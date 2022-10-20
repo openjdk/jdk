@@ -1,0 +1,340 @@
+#
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include Utils.gmk
+include Modules.gmk
+
+IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
+
+CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath
+WORKSPACE_FILE := $(IDE_OUTPUTDIR)/.project
+NATIVE_FILE := $(IDE_OUTPUTDIR)/.cproject
+ANT_BUILDFILE := $(IDE_OUTPUTDIR)/build.xml
+
+# FixPath already removes $(FIXPATH) automatically, but if we rely on FixPath
+# to do it for us dir won't be able to handle the converted path (if on Windows).
+# Reversing the order causes dir to mangle the preceeding $(FIXPATH) which breaks
+# the ability of FixPath to remove it, so it has to be manually removed here.
+# This currently does not support Visual C++
+COMPILER_PATH := $(call FixPath, $(dir $(patsubst $(FIXPATH), , $(CC))))
+
+# Sidestep annoying issue of WSL path conversion not working properly with true
+# Unix paths. Eclipse can't run the WSL make by itself anyway, even if we could
+# properly convert the path.
+ifeq ($(call isBuildOsEnv, windows.wsl1 windows.wsl2), true)
+  MAKE_EXE := wsl.exe $(MAKE)
+else
+  MAKE_EXE := $(call FixPath, $(MAKE))
+endif
+
+# Random number generation, with the amount of specified digits
+# No need to check if the parameter passed is a valid number, the shell will
+# be more than happy to complain if it isn't ;)
+RandomDigits = \
+    $(shell od -An -N8 -d /dev/urandom | sed -e 's| ||g' -e 's|\(.\{$(strip $1)\}\).*|\1|')
+
+# Modified version of utility from JdkNativeCompilation.gmk
+# The full path could be omitted, but it was chosen not to so wildcard
+# can work properly for existing directories. The pathsubst below that
+# this necessitates is a relatively small price to pay.
+FindModuleNativeDirs = \
+  $(call uniq, $(wildcard \
+      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native \
+      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native \
+      $(TOPDIR)/src/$(strip $1)/share/native))
+
+JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
+    $(patsubst $(TOPDIR)/%,%,$(filter-out $(OUTPUTDIR)%, \
+    $(call FindModuleSrcDirs, $(module))))))
+
+NATIVE_DIRS := $(strip $(foreach module, $(call FindAllModules), \
+    $(patsubst $(TOPDIR)/%,%,$(call FindModuleNativeDirs, $(module)))))
+
+EmitEmptyLine = $(file >> $(1),)
+
+# Important note: We only run strip on our own relative source directories
+# Absolute paths should not be passed to strip!
+
+EmitLinkedDirectory = \
+    $(file >> $(WORKSPACE_FILE),        <link>) \
+    $(file >> $(WORKSPACE_FILE),            <name>$(strip $(1))</name>) \
+    $(file >> $(WORKSPACE_FILE),            <type>2</type>) \
+    $(file >> $(WORKSPACE_FILE),            <location>$(subst \\,/,$(call FixPath, $(2)))</location>) \
+    $(file >> $(WORKSPACE_FILE),        </link>)
+
+EmitNativeDir = \
+    $(file >> $(NATIVE_FILE),                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$(strip $(1))"/>)
+
+# This is so named because Eclipse is able to create virtual make targets that call
+# to the real target which can have a different name. For now we don't need to use
+# this functionality that Eclipse provides.
+EmitMatchingMakeTarget = \
+    $(file >> $(NATIVE_FILE),            <target name="$(strip $(1))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">) \
+    $(file >> $(NATIVE_FILE),                <buildCommand>$(MAKE_EXE)</buildCommand>) \
+    $(file >> $(NATIVE_FILE),                <buildArguments>-C $(call FixPath, $(TOPDIR))</buildArguments>) \
+    $(file >> $(NATIVE_FILE),                <buildTarget>$(strip $(1))</buildTarget>) \
+    $(file >> $(NATIVE_FILE),                <stopOnError>true</stopOnError>) \
+    $(file >> $(NATIVE_FILE),                <useDefaultCommand>false</useDefaultCommand>) \
+    $(file >> $(NATIVE_FILE),                <runAllBuilders>true</runAllBuilders>) \
+    $(file >> $(NATIVE_FILE),            </target>)
+
+# Similar reasoning to EmitMatchingMakeTarget
+EmitMatchingAntTarget = \
+    $(file >> $(ANT_BUILDFILE),    <target name="$(strip $(1))">) \
+    $(file >> $(ANT_BUILDFILE),        <call-make args = "$(strip $(1))"/>) \
+    $(file >> $(ANT_BUILDFILE),    </target>) \
+    $(call EmitEmptyLine, $(ANT_BUILDFILE))
+
+################################################################################
+# Define a native toolchain configuration that can be used by
+# SetupNativeCompilation calls
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameter(s) are named arguments:
+#   NATURE - Which Eclipse Workspace nature to generate for the Workspace. Can
+#       be one of JAVA, HOTSPOT, NATIVE, or FULL.
+SetupEclipseWorkspace = $(NamedParamsMacroTemplate)
+define SetupEclipseWorkspaceBody
+
+  ifeq ($$($1_NATURE), )
+    $$(error No nature specified for Eclipse Workspace, cannot continue)
+  endif
+
+  ifeq ($$(findstring $$($1_NATURE), JAVA HOTSPOT NATIVE FULL), )
+    $$(error Unrecognised nature $$($1_NATURE) specified for Eclipse Workspace)
+  endif
+
+  $$(shell mkdir -p $(IDE_OUTPUTDIR))
+
+  # Start with the Workspace file first
+  $$(file > $(WORKSPACE_FILE),<?xml version="1.0" encoding="UTF-8"?>)
+  $$(file >> $(WORKSPACE_FILE),<projectDescription>)
+  $$(file >> $(WORKSPACE_FILE),    <name>OpenJDK</name>)
+  $$(file >> $(WORKSPACE_FILE),    <comment></comment>)
+  $$(file >> $(WORKSPACE_FILE),    <projects>)
+  $$(file >> $(WORKSPACE_FILE),    </projects>)
+  $$(file >> $(WORKSPACE_FILE),    <buildSpec>)
+
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+    $$(file >> $(WORKSPACE_FILE),        <buildCommand>)
+    $$(file >> $(WORKSPACE_FILE),            <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>)
+    $$(file >> $(WORKSPACE_FILE),            <triggers>clean,full,incremental,</triggers>)
+    $$(file >> $(WORKSPACE_FILE),            <arguments>)
+    $$(file >> $(WORKSPACE_FILE),            </arguments>)
+    $$(file >> $(WORKSPACE_FILE),        </buildCommand>)
+    $$(file >> $(WORKSPACE_FILE),        <buildCommand>)
+    $$(file >> $(WORKSPACE_FILE),            <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>)
+    $$(file >> $(WORKSPACE_FILE),            <triggers>full,incremental,</triggers>)
+    $$(file >> $(WORKSPACE_FILE),            <arguments>)
+    $$(file >> $(WORKSPACE_FILE),            </arguments>)
+    $$(file >> $(WORKSPACE_FILE),        </buildCommand>)
+  endif
+
+  $$(file >> $(WORKSPACE_FILE),    </buildSpec>)
+  $$(file >> $(WORKSPACE_FILE),    <natures>)
+
+  ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
+
+  	$$(file > $(CLASSPATH_FILE),<?xml version="1.0" encoding="UTF-8"?>)
+    $$(file >> $(CLASSPATH_FILE),<classpath>)
+
+    # Eclipse crashes when processing multiple module-info.java files
+    # This is an annoying bug that has not been fixed for some time now
+    $$(foreach src,$(JAVA_DIRS),$$(file >> $(CLASSPATH_FILE),    <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>))
+
+    $$(file >> $(CLASSPATH_FILE),</classpath>)
+
+    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.jdt.core.javanature</nature>)
+
+    $$(file > $(ANT_BUILDFILE),<project name="OpenJDK">)
+
+    $$(call EmitEmptyLine, $(ANT_BUILDFILE))
+    $$(file >> $(ANT_BUILDFILE),    <macrodef name="call-make">)
+    $$(file >> $(ANT_BUILDFILE),        <attribute name="args"/>)
+    $$(file >> $(ANT_BUILDFILE),        <sequential>)
+    $$(file >> $(ANT_BUILDFILE),            <exec executable="$(MAKE_EXE)" dir="$$(call FixPath, $(TOPDIR))" failonerror="true">)
+    $$(file >> $(ANT_BUILDFILE),                <arg line="@{args}"/>)
+    $$(file >> $(ANT_BUILDFILE),            </exec>)
+    $$(file >> $(ANT_BUILDFILE),        </sequential>)
+    $$(file >> $(ANT_BUILDFILE),    </macrodef>)
+    $$(call EmitEmptyLine, $(ANT_BUILDFILE))
+
+    # For now just expose the same targets we do with the regular make system
+    $$(call EmitMatchingAntTarget, update-build-docs)
+    $$(call EmitMatchingAntTarget, docs)
+    $$(call EmitMatchingAntTarget, gensrc)
+    $$(call EmitMatchingAntTarget, gendata)
+    $$(call EmitMatchingAntTarget, copy)
+    $$(call EmitMatchingAntTarget, java)
+    $$(call EmitMatchingAntTarget, launchers)
+    $$(call EmitMatchingAntTarget, libs)
+    $$(call EmitMatchingAntTarget, hotspot)
+    $$(call EmitMatchingAntTarget, jdk)
+    $$(call EmitMatchingAntTarget, product-images)
+    $$(call EmitMatchingAntTarget, bootcycle-images)
+    $$(call EmitMatchingAntTarget, all-images)
+    $$(call EmitMatchingAntTarget, test-image)
+    $$(call EmitMatchingAntTarget, clean)
+
+    $$(file >> $(ANT_BUILDFILE),</project>)
+
+  endif
+
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+
+    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.core.cnature</nature>)
+    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.core.ccnature</nature>)
+    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>)
+    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>)
+
+    # Now emit the native file
+    $$(file > $(NATIVE_FILE),<?xml version="1.0" encoding="UTF-8" standalone="no"?>)
+    $$(file >> $(NATIVE_FILE),<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">)
+    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="scannerConfiguration">)
+    $$(file >> $(NATIVE_FILE),        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>)
+    $$(file >> $(NATIVE_FILE),    </storageModule>)
+    $$(call EmitEmptyLine, $(NATIVE_FILE))
+    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>)
+    $$(call EmitEmptyLine, $(NATIVE_FILE))
+    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="org.eclipse.cdt.core.settings">)
+    $$(file >> $(NATIVE_FILE),        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)">)
+    $$(file >> $(NATIVE_FILE),            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>)
+    $$(call EmitEmptyLine, $(NATIVE_FILE))
+    $$(file >> $(NATIVE_FILE),            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" moduleId="org.eclipse.cdt.core.settings" name="OpenJDK">)
+    $$(file >> $(NATIVE_FILE),                <externalSettings/>)
+    $$(file >> $(NATIVE_FILE),                <extensions>)
+    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>)
+    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
+    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
+    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
+    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>)
+    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
+    $$(file >> $(NATIVE_FILE),                </extensions>)
+    $$(file >> $(NATIVE_FILE),            </storageModule>)
+    $$(call EmitEmptyLine, $(NATIVE_FILE))
+    $$(file >> $(NATIVE_FILE),            <storageModule moduleId="cdtBuildSystem" version="4.0.0">)
+    $$(file >> $(NATIVE_FILE),                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" name="OpenJDK" parent="org.eclipse.cdt.build.core.emptycfg">)
+    $$(file >> $(NATIVE_FILE),                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10).$(call RandomDigits, 9)" name="/" resourcePath="">)
+    $$(file >> $(NATIVE_FILE),                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">)
+    $$(file >> $(NATIVE_FILE),                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>)
+    $$(file >> $(NATIVE_FILE),                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>)
+    $$(file >> $(NATIVE_FILE),                        </toolChain>)
+    $$(file >> $(NATIVE_FILE),                    </folderInfo>)
+    $$(file >> $(NATIVE_FILE),                    <sourceEntries>)
+
+    # This is always emitted, no matter which of the 3 natures were selected
+    $$(call EmitNativeDir, src/hotspot)
+
+    ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+      $$(foreach src,$(NATIVE_DIRS),$$(call EmitNativeDir, $$(src)))
+    endif
+
+    $$(file >> $(NATIVE_FILE),                    </sourceEntries>)
+    $$(file >> $(NATIVE_FILE),                </configuration>)
+    $$(file >> $(NATIVE_FILE),            </storageModule>)
+    $$(file >> $(NATIVE_FILE),        </cconfiguration>)
+    $$(file >> $(NATIVE_FILE),    </storageModule>)
+    $$(call EmitEmptyLine, $(NATIVE_FILE))
+    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">)
+    $$(file >> $(NATIVE_FILE),        <buildTargets>)
+
+    # Omitted: reconfigure and dist-clean
+    # The former is sensitive to the make, shell and environment used
+    # The latter would destroy the virtual workspace
+    $$(call EmitMatchingMakeTarget, update-build-docs)
+    $$(call EmitMatchingMakeTarget, docs)
+    $$(call EmitMatchingMakeTarget, gensrc)
+    $$(call EmitMatchingMakeTarget, gendata)
+    $$(call EmitMatchingMakeTarget, copy)
+    $$(call EmitMatchingMakeTarget, java)
+    $$(call EmitMatchingMakeTarget, launchers)
+    $$(call EmitMatchingMakeTarget, libs)
+    $$(call EmitMatchingMakeTarget, hotspot)
+    $$(call EmitMatchingMakeTarget, jdk)
+    $$(call EmitMatchingMakeTarget, product-images)
+    $$(call EmitMatchingMakeTarget, bootcycle-images)
+    $$(call EmitMatchingMakeTarget, all-images)
+    $$(call EmitMatchingMakeTarget, test-image)
+    $$(call EmitMatchingMakeTarget, clean)
+
+    $$(file >> $(NATIVE_FILE),        </buildTargets>)
+    $$(file >> $(NATIVE_FILE),    </storageModule>)
+    $$(file >> $(NATIVE_FILE),</cproject>)
+
+  endif
+
+  $$(file >> $(WORKSPACE_FILE),    </natures>)
+  $$(file >> $(WORKSPACE_FILE),    <linkedResources>)
+
+  ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
+    $$(foreach src,$(JAVA_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
+  endif
+
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+
+    # If CDT support was indicated there's no harm in including make, the cost of
+    # indexing the make system is virtually non-existent
+    $$(call EmitLinkedDirectory, make,$(TOPDIR)/make)
+
+    $$(call EmitLinkedDirectory, src/hotspot,$(TOPDIR)/src/hotspot)
+
+  endif
+  
+  ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+    $$(foreach src,$(NATIVE_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
+  endif
+
+  $$(file >> $(WORKSPACE_FILE),    </linkedResources>)
+  $$(file >> $(WORKSPACE_FILE),</projectDescription>)
+
+endef
+
+workspace-java:
+	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+	    NATURE := JAVA, \
+	))
+
+workspace-hotspot:
+	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+	    NATURE := HOTSPOT, \
+	))
+
+workspace-native:
+	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+	    NATURE := NATIVE, \
+	))
+
+workspace-full:
+	$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+	    NATURE := FULL, \
+	))
+
+all: workspace-full

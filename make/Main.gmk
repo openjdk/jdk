@@ -257,6 +257,25 @@ $(eval $(call SetupTarget, hotspot-ide-project, \
     ARGS := -I$(TOPDIR)/make/hotspot, \
 ))
 
+$(eval $(call SetupTarget, eclipse-java-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    TARGET := workspace-java, \
+))
+
+$(eval $(call SetupTarget, eclipse-hotspot-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    TARGET := workspace-hotspot, \
+))
+
+$(eval $(call SetupTarget, eclipse-native-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    TARGET := workspace-native, \
+))
+
+$(eval $(call SetupTarget, eclipse-dev-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+))
+
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
     $(HOTSPOT_VARIANT_LIBS_TARGETS)
 
