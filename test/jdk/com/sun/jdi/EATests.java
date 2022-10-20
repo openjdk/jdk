@@ -272,6 +272,7 @@ public class EATests extends TestScaffold {
         public final boolean DeoptimizeObjectsALot;
         public final boolean DoEscapeAnalysis;
         public final boolean ZGCIsSelected;
+        public final boolean StressReflectiveCode;
 
         public TargetVMOptions(EATests env, ClassType testCaseBaseTargetClass) {
             Value val;
@@ -286,6 +287,8 @@ public class EATests extends TestScaffold {
             UseJVMCICompiler = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ZGCIsSelected"));
             ZGCIsSelected = ((PrimitiveValue) val).booleanValue();
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("StressReflectiveCode"));
+            StressReflectiveCode = ((PrimitiveValue) val).booleanValue();
         }
 
     }
@@ -394,6 +397,12 @@ abstract class EATestCaseBaseDebugger  extends EATestCaseBaseShared {
     public static final String XYVAL_NAME = XYVal.class.getName();
 
     public abstract void runTestCase() throws Exception;
+
+    @Override
+    public boolean shouldSkip() {
+        // Skip if StressReflectiveCode because it effectively disables escape analysis
+        return super.shouldSkip() || env.targetVMOptions.StressReflectiveCode;
+    }
 
     public void run(EATests env) {
         this.env = env;
@@ -794,6 +803,12 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static final    Long CONST_2_OBJ     = Long.valueOf(2);
     public static final    Long CONST_3_OBJ     = Long.valueOf(3);
 
+    @Override
+    public boolean shouldSkip() {
+        // Skip if StressReflectiveCode because it effectively disables escape analysis
+        return super.shouldSkip() || StressReflectiveCode;
+    }
+
     /**
      * Main driver of a test case.
      * <ul>
@@ -886,7 +901,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
             Asserts.assertEQ(testMethodName, frames[stackTraceDepth].getMethodName(),
                     testCaseName + ": test method not found at depth " + testMethodDepth);
             // check if the frame is (not) deoptimized as expected
-            if (!DeoptimizeObjectsALot && !StressReflectiveCode) {
+            if (!DeoptimizeObjectsALot) {
                 if (testFrameShouldBeDeoptimized()) {
                     Asserts.assertTrue(WB.isFrameDeoptimized(testMethodDepth+1),
                             testCaseName + ": expected test method frame at depth " + testMethodDepth + " to be deoptimized");
