@@ -677,6 +677,17 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "zero_blocks");
     address start = __ pc();
 
+    if (UseBlockZeroing) {
+      // Ensure count >= cache_line_size so that it still deserves a cbo.zero
+      // after alignment.
+      Label small;
+      int low_limit = MAX2(VM_Version::cache_line_size(), (int)BlockZeroingLowLimit);
+      __ li(t0, low_limit);
+      __ blt(cnt, t0, small);
+      __ zero_dcache_blocks(base, cnt);
+      __ bind(small);
+    }
+
     {
       // Clear the remaining blocks.
       Label loop;
@@ -684,9 +695,9 @@ class StubGenerator: public StubCodeGenerator {
       __ bltz(cnt, done);
       __ bind(loop);
       for (int i = 0; i < MacroAssembler::zero_words_block_size; i++) {
-        __ sd(zr, Address(base, 0));
-        __ add(base, base, 8);
+        __ sd(zr, Address(base, i << 3));
       }
+      __ add(base, base, MacroAssembler::zero_words_block_size << 3);
       __ sub(cnt, cnt, MacroAssembler::zero_words_block_size);
       __ bgez(cnt, loop);
       __ bind(done);
