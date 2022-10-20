@@ -467,6 +467,49 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_nth_register_info(outputStream *st, int n, const void *context) {
+  if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
+    return;
+  }
+
+  const CONTEXT* uc = (const CONTEXT*)context;
+# define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->id);
+  switch (n) {
+#ifdef AMD64
+  CASE_PRINT_REG( 0, "RAX=", Rax); break;
+  CASE_PRINT_REG( 1, "RBX=", Rbx); break;
+  CASE_PRINT_REG( 2, "RCX=", Rcx); break;
+  CASE_PRINT_REG( 3, "RDX=", Rdx); break;
+  CASE_PRINT_REG( 4, "RSP=", Rsp); break;
+  CASE_PRINT_REG( 5, "RBP=", Rbp); break;
+  CASE_PRINT_REG( 6, "RSI=", Rsi); break;
+  CASE_PRINT_REG( 7, "RDI=", Rdi); break;
+  CASE_PRINT_REG( 8, "R8 =", R8); break;
+  CASE_PRINT_REG( 9, "R9 =", R9); break;
+  CASE_PRINT_REG(10, "R10=", R10); break;
+  CASE_PRINT_REG(11, "R11=", R11); break;
+  CASE_PRINT_REG(12, "R12=", R12); break;
+  CASE_PRINT_REG(13, "R13=", R13); break;
+  CASE_PRINT_REG(14, "R14=", R14); break;
+  CASE_PRINT_REG(15, "R15=", R15); break;
+#else
+  CASE_PRINT_REG(0, "EAX=", Eax); break;
+  CASE_PRINT_REG(1, "EBX=", Ebx); break;
+  CASE_PRINT_REG(2, "ECX=", Ecx); break;
+  CASE_PRINT_REG(3, "EDX=", Edx); break;
+  CASE_PRINT_REG(4, "ESP=", Esp); break;
+  CASE_PRINT_REG(5, "EBP=", Ebp); break;
+  CASE_PRINT_REG(6, "ESI=", Esi); break;
+  CASE_PRINT_REG(7, "EDI=", Edi); break;
+#endif // AMD64
+  }
+# undef CASE_PRINT_REG
+}
+
+int os::print_nth_register_info_max_index() {
+  return AMD64_ONLY(16) NOT_AMD64(8);
+}
+
 void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
