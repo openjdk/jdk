@@ -50,7 +50,7 @@ public class FormatterBuilder {
         }
     }
 
-    static void suite(TemplateProcessor<String, RuntimeException> fmt) {
+    static void suite(TemplateProcessorWithException<String, RuntimeException> fmt) {
         Object nullObject = null;
         test(String.format("%b", false), fmt."%b\{false}");
         test(String.format("%b", true), fmt."%b\{true}");

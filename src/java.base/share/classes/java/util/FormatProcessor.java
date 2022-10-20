@@ -35,8 +35,8 @@ import java.util.regex.Pattern;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@link TemplateProcessor} constructs a String result using {@link
- * Formatter}. Unlike {@link Formatter}, FormatProcessor uses the value from
+ * This {@linkplain TemplateProcessorWithException yemplate processor} constructs a String
+ * result using {@link Formatter}. Unlike {@link Formatter}, FormatProcessor uses the value from
  * the embedded expression that follows immediately after the
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
  * StringTemplate expressions without a preceeding specifier, use "%s" by
@@ -49,7 +49,7 @@ import jdk.internal.javac.PreviewFeature;
  * result is: <code>00010 + 00020 = 00030</code>
  *
  * @implNote When used in conjunction with a compiler generated {@link
- * StringTemplate} this {@link TemplateProcessor} will use the format
+ * StringTemplate} this {@link TemplateProcessorWithException} will use the format
  * specifiers in the fragments and types of the values in the value list
  * to produce a more performant formatter.
  *
@@ -108,7 +108,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
         Objects.requireNonNull(type);
         String format = stringTemplateFormat(fragments);
         Class<?>[] ptypes = type.dropParameterTypes(0, 1).parameterArray();
-        MethodHandle mh = Formatter.formatterMethodHandle(format, locale, ptypes);
+        MethodHandle mh = new FormatterBuilder(format, locale, ptypes).build();
         mh = MethodHandles.dropArguments(mh, 0, type.parameterType(0));
 
         return mh;

@@ -4876,34 +4876,4 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    /**
-     * Constructs a {@link MethodHandle} expecting arguments matching
-     * {@code ptypes} and returning a {@link String} using the supplied
-     * {@code format} and {@code locale}.
-     *
-     * @param format  format string as described in <a href="#syntax">Format string
-     *                syntax</a>
-     * @param locale  {@link java.util.Locale locale} to process during
-     *                formatting.
-     * @param ptypes  types of arguments
-     *
-     * @return a formatting {@link MethodHandle}
-     *
-     * @throws  java.lang.NullPointerException if any argument is null.
-     * @throws  IllegalFormatException
-     *          If a format string contains an illegal syntax, a format
-     *          specifier that is incompatible with the given arguments,
-     *          insufficient arguments given the format string, or other
-     *          illegal conditions.  For specification of all possible
-     *          formatting errors.
-     */
-    public static MethodHandle formatterMethodHandle(String format, Locale locale, Class<?>... ptypes) {
-        Objects.requireNonNull(format, "format must not be null");
-        Objects.requireNonNull(locale, "locale must not be null");
-        Objects.requireNonNull(ptypes, "ptypes must not be null");
-
-        FormatterBuilder fmh = new FormatterBuilder(format, locale, ptypes);
-
-        return fmh.build();
-    }
 }

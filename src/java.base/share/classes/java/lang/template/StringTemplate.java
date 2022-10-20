@@ -67,8 +67,8 @@ import jdk.internal.javac.PreviewFeature;
  * {@code values} will be the equivalent of <code>List.of(x, y, x + y)</code>.
  * <p>
  * {@link StringTemplate StringTemplates} are primarily used in conjuction
- * with {@link TemplateProcessor} to produce meaningful results. For example, if a
- * user wants string interpolation, then they can use a string template
+ * with {@linkplain  TemplateProcessorWithException template processors} to produce meaningful
+ * results. For example, if a user wants string interpolation, then they can use a string template
  * expression with the standard {@link StringTemplate#STR} processor.
  * {@snippet :
  * int x = 10;
@@ -77,8 +77,8 @@ import jdk.internal.javac.PreviewFeature;
  * }
  * {@code result} will be equivalent to <code>"10 + 20 = 30"</code>.
  * <p>
- * The {@link StringTemplate#process(TemplateProcessor)} method supplies an alternative to using
- * string template expressions.
+ * The {@link StringTemplate#process(TemplateProcessorWithException)} method supplies an
+ * alternative to using string template expressions.
  * {@snippet :
  * String result = "\{x} + \{y} = \{x + y}".process(STR);
  * }
@@ -89,8 +89,8 @@ import jdk.internal.javac.PreviewFeature;
  * The {@link StringTemplate#interpolate()} method provides a simple way to produce a
  * string interpolation of the {@link StringTemplate}.
  * <p>
- * {@link TemplateProcessor Template processors} typically use the following code pattern
- * to perform composition:
+ * {@linkplain TemplateProcessorWithException Template processors} typically use the following code
+ * pattern to perform composition:
  * {@snippet :
  * List<String> fragments = st.fragments();
  * List<Object> values = st.values();
@@ -102,8 +102,8 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec An instance of {@link StringTemplate} is immutatble. Also, the
  * fragment list size must be one more than the values list size.
  *
+ * @see TemplateProcessorWithException
  * @see TemplateProcessor
- * @see SimpleProcessor
  * @see StringProcessor
  * @see java.util.FormatProcessor
  *
@@ -158,7 +158,7 @@ public interface StringTemplate {
      * }
      * produces an equivalent result for both {@code result1} and {@code result2}.
      *
-     * @param processor the {@link TemplateProcessor} instance to process
+     * @param processor the {@link TemplateProcessorWithException} instance to process
      *
      * @param <R>  Processor's process result type.
      * @param <E>  Exception thrown type.
@@ -171,7 +171,7 @@ public interface StringTemplate {
      * @implNote The default implementation simply invokes the processor's process
      * method {@code processor.process(this)}.
      */
-    default <R, E extends Throwable> R process(TemplateProcessor<R, E> processor) throws E {
+    default <R, E extends Throwable> R process(TemplateProcessorWithException<R, E> processor) throws E {
         Objects.requireNonNull(processor, "processor should not be null");
 
         return processor.process(this);
@@ -202,11 +202,50 @@ public interface StringTemplate {
      */
     public static String toString(StringTemplate stringTemplate) {
         Objects.requireNonNull(stringTemplate, "stringTemplate should not be null");
-        String fragments = "[\"" + String.join("\", \"", stringTemplate.fragments()) + "\"](";
-        return stringTemplate.values()
-                .stream()
-                .map(v -> String.valueOf(v))
-                .collect(Collectors.joining(", ", fragments, ")"));
+        return "StringTemplate{ fragments = [ \"" +
+                String.join("\", \"", stringTemplate.fragments()) +
+                "\" ], values = " +
+                stringTemplate.values() +
+                " }";
+    }
+
+    /**
+     * Produces a hash code for the supplied {@link StringTemplate}.
+     *
+     * @param stringTemplate the {@link StringTemplate} to hash
+     *
+     * @return hash code for the supplied {@link StringTemplate}
+     *
+     * @throws NullPointerException if stringTemplate is null
+     *
+     * @implSpec The hashCode is the bit XOR of the fragments hash code and
+     * the values hash code.
+     */
+    public static int hashCode(StringTemplate stringTemplate) {
+        Objects.requireNonNull(stringTemplate, "stringTemplate should not be null");
+        return Objects.hashCode(stringTemplate.fragments()) ^
+               Objects.hashCode(stringTemplate.values());
+    }
+
+    /**
+     * Tests for equality of two {@link StringTemplate}.
+     *
+     * @param a  first {@link StringTemplate}
+     * @param b  second {@link StringTemplate}
+     *
+     * @return true if the two {@link StringTemplate StringTemplates} are equivalent
+     *
+     * @throws NullPointerException if either @link StringTemplate} is null
+     *
+     * @implSpec Equality is determined by testing equality of the fragments and
+     * the values.
+     */
+    public static boolean equals(Object a, Object b) {
+        Objects.requireNonNull(a, "StringTemplate a should not be null");
+        Objects.requireNonNull(b, "StringTemplate b should not be null");
+        return a instanceof StringTemplate aST && b instanceof StringTemplate bST &&
+               Objects.equals(aST.fragments(), bST.fragments()) &&
+               Objects.equals(aST.values(), bST.values());
     }
 
     /**

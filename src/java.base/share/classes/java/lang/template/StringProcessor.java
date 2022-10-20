@@ -32,7 +32,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * This interface simplifies declaration of
- * {@link java.lang.template.TemplateProcessor TemplateProcessors}
+ * {@linkplain TemplateProcessorWithException template processors}
  * that do not throw checked exceptions and have a result type of {@link String}. For example:
  * {@snippet :
  * StringProcessor processor = st -> st.interpolate();
@@ -42,4 +42,4 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
-public interface StringProcessor extends SimpleProcessor<String> {}
+public interface StringProcessor extends TemplateProcessor<String> {}

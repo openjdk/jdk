@@ -408,6 +408,24 @@ public final class TransLiterals extends TreeTranslator {
             toStringMethod.addStatement(make.Return(applytoString));
         }
 
+        void createHashCodeMethod() {
+            MethodInfo toHashCodeMethod = createMethod(PUBLIC, names.hashCode,
+                    syms.intType, List.nil(), stringTemplateClass);
+            JCExpression applyHashCode = this.createApply(syms.stringTemplateType, names.hashCode,
+                    List.of(make.This(stringTemplateClass.type)));
+            toHashCodeMethod.addStatement(make.Return(applyHashCode));
+        }
+
+        void createEqualsMethod() {
+            MethodInfo toEqualsMethod = createMethod(PUBLIC, names.equals,
+                    syms.booleanType, List.of(syms.objectType), stringTemplateClass);
+            List<JCVariableDecl> params = toEqualsMethod.decl.params;
+            JCIdent ident = makeParamIdent(params, params.head.name);
+            JCExpression applyEquals = this.createApply(syms.stringTemplateType, names.equals,
+                    List.of(make.TypeCast(syms.objectType, make.This(stringTemplateClass.type)), ident));
+            toEqualsMethod.addStatement(make.Return(applyEquals));
+        }
+
         private JCClassDecl newStringTemplateClass() {
             long flags = PUBLIC | FINAL | SYNTHETIC;
 
@@ -443,6 +461,8 @@ public final class TransLiterals extends TreeTranslator {
                 currentClass = stringTemplateClass.sym;
                 createFragmentsListAndMethod();
                 createToStringMethod();
+                createHashCodeMethod();
+                createEqualsMethod();
 
                 if (useValuesList) {
                     createValuesListAndMethod();
