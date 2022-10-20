@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 public class Basic {
 
     private static int fail = 0;
@@ -91,7 +90,7 @@ public class Basic {
         if (fail != 0) {
             var tests_message = "%d tests: %d failure(s)%n".formatted(fail + pass, fail);
             var trace_message = "Traceback of the first error located";
-            String message = "%s %s".formatted(tests_message, trace_message);
+            var message = "%s %s".formatted(tests_message, trace_message);
             throw new RuntimeException(message, first);
         } else {
             System.out.printf("All %d tests passed", pass);
