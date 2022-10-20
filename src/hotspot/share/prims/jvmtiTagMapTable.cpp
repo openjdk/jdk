@@ -105,9 +105,58 @@ bool JvmtiTagMapTable::add(oop obj, jlong tag) {
   return is_added;
 }
 
+<<<<<<< HEAD
 void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapEntry jtme(obj);
   _rrht_table->remove(jtme);
+=======
+bool JvmtiTagMapTable::remove(oop obj) {
+
+  JvmtiTagMapEntry jtme(obj,0);
+  jlong* found = _rrht_table.get(jtme);
+  if (found == NULL) {
+    log_debug(jvmti,table)("entry not found to remove.\n");
+    return true;
+  }
+  if( _rrht_table.remove(jtme)) {
+    jtme.release();
+    return true;
+  } else {
+    log_info(jvmti,table)("removing object failed.");
+  }
+  return false;
+}
+int JvmtiTagMapTable::add_update_remove(JvmtiTagMapEntry &entry_par,oop obj, jlong tag){
+  assert(obj != NULL, "obj should not be NULL.");
+  JvmtiTagMapEntry entry (obj,tag);
+  bool found = find(entry, obj);
+  bool to_be_added = tag != 0 ;
+  bool to_be_updated = tag != 0 ;
+  bool to_be_removed = tag == 0 ;
+  if (!found && to_be_added ) {
+    if ( add(obj, tag) ){
+      return AddUpdateRemove::Added;
+    } else {
+      log_info(jvmti,table)("expected to add entry with new tag, but the tag gets updated.\n");
+    }
+  }
+  if ( found && to_be_removed){
+    if ( remove(obj) ) {
+      return AddUpdateRemove::Removed;
+    } else {
+      log_info(jvmti,table)("request for removing an entry failed.\n");
+      return AddUpdateRemove::Failed;
+    }
+  }
+  if (found && to_be_updated ){
+    if ( _rrht_table.put(entry, tag) ) {
+      log_info(jvmti,table)("expected to update entry's tag, but it is added.\n");
+    }
+    entry_par.set_tag(tag);
+    return AddUpdateRemove::Updated;
+  }
+  return AddUpdateRemove::Failed;
+>>>>>>> a9b7f953b0c (step 5)
 }
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
   _rrht_table->iterate(closure);
