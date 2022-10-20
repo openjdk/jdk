@@ -123,6 +123,7 @@ public abstract class ShortResponseBody {
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (client == null || numberOfRequests == REQUESTS_PER_CLIENT) {
+            numberOfRequests = 0;
             out.println("--- new client");
             client = newHttpClient();
             System.gc();
