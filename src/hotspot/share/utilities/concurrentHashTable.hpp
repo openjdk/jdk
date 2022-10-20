@@ -485,13 +485,13 @@ class ConcurrentHashTable : public CHeapObj<F> {
   void do_scan(Thread* thread, SCAN_FUNC& scan_f);
 
 
-  class BucketsClaimer;
   // Visit all items with SCAN_FUNC without any protection.
   // It will assume there is no other thread accessing this
   // table during the safepoint. Must be called with VM thread.
   template <typename SCAN_FUNC>
   void do_safepoint_scan(SCAN_FUNC& scan_f);
 
+  class BucketsClaimer;
   // Visit all items with SCAN_FUNC without any protection.
   // Thread-safe, but must be called at safepoint.
   template <typename SCAN_FUNC>
