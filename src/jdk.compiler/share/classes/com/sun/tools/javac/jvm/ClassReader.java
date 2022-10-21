@@ -2205,7 +2205,8 @@ public class ClassReader {
         Type type = poolReader.getType(nextChar());
         VarSymbol v = new VarSymbol(flags, name, type, currentOwner);
         readMemberAttrs(v);
-        if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
+        if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1 ||
+            Integer.bitCount(rawFlags & (FINAL | VOLATILE)) > 1)
             throw badClassFile("illegal.flag.combo", String.format("0x%04x", (int)rawFlags), "field", v);
         return v;
     }
