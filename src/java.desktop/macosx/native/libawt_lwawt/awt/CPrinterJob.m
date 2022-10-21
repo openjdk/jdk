@@ -318,24 +318,56 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
     javaPaperToNSPrintInfo(env, paper, dstPrintInfo);
     (*env)->DeleteLocalRef(env, paper);
 
+    NSPaperOrientation orientation = [dstPrintInfo orientation];
+
     switch ((*env)->CallIntMethod(env, srcPageFormat, jm_getOrientation)) { // AWT_THREADING Safe (!appKit)
         case java_awt_print_PageFormat_PORTRAIT:
-            [dstPrintInfo setOrientation:NS_PORTRAIT];
+            orientation = NS_PORTRAIT;
             break;
 
         case java_awt_print_PageFormat_LANDSCAPE:
-            [dstPrintInfo setOrientation:NS_LANDSCAPE]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+            orientation = NS_LANDSCAPE; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
             break;
 
         // AppKit printing doesn't support REVERSE_LANDSCAPE. Radar 2960295.
         case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
-            [dstPrintInfo setOrientation:NS_LANDSCAPE]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+            orientation = NS_LANDSCAPE; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
             break;
 
         default:
-            [dstPrintInfo setOrientation:NS_PORTRAIT];
+            orientation = NS_PORTRAIT;
             break;
     }
+
+    // It is not possible to set NSPrintInfo paper size and orientation independently.
+    // Setting paper size width large than height changes NSPrintInfo orientation to landscape.
+    // Setting size width less than height changes NSPrintInfo orientation to portrait.
+    // Updating NSPrintInfo orientation from landscape to portrait or from portrait to landscape
+    // swaps NSPrintInfo paper width and height.
+
+    // There are four possible cases:
+    // 1. Input: paper size: (w > h), orientation portrait
+    //   [dstPrintInfo setPaperSize: NSMakeSize(w, h)] // size: (w, h), orientation: landscape
+    //   [dstPrintInfo setOrientation: NS_PORTRAIT]    // size: (h, w), orientation: portrait
+    //   Note: width and height are swapped
+    // 2. Input: paper size: (w > h), orientation landscape
+    //   [dstPrintInfo setPaperSize: NSMakeSize(h, w)] // size: (h, w), orientation: portrait
+    //   [dstPrintInfo setOrientation: NS_LANDSCAPE]   // size: (w, h), orientation: landscape
+    // 3. Input: paper size: (w < h), orientation portrait
+    //   [dstPrintInfo setPaperSize: NSMakeSize(w, h)] // size: (w, h), orientation: portrait
+    //   [dstPrintInfo setOrientation: NS_PORTRAIT]    // size: (w, h), orientation: portrait
+    // 4. Input: paper size: (w < h), orientation landscape
+    //   [dstPrintInfo setPaperSize: NSMakeSize(h, w)] // size: (h, w), orientation: landscape
+    //   [dstPrintInfo setOrientation: NS_LANDSCAPE]   // size: (h, w), orientation: landscape
+    //   Note: width and height are swapped
+    NSSize size = [dstPrintInfo paperSize];
+    // Enlarge height only for cases 1 and 4.
+    if ([dstPrintInfo orientation] == NS_LANDSCAPE && size.width > size.height) {
+        size.height = size.width + ((orientation == NS_PORTRAIT) ? 1 : 0);
+        [dstPrintInfo setPaperSize: size];
+    }
+
+    [dstPrintInfo setOrientation:orientation];
     CHECK_EXCEPTION();
 
     // <rdar://problem/4022422> NSPrinterInfo is not correctly set to the selected printer
