@@ -59,6 +59,7 @@
 
 #include <libiberty.h>
 #include <bfd.h>
+#include <bfdver.h>
 #include <dis-asm.h>
 
 #include "hsdis.h"
@@ -561,7 +562,13 @@ static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
                                            fprintf_ftype fprintf_func,
                                            bfd* abfd,
                                            char* disassembler_options) {
+#if BFD_VERSION >= 239000000
+  // binutils 2.39+ changed the API in incompatible manner,
+  // by adding the additional "styled printf" parameter
+  init_disassemble_info(dinfo, stream, fprintf_func, NULL);
+#else
   init_disassemble_info(dinfo, stream, fprintf_func);
+#endif
 
   dinfo->flavour = bfd_get_flavour(abfd);
   dinfo->arch = bfd_get_arch(abfd);
