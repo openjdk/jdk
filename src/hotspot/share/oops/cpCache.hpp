@@ -490,6 +490,7 @@ class ConstantPoolCache: public MetaspaceObj {
   int resolved_invokedynamicinfo_length() const { 
     return _resolved_invokedynamic_info_array->length(); 
   }
+  Array<ResolvedInvokeDynamicInfo>* resolved_invokedynamic_info_array() { return _resolved_invokedynamic_info_array; }
 
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
