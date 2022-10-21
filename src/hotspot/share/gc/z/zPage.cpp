@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
@@ -257,25 +258,17 @@ bool ZPage::is_remset_cleared_previous() const {
   return _remembered_set.is_cleared_previous();
 }
 
-#ifdef ASSERT
 void ZPage::verify_remset_cleared_current() const {
-  if (!is_remset_cleared_current()) {
-    log_msg(" Current remset not cleared");
-    assert(is_remset_cleared_current(), "Should be cleared "
-           PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
-           untype(start()), untype(top()), untype(end()));
+  if (ZVerifyRemembered && !is_remset_cleared_current()) {
+    fatal_msg(" current remset bits should be cleared");
   }
 }
 
 void ZPage::verify_remset_cleared_previous() const {
-  if (!is_remset_cleared_previous()) {
-    log_msg(" Previous remset not cleared");
-    assert(is_remset_cleared_previous(), "Should be cleared "
-           PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
-           untype(start()), untype(top()), untype(end()));
+  if (ZVerifyRemembered && !is_remset_cleared_previous()) {
+    fatal_msg(" previous remset bits should be cleared");
   }
 }
-#endif
 
 void ZPage::clear_remset_current() {
  _remembered_set.clear_current();
@@ -329,4 +322,10 @@ void ZPage::verify_live(uint32_t live_objects, size_t live_bytes, bool in_place)
   }
   guarantee(live_objects == _livemap.live_objects(), "Invalid number of live objects");
   guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes");
+}
+
+void ZPage::fatal_msg(const char* msg) const {
+  stringStream ss;
+  print_on_msg(&ss, msg);
+  fatal("%s", ss.base());
 }
