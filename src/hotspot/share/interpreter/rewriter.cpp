@@ -111,13 +111,6 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
                                         THREAD);
-   for (int i = 0; i < _pool->cache()->resolved_invokedynamicinfo_length(); i++) {
-    if (UseNewCode && 0) {
-      tty->print_cr("In rewriter!! Entry: %d Info index %d  cp index %d", i, _pool->cache()->resolved_invokedynamic_info_element(i)->resolved_references_index(), 
-            _pool->cache()->resolved_invokedynamic_info_element(i)->cpool_index());
-      tty->print_cr("Arr length %d", _pool->cache()->resolved_invokedynamicinfo_length());
-    }
-  }
 #if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && Arguments::is_dumping_archive()) {
     if (_pool->pool_holder()->is_shared()) {

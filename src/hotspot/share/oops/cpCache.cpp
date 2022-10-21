@@ -444,13 +444,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // that's set in the constant pool cache here.
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
-  if (UseNewCode) {
-    if (cpCache->resolved_invokedynamicinfo_length() > 0) {
-      //cpCache->resolved_invokedynamic_info_element(0);
-      cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, adapter->size_of_parameters(), adapter->result_type(), has_appendix);
-      //tty->print_cr("The length of invokedynamicinfo array is %d", cpCache->resolved_invokedynamicinfo_length());
-      //tty->print_cr("index of invokevirtual is %d", _invokedynamic_index);
-    }
+  if (UseNewCode && cpCache->resolved_invokedynamic_info_array()) {
+    cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
   }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
@@ -698,12 +693,16 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   const int length = index_map.length() + invokedynamic_index_map.length();
   int size = ConstantPoolCache::size(length);
 
-  // Fill resolvedinvokedynamicinfo array
-  Array<ResolvedInvokeDynamicInfo>* array = MetadataFactory::new_array<ResolvedInvokeDynamicInfo>(
-                       loader_data, invokedynamic_info.length(), THREAD);
-  for (int i = 0; i < invokedynamic_info.length(); i++) {
-      array->at_put(i, ResolvedInvokeDynamicInfo(invokedynamic_info.at(i)._resolved_info_index,
-            invokedynamic_info.at(i)._cp_index));
+  // Initialize resolvedinvokedynamicinfo array with available data
+  Array<ResolvedInvokeDynamicInfo>* array;
+  if (invokedynamic_info.length()) {
+    array = MetadataFactory::new_array<ResolvedInvokeDynamicInfo>(loader_data, invokedynamic_info.length(), CHECK_NULL);
+    for (int i = 0; i < invokedynamic_info.length(); i++) {
+        array->at_put(i, ResolvedInvokeDynamicInfo(invokedynamic_info.at(i)._resolved_info_index,
+                      invokedynamic_info.at(i)._cp_index));
+    }
+  } else {
+    array = nullptr;
   }
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
@@ -800,7 +799,8 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   if (_initial_entries != NULL) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    MetadataFactory::free_array<ResolvedInvokeDynamicInfo>(data, _resolved_invokedynamic_info_array); // new code
+    if (_resolved_invokedynamic_info_array)
+      MetadataFactory::free_array<ResolvedInvokeDynamicInfo>(data, _resolved_invokedynamic_info_array); // new code
     _initial_entries = NULL;
   }
 #endif
@@ -876,9 +876,12 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
-  /*for (int i = 0; i < resolved_invokedynamicinfo_length(); i++) {
-    it->push(resolved_invokedynamic_info_element(i)); // Maybe we need this?
-  }*/
+  if (_resolved_invokedynamic_info_array) {
+    it->push(&_resolved_invokedynamic_info_array);
+    for (int i = 0; i < resolved_invokedynamicinfo_length(); i++) {
+      resolved_invokedynamic_info_element(i)->metaspace_pointers_do(it); // Maybe we need this?
+    }
+  }
 }
 
 // Printing

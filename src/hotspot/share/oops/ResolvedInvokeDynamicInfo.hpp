@@ -1,6 +1,8 @@
 #ifndef SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
 #define SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
 
+#include "memory/metaspaceClosure.hpp"
+
 class Method;
 class ResolvedInvokeDynamicInfo : public MetaspaceObj {
      Method* _method;
@@ -30,7 +32,7 @@ public:
     void print_on(outputStream* st) const;
     void print() const;
 
-    Method* get_method() const { return _method; }
+    Method* method() const { return _method; }
     u2 resolved_references_index() const { return _resolved_references_index; }
     u2 cpool_index() const { return _cpool_index; }
     u2 num_parameters() const { return _number_of_parameters; }
@@ -47,7 +49,8 @@ public:
         _number_of_parameters = num_params; // might be parameter size()
         _return_type = return_type;
         _has_appendix = has_appendix;
-     }
+    }
+    void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
