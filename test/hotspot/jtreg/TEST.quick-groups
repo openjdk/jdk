@@ -1128,6 +1128,8 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/ResumeThread/resumethrd002/TestDescription.java \
   vmTestbase/nsk/jvmti/ResumeThreadList/resumethrdlst001/TestDescription.java \
   vmTestbase/nsk/jvmti/ResumeThreadList/resumethrdlst002/TestDescription.java \
+  vmTestbase/nsk/jvmti/RunAgentThread/agentthr001/TestDescription.java \
+  vmTestbase/nsk/jvmti/RunAgentThread/agentthr002/TestDescription.java \
   vmTestbase/nsk/jvmti/RunAgentThread/agentthr003/TestDescription.java \
   vmTestbase/nsk/jvmti/SetBreakpoint/setbrk002/TestDescription.java \
   vmTestbase/nsk/jvmti/SetBreakpoint/setbrk003/TestDescription.java \
