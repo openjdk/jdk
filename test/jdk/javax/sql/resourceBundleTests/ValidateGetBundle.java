@@ -31,8 +31,8 @@ import java.util.ResourceBundle;
  * @test
  * @bug 8294989
  * @summary Check JDBC RowSet resource bundle access
- * @modules java.sql.rowset/com.sun.rowset
- * @run main/othervm --add-opens java.sql.rowset/com.sun.rowset=ALL-UNNAMED ValidateGetBundle
+ * @modules java.sql.rowset/com.sun.rowset:+open
+ * @run main/othervm ValidateGetBundle
  */
 public class ValidateGetBundle{
 
