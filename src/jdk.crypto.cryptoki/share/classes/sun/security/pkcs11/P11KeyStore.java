@@ -1964,8 +1964,8 @@ final class P11KeyStore extends KeyStoreSpi {
             token.p11.C_DestroyObject(session.id(), h.handle);
             if (debug != null) {
                 debug.println("destroyCert destroyed cert with CKA_ID [" +
-                                                getID(cka_id) +
-                                                "]");
+                        ((cka_id != null) ? getID(cka_id) : "null") +
+                        "]");
             }
             return true;
         } finally {
@@ -1999,7 +1999,7 @@ final class P11KeyStore extends KeyStoreSpi {
             if (debug != null) {
                 debug.println("destroyChain destroyed end entity cert " +
                         "with CKA_ID [" +
-                        getID(cka_id) +
+                        ((cka_id != null) ? getID(cka_id) : "null") +
                         "]");
             }
 
@@ -2124,7 +2124,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 if (debug != null) {
                     debug.println
                         ("destroyPkey did not find private key with CKA_ID [" +
-                        getID(cka_id) +
+                        ((cka_id != null) ? getID(cka_id) : "null") +
                         "]");
                 }
                 return false;
