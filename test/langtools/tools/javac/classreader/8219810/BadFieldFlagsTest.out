@@ -1,0 +1,2 @@
+BadFieldFlagsTest.java:10:32: compiler.err.cant.access: BadFieldFlags, (compiler.misc.bad.class.file.header: BadFieldFlags.class, (compiler.misc.illegal.flag.combo: 0x0006, field, my_field))
+1 error
