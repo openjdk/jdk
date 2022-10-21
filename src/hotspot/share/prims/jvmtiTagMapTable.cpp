@@ -112,7 +112,7 @@ void JvmtiTagMapTable::remove(oop obj) {
 =======
 bool JvmtiTagMapTable::remove(oop obj) {
 
-  JvmtiTagMapEntry jtme(obj);
+  JvmtiTagMapEntry jtme(obj, true);
   jlong* found = _rrht_table.get(jtme);
   if (found == NULL) {
     log_debug(jvmti,table)("entry not found to remove.\n");
@@ -128,11 +128,12 @@ bool JvmtiTagMapTable::remove(oop obj) {
 }
 int JvmtiTagMapTable::add_update_remove(JvmtiTagMapEntry &entry_par,oop obj, jlong tag){
   assert(obj != NULL, "obj should not be NULL.");
-  JvmtiTagMapEntry entry (obj);
+  JvmtiTagMapEntry entry (obj, true);
   bool found = find(entry, obj);
   bool to_be_added = tag != 0 ;
   bool to_be_updated = tag != 0 ;
   bool to_be_removed = tag == 0 ;
+
   if (!found && to_be_added ) {
     if ( add(obj, tag) ){
       return AddUpdateRemove::Added;
