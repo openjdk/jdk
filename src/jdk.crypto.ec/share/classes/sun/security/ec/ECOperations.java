@@ -196,9 +196,10 @@ public class ECOperations {
     /*
      * 4-bit branchless array lookup for projective points.
      */
-    private void lookup4(ProjectivePoint.Immutable[] arr, int index,
-        ProjectivePoint.Mutable result, IntegerModuloP zero) {
-
+    private AffinePoint lookup4(AffinePoint[] arr,
+                                int index, IntegerModuloP zero) {
+        MutableIntegerModuloP x = zero.mutable();
+        MutableIntegerModuloP y = zero.mutable();
         for (int i = 0; i < 16; i++) {
             int xor = index ^ i;
             int bit3 = (xor & 0x8) >>> 3;
@@ -208,9 +209,11 @@ public class ECOperations {
             int inverse = bit0 | bit1 | bit2 | bit3;
             int set = 1 - inverse;
 
-            ProjectivePoint.Immutable pi = arr[i];
-            result.conditionalSet(pi, set);
+            x.conditionalSet(arr[i].getX(), set);
+            y.conditionalSet(arr[i].getY(), set);
         }
+
+        return new AffinePoint(x.fixed(), y.fixed());
     }
 
     private void double4(ProjectivePoint.Mutable p, MutableIntegerModuloP t0,
@@ -245,44 +248,56 @@ public class ECOperations {
         MutableIntegerModuloP t3 = zero.mutable();
         MutableIntegerModuloP t4 = zero.mutable();
 
-        ProjectivePoint.Mutable result = new ProjectivePoint.Mutable(field);
-        result.getY().setValue(field.get1().mutable());
 
-        ProjectivePoint.Immutable[] pointMultiples =
-            new ProjectivePoint.Immutable[16];
-        // 0P is neutral---same as initial result value
-        pointMultiples[0] = result.fixed();
-
+        // pre-computation
+        AffinePoint[] pointMultiples = new AffinePoint[16];
         ProjectivePoint.Mutable ps = new ProjectivePoint.Mutable(field);
-        ps.setValue(affineP);
+
+        // 0P is neutral
+        pointMultiples[0] = new AffinePoint(field.get0(), field.get0());
+
         // 1P = P
-        pointMultiples[1] = ps.fixed();
+        ps.setValue(affineP);
+        pointMultiples[1] = ps.asAffine();
 
         // the rest are calculated using mixed point addition
         for (int i = 2; i < 16; i++) {
             setSum(ps, affineP, t0, t1, t2, t3, t4);
-            pointMultiples[i] = ps.fixed();
+            pointMultiples[i] = ps.asAffine();
         }
-
-        ProjectivePoint.Mutable lookupResult = ps.mutable();
-
+for (int i = 0; i < 16; i++) {
+    System.out.println("pre-compu " + i + ": " + pointMultiples[i].toString());
+}
+for (int i = 0; i < 32; i++) {
+    s[i] = (byte)i;
+}
+        ProjectivePoint.Mutable result = new ProjectivePoint.Mutable(field);
+        result.getY().setValue(field.get1().mutable());
         for (int i = s.length - 1; i >= 0; i--) {
-
+System.out.println("For byte " + i);
             double4(result, t0, t1, t2, t3, t4);
+System.out.println("double result: " + result.asAffine().toString());
 
             int high = (0xFF & s[i]) >>> 4;
-            lookup4(pointMultiples, high, lookupResult, zero);
+System.out.println("high index: " + high);
+
+            AffinePoint lookupResult = lookup4(pointMultiples, high, zero);
+System.out.println("lookup result: " + lookupResult.toString());
             setSum(result, lookupResult, t0, t1, t2, t3, t4);
+System.out.println("sum result: " + result.asAffine().toString());
 
             double4(result, t0, t1, t2, t3, t4);
+System.out.println("double result: " + result.asAffine().toString());
 
             int low = 0xF & s[i];
-            lookup4(pointMultiples, low, lookupResult, zero);
+System.out.println("low index: " + low);
+            lookupResult = lookup4(pointMultiples, low, zero);
+System.out.println("lookup result: " + lookupResult.toString());
             setSum(result, lookupResult, t0, t1, t2, t3, t4);
+System.out.println("sum result: " + result.asAffine().toString());
         }
 
         return result;
-
     }
 
     /*
