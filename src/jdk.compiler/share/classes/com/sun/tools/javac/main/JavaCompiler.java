@@ -26,6 +26,9 @@
 package com.sun.tools.javac.main;
 
 import java.io.*;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1637,7 +1640,7 @@ public class JavaCompiler {
                 }
                 if (results != null && file != null)
                     results.add(file);
-            } catch (IOException ex) {
+            } catch (IOException | FileSystemNotFoundException | InvalidPathException | ReadOnlyFileSystemException ex) {
                 log.error(cdef.pos(),
                           Errors.ClassCantWrite(cdef.sym, ex.getMessage()));
                 return;
