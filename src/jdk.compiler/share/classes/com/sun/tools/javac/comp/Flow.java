@@ -649,30 +649,11 @@ public class Flow {
             } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
                 visitRecordPattern(jcRecordPattern);
 
-                // copied from Attr.java
-                Type exprType = types.cvarUpperBound(tree.expr.type);
-                Type elemtype = types.elemtype(exprType);
-                if (elemtype == null) {
-                    Type base = types.asSuper(exprType, syms.iterableType.tsym);
-                    if (base == null) {
-                        // TODO: repeating error here, should be covered from Attr
-                        log.error(tree.expr.pos(),
-                                Errors.ForeachNotApplicableToType(exprType,
-                                        Fragments.TypeReqArrayOrIterable));
-                        elemtype = types.createErrorType(exprType);
-                    } else {
-                        List<Type> iterableParams = base.allparams();
-                        elemtype = iterableParams.isEmpty()
-                                ? syms.objectType
-                                : types.wildUpperBound(iterableParams.head);
-                    }
-                }
-
                 Set<Symbol> coveredSymbols =
-                        coveredSymbols(jcRecordPattern.pos(), elemtype, List.of(jcRecordPattern));
+                        coveredSymbols(jcRecordPattern.pos(), tree.elementType, List.of(jcRecordPattern));
 
                 boolean isExhaustive =
-                        isExhaustive(jcRecordPattern.pos(), elemtype, coveredSymbols);
+                        isExhaustive(jcRecordPattern.pos(), tree.elementType, coveredSymbols);
 
                 if (!isExhaustive) {
                     log.error(tree, Errors.NotExhaustive);

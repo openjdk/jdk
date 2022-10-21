@@ -1521,18 +1521,18 @@ public class Attr extends JCTree.Visitor {
             //the for-each expression first (against original scope).
             Type exprType = types.cvarUpperBound(attribExpr(tree.expr, loopEnv));
             chk.checkNonVoid(tree.pos(), exprType);
-            Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
-            if (elemtype == null) {
+            tree.elementType = types.elemtype(exprType); // perhaps expr is an array?
+            if (tree.elementType == null) {
                 // or perhaps expr implements Iterable<T>?
                 Type base = types.asSuper(exprType, syms.iterableType.tsym);
                 if (base == null) {
                     log.error(tree.expr.pos(),
                               Errors.ForeachNotApplicableToType(exprType,
                                                                 Fragments.TypeReqArrayOrIterable));
-                    elemtype = types.createErrorType(exprType);
+                    tree.elementType = types.createErrorType(exprType);
                 } else {
                     List<Type> iterableParams = base.allparams();
-                    elemtype = iterableParams.isEmpty()
+                    tree.elementType = iterableParams.isEmpty()
                         ? syms.objectType
                         : types.wildUpperBound(iterableParams.head);
 
@@ -1550,11 +1550,11 @@ public class Attr extends JCTree.Visitor {
                 JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
 
                 if (var.isImplicitlyTyped()) {
-                    Type inferredType = chk.checkLocalVarType(var, elemtype, var.name);
+                    Type inferredType = chk.checkLocalVarType(var, tree.elementType, var.name);
                     setSyntheticVariableType(var, inferredType);
                 }
                 attribStat(var, loopEnv);
-                chk.checkType(tree.expr.pos(), elemtype, var.sym.type);
+                chk.checkType(tree.expr.pos(), tree.elementType, var.sym.type);
 
                 loopEnv.tree = tree; // before, we were not in loop!
                 attribStat(tree.body, loopEnv);
@@ -1573,7 +1573,7 @@ public class Attr extends JCTree.Visitor {
 
                 Type clazztype = recordPattern.type;
 
-                chk.checkType(tree.expr.pos(), elemtype, clazztype);
+                chk.checkType(tree.expr.pos(), tree.elementType, clazztype);
 
                 recordPatternEnv.tree = tree; // before, we were not in loop!
                 try {

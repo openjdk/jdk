@@ -1213,6 +1213,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCTree varOrRecordPattern;
         public JCExpression expr;
         public JCStatement body;
+        public Type elementType;
 
         protected JCEnhancedForLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
             this.varOrRecordPattern = varOrRecordPattern;
