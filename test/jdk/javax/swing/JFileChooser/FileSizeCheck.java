@@ -184,7 +184,7 @@ public class FileSizeCheck {
             String fcSize = getCellRenderedText(table, row++, 1);
             if (!f.renderedSize.equals(fcSize)) {
                 String errMsg = "Wrong rendered size for " + f + ": "
-                        + fcSize + " vs. " + f.renderedSize;
+                                + fcSize + " vs. " + f.renderedSize;
                 if (firstError == null) {
                     firstError = errMsg;
                 }
