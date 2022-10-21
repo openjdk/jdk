@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq* _mixed_rs_length_diff_seq;
   TruncatedSeq* _concurrent_refine_rate_ms_seq;
   TruncatedSeq* _dirtied_cards_rate_ms_seq;
+  TruncatedSeq* _dirtied_cards_in_thread_buffers_seq;
   // The ratio between the number of scanned cards and actually merged cards, for
   // young-only and mixed gcs.
   TruncatedSeq* _young_card_scan_to_merge_ratio_seq;
@@ -126,6 +127,7 @@ public:
   void report_alloc_rate_ms(double alloc_rate);
   void report_concurrent_refine_rate_ms(double cards_per_ms);
   void report_dirtied_cards_rate_ms(double cards_per_ms);
+  void report_dirtied_cards_in_thread_buffers(size_t num_cards);
   void report_cost_per_card_scan_ms(double cost_per_remset_card_ms, bool for_young_only_phase);
   void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
   void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
@@ -142,6 +144,7 @@ public:
 
   double predict_concurrent_refine_rate_ms() const;
   double predict_dirtied_cards_rate_ms() const;
+  size_t predict_dirtied_cards_in_thread_buffers() const;
 
   // Predict how many of the given remembered set of length rs_length will add to
   // the number of total cards scanned.

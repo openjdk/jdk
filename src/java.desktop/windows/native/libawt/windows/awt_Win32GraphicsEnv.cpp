@@ -283,7 +283,7 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
             return NULL;
         }
     } else if (wcscmp(fontPath, L"EUDC.TTE") == 0) {
-        //else to see if it only inludes "EUDC.TTE"
+        //else to see if it only includes "EUDC.TTE"
         WCHAR systemRoot[MAX_PATH + 1];
         if (GetWindowsDirectory(systemRoot, MAX_PATH + 1) != 0) {
             swprintf(tmpPath, MAX_PATH, L"%s\\FONTS\\EUDC.TTE", systemRoot);

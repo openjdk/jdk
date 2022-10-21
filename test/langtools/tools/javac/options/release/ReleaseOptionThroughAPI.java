@@ -50,10 +50,12 @@ public class ReleaseOptionThroughAPI {
              PrintWriter outWriter = new PrintWriter(out)) {
             Iterable<? extends JavaFileObject> input =
                     fm.getJavaFileObjects(System.getProperty("test.src") + "/ReleaseOption.java");
-            List<String> options = Arrays.asList("--release", "8", "-XDrawDiagnostics", "-Xlint:-options");
+            List<String> options = Arrays.asList("--release", "11", "-XDrawDiagnostics", "-d", ".");
 
             compiler.getTask(outWriter, fm, null, options, null, input).call();
-            String expected ="";
+            String expected =
+                    "ReleaseOption.java:9:49: compiler.err.doesnt.exist: java.util.random" + lineSep +
+                    "1 error" + lineSep;
             if (!expected.equals(out.toString())) {
                 throw new AssertionError("Unexpected output: " + out.toString());
             }

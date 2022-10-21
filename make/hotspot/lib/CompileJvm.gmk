@@ -94,6 +94,8 @@ DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
 ifneq ($(DEBUG_LEVEL), release)
   # Assert macro gives warning
   DISABLED_WARNINGS_clang += tautological-constant-out-of-range-compare
+  # Some reasonable asserts produce warnings on GCC <= 7
+  DISABLED_WARNINGS_gcc += strict-overflow
 endif
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
@@ -153,32 +155,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
-    DISABLED_WARNINGS_gcc_assembler_aarch64.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_c1_LIR.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_cgroupV1Subsystem_linux.cpp := address, \
     DISABLED_WARNINGS_gcc_cgroupV2Subsystem_linux.cpp := address, \
-    DISABLED_WARNINGS_gcc_dict.cpp := char-subscripts, \
     DISABLED_WARNINGS_gcc_interp_masm_x86.cpp := uninitialized, \
-    DISABLED_WARNINGS_gcc_javaClasses.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_loopnode.cpp := sequence-point, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
-    DISABLED_WARNINGS_gcc_sharedRuntimeTrig.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSet.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_aarch64.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_ppc.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_riscv.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_x86.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_aarch64.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_ppc.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_riscv.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_x86.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1.cpp := misleading-indentation, \
-    DISABLED_WARNINGS_gcc_signals_posix.cpp := cast-function-type, \
     DISABLED_WARNINGS_gcc_templateTable.cpp := cast-function-type, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_codeBuffer.cpp := tautological-undefined-compare, \
-    DISABLED_WARNINGS_clang_dict.cpp := char-subscripts, \
     DISABLED_WARNINGS_clang_directivesParser.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_g1ParScanThreadState.cpp := delete-abstract-non-virtual-dtor, \
     DISABLED_WARNINGS_clang_g1YoungGCPostEvacuateTasks.cpp := delete-abstract-non-virtual-dtor, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,9 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8257228
- * @library /test/lib
- * @requires vm.bits == 64
- * @build gc.g1.TestBuffersToCardsOverflow jdk.test.lib.process.*
- * @run main gc.g1.TestBuffersToCardsOverflow
- */
-
-package gc.g1;
-
-import jdk.test.lib.process.ProcessTools;
-
-public class TestBuffersToCardsOverflow {
-    public static void main(String... args) throws Exception {
-        ProcessTools.executeTestJava("-XX:G1ConcRefinementThresholdStep=16G",
-                                     "-XX:G1UpdateBufferSize=1G")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .stdoutShouldNotContain("SIGFPE")
-                .stdoutShouldNotContain("hs_err");
-    }
+// This doesn't have to do anything
+public class A {
+  static { System.out.println("A called"); }
+  public A() { System.out.println("A.<init> called"); }
 }
+
