@@ -2205,12 +2205,12 @@ final class P11KeyStore extends KeyStoreSpi {
                 } else if (type == ATTR_CLASS_CERT) {
                     debug.println
                         ("getTokenObject did not find cert with CKA_ID [" +
-                        getID(cka_id) +
+                        ((cka_id != null) ? getID(cka_id) : "null") +
                         "]");
                 } else {
                     debug.println("getTokenObject did not find private key " +
                         "with CKA_ID [" +
-                        getID(cka_id) +
+                        ((cka_id != null) ? getID(cka_id) : "null") +
                         "]");
                 }
             }
