@@ -54,17 +54,17 @@ abstract public class ModelAwareAction extends ContextAction<DiagramViewModel> {
 
     @Override
     public void addContextListener(DiagramViewModel model) {
-        model.getViewChangedEvent().addListener(this);
+        model.getSelectedNodesChangedEvent().addListener(this);
         model.getDiagramChangedEvent().addListener(this);
-        model.getViewPropertiesChangedEvent().addListener(this);
+        model.getGraphChangedEvent().addListener(this);
         model.getHiddenNodesChangedEvent().addListener(this);
     }
 
     @Override
     public void removeContextListener(DiagramViewModel model) {
-        model.getViewChangedEvent().removeListener(this);
+        model.getSelectedNodesChangedEvent().removeListener(this);
         model.getDiagramChangedEvent().removeListener(this);
-        model.getViewPropertiesChangedEvent().removeListener(this);
+        model.getGraphChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);
     }
 
