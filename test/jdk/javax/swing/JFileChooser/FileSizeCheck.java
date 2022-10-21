@@ -178,17 +178,21 @@ public class FileSizeCheck {
             throw new Error("Didn't find JTable in JFileChooser");
         }
 
+        String firstError = null;
         int row = findFirstFileRow(table);
         for (FileSize f : FileSize.values()) {
             String fcSize = getCellRenderedText(table, row++, 1);
             if (!f.renderedSize.equals(fcSize)) {
                 String errMsg = "Wrong rendered size for " + f + ": "
                         + fcSize + " vs. " + f.renderedSize;
-                if (error.get() == null) {
-                    error.set(errMsg);
+                if (firstError == null) {
+                    firstError = errMsg;
                 }
                 System.err.println(errMsg);
             }
+        }
+        if (firstError != null) {
+            error.set(firstError);
         }
     }
 
