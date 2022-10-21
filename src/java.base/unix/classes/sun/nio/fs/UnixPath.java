@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.nio.charset.*;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -833,11 +835,13 @@ class UnixPath implements Path {
             UnixPath element = absolute.getName(i);
 
             // eliminate "."
-            if ((element.asByteArray().length == 1) && (element.asByteArray()[0] == '.'))
+            if ((element.asByteArray().length == 1) &&
+                (element.asByteArray()[0] == '.'))
                 continue;
 
             // cannot eliminate ".." if previous element is a link
-            if ((element.asByteArray().length == 2) && (element.asByteArray()[0] == '.') &&
+            if ((element.asByteArray().length == 2) &&
+                (element.asByteArray()[0] == '.') &&
                 (element.asByteArray()[1] == '.'))
             {
                 UnixFileAttributes attrs = null;
@@ -863,7 +867,40 @@ class UnixPath implements Path {
         } catch (UnixException x) {
             x.rethrowAsIOException(result);
         }
-        return result;
+
+        // Return if the file system is not both case insensitive and retentive
+        if (!fs.isCaseInsensitiveAndRetentive())
+            return result;
+
+        UnixPath path = fs.rootDirectory();
+
+        // Traverse the result obtained above from the root downward, leaving
+        // any '..' elements intact, and replacing other elements with the
+        // entry in the same directory to which it is equal ignoring case
+        for (int i = 0; i < result.getNameCount(); i++ ) {
+            UnixPath elt = result.getName(i);
+            String els = elt.toString();
+
+            // If the element is "..", append it directly and continue
+            if (els.equals("..")) {
+                path = path.resolve(elt);
+                continue;
+            }
+
+            // Obtain the stream of entries in the directory corresponding
+            // to the path constructed thus far, and extract the entry whose
+            // name is equal ignoring case to the name of the current element
+            try (Stream<Path> entries = Files.list(path)) {
+                Predicate<Path> predicate =
+                    (f) -> f.getFileName().toString().equalsIgnoreCase(els);
+                Optional<Path> op = entries.filter(predicate).findFirst();
+
+                // Use entry if found, otherwise use the current element
+                path = path.resolve(op.isPresent() ? op.get() : elt);
+            }
+        }
+
+        return path;
     }
 
     @Override
