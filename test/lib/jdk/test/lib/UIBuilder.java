@@ -48,6 +48,7 @@ public class UIBuilder {
         private JTextArea messageText;
         private JButton pass;
         private JButton fail;
+        private JButton submit;
 
         /**
          * Construct a new DialogBuilder object.
@@ -55,7 +56,7 @@ public class UIBuilder {
         public DialogBuilder() {
             dialog = new JDialog(new JFrame());
             dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-            instructionsText = new JTextArea("", 5, 100);
+            instructionsText = new JTextArea("", 12, 100);
 
             dialog.add("North", new JScrollPane(instructionsText,
                     JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -69,11 +70,18 @@ public class UIBuilder {
             JPanel buttons = new JPanel();
             pass = new JButton("pass");
             pass.setActionCommand("pass");
+            pass.setVisible(false);
             buttons.add("East", pass);
 
             fail = new JButton("fail");
             fail.setActionCommand("fail");
-            buttons.add("West", fail);
+            fail.setVisible(false);
+            buttons.add("Center", fail);
+
+            submit = new JButton("submit");
+            submit.setActionCommand("submit");
+            submit.setVisible(false);
+            buttons.add("West", submit);
 
             dialog.add("South", buttons);
         }
@@ -117,6 +125,7 @@ public class UIBuilder {
          */
         public DialogBuilder setPassAction(ActionListener action) {
             pass.addActionListener(action);
+            pass.setVisible(true);
             return this;
         }
 
@@ -128,13 +137,26 @@ public class UIBuilder {
          */
         public DialogBuilder setFailAction(ActionListener action) {
             fail.addActionListener(action);
+            fail.setVisible(true);
+            return this;
+        }
+
+        /**
+         * Returns this {@code DialogBuilder} setting submit button action to
+         * {@link java.awt.event.ActionListener}.
+         * @param action an action to perform on button click
+         * @returns this DialogBuilder
+         */
+        public DialogBuilder setSubmitAction(ActionListener action) {
+            submit.addActionListener(action);
+            submit.setVisible(true);
             return this;
         }
 
         /**
          * Returns this {@code DialogBuilder} setting window-closing action to
          * {@link java.lang.Runnable}.
-         * @param action a runnerable action to perform on window close
+         * @param action a runnable action to perform on window close
          * @returns this DialogBuilder
          */
         public DialogBuilder setCloseAction(Runnable action) {
@@ -155,6 +177,14 @@ public class UIBuilder {
         public JDialog build() {
             dialog.pack();
             return dialog;
+        }
+
+        /**
+         * Returns the message {@link javax.swing.JTextArea} .
+         * @returns a JTextArea
+         */
+        public JTextArea getMessageText() {
+            return messageText;
         }
     }
 }

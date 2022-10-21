@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,22 +43,24 @@ import java.util.Set;
 
 /* @test
  * @bug 8218453
- * @library ../../testlibrary
+ * @library ../../testlibrary /test/lib
  * @modules java.rmi/sun.rmi.registry:+open java.rmi/sun.rmi.server:+open
  *      java.rmi/sun.rmi.transport:+open java.rmi/sun.rmi.transport.tcp:+open
  * @summary Verify that Registry rejects non-local access for bind, unbind, rebind.
  *    The test is manual because the (non-local) host running rmiregistry must be supplied as a property.
+ *
  * @run main/othervm -Dregistry.host=localhost NonLocalSkeletonTest
  */
 
 /*
  * @test
- * @library ../../testlibrary
+ * @library ../../testlibrary /test/lib
  * @modules java.rmi/sun.rmi.registry:+open java.rmi/sun.rmi.server:+open
  *      java.rmi/sun.rmi.transport:+open java.rmi/sun.rmi.transport.tcp:+open
  * @summary Verify that Registry rejects non-local access for bind, unbind, rebind.
  *    The test is manual because the (non-local) host running rmiregistry must be supplied as a property.
- * @run main/othervm/manual -Dregistry.host=rmi-registry-host NonLocalSkeletonTest
+ *
+ * @run main/othervm/manual NonLocalSkeletonTest
  */
 
 /**
@@ -76,12 +78,17 @@ import java.util.Set;
  * On the first host modify the @run command above to replace "rmi-registry-host"
  * with the hostname or IP address of the different host and run the test with jtreg.
  */
-public class NonLocalSkeletonTest {
+public class NonLocalSkeletonTest extends NonLocalRegistryBase {
 
     public static void main(String[] args) throws Exception {
         String host = System.getProperty("registry.host");
         if (host == null || host.isEmpty()) {
-            throw new RuntimeException("supply a remote host with -Dregistry.host=hostname");
+            NonLocalRegistryBase test = new NonLocalSkeletonTest();
+            host = test.readHostInput();
+            if (host == null || host.isEmpty()) {
+                throw new RuntimeException(
+                        "supply a remote host with -Dregistry.host=hostname");
+            }
         }
 
         // Check if running the test on a local system; it only applies to remote

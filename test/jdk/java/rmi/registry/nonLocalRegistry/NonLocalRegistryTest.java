@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@ import java.net.InetAddress;
 import java.rmi.AccessException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Arrays;
 import java.util.Set;
 
 /* @test
  * @bug 8174770
  * @summary Verify that Registry rejects non-local access for bind, unbind, rebind.
  *    The test is manual because the (non-local) host running rmiregistry must be supplied as a property.
- * @run main/othervm/manual -Dregistry.host=rmi-registry-host NonLocalRegistryTest
+ * @library /test/lib
+ * @run main/manual NonLocalRegistryTest
  */
 
 /**
@@ -46,22 +48,29 @@ import java.util.Set;
  * Login or ssh to the different host and invoke {@code $JDK_HOME/bin/rmiregistry}.
  * It will not show any output.
  *
- * On the first host modify the @run command above to replace "rmi-registry-host"
- * with the hostname or IP address of the different host and run the test with jtreg.
+ * On the first host, run the test and provide the hostname or IP address of the
+ * different host when prompted in the console, or run jtreg command with system
+ * property -Dregistry.host set to the hostname or IP address of the different host.
  */
-public class NonLocalRegistryTest {
+public class NonLocalRegistryTest extends NonLocalRegistryBase {
 
     public static void main(String[] args) throws Exception {
-
         String host = System.getProperty("registry.host");
         if (host == null || host.isEmpty()) {
-            throw new RuntimeException("Specify host with system property: -Dregistry.host=<host>");
+            NonLocalRegistryBase test = new NonLocalRegistryTest();
+            host = test.readHostInput();
+            if (host == null || host.isEmpty()) {
+                throw new RuntimeException(
+                        "supply a remote host with -Dregistry.host=hostname");
+            }
         }
 
         // Check if running the test on a local system; it only applies to remote
         String myHostName = InetAddress.getLocalHost().getHostName();
-        Set<InetAddress> myAddrs = Set.of(InetAddress.getAllByName(myHostName));
-        Set<InetAddress> hostAddrs = Set.of(InetAddress.getAllByName(host));
+        Set<InetAddress> myAddrs =
+                Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
+        Set<InetAddress> hostAddrs =
+                Set.copyOf(Arrays.asList(InetAddress.getAllByName(host)));
         if (hostAddrs.stream().anyMatch(i -> myAddrs.contains(i))
                 || hostAddrs.stream().anyMatch(h -> h.isLoopbackAddress())) {
             throw new RuntimeException("Error: property 'registry.host' must not be the local host%n");

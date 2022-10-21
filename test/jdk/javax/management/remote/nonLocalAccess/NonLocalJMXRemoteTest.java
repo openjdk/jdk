@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,31 @@
  * questions.
  */
 
+import jdk.test.lib.UIBuilder;
+
+import javax.swing.*;
 import java.net.InetAddress;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Arrays;
 import java.util.Set;
 
 /* @test
  * @bug 8174770
  * @summary Verify that JMX Registry rejects non-local access for bind, unbind, rebind.
  *    The test is manual because the (non-local) host and port running JMX must be supplied as properties.
- * @run main/othervm/manual -Djmx-registry.host=jmx-registry-host -Djmx-registry.port=jmx-registry-port NonLocalJMXRemoteTest
+ * @library /test/lib
+ * @run main/othervm/manual NonLocalJMXRemoteTest 0
+ */
+
+/* @test
+ * @bug 8174770
+ * @summary Verify that JMX Registry rejects non-local access for bind, unbind, rebind.
+ *    The test is manual because the (non-local) host and port running JMX must be supplied as properties.
+ * @library /test/lib
+ * @run main/othervm/manual NonLocalJMXRemoteTest 1
  */
 
 /**
@@ -63,7 +76,7 @@ import java.util.Set;
  * }
  *
  *
- * replace "jmx-registry-host" with the hostname or IP address of the remote host
+ * replace "registry-host" with the hostname or IP address of the remote host
  * for property "-J-Dcom.sun.management.jmxremote.host" below.
  *
  * arg2: {@code $JDK_HOME/bin/rmiregistry \
@@ -71,7 +84,7 @@ import java.util.Set;
  *         -J-Dcom.sun.management.jmxremote.local.only=false \
  *         -J-Dcom.sun.management.jmxremote.ssl=false \
  *         -J-Dcom.sun.management.jmxremote.authenticate=false \
- *         -J-Dcom.sun.management.jmxremote.host="jmx-registry-host"
+ *         -J-Dcom.sun.management.jmxremote.host="registry-host"
  * }
  *
  * On the first host modify the @run command above to replace "jmx-registry-host"
@@ -79,24 +92,77 @@ import java.util.Set;
  */
 public class NonLocalJMXRemoteTest {
 
+    static final String[] instructions = new String[]{
+            "This is a manual test that requires rmiregistry run on a different host"
+                    + ". Login or ssh to a different host and invoke:\n\n"
+                    + "$JDK_HOME/bin/rmiregistry \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.port=8888 \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.local.only=false \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.ssl=false \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.authenticate=false"
+                    + "\n\nRegistry service is run in the background without any "
+                    + "output. Enter the hostname or IP address of the different "
+                    + "host and the port separated by a semicolon below and continue "
+                    + "the test.",
+            "This is a manual test that requires rmiregistry run on a different host"
+                    + ". Login or ssh to a different host and invoke :\n"
+                    + "(Stop the current running rmi server by typing Ctrl-C)\n\n"
+                    + "$JDK_HOME/bin/rmiregistry \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.port=8888 \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.local.only=false \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.ssl=false \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.authenticate=false \\\n"
+                    + "-J-Dcom.sun.management.jmxremote.host=<registry-host>"
+                    + "\n\nRegistry service is run in the background without any "
+                    + "output. Enter the hostname or IP address of the different "
+                    + "host and the port separated by a semicolon below and continue "
+                    + "the test."
+                    + "\n\n",
+    };
+    static final String message = "Enter <registry.host>:<port> and submit:";
+    static final int TIMEOUT_MS = 3600000;
+    private volatile boolean abort = false;
+
     public static void main(String[] args) throws Exception {
 
-        String host = System.getProperty("jmx-registry.host");
-        if (host == null || host.isEmpty()) {
-            throw new RuntimeException("Specify host with system property: -Djmx-registry.host=<host>");
-        }
-        int port = Integer.getInteger("jmx-registry.port", -1);
-        if (port <= 0) {
-            throw new RuntimeException("Specify port with system property: -Djmx-registry.port=<port>");
+        String host = System.getProperty("registry.host");
+        int port = Integer.getInteger("registry.port", -1);
+        if (host == null || host.isEmpty() || port <= 0) {
+            NonLocalJMXRemoteTest test = new NonLocalJMXRemoteTest();
+
+            int testId = 0;
+            if (args.length > 0) {
+                testId = Integer.valueOf(args[0]);
+            }
+            String input = test.readHostInput(testId);
+            String[] hostAndPort = input.split(":");
+
+            if (hostAndPort.length >= 1) {
+                host = hostAndPort[0];
+                port = 8888;
+            }
+
+            if (hostAndPort.length == 2) {
+                port = Integer.valueOf(hostAndPort[1]);
+            }
+
+            if (host == null || host.isEmpty() || port <= 0) {
+                throw new RuntimeException(
+                        "Specify host with system property: -Dregistry"
+                                + ".host=<host> and -Dregistry.port=<port>");
+            }
         }
 
         // Check if running the test on a local system; it only applies to remote
         String myHostName = InetAddress.getLocalHost().getHostName();
-        Set<InetAddress> myAddrs = Set.of(InetAddress.getAllByName(myHostName));
-        Set<InetAddress> hostAddrs = Set.of(InetAddress.getAllByName(host));
+        Set<InetAddress> myAddrs =
+                Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
+        Set<InetAddress> hostAddrs =
+                Set.copyOf(Arrays.asList(InetAddress.getAllByName(host)));
         if (hostAddrs.stream().anyMatch(i -> myAddrs.contains(i))
                 || hostAddrs.stream().anyMatch(h -> h.isLoopbackAddress())) {
-            throw new RuntimeException("Error: property 'jmx-registry.host' must not be the local host%n");
+            throw new RuntimeException(
+                    "Error: property 'jmx-registry.host' must not be the local host%n");
         }
 
         Registry registry = LocateRegistry.getRegistry(host, port);
@@ -153,5 +219,44 @@ public class NonLocalJMXRemoteTest {
         } else {
             throw new RuntimeException("AccessException did not occur when expected", ex);
         }
+    }
+
+    private String readHostInput(int index) {
+        String host = "";
+        Thread currentThread = Thread.currentThread();
+        UIBuilder.DialogBuilder db = new UIBuilder.DialogBuilder()
+                .setTitle("NonLocalRegistrTest")
+                .setInstruction(instructions[index])
+                .setMessage(message)
+                .setSubmitAction(e -> currentThread.interrupt())
+                .setCloseAction(() -> {
+                    abort = true;
+                    currentThread.interrupt();
+                });
+        JTextArea input = db.getMessageText();
+        JDialog dialog = db.build();
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                dialog.setVisible(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(TIMEOUT_MS);
+            //Timed out, so fail the test
+            throw new RuntimeException(
+                    "Timed out after " + TIMEOUT_MS / 1000 + " seconds");
+        } catch (InterruptedException e) {
+        } finally {
+            if (abort) {
+                throw new RuntimeException("TEST ABORTED");
+            }
+            host = input.getText().replaceAll(message, "").strip().trim();
+            dialog.dispose();
+        }
+        return host;
     }
 }
