@@ -792,7 +792,7 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
 
 void MacroAssembler::la(Register Rd, Label &label) {
   IncompressibleRegion ir(this);   // the label address may be patched back.
-  la(Rd, target(label));
+  wrap_label(Rd, label, &MacroAssembler::la);
 }
 
 void MacroAssembler::li32(Register Rd, int32_t imm) {
@@ -3980,9 +3980,9 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
     andi(t0, cnt, i);
     beqz(t0, l);
     for (int j = 0; j < i; j++) {
-      sd(zr, Address(ptr, 0));
-      addi(ptr, ptr, 8);
+      sd(zr, Address(ptr, j*8));
     }
+    addi(ptr, ptr, i*8);
     bind(l);
   }
   {
@@ -4001,7 +4001,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 
 // base:  Address of a buffer to be zeroed, 8 bytes aligned.
 // cnt:   Immediate count in HeapWords.
-void MacroAssembler::zero_words(Register base, u_int64_t cnt)
+void MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   assert_different_registers(base, t0, t1);
 
@@ -4101,8 +4101,8 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
 // you want to use it elsewhere, note that cnt must be >= CacheLineSize.
-void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2, Register tmp3) {
-  Label initial_table_end, loop_cbo_zero;
+void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
+  Label initial_table_end, loop;
 
   // Align base with cache line size.
   neg(tmp1, base);
@@ -4112,22 +4112,21 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   add(base, base, tmp1);
   srai(tmp2, tmp1, 3);
   sub(cnt, cnt, tmp2);
-  add(tmp3, zr, zr);
-  movptr(tmp3, initial_table_end);
   srli(tmp2, tmp1, 1);
-  sub(tmp2, tmp3, tmp2);
-  j(tmp2);
-  for (int i = -CacheLineSize + 8; i < 0; i += 8) {
+  la(tmp1, initial_table_end);
+  sub(tmp2, tmp1, tmp2);
+  jr(tmp2);
+  for (int i = -CacheLineSize + wordSize; i < 0; i += wordSize) {
     sd(zr, Address(base, i));
   }
   bind(initial_table_end);
 
-  li(tmp1, CacheLineSize >> 3);
-  bind(loop_cbo_zero);
+  mv(tmp1, CacheLineSize / wordSize);
+  bind(loop);
   cbo_zero(base);
   sub(cnt, cnt, tmp1);
   add(base, base, CacheLineSize);
-  bge(cnt, tmp1, loop_cbo_zero);
+  bge(cnt, tmp1, loop);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATEQ)                                                             \
