@@ -32,7 +32,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * This interface simplifies declaration of
- * {@linkplain TemplateProcessorWithException template processors}
+ * {@linkplain ValidatingProcessor template processors}
  * that do not throw checked exceptions. For example:
  * {@snippet :
  * TemplateProcessor<String> processor = st -> {
@@ -50,4 +50,4 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
-public interface TemplateProcessor<R> extends TemplateProcessorWithException<R, RuntimeException> {}
+public interface TemplateProcessor<R> extends ValidatingProcessor<R, RuntimeException> {}

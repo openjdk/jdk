@@ -67,7 +67,7 @@ import jdk.internal.javac.PreviewFeature;
  * {@code values} will be the equivalent of <code>List.of(x, y, x + y)</code>.
  * <p>
  * {@link StringTemplate StringTemplates} are primarily used in conjuction
- * with {@linkplain  TemplateProcessorWithException template processors} to produce meaningful
+ * with {@linkplain  ValidatingProcessor template processors} to produce meaningful
  * results. For example, if a user wants string interpolation, then they can use a string template
  * expression with the standard {@link StringTemplate#STR} processor.
  * {@snippet :
@@ -77,7 +77,7 @@ import jdk.internal.javac.PreviewFeature;
  * }
  * {@code result} will be equivalent to <code>"10 + 20 = 30"</code>.
  * <p>
- * The {@link StringTemplate#process(TemplateProcessorWithException)} method supplies an
+ * The {@link StringTemplate#process(ValidatingProcessor)} method supplies an
  * alternative to using string template expressions.
  * {@snippet :
  * String result = "\{x} + \{y} = \{x + y}".process(STR);
@@ -89,7 +89,7 @@ import jdk.internal.javac.PreviewFeature;
  * The {@link StringTemplate#interpolate()} method provides a simple way to produce a
  * string interpolation of the {@link StringTemplate}.
  * <p>
- * {@linkplain TemplateProcessorWithException Template processors} typically use the following code
+ * {@linkplain ValidatingProcessor Template processors} typically use the following code
  * pattern to perform composition:
  * {@snippet :
  * List<String> fragments = st.fragments();
@@ -102,7 +102,7 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec An instance of {@link StringTemplate} is immutatble. Also, the
  * fragment list size must be one more than the values list size.
  *
- * @see TemplateProcessorWithException
+ * @see ValidatingProcessor
  * @see TemplateProcessor
  * @see StringProcessor
  * @see java.util.FormatProcessor
@@ -158,7 +158,7 @@ public interface StringTemplate {
      * }
      * produces an equivalent result for both {@code result1} and {@code result2}.
      *
-     * @param processor the {@link TemplateProcessorWithException} instance to process
+     * @param processor the {@link ValidatingProcessor} instance to process
      *
      * @param <R>  Processor's process result type.
      * @param <E>  Exception thrown type.
@@ -171,7 +171,7 @@ public interface StringTemplate {
      * @implNote The default implementation simply invokes the processor's process
      * method {@code processor.process(this)}.
      */
-    default <R, E extends Throwable> R process(TemplateProcessorWithException<R, E> processor) throws E {
+    default <R, E extends Throwable> R process(ValidatingProcessor<R, E> processor) throws E {
         Objects.requireNonNull(processor, "processor should not be null");
 
         return processor.process(this);

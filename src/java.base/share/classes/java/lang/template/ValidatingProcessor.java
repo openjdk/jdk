@@ -37,11 +37,11 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * This interface describes the methods provided by a generalized string template processor. The
- * primary method {@link TemplateProcessorWithException#process(StringTemplate)} is used to validate
+ * primary method {@link ValidatingProcessor#process(StringTemplate)} is used to validate
  * and compose a result using a {@link StringTemplate StringTemplate's} fragments and values lists.
  * For example:
  * {@snippet :
- * class MyProcessor implements TemplateProcessorWithException<String, IllegalArgumentException> {
+ * class MyProcessor implements ValidatingProcessor<String, IllegalArgumentException> {
  *     @Override
  *     public String process(StringTemplate st) throws IllegalArgumentException {
  *          StringBuilder sb = new StringBuilder();
@@ -89,10 +89,10 @@ import jdk.internal.javac.PreviewFeature;
  * instance, a JSON processor could return a JSON object, by parsing the string created
  * by composition, instead of the composed string.
  * <p>
- * {@link TemplateProcessorWithException} is a {@link FunctionalInterface}. This permits
+ * {@link ValidatingProcessor} is a {@link FunctionalInterface}. This permits
  * declaration of a processor using lambda expressions;
  * {@snippet :
- * TemplateProcessorWithException<String, RuntimeException> processor = st -> {
+ * ValidatingProcessor<String, RuntimeException> processor = st -> {
  *     List<String> fragments = st.fragments();
  *     List<Object> values = st.values();
  *     // check or manipulate the fragments and/or values
@@ -146,7 +146,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
-public interface TemplateProcessorWithException<R, E extends Throwable> {
+public interface ValidatingProcessor<R, E extends Throwable> {
 
     /**
      * Constructs a result based on the template string and values in the

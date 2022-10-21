@@ -73,9 +73,9 @@ public final class TemplateRuntime {
         Objects.requireNonNull(processorGetter, "processorGetter is null");
         Objects.requireNonNull(fragments, "fragments is null");
 
-        MethodType processorGetterType = MethodType.methodType(TemplateProcessorWithException.class);
-        TemplateProcessorWithException<?, ? extends Throwable> processor =
-                (TemplateProcessorWithException<?, ? extends Throwable>)processorGetter.asType(processorGetterType).invokeExact();
+        MethodType processorGetterType = MethodType.methodType(ValidatingProcessor.class);
+        ValidatingProcessor<?, ? extends Throwable> processor =
+                (ValidatingProcessor<?, ? extends Throwable>)processorGetter.asType(processorGetterType).invokeExact();
         TemplateBootstrap bootstrap = new TemplateBootstrap(lookup, name, type, List.of(fragments), processor);
 
         return bootstrap.processWithProcessor();
@@ -113,7 +113,7 @@ public final class TemplateRuntime {
         /**
          * Static final processor.
          */
-        private final TemplateProcessorWithException<?, ? extends Throwable> processor;
+        private final ValidatingProcessor<?, ? extends Throwable> processor;
 
         /**
          * Initialize {@link MethodHandle MethodHandles}.
@@ -123,7 +123,7 @@ public final class TemplateRuntime {
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
 
                 MethodType mt = MethodType.methodType(Object.class,
-                        List.class, TemplateProcessorWithException.class, Object[].class);
+                        List.class, ValidatingProcessor.class, Object[].class);
                 DEFAULT_PROCESS_MH = lookup.findStatic(TemplateBootstrap.class, "defaultProcess", mt);
             } catch (ReflectiveOperationException ex) {
                 throw new AssertionError("templated string bootstrap fail", ex);
@@ -141,7 +141,7 @@ public final class TemplateRuntime {
          */
         private TemplateBootstrap(MethodHandles.Lookup lookup, String name, MethodType type,
                                   List<String> fragments,
-                                  TemplateProcessorWithException<?, ? extends Throwable> processor) {
+                                  ValidatingProcessor<?, ? extends Throwable> processor) {
             this.lookup = lookup;
             this.name = name;
             this.type = type;
@@ -167,12 +167,12 @@ public final class TemplateRuntime {
          * Creates a simple {@link StringTemplate} and then invokes the processor's process method.
          *
          * @param fragments fragments from string template
-         * @param processor {@link TemplateProcessorWithException} to process
+         * @param processor {@link ValidatingProcessor} to process
          * @param values    array of expression values
          * @return
          */
         private static Object defaultProcess(List<String> fragments,
-                                             TemplateProcessorWithException<Object, Throwable> processor,
+                                             ValidatingProcessor<Object, Throwable> processor,
                                              Object[] values) throws Throwable {
             return processor.process(new SimpleStringTemplate(fragments, List.of(values)));
         }

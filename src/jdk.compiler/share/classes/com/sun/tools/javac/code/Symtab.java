@@ -628,7 +628,7 @@ public class Symtab {
         // For string templates
         stringTemplateType = enterClass("java.lang.template.StringTemplate");
         templateRuntimeType = enterClass("java.lang.template.TemplateRuntime");
-        templateProcessorType = enterClass("java.lang.template.TemplateProcessorWithException");
+        templateProcessorType = enterClass("java.lang.template.ValidatingProcessor");
         processorLinkage = enterClass("java.lang.template.ProcessorLinkage");
 
         // Enter a synthetic class that is used to mark internal

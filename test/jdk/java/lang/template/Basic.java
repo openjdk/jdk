@@ -432,7 +432,7 @@ public class Basic {
      * TemplateProcessor coverage.
      */
 
-    static class Processor0 implements TemplateProcessorWithException<String, IllegalArgumentException> {
+    static class Processor0 implements ValidatingProcessor<String, IllegalArgumentException> {
         @Override
         public String process(StringTemplate stringTemplate) throws IllegalArgumentException {
             StringBuilder sb = new StringBuilder();
@@ -456,7 +456,7 @@ public class Basic {
 
     static Processor0 processor0 = new Processor0();
 
-    static TemplateProcessorWithException<String, RuntimeException> processor1 =
+    static ValidatingProcessor<String, RuntimeException> processor1 =
         st -> st.interpolate();
 
     static TemplateProcessor<String> processor2 = st -> st.interpolate();
