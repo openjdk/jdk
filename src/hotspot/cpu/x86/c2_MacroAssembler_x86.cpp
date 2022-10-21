@@ -1698,18 +1698,7 @@ void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, Ba
     offset += 128;
   }
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
-  if (vlen_in_bytes <= 4) {
-    movdl(dst, addr);
-  } else if (vlen_in_bytes == 8) {
-    movq(dst, addr);
-  } else if (vlen_in_bytes == 16) {
-    movdqu(dst, addr, noreg);
-  } else if (vlen_in_bytes == 32) {
-    vmovdqu(dst, addr, noreg);
-  } else {
-    assert(vlen_in_bytes == 64, "%d", vlen_in_bytes);
-    evmovdqub(dst, k0, addr, false /*merge*/, Assembler::AVX_512bit, noreg);
-  }
+  load_vector(dst, addr, vlen_in_bytes);
 }
 
 // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
