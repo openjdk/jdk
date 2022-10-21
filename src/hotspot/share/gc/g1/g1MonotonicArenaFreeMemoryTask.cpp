@@ -108,7 +108,7 @@ bool G1MonotonicArenaFreeMemoryTask::cleanup_return_infos() {
   return false;
 }
 
-bool G1MonotonicArenaFreeMemoryTask::free_excess_monotonic_arena_memory() {
+bool G1MonotonicArenaFreeMemoryTask::free_excess_arena_memory() {
   jlong start = os::elapsed_counter();
   jlong end = start +
               (os::elapsed_frequency() / 1000) * G1RemSetFreeMemoryStepDurationMillis;
@@ -186,7 +186,7 @@ G1MonotonicArenaFreeMemoryTask::G1MonotonicArenaFreeMemoryTask(const char* name)
 void G1MonotonicArenaFreeMemoryTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
-  if (free_excess_monotonic_arena_memory()) {
+  if (free_excess_arena_memory()) {
     schedule(reschedule_delay_ms());
   }
 }

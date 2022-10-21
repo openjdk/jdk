@@ -145,7 +145,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1MonotonicArenaFreeMemoryTask* _free_monotonic_arena_memory_task;
+  G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;

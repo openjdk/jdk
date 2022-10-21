@@ -1429,7 +1429,7 @@ G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
   _service_thread(NULL),
   _periodic_gc_task(NULL),
-  _free_monotonic_arena_memory_task(NULL),
+  _free_arena_memory_task(NULL),
   _workers(NULL),
   _card_table(NULL),
   _collection_pause_end(Ticks::now()),
@@ -1720,8 +1720,8 @@ jint G1CollectedHeap::initialize() {
   _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");
   _service_thread->register_task(_periodic_gc_task);
 
-  _free_monotonic_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
-  _service_thread->register_task(_free_monotonic_arena_memory_task);
+  _free_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
+  _service_thread->register_task(_free_arena_memory_task);
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
@@ -2619,8 +2619,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   _collection_pause_end = Ticks::now();
 
-  _free_monotonic_arena_memory_task->notify_new_stats(&_young_gen_card_set_stats,
-                                                      &_collection_set_candidates_card_set_stats);
+  _free_arena_memory_task->notify_new_stats(&_young_gen_card_set_stats,
+                                            &_collection_set_candidates_card_set_stats);
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {

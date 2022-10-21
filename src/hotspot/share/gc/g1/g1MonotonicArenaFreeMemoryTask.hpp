@@ -73,7 +73,7 @@ class G1MonotonicArenaFreeMemoryTask : public G1ServiceTask {
 
   // Free excess monotonic arena memory, main method. Returns true if there is more work
   // to do.
-  bool free_excess_monotonic_arena_memory();
+  bool free_excess_arena_memory();
 
   void set_state(State new_state);
   // Returns whether we are currently processing a recent request.

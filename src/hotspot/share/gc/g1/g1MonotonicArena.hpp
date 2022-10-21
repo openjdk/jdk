@@ -41,7 +41,7 @@
 // Actual allocation from the C heap occurs as memory blocks called Segments.
 // The allocation pattern for these Segments is assumed to be strictly two-phased:
 //
-// - in the first phase, Segment are allocated from the C heap (or a free
+// - in the first phase, Segments are allocated from the C heap (or a free
 // list given at initialization time). This allocation may occur in parallel. This
 // typically corresponds to a single mutator phase, but may extend over multiple.
 //
@@ -56,15 +56,13 @@
 // The class also manages a few counters for statistics using atomic operations.
 // Their values are only consistent within each other with extra global
 // synchronization.
-
 class G1MonotonicArena : public FreeListConfig {
 public:
   class AllocOptions;
   class Segment;
   class SegmentFreeList;
 private:
-  // AllocOptions provides parameters for allocation segment
-  // sizing and expansion.
+  // AllocOptions provides parameters for Segment sizing and expansion.
   const AllocOptions* _alloc_options;
 
   Segment* volatile _first;       // The (start of the) list of all segments.
@@ -72,8 +70,8 @@ private:
   volatile uint _num_segments;    // Number of assigned segments to this allocator.
   volatile size_t _mem_size;      // Memory used by all segments.
 
-  SegmentFreeList* _segment_free_list;   // The global free segment list to preferentially
-                                      // get new segments from.
+  SegmentFreeList* _segment_free_list;  // The global free segment list to preferentially
+                                        // get new segments from.
 
   volatile uint _num_total_slots; // Number of slots available in all segments (allocated + not yet used).
   volatile uint _num_allocated_slots; // Number of total slots allocated ever (including free and pending).
