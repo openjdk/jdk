@@ -118,11 +118,12 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
     GrowableArray<jlong>* _objects;
     int count;
     IsDead(GrowableArray<jlong>* objects) : _objects(objects),count(0){}
-    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag){
+    bool do_entry(JvmtiTagMapEntry & entry, jlong tag){
       if ( entry.object_no_keepalive() == NULL){
         log_info(jvmti,table)("%d objects found dead.\n",++count);
         if(_objects!=NULL){
           _objects->append(tag);
+          entry.release();
           log_info(jvmti,table)("dead object is appended to GrowableArray.\n");
         }
         return true;
