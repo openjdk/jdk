@@ -285,18 +285,21 @@ public class MetalBorders {
             // skip resetting the transform
             boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
 
-            int xtranslation = 0;
-            int ytranslation = 0;
-            int width = 0;
-            int height = 0;
+            int xtranslation;
+            int ytranslation;
+            int width;
+            int height;
 
             if (resetTransform) {
                 g2d.setTransform(new AffineTransform());
                 stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
-                width = roundHalfDown(at.getScaleX() * w);
-                height = roundHalfDown(at.getScaleY() * h);
-                xtranslation = roundHalfDown(at.getScaleX() * x + at.getTranslateX());
-                ytranslation = roundHalfDown(at.getScaleY() * y + at.getTranslateY());
+
+                double xx = at.getScaleX() * x + at.getTranslateX();
+                double yy = at.getScaleY() * y + at.getTranslateY();
+                xtranslation = roundHalfDown(xx);
+                ytranslation = roundHalfDown(yy);
+                width = roundHalfDown(at.getScaleX() * w + xx) - xtranslation;
+                height = roundHalfDown(at.getScaleY() * h + yy) - ytranslation;
             } else {
                 width = w;
                 height = h;
