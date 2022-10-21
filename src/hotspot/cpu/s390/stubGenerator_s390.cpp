@@ -2889,6 +2889,10 @@ class StubGenerator: public StubCodeGenerator {
     // return to caller
     __ z_bcr(Assembler::bcondNotZero, Z_R14);
 
+    // Pop frame built in prologue.
+    __ pop_frame();
+    __ restore_return_pc();
+
     // O.W. call indicates deoptimization required
     // Get handle to wrong-method-stub for s390
     __ load_const_optimized(Z_R1_scratch, SharedRuntime::get_handle_wrong_method_stub());
