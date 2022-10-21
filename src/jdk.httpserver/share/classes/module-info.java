@@ -41,19 +41,22 @@
  * <b id="httpserverprops">System properties used by the HTTP server API</b>
  * <p>
  * The following is a list of JDK specific system properties used by the default HTTP
- * server implementation in the JDK.
+ * server implementation in the JDK. Any properties below that take a numeric value
+ * assume the default value if given a string that does not parse as a number.
  * <ul>
  * <li><p><b>{@systemProperty sun.net.httpserver.idleInterval}</b> (default: 30 sec)<br>
  * Maximum duration in seconds which an idle connection is kept open. This timer
  * has an implementation specific granularity that may mean that idle connections are
- * closed later than the specified interval.
+ * closed later than the specified interval. Values less than or equal to zero are mapped
+ * to the default setting.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpserver.maxConnections}</b> (default: -1)<br>
  * The maximum number of open connections at a time. This includes active and idle connections.
  * If zero or negative, then no limit is enforced.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxIdleConnections}</b> (default: 200)<br>
- * The maximum number of idle connections at a time.
+ * The maximum number of idle connections at a time. If set to zero or a negative value
+ * then connections are closed after use.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.drainAmount}</b> (default: 65536)<br>
  * The maximum number of bytes that will be automatically read and discarded from a
@@ -65,6 +68,7 @@
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaders}</b> (default: 200)<br>
  * The maxiumum number of header fields accepted in a request. If this limit is exceeded
  * while the headers are being read, then the connection is terminated and the request ignored.
+ * If the value is less than or equal to zero, then the default value is used.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
  * The maximum time in milliseconds allowed to receive a request headers and body.
