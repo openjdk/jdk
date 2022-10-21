@@ -38,9 +38,9 @@ import static org.testng.Assert.*;
  */
 public class ValidateResourceBundleAccess{
     // Expected JDBCResourceBundle message, jdbcrowsetimpl.invalstate
-    private static final String invalidState = "Invalid state";
+    private static final String INVALIDSTATE = "Invalid state";
     // Expected JDBCResourceBundle message, crsreader.connecterr
-    private static final String rsReaderError = "Internal Error in RowSetReader: no connection or command";
+    private static final String RSREADERERROR = "Internal Error in RowSetReader: no connection or command";
 
     // Checking against English messages, set to US Locale
     @BeforeClass
@@ -53,25 +53,21 @@ public class ValidateResourceBundleAccess{
         var rsr = RowSetProvider.newFactory();
         var crs =rsr.createCachedRowSet();
         var jrs = rsr.createJdbcRowSet();
-
+        
         // Simple test to force an Exception to validate the expected message
         // is found from the resource bundle
         try {
             jrs.getMetaData();
-            // Unexpected case where exception is not forced
-            throw new RuntimeException(
-                    String.format("$$$ Error: SQLException was not caught!%n"));
+            throw new RuntimeException("$$$ Expected SQLException was not thrown!");
         } catch (SQLException sqe) {
-            assertTrue(sqe.getMessage().equals(invalidState));
+            assertTrue(sqe.getMessage().equals(INVALIDSTATE));
         }
         // Now tests via CachedRowSet
         try {
             crs.execute();
-            // Unexpected case where exception is not forced
-            throw new RuntimeException(
-                    String.format("$$$ Error: SQLException was not caught!%n"));
+            throw new RuntimeException("$$$ Expected SQLException was not thrown!");
         } catch (SQLException e) {
-            assertTrue(e.getMessage().equals(rsReaderError));
+            assertTrue(e.getMessage().equals(RSREADERERROR));
         }
     }
 }
