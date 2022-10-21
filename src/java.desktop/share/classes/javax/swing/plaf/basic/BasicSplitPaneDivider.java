@@ -315,7 +315,7 @@ public class BasicSplitPaneDivider extends Container
      */
     public Dimension getPreferredSize() {
         // Ideally this would return the size from the layout manager,
-        // but that could result in the layed out size being different from
+        // but that could result in the laid out size being different from
         // the dividerSize, which may break developers as well as
         // BasicSplitPaneUI.
         if (orientation == JSplitPane.HORIZONTAL_SPLIT) {

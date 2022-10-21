@@ -1078,7 +1078,7 @@ final class TransformingPathConsumer2D {
         // squared half line width (for stroker)
         private double lw2;
 
-        // number of splitted curves
+        // number of split curves
         int nbSplits;
 
         // This is where the curve to be processed is put. We give it

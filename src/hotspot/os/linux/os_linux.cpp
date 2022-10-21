@@ -1372,93 +1372,25 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
-struct _address_to_library_name {
-  address addr;          // input : memory address
-  size_t  buflen;        //         size of fname
-  char*   fname;         // output: library name
-  address base;          //         library base addr
-};
-
-static int address_to_library_name_callback(struct dl_phdr_info *info,
-                                            size_t size, void *data) {
-  int i;
-  bool found = false;
-  address libbase = NULL;
-  struct _address_to_library_name * d = (struct _address_to_library_name *)data;
-
-  // iterate through all loadable segments
-  for (i = 0; i < info->dlpi_phnum; i++) {
-    address segbase = (address)(info->dlpi_addr + info->dlpi_phdr[i].p_vaddr);
-    if (info->dlpi_phdr[i].p_type == PT_LOAD) {
-      // base address of a library is the lowest address of its loaded
-      // segments.
-      if (libbase == NULL || libbase > segbase) {
-        libbase = segbase;
-      }
-      // see if 'addr' is within current segment
-      if (segbase <= d->addr &&
-          d->addr < segbase + info->dlpi_phdr[i].p_memsz) {
-        found = true;
-      }
-    }
-  }
-
-  // dlpi_name is NULL or empty if the ELF file is executable, return 0
-  // so dll_address_to_library_name() can fall through to use dladdr() which
-  // can figure out executable name from argv[0].
-  if (found && info->dlpi_name && info->dlpi_name[0]) {
-    d->base = libbase;
-    if (d->fname) {
-      jio_snprintf(d->fname, d->buflen, "%s", info->dlpi_name);
-    }
-    return 1;
-  }
-  return 0;
-}
-
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
 
   Dl_info dlinfo;
-  struct _address_to_library_name data;
-
-  // There is a bug in old glibc dladdr() implementation that it could resolve
-  // to wrong library name if the .so file has a base address != NULL. Here
-  // we iterate through the program headers of all loaded libraries to find
-  // out which library 'addr' really belongs to. This workaround can be
-  // removed once the minimum requirement for glibc is moved to 2.3.x.
-  data.addr = addr;
-  data.fname = buf;
-  data.buflen = buflen;
-  data.base = NULL;
-  int rslt = dl_iterate_phdr(address_to_library_name_callback, (void *)&data);
-
-  if (rslt) {
-    // buf already contains library name
-    if (offset) *offset = addr - data.base;
-    return true;
-  }
   if (dladdr((void*)addr, &dlinfo) != 0) {
-    if (dlinfo.dli_fname != NULL) {
+    if (dlinfo.dli_fname != nullptr) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+    if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
       *offset = addr - (address)dlinfo.dli_fbase;
     }
     return true;
   }
-
   buf[0] = '\0';
   if (offset) *offset = -1;
   return false;
 }
-
-// Loads .dll/.so and
-// in case of error it checks if .dll/.so was built for the
-// same architecture as Hotspot is running on
-
 
 // Remember the stack's state. The Linux dynamic linker will change
 // the stack to 'executable' at most once, so we must safepoint only once.
@@ -4314,7 +4246,7 @@ static void check_pax(void) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "failed to allocate memory for PaX check.");
   }
 
-  int res = ::mprotect(p, size, PROT_WRITE|PROT_EXEC);
+  int res = ::mprotect(p, size, PROT_READ|PROT_WRITE|PROT_EXEC);
   if (res == -1) {
     log_debug(os)("os_linux.cpp: check_pax: mprotect failed (%s)" , os::strerror(errno));
     vm_exit_during_initialization(

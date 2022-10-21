@@ -134,7 +134,7 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
   BINUTILS_SRC="$with_binutils_src"
   UTIL_FIXUP_PATH(BINUTILS_SRC)
 
-  BINUTILS_DIR="${OUTPUTDIR}/binutils"
+  BINUTILS_DIR="$CONFIGURESUPPORT_OUTPUTDIR/binutils"
 
   if ! test -d $BINUTILS_SRC; then
     AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
@@ -190,10 +190,10 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
-    AC_MSG_NOTICE([configure command line: cd $BINUTILS_DIR && $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target])
+    AC_MSG_NOTICE([configure command line: cd $BINUTILS_DIR && $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target])
     saved_dir=`pwd`
     cd "$BINUTILS_DIR"
-    $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target
+    $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target
     if test $? -ne 0 || ! test -e $BINUTILS_DIR/Makefile; then
       AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
       AC_MSG_ERROR([Cannot continue])

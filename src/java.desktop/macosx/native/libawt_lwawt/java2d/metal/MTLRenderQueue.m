@@ -946,7 +946,7 @@ MTLRenderQueue_GetCurrentDestination()
 }
 
 /**
- * commit earlier encoded commmands
+ * commit earlier encoded commands
  * these would be rendered to the back-buffer - which is read in shader while rendering in XOR mode
  */
 void commitEncodedCommands() {
