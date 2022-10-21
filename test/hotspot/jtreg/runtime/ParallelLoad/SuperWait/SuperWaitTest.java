@@ -37,6 +37,7 @@ import java.util.concurrent.Semaphore;
 public class SuperWaitTest {
 
     private static Semaphore mainSync = null;
+    private static Semaphore threadSync = null;
 
     // Loads classes A and D, delegates for A's super class B
     private static class MyLoaderOne extends ClassLoader {
@@ -63,6 +64,7 @@ public class SuperWaitTest {
                 if (name.equals("A")) {
                     try {
                         ThreadPrint.println("Waiting for " + name);
+                        threadSync.release();
                         mainSync.acquire(); // wait until other thread gets here
                         wait(); // let the other thread have this lock.
                     } catch (InterruptedException ie) {}
@@ -103,6 +105,10 @@ public class SuperWaitTest {
             if (name.equals("C") || name.equals("B")) {
                 ThreadPrint.println("Loading " + name);
                 if (name.equals("C")) {
+                    // We want loading thread 1 and 2 to be here at the same time.
+                    try {
+                        threadSync.acquire();
+                    } catch (InterruptedException ie) {}
                     mainSync.release();
                 }
                 byte[] classfile = ClassUnloadCommon.getClassData(name);
@@ -131,7 +137,8 @@ public class SuperWaitTest {
 
     public static void main(java.lang.String[] unused) {
         // t1 loads (A,CL1) extends (B,CL2); t2 loads (C,CL2) extends (D,CL1)
-        mainSync = new Semaphore(0);
+        mainSync   = new Semaphore(0);
+        threadSync = new Semaphore(0);
 
         ClassLoader appLoader = SuperWaitTest.class.getClassLoader();
         MyLoaderOne ldr1 = new MyLoaderOne(appLoader);
