@@ -139,7 +139,7 @@ Assembler::branch_condition Assembler::inverse_float_condition(Assembler::branch
   return inverse_cc;
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void Assembler::print_dbg_msg(outputStream* out, unsigned long inst, const char* msg, int ilen) {
   out->flush();
   switch (ilen) {
