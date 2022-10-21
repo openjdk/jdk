@@ -36,11 +36,13 @@ uint32_t VM_Version::_initial_vector_length = 0;
 void VM_Version::initialize() {
   get_os_cpu_info();
 
+  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
   if (UseRVA20U64) {
     if (FLAG_IS_DEFAULT(UseRVC)) {
       FLAG_SET_DEFAULT(UseRVC, true);
     }
   }
+  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
   if (UseRVA22U64) {
     if (FLAG_IS_DEFAULT(UseRVC)) {
       FLAG_SET_DEFAULT(UseRVC, true);
