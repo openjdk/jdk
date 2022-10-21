@@ -291,7 +291,7 @@ static bool rule_minor_high_usage(ZDirectorStats& stats) {
   }
 
   // Perform GC if the amount of free memory is 5% or less. This is a preventive
-  // meassure in the case where the application has a very low allocation rate,
+  // measure in the case where the application has a very low allocation rate,
   // such that the allocation rate rule doesn't trigger, but the amount of free
   // memory is still slowly but surely heading towards zero. In this situation,
   // we start a GC cycle to avoid a potential allocation stall later.

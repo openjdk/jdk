@@ -198,7 +198,7 @@ void ZNMethod::register_nmethod(nmethod* nm) {
 
   log_register(nm);
 
-  // Patch nmathod barriers
+  // Patch nmethod barriers
   nmethod_patch_barriers(nm);
 
   // Register nmethod

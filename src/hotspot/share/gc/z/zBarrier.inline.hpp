@@ -316,7 +316,7 @@ inline ZGeneration* ZBarrier::remap_generation(zpointer ptr) {
   // the young relocation starts.
   //
   // After the young relocation has started, the pointer became young remap
-  // bad, and maybe we even started an old relocaton, and the pointer became
+  // bad, and maybe we even started an old relocation, and the pointer became
   // double remap bad. When the next load barrier triggers, it will self heal
   // with double remember bits, but *importantly* it will at the same time
   // heal with good remap bits.

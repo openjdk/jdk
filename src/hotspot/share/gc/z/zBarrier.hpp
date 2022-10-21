@@ -53,7 +53,7 @@
 // 1) The load barrier can only recognize 4 different good patterns across all GC phases.
 //    The reason is that when a load barrier applies the currently good shift, then
 //    the value of said shift may differ only by 3, until we risk shifting away more
-//    than the low order three zeroes of an addres, given a bad pointer, which would
+//    than the low order three zeroes of an address, given a bad pointer, which would
 //    yield spurious false positives.
 // 2) Those bit patterns must have only a single bit set. We achieve that by moving
 //    non-relocation work to store barriers.

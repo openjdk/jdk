@@ -128,7 +128,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_h
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
     ZBarrier::store_barrier_on_heap_oop_field(p, true /* heal */);
   } else {
-    assert(false, "Should not be used on uinitialized memory");
+    assert(false, "Should not be used on uninitialized memory");
   }
 }
 
@@ -151,7 +151,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_n
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
     ZBarrier::store_barrier_on_native_oop_field(p, true /* heal */);
   } else {
-    assert(false, "Should not be used on uinitialized memory");
+    assert(false, "Should not be used on uninitialized memory");
   }
 }
 

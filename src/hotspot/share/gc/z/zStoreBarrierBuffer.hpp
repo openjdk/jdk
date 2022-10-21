@@ -52,7 +52,7 @@ private:
   // Color from previous phase this buffer was processed
   uintptr_t          _last_processed_color;
 
-  // Use as a claim mechansim for installing base pointers
+  // Use as a claim mechanism for installing base pointers
   uintptr_t          _last_installed_color;
 
   ZLock              _base_pointer_lock;

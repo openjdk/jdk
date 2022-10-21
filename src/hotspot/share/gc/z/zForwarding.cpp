@@ -215,7 +215,7 @@ bool ZForwarding::is_done() const {
 // none:      Starting state - neither OC nor YC has stated their intentions
 // published: The OC has completed relocating all objects, and published an array
 //            of all to-space fields that should have a remembered set entry.
-// reject:    The OC relocation of the page happened concurrentely with the YC
+// reject:    The OC relocation of the page happened concurrently with the YC
 //            remset scanning. Two situations:
 //            a) The page had not been released yet: The YC eagerly relocated and
 //            scanned the to-space objects with remset entries.
