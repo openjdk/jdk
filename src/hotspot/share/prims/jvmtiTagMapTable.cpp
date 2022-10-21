@@ -112,7 +112,7 @@ void JvmtiTagMapTable::remove(oop obj) {
 =======
 bool JvmtiTagMapTable::remove(oop obj) {
 
-  JvmtiTagMapEntry jtme(obj,0);
+  JvmtiTagMapEntry jtme(obj);
   jlong* found = _rrht_table.get(jtme);
   if (found == NULL) {
     log_debug(jvmti,table)("entry not found to remove.\n");
@@ -128,7 +128,7 @@ bool JvmtiTagMapTable::remove(oop obj) {
 }
 int JvmtiTagMapTable::add_update_remove(JvmtiTagMapEntry &entry_par,oop obj, jlong tag){
   assert(obj != NULL, "obj should not be NULL.");
-  JvmtiTagMapEntry entry (obj,tag);
+  JvmtiTagMapEntry entry (obj);
   bool found = find(entry, obj);
   bool to_be_added = tag != 0 ;
   bool to_be_updated = tag != 0 ;
@@ -171,11 +171,12 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
     GrowableArray<jlong>* _objects;
     int count;
     IsDead(GrowableArray<jlong>* objects) : _objects(objects),count(0){}
-    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag){
+    bool do_entry(JvmtiTagMapEntry & entry, jlong tag){
       if ( entry.object_no_keepalive() == NULL){
         log_info(jvmti,table)("%d objects found dead.\n",++count);
         if(_objects!=NULL){
           _objects->append(tag);
+          entry.release();
           log_info(jvmti,table)("dead object is appended to GrowableArray.\n");
         }
         return true;

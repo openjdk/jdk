@@ -170,16 +170,7 @@ void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
 // not tagged
 //
 static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
-  return tag_map->hashmap()->find(o);
-}
-
-
-// A CallbackWrapper is a support class for querying and tagging an object
-// around a callback to a profiler. The constructor does pre-callback
-// work to get the tag value, klass tag value, ... and the destructor
-// does the post-callback work of tagging or untagging the object.
-//
-// {
+  return tag_map->hashmap()->find(o); } // A CallbackWrapper is a support class for querying and tagging an object // around a callback to a profiler. The constructor does pre-callback // work to get the tag value, klass tag value, ... and the destructor // does the post-callback work of tagging or untagging the object. // // {
 //   CallbackWrapper wrapper(tag_map, o);
 //
 //   (*callback)(wrapper.klass_tag(), wrapper.obj_size(), wrapper.obj_tag_p(), ...)
@@ -192,7 +183,6 @@ class CallbackWrapper : public StackObj {
  private:
   JvmtiTagMap* _tag_map;
   JvmtiTagMapTable* _hashmap;
-  JvmtiTagMapEntry _entry;
   bool _entry_found;
   oop _o;
   jlong _obj_size;
@@ -351,8 +341,6 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
-  JvmtiTagMapEntry entry ;
-  _hashmap->add_update_remove(entry, o, tag);
   // see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
   jlong found_tag  = hashmap->find(o);
