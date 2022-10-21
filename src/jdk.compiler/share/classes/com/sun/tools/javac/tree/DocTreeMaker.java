@@ -89,9 +89,7 @@ import com.sun.tools.javac.tree.DCTree.DCVersion;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
@@ -352,7 +350,7 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCReference newReferenceTree(String signature) {
         try {
-            ReferenceParser.Reference ref = referenceParser.parse(signature);
+            ReferenceParser.Reference ref = referenceParser.parse(signature, ReferenceParser.Mode.MEMBER_OPTIONAL);
             DCReference tree = newReferenceTree(signature, ref);
             tree.pos = pos;
             return tree;

@@ -147,7 +147,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
                                              ^
                     """,
             """
-                    src/nolabel/Class1.java:5: warning: missing reference label
+                    Class1.java:5: warning: missing reference label
                     @see ##main
                     ^
                     """);
