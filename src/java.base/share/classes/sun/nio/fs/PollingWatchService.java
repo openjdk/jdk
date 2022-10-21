@@ -150,7 +150,15 @@ class PollingWatchService
                 new PrivilegedExceptionAction<PollingWatchKey>() {
                     @Override
                     public PollingWatchKey run() throws IOException {
-                        return doPrivilegedRegister(path, eventSet, value);
+                        PollingWatchKey newKey = doPrivilegedRegister(path, eventSet, value);
+
+                        try {
+                            // To ensure the key is watching for changes when this method returns, sleep
+                            // for the initial delay period before returning.
+                            Thread.sleep(1000 * POLLING_INIT_DELAY);
+                        } catch (InterruptedException e) {}
+
+                        return newKey;
                     }
                 });
         } catch (PrivilegedActionException pae) {
