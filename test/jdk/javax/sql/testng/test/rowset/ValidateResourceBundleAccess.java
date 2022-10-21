@@ -53,7 +53,6 @@ public class ValidateResourceBundleAccess{
         var rsr = RowSetProvider.newFactory();
         var crs =rsr.createCachedRowSet();
         var jrs = rsr.createJdbcRowSet();
-        
         // Simple test to force an Exception to validate the expected message
         // is found from the resource bundle
         try {
