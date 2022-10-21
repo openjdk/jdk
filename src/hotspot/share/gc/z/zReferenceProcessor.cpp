@@ -282,6 +282,8 @@ void ZReferenceProcessor::process_worker_discovered_list(zaddress discovered_lis
   // Iterate over the discovered list and unlink them as we go, potentially
   // appending them to the keep list
   for (zaddress reference = discovered_list; !is_null(reference); ) {
+    assert(ZHeap::heap()->is_old(reference), "Must be old");
+
     const ReferenceType type = reference_type(reference);
     const zaddress next = reference_discovered(reference);
     reference_set_discovered(reference, zaddress::null);
@@ -315,6 +317,8 @@ void ZReferenceProcessor::process_worker_discovered_list(zaddress discovered_lis
     if (is_null(old_pending_list)) {
       // Old list was empty. First to prepend to list, record tail
       _pending_list_tail = keep_tail;
+    } else {
+      assert(ZHeap::heap()->is_old(old_pending_list), "Must be old");
     }
   }
 }
