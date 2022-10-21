@@ -45,7 +45,7 @@ class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
    void set_released(bool flag){ _released = flag;}
 
   void release();
-  void resolve();
+  void resolve(oop obj);
   oop object() const;
   oop object_no_keepalive() const;
 };
