@@ -719,6 +719,8 @@ void JvmtiExport::post_vm_initialized() {
 void JvmtiExport::post_vm_death() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_DEATH, ("Trg VM death event triggered" ));
 
+  JvmtiTagMap::flush_all_object_free_events();
+
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_DEATH)) {

@@ -1166,8 +1166,8 @@ void ArchiveBuilder::clean_up_src_obj_table() {
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                    GrowableArray<MemRegion>* closed_heap_regions,
                                    GrowableArray<MemRegion>* open_heap_regions,
-                                   GrowableArray<ArchiveHeapOopmapInfo>* closed_heap_oopmaps,
-                                   GrowableArray<ArchiveHeapOopmapInfo>* open_heap_oopmaps) {
+                                   GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_bitmaps,
+                                   GrowableArray<ArchiveHeapBitmapInfo>* open_heap_bitmaps) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // MetaspaceShared::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
@@ -1176,18 +1176,18 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_heap_oopmaps, open_heap_oopmaps,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_heap_bitmaps, open_heap_bitmaps,
                                               bitmap_size_in_bytes);
 
   if (closed_heap_regions != NULL) {
     _total_closed_heap_region_size = mapinfo->write_heap_regions(
                                         closed_heap_regions,
-                                        closed_heap_oopmaps,
+                                        closed_heap_bitmaps,
                                         MetaspaceShared::first_closed_heap_region,
                                         MetaspaceShared::max_num_closed_heap_regions);
     _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
-                                        open_heap_oopmaps,
+                                        open_heap_bitmaps,
                                         MetaspaceShared::first_open_heap_region,
                                         MetaspaceShared::max_num_open_heap_regions);
   }

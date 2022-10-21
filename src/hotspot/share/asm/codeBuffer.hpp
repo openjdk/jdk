@@ -452,6 +452,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _shared_stub_to_interp_requests = NULL;
     _shared_trampoline_requests = NULL;
 
+    _consts.initialize_outer(this, SECT_CONSTS);
+    _insts.initialize_outer(this,  SECT_INSTS);
+    _stubs.initialize_outer(this,  SECT_STUBS);
+
 #ifndef PRODUCT
     _decode_begin    = NULL;
     // Collect block comments, but restrict collection to cases where a disassembly is output.
@@ -466,9 +470,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   void initialize(address code_start, csize_t code_size) {
-    _consts.initialize_outer(this,  SECT_CONSTS);
-    _insts.initialize_outer(this,   SECT_INSTS);
-    _stubs.initialize_outer(this,   SECT_STUBS);
     _total_start = code_start;
     _total_size  = code_size;
     // Initialize the main section:
@@ -752,7 +753,7 @@ inline int CodeSection::alignment(int section) {
   if (section == CodeBuffer::SECT_INSTS) {
     return (int) CodeEntryAlignment;
   }
-  if (CodeBuffer::SECT_STUBS) {
+  if (section == CodeBuffer::SECT_STUBS) {
     // CodeBuffer installer expects sections to be HeapWordSize aligned
     return HeapWordSize;
   }

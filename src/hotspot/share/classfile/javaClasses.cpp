@@ -1117,21 +1117,6 @@ class ResetMirrorField: public FieldClosure {
   }
 };
 
-static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass* k) {
-  assert(java_lang_Class::is_instance(mirror_obj), "must be");
-  // this is the copy of k in the output buffer
-  Klass* copy = ArchiveBuilder::get_buffered_klass(k);
-
-  // This is the address of k, if the archive is loaded at the requested location
-  Klass* def = ArchiveBuilder::current()->to_requested(copy);
-
-  log_debug(cds, heap, mirror)(
-      "Relocate mirror metadata field at %d from " PTR_FORMAT " ==> " PTR_FORMAT,
-      offset, p2i(k), p2i(def));
-
-  mirror_obj->metadata_field_put(offset, def);
-}
-
 void java_lang_Class::archive_basic_type_mirrors() {
   assert(HeapShared::can_write(), "must be");
 
@@ -1142,11 +1127,6 @@ void java_lang_Class::archive_basic_type_mirrors() {
       // Update the field at _array_klass_offset to point to the relocated array klass.
       oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
-      Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
-      assert(ak != NULL || t == T_VOID, "should not be NULL");
-      if (ak != NULL) {
-        set_klass_field_in_archived_mirror(archived_m, _array_klass_offset, ak);
-      }
 
       // Clear the fields. Just to be safe
       Klass *k = m->klass();
@@ -1260,46 +1240,8 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   set_class_loader(archived_mirror, NULL);
   set_module(archived_mirror, NULL);
 
-  // The archived mirror's field at _klass_offset is still pointing to the original
-  // klass. Updated the field in the archived mirror to point to the relocated
-  // klass in the archive.
-  set_klass_field_in_archived_mirror(archived_mirror, _klass_offset, as_Klass(mirror));
-
-  // The field at _array_klass_offset is pointing to the original one dimension
-  // higher array klass if exists. Relocate the pointer.
-  Klass *arr = array_klass_acquire(mirror);
-  if (arr != NULL) {
-    set_klass_field_in_archived_mirror(archived_mirror, _array_klass_offset, arr);
-  }
   return archived_mirror;
 }
-
-void java_lang_Class::update_archived_primitive_mirror_native_pointers(oop archived_mirror) {
-  if (MetaspaceShared::relocation_delta() != 0) {
-    assert(archived_mirror->metadata_field(_klass_offset) == NULL, "must be for primitive class");
-
-    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
-    if (ak != NULL) {
-      archived_mirror->metadata_field_put(_array_klass_offset,
-          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
-    }
-  }
-}
-
-void java_lang_Class::update_archived_mirror_native_pointers(oop archived_mirror) {
-  assert(MetaspaceShared::relocation_delta() != 0, "must be");
-
-  Klass* k = ((Klass*)archived_mirror->metadata_field(_klass_offset));
-  archived_mirror->metadata_field_put(_klass_offset,
-      (Klass*)(address(k) + MetaspaceShared::relocation_delta()));
-
-  Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
-  if (ak != NULL) {
-    archived_mirror->metadata_field_put(_array_klass_offset,
-        (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
-  }
-}
-
 
 // Returns true if the mirror is updated, false if no archived mirror
 // data is present. After the archived mirror object is restored, the
@@ -3904,7 +3846,9 @@ oop java_lang_boxing_object::initialize_and_allocate(BasicType type, TRAPS) {
   Klass* k = vmClasses::box_klass(type);
   if (k == NULL)  return NULL;
   InstanceKlass* ik = InstanceKlass::cast(k);
-  if (!ik->is_initialized())  ik->initialize(CHECK_NULL);
+  if (!ik->is_initialized()) {
+    ik->initialize(CHECK_NULL);
+  }
   return ik->allocate_instance(THREAD);
 }
 
