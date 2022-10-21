@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -149,6 +150,7 @@ public class FileSizeCheck {
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException, AWTException {
+        Locale.setDefault(Locale.US);
         try {
             final Robot robot = new Robot();
             SwingUtilities.invokeAndWait(FileSizeCheck::createUI);
