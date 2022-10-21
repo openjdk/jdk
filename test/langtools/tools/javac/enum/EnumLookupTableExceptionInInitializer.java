@@ -29,7 +29,7 @@
 
 import java.math.RoundingMode;
 
-public class T7176515 {
+public class EnumLookupTableExceptionInInitializer {
 
     public enum MyEnum {
         FIRST(RoundingMode.CEILING),
@@ -87,7 +87,8 @@ public class T7176515 {
     public static void main(String[] args) {
         boolean shouldBeOdd = true;
         for (MyEnum x : MyEnum.values()) {
-            assert x.isOdd() == shouldBeOdd;
+            if (x.isOdd() != shouldBeOdd)
+                throw new RuntimeException("failed");
             shouldBeOdd = !shouldBeOdd;
         }
         Nested.class.hashCode();
