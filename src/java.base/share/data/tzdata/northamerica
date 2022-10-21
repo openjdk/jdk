@@ -367,8 +367,7 @@ Zone	PST8PDT		 -8:00	US	P%sT
 # From Paul Eggert (2014-09-06):
 # Monthly Notices of the Royal Astronomical Society 44, 4 (1884-02-08), 208
 # says that New York City Hall time was 3 minutes 58.4 seconds fast of
-# Eastern time (i.e., -4:56:01.6) just before the 1883 switch.  Round to the
-# nearest second.
+# Eastern time (i.e., -4:56:01.6) just before the 1883 switch.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	NYC	1920	only	-	Mar	lastSun	2:00	1:00	D
@@ -377,7 +376,8 @@ Rule	NYC	1921	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	NYC	1921	1954	-	Sep	lastSun	2:00	0	S
 Rule	NYC	1955	1966	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
+		#STDOFF	-4:56:01.6
+Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 17:00u
 			-5:00	US	E%sT	1920
 			-5:00	NYC	E%sT	1942
 			-5:00	US	E%sT	1946
@@ -462,7 +462,7 @@ Rule	Chicago	1922	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	Chicago	1922	1954	-	Sep	lastSun	2:00	0	S
 Rule	Chicago	1955	1966	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Chicago	-5:50:36 -	LMT	1883 Nov 18 12:09:24
+Zone America/Chicago	-5:50:36 -	LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1920
 			-6:00	Chicago	C%sT	1936 Mar  1  2:00
 			-5:00	-	EST	1936 Nov 15  2:00
@@ -471,7 +471,7 @@ Zone America/Chicago	-5:50:36 -	LMT	1883 Nov 18 12:09:24
 			-6:00	Chicago	C%sT	1967
 			-6:00	US	C%sT
 # Oliver County, ND switched from mountain to central time on 1992-10-25.
-Zone America/North_Dakota/Center -6:45:12 - LMT	1883 Nov 18 12:14:48
+Zone America/North_Dakota/Center -6:45:12 - LMT	1883 Nov 18 19:00u
 			-7:00	US	M%sT	1992 Oct 25  2:00
 			-6:00	US	C%sT
 # Morton County, ND, switched from mountain to central time on
@@ -481,7 +481,7 @@ Zone America/North_Dakota/Center -6:45:12 - LMT	1883 Nov 18 12:14:48
 # Jones, Mellette, and Todd Counties in South Dakota;
 # but in practice these other counties were already observing central time.
 # See <http://www.epa.gov/fedrgstr/EPA-IMPACT/2003/October/Day-28/i27056.htm>.
-Zone America/North_Dakota/New_Salem -6:45:39 - LMT	1883 Nov 18 12:14:21
+Zone America/North_Dakota/New_Salem -6:45:39 - LMT 1883 Nov 18 19:00u
 			-7:00	US	M%sT	2003 Oct 26  2:00
 			-6:00	US	C%sT
 
@@ -498,7 +498,7 @@ Zone America/North_Dakota/New_Salem -6:45:39 - LMT	1883 Nov 18 12:14:21
 # largest city in Mercer County).  Google Maps places Beulah's city hall
 # at 47° 15' 51" N, 101° 46' 40" W, which yields an offset of 6h47'07".
 
-Zone America/North_Dakota/Beulah -6:47:07 - LMT	1883 Nov 18 12:12:53
+Zone America/North_Dakota/Beulah -6:47:07 - LMT	1883 Nov 18 19:00u
 			-7:00	US	M%sT	2010 Nov  7  2:00
 			-6:00	US	C%sT
 
@@ -530,7 +530,7 @@ Rule	Denver	1921	only	-	May	22	2:00	0	S
 Rule	Denver	1965	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	Denver	1965	1966	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 12:00:04
+Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 19:00u
 			-7:00	US	M%sT	1920
 			-7:00	Denver	M%sT	1942
 			-7:00	US	M%sT	1946
@@ -583,7 +583,7 @@ Rule	CA	1950	1966	-	Apr	lastSun	1:00	1:00	D
 Rule	CA	1950	1961	-	Sep	lastSun	2:00	0	S
 Rule	CA	1962	1966	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
+Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 20:00u
 			-8:00	US	P%sT	1946
 			-8:00	CA	P%sT	1967
 			-8:00	US	P%sT
@@ -845,7 +845,7 @@ Zone Pacific/Honolulu	-10:31:26 -	LMT	1896 Jan 13 12:00
 # Go with the Arizona State Library instead.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 11:31:42
+Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 19:00u
 			-7:00	US	M%sT	1944 Jan  1  0:01
 			-7:00	-	MST	1944 Apr  1  0:01
 			-7:00	US	M%sT	1944 Oct  1  0:01
@@ -873,7 +873,7 @@ Link America/Phoenix America/Creston
 # switched four weeks late in 1974.
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Boise	-7:44:49 -	LMT	1883 Nov 18 12:15:11
+Zone America/Boise	-7:44:49 -	LMT	1883 Nov 18 20:00u
 			-8:00	US	P%sT	1923 May 13  2:00
 			-7:00	US	M%sT	1974
 			-7:00	-	MST	1974 Feb  3  2:00
@@ -945,7 +945,7 @@ Rule Indianapolis 1941	only	-	Jun	22	2:00	1:00	D
 Rule Indianapolis 1941	1954	-	Sep	lastSun	2:00	0	S
 Rule Indianapolis 1946	1954	-	Apr	lastSun	2:00	1:00	D
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Indianapolis -5:44:38 - LMT	1883 Nov 18 12:15:22
+Zone America/Indiana/Indianapolis -5:44:38 - LMT 1883 Nov 18 18:00u
 			-6:00	US	C%sT	1920
 			-6:00 Indianapolis C%sT	1942
 			-6:00	US	C%sT	1946
@@ -965,7 +965,7 @@ Rule	Marengo	1951	only	-	Sep	lastSun	2:00	0	S
 Rule	Marengo	1954	1960	-	Apr	lastSun	2:00	1:00	D
 Rule	Marengo	1954	1960	-	Sep	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Marengo -5:45:23 -	LMT	1883 Nov 18 12:14:37
+Zone America/Indiana/Marengo -5:45:23 -	LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1951
 			-6:00	Marengo	C%sT	1961 Apr 30  2:00
 			-5:00	-	EST	1969
@@ -989,7 +989,7 @@ Rule Vincennes	1960	only	-	Oct	lastSun	2:00	0	S
 Rule Vincennes	1961	only	-	Sep	lastSun	2:00	0	S
 Rule Vincennes	1962	1963	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 12:09:53
+Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1946
 			-6:00 Vincennes	C%sT	1964 Apr 26  2:00
 			-5:00	-	EST	1969
@@ -1009,7 +1009,7 @@ Rule Perry	1955	1960	-	Sep	lastSun	2:00	0	S
 Rule Perry	1956	1963	-	Apr	lastSun	2:00	1:00	D
 Rule Perry	1961	1963	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Tell_City -5:47:03 - LMT	1883 Nov 18 12:12:57
+Zone America/Indiana/Tell_City -5:47:03 - LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1946
 			-6:00 Perry	C%sT	1964 Apr 26  2:00
 			-5:00	-	EST	1967 Oct 29  2:00
@@ -1026,7 +1026,7 @@ Rule	Pike	1955	1960	-	Sep	lastSun	2:00	0	S
 Rule	Pike	1956	1964	-	Apr	lastSun	2:00	1:00	D
 Rule	Pike	1961	1964	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Petersburg -5:49:07 - LMT	1883 Nov 18 12:10:53
+Zone America/Indiana/Petersburg -5:49:07 - LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1955
 			-6:00	Pike	C%sT	1965 Apr 25  2:00
 			-5:00	-	EST	1966 Oct 30  2:00
@@ -1048,7 +1048,7 @@ Rule	Starke	1955	1956	-	Oct	lastSun	2:00	0	S
 Rule	Starke	1957	1958	-	Sep	lastSun	2:00	0	S
 Rule	Starke	1959	1961	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Knox -5:46:30 -	LMT	1883 Nov 18 12:13:30
+Zone America/Indiana/Knox -5:46:30 -	LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1947
 			-6:00	Starke	C%sT	1962 Apr 29  2:00
 			-5:00	-	EST	1963 Oct 27  2:00
@@ -1064,7 +1064,7 @@ Rule	Pulaski	1946	1954	-	Sep	lastSun	2:00	0	S
 Rule	Pulaski	1955	1956	-	Oct	lastSun	2:00	0	S
 Rule	Pulaski	1957	1960	-	Sep	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Winamac -5:46:25 - LMT	1883 Nov 18 12:13:35
+Zone America/Indiana/Winamac -5:46:25 - LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1946
 			-6:00	Pulaski	C%sT	1961 Apr 30  2:00
 			-5:00	-	EST	1969
@@ -1075,7 +1075,7 @@ Zone America/Indiana/Winamac -5:46:25 - LMT	1883 Nov 18 12:13:35
 #
 # Switzerland County, Indiana, did not observe DST from 1973 through 2005.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Indiana/Vevay -5:40:16 -	LMT	1883 Nov 18 12:19:44
+Zone America/Indiana/Vevay -5:40:16 -	LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1954 Apr 25  2:00
 			-5:00	-	EST	1969
 			-5:00	US	E%sT	1973
@@ -1111,7 +1111,7 @@ Rule Louisville	1950	1961	-	Apr	lastSun	2:00	1:00	D
 Rule Louisville	1950	1955	-	Sep	lastSun	2:00	0	S
 Rule Louisville	1956	1961	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Kentucky/Louisville -5:43:02 -	LMT	1883 Nov 18 12:16:58
+Zone America/Kentucky/Louisville -5:43:02 - LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1921
 			-6:00 Louisville C%sT	1942
 			-6:00	US	C%sT	1946
@@ -1145,7 +1145,7 @@ Zone America/Kentucky/Louisville -5:43:02 -	LMT	1883 Nov 18 12:16:58
 # Federal Register 65, 160 (2000-08-17), pp 50154-50158.
 # https://www.gpo.gov/fdsys/pkg/FR-2000-08-17/html/00-20854.htm
 #
-Zone America/Kentucky/Monticello -5:39:24 - LMT	1883 Nov 18 12:20:36
+Zone America/Kentucky/Monticello -5:39:24 - LMT	1883 Nov 18 18:00u
 			-6:00	US	C%sT	1946
 			-6:00	-	CST	1968
 			-6:00	US	C%sT	2000 Oct 29  2:00
@@ -2640,6 +2640,8 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 #    longitude they are located at.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	Mexico	1931	only	-	May	1	23:00	1:00	D
+Rule	Mexico	1931	only	-	Oct	1	0:00	0	S
 Rule	Mexico	1939	only	-	Feb	5	0:00	1:00	D
 Rule	Mexico	1939	only	-	Jun	25	0:00	0	S
 Rule	Mexico	1940	only	-	Dec	9	0:00	1:00	D
@@ -2656,13 +2658,13 @@ Rule	Mexico	2002	max	-	Apr	Sun>=1	2:00	1:00	D
 Rule	Mexico	2002	max	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Quintana Roo; represented by Cancún
-Zone America/Cancun	-5:47:04 -	LMT	1922 Jan  1  0:12:56
+Zone America/Cancun	-5:47:04 -	LMT	1922 Jan  1  6:00u
 			-6:00	-	CST	1981 Dec 23
 			-5:00	Mexico	E%sT	1998 Aug  2  2:00
 			-6:00	Mexico	C%sT	2015 Feb  1  2:00
 			-5:00	-	EST
 # Campeche, Yucatán; represented by Mérida
-Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  0:01:32
+Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  6:00u
 			-6:00	-	CST	1981 Dec 23
 			-5:00	-	EST	1982 Dec  2
 			-6:00	Mexico	C%sT
@@ -2676,23 +2678,21 @@ Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  0:01:32
 # See: Inicia mañana Horario de Verano en zona fronteriza, El Universal,
 # 2016-03-12
 # http://www.eluniversal.com.mx/articulo/estados/2016/03/12/inicia-manana-horario-de-verano-en-zona-fronteriza
-Zone America/Matamoros	-6:40:00 -	LMT	1921 Dec 31 23:20:00
+Zone America/Matamoros	-6:30:00 -	LMT	1922 Jan  1  6:00u
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
 			-6:00	Mexico	C%sT	2010
 			-6:00	US	C%sT
 # Durango; Coahuila, Nuevo León, Tamaulipas (away from US border)
-Zone America/Monterrey	-6:41:16 -	LMT	1921 Dec 31 23:18:44
+Zone America/Monterrey	-6:41:16 -	LMT	1922 Jan  1  6:00u
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
 			-6:00	Mexico	C%sT
 # Central Mexico
-Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  0:23:24
+Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
-			-7:00	-	MST	1931 May  1 23:00
-			-6:00	-	CST	1931 Oct
-			-7:00	-	MST	1932 Apr  1
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	Mexico	C%sT	2001 Sep 30  2:00
 			-6:00	-	CST	2002 Feb 20
 			-6:00	Mexico	C%sT
@@ -2700,35 +2700,29 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  0:23:24
 # This includes the municipalities of Janos, Ascensión, Juárez, Guadalupe,
 # Práxedis G Guerrero, Coyame del Sotol, Ojinaga, and Manuel Benavides.
 # (See the 2016-03-12 El Universal source mentioned above.)
-Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  0:02:20
+Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
-			-7:00	-	MST	1931 May  1 23:00
-			-6:00	-	CST	1931 Oct
-			-7:00	-	MST	1932 Apr  1
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1996
 			-6:00	Mexico	C%sT	1998
 			-6:00	-	CST	1998 Apr Sun>=1  3:00
 			-7:00	Mexico	M%sT	2010
 			-7:00	US	M%sT
 # Chihuahua (away from US border)
-Zone America/Chihuahua	-7:04:20 -	LMT	1921 Dec 31 23:55:40
+Zone America/Chihuahua	-7:04:20 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
-			-7:00	-	MST	1931 May  1 23:00
-			-6:00	-	CST	1931 Oct
-			-7:00	-	MST	1932 Apr  1
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1996
 			-6:00	Mexico	C%sT	1998
 			-6:00	-	CST	1998 Apr Sun>=1  3:00
 			-7:00	Mexico	M%sT
 # Sonora
-Zone America/Hermosillo	-7:23:52 -	LMT	1921 Dec 31 23:36:08
+Zone America/Hermosillo	-7:23:52 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
-			-7:00	-	MST	1931 May  1 23:00
-			-6:00	-	CST	1931 Oct
-			-7:00	-	MST	1932 Apr  1
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1942 Apr 24
 			-7:00	-	MST	1949 Jan 14
 			-8:00	-	PST	1970
@@ -2763,24 +2757,20 @@ Zone America/Hermosillo	-7:23:52 -	LMT	1921 Dec 31 23:36:08
 # Use "Bahia_Banderas" to keep the name to fourteen characters.
 
 # Mazatlán
-Zone America/Mazatlan	-7:05:40 -	LMT	1921 Dec 31 23:54:20
+Zone America/Mazatlan	-7:05:40 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
-			-7:00	-	MST	1931 May  1 23:00
-			-6:00	-	CST	1931 Oct
-			-7:00	-	MST	1932 Apr  1
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1942 Apr 24
 			-7:00	-	MST	1949 Jan 14
 			-8:00	-	PST	1970
 			-7:00	Mexico	M%sT
 
 # Bahía de Banderas
-Zone America/Bahia_Banderas	-7:01:00 -	LMT	1921 Dec 31 23:59:00
+Zone America/Bahia_Banderas -7:01:00 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
-			-7:00	-	MST	1931 May  1 23:00
-			-6:00	-	CST	1931 Oct
-			-7:00	-	MST	1932 Apr  1
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1942 Apr 24
 			-7:00	-	MST	1949 Jan 14
 			-8:00	-	PST	1970
@@ -2788,7 +2778,7 @@ Zone America/Bahia_Banderas	-7:01:00 -	LMT	1921 Dec 31 23:59:00
 			-6:00	Mexico	C%sT
 
 # Baja California
-Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
+Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1924
 			-8:00	-	PST	1927 Jun 10 23:00
 			-7:00	-	MST	1930 Nov 15
@@ -2841,7 +2831,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 
 # Barbados
 
-# For 1899 Milne gives -3:58:29.2; round that.
+# For 1899 Milne gives -3:58:29.2.
 
 # From P Chan (2020-12-09 and 2020-12-11):
 # Standard time of GMT-4 was adopted in 1911.
@@ -2885,6 +2875,7 @@ Rule	Barb	1978	1980	-	Apr	Sun>=15	2:00	1:00	D
 Rule	Barb	1979	only	-	Sep	30	2:00	0	S
 Rule	Barb	1980	only	-	Sep	25	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-3:58:29.2
 Zone America/Barbados	-3:58:29 -	LMT	1911 Aug 28 # Bridgetown
 			-4:00	Barb	A%sT	1944
 			-4:00	Barb	AST/-0330 1945
@@ -2945,10 +2936,10 @@ Zone	America/Belize	-5:52:48 -	LMT	1912 Apr  1
 
 # Bermuda
 
-# From Paul Eggert (2020-11-24):
+# From Paul Eggert (2022-07-27):
 # For 1899 Milne gives -4:19:18.3 as the meridian of the clock tower,
 # Bermuda dockyard, Ireland I.  This agrees with standard offset given in the
-# Daylight Saving Act, 1917 cited below.  Round that to the nearest second.
+# Daylight Saving Act, 1917 cited below.
 # It is not known when this time became standard for Bermuda; guess 1890.
 # The transition to -04 was specified by:
 # 1930: The Time Zone Act, 1929 (1929: No. 39) [1929-11-08]
@@ -3043,6 +3034,7 @@ Rule	Bermuda	1956	only	-	May	Sun>=22	 2:00	1:00	D
 Rule	Bermuda	1956	only	-	Oct	lastSun	 2:00	0	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-4:19:18.3
 Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
 			-4:19:18 Bermuda BMT/BST 1930 Jan 1  2:00
 			-4:00	Bermuda	A%sT	1974 Apr 28  2:00
@@ -3057,7 +3049,7 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
 
 # Costa Rica
 
-# Milne gives -5:36:13.3 as San José mean time; round to nearest.
+# Milne gives -5:36:13.3 as San José mean time.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	CR	1979	1980	-	Feb	lastSun	0:00	1:00	D
@@ -3069,6 +3061,7 @@ Rule	CR	1991	only	-	Jul	 1	0:00	0	S
 Rule	CR	1992	only	-	Mar	15	0:00	0	S
 # There are too many San Josés elsewhere, so we'll use 'Costa Rica'.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-5:36:13.3
 Zone America/Costa_Rica	-5:36:13 -	LMT	1890        # San José
 			-5:36:13 -	SJMT	1921 Jan 15 # San José Mean Time
 			-6:00	CR	C%sT
@@ -3491,7 +3484,7 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # Jamaica
 # Shanks & Pottenger give -5:07:12, but Milne records -5:07:10.41 from an
 # unspecified official document, and says "This time is used throughout the
-# island".  Go with Milne.  Round to the nearest second as required by zic.
+# island".  Go with Milne.
 #
 # Shanks & Pottenger give April 28 for the 1974 spring-forward transition, but
 # Lance Neita writes that Prime Minister Michael Manley decreed it January 5.
@@ -3504,6 +3497,7 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # http://www.jamaicaobserver.com/columns/The-politician-in-all-of-us_17573647
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-5:07:10.41
 Zone	America/Jamaica	-5:07:10 -	LMT	1890        # Kingston
 			-5:07:10 -	KMT	1912 Feb    # Kingston Mean Time
 			-5:00	-	EST	1974
@@ -3701,6 +3695,7 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Grand_Turk	-4:44:32 -	LMT	1890
+		#STDOFF	-5:07:10.41
 			-5:07:10 -	KMT	1912 Feb # Kingston Mean Time
 			-5:00	-	EST	1979
 			-5:00	US	E%sT	2015 Mar  8  2:00

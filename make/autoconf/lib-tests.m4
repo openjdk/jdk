@@ -27,6 +27,9 @@
 # Setup libraries and functionalities needed to test the JDK.
 ################################################################################
 
+# Minimum supported version
+JTREG_MINIMUM_VERSION=7
+
 ###############################################################################
 #
 # Setup and check for gtest framework source files
@@ -51,9 +54,25 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
         AC_MSG_RESULT([no])
         AC_MSG_ERROR([Can't find 'googlemock/include/gmock/gmock.h' under ${with_gtest} given with the --with-gtest option.])
       else
-        GTEST_FRAMEWORK_SRC=${with_gtest}
+        GTEST_FRAMEWORK_SRC=$with_gtest
         AC_MSG_RESULT([$GTEST_FRAMEWORK_SRC])
         UTIL_FIXUP_PATH([GTEST_FRAMEWORK_SRC])
+
+        # Try to verify version. We require 1.8.1, but this can not be directly
+        # determined. :-( Instead, there are different, incorrect version
+        # numbers we can look for.
+        GTEST_VERSION_1="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
+        if test "x$GTEST_VERSION_1" != "x1.9.0"; then
+          AC_MSG_ERROR([gtest at $GTEST_FRAMEWORK_SRC does not seem to be version 1.8.1])
+        fi
+
+        # We cannot grep for "AC_IN*T" as a literal since then m4 will treat it as a macro
+        # and expand it.
+        # Additional [] needed to keep m4 from mangling shell constructs.
+        [ GTEST_VERSION_2="`$GREP -A1 ^.C_INIT $GTEST_FRAMEWORK_SRC/configure.ac | $TAIL -n 1 | $SED -E -e 's/ +\[(.*)],/\1/'`" ]
+        if test "x$GTEST_VERSION_2" != "x1.8.0"; then
+          AC_MSG_ERROR([gtest at $GTEST_FRAMEWORK_SRC does not seem to be version 1.8.1 B])
+        fi
       fi
     fi
   fi
@@ -213,6 +232,23 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
 
   UTIL_FIXUP_PATH(JT_HOME)
   AC_SUBST(JT_HOME)
+
+  # Verify jtreg version
+  if test "x$JT_HOME" != x; then
+    AC_MSG_CHECKING([jtreg version number])
+    # jtreg -version looks like this: "jtreg 6.1+1-19"
+    # Extract actual version part ("6.1" in this case)
+    jtreg_version_full=`$JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2`
+    jtreg_version=${jtreg_version_full/%+*}
+    AC_MSG_RESULT([$jtreg_version])
+
+    # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
+    comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$jtreg_version"`
+    comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$JTREG_MINIMUM_VERSION"`
+    if test $comparable_actual_version -lt $comparable_minimum_version ; then
+      AC_MSG_ERROR([jtreg version is too old, at least version $JTREG_MINIMUM_VERSION is required])
+    fi
+  fi
 ])
 
 # Setup the JIB dependency resolver

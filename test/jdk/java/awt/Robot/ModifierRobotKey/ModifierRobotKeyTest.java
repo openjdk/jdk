@@ -69,24 +69,36 @@ public class ModifierRobotKeyTest extends KeyAdapter {
     }
 
     public ModifierRobotKeyTest() throws Exception {
-        modifierKeys =  new int[4];
-        modifierKeys[0] = KeyEvent.VK_SHIFT;
-        modifierKeys[1] = KeyEvent.VK_CONTROL;
-        modifierKeys[2] = KeyEvent.VK_ALT;
-        modifierKeys[3] = KeyEvent.VK_ALT_GRAPH;
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("os x")) {
+            modifierKeys =  new int[3];
+            modifierKeys[0] = KeyEvent.VK_SHIFT;
+            modifierKeys[1] = KeyEvent.VK_CONTROL;
+            modifierKeys[2] = KeyEvent.VK_ALT;
 
-        inputMasks = new int[4];
-        inputMasks[0] =  InputEvent.SHIFT_MASK;
-        inputMasks[1] =  InputEvent.CTRL_MASK;
-        inputMasks[2] =  InputEvent.ALT_MASK;
-        inputMasks[3] =  InputEvent.ALT_GRAPH_MASK;
+            inputMasks = new int[3];
+            inputMasks[0] =  InputEvent.SHIFT_MASK;
+            inputMasks[1] =  InputEvent.CTRL_MASK;
+            inputMasks[2] =  InputEvent.ALT_MASK;
+        } else {
+            modifierKeys =  new int[4];
+            modifierKeys[0] = KeyEvent.VK_SHIFT;
+            modifierKeys[1] = KeyEvent.VK_CONTROL;
+            modifierKeys[2] = KeyEvent.VK_ALT;
+            modifierKeys[3] = KeyEvent.VK_ALT_GRAPH;
+
+            inputMasks = new int[4];
+            inputMasks[0] =  InputEvent.SHIFT_MASK;
+            inputMasks[1] =  InputEvent.CTRL_MASK;
+            inputMasks[2] =  InputEvent.ALT_MASK;
+            inputMasks[3] =  InputEvent.ALT_GRAPH_MASK;
+        }
 
         modifierStatus = new boolean[modifierKeys.length];
 
         textKeys = new int[2];
         textKeys[0] = KeyEvent.VK_A;
 
-        String os = System.getProperty("os.name").toLowerCase();
 
         if (os.contains("os x"))
             textKeys[1] = KeyEvent.VK_K;

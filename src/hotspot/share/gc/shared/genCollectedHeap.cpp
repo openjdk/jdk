@@ -24,13 +24,15 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/genMarkSweep.hpp"
+#include "gc/serial/markSweep.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -38,20 +40,20 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/gcInitLogger.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -63,7 +65,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -535,7 +536,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
   if (do_young_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(((DefNewGeneration*)_young_gen)->gc_tracer());
     GCTraceTime(Info, gc) t("Pause Young", NULL, gc_cause(), true);
 
     print_heap_before_gc();
@@ -585,7 +586,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(GenMarkSweep::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", NULL, gc_cause(), true);
 
     print_heap_before_gc();
@@ -607,8 +608,8 @@ void GenCollectedHeap::do_collection(bool           full,
       increment_total_full_collections();
     }
 
-    Continuations::on_gc_marking_cycle_start();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_start();
+    CodeCache::arm_all_nmethods();
 
     collect_generation(_old_gen,
                        full,
@@ -617,8 +618,8 @@ void GenCollectedHeap::do_collection(bool           full,
                        run_verification && VerifyGCLevel <= 1,
                        do_clear_all_soft_refs);
 
-    Continuations::on_gc_marking_cycle_finish();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_finish();
+    CodeCache::arm_all_nmethods();
 
     // Adjust generation sizes.
     _old_gen->compute_new_size();
@@ -659,10 +660,6 @@ void GenCollectedHeap::unregister_nmethod(nmethod* nm) {
 
 void GenCollectedHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void GenCollectedHeap::flush_nmethod(nmethod* nm) {
-  // Do nothing.
 }
 
 void GenCollectedHeap::prune_scavengable_nmethods() {
@@ -816,29 +813,7 @@ bool GenCollectedHeap::no_allocs_since_save_marks() {
 }
 
 // public collection interfaces
-
 void GenCollectedHeap::collect(GCCause::Cause cause) {
-  if ((cause == GCCause::_wb_young_gc) ||
-      (cause == GCCause::_gc_locker)) {
-    // Young collection for WhiteBox or GCLocker.
-    collect(cause, YoungGen);
-  } else {
-#ifdef ASSERT
-  if (cause == GCCause::_scavenge_alot) {
-    // Young collection only.
-    collect(cause, YoungGen);
-  } else {
-    // Stop-the-world full collection.
-    collect(cause, OldGen);
-  }
-#else
-    // Stop-the-world full collection.
-    collect(cause, OldGen);
-#endif
-  }
-}
-
-void GenCollectedHeap::collect(GCCause::Cause cause, GenerationType max_generation) {
   // The caller doesn't have the Heap_lock
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
@@ -855,6 +830,14 @@ void GenCollectedHeap::collect(GCCause::Cause cause, GenerationType max_generati
   if (GCLocker::should_discard(cause, gc_count_before)) {
     return;
   }
+
+  bool should_run_young_gc =  (cause == GCCause::_wb_young_gc)
+                           || (cause == GCCause::_gc_locker)
+                DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
+
+  const GenerationType max_generation = should_run_young_gc
+                                      ? YoungGen
+                                      : OldGen;
 
   VM_GenCollectFull op(gc_count_before, full_gc_count_before,
                        cause, max_generation);
@@ -886,10 +869,10 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   }
 }
 
-bool GenCollectedHeap::is_in_young(oop p) const {
-  bool result = cast_from_oop<HeapWord*>(p) < _old_gen->reserved().start();
+bool GenCollectedHeap::is_in_young(const void* p) const {
+  bool result = p < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
-         "incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p));
+         "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i(p));
   return result;
 }
 

@@ -400,6 +400,6 @@ bool PSCardTable::addr_is_marked_precise(void *addr) {
   return false;
 }
 
-bool PSCardTable::is_in_young(oop obj) const {
-  return ParallelScavengeHeap::heap()->is_in_young(obj);
+bool PSCardTable::is_in_young(const void* p) const {
+  return ParallelScavengeHeap::heap()->is_in_young(p);
 }

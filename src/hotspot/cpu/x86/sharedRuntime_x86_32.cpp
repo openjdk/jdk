@@ -667,16 +667,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
         __ movptr(rdi, Address(rsp, ld_off));
         __ movptr(Address(rsp, next_off), rdi);
-#ifndef _LP64
         __ movptr(rdi, Address(rsp, ld_off + wordSize));
         __ movptr(Address(rsp, st_off), rdi);
-#else
-#ifdef ASSERT
-        // Overwrite the unused slot with known junk
-        __ mov64(rax, CONST64(0xdeadffffdeadaaaa));
-        __ movptr(Address(rsp, st_off), rax);
-#endif /* ASSERT */
-#endif // _LP64
       }
     } else if (r_1->is_Register()) {
       Register r = r_1->as_Register();
@@ -684,20 +676,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
         __ movl(Address(rsp, st_off), r);
       } else {
         // long/double in gpr
-        NOT_LP64(ShouldNotReachHere());
-        // Two VMRegs can be T_OBJECT, T_ADDRESS, T_DOUBLE, T_LONG
-        // T_DOUBLE and T_LONG use two slots in the interpreter
-        if ( sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
-          // long/double in gpr
-#ifdef ASSERT
-          // Overwrite the unused slot with known junk
-          LP64_ONLY(__ mov64(rax, CONST64(0xdeadffffdeadaaab)));
-          __ movptr(Address(rsp, st_off), rax);
-#endif /* ASSERT */
-          __ movptr(Address(rsp, next_off), r);
-        } else {
-          __ movptr(Address(rsp, st_off), r);
-        }
+        ShouldNotReachHere();
       }
     } else {
       assert(r_1->is_XMMRegister(), "");
@@ -883,14 +862,10 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
         // are accessed as negative so LSW is at LOW address
 
         // ld_off is MSW so get LSW
-        const int offset = (NOT_LP64(true ||) sig_bt[i]==T_LONG||sig_bt[i]==T_DOUBLE)?
-                           next_off : ld_off;
-        __ movptr(rsi, Address(saved_sp, offset));
+        __ movptr(rsi, Address(saved_sp, next_off));
         __ movptr(Address(rsp, st_off), rsi);
-#ifndef _LP64
         __ movptr(rsi, Address(saved_sp, ld_off));
         __ movptr(Address(rsp, st_off + wordSize), rsi);
-#endif // _LP64
       }
     } else if (r_1->is_Register()) {  // Register argument
       Register r = r_1->as_Register();
@@ -901,17 +876,12 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
         // the interpreter allocates two slots but only uses one for thr T_LONG or T_DOUBLE case
         // So we must adjust where to pick up the data to match the interpreter.
 
-        const int offset = (NOT_LP64(true ||) sig_bt[i]==T_LONG||sig_bt[i]==T_DOUBLE)?
-                           next_off : ld_off;
-
         // this can be a misaligned move
-        __ movptr(r, Address(saved_sp, offset));
-#ifndef _LP64
+        __ movptr(r, Address(saved_sp, next_off));
         assert(r_2->as_Register() != rax, "need another temporary register");
         // Remember r_1 is low address (and LSB on x86)
         // So r_2 gets loaded from high address regardless of the platform
         __ movptr(r_2->as_Register(), Address(saved_sp, ld_off));
-#endif // _LP64
       } else {
         __ movl(r, Address(saved_sp, ld_off));
       }
@@ -1159,9 +1129,9 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack() && dst.first()->is_stack()) {
     assert(src.second()->is_stack() && dst.second()->is_stack(), "must be all stack");
     __ movptr(rax, Address(rbp, reg2offset_in(src.first())));
-    NOT_LP64(__ movptr(rbx, Address(rbp, reg2offset_in(src.second()))));
+    __ movptr(rbx, Address(rbp, reg2offset_in(src.second())));
     __ movptr(Address(rsp, reg2offset_out(dst.first())), rax);
-    NOT_LP64(__ movptr(Address(rsp, reg2offset_out(dst.second())), rbx));
+    __ movptr(Address(rsp, reg2offset_out(dst.second())), rbx);
   } else {
     ShouldNotReachHere();
   }
@@ -1183,9 +1153,9 @@ static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack()) {
     // source is all stack
     __ movptr(rax, Address(rbp, reg2offset_in(src.first())));
-    NOT_LP64(__ movptr(rbx, Address(rbp, reg2offset_in(src.second()))));
+    __ movptr(rbx, Address(rbp, reg2offset_in(src.second())));
     __ movptr(Address(rsp, reg2offset_out(dst.first())), rax);
-    NOT_LP64(__ movptr(Address(rsp, reg2offset_out(dst.second())), rbx));
+    __ movptr(Address(rsp, reg2offset_out(dst.second())), rbx);
   } else {
     // reg to stack
     // No worries about stack alignment
@@ -1207,7 +1177,7 @@ void SharedRuntime::save_native_result(MacroAssembler *masm, BasicType ret_type,
   case T_VOID:  break;
   case T_LONG:
     __ movptr(Address(rbp, -wordSize), rax);
-    NOT_LP64(__ movptr(Address(rbp, -2*wordSize), rdx));
+    __ movptr(Address(rbp, -2*wordSize), rdx);
     break;
   default: {
     __ movptr(Address(rbp, -wordSize), rax);
@@ -1227,7 +1197,7 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
     break;
   case T_LONG:
     __ movptr(rax, Address(rbp, -wordSize));
-    NOT_LP64(__ movptr(rdx, Address(rbp, -2*wordSize)));
+    __ movptr(rdx, Address(rbp, -2*wordSize));
     break;
   case T_VOID:  break;
   default: {
@@ -1660,14 +1630,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   intptr_t the_pc = (intptr_t) __ pc();
   oop_maps->add_gc_map(the_pc - start, map);
 
-  __ set_last_Java_frame(thread, rsp, noreg, (address)the_pc);
+  __ set_last_Java_frame(thread, rsp, noreg, (address)the_pc, noreg);
 
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
 
   {
-    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0);
+    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0, noreg);
     __ mov_metadata(rax, method());
     __ call_VM_leaf(
          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -1760,7 +1730,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ call(RuntimeAddress(native_func));
 
   // Verify or restore cpu control state after JNI call
-  __ restore_cpu_control_state_after_jni();
+  __ restore_cpu_control_state_after_jni(noreg);
 
   // WARNING - on Windows Java Natives use pascal calling convention and pop the
   // arguments off of the stack. We could just re-adjust the stack pointer here
@@ -1903,7 +1873,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   {
-    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0);
+    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0, noreg);
     // Tell dtrace about this method exit
     save_native_result(masm, ret_type, stack_slots);
     __ mov_metadata(rax, method());
@@ -2233,7 +2203,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ get_thread(rcx);
   __ push(rcx);
   // fetch_unroll_info needs to call last_java_frame()
-  __ set_last_Java_frame(rcx, noreg, noreg, NULL);
+  __ set_last_Java_frame(rcx, noreg, noreg, NULL, noreg);
 
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info)));
 
@@ -2381,7 +2351,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ push(rcx);
 
   // set last_Java_sp, last_Java_fp
-  __ set_last_Java_frame(rcx, noreg, rbp, NULL);
+  __ set_last_Java_frame(rcx, noreg, rbp, NULL, noreg);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2478,7 +2448,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // set last_Java_sp
   __ get_thread(rdx);
-  __ set_last_Java_frame(rdx, noreg, noreg, NULL);
+  __ set_last_Java_frame(rdx, noreg, noreg, NULL, noreg);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2508,7 +2478,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
             (int32_t)Deoptimization::Unpack_uncommon_trap);
     __ jcc(Assembler::equal, L);
-    __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
   }
 #endif
@@ -2590,7 +2560,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // set last_Java_sp, last_Java_fp
   __ get_thread(rdi);
-  __ set_last_Java_frame(rdi, noreg, rbp, NULL);
+  __ set_last_Java_frame(rdi, noreg, rbp, NULL, noreg);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2672,7 +2642,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // Push thread argument and setup last_Java_sp
   __ get_thread(java_thread);
   __ push(java_thread);
-  __ set_last_Java_frame(java_thread, noreg, noreg, NULL);
+  __ set_last_Java_frame(java_thread, noreg, noreg, NULL, noreg);
 
   // if this was not a poll_return then we need to correct the return address now.
   if (!cause_return) {
@@ -2811,7 +2781,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ get_thread(rdi);
 
   __ push(thread);
-  __ set_last_Java_frame(thread, noreg, rbp, NULL);
+  __ set_last_Java_frame(thread, noreg, rbp, NULL, noreg);
 
   __ call(RuntimeAddress(destination));
 

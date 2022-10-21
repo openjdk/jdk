@@ -151,7 +151,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
   _block_size = buf.f_bsize;
   _available = buf.f_bavail * _block_size;
 
-  log_info_p(gc, init)("Heap Backing Filesystem: %s (0x" UINT64_FORMAT_X ")",
+  log_info_p(gc, init)("Heap Backing Filesystem: %s (" UINT64_FORMAT_X ")",
                        is_tmpfs() ? ZFILESYSTEM_TMPFS : is_hugetlbfs() ? ZFILESYSTEM_HUGETLBFS : "other", _filesystem);
 
   // Make sure the filesystem type matches requested large page type

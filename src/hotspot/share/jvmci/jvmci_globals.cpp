@@ -122,6 +122,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCIThreadsPerNativeLibraryRuntime, EnableJVMCI)
   CHECK_NOT_SET(JVMCICompilerIdleDelay,              EnableJVMCI)
   CHECK_NOT_SET(UseJVMCINativeLibrary,               EnableJVMCI)
+  CHECK_NOT_SET(JVMCINativeLibraryThreadFraction,    EnableJVMCI)
   CHECK_NOT_SET(JVMCILibPath,                        EnableJVMCI)
   CHECK_NOT_SET(JVMCINativeLibraryErrorFile,         EnableJVMCI)
   CHECK_NOT_SET(JVMCILibDumpJNIConfig,               EnableJVMCI)
@@ -151,7 +152,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 #undef CHECK_NOT_SET
 
   if (JVMCILibDumpJNIConfig != NULL) {
-    _jni_config_file = new(ResourceObj::C_HEAP, mtJVMCI) fileStream(JVMCILibDumpJNIConfig);
+    _jni_config_file = new(mtJVMCI) fileStream(JVMCILibDumpJNIConfig);
     if (_jni_config_file == NULL || !_jni_config_file->is_open()) {
       jio_fprintf(defaultStream::error_stream(),
           "Could not open file for dumping JVMCI shared library JNI config: %s\n", JVMCILibDumpJNIConfig);
@@ -181,6 +182,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
     "JVMCILibPath",
     "JVMCILibDumpJNIConfig",
     "UseJVMCINativeLibrary",
+    "JVMCINativeLibraryThreadFraction",
     "JVMCINativeLibraryErrorFile",
     NULL
   };

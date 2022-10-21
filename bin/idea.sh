@@ -215,14 +215,28 @@ replace_template_dir "$IDEA_OUTPUT"
 CLASSES=$IDEA_OUTPUT/classes
 
 if [ "x$ANT_HOME" = "x" ] ; then
-   # try some common locations, before giving up
-   if [ -f "/usr/share/ant/lib/ant.jar" ] ; then
-     ANT_HOME="/usr/share/ant"
-   elif [ -f "/usr/local/Cellar/ant/1.9.4/libexec/lib/ant.jar" ] ; then
-     ANT_HOME="/usr/local/Cellar/ant/1.9.4/libexec"
-   else
-     echo "FATAL: cannot find ant. Try setting ANT_HOME." >&2; exit 1
-   fi
+  # try some common locations
+  if [ -f "/usr/share/ant/lib/ant.jar" ] ; then
+    ANT_HOME="/usr/share/ant"
+  else
+    try_ant=$(ls /opt/homebrew/Cellar/ant/*/libexec/lib/ant.jar 2> /dev/null | sort -r | head -n 1)
+    if [ "x$try_ant" != "x" ] ; then
+      ANT_HOME=$(cd $(dirname $try_ant)/.. && pwd)
+    else
+      try_ant=$(ls /usr/local/Cellar/ant/*/libexec/lib/ant.jar 2> /dev/null | sort -r | head -n 1)
+      if [ "x$try_ant" != "x" ] ; then
+        ANT_HOME=$(cd $(dirname $try_ant)/.. && pwd)
+      fi
+    fi
+  fi
+else
+  if [ ! -f "$ANT_HOME/lib/ant.jar" ] ; then
+     echo "FATAL: ANT_HOME is incorrect. Try removing it and use autodetection, or fix the value" >&2; exit 1
+  fi
+fi
+
+if [ "x$ANT_HOME" = "x" ] ; then
+   echo "FATAL: cannot find ant. Try setting ANT_HOME." >&2; exit 1
 fi
 CP=$ANT_HOME/lib/ant.jar
 rm -rf $CLASSES; mkdir $CLASSES
@@ -230,7 +244,7 @@ rm -rf $CLASSES; mkdir $CLASSES
 # If we have a Windows boot JDK, we need a .exe suffix
 if [ -e "$BOOT_JDK/bin/java.exe" ] ; then
   JAVAC=javac.exe
-else 
+else
   JAVAC=javac
 fi
 

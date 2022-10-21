@@ -405,7 +405,7 @@ bool PSScavenge::invoke_no_policy() {
   {
     ResourceMark rm;
 
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(&_gc_tracer);
     GCTraceTime(Info, gc) tm("Pause Young", NULL, gc_cause, true);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause);

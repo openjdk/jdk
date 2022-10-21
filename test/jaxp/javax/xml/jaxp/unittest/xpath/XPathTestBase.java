@@ -68,6 +68,7 @@ class XPathTestBase {
 
     static final String RAW_XML
             = "<Customers xmlns:foo=\"foo\" xml:lang=\"en\">"
+            + "<!-- This is a comment -->"
             + "    <Customer id=\"x1\">"
             + "        <Name>name1</Name>"
             + "        <Phone>1111111111</Phone>"

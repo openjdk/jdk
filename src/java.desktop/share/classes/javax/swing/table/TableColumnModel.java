@@ -195,8 +195,8 @@ public interface TableColumnModel
     public boolean getColumnSelectionAllowed();
 
     /**
-     * Returns an array of indicies of all selected columns.
-     * @return an array of integers containing the indicies of all
+     * Returns an array of indices of all selected columns.
+     * @return an array of integers containing the indices of all
      *          selected columns; or an empty array if nothing is selected
      */
     public int[] getSelectedColumns();

@@ -52,12 +52,7 @@ class CodeHeapState : public CHeapObj<mtCode> {
     nMethod_inuse,          // executable. This is the "normal" state for a nmethod.
     nMethod_notused,        // assumed inactive, marked not entrant. Could be revived if necessary.
     nMethod_notentrant,     // no new activations allowed, marked for deoptimization. Old activations may still exist.
-                            // Will transition to "zombie" after all activations are gone.
-    nMethod_zombie,         // No more activations exist, ready for purge (remove from code cache).
-    nMethod_unloaded,       // No activations exist, should not be called. Transient state on the way to "zombie".
-    nMethod_alive = nMethod_notentrant, // Combined state: nmethod may have activations, thus can't be purged.
-    nMethod_dead  = nMethod_zombie,     // Combined state: nmethod does not have any activations.
-    runtimeStub   = nMethod_unloaded + 1,
+    runtimeStub,
     ricochetStub,
     deoptimizationStub,
     uncommonTrapStub,

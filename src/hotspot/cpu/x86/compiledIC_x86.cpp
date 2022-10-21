@@ -127,7 +127,7 @@ void CompiledDirectStaticCall::verify() {
   _call->verify_alignment();
 
 #ifdef ASSERT
-  CodeBlob *cb = CodeCache::find_blob_unsafe((address) _call);
+  CodeBlob *cb = CodeCache::find_blob((address) _call);
   assert(cb != NULL, "sanity");
 #endif
 

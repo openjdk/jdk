@@ -111,11 +111,11 @@ void ZMark::start() {
   // marking information for all pages.
   ZGlobalSeqNum++;
 
-  // Tell the sweeper that we start a marking cycle.
+  // Note that we start a marking cycle.
   // Unlike other GCs, the color switch implicitly changes the nmethods
   // to be armed, and the thread-local disarm values are lazily updated
   // when JavaThreads wake up from safepoints.
-  Continuations::on_gc_marking_cycle_start();
+  CodeCache::on_gc_marking_cycle_start();
 
   // Reset flush/continue counters
   _nproactiveflush = 0;
@@ -695,15 +695,11 @@ public:
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-    if (!nm->is_alive()) {
-      return;
-    }
-
     if (ZNMethod::is_armed(nm)) {
       ZNMethod::nmethod_oops_do_inner(nm, _cl);
 
-      // CodeCache sweeper support
-      nm->mark_as_maybe_on_continuation();
+      // CodeCache unloading support
+      nm->mark_as_maybe_on_stack();
 
       ZNMethod::disarm(nm);
     }
@@ -826,10 +822,10 @@ bool ZMark::end() {
   // Update statistics
   ZStatMark::set_at_mark_end(_nproactiveflush, _nterminateflush, _ntrycomplete, _ncontinue);
 
-  // Tell the sweeper that we finished a marking cycle.
+  // Note that we finished a marking cycle.
   // Unlike other GCs, we do not arm the nmethods
   // when marking terminates.
-  Continuations::on_gc_marking_cycle_finish();
+  CodeCache::on_gc_marking_cycle_finish();
 
   // Mark completed
   return true;

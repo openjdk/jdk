@@ -60,7 +60,7 @@ Java_sun_java2d_metal_MTLGraphicsConfig_isMetalFrameworkAvailable
 {
     jboolean metalSupported = JNI_FALSE;
 
-    // It is guranteed that metal supported GPU is available macOS 10.14 onwards
+    // It is guaranteed that metal supported GPU is available since macOS 10.14
     if (@available(macOS 10.14, *)) {
         metalSupported = JNI_TRUE;
     }
@@ -135,7 +135,7 @@ JNI_COCOA_ENTER(env);
                 mtlc = nil;
             }
         } else {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGraphicsConfig_getMTLConfigInfo: could not initialze MTLContext.");
+            J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLGraphicsConfig_getMTLConfigInfo: could not initialize MTLContext.");
         }
     }];
 

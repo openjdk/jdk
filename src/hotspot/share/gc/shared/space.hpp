@@ -35,6 +35,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_SERIALGC
+#include "gc/serial/serialBlockOffsetTable.hpp"
+#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -43,11 +46,14 @@
 
 // Forward decls.
 class Space;
+class ContiguousSpace;
+#if INCLUDE_SERIALGC
 class BlockOffsetArray;
 class BlockOffsetArrayContigSpace;
+class BlockOffsetTable;
+#endif
 class Generation;
 class CompactibleSpace;
-class BlockOffsetTable;
 class CardTableRS;
 class DirtyCardToOopClosure;
 class FilteringClosure;
@@ -600,6 +606,7 @@ public:
 // other spaces.)  This is the abstract base class for old generation
 // (tenured) spaces.
 
+#if INCLUDE_SERIALGC
 class OffsetTableContigSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
@@ -646,4 +653,6 @@ class TenuredSpace: public OffsetTableContigSpace {
                MemRegion mr) :
     OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
+#endif //INCLUDE_SERIALGC
+
 #endif // SHARE_GC_SHARED_SPACE_HPP

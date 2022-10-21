@@ -64,8 +64,10 @@ public class VectorLogicalOpIdentityTest {
     private static short[] sa;
     private static short[] sr;
     private static int[] ia;
+    private static int[] ib;
     private static int[] ir;
     private static long[] la;
+    private static long[] lb;
     private static long[] lr;
     private static boolean[] m;
     private static boolean[] mr;
@@ -76,8 +78,10 @@ public class VectorLogicalOpIdentityTest {
         sa = new short[LENGTH];
         sr = new short[LENGTH];
         ia = new int[LENGTH];
+        ib = new int[LENGTH];
         ir = new int[LENGTH];
         la = new long[LENGTH];
+        lb = new long[LENGTH];
         lr = new long[LENGTH];
         m = new boolean[LENGTH];
         mr = new boolean[LENGTH];
@@ -86,7 +90,9 @@ public class VectorLogicalOpIdentityTest {
             ba[i] = (byte) RD.nextInt(25);
             sa[i] = (short) RD.nextInt(25);
             ia[i] = RD.nextInt(25);
+            ib[i] = RD.nextInt(25);
             la[i] = RD.nextLong(25);
+            lb[i] = RD.nextLong(25);
             m[i] = RD.nextBoolean();
         }
     }
@@ -232,6 +238,129 @@ public class VectorLogicalOpIdentityTest {
         }
     }
 
+    // Transform AndV(AndV(a, b), b) ==> AndV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"})
+    public static void testAndSameValue1() {
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        (av.and(bv).and(bv)).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((int) and(and(ia[i], ib[i]), ib[i]), ir[i]);
+        }
+    }
+
+    // Transform AndV(AndV(a, b), a) ==> AndV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"})
+    public static void testAndSameValue2() {
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        (av.and(bv).and(av)).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(and(and(la[i], lb[i]), la[i]), lr[i]);
+        }
+    }
+
+    // Transform AndV(b, AndV(a, b)) ==> AndV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"})
+    public static void testAndSameValue3() {
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        (bv.and(av.and(bv))).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((int) and(ib[i], and(ia[i], ib[i])), ir[i]);
+        }
+    }
+
+    // Transform AndV(a, AndV(a, b)) ==> AndV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"})
+    public static void testAndSameValue4() {
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        (av.and(av.and(bv))).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(and(la[i], and(la[i], lb[i])), lr[i]);
+        }
+    }
+
+    // Transform AndV(AndV(a, b, m), b, m) ==> AndV(a, b, m)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"}, applyIfCPUFeatureOr = {"sve1", "true", "avx3", "true"})
+    public static void testAndMaskSameValue1() {
+        VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        av.lanewise(VectorOperators.AND, bv, mask)
+        .lanewise(VectorOperators.AND, bv, mask).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            if (m[i]) {
+              Asserts.assertEquals((int) and(and(ia[i], ib[i]), ib[i]), ir[i]);
+            } else {
+              Asserts.assertEquals(ia[i], ir[i]);
+            }
+        }
+    }
+
+    // Transform AndV(AndV(a, b, m), a, m) ==> AndV(a, b, m)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"}, applyIfCPUFeatureOr = {"sve1", "true", "avx3", "true"})
+    public static void testAndMaskSameValue2() {
+        VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        av.lanewise(VectorOperators.AND, bv, mask)
+        .lanewise(VectorOperators.AND, av, mask).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            if (m[i]) {
+              Asserts.assertEquals(and(and(la[i], lb[i]), la[i]), lr[i]);
+            } else {
+              Asserts.assertEquals(la[i], lr[i]);
+            }
+        }
+    }
+
+    // Transform AndV(a, AndV(a, b, m), m) ==> AndV(a, b, m)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.AND_V, "1"}, applyIfCPUFeatureOr = {"sve1", "true", "avx3", "true"})
+    public static void testAndMaskSameValue3() {
+        VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        av.lanewise(VectorOperators.AND, av.lanewise(VectorOperators.AND, bv, mask), mask)
+        .intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            if (m[i]) {
+              Asserts.assertEquals((int) and(ia[i], and(ia[i], ib[i])), ir[i]);
+            } else {
+              Asserts.assertEquals(ia[i], ir[i]);
+            }
+        }
+    }
+
     private static long or(long a, long b) {
         return a | b;
     }
@@ -369,6 +498,129 @@ public class VectorLogicalOpIdentityTest {
                 Asserts.assertEquals(or(la[i], la[i]), lr[i]);
             } else {
                 Asserts.assertEquals(la[i], lr[i]);
+            }
+        }
+    }
+
+    // Transform OrV(OrV(a, b), b) ==> OrV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"})
+    public static void testOrSameValue1() {
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        (av.or(bv).or(bv)).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((int) or(or(ia[i], ib[i]), ib[i]), ir[i]);
+        }
+    }
+
+    // Transform OrV(OrV(a, b), a) ==> OrV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"})
+    public static void testOrSameValue2() {
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        (av.or(bv).or(av)).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(or(or(la[i], lb[i]), la[i]), lr[i]);
+        }
+    }
+
+    // Transform OrV(b, OrV(a, b)) ==> OrV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"})
+    public static void testOrSameValue3() {
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        (bv.or(av.or(bv))).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((int) or(ib[i], or(ia[i], ib[i])), ir[i]);
+        }
+    }
+
+    // Transform OrV(a, OrV(a, b)) ==> OrV(a, b)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"})
+    public static void testOrSameValue4() {
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        (av.or(av.or(bv))).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(or(la[i], or(la[i], lb[i])), lr[i]);
+        }
+    }
+
+    // Transform OrV(OrV(a, b, m), b, m) ==> OrV(a, b, m)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"}, applyIfCPUFeatureOr = {"sve1", "true", "avx3", "true"})
+    public static void testOrMaskSameValue1() {
+        VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        av.lanewise(VectorOperators.OR, bv, mask)
+        .lanewise(VectorOperators.OR, bv, mask).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            if (m[i]) {
+              Asserts.assertEquals((int) or(or(ia[i], ib[i]), ib[i]), ir[i]);
+            } else {
+              Asserts.assertEquals(ia[i], ir[i]);
+            }
+        }
+    }
+
+    // Transform OrV(OrV(a, b, m), a, m) ==> OrV(a, b, m)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"}, applyIfCPUFeatureOr = {"sve1", "true", "avx3", "true"})
+    public static void testOrMaskSameValue2() {
+        VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        av.lanewise(VectorOperators.OR, bv, mask)
+        .lanewise(VectorOperators.OR, av, mask).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            if (m[i]) {
+              Asserts.assertEquals(or(or(la[i], lb[i]), la[i]), lr[i]);
+            } else {
+              Asserts.assertEquals(la[i], lr[i]);
+            }
+        }
+    }
+
+    // Transform OrV(a, OrV(a, b, m), m) ==> OrV(a, b, m)
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.OR_V, "1"}, applyIfCPUFeatureOr = {"sve1", "true", "avx3", "true"})
+    public static void testOrMaskSameValue3() {
+        VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        av.lanewise(VectorOperators.OR, av.lanewise(VectorOperators.OR, bv, mask), mask)
+        .intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            if (m[i]) {
+              Asserts.assertEquals((int) or(ia[i], or(ia[i], ib[i])), ir[i]);
+            } else {
+              Asserts.assertEquals(ia[i], ir[i]);
             }
         }
     }

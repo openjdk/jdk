@@ -842,10 +842,6 @@ void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
 }
 
-void ParallelScavengeHeap::flush_nmethod(nmethod* nm) {
-  // nothing particular
-}
-
 void ParallelScavengeHeap::prune_scavengable_nmethods() {
   ScavengableNMethods::prune_nmethods();
 }

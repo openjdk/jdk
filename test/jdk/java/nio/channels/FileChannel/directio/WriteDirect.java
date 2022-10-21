@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class WriteDirect {
                 fc.write(block);
                 throw new RuntimeException("Expected exception not thrown");
             } catch (IOException e) {
-                if (!e.getMessage().contains("Current location of the bytebuffer "
+                if (!e.getMessage().contains("Current position of the bytebuffer "
                     +  "(" + pos + ") is not a multiple of the block size ("
                     + alignment + ")"))
                     throw new Exception("Write test failed");

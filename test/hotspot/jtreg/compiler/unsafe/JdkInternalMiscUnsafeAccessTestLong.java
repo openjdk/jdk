@@ -43,7 +43,14 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestLong {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attempts with delay on failure.
+    // Be mindful of worst-case total time on test, which would be at
+    // roughly (delay*attempts) milliseconds.
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -84,6 +91,16 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(long[].class);
         int ascale = UNSAFE.arrayIndexScale(long[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay() {
+        try {
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static long static_v;
@@ -258,6 +275,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetLongPlain(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain long");
             long x = UNSAFE.getLong(base, offset);
@@ -275,6 +293,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire long");
             long x = UNSAFE.getLong(base, offset);
@@ -292,6 +311,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetLongRelease(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease long");
             long x = UNSAFE.getLong(base, offset);
@@ -309,6 +329,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetLong(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet long");
             long x = UNSAFE.getLong(base, offset);

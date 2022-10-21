@@ -62,6 +62,30 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
      */
     static native void endmntent(long stream) throws UnixException;
 
+    /**
+     * int posix_fadvise(int fd, off_t offset, off_t len, int advice);
+     */
+    static native int posix_fadvise(int fd, long offset, long len, int advice)
+        throws UnixException;
+
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * a platform-specific function or system call possibly having kernel
+     * support.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     *
+     * @return 0 on success, UNAVAILABLE if the platform function would block,
+     *         UNSUPPORTED_CASE if the call does not work with the given
+     *         parameters, or UNSUPPORTED if direct copying is not supported
+     *         on this platform
+     */
+    static native int directCopy0(int dst, int src, long addressToPollForCancel)
+        throws UnixException;
+
     // initialize
     private static native void init();
 
