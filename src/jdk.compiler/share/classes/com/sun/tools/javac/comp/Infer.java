@@ -69,6 +69,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
+import java.util.Comparator;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
@@ -650,6 +651,81 @@ public class Infer {
             checkContext.compatible(owntype, funcInterface, types.noWarnings);
             return owntype;
         }
+    }
+
+    public Type instantiatePatternType(DiagnosticPosition pos, Type expressionType, TypeSymbol patternTypeSymbol) {
+        if (expressionType.tsym == patternTypeSymbol)
+            return expressionType; //TODO: shortcut desirable?
+
+        //step 1:
+        Type expressionTypeCaptured = types.capture(expressionType);
+        List<Type> params = patternTypeSymbol.type.allparams();
+        List<Type> capturedWildcards = List.nil();
+        //add synthetic captured ivars
+        for (Type ta : expressionTypeCaptured.getTypeArguments()) {
+            if (ta.hasTag(TYPEVAR) && ((TypeVar)ta).isCaptured()) {
+                params = params.prepend((TypeVar)ta);
+                capturedWildcards = capturedWildcards.prepend(ta);
+            }
+        }
+        InferenceContext c = new InferenceContext(this, params);
+        Type patternType = c.asUndetVar(patternTypeSymbol.type);
+        Type exprType = c.asUndetVar(expressionTypeCaptured);
+
+        capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
+
+        //step 2:
+        Set<Symbol> patternTypeSuperTypes = new HashSet<>();
+        types.closure(patternTypeSymbol.type).stream().map(s -> s.tsym).forEach(patternTypeSuperTypes::add);
+        Set<Symbol> expressionTypeSuperTypes = new HashSet<>();
+        types.closure(expressionType).stream().map(s -> s.tsym).forEach(expressionTypeSuperTypes::add);
+        patternTypeSuperTypes.retainAll(expressionTypeSuperTypes);
+
+        for (Symbol common : patternTypeSuperTypes) {
+            Type fromPatternType = types.asSuper(patternType, common);
+            Type fromExprType = types.asSuper(exprType, common);
+            if (!types.isSameType(fromPatternType, fromExprType) && !fromExprType.isRaw()) {
+                return null;
+            }
+        }
+
+        List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
+
+        try {
+            doIncorporation(c, types.noWarnings); //TODO: warnings?
+
+            while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
+                doIncorporation(c, types.noWarnings);
+            }
+        } catch (Infer.InferenceException ex) {
+            return null;
+        }
+
+        //step 3:
+        ListBuffer<Type> freshVars = new ListBuffer<>();
+
+        for (Type param : patternType.allparams()) {
+            UndetVar undet = (UndetVar) param;
+            List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
+            if (bounds.nonEmpty()) {
+                undet.setInst(bounds.head);
+            } else {
+                List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
+                Type bound = upperBounds.isEmpty() ? syms.objectType : types.glb(upperBounds);
+                List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
+                Type lower = lowerBounds.isEmpty() ? syms.botType
+                                                   : lowerBounds.tail.isEmpty() ? lowerBounds.head
+                                                                                : types.lub(lowerBounds);
+                TypeVar vt = new TypeVar(syms.noSymbol, bound, lower);
+                freshVars.add(vt);
+                undet.setInst(vt);
+            }
+        }
+
+        Type substituted = c.asInstType(patternTypeSymbol.type);
+
+        //step 4:
+        return types.upward(substituted, freshVars.toList());
     }
     // </editor-fold>
 

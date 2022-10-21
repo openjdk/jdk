@@ -61,6 +61,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndImplicitNotAllowed;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import java.util.function.BiFunction;
 
 /**
@@ -246,13 +247,14 @@ public class JavacParser implements Parser {
     protected static final int TYPEARG = 0x8;
     protected static final int DIAMOND = 0x10;
     protected static final int NOLAMBDA = 0x20;
+    protected static final int ALLOW_DIAMOND = 0x40;
 
     protected void selectExprMode() {
-        mode = (mode & NOLAMBDA) | EXPR;
+        mode = (mode & (NOLAMBDA | ALLOW_DIAMOND)) | EXPR;
     }
 
     protected void selectTypeMode() {
-        mode = (mode & NOLAMBDA) | TYPE;
+        mode = (mode & (NOLAMBDA | ALLOW_DIAMOND)) | TYPE;
     }
 
     /** The current mode.
@@ -775,7 +777,7 @@ public class JavacParser implements Parser {
             JCExpression e;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
-                e = unannotatedType(allowVar, TYPE | NOLAMBDA);
+                e = unannotatedType(allowVar, ALLOW_DIAMOND | TYPE | NOLAMBDA);
                 if (var) {
                     e = null;
                 }
@@ -796,18 +798,7 @@ public class JavacParser implements Parser {
                     nextToken();
                 }
                 accept(RPAREN);
-                JCVariableDecl var;
-                if (token.kind == IDENTIFIER) {
-                    if (!checkGuard || token.name() != names.when) {
-                        var = to(F.at(token.pos).VarDef(F.Modifiers(0), token.name(), e, null));
-                        nextToken();
-                    } else {
-                        var = null;
-                    }
-                } else {
-                    var = null;
-                }
-                pattern = toP(F.at(pos).RecordPattern(e, nested.toList(), var));
+                pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
                 //type test pattern:
                 JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
@@ -1008,7 +999,7 @@ public class JavacParser implements Parser {
                     int patternPos = token.pos;
                     JCModifiers mods = optFinal(0);
                     int typePos = token.pos;
-                    JCExpression type = unannotatedType(false);
+                    JCExpression type = unannotatedType(false, ALLOW_DIAMOND | TYPE);
                     if (token.kind == IDENTIFIER) {
                         checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
                         pattern = parsePattern(patternPos, mods, type, false, false);
@@ -1536,12 +1527,14 @@ public class JavacParser implements Parser {
             pats.append(toP(F.at(casePos).DefaultCaseLabel()));
         } else {
             accept(CASE);
+            boolean allowDefault = false;
             while (true) {
-                JCCaseLabel label = parseCaseLabel();
+                JCCaseLabel label = parseCaseLabel(allowDefault);
                 pats.append(label);
                 if (token.kind != COMMA) break;
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
                 nextToken();
+                allowDefault = TreeInfo.isNullCaseLabel(label);
             };
         }
         List<JCStatement> stats = null;
@@ -2107,7 +2100,7 @@ public class JavacParser implements Parser {
             (mode & TYPE) != 0 &&
             (mode & NOPARAMS) == 0) {
             selectTypeMode();
-            return typeArguments(t, false);
+            return typeArguments(t, (mode & ALLOW_DIAMOND) != 0);
         } else {
             return t;
         }
@@ -3034,11 +3027,14 @@ public class JavacParser implements Parser {
         case CASE: {
             nextToken();
             ListBuffer<JCCaseLabel> pats = new ListBuffer<>();
+            boolean allowDefault = false;
             while (true) {
-                pats.append(parseCaseLabel());
+                JCCaseLabel label = parseCaseLabel(allowDefault);
+                pats.append(label);
                 if (token.kind != COMMA) break;
                 nextToken();
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
+                allowDefault = TreeInfo.isNullCaseLabel(label);
             };
             CaseTree.CaseKind caseKind;
             JCTree body = null;
@@ -3091,12 +3087,16 @@ public class JavacParser implements Parser {
         throw new AssertionError("should not reach here");
     }
 
-    private JCCaseLabel parseCaseLabel() {
+    private JCCaseLabel parseCaseLabel(boolean allowDefault) {
         int patternPos = token.pos;
         JCCaseLabel label;
 
         if (token.kind == DEFAULT) {
             checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
+            if (!allowDefault) {
+                reportSyntaxError(new SimpleDiagnosticPosition(token.pos),
+                                  Errors.DefaultLabelNotAllowed);
+            }
             nextToken();
             label = toP(F.at(patternPos).DefaultCaseLabel());
         } else {

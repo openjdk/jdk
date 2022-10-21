@@ -21,15 +21,16 @@
  * questions.
  */
 
-// key: compiler.err.raw.deconstruction.pattern
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
+// key: compiler.err.invalid.case.label.combination
+// key: compiler.misc.feature.case.null
+// key: compiler.warn.preview.feature.use
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-class RawDeconstructionPattern {
-    boolean test(Object o) {
-        return o instanceof R(String s);
+class InvalidCaseLabelCombination {
+    private void doSwitch(Integer i) {
+        switch (i) {
+            case null, 1: break;
+            default: break;
+        }
     }
-
-    record R<T>(T t) {}
 }
