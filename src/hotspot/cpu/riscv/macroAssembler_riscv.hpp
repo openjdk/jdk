@@ -624,10 +624,6 @@ public:
   void movptr(Register Rd, address addr, int32_t &offset);
   void movptr(Register Rd, uintptr_t imm64);
 
-  void movptr(Register Rd, Label &L) {
-    wrap_label(Rd, L, (MacroAssembler::jal_jalr_insn)&MacroAssembler::movptr);
-  }
-
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
   void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
