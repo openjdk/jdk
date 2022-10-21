@@ -61,10 +61,11 @@ public class ValidateGetBundle{
                 throw new RuntimeException(
                         String.format("$$$ Error: '%s' shouldn't have loaded!%n", bundleName));
             }
-            System.out.printf("$$$ %s found as expected!%n", bundleName);
+            System.out.printf("$$$ %s was found as expected!%n", bundleName);
         } catch (MissingResourceException mr) {
             if (expectBundle) {
-                throw new RuntimeException(String.format("Error:%s%n", mr.getMessage()));
+                throw new RuntimeException(
+                        String.format("$$$ Error: '%s' should have loaded!", bundleName), mr);
             }
             System.out.printf("$$$ %s was not found as expected!", bundleName);
         }
