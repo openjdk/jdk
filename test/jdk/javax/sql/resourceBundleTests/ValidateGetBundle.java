@@ -58,8 +58,8 @@ public class ValidateGetBundle{
             var bundle = ResourceBundle.getBundle(bundleName,
                     Locale.US, JdbcRowSetResourceBundle.class.getModule());
             if (!expectBundle) {
-                String message = "$$$ '%s' shouldn't have loaded!%n";
-                throw new RuntimeException(String.format(message, bundleName));
+                throw new RuntimeException(
+                        String.format("$$$ Error: '%s' shouldn't have loaded!%n", bundleName));
             }
             System.out.printf("$$$ %s found as expected!%n", bundleName);
         } catch (MissingResourceException mr) {
