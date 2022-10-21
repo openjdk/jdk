@@ -26,9 +26,8 @@ import java.util.Locale;
 import java.sql.SQLException;
 import javax.sql.rowset.RowSetProvider;
 import org.testng.annotations.Test;
-import util.BaseTest;
+import org.testng.annotations.BeforeClass;
 import static org.testng.Assert.*;
-
 
 /**
  * @test
@@ -43,11 +42,14 @@ public class ValidateResourceBundleAccess{
     // Expected JDBCResourceBundle message, crsreader.connecterr
     private static final String rsReaderError = "Internal Error in RowSetReader: no connection or command";
 
+    // Checking against English messages, set to US Locale
+    @BeforeClass
+    public void setEnglishEnvironment() {
+        Locale.setDefault(Locale.US);
+    }
+
     @Test
     public void testResourceBundleAccess() throws SQLException {
-        // Checking against English messages, set to US Locale
-        Locale.setDefault(Locale.US);
-
         var rsr = RowSetProvider.newFactory();
         var crs =rsr.createCachedRowSet();
         var jrs = rsr.createJdbcRowSet();
@@ -57,8 +59,8 @@ public class ValidateResourceBundleAccess{
         try {
             jrs.getMetaData();
             // Unexpected case where exception is not forced
-            var msg = "$$$ Error: SQLException was not caught!%n";
-            throw new RuntimeException(String.format(msg));
+            throw new RuntimeException(
+                    String.format("$$$ Error: SQLException was not caught!%n"));
         } catch (SQLException sqe) {
             assertTrue(sqe.getMessage().equals(invalidState));
         }
@@ -66,8 +68,8 @@ public class ValidateResourceBundleAccess{
         try {
             crs.execute();
             // Unexpected case where exception is not forced
-            var msg = "$$$ Error: SQLException was not caught!%n";
-            throw new RuntimeException(String.format(msg));
+            throw new RuntimeException(
+                    String.format("$$$ Error: SQLException was not caught!%n"));
         } catch (SQLException e) {
             assertTrue(e.getMessage().equals(rsReaderError));
         }
