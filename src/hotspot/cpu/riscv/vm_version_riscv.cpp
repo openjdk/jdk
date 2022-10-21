@@ -73,13 +73,10 @@ void VM_Version::initialize() {
       warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
       FLAG_SET_DEFAULT(CacheLineSize, 64);
     }
-  } else if (!FLAG_IS_DEFAULT(CacheLineSize)) {
-    if (!is_power_of_2(CacheLineSize)) {
+  } else {
+    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
       warning("CacheLineSize must be a power of 2");
       FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
-    } else if (FLAG_IS_DEFAULT(UseZicboz)) {
-      // It's safer to disable Zicboz if CacheLineSize is set by the user
-      FLAG_SET_DEFAULT(UseZicboz, false);
     }
   }
 
@@ -174,7 +171,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz) {
+  if (UseZicboz && FLAG_IS_DEFAULT(CacheLineSize)) {
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
@@ -182,7 +179,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(BlockZeroingLowLimit, CacheLineSize);
     }
   } else if (UseBlockZeroing) {
-    warning("Zicboz is not available on this CPU");
+    warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
