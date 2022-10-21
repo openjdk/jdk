@@ -56,7 +56,7 @@ public class MethodRefQualifyingTypeTest {
             MethodSupplierImpl ms = new MethodSupplierImpl() {
                     public  int m(int a){
                         return a;
-                    } 
+                    }
                 };
             instance = ms.new Inner().createMethodReference();
             instance.invokeMethodReference(1);
