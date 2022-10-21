@@ -59,9 +59,11 @@ public class FileViewNPETest {
 
             SwingUtilities.invokeAndWait(() -> {
                 jfc.setCurrentDirectory(path.getParentFile());
-                assert jfc.getCurrentDirectory() == null
-                       : "Expected to become null because the parent directory "
-                         + "is not traversable";
+                if (null != jfc.getCurrentDirectory()) {
+                    // The current directory to become null because
+                    // the parent directory is not traversable
+                    throw new RuntimeException("Current directory is not null");
+                }
             });
             robot.waitForIdle();
 
@@ -69,8 +71,9 @@ public class FileViewNPETest {
                 JComboBox<?> dirs = findDirectoryComboBox(jfc);
                 // No NPE is expected
                 dirs.setSelectedIndex(dirs.getSelectedIndex());
-                assert jfc.getCurrentDirectory().equals(path)
-                       : "The current directory should be restored";
+                if (!jfc.getCurrentDirectory().equals(path)) {
+                    throw new RuntimeException("The current directory is not restored");
+                }
             });
         } finally {
             SwingUtilities.invokeAndWait(() -> {
