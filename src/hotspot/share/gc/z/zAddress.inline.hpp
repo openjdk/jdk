@@ -258,22 +258,21 @@ inline bool is_valid(zaddress addr, bool assert_on_failure = false) {
 
   uintptr_t value = static_cast<uintptr_t>(addr);
 
-  if ((value & ZAddressHeapBase) == 0) {
-    // Must have a heap base bit
-    report_is_valid_failure("Missing heap base");
-    return false;
-  }
-
   if (value & 0x7) {
     // No low order bits
     report_is_valid_failure("Has low-order bits set");
     return false;
   }
 
-  const bool low_order_bits_set = (value & ZPointerAllMetadataMask) != 0;
-  const bool high_order_bits_set = (value & ~ZPointerAllMetadataMask) != 0;
-  if (!high_order_bits_set && low_order_bits_set) {
-    report_is_valid_failure("Colored null");
+  if ((value & ZAddressHeapBase) == 0) {
+    // Must have a heap base bit
+    report_is_valid_failure("Missing heap base");
+    return false;
+  }
+
+  if (value >= (ZAddressHeapBase + ZAddressOffsetMax)) {
+    // Must not point outside of the heap's virtual address range
+    report_is_valid_failure("Address outside of the heap");
     return false;
   }
 
