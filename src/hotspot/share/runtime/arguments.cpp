@@ -1957,6 +1957,14 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
+#if INCLUDE_JFR
+  if (status && (FlightRecorderOptions || StartFlightRecording)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", addmods_count++)) {
+      return false;
+    }
+  }
+#endif
+
 #ifndef SUPPORT_RESERVED_STACK_AREA
   if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
