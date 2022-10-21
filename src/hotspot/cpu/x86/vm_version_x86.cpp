@@ -1175,7 +1175,7 @@ void VM_Version::get_processor_features() {
   }
 
 #ifdef _LP64
-  if (supports_avx512ifma()) {
+  if (supports_avx512ifma() & supports_avx512vlbw()) {
     if (FLAG_IS_DEFAULT(UsePolyIntrinsics)) {
       FLAG_SET_DEFAULT(UsePolyIntrinsics, true);
     }
