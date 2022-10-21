@@ -1069,7 +1069,7 @@ public final class StringConcatFactory {
      * @param fragments list of string fragments
      * @param ptypes    list of expression types
      *
-     * @return List of {@link MethodHandles}
+     * @return {@link MethodHandle}
      *
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
