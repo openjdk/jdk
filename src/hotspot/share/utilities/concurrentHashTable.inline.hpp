@@ -1324,15 +1324,29 @@ class ConcurrentHashTable<CONFIG, F>::BucketsClaimer {
       _size  = MIN2(claim_size, _limit);
       _table = table;
     }
+
+    bool claim(size_t* start, size_t* stop, InternalTable** table) {
+      if (Atomic::load(&_next) < _limit) {
+        size_t claimed = Atomic::fetch_and_add(&_next, _size);
+        if (claimed < _limit) {
+          *start = claimed;
+          *stop  = MIN2(claimed + _size, _limit);
+          *table = _table;
+          return true;
+        }
+      }
+      return false;
+    }
   };
 
-  InternalTableClaimer _claimer;
-  // If there is a paused resize, we also need to operate on the already resized items.
+  InternalTableClaimer _table_claimer;
+  // If there is a paused resize, we need to claim items already
+  // moved to the new resized table.
   InternalTableClaimer _new_table_claimer;
 public:
   BucketsClaimer(ConcurrentHashTable<CONFIG, F>* cht, size_t claim_size) :
     _cht(cht),
-    _claimer(claim_size, _cht->_table),
+    _table_claimer(claim_size, _cht->_table),
     _new_table_claimer()
   {
     InternalTable* new_table = _cht->get_new_table();
@@ -1344,22 +1358,9 @@ public:
     _new_table_claimer.set(claim_size, new_table);
   }
 
-  bool claim(InternalTableClaimer* claimer, size_t* start, size_t* stop, InternalTable** table) {
-    if (Atomic::load(&claimer->_next) < claimer->_limit) {
-      size_t claimed = Atomic::fetch_and_add(&claimer->_next, claimer->_size);
-      if (claimed < claimer->_limit) {
-        *start = claimed;
-        *stop  = MIN2(claimed + claimer->_size, claimer->_limit);
-        *table = claimer->_table;
-        return true;
-      }
-    }
-    return false;
-  }
-
   // Returns true if you succeeded to claim the range [start, stop).
   bool claim(size_t* start, size_t* stop, InternalTable** table) {
-    if (claim(&_claimer, start, stop, table)) {
+    if (_table_claimer.claim(start, stop, table)) {
       return true;
     }
 
@@ -1368,8 +1369,7 @@ public:
       assert(_cht->get_new_table() == nullptr || _cht->get_new_table() == POISON_PTR, "Precondition");
       return false;
     }
-
-    return claim(&_new_table_claimer, start, stop, table);
+    return _new_table_claimer.claim(start, stop, table);
   }
 };
 
