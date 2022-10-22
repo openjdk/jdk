@@ -20,3 +20,12 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+# jdk / tier1_part_1
+
+java/lang/ProcessHandle/InfoTest.java                           0         linux-riscv64
+java/lang/invoke/lambda/LogGeneratedClassesTest.java            0         linux-riscv64
+
+# jdk / tier1_part_2
+
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java           0         linux-riscv64
