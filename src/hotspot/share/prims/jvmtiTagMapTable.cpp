@@ -126,11 +126,11 @@ bool JvmtiTagMapTable::remove(oop obj) {
   }
   return false;
 }
-int JvmtiTagMapTable::add_update_remove(JvmtiTagMapEntry *entry_par,oop obj, jlong tag){
-  assert(obj != NULL, "obj should not be NULL.");
-  JvmtiTagMapEntry entry (obj, true);
-  bool found = find(&entry, obj);
-  bool to_be_added   = tag != 0 ;
+int JvmtiTagMapTable::add_update_remove(JvmtiTagMapEntry &entry_par,oop obj, jlong tag){
+
+  JvmtiTagMapEntry entry (obj,tag);
+  bool found = find(entry, obj);
+  bool to_be_added = tag != 0 ;
   bool to_be_updated = tag != 0 ;
   bool to_be_removed = tag == 0 ;
 
