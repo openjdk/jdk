@@ -139,8 +139,8 @@ bool JvmtiTagMap::is_empty() {
 // this tagmap table.
 void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
   assert(is_locked(), "checking");
-
   if (is_empty()) { return; }
+  //fprintf(stderr, "check hash map entered.\n" );
 
   if (_needs_cleaning &&
       objects != NULL &&
@@ -345,6 +345,10 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
+  //JvmtiTagMapEntry entry ;
+  //_hashmap->add_update_remove(&entry, o, tag);
+  //see if the object is already tagged
+  JvmtiTagMapTable* hashmap = _hashmap;
   JvmtiTagMapEntry entry ;
   _hashmap->add_update_remove(entry, o, tag);
   // see if the object is already tagged
