@@ -355,8 +355,8 @@ class Stream<T> extends ExchangeImpl<T> {
         client().registerSubscriber(subscriber);
     }
 
-    private void subscriberCompleted(Http2StreamResponseSubscriber<?> subscriber) {
-        client().subscriberCompleted(subscriber);
+    private void unregisterResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        client().unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -1546,10 +1546,14 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         protected void complete(Throwable t) {
             try {
-                Stream.this.subscriberCompleted(this);
+                Stream.this.unregisterResponseSubscriber(this);
             } finally {
                 super.complete(t);
             }
+        }
+        @Override
+        protected void onCancel() {
+            Stream.this.unregisterResponseSubscriber(this);
         }
     }
 
