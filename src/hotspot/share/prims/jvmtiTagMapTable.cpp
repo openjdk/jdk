@@ -112,50 +112,33 @@ void JvmtiTagMapTable::remove(oop obj) {
 =======
 bool JvmtiTagMapTable::remove(oop obj) {
 
-  JvmtiTagMapEntry jtme(obj, true);
+  JvmtiTagMapEntry jtme(obj,0);
   jlong* found = _rrht_table.get(jtme);
   if (found == NULL) {
-    log_debug(jvmti,table)("entry not found to remove.\n");
-    return true;
+    return ;
   }
   if( _rrht_table.remove(jtme)) {
     jtme.release();
-    return true;
   } else {
-    fprintf(stderr,"removing object failed.");
+    assert(false,"removing object failed.");
   }
-  return false;
 }
-int JvmtiTagMapTable::add_update_remove(JvmtiTagMapEntry &entry_par,oop obj, jlong tag){
+int JvmtiTagMapTable::add_update_remove(oop obj, jlong tag){
 
   JvmtiTagMapEntry entry (obj,tag);
   bool found = find(entry, obj);
-  bool to_be_added = tag != 0 ;
-  bool to_be_updated = tag != 0 ;
-  bool to_be_removed = tag == 0 ;
-
-  if (!found && to_be_added ) {
-    if ( add(obj, tag) ){
-      fprintf(stderr, "object is added.\n");
-      return AddUpdateRemove::Added;
-    }
+  bool new_tag = tag != 0 ;
+  bool to_be_removed = !new_tag;
+  if (!found && new_tag ) {
+    add(obj, tag);
+    return AddUpdateRemove::Added;
   }
   if ( found && to_be_removed){
-    if ( remove(obj) ) {
-      fprintf(stderr, "object is removed.\n");
-      return AddUpdateRemove::Removed;
-    } else {
-      fprintf(stderr,"request for removing an entry failed.\n");
-      return AddUpdateRemove::Failed;
-    }
+    remove(obj);
+    return AddUpdateRemove::Removed;
   }
-  if (found && to_be_updated ){
-    if ( _rrht_table.put(entry, tag) ) {
-      fprintf(stderr,"expected to update entry's tag, but it is added.\n");
-    }
-    if (entry_par != NULL)
-      entry_par->set_tag(tag);
-    fprintf(stderr, "object tag is updated.\n");
+  if (found && new_tag ){
+    _rrht_table.put(entry, tag);
     return AddUpdateRemove::Updated;
   }
   return AddUpdateRemove::Failed;
@@ -170,18 +153,13 @@ void JvmtiTagMapTable::resize_if_needed() {
 }
 
 void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
-
   struct IsDead{
     GrowableArray<jlong>* _objects;
-    int count;
-    IsDead(GrowableArray<jlong>* objects) : _objects(objects),count(0){}
-    bool do_entry(JvmtiTagMapEntry & entry, jlong tag){
+    IsDead(GrowableArray<jlong>* objects) : _objects(objects){}
+    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag){
       if ( entry.object_no_keepalive() == NULL){
-        //fprintf(stderr,"%d objects found dead.\n",++count);
         if(_objects!=NULL){
           _objects->append(tag);
-          entry.release();
-          //fprintf(stderr,"dead object is appended to GrowableArray.\n");
         }
         return true;
       }
