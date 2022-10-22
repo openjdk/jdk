@@ -139,8 +139,8 @@ bool JvmtiTagMap::is_empty() {
 // this tagmap table.
 void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
   assert(is_locked(), "checking");
-
   if (is_empty()) { return; }
+  //fprintf(stderr, "check hash map entered.\n" );
 
   if (_needs_cleaning &&
       objects != NULL &&
