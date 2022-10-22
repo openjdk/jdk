@@ -114,18 +114,13 @@ void JvmtiTagMapTable::resize_if_needed() {
 }
 
 void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
-
   struct IsDead{
     GrowableArray<jlong>* _objects;
-    int count;
-    IsDead(GrowableArray<jlong>* objects) : _objects(objects),count(0){}
-    bool do_entry(JvmtiTagMapEntry & entry, jlong tag){
+    IsDead(GrowableArray<jlong>* objects) : _objects(objects){}
+    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag){
       if ( entry.object_no_keepalive() == NULL){
-        //fprintf(stderr,"%d objects found dead.\n",++count);
         if(_objects!=NULL){
           _objects->append(tag);
-          entry.release();
-          //fprintf(stderr,"dead object is appended to GrowableArray.\n");
         }
         return true;
       }
