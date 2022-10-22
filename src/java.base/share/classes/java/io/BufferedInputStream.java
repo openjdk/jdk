@@ -607,8 +607,33 @@ public class BufferedInputStream extends FilterInputStream {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                out.write(getBufIfOpen(), pos, avail);
-                pos = count;
+                byte[] buffer = getBufIfOpen();
+                out.write(buffer, pos, avail);
+                count = 0;
+                pos = 0;
+
+                // Allow GC before reallocating possibly large buffer to prevent OOME
+                byte[] emptyBuffer = new byte[0];
+                if (!U.compareAndSetReference(this, BUF_OFFSET, buffer, emptyBuffer)) {
+                    // Can't replace buf if there was an async close.
+                    // Note: This would need to be changed if transferTo()
+                    // is ever made accessible to multiple threads.
+                    // But for now, the only way CAS can fail is via close.
+                    // assert buf == null;
+                    throw new IOException("Stream closed");
+                }
+                int bufferSize = buffer.length;
+                buffer = null;
+
+                byte[] nbuf = new byte[bufferSize];
+                if (!U.compareAndSetReference(this, BUF_OFFSET, emptyBuffer, nbuf)) {
+                    // Can't replace buf if there was an async close.
+                    // Note: This would need to be changed if transferTo()
+                    // is ever made accessible to multiple threads.
+                    // But for now, the only way CAS can fail is via close.
+                    // assert buf == null;
+                    throw new IOException("Stream closed");
+                }
             }
             return avail + getInIfOpen().transferTo(out);
         } else {
