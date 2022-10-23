@@ -74,7 +74,7 @@ public:
   }
 
   void print_instance_klass(InstanceKlass* ik) {
-    if (ik->is_loaded() && matches(_class_name_pattern, ik->name())) {
+    if (ik->is_loaded() && ik->name()->is_star_match(_class_name_pattern)) {
       ResourceMark rm;
       if (_last_printed_methods) {
         _st->cr();
@@ -92,11 +92,11 @@ public:
         for (int index = 0; index < len; index++) {
           Method* m = ik->methods()->at(index);
           if (_method_name_pattern != NULL &&
-              !matches(_method_name_pattern, m->name())) {
+              !m->name()->is_star_match(_method_name_pattern)) {
             continue;
           }
           if (_method_signature_pattern != NULL &&
-              !matches(_method_signature_pattern, m->signature())) {
+              !m->signature()->is_star_match(_method_signature_pattern)) {
             continue;
           }
           if (print_codes && num_methods_printed++ > 0) {
@@ -120,78 +120,42 @@ public:
   }
 };
 
-bool ClassPrinter::matches(const char *pattern, const char *candidate, int p, int c) {
-  if (pattern[p] == '\0') {
-    return candidate[c] == '\0';
-  } else if (pattern[p] == '*') {
-    for (; candidate[c] != '\0'; c++) {
-      if (matches(pattern, candidate, p+1, c))
-        return true;
-    }
-    return matches(pattern, candidate, p+1, c);
-  } else if (pattern[p] != '?' && pattern[p] != candidate[c]) {
-    return false;
-  }  else {
-    return matches(pattern, candidate, p+1, c+1);
-  }
-}
-
-bool ClassPrinter::matches(const char* pattern, Symbol* symbol) {
-  if (pattern == NULL) {
-    return true;
-  }
-  if (strchr(pattern, '*') == NULL) {
-    return symbol->equals(pattern);
-  } else {
-    ResourceMark rm;
-    char* buf = symbol->as_C_string();
-    return matches(pattern, buf, 0, 0);
-  }
-}
-
-void ClassPrinter::print_help() {
-  tty->print_cr("flags (bitmask):");
-  tty->print_cr("   0x%02x  - print names of methods", PRINT_METHOD_NAME);
-  tty->print_cr("   0x%02x  - print bytecodes", PRINT_BYTECODE);
-  tty->print_cr("   0x%02x  - print the address of bytecodes", PRINT_BYTECODE_ADDR);
-  tty->print_cr("   0x%02x  - print info for invokedynamic", PRINT_DYNAMIC);
-  tty->print_cr("   0x%02x  - print info for invokehandle",  PRINT_METHOD_HANDLE);
-  tty->cr();
+void ClassPrinter::print_flags_help(outputStream* os) {
+  os->print_cr("flags (bitmask):");
+  os->print_cr("   0x%02x  - print names of methods", PRINT_METHOD_NAME);
+  os->print_cr("   0x%02x  - print bytecodes", PRINT_BYTECODE);
+  os->print_cr("   0x%02x  - print the address of bytecodes", PRINT_BYTECODE_ADDR);
+  os->print_cr("   0x%02x  - print info for invokedynamic", PRINT_DYNAMIC);
+  os->print_cr("   0x%02x  - print info for invokehandle",  PRINT_METHOD_HANDLE);
+  os->cr();
 }
 
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
-  print_help();
   KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
-                                 const char* method_name_pattern, int flags, outputStream* os) {
-  print_help();
-  KlassPrintClosure closure(class_name_pattern, method_name_pattern, NULL,
-                            flags | PRINT_METHOD_NAME, os);
-  ClassLoaderDataGraph::classes_do(&closure);
+                                 const char* method_pattern, int flags, outputStream* os) {
+  const char* method_name_pattern;
+  const char* method_signature_pattern;
 
-}
+  const char* colon = strchr(method_pattern, ':');
+  if (colon == NULL) {
+    method_name_pattern = method_pattern;
+    method_signature_pattern = NULL;
+  } else {
+    ptrdiff_t name_pat_len = colon - method_pattern;
+    assert(name_pat_len >= 0, "sanity");
+    char* buf = NEW_RESOURCE_ARRAY(char, name_pat_len + 1);
+    strncpy(buf, method_pattern, name_pat_len);
+    buf[name_pat_len] = 0;
 
-void ClassPrinter::print_methods(const char* class_name_pattern,
-                                 const char* method_name_pattern,
-                                 const char* method_signature_pattern, int flags, outputStream* os) {
-  print_help();
+    method_name_pattern = buf;
+    method_signature_pattern = colon + 1;
+  }
+
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
                             flags | PRINT_METHOD_NAME, os);
   ClassLoaderDataGraph::classes_do(&closure);
-}
-
-void ClassPrinter::print_class(InstanceKlass* k, int flags, outputStream* os) {
-  print_help();
-  KlassPrintClosure closure(NULL, NULL, NULL, flags, os);
-  closure.print_instance_klass(k);
-}
-
-void ClassPrinter::print_method(Method* m, int flags, outputStream* os) {
-  print_help();
-  KlassPrintClosure closure(NULL, "", "", flags | PRINT_METHOD_NAME | PRINT_BYTECODE, os);
-  closure.print_instance_klass(m->method_holder());
-  closure.print_method(m);
 }

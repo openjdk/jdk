@@ -33,7 +33,7 @@ class Method;
 class outputStream;
 class Symbol;
 
-// ClassPrinter is intended to be called from findclass/findmethod/findmethod2
+// ClassPrinter is intended to be called from findclass() and findmethod()
 // in debug.cpp (inside a debugger, such as gdb).
 //
 // The ClassPrinter::print_xxx() functions hold the ClassLoaderDataGraph_lock
@@ -44,11 +44,6 @@ class Symbol;
 class ClassPrinter : public AllStatic {
   class KlassPrintClosure;
 
-  static bool matches(const char *pattern, const char *candidate, int p, int c);
-  static bool matches(const char* pattern, Symbol* symbol);
-  static bool matches_klass(const char* pattern, InstanceKlass* ik);
-  static void print_help();
-
 public:
 
   enum Mode : int {
@@ -58,22 +53,16 @@ public:
     PRINT_DYNAMIC           = 1 << 3, // extra information for invokedynamic (and dynamic constant ...)
     PRINT_METHOD_HANDLE     = 1 << 4, // extra information for invokehandle
   };
-
-  // flags must be OR'ed from ClassPrinter::Mode for the next 5 functions
-  static void print_classes(const char* class_name_pattern, int flags, outputStream* os);
-  static void print_methods(const char* class_name_pattern,
-                            const char* method_name_pattern, int flags, outputStream* os);
-  static void print_methods(const char* class_name_pattern,
-                            const char* method_name_pattern,
-                            const char* method_signature_pattern, int flags, outputStream* os);
-
-  static void print_class(InstanceKlass* k, int flags, outputStream* os);
-  static void print_method(Method* k, int flags, outputStream* os);
-
-
   static bool has_mode(int flags, Mode mode) {
     return (flags & static_cast<int>(mode)) != 0;
   }
+
+  static void print_flags_help(outputStream* os);
+
+  // flags must be OR'ed from ClassPrinter::Mode for the these two functions
+  static void print_classes(const char* class_name_pattern, int flags, outputStream* os);
+  static void print_methods(const char* class_name_pattern,
+                            const char* method_name_pattern, int flags, outputStream* os);
 };
 
 #endif // SHARE_CLASSFILE_CLASSPRINTER_HPP

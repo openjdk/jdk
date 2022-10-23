@@ -39,6 +39,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"
 
 Symbol* Symbol::_vm_symbols[vmSymbols::number_of_symbols()];
@@ -143,6 +144,15 @@ int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
   return -1;
 }
 
+bool Symbol::is_star_match(const char* star_pattern) const {
+  if (strchr(star_pattern, '*') == NULL) {
+    return equals(star_pattern);
+  } else {
+    ResourceMark rm;
+    char* buf = as_C_string();
+    return StringUtils::is_star_match(star_pattern, buf);
+  }
+}
 
 char* Symbol::as_C_string(char* buf, int size) const {
   if (size > 0) {
