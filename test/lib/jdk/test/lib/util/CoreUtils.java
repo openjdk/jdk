@@ -260,4 +260,14 @@ public class CoreUtils {
         }
     }
 
+    public static String getAlwaysPretouchArg(boolean withCore) {
+        // macosx-aarch64 has an issue where sometimes the java heap will not be dumped to the
+        // core file. Using -XX:+AlwaysPreTouch fixes the problem.
+        if (withCore && Platform.isOSX() && Platform.isAArch64()) {
+            return "-XX:+AlwaysPreTouch";
+        } else {
+            return "-XX:-AlwaysPreTouch";
+        }
+    }
+
 }

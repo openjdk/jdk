@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class AttributeChangeNotificationFilter implements NotificationFilter {
      * @serial {@link Vector} that contains the enabled attribute names.
      *         The default value is an empty vector.
      */
-    private Vector<String> enabledAttributes = new Vector<String>();
+    private Vector<String> enabledAttributes = new Vector<>();
 
     /**
      * Constructs an {@code AttributeChangeNotificationFilter}.

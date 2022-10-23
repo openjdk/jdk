@@ -61,7 +61,7 @@ class G1YoungGCEvacFailureInjector {
   CHeapBitMap _evac_failure_regions;
 #endif
 
-  bool arm_if_needed_for_gc_type(bool for_young_gc,
+  bool arm_if_needed_for_gc_type(bool for_young_only_phase,
                                  bool during_concurrent_start,
                                  bool mark_or_rebuild_in_progress) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 

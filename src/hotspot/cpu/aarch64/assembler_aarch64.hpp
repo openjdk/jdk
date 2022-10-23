@@ -62,23 +62,23 @@ class Argument {
   };
 };
 
-REGISTER_DECLARATION(Register, c_rarg0, r0);
-REGISTER_DECLARATION(Register, c_rarg1, r1);
-REGISTER_DECLARATION(Register, c_rarg2, r2);
-REGISTER_DECLARATION(Register, c_rarg3, r3);
-REGISTER_DECLARATION(Register, c_rarg4, r4);
-REGISTER_DECLARATION(Register, c_rarg5, r5);
-REGISTER_DECLARATION(Register, c_rarg6, r6);
-REGISTER_DECLARATION(Register, c_rarg7, r7);
+constexpr Register c_rarg0 = r0;
+constexpr Register c_rarg1 = r1;
+constexpr Register c_rarg2 = r2;
+constexpr Register c_rarg3 = r3;
+constexpr Register c_rarg4 = r4;
+constexpr Register c_rarg5 = r5;
+constexpr Register c_rarg6 = r6;
+constexpr Register c_rarg7 = r7;
 
-REGISTER_DECLARATION(FloatRegister, c_farg0, v0);
-REGISTER_DECLARATION(FloatRegister, c_farg1, v1);
-REGISTER_DECLARATION(FloatRegister, c_farg2, v2);
-REGISTER_DECLARATION(FloatRegister, c_farg3, v3);
-REGISTER_DECLARATION(FloatRegister, c_farg4, v4);
-REGISTER_DECLARATION(FloatRegister, c_farg5, v5);
-REGISTER_DECLARATION(FloatRegister, c_farg6, v6);
-REGISTER_DECLARATION(FloatRegister, c_farg7, v7);
+constexpr FloatRegister c_farg0 = v0;
+constexpr FloatRegister c_farg1 = v1;
+constexpr FloatRegister c_farg2 = v2;
+constexpr FloatRegister c_farg3 = v3;
+constexpr FloatRegister c_farg4 = v4;
+constexpr FloatRegister c_farg5 = v5;
+constexpr FloatRegister c_farg6 = v6;
+constexpr FloatRegister c_farg7 = v7;
 
 // Symbolically name the register arguments used by the Java calling convention.
 // We have control over the convention for java so we can do what we please.
@@ -96,25 +96,25 @@ REGISTER_DECLARATION(FloatRegister, c_farg7, v7);
 //  |--------------------------------------------------------------------|
 
 
-REGISTER_DECLARATION(Register, j_rarg0, c_rarg1);
-REGISTER_DECLARATION(Register, j_rarg1, c_rarg2);
-REGISTER_DECLARATION(Register, j_rarg2, c_rarg3);
-REGISTER_DECLARATION(Register, j_rarg3, c_rarg4);
-REGISTER_DECLARATION(Register, j_rarg4, c_rarg5);
-REGISTER_DECLARATION(Register, j_rarg5, c_rarg6);
-REGISTER_DECLARATION(Register, j_rarg6, c_rarg7);
-REGISTER_DECLARATION(Register, j_rarg7, c_rarg0);
+constexpr Register j_rarg0 = c_rarg1;
+constexpr Register j_rarg1 = c_rarg2;
+constexpr Register j_rarg2 = c_rarg3;
+constexpr Register j_rarg3 = c_rarg4;
+constexpr Register j_rarg4 = c_rarg5;
+constexpr Register j_rarg5 = c_rarg6;
+constexpr Register j_rarg6 = c_rarg7;
+constexpr Register j_rarg7 = c_rarg0;
 
 // Java floating args are passed as per C
 
-REGISTER_DECLARATION(FloatRegister, j_farg0, v0);
-REGISTER_DECLARATION(FloatRegister, j_farg1, v1);
-REGISTER_DECLARATION(FloatRegister, j_farg2, v2);
-REGISTER_DECLARATION(FloatRegister, j_farg3, v3);
-REGISTER_DECLARATION(FloatRegister, j_farg4, v4);
-REGISTER_DECLARATION(FloatRegister, j_farg5, v5);
-REGISTER_DECLARATION(FloatRegister, j_farg6, v6);
-REGISTER_DECLARATION(FloatRegister, j_farg7, v7);
+constexpr FloatRegister j_farg0 = v0;
+constexpr FloatRegister j_farg1 = v1;
+constexpr FloatRegister j_farg2 = v2;
+constexpr FloatRegister j_farg3 = v3;
+constexpr FloatRegister j_farg4 = v4;
+constexpr FloatRegister j_farg5 = v5;
+constexpr FloatRegister j_farg6 = v6;
+constexpr FloatRegister j_farg7 = v7;
 
 // registers used to hold VM data either temporarily within a method
 // or across method calls
@@ -123,40 +123,28 @@ REGISTER_DECLARATION(FloatRegister, j_farg7, v7);
 
 // r8 is used for indirect result location return
 // we use it and r9 as scratch registers
-REGISTER_DECLARATION(Register, rscratch1, r8);
-REGISTER_DECLARATION(Register, rscratch2, r9);
+constexpr Register rscratch1 = r8;
+constexpr Register rscratch2 = r9;
 
 // current method -- must be in a call-clobbered register
-REGISTER_DECLARATION(Register, rmethod,   r12);
+constexpr Register rmethod = r12;
 
 // non-volatile (callee-save) registers are r16-29
 // of which the following are dedicated global state
 
-// link register
-REGISTER_DECLARATION(Register, lr,        r30);
-// frame pointer
-REGISTER_DECLARATION(Register, rfp,       r29);
-// current thread
-REGISTER_DECLARATION(Register, rthread,   r28);
-// base of heap
-REGISTER_DECLARATION(Register, rheapbase, r27);
-// constant pool cache
-REGISTER_DECLARATION(Register, rcpool,    r26);
-// r25 is a callee-saved temp
-// REGISTER_DECLARATION(Register, unused, r25);
-// locals on stack
-REGISTER_DECLARATION(Register, rlocals,   r24);
-// bytecode pointer
-REGISTER_DECLARATION(Register, rbcp,      r22);
-// Dispatch table base
-REGISTER_DECLARATION(Register, rdispatch, r21);
-// Java expression stack pointer
-REGISTER_DECLARATION(Register, esp,      r20);
-// Sender's SP while in interpreter
-REGISTER_DECLARATION(Register, r19_sender_sp, r19);
+constexpr Register lr            = r30; // link register
+constexpr Register rfp           = r29; // frame pointer
+constexpr Register rthread       = r28; // current thread
+constexpr Register rheapbase     = r27; // base of heap
+constexpr Register rcpool        = r26; // constant pool cache
+constexpr Register rlocals       = r24; // locals on stack
+constexpr Register rbcp          = r22; // bytecode pointer
+constexpr Register rdispatch     = r21; // dispatch table base
+constexpr Register esp           = r20; // Java expression stack pointer
+constexpr Register r19_sender_sp = r19; // sender's SP while in interpreter
 
 // Preserved predicate register with all elements set TRUE.
-REGISTER_DECLARATION(PRegister, ptrue, p7);
+constexpr PRegister ptrue = p7;
 
 #define assert_cond(ARG1) assert(ARG1, #ARG1)
 
@@ -277,29 +265,29 @@ public:
   }
 
   void rf(Register r, int lsb) {
-    f(r->encoding_nocheck(), lsb + 4, lsb);
+    f(r->raw_encoding(), lsb + 4, lsb);
   }
 
   // reg|ZR
   void zrf(Register r, int lsb) {
-    f(r->encoding_nocheck() - (r == zr), lsb + 4, lsb);
+    f(r->raw_encoding() - (r == zr), lsb + 4, lsb);
   }
 
   // reg|SP
   void srf(Register r, int lsb) {
-    f(r == sp ? 31 : r->encoding_nocheck(), lsb + 4, lsb);
+    f(r == sp ? 31 : r->raw_encoding(), lsb + 4, lsb);
   }
 
   void rf(FloatRegister r, int lsb) {
-    f(r->encoding_nocheck(), lsb + 4, lsb);
+    f(r->raw_encoding(), lsb + 4, lsb);
   }
 
   void prf(PRegister r, int lsb) {
-    f(r->encoding_nocheck(), lsb + 3, lsb);
+    f(r->raw_encoding(), lsb + 3, lsb);
   }
 
   void pgrf(PRegister r, int lsb) {
-    f(r->encoding_nocheck(), lsb + 2, lsb);
+    f(r->raw_encoding(), lsb + 2, lsb);
   }
 
   unsigned get(int msb = 31, int lsb = 0) {
@@ -329,7 +317,7 @@ class Post : public PrePost {
   Register _idx;
   bool _is_postreg;
 public:
-  Post(Register reg, int o) : PrePost(reg, o) { _idx = NULL; _is_postreg = false; }
+  Post(Register reg, int o) : PrePost(reg, o) { _idx = noreg; _is_postreg = false; }
   Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; _is_postreg = true; }
   Register idx_reg() { return _idx; }
   bool is_postreg() {return _is_postreg; }
@@ -627,8 +615,7 @@ class InternalAddress: public Address {
   InternalAddress(address target) : Address(target, relocInfo::internal_word_type) {}
 };
 
-const int FPUStateSizeInWords = FloatRegisterImpl::number_of_registers *
-                                FloatRegisterImpl::save_slots_per_register;
+const int FPUStateSizeInWords = FloatRegister::number_of_registers * FloatRegister::save_slots_per_register;
 
 typedef enum {
   PLDL1KEEP = 0b00000, PLDL1STRM, PLDL2KEEP, PLDL2STRM, PLDL3KEEP, PLDL3STRM,
@@ -2566,6 +2553,7 @@ public:
   INSN(fcmeq, 0, 0, 0b111001);
   INSN(fcmgt, 1, 1, 0b111001);
   INSN(fcmge, 1, 0, 0b111001);
+  INSN(facgt, 1, 1, 0b111011);
 
 #undef INSN
 
@@ -3154,6 +3142,7 @@ public:
     sve_predicate_reg_insn(op1, op2, Zd_or_Zdn_or_Vd, T, Pg, Zn_or_Zm);                               \
   }
 
+  INSN(sve_fabd,   0b01100101, 0b001000100); // floating-point absolute difference
   INSN(sve_fabs,   0b00000100, 0b011100101);
   INSN(sve_fadd,   0b01100101, 0b000000100);
   INSN(sve_fadda,  0b01100101, 0b011000001); // add strictly-ordered reduction to scalar Vd
@@ -3512,18 +3501,22 @@ public:
   void NAME(Condition cond, PRegister Pd, SIMD_RegVariant T, PRegister Pg,             \
             FloatRegister Zn, FloatRegister Zm) {                                      \
     starti;                                                                            \
-    if (fp == 0) {                                                                     \
-      assert(T != Q, "invalid size");                                                  \
-    } else {                                                                           \
-      assert(T != B && T != Q, "invalid size");                                        \
-      assert(cond != HI && cond != HS, "invalid condition for fcm");                   \
+    assert(T != Q, "invalid size");                                                    \
+    bool is_absolute = op2 == 0b11;                                                    \
+    if (fp == 1) {                                                                     \
+      assert(T != B, "invalid size");                                                  \
+      if (is_absolute) {                                                               \
+        assert(cond == GT || cond == GE, "invalid condition for fac");                 \
+      } else {                                                                         \
+        assert(cond != HI && cond != HS, "invalid condition for fcm");                 \
+      }                                                                                \
     }                                                                                  \
     int cond_op;                                                                       \
     switch(cond) {                                                                     \
       case EQ: cond_op = (op2 << 2) | 0b10; break;                                     \
       case NE: cond_op = (op2 << 2) | 0b11; break;                                     \
-      case GE: cond_op = (op2 << 2) | 0b00; break;                                     \
-      case GT: cond_op = (op2 << 2) | 0b01; break;                                     \
+      case GE: cond_op = (op2 << 2) | (is_absolute ? 0b01 : 0b00); break;              \
+      case GT: cond_op = (op2 << 2) | (is_absolute ? 0b11 : 0b01); break;              \
       case HI: cond_op = 0b0001; break;                                                \
       case HS: cond_op = 0b0000; break;                                                \
       default:                                                                         \
@@ -3533,8 +3526,9 @@ public:
     pgrf(Pg, 10), rf(Zn, 5), f(cond_op & 1, 4), prf(Pd, 0);                            \
   }
 
-  INSN(sve_cmp, 0b00100100, 0b10, 0);
-  INSN(sve_fcm, 0b01100101, 0b01, 1);
+  INSN(sve_cmp, 0b00100100, 0b10, 0); // Integer compare vectors
+  INSN(sve_fcm, 0b01100101, 0b01, 1); // Floating-point compare vectors
+  INSN(sve_fac, 0b01100101, 0b11, 1); // Floating-point absolute compare vectors
 #undef INSN
 
 // SVE Integer Compare - Signed Immediate

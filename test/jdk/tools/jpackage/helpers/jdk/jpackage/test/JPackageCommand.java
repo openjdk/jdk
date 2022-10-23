@@ -395,10 +395,16 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
      * Returns path to output bundle of configured jpackage command.
      *
      * If this is build image command, returns path to application image directory.
+     *
+     * Special case for masOS. If this is sign app image command, returns value
+     * of "--app-image".
      */
     public Path outputBundle() {
         final String bundleName;
         if (isImagePackageType()) {
+            if (TKit.isOSX() && hasArgument("--app-image")) {
+                return Path.of(getArgumentValue("--app-image", () -> null));
+            }
             String dirName = name();
             if (TKit.isOSX()) {
                 dirName = dirName + ".app";
@@ -818,12 +824,34 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private void assertAppImageFile() {
-        final Path lookupPath = AppImageFile.getPathInAppImage(Path.of(""));
+        Path appImageDir = Path.of("");
+        if (isImagePackageType() && hasArgument("--app-image")) {
+            appImageDir = Path.of(getArgumentValue("--app-image", () -> null));
+        }
 
+        final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
         if (isRuntime() || (!isImagePackageType() && !TKit.isOSX())) {
             assertFileInAppImage(lookupPath, null);
         } else {
             assertFileInAppImage(lookupPath, lookupPath);
+
+            // If file exist validated important values based on arguments
+            // Exclude validation when we generating packages from predefined
+            // app images, since we do not know if image is signed or not.
+            if (isImagePackageType() || !hasArgument("--app-image")) {
+                final Path rootDir = isImagePackageType() ? outputBundle() :
+                        pathToUnpackedPackageFile(appInstallationDirectory());
+
+                boolean expectedValue = hasArgument("--mac-sign");
+                boolean actualValue = AppImageFile.load(rootDir).isSigned();
+                TKit.assertTrue(expectedValue == actualValue,
+                    "Unexptected value in app image file for <signed>");
+
+                expectedValue = hasArgument("--mac-app-store");
+                actualValue = AppImageFile.load(rootDir).isAppStore();
+                TKit.assertTrue(expectedValue == actualValue,
+                    "Unexptected value in app image file for <app-store>");
+            }
         }
     }
 

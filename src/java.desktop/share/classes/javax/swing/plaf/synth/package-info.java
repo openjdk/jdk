@@ -39,7 +39,7 @@
  * Each {@link javax.swing.plaf.ComponentUI} implementation in Synth associates
  * itself with one {@link javax.swing.plaf.synth.SynthStyle} per
  * {@link javax.swing.plaf.synth.Region}, most {@code Components} only have one
- * {@code Region} and therefor only one {@code SynthStyle}. {@code SynthStyle}
+ * {@code Region} and therefore only one {@code SynthStyle}. {@code SynthStyle}
  * is used to access all style related properties: fonts, colors
  * and other {@code Component} properties. In addition {@code SynthStyle}s are
  * used to obtain {@link javax.swing.plaf.synth.SynthPainter}s for painting the

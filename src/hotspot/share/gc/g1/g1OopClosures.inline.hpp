@@ -64,7 +64,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
 
 template <class T>
 inline void G1ScanClosureBase::handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj) {
-  if (region_attr.is_humongous()) {
+  if (region_attr.is_humongous_candidate()) {
     _g1h->set_humongous_is_live(obj);
   } else if (region_attr.is_optional()) {
     _par_scan_state->remember_reference_into_optional_region(p);
@@ -245,7 +245,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
       do_cld_barrier(forwardee);
     }
   } else {
-    if (state.is_humongous()) {
+    if (state.is_humongous_candidate()) {
       _g1h->set_humongous_is_live(obj);
     } else if ((barrier != G1BarrierNoOptRoots) && state.is_optional()) {
       _par_scan_state->remember_root_into_optional_region(p);

@@ -330,7 +330,7 @@ public abstract sealed class Executable extends AccessibleObject
         } else {
             final boolean realParamData = hasRealParameterData();
             final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getParameterTypes();
+            final Type[] nonGenericParamTypes = getSharedParameterTypes();
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
@@ -357,7 +357,7 @@ public abstract sealed class Executable extends AccessibleObject
                 // synthetic/mandated, thus, no way to match up the
                 // indexes.
                 return genericParamTypes.length == nonGenericParamTypes.length ?
-                    genericParamTypes : nonGenericParamTypes;
+                    genericParamTypes : getParameterTypes();
             }
         }
     }

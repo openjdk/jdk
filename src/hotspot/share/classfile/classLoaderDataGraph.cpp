@@ -71,6 +71,15 @@ void ClassLoaderDataGraph::clear_claimed_marks(int claim) {
     cld->clear_claim(claim);
   }
 }
+
+void ClassLoaderDataGraph::verify_claimed_marks_cleared(int claim) {
+#ifdef ASSERT
+ for (ClassLoaderData* cld = Atomic::load_acquire(&_head); cld != NULL; cld = cld->next()) {
+    cld->verify_not_claimed(claim);
+  }
+#endif
+}
+
 // Class iterator used by the compiler.  It gets some number of classes at
 // a safepoint to decay invocation counters on the methods.
 class ClassLoaderDataGraphKlassIteratorStatic {
@@ -439,10 +448,10 @@ void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
 
 void ClassLoaderDataGraph::print_table_statistics(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
-    ResourceMark rm;
+    ResourceMark rm; // loader_name_and_id
     stringStream tempst;
     tempst.print("System Dictionary for %s class loader", cld->loader_name_and_id());
-    cld->dictionary()->print_table_statistics(st, tempst.as_string());
+    cld->dictionary()->print_table_statistics(st, tempst.freeze());
   }
 }
 
@@ -550,10 +559,12 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
     delete purge_me;
     classes_unloaded = true;
   }
+
+  Metaspace::purge(classes_unloaded);
   if (classes_unloaded) {
-    Metaspace::purge();
     set_metaspace_oom(false);
   }
+
   DependencyContext::purge_dependency_contexts();
 
   // If we're purging metadata at a safepoint, clean remaining
@@ -570,18 +581,6 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
     _safepoint_cleanup_needed = true;
     Service_lock->notify_all();
   }
-}
-
-int ClassLoaderDataGraph::resize_dictionaries() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  int resized = 0;
-  assert (Dictionary::does_any_dictionary_needs_resizing(), "some dictionary should need resizing");
-  FOR_ALL_DICTIONARY(cld) {
-    if (cld->dictionary()->resize_if_needed()) {
-      resized++;
-    }
-  }
-  return resized;
 }
 
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()

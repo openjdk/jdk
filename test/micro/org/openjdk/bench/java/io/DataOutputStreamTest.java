@@ -30,9 +30,9 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 1, warmups = 0)
+@Fork(2)
 @Measurement(iterations = 6, time = 1)
-@Warmup(iterations=2, time = 2)
+@Warmup(iterations=4, time = 2)
 @State(Scope.Benchmark)
 public class DataOutputStreamTest {
 

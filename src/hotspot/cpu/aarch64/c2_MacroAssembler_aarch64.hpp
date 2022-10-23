@@ -165,4 +165,11 @@
 
   void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
+  // java.lang.Math::signum intrinsics
+  void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                          FloatRegister one, SIMD_Arrangement T);
+
+  void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                         FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
+
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

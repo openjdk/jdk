@@ -101,7 +101,6 @@ public class Annotate {
     private final Types types;
 
     private final Attribute theUnfinishedDefaultValue;
-    private final boolean allowRepeatedAnnos;
     private final String sourceName;
 
     protected Annotate(Context context) {
@@ -124,7 +123,6 @@ public class Annotate {
         theUnfinishedDefaultValue =  new Attribute.Error(syms.errType);
 
         Source source = Source.instance(context);
-        allowRepeatedAnnos = Feature.REPEATED_ANNOTATIONS.allowedInSource(source);
         sourceName = source.name;
 
         blockCount = 1;
@@ -347,9 +345,6 @@ public class Annotate {
 
             if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
-                    if (!allowRepeatedAnnos) {
-                        log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
-                    }
                     ListBuffer<T> l = annotated.get(a.type.tsym);
                     l = l.append(c);
                     annotated.put(a.type.tsym, l);

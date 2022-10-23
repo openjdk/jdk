@@ -70,11 +70,7 @@ class BootstrapInfo;
 class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
-template <MEMFLAGS F> class HashtableBucket;
-class SymbolPropertyTable;
 class PackageEntry;
-class ProtectionDomainCacheTable;
-class ProtectionDomainCacheEntry;
 class GCTimer;
 class EventClassLoad;
 class Symbol;
@@ -144,12 +140,13 @@ class SystemDictionary : AllStatic {
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
+  static InstanceKlass* find_instance_klass(Thread* current, Symbol* class_name,
+                                            Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
-  static Klass* find_instance_or_array_klass(Symbol* class_name,
+  static Klass* find_instance_or_array_klass(Thread* current, Symbol* class_name,
                                              Handle class_loader,
                                              Handle protection_domain);
 
@@ -188,9 +185,6 @@ class SystemDictionary : AllStatic {
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(GCTimer* gc_timer);
-
-  // Protection Domain Table
-  static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
 
   // Printing
   static void print();
@@ -294,15 +288,6 @@ public:
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
- private:
-  // Static tables owned by the SystemDictionary
-
-  // Invoke methods (JSR 292)
-  static SymbolPropertyTable*    _invoke_method_table;
-
-  // ProtectionDomain cache
-  static ProtectionDomainCacheTable*   _pd_cache_table;
-
 protected:
   static InstanceKlass* _well_known_klasses[];
 
@@ -313,8 +298,6 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
-
 private:
   // Basic loading operations
   static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
@@ -324,7 +307,6 @@ private:
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
   static InstanceKlass* handle_parallel_loading(JavaThread* current,
-                                                unsigned int name_hash,
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
                                                 Handle lockObject,
@@ -335,8 +317,7 @@ private:
                                               Handle class_loader,
                                               InstanceKlass* k, TRAPS);
   static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
-  static InstanceKlass* load_instance_class(unsigned int name_hash,
-                                            Symbol* class_name,
+  static InstanceKlass* load_instance_class(Symbol* class_name,
                                             Handle class_loader, TRAPS);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
@@ -400,11 +381,9 @@ protected:
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
 
   // Class loader constraints
-  static void check_constraints(unsigned int hash,
-                                InstanceKlass* k, Handle loader,
+  static void check_constraints(InstanceKlass* k, Handle loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(unsigned int hash,
-                                InstanceKlass* k, Handle loader);
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, Handle loader);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

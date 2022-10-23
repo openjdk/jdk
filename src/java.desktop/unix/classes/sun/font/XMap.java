@@ -202,7 +202,7 @@ class XMap {
                 int bbLen = 0;
                 // Since we don't support surrogates in any X11 encoding, skip
                 // the surrogate area, otherwise the sequence of "Oxdbff0xdc00"
-                // will accidently cause the surrogate-aware nio charset to treat
+                // will accidentally cause the surrogate-aware nio charset to treat
                 // them as a legal pair and then undesirablly skip 2 "chars"
                 // for one "unmappable character"
                 if (startCharIndex < SURR_MIN && startCharIndex + count >SURR_MAX) {

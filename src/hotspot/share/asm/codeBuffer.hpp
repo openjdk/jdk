@@ -27,7 +27,6 @@
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -205,43 +204,43 @@ class CodeSection {
   }
 
   // Code emission
-  void emit_int8(int8_t x1) {
+  void emit_int8(uint8_t x1) {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x1;
     set_end(curr);
   }
 
-  void emit_int16(int16_t x) { *((int16_t*) end()) = x; set_end(end() + sizeof(int16_t)); }
-  void emit_int16(int8_t x1, int8_t x2) {
+  void emit_int16(uint16_t x) { *((uint16_t*) end()) = x; set_end(end() + sizeof(uint16_t)); }
+  void emit_int16(uint8_t x1, uint8_t x2) {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
     set_end(curr);
   }
 
-  void emit_int24(int8_t x1, int8_t x2, int8_t x3)  {
+  void emit_int24(uint8_t x1, uint8_t x2, uint8_t x3)  {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
-    *((int8_t*)  curr++) = x3;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x3;
     set_end(curr);
   }
 
-  void emit_int32(int32_t x) {
+  void emit_int32(uint32_t x) {
     address curr = end();
-    *((int32_t*) curr) = x;
-    set_end(curr + sizeof(int32_t));
+    *((uint32_t*) curr) = x;
+    set_end(curr + sizeof(uint32_t));
   }
-  void emit_int32(int8_t x1, int8_t x2, int8_t x3, int8_t x4)  {
+  void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
-    *((int8_t*)  curr++) = x3;
-    *((int8_t*)  curr++) = x4;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x3;
+    *((uint8_t*)  curr++) = x4;
     set_end(curr);
   }
 
-  void emit_int64( int64_t x)  { *((int64_t*) end()) = x; set_end(end() + sizeof(int64_t)); }
+  void emit_int64( uint64_t x)  { *((uint64_t*) end()) = x; set_end(end() + sizeof(uint64_t)); }
 
   void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
   void emit_double(jdouble x)  { *((jdouble*) end()) = x; set_end(end() + sizeof(jdouble)); }
@@ -453,6 +452,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _shared_stub_to_interp_requests = NULL;
     _shared_trampoline_requests = NULL;
 
+    _consts.initialize_outer(this, SECT_CONSTS);
+    _insts.initialize_outer(this,  SECT_INSTS);
+    _stubs.initialize_outer(this,  SECT_STUBS);
+
 #ifndef PRODUCT
     _decode_begin    = NULL;
     // Collect block comments, but restrict collection to cases where a disassembly is output.
@@ -467,9 +470,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   void initialize(address code_start, csize_t code_size) {
-    _consts.initialize_outer(this,  SECT_CONSTS);
-    _insts.initialize_outer(this,   SECT_INSTS);
-    _stubs.initialize_outer(this,   SECT_STUBS);
     _total_start = code_start;
     _total_size  = code_size;
     // Initialize the main section:
@@ -753,7 +753,7 @@ inline int CodeSection::alignment(int section) {
   if (section == CodeBuffer::SECT_INSTS) {
     return (int) CodeEntryAlignment;
   }
-  if (CodeBuffer::SECT_STUBS) {
+  if (section == CodeBuffer::SECT_STUBS) {
     // CodeBuffer installer expects sections to be HeapWordSize aligned
     return HeapWordSize;
   }

@@ -51,10 +51,6 @@ public class DocTest extends JavadocTester {
                 testSrc("DocTest.java")
         );
         checkExit(Exit.OK);
-
-        // javadoc does not report an exit code for an internal exception (!)
-        // so monitor stderr for stack dumps.
-        checkOutput(Output.STDERR, false, "at com.sun");
     }
 
     /**

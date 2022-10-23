@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,21 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
+import com.sun.hotspot.igv.graph.Figure;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public final class ExpandPredecessorsAction extends CallableSystemAction {
+public final class ExpandPredecessorsAction extends ExpandAdjacentAction {
 
     @Override
     public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.expandPredecessors();
-        }
+        expandFigures(Figure::getSuccessors);
     }
 
     @Override
     public String getName() {
         return "Expand Above";
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
-    }
-
-    @Override
-    protected boolean asynchronous() {
-        return false;
     }
 }

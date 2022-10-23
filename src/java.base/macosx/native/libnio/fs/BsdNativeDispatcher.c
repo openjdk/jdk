@@ -42,6 +42,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/attr.h>
+#include <sys/clonefile.h>
 
 static jfieldID entry_name;
 static jfieldID entry_dir;
@@ -223,6 +225,22 @@ Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
     }
 
     return mntonname;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
+    jlong srcAddress, jlong dstAddress, jint flags)
+{
+    const char* src = (const char*)jlong_to_ptr(srcAddress);
+    const char* dst = (const char*)jlong_to_ptr(dstAddress);
+
+    int ret = clonefile(src, dst, flags);
+    if (ret != 0) {
+        throwUnixException(env, errno);
+        return ret;
+    }
+
+    return 0;
 }
 
 JNIEXPORT void JNICALL

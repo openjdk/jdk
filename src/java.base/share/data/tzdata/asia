@@ -278,10 +278,7 @@ Zone	Indian/Chagos	4:49:40	-	LMT	1907
 			6:00	-	+06
 
 # Brunei
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Brunei	7:39:40 -	LMT	1926 Mar # Bandar Seri Begawan
-			7:30	-	+0730	1933
-			8:00	-	+08
+# See Asia/Kuching.
 
 # Burma / Myanmar
 
@@ -299,6 +296,7 @@ Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 			6:30	-	+0630	1942 May
 			9:00	-	+09	1945 May  3
 			6:30	-	+0630
+Link Asia/Yangon Indian/Cocos
 
 # Cambodia
 # See Asia/Bangkok.
@@ -367,12 +365,9 @@ Rule	Shang	1919	only	-	Sep	30	24:00	0	S
 # in the city at the time for people who use different time standard to adjust
 # their clock to their preferred time.
 #
-# a. For the 1940 May 31 spring forward, the essay claim that it was
-# coordinared between the international settlement authority and the French
-# concession authority and have gathered support from Hong Kong and Xiamen,
-# that it would spring forward an hour from May 31 "midnight", and the essay
-# claim "Hong Kong government implemented the spring forward in the same time
-# on the same date as Shanghai".
+# a. For the 1940 May 31 spring forward, the essay [says] ... "Hong
+# Kong government implemented the spring forward in the same time on
+# the same date as Shanghai".
 #
 # b. For the 1940 fall back, it was said that they initially intended to do
 # so on September 30 00:59 at night, however they postponed it to October 12
@@ -568,7 +563,7 @@ Rule	PRC	1987	1991	-	Apr	Sun>=11	 2:00	1:00	D
 # Zhongyuan Time ("Central plain Time") UT +08
 # Now part of Asia/Shanghai.
 # most of China
-# Milne gives 8:05:43.2 for Xujiahui Observatory time; round to nearest.
+# Milne gives 8:05:43.2 for Xujiahui Observatory time....
 # Guo says Shanghai switched to UT +08 "from the end of the 19th century".
 #
 # Long-shu Time (probably as Long and Shu were two names of the area) UT +07
@@ -687,6 +682,7 @@ Rule	PRC	1987	1991	-	Apr	Sun>=11	 2:00	1:00	D
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Beijing time, used throughout China; represented by Shanghai.
+		#STDOFF	8:05:43.2
 Zone	Asia/Shanghai	8:05:43	-	LMT	1901
 			8:00	Shang	C%sT	1949 May 28
 			8:00	PRC	C%sT
@@ -694,11 +690,12 @@ Zone	Asia/Shanghai	8:05:43	-	LMT	1901
 # / Wulumuqi.  (Please use Asia/Shanghai if you prefer Beijing time.)
 Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 			6:00	-	+06
+Link Asia/Urumqi Antarctica/Vostok
 
 
 # Hong Kong
 
-# Milne gives 7:36:41.7; round this.
+# Milne gives 7:36:41.7.
 
 # From Lee Yiu Chung (2009-10-24):
 # I found there are some mistakes for the...DST rule for Hong
@@ -882,7 +879,8 @@ Rule	HK	1973	only	-	Dec	30	3:30	1:00	S
 Rule	HK	1979	only	-	May	13	3:30	1:00	S
 Rule	HK	1979	only	-	Oct	21	3:30	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30  0:36:42
+		#STDOFF	7:36:41.7
+Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 29 17:00u
 			8:00	-	HKT	1941 Jun 15  3:00
 			8:00	1:00	HKST	1941 Oct  1  4:00
 			8:00	0:30	HKWT	1941 Dec 25
@@ -1357,7 +1355,7 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1854 Jun 28 # Kolkata
 #
 # From Paul Eggert (2014-09-06):
 # The 1876 Report of the Secretary of the [US] Navy, p 306 says that Batavia
-# civil time was 7:07:12.5; round to even for Jakarta.
+# civil time was 7:07:12.5.
 #
 # From Gwillim Law (2001-05-28), overriding Shanks & Pottenger:
 # http://www.sumatera-inc.com/go_to_invest/about_indonesia.asp#standtime
@@ -1393,10 +1391,11 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1854 Jun 28 # Kolkata
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Java, Sumatra
+		#STDOFF	7:07:12.5
 Zone Asia/Jakarta	7:07:12 -	LMT	1867 Aug 10
 # Shanks & Pottenger say the next transition was at 1924 Jan 1 0:13,
 # but this must be a typo.
-			7:07:12	-	BMT	1923 Dec 31 23:47:12 # Batavia
+			7:07:12	-	BMT	1923 Dec 31 16:40u # Batavia
 			7:20	-	+0720	1932 Nov
 			7:30	-	+0730	1942 Mar 23
 			9:00	-	+09	1945 Sep 23
@@ -1427,6 +1426,111 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 			9:00	-	WIT
 
 # Iran
+
+# From Roozbeh Pournader (2022-05-30):
+# Here's an order from the Cabinet to the rest of the government to switch to
+# Tehran time, which is mentioned to be already at +03:30:
+# https://qavanin.ir/Law/TreeText/180138
+# Just in case that goes away, I also saved a copy at archive.org:
+# https://web.archive.org/web/20220530111940/https://qavanin.ir/Law/TreeText/180138
+# Here's my translation:
+#
+# "Circular on Matching the Hours of Governmental and Official Circles
+# in Provinces
+# Approved 1314/03/22 [=1935-06-13]
+# According to the ruling of the Honorable Cabinet, it is ordered that from
+# now on in all internal provinces of the country, governmental and official
+# circles set their time to match Tehran time (three hours and half before
+# Greenwich)....
+#
+# I still haven't found out when Tehran itself switched to +03:30....
+#
+# From Paul Eggert (2022-06-05):
+# Although the above says Tehran was at +03:30 before 1935-06-13, we don't
+# know when it switched to +03:30.  For now, use 1935-06-13 as the switch date.
+# Although most likely wrong, we have no better info.
+
+# From Roozbeh Pournader (2022-06-01):
+# This is from Kayhan newspaper, one of the major Iranian newspapers, from
+# March 20, 1978, page 2:
+#
+# "Pull the clocks 60 minutes forward
+# As we informed before, from the fourth day of the month Farvardin of the
+# new year [=1978-03-24], clocks will be pulled forward, and people's daily
+# work and life program will start one hour earlier than the current program.
+# On the 1st day of the month Farvardin of this year [=1977-03-21], they had
+# pulled the clocks forward by one hour, but in the month of Mehr
+# [=1977-09-23], the clocks were pulled back by 30 minutes.
+# In this way, from the 4th day of the month Farvardin, clocks will be ahead
+# of the previous years by one hour and a half.
+# According to the new program, during the night of 4th of Farvardin, when
+# the midnight, meaning 24 o'clock is announced, the hands of the clock must
+# be pulled forward by one hour and thus consider midnight 1 o'clock in the
+# forenoon."
+#
+# This implies that in September 1977, when the daylight savings time was
+# done with, Iran didn't go back to +03:30, but immediately to +04:00.
+#
+#
+# This is from the major Iranian newspaper Ettela'at, dated [1978-08-03]...,
+# page 32. It looks like they decided to get the clocks back to +4:00
+# just in time for Ramadan that year:
+#
+# "Tomorrow Night, Pull the Clocks Back by One Hour
+# At 1 o'clock in the forenoon of Saturday 14 Mordad [=1978-08-05], the
+# clocks will be pulled one hour back and instead of 1 o'clock in the
+# forenoon, Radio Iran will announce 24 o'clock.
+# This decision was made in the Cabinet of Ministers meeting of 25 Tir
+# [=1978-07-16], [...]
+# At the beginning of the year 2537 [=March 1978: Iran was using a different
+# year number for a few years then, based on the Coronation of Cyrus the
+# Great], the country's official time was pulled forward by one hour and now
+# the official time is one hour and a half ahead compared to last year,
+# because in Farvardin of last year [=March 1977], the official time was
+# pulled forward one hour and this continued until the second half of last
+# year [=September 1977] until in the second half of last year the official
+# time was pulled back half an hour and that half hour still remains."
+#
+# This matches the time of the true noon published in the newspapers, as they
+# clearly go from +05:00 to +04:00 after that date (which happened during a
+# long weekend in Iran).
+
+# From Roozbeh Pournader (2022-05-31):
+# [Movahedi S. Cultural preconceptions of time: Can we use operational time
+# to meddle in God's Time? Comp Stud Soc Hist. 1985;27(3):385-400]
+# https://www.jstor.org/stable/178704
+# Here's the quotes from the paper:
+# 1. '"Iran's official time keeper moved the clock one hour forward as from
+# March 22, 1977 (Farvardin 2, 2536) to make maximum use of daylight and save
+# in energy consumption. Thus Iran joined such other countries as Britain in
+# observing what is known as 'daylight saving.' The proposal was originally
+# put forward by the Ministry of Energy, in no way having any influence on
+# observing religious ceremonies. Moving time one hour forward in summer
+# means that at 11:00 o'clock on March 21, the official time was set as
+# midnight March 22. Then September 24 will actually begin one hour later
+# than the end of September 23 [...]." Iran's time base thus continued to be
+# Greenwich Mean Time plus three and one-half hours (plus four and one-half
+# hours in summer).'
+#
+# The article sources this from Iran Almanac and Book of Facts, 1977, Tehran:
+# Echo of Iran, which is on Google Books at
+# https://www.google.com/books/edition/Iran_Almanac_and_Book_of_Facts/9ybVAAAAMAAJ.
+# (I confirmed it by searching for snippets.)
+#
+# 2. "After the fall of the shah, the revolutionary government returned to
+# daylight-saving time (DST) on 26 May 1979."
+#
+# This seems to have been announced just one day in advance, on 25 May 1979.
+#
+# The change in 1977 clearly seems to be the first daylight savings effort in
+# Iran. But the article doesn't mention what happened in 1978 (which was
+# still during the shah's government), or how things continued in 1979
+# onwards (which was during the Islamic Republic).
+
+# From Francis Santoni (2022-06-01):
+# for Iran and 1977 the effective change is only 20 October
+# (UIT No. 143 17.XI.1977) and not 23 September (UIT No. 141 13.IX.1977).
+# UIT is the Operational Bulletin of International Telecommunication Union.
 
 # From Roozbeh Pournader (2003-03-15):
 # This is an English translation of what I just found (originally in Persian).
@@ -1462,65 +1566,12 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # leap year calculation involved.  There has never been any serious
 # plan to change that law....
 #
-# From Paul Eggert (2018-11-30):
-# Go with Shanks & Pottenger before Sept. 1991, and with Pournader thereafter.
-# I used the following code in GNU Emacs 26.1 to generate the "Rule Iran"
-# lines from 2008 through 2087.  Emacs 26.1 uses Ed Reingold's
-# cal-persia implementation of Birashk's approximation, which in the
-# 2008-2087 range disagrees with the astronomical Persian calendar
-# for Persian years 1404 (Gregorian 2025) and 1437 (Gregorian 2058), so
-# the following code special-cases those years.  See Table 15.1, page 264, of:
-# Edward M. Reingold and Nachum Dershowitz, Calendrical Calculations:
-# The Ultimate Edition, Cambridge University Press (2018).
-# https://www.cambridge.org/fr/academic/subjects/computer-science/computing-general-interest/calendrical-calculations-ultimate-edition-4th-edition
-# Page 258, footnote 2, of this book says there is some dispute over what will
-# happen in 2091 (and some other years after that), so this code
-# stops in 2087, as 2088 and 2089 agree with the "max" rule below.
-# (cl-loop
-#  initially (require 'cal-persia)
-#  with first-persian-year = 1387
-#  with last-persian-year = 1466
-#  ;; Exceptional years in the above range,
-#  ;; from Reingold & Dershowitz Table 15.1, page 264:
-#  with exceptional-persian-years = '(1404 1437)
-#  with range-start = nil
-#  for persian-year from first-persian-year to last-persian-year
-#  do
-#  (let*
-#      ((exceptional-year-offset
-#        (if (member persian-year exceptional-persian-years) 1 0))
-#       (beg-dst-absolute
-#        (+ (calendar-persian-to-absolute (list 1 1 persian-year))
-#           exceptional-year-offset))
-#       (end-dst-absolute
-#        (+ (calendar-persian-to-absolute (list 6 30 persian-year))
-#           exceptional-year-offset))
-#       (next-year-beg-dst-absolute
-#        (+ (calendar-persian-to-absolute (list 1 1 (1+ persian-year)))
-#           (if (member (1+ persian-year) exceptional-persian-years) 1 0)))
-#       (beg-dst (calendar-gregorian-from-absolute beg-dst-absolute))
-#       (end-dst (calendar-gregorian-from-absolute end-dst-absolute))
-#       (next-year-beg-dst (calendar-gregorian-from-absolute
-#                           next-year-beg-dst-absolute))
-#       (year (calendar-extract-year beg-dst))
-#       (range-end (if range-start year "only")))
-#    (setq range-start (or range-start year))
-#    (when (or (/= (calendar-extract-day beg-dst)
-#                  (calendar-extract-day next-year-beg-dst))
-#              (= persian-year last-persian-year))
-#      (insert
-#       (format
-#        "Rule\tIran\t%d\t%s\t-\t%s\t%2d\t24:00\t1:00\t-\n"
-#        range-start range-end
-#        (calendar-month-name (calendar-extract-month beg-dst) t)
-#        (calendar-extract-day beg-dst)))
-#      (insert
-#       (format
-#        "Rule\tIran\t%d\t%s\t-\t%s\t%2d\t24:00\t0\t-\n"
-#        range-start range-end
-#        (calendar-month-name (calendar-extract-month end-dst) t)
-#        (calendar-extract-day end-dst)))
-#      (setq range-start nil))))
+# From Paul Eggert (2022-06-30):
+# Go with Pournader for 1935 through spring 1979, and for timestamps
+# after August 1991; go with with Shanks & Pottenger for other timestamps.
+# Go with Santoni's citation of the UIT for fall 1977, as 20 October 1977
+# is 28 Mehr 1356, consistent with the "Mehr" in Pournader's source.
+# Assume that the UIT's "1930" is UTC, i.e., 24:00 local time.
 #
 # From Oscar van Vlijmen (2005-03-30), writing about future
 # discrepancies between cal-persia and the Iranian calendar:
@@ -1554,10 +1605,23 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # be changed back to its previous state on the 24 hours of the
 # thirtieth day of Shahrivar.
 #
+# From Ali Mirjamali (2022-05-10):
+# Official IR News Agency announcement: irna.ir/xjJ3TT
+# ...
+# Highlights: DST will be cancelled for the next Iranian year 1402
+# (i.e 2023-March-21) and forthcoming years.
+#
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Iran	1978	1980	-	Mar	20	24:00	1:00	-
-Rule	Iran	1978	only	-	Oct	20	24:00	0	-
+# Work around a bug in zic 2022a and earlier.
+Rule	Iran	1910	only	-	Jan	 1	00:00	0	-
+#
+Rule	Iran	1977	only	-	Mar	21	23:00	1:00	-
+Rule	Iran	1977	only	-	Oct	20	24:00	0	-
+Rule	Iran	1978	only	-	Mar	24	24:00	1:00	-
+Rule	Iran	1978	only	-	Aug	 5	01:00	0	-
+Rule	Iran	1979	only	-	May	26	24:00	1:00	-
 Rule	Iran	1979	only	-	Sep	18	24:00	0	-
+Rule	Iran	1980	only	-	Mar	20	24:00	1:00	-
 Rule	Iran	1980	only	-	Sep	22	24:00	0	-
 Rule	Iran	1991	only	-	May	 2	24:00	1:00	-
 Rule	Iran	1992	1995	-	Mar	21	24:00	1:00	-
@@ -1588,85 +1652,13 @@ Rule	Iran	2017	2019	-	Mar	21	24:00	1:00	-
 Rule	Iran	2017	2019	-	Sep	21	24:00	0	-
 Rule	Iran	2020	only	-	Mar	20	24:00	1:00	-
 Rule	Iran	2020	only	-	Sep	20	24:00	0	-
-Rule	Iran	2021	2023	-	Mar	21	24:00	1:00	-
-Rule	Iran	2021	2023	-	Sep	21	24:00	0	-
-Rule	Iran	2024	only	-	Mar	20	24:00	1:00	-
-Rule	Iran	2024	only	-	Sep	20	24:00	0	-
-Rule	Iran	2025	2027	-	Mar	21	24:00	1:00	-
-Rule	Iran	2025	2027	-	Sep	21	24:00	0	-
-Rule	Iran	2028	2029	-	Mar	20	24:00	1:00	-
-Rule	Iran	2028	2029	-	Sep	20	24:00	0	-
-Rule	Iran	2030	2031	-	Mar	21	24:00	1:00	-
-Rule	Iran	2030	2031	-	Sep	21	24:00	0	-
-Rule	Iran	2032	2033	-	Mar	20	24:00	1:00	-
-Rule	Iran	2032	2033	-	Sep	20	24:00	0	-
-Rule	Iran	2034	2035	-	Mar	21	24:00	1:00	-
-Rule	Iran	2034	2035	-	Sep	21	24:00	0	-
-Rule	Iran	2036	2037	-	Mar	20	24:00	1:00	-
-Rule	Iran	2036	2037	-	Sep	20	24:00	0	-
-Rule	Iran	2038	2039	-	Mar	21	24:00	1:00	-
-Rule	Iran	2038	2039	-	Sep	21	24:00	0	-
-Rule	Iran	2040	2041	-	Mar	20	24:00	1:00	-
-Rule	Iran	2040	2041	-	Sep	20	24:00	0	-
-Rule	Iran	2042	2043	-	Mar	21	24:00	1:00	-
-Rule	Iran	2042	2043	-	Sep	21	24:00	0	-
-Rule	Iran	2044	2045	-	Mar	20	24:00	1:00	-
-Rule	Iran	2044	2045	-	Sep	20	24:00	0	-
-Rule	Iran	2046	2047	-	Mar	21	24:00	1:00	-
-Rule	Iran	2046	2047	-	Sep	21	24:00	0	-
-Rule	Iran	2048	2049	-	Mar	20	24:00	1:00	-
-Rule	Iran	2048	2049	-	Sep	20	24:00	0	-
-Rule	Iran	2050	2051	-	Mar	21	24:00	1:00	-
-Rule	Iran	2050	2051	-	Sep	21	24:00	0	-
-Rule	Iran	2052	2053	-	Mar	20	24:00	1:00	-
-Rule	Iran	2052	2053	-	Sep	20	24:00	0	-
-Rule	Iran	2054	2055	-	Mar	21	24:00	1:00	-
-Rule	Iran	2054	2055	-	Sep	21	24:00	0	-
-Rule	Iran	2056	2057	-	Mar	20	24:00	1:00	-
-Rule	Iran	2056	2057	-	Sep	20	24:00	0	-
-Rule	Iran	2058	2059	-	Mar	21	24:00	1:00	-
-Rule	Iran	2058	2059	-	Sep	21	24:00	0	-
-Rule	Iran	2060	2062	-	Mar	20	24:00	1:00	-
-Rule	Iran	2060	2062	-	Sep	20	24:00	0	-
-Rule	Iran	2063	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2063	only	-	Sep	21	24:00	0	-
-Rule	Iran	2064	2066	-	Mar	20	24:00	1:00	-
-Rule	Iran	2064	2066	-	Sep	20	24:00	0	-
-Rule	Iran	2067	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2067	only	-	Sep	21	24:00	0	-
-Rule	Iran	2068	2070	-	Mar	20	24:00	1:00	-
-Rule	Iran	2068	2070	-	Sep	20	24:00	0	-
-Rule	Iran	2071	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2071	only	-	Sep	21	24:00	0	-
-Rule	Iran	2072	2074	-	Mar	20	24:00	1:00	-
-Rule	Iran	2072	2074	-	Sep	20	24:00	0	-
-Rule	Iran	2075	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2075	only	-	Sep	21	24:00	0	-
-Rule	Iran	2076	2078	-	Mar	20	24:00	1:00	-
-Rule	Iran	2076	2078	-	Sep	20	24:00	0	-
-Rule	Iran	2079	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2079	only	-	Sep	21	24:00	0	-
-Rule	Iran	2080	2082	-	Mar	20	24:00	1:00	-
-Rule	Iran	2080	2082	-	Sep	20	24:00	0	-
-Rule	Iran	2083	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2083	only	-	Sep	21	24:00	0	-
-Rule	Iran	2084	2086	-	Mar	20	24:00	1:00	-
-Rule	Iran	2084	2086	-	Sep	20	24:00	0	-
-Rule	Iran	2087	only	-	Mar	21	24:00	1:00	-
-Rule	Iran	2087	only	-	Sep	21	24:00	0	-
-#
-# The following rules are approximations starting in the year 2088.
-# These are the best post-2088 approximations available, given the
-# restrictions of a single rule using ordinary Gregorian dates.
-# At some point this table will need to be extended, though quite
-# possibly Iran will change the rules first.
-Rule	Iran	2088	max	-	Mar	20	24:00	1:00	-
-Rule	Iran	2088	max	-	Sep	20	24:00	0	-
+Rule	Iran	2021	2022	-	Mar	21	24:00	1:00	-
+Rule	Iran	2021	2022	-	Sep	21	24:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tehran	3:25:44	-	LMT	1916
-			3:25:44	-	TMT	1946     # Tehran Mean Time
-			3:30	-	+0330	1977 Nov
+			3:25:44	-	TMT	1935 Jun 13 # Tehran Mean Time
+			3:30	Iran	+0330/+0430 1977 Oct 20 24:00
 			4:00	Iran	+04/+05	1979
 			3:30	Iran	+0330/+0430
 
@@ -2262,6 +2254,17 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # From the Arabic version, it seems to say it would be at midnight
 # (assume 24:00) on the last Thursday in February, starting from 2022.
 
+# From Issam Al-Zuwairi (2022-10-05):
+# The Council of Ministers in Jordan decided Wednesday 5th October 2022,
+# that daylight saving time (DST) will be throughout the year....
+#
+# From Brian Inglis (2022-10-06):
+# https://petra.gov.jo/Include/InnerPage.jsp?ID=45567&lang=en&name=en_news
+#
+# From Paul Eggert (2022-10-05):
+# Like Syria, model this as a transition from EEST +03 (DST) to plain +03
+# (non-DST) at the point where DST would otherwise have ended.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
 Rule	Jordan	1973	1975	-	Oct	1	0:00	0	-
@@ -2293,11 +2296,12 @@ Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
 Rule	Jordan	2006	2011	-	Oct	lastFri	0:00s	0	-
 Rule	Jordan	2013	only	-	Dec	20	0:00	0	-
 Rule	Jordan	2014	2021	-	Mar	lastThu	24:00	1:00	S
-Rule	Jordan	2014	max	-	Oct	lastFri	0:00s	0	-
-Rule	Jordan	2022	max	-	Feb	lastThu	24:00	1:00	S
+Rule	Jordan	2014	2022	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2022	only	-	Feb	lastThu	24:00	1:00	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
-			2:00	Jordan	EE%sT
+			2:00	Jordan	EE%sT	2022 Oct 28 0:00s
+			3:00	-	+03
 
 
 # Kazakhstan
@@ -2488,9 +2492,9 @@ Zone	Asia/Amman	2:23:44 -	LMT	1931
 # the third time belt (before 1930 this means +03).
 
 # From Alexander Konzurovski (2018-12-20):
-# Qyzyolrda Region (Asia/Qyzylorda) is changing its time zone from
-# UTC+6 to UTC+5 effective December 21st, 2018. The legal document is
-# located here: http://adilet.zan.kz/rus/docs/P1800000817 (russian language).
+# (Asia/Qyzylorda) is changing its time zone from UTC+6 to UTC+5
+# effective December 21st, 2018....
+# http://adilet.zan.kz/rus/docs/P1800000817 (russian language).
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 #
@@ -2767,20 +2771,8 @@ Zone	Asia/Beirut	2:22:00 -	LMT	1880
 Rule	NBorneo	1935	1941	-	Sep	14	0:00	0:20	-
 Rule	NBorneo	1935	1941	-	Dec	14	0:00	0	-
 #
-# peninsular Malaysia
-# taken from Mok Ly Yng (2003-10-30)
-# https://web.archive.org/web/20190822231045/http://www.math.nus.edu.sg/~mathelmr/teaching/timezone.html
-# This agrees with Singapore since 1905-06-01.
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Asia/Kuala_Lumpur	6:46:46 -	LMT	1901 Jan  1
-			6:55:25	-	SMT	1905 Jun  1 # Singapore M.T.
-			7:00	-	+07	1933 Jan  1
-			7:00	0:20	+0720	1936 Jan  1
-			7:20	-	+0720	1941 Sep  1
-			7:30	-	+0730	1942 Feb 16
-			9:00	-	+09	1945 Sep 12
-			7:30	-	+0730	1982 Jan  1
-			8:00	-	+08
+# For peninsular Malaysia see Asia/Singapore.
+#
 # Sabah & Sarawak
 # From Paul Eggert (2014-08-12):
 # The data entries here are mostly from Shanks & Pottenger, but the 1942, 1945
@@ -2791,12 +2783,14 @@ Zone Asia/Kuching	7:21:20	-	LMT	1926 Mar
 			8:00 NBorneo  +08/+0820	1942 Feb 16
 			9:00	-	+09	1945 Sep 12
 			8:00	-	+08
+Link Asia/Kuching Asia/Brunei
 
 # Maldives
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Malé
 			4:54:00	-	MMT	1960 # Malé Mean Time
 			5:00	-	+05
+Link Indian/Maldives Indian/Kerguelen
 
 # Mongolia
 
@@ -3416,10 +3410,6 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # The winter time in 2015 started on October 23 at 01:00.
 # https://wafa.ps/ar_page.aspx?id=CgpCdYa670694628582aCgpCdY
 # http://www.palestinecabinet.gov.ps/portal/meeting/details/27583
-#
-# From Paul Eggert (2019-04-10):
-# For now, guess spring-ahead transitions are at 00:00 on the Saturday
-# preceding March's last Sunday (i.e., Sat>=24).
 
 # From P Chan (2021-10-18):
 # http://wafa.ps/Pages/Details/34701
@@ -3435,6 +3425,18 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 
 # From Heba Hamad (2022-03-10):
 # summer time will begin in Palestine from Sunday 03-27-2022, 00:00 AM.
+
+# From Heba Hamad (2022-08-30):
+# winter time will begin in Palestine from Saturday 10-29, 02:00 AM by
+# 60 minutes backwards.  Also the state of Palestine adopted the summer
+# and winter time for the years: 2023,2024,2025,2026 ...
+# https://mm.icann.org/pipermail/tz/attachments/20220830/9f024566/Time-0001.pdf
+# (2022-08-31): ... the Saturday before the last Sunday in March and October
+# at 2:00 AM ,for the years from 2023 to 2026.
+# (2022-09-05): https://mtit.pna.ps/Site/New/1453
+#
+# From Paul Eggert (2022-08-31):
+# For now, assume that this rule will also be used after 2026.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -3466,14 +3468,16 @@ Rule Palestine	2013	only	-	Sep	27	0:00	0	-
 Rule Palestine	2014	only	-	Oct	24	0:00	0	-
 Rule Palestine	2015	only	-	Mar	28	0:00	1:00	S
 Rule Palestine	2015	only	-	Oct	23	1:00	0	-
-Rule Palestine	2016	2018	-	Mar	Sat>=24	1:00	1:00	S
-Rule Palestine	2016	2018	-	Oct	Sat>=24	1:00	0	-
+Rule Palestine	2016	2018	-	Mar	Sat<=30	1:00	1:00	S
+Rule Palestine	2016	2018	-	Oct	Sat<=30	1:00	0	-
 Rule Palestine	2019	only	-	Mar	29	0:00	1:00	S
-Rule Palestine	2019	only	-	Oct	Sat>=24	0:00	0	-
-Rule Palestine	2020	2021	-	Mar	Sat>=24	0:00	1:00	S
+Rule Palestine	2019	only	-	Oct	Sat<=30	0:00	0	-
+Rule Palestine	2020	2021	-	Mar	Sat<=30	0:00	1:00	S
 Rule Palestine	2020	only	-	Oct	24	1:00	0	-
-Rule Palestine	2021	max	-	Oct	Fri>=23	1:00	0	-
-Rule Palestine	2022	max	-	Mar	Sun>=25	0:00	1:00	S
+Rule Palestine	2021	only	-	Oct	29	1:00	0	-
+Rule Palestine	2022	only	-	Mar	27	0:00	1:00	S
+Rule Palestine	2022	max	-	Oct	Sat<=30	2:00	0	-
+Rule Palestine	2023	max	-	Mar	Sat<=30	2:00	1:00	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -3631,6 +3635,7 @@ Zone	Asia/Singapore	6:55:25 -	LMT	1901 Jan  1
 			9:00	-	+09	1945 Sep 12
 			7:30	-	+0730	1982 Jan  1
 			8:00	-	+08
+Link Asia/Singapore Asia/Kuala_Lumpur
 
 # Spratly Is
 # no information
@@ -3845,19 +3850,27 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # Our brief summary:
 # https://www.timeanddate.com/news/time/syria-dst-2012.html
 
-# From Arthur David Olson (2012-03-27):
-# Assume last Friday in March going forward XXX.
+# From Steffen Thorsen (2022-10-05):
+# Syria is adopting year-round DST, starting this autumn....
+# From https://www.enabbaladi.net/archives/607812
+# "This [the decision] came after the weekly government meeting today,
+# Tuesday 4 October ..."
+#
+# From Paul Eggert (2022-10-05):
+# Like Jordan, model this as a transition from EEST +03 (DST) to plain +03
+# (non-DST) at the point where DST would otherwise have ended.
 
 Rule	Syria	2008	only	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Syria	2008	only	-	Nov	1	0:00	0	-
 Rule	Syria	2009	only	-	Mar	lastFri	0:00	1:00	S
 Rule	Syria	2010	2011	-	Apr	Fri>=1	0:00	1:00	S
-Rule	Syria	2012	max	-	Mar	lastFri	0:00	1:00	S
-Rule	Syria	2009	max	-	Oct	lastFri	0:00	0	-
+Rule	Syria	2012	2022	-	Mar	lastFri	0:00	1:00	S
+Rule	Syria	2009	2022	-	Oct	lastFri	0:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Damascus	2:25:12 -	LMT	1920 # Dimashq
-			2:00	Syria	EE%sT
+			2:00	Syria	EE%sT	2022 Oct 28 0:00
+			3:00	-	+03
 
 # Tajikistan
 # From Shanks & Pottenger.
@@ -3865,7 +3878,7 @@ Zone	Asia/Damascus	2:25:12 -	LMT	1920 # Dimashq
 Zone	Asia/Dushanbe	4:35:12 -	LMT	1924 May  2
 			5:00	-	+05	1930 Jun 21
 			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
-			5:00	1:00	+05/+06	1991 Sep  9  2:00s
+			5:00	1:00	+06	1991 Sep  9  2:00s
 			5:00	-	+05
 
 # Thailand
@@ -3875,6 +3888,7 @@ Zone	Asia/Bangkok	6:42:04	-	LMT	1880
 			7:00	-	+07
 Link Asia/Bangkok Asia/Phnom_Penh	# Cambodia
 Link Asia/Bangkok Asia/Vientiane	# Laos
+Link Asia/Bangkok Indian/Christmas
 
 # Turkmenistan
 # From Shanks & Pottenger.
@@ -3890,6 +3904,8 @@ Zone	Asia/Ashgabat	3:53:32 -	LMT	1924 May  2 # or Ashkhabad
 Zone	Asia/Dubai	3:41:12 -	LMT	1920
 			4:00	-	+04
 Link Asia/Dubai Asia/Muscat	# Oman
+Link Asia/Dubai Indian/Mahe
+Link Asia/Dubai Indian/Reunion
 
 # Uzbekistan
 # Byalokoz 1919 says Uzbekistan was 4:27:53.
@@ -3901,7 +3917,8 @@ Zone	Asia/Samarkand	4:27:53 -	LMT	1924 May  2
 			6:00	-	+06	1982 Apr  1
 			5:00 RussiaAsia	+05/+06	1992
 			5:00	-	+05
-# Milne says Tashkent was 4:37:10.8; round to nearest.
+# Milne says Tashkent was 4:37:10.8.
+		#STDOFF	4:37:10.8
 Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 			5:00	-	+05	1930 Jun 21
 			6:00 RussiaAsia	+06/+07	1991 Mar 31  2:00
@@ -3920,7 +3937,7 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 # The English-language name of Vietnam's most populous city is "Ho Chi Minh
 # City"; use Ho_Chi_Minh below to avoid a name of more than 14 characters.
 
-# From Paul Eggert (2014-10-21) after a heads-up from Trần Ngọc Quân:
+# From Paul Eggert (2022-07-27) after a 2014 heads-up from Trần Ngọc Quân:
 # Trần Tiến Bình's authoritative book "Lịch Việt Nam: thế kỷ XX-XXI (1901-2100)"
 # (Nhà xuất bản Văn Hoá - Thông Tin, Hanoi, 2005), pp 49-50,
 # is quoted verbatim in:
@@ -3932,8 +3949,8 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 # The 1906 transition was effective July 1 and standardized Indochina to
 # Phù Liễn Observatory, legally 104° 17' 17" east of Paris.
 # It's unclear whether this meant legal Paris Mean Time (00:09:21) or
-# the Paris Meridian (2° 20' 14.03" E); the former yields 07:06:30.1333...
-# and the latter 07:06:29.333... so either way it rounds to 07:06:30,
+# the Paris Meridian; for now guess the former and round the exact
+# 07:06:30.1333... to 07:06:30.13 as the legal spec used 66 2/3 ms precision.
 # which is used below even though the modern-day Phù Liễn Observatory
 # is closer to 07:06:31.  Abbreviate Phù Liễn Mean Time as PLMT.
 #
@@ -3960,7 +3977,8 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 # NXB Thuận Hoá, Huế, 1995.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Asia/Ho_Chi_Minh	7:06:40 -	LMT	1906 Jul  1
+		#STDOFF	7:06:30.13
+Zone Asia/Ho_Chi_Minh	7:06:30 -	LMT	1906 Jul  1
 			7:06:30	-	PLMT	1911 May  1 # Phù Liễn MT
 			7:00	-	+07	1942 Dec 31 23:00
 			8:00	-	+08	1945 Mar 14 23:00

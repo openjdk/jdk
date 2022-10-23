@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class KeyStoreUtil {
             }
         } else if (collator.compare(modifier, "file") == 0) {
             try {
-                URL url = null;
+                URL url;
                 try {
                     url = new URL(arg);
                 } catch (java.net.MalformedURLException mue) {
@@ -190,7 +190,7 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Parses a option line likes
+     * Parses an option line likes
      *    -genkaypair -dname "CN=Me"
      * and add the results into a list
      * @param list the list to fill into
@@ -207,10 +207,7 @@ public class KeyStoreUtil {
         st.quoteChar('"');
         st.quoteChar('\'');
 
-        while (true) {
-            if (st.nextToken() == StreamTokenizer.TT_EOF) {
-                break;
-            }
+        while (st.nextToken() != StreamTokenizer.TT_EOF) {
             list.add(PropertyExpander.expand(st.sval));
         }
     }
@@ -267,7 +264,7 @@ public class KeyStoreUtil {
             return args;
         } else {
             result.addAll(Arrays.asList(args));
-            return result.toArray(new String[result.size()]);
+            return result.toArray(new String[0]);
         }
     }
 
