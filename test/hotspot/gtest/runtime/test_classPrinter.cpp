@@ -24,10 +24,14 @@
 #include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
 TEST_VM(ClassPrinter, print_classes) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
   ResourceMark rm;
 
   stringStream ss;
@@ -40,6 +44,8 @@ TEST_VM(ClassPrinter, print_classes) {
 }
 
 TEST_VM(ClassPrinter, print_methods) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
   ResourceMark rm;
 
   stringStream s1;

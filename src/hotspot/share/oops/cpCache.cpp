@@ -636,6 +636,7 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
     constantPoolHandle cph(Thread::current(), cache->constant_pool());
     Method* m = method_if_resolved(cph);
     oop appendix = appendix_if_resolved(cph);
+    ResourceMark rm;
     if (m != NULL) {
       st->print_cr("  Method%s: " INTPTR_FORMAT " %s.%s%s",
                    m->is_native() ? " (native)" : "",
