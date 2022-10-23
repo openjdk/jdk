@@ -41,7 +41,7 @@ class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   int _flags;
   outputStream* _st;
   int _num;
-  bool _last_printed_methods;
+  bool _has_printed_methods;
 public:
   KlassPrintClosure(const char* class_name_pattern,
                     const char* method_name_pattern,
@@ -50,7 +50,7 @@ public:
     : _class_name_pattern(class_name_pattern),
       _method_name_pattern(method_name_pattern),
       _method_signature_pattern(method_signature_pattern),
-      _flags(flags), _st(st), _num(0), _last_printed_methods(false)
+      _flags(flags), _st(st), _num(0), _has_printed_methods(false)
   {
     if (has_mode(_flags, PRINT_METHOD_HANDLE)) {
       _flags |= (PRINT_METHOD_NAME | PRINT_BYTECODE);
@@ -73,16 +73,25 @@ public:
     print_instance_klass(InstanceKlass::cast(k));
   }
 
+  static bool match(const char* pattern, Symbol* sym) {
+    return (pattern == NULL || sym->is_star_match(pattern));
+  }
+
+  void print_klass_name(InstanceKlass* ik) {
+    _st->print("[%3d] " INTPTR_FORMAT " class %s ", _num++, p2i(ik), ik->name()->as_C_string());
+    ik->class_loader_data()->print_value_on(_st);
+    _st->cr();
+  }
+
   void print_instance_klass(InstanceKlass* ik) {
     if (ik->is_loaded() && ik->name()->is_star_match(_class_name_pattern)) {
       ResourceMark rm;
-      if (_last_printed_methods) {
+      if (_has_printed_methods) {
+        // We have printed some methods in the previous class.
+        // Print a new line to separate the two classes
         _st->cr();
       }
-      _last_printed_methods = false;
-      _st->print("[%3d] " INTPTR_FORMAT " class %s ", _num++, p2i(ik), ik->name()->as_C_string());
-      ik->class_loader_data()->print_value_on(_st);
-      _st->cr();
+      _has_printed_methods = false;
 
       if (has_mode(_flags, ClassPrinter::PRINT_METHOD_NAME)) {
         bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
@@ -91,20 +100,21 @@ public:
 
         for (int index = 0; index < len; index++) {
           Method* m = ik->methods()->at(index);
-          if (_method_name_pattern != NULL &&
-              !m->name()->is_star_match(_method_name_pattern)) {
-            continue;
+          if (match(_method_name_pattern, m->name()) &&
+              match(_method_signature_pattern, m->signature())) {
+            if (print_codes && num_methods_printed++ > 0) {
+              _st->cr();
+            }
+
+            if (_has_printed_methods == false) {
+              print_klass_name(ik);
+              _has_printed_methods = true;
+            }
+            print_method(m);
           }
-          if (_method_signature_pattern != NULL &&
-              !m->signature()->is_star_match(_method_signature_pattern)) {
-            continue;
-          }
-          if (print_codes && num_methods_printed++ > 0) {
-            _st->cr();
-          }
-          print_method(m);
-          _last_printed_methods = true;
         }
+      } else {
+        print_klass_name(ik);
       }
     }
   }
