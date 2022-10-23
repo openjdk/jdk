@@ -153,6 +153,7 @@ void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outp
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
                                  const char* method_pattern, int flags, outputStream* os) {
+  ResourceMark rm;
   const char* method_name_pattern;
   const char* method_signature_pattern;
 
