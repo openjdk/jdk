@@ -38,6 +38,7 @@ class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   const char* _class_name_pattern;
   const char* _method_name_pattern;
   const char* _method_signature_pattern;
+  bool _always_print_class_name;
   int _flags;
   outputStream* _st;
   int _num;
@@ -46,10 +47,12 @@ public:
   KlassPrintClosure(const char* class_name_pattern,
                     const char* method_name_pattern,
                     const char* method_signature_pattern,
+                    bool always_print_class_name,
                     int flags, outputStream* st)
     : _class_name_pattern(class_name_pattern),
       _method_name_pattern(method_name_pattern),
       _method_signature_pattern(method_signature_pattern),
+      _always_print_class_name(always_print_class_name),
       _flags(flags), _st(st), _num(0), _has_printed_methods(false)
   {
     if (has_mode(_flags, PRINT_METHOD_HANDLE)) {
@@ -92,6 +95,9 @@ public:
         _st->cr();
       }
       _has_printed_methods = false;
+      if (_always_print_class_name) {
+        print_klass_name(ik);
+      }
 
       if (has_mode(_flags, ClassPrinter::PRINT_METHOD_NAME)) {
         bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
@@ -107,14 +113,14 @@ public:
             }
 
             if (_has_printed_methods == false) {
-              print_klass_name(ik);
+              if (!_always_print_class_name) {
+                print_klass_name(ik);
+              }
               _has_printed_methods = true;
             }
             print_method(m);
           }
         }
-      } else {
-        print_klass_name(ik);
       }
     }
   }
@@ -141,7 +147,7 @@ void ClassPrinter::print_flags_help(outputStream* os) {
 }
 
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
-  KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, os);
+  KlassPrintClosure closure(class_name_pattern, NULL, NULL, true, flags, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
@@ -166,6 +172,6 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
   }
 
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
-                            flags | PRINT_METHOD_NAME, os);
+                            false, flags | PRINT_METHOD_NAME, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
