@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.misc.InternalLock;
@@ -608,11 +609,8 @@ public class BufferedInputStream extends FilterInputStream {
             int avail = count - pos;
             if (avail > 0) {
                 byte[] buffer = getBufIfOpen();
-                out.write(buffer, pos, avail);
-                count = 0;
-                pos = 0;
 
-                // Allow GC before reallocating possibly large buffer to prevent OOME
+                // Prevent buffer poisoning (by out.write throwing IOException)
                 byte[] emptyBuffer = new byte[0];
                 if (!U.compareAndSetReference(this, BUF_OFFSET, buffer, emptyBuffer)) {
                     // Can't replace buf if there was an async close.
@@ -622,9 +620,20 @@ public class BufferedInputStream extends FilterInputStream {
                     // assert buf == null;
                     throw new IOException("Stream closed");
                 }
+
+                // Prevent leaking of "confidential" buffer content
+                Arrays.fill(buffer, 0, pos, (byte) 0);
+                Arrays.fill(buffer, count, buffer.length, (byte) 0);
+
+                out.write(buffer, pos, avail);
+                count = 0;
+                pos = 0;
+
+                // Allow GC before reallocating possibly large buffer to prevent OOME
                 int bufferSize = buffer.length;
                 buffer = null;
 
+                // Resizing the buffer to respect user's buffer size choice
                 byte[] nbuf = new byte[bufferSize];
                 if (!U.compareAndSetReference(this, BUF_OFFSET, emptyBuffer, nbuf)) {
                     // Can't replace buf if there was an async close.
