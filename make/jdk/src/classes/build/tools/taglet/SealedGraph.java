@@ -26,6 +26,7 @@
 package build.tools.taglet;
 
 import com.sun.source.doctree.DocTree;
+import java.nio.file.Path;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
@@ -83,7 +84,7 @@ public final class SealedGraph implements Taglet {
         }
 
         ModuleElement module = docletEnvironment.getElementUtils().getModuleOf(element);
-        File dotFile = new File(sealedGraphDotPath,
+        Path dotFile = Path.of(sealedGraphDotPath,
                 module.getQualifiedName() + "_" + typeElement.getQualifiedName() + ".dot");
 
         Set<String> exports = module.getDirectives().stream()
@@ -98,7 +99,7 @@ public final class SealedGraph implements Taglet {
 
         String dotContent = Renderer.graph(typeElement, exports);
 
-        try (PrintWriter pw = new PrintWriter(dotFile)) {
+        try (PrintWriter pw = new PrintWriter(dotFile.toFile())) {
             pw.println(dotContent);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
