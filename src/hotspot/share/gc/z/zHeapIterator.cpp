@@ -322,7 +322,7 @@ bool ZHeapIterator::mark_object(oop obj) {
   return bitmap->try_set_bit(index);
 }
 
-typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_other> ZHeapIteratorCLDCLosure;
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_other> ZHeapIteratorCLDClosure;
 
 class ZHeapIteratorNMethodClosure : public NMethodClosure {
 private:
@@ -363,7 +363,7 @@ public:
 void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
   {
     ZHeapIteratorColoredRootOopClosure<false /* Weak */> cl(context);
-    ZHeapIteratorCLDCLosure cld_cl(&cl);
+    ZHeapIteratorCLDClosure cld_cl(&cl);
 
     _roots_colored.apply(&cl,
                          &cld_cl);
