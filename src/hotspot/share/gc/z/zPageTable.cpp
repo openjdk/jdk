@@ -100,7 +100,7 @@ bool ZOldPagesParallelIterator::next(ZPage** page_addr)  {
 
     BitMap::idx_t page_index = bm->get_next_one_offset(_claimed);
     if (page_index == bm->size()) {
-      BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
+      Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
       return false;
     }
 
