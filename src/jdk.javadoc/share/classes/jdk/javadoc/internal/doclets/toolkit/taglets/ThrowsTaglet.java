@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -45,6 +43,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -57,8 +56,6 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -72,6 +69,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     /*
      * Relevant bits from JLS
      * ======================
+     *
+     * This list is _incomplete_ because some parts cannot be summarized here
+     * and require careful reading of JLS.
      *
      * 11.1.1 The Kinds of Exceptions
      *
@@ -114,11 +114,43 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *   Constructor declarations are ... never inherited and therefore are not
      *   subject to hiding or overriding.
      *
-     * General Comments
-     * ================
+     * 8.4.4. Generic Methods
      *
-     * Map<ThrowsTree, ExecutableElement> associates a doc tree with its holder
-     * element externally. Such maps are ordered, have non-null keys and values.
+     *   A method is generic if it declares one or more type variables (4.4).
+     *   These type variables are known as the type parameters of the method.
+     *
+     *   ...
+     *
+     *   Two methods or constructors M and N have the same type parameters if
+     *   both of the following are true:
+     *
+     *      - M and N have same number of type parameters (possibly zero).
+     *      ...
+     *
+     * 8.4.2. Method Signature
+     *
+     *   Two methods or constructors, M and N, have the same signature if they
+     *   have ... the same type parameters (if any) (8.4.4) ...
+     *   ...
+     *   The signature of a method m1 is a subsignature of the signature of
+     *   a method m2 if either:
+     *
+     *     - m2 has the same signature as m1, or
+     *     - the signature of m1 is the same as the erasure (4.6) of the
+     *       signature of m2.
+     *
+     *   Two method signatures m1 and m2 are override-equivalent iff either
+     *   m1 is a subsignature of m2 or m2 is a subsignature of m1.
+     *
+     * 8.4.8.1. Overriding (by Instance Methods)
+     *
+     *   An instance method mC declared in or inherited by class C, overrides
+     *   from C another method mA declared in class A, iff all of the following
+     *   are true:
+     *
+     *     ...
+     *     - The signature of mC is a subsignature (8.4.2) of the signature of
+     *       mA as a member of the supertype of C that names A.
      */
 
     public ThrowsTaglet(BaseConfiguration configuration) {
@@ -160,70 +192,95 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 originalExceptionTypes,
                 substitutedExceptionTypes);
         var exceptionSection = new ExceptionSectionBuilder(writer);
-        try {
-            // Step 1: Document exception tags
-            Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
-            List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
-            for (ThrowsTree t : exceptionTags) {
+        // Step 1: Document exception tags
+        Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
+        List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
+        for (ThrowsTree t : exceptionTags) {
+            try {
                 outputAnExceptionTagDeeply(exceptionSection, t, executable, alreadyDocumentedExceptions, typeSubstitutions, writer);
+            } catch (Failure f) {
+                if (!t.equals(f.tag())) {
+                    // dependant problem
+                    // FIXME: report
+                    continue;
+                }
+                // TODO: once Pattern Matching for switch is available, use it here
+                if (f instanceof Failure.ExceptionTypeNotFound e) {
+
+                } else if (f instanceof Failure.InvalidMarkup e) {
+
+                } else if (f instanceof Failure.NoExpansion e) {
+
+                } else if (f instanceof Failure.NotExceptionType e) {
+
+                } else if (f instanceof Failure.Unsupported e) {
+
+                } else {
+                    throw newAssertionError(f.getClass());
+                }
+
+                //            if (expansion.isEmpty()) {
+//                if (!add) {
+//                    exceptionSection.beginEntry(exceptionType);
+//                }
+//                Resources resources = configuration.getDocResources();
+//                String text = resources.getText("doclet.tag.invalid_input", tag.toString());
+//                exceptionSection.continueEntry(writer.invalidTagOutput(text, Optional.empty()));
+//                // it might be helpful to output the type we found for the user to diagnose the issue
+//                String n = diagnosticDescriptionOf(utils.typeUtils.asElement(exceptionType));
+//                configuration.getMessages().warning(ch.getDocTreePath(tag), "doclet.inheritDocNoDoc", n);
+//                if (!add) {
+//                    exceptionSection.endEntry();
+//                }
+//                return;
+//            }
+                //                configuration.getMessages().error(utils.getCommentHelper(holder).getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
+                //                return;
+
+            } catch (DocFinder.NoOverriddenMethodsFound e) {
+                // FIXME: report
+                throw new RuntimeException(e);
             }
-            // Step 2: Document exception types from the `throws` clause
-            if (executable.getKind() == ElementKind.METHOD) { // methods are inherited, but constructors are not (JLS 8.8)
-                var docFinder = utils.docFinder();
-                for (TypeMirror exceptionType : substitutedExceptionTypes) {
-                    var r = docFinder.search(executable,
-                            false, // false: do not look for documentation in `executable`;
-                            // if documentation were there, we would find it on step 1
-                            m -> extract(m, exceptionType)).toOptional();
+        }
+        // Step 2: Document exception types from the `throws` clause (of a method)
+        //
+        // While methods can be inherited and overridden, constructors can be neither of those (JLS 8.8);
+        // so we don't look for documentation in a super constructor.
+        if (executable.getKind() == ElementKind.METHOD) {
+            for (TypeMirror exceptionType : substitutedExceptionTypes) {
+                try {
+                    Map<ThrowsTree, ExecutableElement> r;
+                    r = expandShallowly(utils.typeUtils.asElement(exceptionType), executable);
                     if (r.isEmpty()) {
-                        // if the result is empty, `exceptionType` will be
-                        // documented on Step 3; skip it for now
+                        // `exceptionType` is not documented by any tags from ancestors, skip it till Step 3
                         continue;
                     }
                     if (!alreadyDocumentedExceptions.add(exceptionType)) {
+                        // it expands to something that has to have been documented on Step 1, skip
                         continue;
                     }
-                    for (ThrowsTree t : r.get().throwsTrees()) {
-                        outputAnExceptionTagDeeply(exceptionSection, t, r.get().method(), alreadyDocumentedExceptions, typeSubstitutions, writer);
+                    for (Map.Entry<ThrowsTree, ExecutableElement> e : r.entrySet()) {
+                        // FIXME: this can generate an error an leave the section unusable (i.e. in an inconsistent state)
+                        outputAnExceptionTagDeeply(exceptionSection, e.getKey(), e.getValue(), alreadyDocumentedExceptions, typeSubstitutions, writer);
                     }
+                } catch (Failure | DocFinder.NoOverriddenMethodsFound ignored) {
+                    // Ignore errors here because unlike @throws tags, the `throws` clause is implicit
+                    // documentation inheritance. It triggers a best-effort attempt to inherit
+                    // documentation. If there are errors in ancestors, they will likely be caught
+                    // once those ancestors are documented.
                 }
             }
-            // Step 3: List those exceptions from the `throws` clause for which no documentation was found on Step 2
-            for (TypeMirror e : substitutedExceptionTypes) {
-                if (!alreadyDocumentedExceptions.add(e)) {
-                    continue;
-                }
-                exceptionSection.beginEntry(e);
-                exceptionSection.endEntry();
-            }
-            assert alreadyDocumentedExceptions.containsAll(substitutedExceptionTypes);
-        } catch (Failure.ExceptionTypeNotFound f) {
-            var ch = utils.getCommentHelper(f.holder());
-            configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
-                    "doclet.throws.reference_not_found");
-            // add bad entry to section
-        } catch (Failure.NotExceptionType f) {
-            var ch = utils.getCommentHelper(f.holder());
-            var name = diagnosticDescriptionOf(f.type());
-            configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
-                    "doclet.throws.reference_bad_type", name);
-            // add bad entry to section
-        } catch (Failure.InvalidMarkup f) {
-
-        } catch (Failure.Unsupported f) {
-            var ch = utils.getCommentHelper(f.holder());
-            configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
-                    "doclet.throwsInheritDocUnsupported");
         }
+        // Step 3: List those exceptions from the `throws` clause for which no documentation was found on Step 2
+        for (TypeMirror e : substitutedExceptionTypes) {
+            if (!alreadyDocumentedExceptions.add(e)) {
+                continue;
+            }
+            exceptionSection.beginEntry(e);
+            exceptionSection.endEntry();
+        }
+        assert alreadyDocumentedExceptions.containsAll(substitutedExceptionTypes);
         return exceptionSection.build();
-    }
-
-    private static Map<ThrowsTree, ExecutableElement> toExceptionTags(ExecutableElement e, List<ThrowsTree> tags) {
-        return tags.stream()
-                .collect(Collectors.toMap(Function.identity(), t -> e, (e1, e2) -> {
-                    // there should be no equal exception tags, hence no merging is expected
-                    throw newAssertionError(e1, e2);
-                }, LinkedHashMap::new));
     }
 
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
@@ -232,15 +289,14 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                             Set<TypeMirror> alreadyDocumentedExceptions,
                                             Map<TypeMirror, TypeMirror> typeSubstitutions,
                                             TagletWriter writer)
-            throws Failure.ExceptionTypeNotFound,
-                   Failure.NotExceptionType,
-                   Failure.InvalidMarkup,
-                   Failure.Unsupported
+            throws Failure,
+                   DocFinder.NoOverriddenMethodsFound
     {
         var exceptionType = getExceptionType(tag, holder);
         outputAnExceptionTagDeeply(exceptionSection, exceptionType, tag, holder, true, alreadyDocumentedExceptions, typeSubstitutions, writer);
     }
 
+    // This method throws exceptions because it can be called in different context, not all of which need to output error
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
                                             Element originalExceptionType,
                                             ThrowsTree tag,
@@ -249,12 +305,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                             Set<TypeMirror> alreadyDocumentedExceptions,
                                             Map<TypeMirror, TypeMirror> typeSubstitutions,
                                             TagletWriter writer)
-            throws Failure.InvalidMarkup,
-                   Failure.ExceptionTypeNotFound,
-                   Failure.NotExceptionType,
-                   Failure.Unsupported
+            throws Failure,
+                   DocFinder.NoOverriddenMethodsFound
     {
-        var ch = utils.getCommentHelper(holder);
         var t = originalExceptionType.asType();
         var exceptionType = typeSubstitutions.getOrDefault(t, t);
         alreadyDocumentedExceptions.add(exceptionType);
@@ -281,6 +334,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 exceptionSection.endEntry();
             }
         } else {
+            // only methods can use {@inheritDoc}
+            assert holder.getKind() == ElementKind.METHOD : holder.getKind();
             // Is the {@inheritDoc} that we found standalone (i.e. without preceding and following text)?
             boolean loneInheritDoc = description.size() == 1;
             assert !loneInheritDoc || i == 0 : i;
@@ -296,33 +351,25 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 Content beforeInheritDoc = writer.commentTagsToOutput(holder, description.subList(0, i));
                 exceptionSection.continueEntry(beforeInheritDoc);
             }
-            Optional<Map<ThrowsTree, ExecutableElement>> expansion = expandShallowly(tag, holder);
-            if (expansion.isEmpty()) {
-                if (!add) {
-                    exceptionSection.beginEntry(exceptionType);
-                }
-                Resources resources = configuration.getDocResources();
-                String text = resources.getText("doclet.tag.invalid_input", tag.toString());
-                exceptionSection.continueEntry(writer.invalidTagOutput(text, Optional.empty()));
-                // it might be helpful to output the type we found for the user to diagnose the issue
-                String n = diagnosticDescriptionOf(utils.typeUtils.asElement(exceptionType));
-                configuration.getMessages().warning(ch.getDocTreePath(tag), "doclet.inheritDocNoDoc", n);
-                if (!add) {
-                    exceptionSection.endEntry();
-                }
-                return;
+            Element target = getExceptionType(tag, holder);
+            Map<ThrowsTree, ExecutableElement> tags;
+            try {
+                tags = expandShallowly(target, holder);
+            } catch (IllegalArgumentException e) {
+                throw new Failure.Unsupported(tag, holder);
+            }
+            if (tags.isEmpty()) {
+                throw new Failure.NoExpansion(tag, holder);
             }
             // if {@inheritDoc} is the only tag in the @throws description and
             // this call can add new entries to the exception section,
             // so can the recursive call
             boolean addNewEntryRecursively = addNewEntry && !add;
-            var tags = expansion.get();
             if (!addNewEntryRecursively && tags.size() > 1) {
                 // current tag has more to description than just {@inheritDoc}
                 // and thus cannot expand to multiple tags;
                 // it's likely a documentation error
-                configuration.getMessages().error(utils.getCommentHelper(holder).getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
-                return;
+                throw new Failure.InvalidMarkup(tag, holder);
             }
             for (Map.Entry<ThrowsTree, ExecutableElement> e : tags.entrySet()) {
                 outputAnExceptionTagDeeply(exceptionSection, originalExceptionType, e.getKey(), e.getValue(), addNewEntryRecursively, alreadyDocumentedExceptions, typeSubstitutions, writer);
@@ -347,6 +394,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             DocTree t = iterator.next();
             if (t.getKind() == DocTree.Kind.INHERIT_DOC) {
                 if (i != -1) {
+                    // an exception tag description contains more than one {@inheritDoc},
+                    // we consider it nonsensical and, hence, a documentation error
                     throw new Failure.InvalidMarkup(t, holder);
                 }
                 i = iterator.previousIndex();
@@ -356,7 +405,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     private Element getExceptionType(ThrowsTree tag, ExecutableElement holder)
-            throws Failure.ExceptionTypeNotFound, Failure.NotExceptionType
+            throws Failure
     {
         Element e = utils.getCommentHelper(holder).getException(tag);
         if (e == null) {
@@ -367,9 +416,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 || t.getKind() == TypeKind.PACKAGE
                 || t.getKind() == TypeKind.MODULE;
         if (subtypeTestInapplicable || !utils.typeUtils.isSubtype(t, utils.getThrowableType())) {
-            // aside from trivial documentation errors, this condition
-            // might arise when we found something which is not what
-            // the documentation author intended
+            // Aside from documentation errors, this condition might arise when the
+            // element we found is not what the documentation author intended.
+            // Whatever the reason is (e.g. see 8295543), we should not
+            // process such an element.
             throw new Failure.NotExceptionType(tag, holder, e);
         }
         var k = e.getKind();
@@ -440,60 +490,113 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
             @Override ThrowsTree tag() { return (ThrowsTree) super.tag(); }
         }
+
+        static final class NoExpansion extends Failure {
+
+            @java.io.Serial private static final long serialVersionUID = 1L;
+
+            NoExpansion(ThrowsTree tag, ExecutableElement holder) {
+                super(tag, holder);
+            }
+
+            @Override ThrowsTree tag() { return (ThrowsTree) super.tag(); }
+        }
     }
 
     /*
-     * Returns tags immediately inherited by the provided tag.
+     * Returns immediately inherited tags that document the provided exception type.
      *
-     * This method provides shallow expansion. If required, deep expansion may
-     * be obtained by calling this method recursively for tags returned from
-     * this method.
+     * A map associates a doc tree with its holder element externally. Such maps
+     * have defined iteration order of entries, whose keys and values
+     * are non-null.
      */
-    private Optional<Map<ThrowsTree, ExecutableElement>> expandShallowly(ThrowsTree tag,
-                                                                         ExecutableElement holder)
-            throws Failure.ExceptionTypeNotFound,
-                   Failure.NotExceptionType,
-                   Failure.Unsupported
+    private Map<ThrowsTree, ExecutableElement> expandShallowly(Element exceptionType,
+                                                               ExecutableElement holder)
+            throws Failure,
+                   IllegalArgumentException,
+                   DocFinder.NoOverriddenMethodsFound
     {
-        Element target = getExceptionType(tag, holder);
-        ElementKind kind = target.getKind();
-
-        DocFinder.Criterion<Map<ThrowsTree, ExecutableElement>, RuntimeException> c;
-        if (kind.isClass()) {
-            c = method -> {
-                var tags = findByExceptionType(target, method);
-                return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
+        ElementKind kind = exceptionType.getKind();
+        // the language does not allow to list individual subclasses of Failure (i.e. union), hence just Failure
+        DocFinder.Criterion<Map<ThrowsTree, ExecutableElement>, Failure> criterion;
+        if (kind == ElementKind.CLASS) {
+            criterion = method -> {
+                var tags = findByTypeElement(exceptionType, method);
+                return toResult(exceptionType, method, tags);
             };
         } else {
-            // the basis for parameter position matching is JLS sections 8.4.2 and 8.4.4
-            int i = holder.getTypeParameters().indexOf(target);
-            if (i == -1) {
-                throw new Failure.Unsupported(tag, holder);
-            }
-            c = method -> {
+            // type parameters are matched by position; the basis for position matching
+            // is JLS sections 8.4.2 and 8.4.4
+            criterion = method -> {
+                // TODO: add a test for the throws clause mentioning
+                //  a type parameter which is not declared by holder
+                int i = holder.getTypeParameters().indexOf((TypeParameterElement) exceptionType);
+                if (i == -1) {
+                    // the type parameter is not declared by `holder`
+                    throw new IllegalArgumentException();
+                }
+                // if one method overrides the other, then those methods must
+                // have the same number of type parameters (JLS 8.4.2)
                 assert utils.elementUtils.overrides(holder, method, (TypeElement) holder.getEnclosingElement());
-                // those lists must have the same number of elements
                 var typeParameterElement = method.getTypeParameters().get(i);
-                var tags = findByExceptionType(typeParameterElement, method);
-                return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
+                var tags = findByTypeElement(typeParameterElement, method);
+                return toResult(exceptionType, method, tags);
             };
         }
-        var result = utils.docFinder().search(holder, false, c).toOptional();
-        assert !(result.isPresent() && result.get().isEmpty());
-        return result;
+        var result = utils.docFinder().trySearch(holder, criterion);
+        if (result instanceof Result.Conclude<Map<ThrowsTree, ExecutableElement>> c) {
+            return c.value();
+        }
+        return Map.of(); // an empty map is effectively ordered
     }
 
-    private List<ThrowsTree> findByExceptionType(Element exceptionType,
-                                                 ExecutableElement executable) {
+    private static Result<Map<ThrowsTree, ExecutableElement>> toResult(Element target,
+                                                                       ExecutableElement holder,
+                                                                       List<ThrowsTree> tags) {
+        if (!tags.isEmpty()) {
+            // if there are tags for the target exception type, conclude search successfully
+            return Result.CONCLUDE(toExceptionTags(holder, tags));
+        }
+        if (holder.getThrownTypes().contains(target.asType())) {
+            // if there are no tags for the target exception type, BUT that type is
+            // mentioned in the `throws` clause, continue search
+            return Result.CONTINUE();
+        }
+        // there are no tags for the target exception type AND that type is not
+        // mentioned in the `throws` clause, skip search on the remaining part
+        // of the current branch of the hierarchy
+        return Result.SKIP();
+    }
+
+    /*
+     * Associates exception tags with their holder.
+     *
+     * Such a map is used as a data structure to pass around methods that output tags to content.
+     */
+    private static Map<ThrowsTree, ExecutableElement> toExceptionTags(ExecutableElement holder,
+                                                                      List<ThrowsTree> tags)
+    {
+        // preserve the tag order using the linked hash map
+        var map = new LinkedHashMap<ThrowsTree, ExecutableElement>();
+        for (var t : tags) {
+            var prev = map.put(t, holder);
+            assert prev == null; // there should be no equal exception tags
+        }
+        return map;
+    }
+
+    private List<ThrowsTree> findByTypeElement(Element targetExceptionType,
+                                               ExecutableElement executable)
+            throws Failure
+    {
         var result = new LinkedList<ThrowsTree>();
         for (ThrowsTree t : utils.getThrowsTrees(executable)) {
-            CommentHelper ch = utils.getCommentHelper(executable);
-            Element candidate = ch.getException(t);
-            if (exceptionType.equals(candidate)) { // candidate may be null
+            Element candidate = getExceptionType(t, executable);
+            if (targetExceptionType.equals(candidate)) {
                 result.add(t);
             }
         }
-        return result;
+        return List.copyOf(result);
     }
 
     /*
@@ -583,41 +686,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         // number of elements; if they don't, this algorithm is
         // broken
         assert !i1.hasNext() && !i2.hasNext();
-        return map;
-    }
-
-    private record Documentation(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
-
-    private Result<Documentation> extract(ExecutableElement method, TypeMirror targetExceptionType) {
-        // FIXME: find substitutions?
-        var ch = utils.getCommentHelper(method);
-        List<ThrowsTree> tags = new LinkedList<>();
-        for (ThrowsTree tag : utils.getThrowsTrees(method)) {
-            Element candidate = ch.getException(tag);
-            if (candidate == null) {
-                errorUnknownException(ch, tag);
-                continue;
-            }
-            if (utils.typeUtils.isSameType(candidate.asType(), targetExceptionType)) {
-                tags.add(tag);
-            }
-        }
-        if (tags.isEmpty()) {
-            // check if the exception is reachable through the throws clause
-            // TODO: need complete search: type variables and probably substitutions
-            Optional<? extends TypeMirror> any = method.getThrownTypes().stream().filter(targetExceptionType::equals).findAny();
-            if (any.isPresent()) {
-                return Result.CONTINUE();
-            } else {
-                return Result.SKIP();
-            }
-        }
-        return Result.TERMINATE(new Documentation(tags, method));
-    }
-
-    private void errorUnknownException(CommentHelper ch, ThrowsTree tag) {
-        configuration.getMessages().error(ch.getDocTreePath(tag),
-                "doclet.throws.reference_not_found", tag.getExceptionName());
+        // copyOf is unordered and this is fine: this map is for queries;
+        // it doesn't control rendering order
+        return Map.copyOf(map);
     }
 
     private static AssertionError newAssertionError(Object... objects) {

@@ -159,7 +159,7 @@ public class DocFinder {
         while (methods.hasNext()) {
             ExecutableElement m = methods.next();
             r = search0(m, true, false /* don't check for overrides */, criterion);
-            if (r instanceof Result.Terminate<T>) {
+            if (r instanceof Result.Conclude<T>) {
                 return r;
             }
         }
@@ -195,7 +195,7 @@ public class DocFinder {
     //      ruled out first. Then a switch could
     //      determine a particular constant.)
     //
-    // Terminate could be modelled as a record implementing Control<T>, but
+    // `Conclude` could be modelled as a record implementing Control<T>, but
     // it would be a bit limiting and asymmetric with respect to other
     // controls.
     //
@@ -215,11 +215,11 @@ public class DocFinder {
             private Continue() { }
         }
 
-        final class Terminate<T> implements Result<T> {
+        final class Conclude<T> implements Result<T> {
 
             private final T value;
 
-            private Terminate(T value) {
+            private Conclude(T value) {
                 this.value = Objects.requireNonNull(value);
             }
 
@@ -243,8 +243,8 @@ public class DocFinder {
             return (Result<T>) CONTINUE;
         }
 
-        static <T> Result<T> TERMINATE(T value) {
-            return new Terminate<>(value);
+        static <T> Result<T> CONCLUDE(T value) {
+            return new Conclude<>(value);
         }
 
         // A pair of convenience methods for the most typical scenario
@@ -254,7 +254,7 @@ public class DocFinder {
         }
 
         static <T> Result<T> fromOptional(Optional<T> optional) {
-            return optional.map(Result::TERMINATE).orElseGet(Result::CONTINUE);
+            return optional.map(Result::CONCLUDE).orElseGet(Result::CONTINUE);
         }
     }
 }
