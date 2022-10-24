@@ -461,7 +461,8 @@ private:
 
 public:
   ZVerifyRemsetBeforeOopClosure(ZForwarding* forwarding) :
-      _forwarding(forwarding) {}
+      _forwarding(forwarding),
+      _from_addr(zaddress_unsafe::null) {}
 
   void set_from_addr(zaddress_unsafe addr) {
     _from_addr = addr;
@@ -566,7 +567,9 @@ private:
 
 public:
   ZVerifyRemsetAfterOopClosure(ZForwarding* forwarding) :
-      _forwarding(forwarding) {}
+      _forwarding(forwarding),
+      _from_addr(zaddress_unsafe::null),
+      _to_addr(zaddress::null) {}
 
   void set_from_addr(zaddress_unsafe addr) {
     _from_addr = addr;
