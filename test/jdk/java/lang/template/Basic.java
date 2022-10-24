@@ -34,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
+import static java.lang.template.StringTemplate.RAW;
+
 public class Basic {
     public static void main(String... arg) {
         equalsHashCode();
@@ -471,6 +473,7 @@ public class Basic {
         try {
             int x = 10;
             int y = 20;
+            ASSERT(RAW."\{x} + \{y} = \{x + y}", "\{x} + \{y} = \{x + y}");
             ASSERT(processor0."\{x} + \{y} = \{x + y}", "10 + 20 = 30");
             ASSERT(processor1."\{x} + \{y} = \{x + y}", "10 + 20 = 30");
             ASSERT(processor2."\{x} + \{y} = \{x + y}", "10 + 20 = 30");

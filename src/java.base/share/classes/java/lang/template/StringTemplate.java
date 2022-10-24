@@ -338,4 +338,16 @@ public interface StringTemplate {
      */
     public static final StringProcessor STR = st -> st.interpolate();
 
+    /**
+     * No-op template processor. Used to highlight that non-processing of the StringTemplate
+     * was intentional.
+     * {@snippet :
+     * // The string template before interpolation
+     * System.out.println(RAW."\{x} = \{y} = \{x + y}");
+     * // The string template after interpolation
+     * System.out.println(STR."\{x} = \{y} = \{x + y}");
+     * }
+     */
+    public static final TemplateProcessor<StringTemplate> RAW = st -> st;
+
 }
