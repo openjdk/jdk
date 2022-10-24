@@ -32,8 +32,8 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm -Djdk.httpclient.keepalive.timeout=800 IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.keepalive.timeout=100 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.keepalive.timeout=8 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.keepalive.timeout=1 IdleConnectionTimeoutTest
  * @run testng/othervm  IdleConnectionTimeoutTest
  */
 
@@ -90,16 +90,14 @@ public class IdleConnectionTimeoutTest {
         HttpRequest hreq;
         HttpResponse<String> hresp;
         if (timeoutVal != null) {
-            if (timeoutVal.equals("100")) {
-                testLog.println("This one");
+            if (timeoutVal.equals("1")) {
                 hreq = HttpRequest.newBuilder(timeoutUri).version(HTTP_2).GET().build();
-                sleepTime = 800;
+                sleepTime = 8000;
                 hresp = runRequest(hc, hreq, sleepTime);
                 assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was expected but did not occur");
-            } else if (timeoutVal.equals("800")) {
-                testLog.println("This two");
+            } else if (timeoutVal.equals("8")) {
                 hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
-                sleepTime = 100;
+                sleepTime = 1000;
                 hresp = runRequest(hc, hreq, sleepTime);
                 assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
             }

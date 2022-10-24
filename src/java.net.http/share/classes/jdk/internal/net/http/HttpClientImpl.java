@@ -1691,13 +1691,12 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     private Duration getIdleConnectionTimeoutProp() {
-        // Http 2 in prop name somewhere
         String s = Utils.getNetProperty("jdk.httpclient.keepalive.timeout");
         if (s != null) {
             try {
                 long val = Long.parseLong(s);
                 if (val >= 0)
-                    return Duration.ofMillis(Long.parseLong(s));
+                    return Duration.ofSeconds(Long.parseLong(s));
             } catch (NumberFormatException ignored) {}
         }
         return null;
