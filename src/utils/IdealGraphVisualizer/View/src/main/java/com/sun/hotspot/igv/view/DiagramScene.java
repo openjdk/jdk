@@ -723,50 +723,52 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private Set<Pair<Point, Point>> lineCache = new HashSet<>();
 
-    private void relayoutWithoutLayout(Set<Widget> oldVisibleWidgets) {
-
-        Diagram diagram = getModel().getDiagram();
-
-        SceneAnimator animator = getSceneAnimator();
-        connectionLayer.removeChildren();
+    private boolean shouldAnimate() {
         int visibleFigureCount = 0;
-        for (Figure f : diagram.getFigures()) {
-            if (getWidget(f, FigureWidget.class).isVisible()) {
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            if (getWidget(figure, FigureWidget.class).isVisible()) {
                 visibleFigureCount++;
             }
         }
+        return visibleFigureCount <= ANIMATION_LIMIT;
+    }
 
+    private void relayoutWithoutLayout(Set<Widget> oldVisibleWidgets) {
+        assert oldVisibleWidgets != null;
+
+        Diagram diagram = getModel().getDiagram();
+        connectionLayer.removeChildren();
+
+        SceneAnimator connectionAnimator = getSceneAnimator();
+        boolean doAnimation = shouldAnimate();
+        if (!doAnimation) {
+            connectionAnimator = null;
+        }
 
         Set<Pair<Point, Point>> lastLineCache = lineCache;
         lineCache = new HashSet<>();
-        for (Figure f : diagram.getFigures()) {
-            for (OutputSlot s : f.getOutputSlots()) {
-                SceneAnimator anim = animator;
-                if (visibleFigureCount > ANIMATION_LIMIT || oldVisibleWidgets == null) {
-                    anim = null;
-                }
-                List<Connection> cl = new ArrayList<>(s.getConnections().size());
-                for (FigureConnection c : s.getConnections()) {
-                    cl.add((Connection) c);
-                }
-                processOutputSlot(lastLineCache, s, cl, 0, null, null, 0, 0, anim);
+        for (Figure figure : diagram.getFigures()) {
+            for (OutputSlot outputSlot : figure.getOutputSlots()) {
+                List<Connection> connectionList = new ArrayList<>(outputSlot.getConnections());
+                processOutputSlot(lastLineCache, outputSlot, connectionList, 0, null, null, connectionAnimator);
             }
         }
 
         if (getModel().getShowCFG()) {
             for (BlockConnection c : diagram.getBlockConnections()) {
                 if (isVisible(c)) {
-                    processOutputSlot(lastLineCache, null, Collections.singletonList(c), 0, null, null, 0, 0, animator);
+                    processOutputSlot(lastLineCache, null, Collections.singletonList(c), 0, null, null, connectionAnimator);
                 }
             }
         }
 
+        SceneAnimator animator = getSceneAnimator();
         for (Figure f : diagram.getFigures()) {
             FigureWidget w = getWidget(f);
             if (w.isVisible()) {
                 Point p = f.getPosition();
                 Point p2 = new Point(p.x, p.y);
-                if ((visibleFigureCount <= ANIMATION_LIMIT && oldVisibleWidgets != null && oldVisibleWidgets.contains(w))) {
+                if (doAnimation && oldVisibleWidgets.contains(w)) {
                     animator.animatePreferredLocation(w, p2);
                 } else {
                     w.setPreferredLocation(p2);
@@ -782,7 +784,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
                     Point location = new Point(b.getBounds().x, b.getBounds().y);
                     Rectangle r = new Rectangle(location.x, location.y, b.getBounds().width, b.getBounds().height);
 
-                    if ((visibleFigureCount <= ANIMATION_LIMIT && oldVisibleWidgets != null && oldVisibleWidgets.contains(w))) {
+                    if (doAnimation && oldVisibleWidgets.contains(w)) {
                         animator.animatePreferredBounds(w, r);
                     } else {
                         w.setPreferredBounds(r);
@@ -796,44 +798,42 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
-    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot outputSlot, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, int offx, int offy, SceneAnimator animator) {
+    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot outputSlot, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, SceneAnimator animator) {
         Map<Point, List<Connection>> pointMap = new HashMap<>(connections.size());
 
-        for (Connection c : connections) {
-
-            if (!isVisible(c)) {
+        for (Connection connection : connections) {
+            if (!isVisible(connection)) {
                 continue;
             }
 
-            List<Point> controlPoints = c.getControlPoints();
+            List<Point> controlPoints = connection.getControlPoints();
             if (controlPointIndex >= controlPoints.size()) {
                 continue;
             }
 
-            Point cur = controlPoints.get(controlPointIndex);
-            if (cur == null) { // Long connection, has been cut vertically.
-                cur = specialNullPoint;
-            } else if (c.hasSlots()) {
+            Point currentPoint = controlPoints.get(controlPointIndex);
+            if (currentPoint == null) { // Long connection, has been cut vertically.
+                currentPoint = specialNullPoint;
+            } else if (connection.hasSlots()) {
                 if (controlPointIndex == 0 && !outputSlot.shouldShowName()) {
-                    cur = new Point(cur.x, cur.y - SLOT_OFFSET);
+                    currentPoint = new Point(currentPoint.x, currentPoint.y - SLOT_OFFSET);
                 } else if (controlPointIndex == controlPoints.size() - 1 &&
-                           !((Slot)c.getTo()).shouldShowName()) {
-                    cur = new Point(cur.x, cur.y + SLOT_OFFSET);
+                           !((Slot)connection.getTo()).shouldShowName()) {
+                    currentPoint = new Point(currentPoint.x, currentPoint.y + SLOT_OFFSET);
                 }
             }
 
-            if (pointMap.containsKey(cur)) {
-                pointMap.get(cur).add(c);
+            if (pointMap.containsKey(currentPoint)) {
+                pointMap.get(currentPoint).add(connection);
             } else {
                 List<Connection> newList = new ArrayList<>(2);
-                newList.add(c);
-                pointMap.put(cur, newList);
+                newList.add(connection);
+                pointMap.put(currentPoint, newList);
             }
-
         }
 
-        for (Point p : pointMap.keySet()) {
-            List<Connection> connectionList = pointMap.get(p);
+        for (Point currentPoint : pointMap.keySet()) {
+            List<Connection> connectionList = pointMap.get(currentPoint);
 
             boolean isBold = false;
             boolean isDashed = true;
@@ -855,9 +855,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             }
 
             LineWidget newPredecessor = predecessor;
-            if (p != specialNullPoint && lastPoint != specialNullPoint && lastPoint != null) {
-                Point p1 = new Point(lastPoint.x + offx, lastPoint.y + offy);
-                Point p2 = new Point(p.x + offx, p.y + offy);
+            if (currentPoint != specialNullPoint && lastPoint != specialNullPoint && lastPoint != null) {
+                Point p1 = new Point(lastPoint.x, lastPoint.y);
+                Point p2 = new Point(currentPoint.x, currentPoint.y);
 
                 Pair<Point, Point> curPair = new Pair<>(p1, p2);
                 SceneAnimator curAnimator = animator;
@@ -874,7 +874,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
                 lineWidget.getActions().addAction(hoverAction);
             }
 
-            processOutputSlot(lastLineCache, outputSlot, connectionList, controlPointIndex + 1, p, newPredecessor, offx, offy, animator);
+            processOutputSlot(lastLineCache, outputSlot, connectionList, controlPointIndex + 1, currentPoint, newPredecessor, animator);
         }
     }
 
