@@ -206,12 +206,12 @@ class MacroAssembler: public Assembler {
   void decode_heap_oop(Register r) { decode_heap_oop(r, r); }
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register tmp2 = noreg, DecoratorSet decorators = 0);
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register tmp2 = noreg, DecoratorSet decorators = 0);
-  void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
-                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1,
+                     Register tmp2, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                              Register tmp2, DecoratorSet decorators = 0);
+  void store_heap_oop(Address dst, Register val, Register tmp1,
+                      Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   void store_klass_gap(Register dst, Register src);
 

@@ -32,7 +32,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
@@ -121,7 +120,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void addSystemProperties(Content target) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = Text.of(", ");
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
