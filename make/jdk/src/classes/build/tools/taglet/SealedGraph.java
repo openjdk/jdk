@@ -90,7 +90,7 @@ public final class SealedGraph implements Taglet {
                 .filter(ModuleElement.ExportsDirective.class::isInstance)
                 .map(ModuleElement.ExportsDirective.class::cast)
                 // Only include packages that are globally exported (i.e. no "to" exports)
-                .filter(me -> me.getTargetModules() == null)
+                .filter(ed -> ed.getTargetModules() == null)
                 .map(ModuleElement.ExportsDirective::getPackage)
                 .map(PackageElement::getQualifiedName)
                 .map(Objects::toString)
