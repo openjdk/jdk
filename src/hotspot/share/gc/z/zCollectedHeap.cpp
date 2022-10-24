@@ -289,7 +289,15 @@ void ZCollectedHeap::register_nmethod(nmethod* nm) {
 }
 
 void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
-  ZNMethod::unregister_nmethod(nm);
+  // ZGC follows the 'unlink | handshake | purge', where nmethods are unlinked
+  // from the system, threads are handshaked so that no reference to the
+  // unlinked nmethods exist, then the nmethods are deleted in the purge phase.
+  //
+  //
+  // CollectedHeap::unregister_nmethod is called during the flush phase, which
+  // is too late for ZGC.
+
+  ZNMethod::purge_nmethod(nm);
 }
 
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {

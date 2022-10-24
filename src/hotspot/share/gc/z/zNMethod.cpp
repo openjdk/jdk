@@ -110,6 +110,8 @@ void ZNMethod::log_register(const nmethod* nm) {
     return;
   }
 
+  ResourceMark rm;
+
   const ZNMethodData* const data = gc_data(nm);
 
   log.print("Register NMethod: %s.%s (" PTR_FORMAT ") [" PTR_FORMAT ", " PTR_FORMAT "] "
@@ -162,6 +164,8 @@ void ZNMethod::log_unregister(const nmethod* nm) {
     return;
   }
 
+  ResourceMark rm;
+
   log.print("Unregister NMethod: %s.%s (" PTR_FORMAT ") [" PTR_FORMAT ", " PTR_FORMAT "] ",
             nm->method()->method_holder()->external_name(),
             nm->method()->name()->as_C_string(),
@@ -170,9 +174,23 @@ void ZNMethod::log_unregister(const nmethod* nm) {
             p2i(nm->code_end()));
 }
 
-void ZNMethod::register_nmethod(nmethod* nm) {
+void ZNMethod::log_purge(const nmethod* nm) {
+  LogTarget(Debug, gc, nmethod) log;
+  if (!log.is_enabled()) {
+    return;
+  }
+
   ResourceMark rm;
 
+  log.print("Purge NMethod: %s.%s (" PTR_FORMAT ") [" PTR_FORMAT ", " PTR_FORMAT "] ",
+            nm->method()->method_holder()->external_name(),
+            nm->method()->name()->as_C_string(),
+            p2i(nm),
+            p2i(nm->code_begin()),
+            p2i(nm->code_end()));
+}
+
+void ZNMethod::register_nmethod(nmethod* nm) {
   // Create and attach gc data
   attach_gc_data(nm);
 
@@ -191,11 +209,13 @@ void ZNMethod::register_nmethod(nmethod* nm) {
 }
 
 void ZNMethod::unregister_nmethod(nmethod* nm) {
-  ResourceMark rm;
-
   log_unregister(nm);
 
   ZNMethodTable::unregister_nmethod(nm);
+}
+
+void ZNMethod::purge_nmethod(nmethod* nm) {
+  log_purge(nm);
 
   // Destroy GC data
   delete gc_data(nm);
@@ -333,6 +353,10 @@ public:
     }
 
     if (nm->is_unloading()) {
+      // Unlink from the ZNMethodTable
+      ZNMethod::unregister_nmethod(nm);
+
+      // Shared unlink
       ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
       nm->unlink();
       return;

@@ -205,7 +205,7 @@ void ZNMethodTable::wait_until_iteration_done() {
 }
 
 void ZNMethodTable::unregister_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Remove entry
   unregister_entry(_table, _size, nm);

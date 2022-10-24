@@ -39,10 +39,12 @@ private:
 
   static void log_register(const nmethod* nm);
   static void log_unregister(const nmethod* nm);
+  static void log_purge(const nmethod* nm);
 
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
+  static void purge_nmethod(nmethod* nm);
 
   static bool supports_entry_barrier(nmethod* nm);
 
