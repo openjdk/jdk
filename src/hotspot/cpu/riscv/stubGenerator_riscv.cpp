@@ -692,14 +692,14 @@ class StubGenerator: public StubCodeGenerator {
       // Clear the remaining blocks.
       Label loop;
       __ mv(tmp1, MacroAssembler::zero_words_block_size);
-      __ bind(loop);
       __ blt(cnt, tmp1, done);
+      __ bind(loop);
       for (int i = 0; i < MacroAssembler::zero_words_block_size; i++) {
-        __ sd(zr, Address(base, i << 3));
+        __ sd(zr, Address(base, i * wordSize));
       }
-      __ add(base, base, MacroAssembler::zero_words_block_size << 3);
+      __ add(base, base, MacroAssembler::zero_words_block_size * wordSize);
       __ sub(cnt, cnt, MacroAssembler::zero_words_block_size);
-      __ j(loop);
+      __ bge(cnt, tmp1, loop);
       __ bind(done);
     }
 
