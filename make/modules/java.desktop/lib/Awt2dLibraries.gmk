@@ -757,6 +757,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
       DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
       DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_pngerror.c := maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough sign-compare unused-function, \
       DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
