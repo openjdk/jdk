@@ -62,7 +62,6 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::larg
 }
 
 inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
-  const ZPageType type = page->type();
   const size_t size = page->size();
   const size_t live = page->live_bytes();
   const size_t garbage = size - live;
