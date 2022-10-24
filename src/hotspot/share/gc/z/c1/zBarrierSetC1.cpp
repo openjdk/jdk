@@ -415,7 +415,6 @@ void ZBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
     return;
   }
 
-  LIRGenerator* gen = access.gen();
   value = store_barrier(access, value, false /* is_atomic */);
 
   BarrierSetC1::store_at_resolved(access, value);
