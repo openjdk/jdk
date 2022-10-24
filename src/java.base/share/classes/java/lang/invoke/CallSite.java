@@ -126,20 +126,27 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
     private static class CallerFinder implements Function<Stream<StackWalker.StackFrame>, Object> {
         private String caller = null;
         private boolean foundLinkCallSite = false;
+        private String bsm = "Unknown";
+        private StackWalker.StackFrame lastFrame;
 
         @Override
         public Object apply(Stream<StackWalker.StackFrame> s) {
             s.forEach(new Consumer<StackWalker.StackFrame>() {
                 @Override
                 public void accept(StackWalker.StackFrame f) {
-                    if (caller == null && foundLinkCallSite) {
+                    String className = f.getClassName();
+                    if (className.equals("java.lang.invoke.MethodHandleNatives") && f.getMethodName().equals("linkCallSite")) {
+                        foundLinkCallSite = true;
+                    } else if (caller == null && foundLinkCallSite) {
                         // Find the caller of MethodHandleNatives.linkCallSite(), which
                         // contains the invokedynamic bytecode that has triggered the BSM.
                         caller = f.toStackTraceElement().toString();
-                    } else if (f.getClassName().equals("java.lang.invoke.MethodHandleNatives") && 
-                               f.getMethodName().equals("linkCallSite")) {
-                        foundLinkCallSite = true; 
+                    } else if (className.equals("java.lang.invoke.BootstrapMethodInvoker") && f.getMethodName().equals("invoke")) {
+                        if (lastFrame != null) {
+                            bsm = lastFrame.toStackTraceElement().toString();
+                        }
                     }
+                    lastFrame = f;
                 }
             });
             return null;
@@ -153,6 +160,10 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
             } else {
                 return caller;
             }
+        }
+
+        public String getBSM() {
+            return bsm;
         }
     }
 
@@ -170,6 +181,7 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
                 CallerFinder finder = new CallerFinder();
                 StackWalker.getInstance().walk(finder);
                 System.out.println("======== CallSite: " + finder.getCaller());
+                System.out.println("BSM = " + finder.getBSM());
                 System.out.println("target class = " + target.getClass().getName());
                 System.out.println("target = " + target.debugString(0));
             }
