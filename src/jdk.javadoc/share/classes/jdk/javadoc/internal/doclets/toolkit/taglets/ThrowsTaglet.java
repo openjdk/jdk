@@ -121,11 +121,16 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * element externally. Such maps are ordered, have non-null keys and values.
      */
 
-    public ThrowsTaglet() {
+    public ThrowsTaglet(BaseConfiguration configuration) {
         // of all language elements only constructors and methods can declare
         // thrown exceptions and, hence, document them
         super(DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
+        this.configuration = configuration;
+        this.utils = this.configuration.utils;
     }
+
+    private final BaseConfiguration configuration;
+    private final Utils utils;
 
     @Override
     public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
@@ -146,7 +151,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             throw newAssertionError(holder, kind);
         }
         var executable = (ExecutableElement) holder;
-        var utils = writer.configuration().utils;
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(
                 writer.getCurrentPageElement(), executable);
         List<? extends TypeMirror> substitutedExceptionTypes = instantiatedType.getThrownTypes();
@@ -157,20 +161,20 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 substitutedExceptionTypes);
         var exceptionSection = new ExceptionSectionBuilder(writer);
         try {
-            // Step 1. Document exception tags
+            // Step 1: Document exception tags
             Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
             List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
             for (ThrowsTree t : exceptionTags) {
-                outputAnExceptionTagDeeply(exceptionSection, t, executable, alreadyDocumentedExceptions, typeSubstitutions, writer, utils);
+                outputAnExceptionTagDeeply(exceptionSection, t, executable, alreadyDocumentedExceptions, typeSubstitutions, writer);
             }
-            // Step 2. Document exception types from the `throws` clause
+            // Step 2: Document exception types from the `throws` clause
             if (executable.getKind() == ElementKind.METHOD) { // methods are inherited, but constructors are not (JLS 8.8)
                 var docFinder = utils.docFinder();
                 for (TypeMirror exceptionType : substitutedExceptionTypes) {
                     var r = docFinder.search(executable,
                             false, // false: do not look for documentation in `executable`;
                             // if documentation were there, we would find it on step 1
-                            m -> extract(m, exceptionType, utils)).toOptional();
+                            m -> extract(m, exceptionType)).toOptional();
                     if (r.isEmpty()) {
                         // if the result is empty, `exceptionType` will be
                         // documented on Step 3; skip it for now
@@ -180,12 +184,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                         continue;
                     }
                     for (ThrowsTree t : r.get().throwsTrees()) {
-                        outputAnExceptionTagDeeply(exceptionSection, t, r.get().method(), alreadyDocumentedExceptions, typeSubstitutions, writer, utils);
+                        outputAnExceptionTagDeeply(exceptionSection, t, r.get().method(), alreadyDocumentedExceptions, typeSubstitutions, writer);
                     }
                 }
             }
-            // Step 3. List those exceptions from the `throws` clause for which
-            //         no documentation was found on Step 2.
+            // Step 3: List those exceptions from the `throws` clause for which no documentation was found on Step 2
             for (TypeMirror e : substitutedExceptionTypes) {
                 if (!alreadyDocumentedExceptions.add(e)) {
                     continue;
@@ -196,20 +199,20 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             assert alreadyDocumentedExceptions.containsAll(substitutedExceptionTypes);
         } catch (Failure.ExceptionTypeNotFound f) {
             var ch = utils.getCommentHelper(f.holder());
-            utils.configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
+            configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
                     "doclet.throws.reference_not_found");
             // add bad entry to section
         } catch (Failure.NotExceptionType f) {
             var ch = utils.getCommentHelper(f.holder());
             var name = diagnosticDescriptionOf(f.type());
-            utils.configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
+            configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
                     "doclet.throws.reference_bad_type", name);
             // add bad entry to section
         } catch (Failure.InvalidMarkup f) {
 
         } catch (Failure.Unsupported f) {
             var ch = utils.getCommentHelper(f.holder());
-            utils.configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
+            configuration.getMessages().warning(ch.getDocTreePath(f.tag().getExceptionName()),
                     "doclet.throwsInheritDocUnsupported");
         }
         return exceptionSection.build();
@@ -223,29 +226,19 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 }, LinkedHashMap::new));
     }
 
-    // - we need to hijack tag processing just for the "@throws + @inheritDoc"
-    //   combination (because one-to-many we need access to exception section
-    //   being written rather than individual exception description)
-    // - populates exception section, depth-first
-    // - content elements are composable, tags are not (because of the DocTreePath,
-    //   one cannot practically use a list of tags cherry-picked from different doc comments)
-
-    // This adds entries late; who starts an entry also ends it
-
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
                                             ThrowsTree tag,
                                             ExecutableElement holder,
                                             Set<TypeMirror> alreadyDocumentedExceptions,
                                             Map<TypeMirror, TypeMirror> typeSubstitutions,
-                                            TagletWriter writer,
-                                            Utils utils)
+                                            TagletWriter writer)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
                    Failure.InvalidMarkup,
                    Failure.Unsupported
     {
-        var exceptionType = getExceptionType(tag, holder, utils);
-        outputAnExceptionTagDeeply(exceptionSection, exceptionType, tag, holder, true, alreadyDocumentedExceptions, typeSubstitutions, writer, utils);
+        var exceptionType = getExceptionType(tag, holder);
+        outputAnExceptionTagDeeply(exceptionSection, exceptionType, tag, holder, true, alreadyDocumentedExceptions, typeSubstitutions, writer);
     }
 
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
@@ -255,8 +248,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                             boolean addNewEntry,
                                             Set<TypeMirror> alreadyDocumentedExceptions,
                                             Map<TypeMirror, TypeMirror> typeSubstitutions,
-                                            TagletWriter writer,
-                                            Utils utils)
+                                            TagletWriter writer)
             throws Failure.InvalidMarkup,
                    Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
@@ -304,17 +296,17 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 Content beforeInheritDoc = writer.commentTagsToOutput(holder, description.subList(0, i));
                 exceptionSection.continueEntry(beforeInheritDoc);
             }
-            Optional<Map<ThrowsTree, ExecutableElement>> expansion = expandShallowly(tag, holder, utils);
+            Optional<Map<ThrowsTree, ExecutableElement>> expansion = expandShallowly(tag, holder);
             if (expansion.isEmpty()) {
                 if (!add) {
                     exceptionSection.beginEntry(exceptionType);
                 }
-                Resources resources = utils.configuration.getDocResources();
+                Resources resources = configuration.getDocResources();
                 String text = resources.getText("doclet.tag.invalid_input", tag.toString());
                 exceptionSection.continueEntry(writer.invalidTagOutput(text, Optional.empty()));
                 // it might be helpful to output the type we found for the user to diagnose the issue
                 String n = diagnosticDescriptionOf(utils.typeUtils.asElement(exceptionType));
-                utils.configuration.getMessages().warning(ch.getDocTreePath(tag), "doclet.inheritDocNoDoc", n);
+                configuration.getMessages().warning(ch.getDocTreePath(tag), "doclet.inheritDocNoDoc", n);
                 if (!add) {
                     exceptionSection.endEntry();
                 }
@@ -329,11 +321,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 // current tag has more to description than just {@inheritDoc}
                 // and thus cannot expand to multiple tags;
                 // it's likely a documentation error
-                utils.configuration.getMessages().error(utils.getCommentHelper(holder).getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
+                configuration.getMessages().error(utils.getCommentHelper(holder).getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
                 return;
             }
             for (Map.Entry<ThrowsTree, ExecutableElement> e : tags.entrySet()) {
-                outputAnExceptionTagDeeply(exceptionSection, originalExceptionType, e.getKey(), e.getValue(), addNewEntryRecursively, alreadyDocumentedExceptions, typeSubstitutions, writer, utils);
+                outputAnExceptionTagDeeply(exceptionSection, originalExceptionType, e.getKey(), e.getValue(), addNewEntryRecursively, alreadyDocumentedExceptions, typeSubstitutions, writer);
             }
             // this might be an empty list, which is fine
             if (!loneInheritDoc) {
@@ -363,11 +355,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return i;
     }
 
-    private static Element getExceptionType(ThrowsTree tag,
-                                            ExecutableElement holder,
-                                            Utils utils)
-            throws Failure.ExceptionTypeNotFound,
-                   Failure.NotExceptionType
+    private Element getExceptionType(ThrowsTree tag, ExecutableElement holder)
+            throws Failure.ExceptionTypeNotFound, Failure.NotExceptionType
     {
         Element e = utils.getCommentHelper(holder).getException(tag);
         if (e == null) {
@@ -460,19 +449,19 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * be obtained by calling this method recursively for tags returned from
      * this method.
      */
-    private static Optional<Map<ThrowsTree, ExecutableElement>> expandShallowly(ThrowsTree tag,
-                                                                                ExecutableElement holder,
-                                                                                Utils utils)
+    private Optional<Map<ThrowsTree, ExecutableElement>> expandShallowly(ThrowsTree tag,
+                                                                         ExecutableElement holder)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
-                   Failure.Unsupported {
-        Element target = getExceptionType(tag, holder, utils);
+                   Failure.Unsupported
+    {
+        Element target = getExceptionType(tag, holder);
         ElementKind kind = target.getKind();
 
         DocFinder.Criterion<Map<ThrowsTree, ExecutableElement>, RuntimeException> c;
         if (kind.isClass()) {
             c = method -> {
-                var tags = findByExceptionType(target, method, utils);
+                var tags = findByExceptionType(target, method);
                 return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
             };
         } else {
@@ -485,7 +474,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 assert utils.elementUtils.overrides(holder, method, (TypeElement) holder.getEnclosingElement());
                 // those lists must have the same number of elements
                 var typeParameterElement = method.getTypeParameters().get(i);
-                var tags = findByExceptionType(typeParameterElement, method, utils);
+                var tags = findByExceptionType(typeParameterElement, method);
                 return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
             };
         }
@@ -494,9 +483,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return result;
     }
 
-    private static List<ThrowsTree> findByExceptionType(Element exceptionType,
-                                                        ExecutableElement executable,
-                                                        Utils utils) {
+    private List<ThrowsTree> findByExceptionType(Element exceptionType,
+                                                 ExecutableElement executable) {
         var result = new LinkedList<ThrowsTree>();
         for (ThrowsTree t : utils.getThrowsTrees(executable)) {
             CommentHelper ch = utils.getCommentHelper(executable);
@@ -600,14 +588,14 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
     private record Documentation(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
 
-    private static Result<Documentation> extract(ExecutableElement method, TypeMirror targetExceptionType, Utils utils) {
+    private Result<Documentation> extract(ExecutableElement method, TypeMirror targetExceptionType) {
         // FIXME: find substitutions?
         var ch = utils.getCommentHelper(method);
         List<ThrowsTree> tags = new LinkedList<>();
         for (ThrowsTree tag : utils.getThrowsTrees(method)) {
             Element candidate = ch.getException(tag);
             if (candidate == null) {
-                errorUnknownException(utils.configuration, ch, tag);
+                errorUnknownException(ch, tag);
                 continue;
             }
             if (utils.typeUtils.isSameType(candidate.asType(), targetExceptionType)) {
@@ -627,9 +615,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return Result.TERMINATE(new Documentation(tags, method));
     }
 
-    private static void errorUnknownException(BaseConfiguration configuration,
-                                              CommentHelper ch,
-                                              ThrowsTree tag) {
+    private void errorUnknownException(CommentHelper ch, ThrowsTree tag) {
         configuration.getMessages().error(ch.getDocTreePath(tag),
                 "doclet.throws.reference_not_found", tag.getExceptionName());
     }
