@@ -84,7 +84,7 @@ uintptr_t ZStackWatermark::prev_head_color() const {
 
 uintptr_t ZStackWatermark::prev_frame_color(const frame& fr) const {
   for (int i = _old_watermarks_newest; i >= 0; i--) {
-    ZColorWatermark ow = _old_watermarks[i];
+    const ZColorWatermark ow = _old_watermarks[i];
     if (ow._watermark == 0 || uintptr_t(fr.sp()) <= ow._watermark) {
       return ow._color;
     }

@@ -110,9 +110,9 @@ static void deoptimize_allocation(JavaThread* thread) {
   RegisterMap reg_map(thread, RegisterMap::UpdateMap::skip,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
-  frame runtime_frame = thread->last_frame();
+  const frame runtime_frame = thread->last_frame();
   assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
-  frame caller_frame = runtime_frame.sender(&reg_map);
+  const frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.is_compiled_frame(), "must be compiled");
   nmethod* nm = caller_frame.cb()->as_nmethod();
   if (nm->is_compiled_by_c2()) {
@@ -123,7 +123,7 @@ static void deoptimize_allocation(JavaThread* thread) {
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-  ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
+  const ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
   const ZPageAge age = page->age();
   if (age == ZPageAge::old) {
     // We promised C2 that its allocations would end up in young gen. This object

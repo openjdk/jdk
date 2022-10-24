@@ -206,7 +206,7 @@ bool ZStoreBarrierBuffer::stored_during_old_mark() const {
 }
 
 void ZStoreBarrierBuffer::on_new_phase_mark(int i) {
-  ZStoreBarrierEntry& entry = _buffer[i];
+  const ZStoreBarrierEntry& entry = _buffer[i];
   const zpointer prev = entry._prev;
 
   if (is_null_any(prev)) {

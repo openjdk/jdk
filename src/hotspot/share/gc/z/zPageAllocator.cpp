@@ -523,7 +523,7 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   check_out_of_memory_during_initialization();
 
   // Start asynchronous minor GC
-  ZDriverRequest request(GCCause::_z_allocation_stall, 1, 0);
+  const ZDriverRequest request(GCCause::_z_allocation_stall, 1, 0);
   ZDriver::minor()->collect(request);
 
   // Wait for allocation to complete or fail
@@ -963,11 +963,11 @@ void ZPageAllocator::restart_gc() const {
 
   if (!has_alloc_seen_young(allocation)) {
     // Start asynchronous minor GC, keep allocation requests enqueued
-    ZDriverRequest request(GCCause::_z_allocation_stall, 1, 0);
+    const ZDriverRequest request(GCCause::_z_allocation_stall, 1, 0);
     ZDriver::minor()->collect(request);
   } else {
     // Start asynchronous major GC, keep allocation requests enqueued
-    ZDriverRequest request(GCCause::_z_allocation_stall, 1, 1);
+    const ZDriverRequest request(GCCause::_z_allocation_stall, 1, 1);
     ZDriver::major()->collect(request);
   }
 }

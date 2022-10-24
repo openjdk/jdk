@@ -479,7 +479,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       // to the first element in the array when cloning object arrays. Otherwise, load
       // barriers are applied to parts of the header. Also adjust the length accordingly.
       assert(src_offset == dest_offset, "should be equal");
-      jlong offset = src_offset->get_long();
+      const jlong offset = src_offset->get_long();
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
         assert(!UseCompressedClassPointers, "should only happen without compressed class pointers");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
@@ -492,7 +492,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
     const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
+    const address copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
 
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
     const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
@@ -667,7 +667,7 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
       }
 
       Block* mem_block = cfg->get_block_for_node(mem);
-      uint mem_index = block_index(mem_block, mem);
+      const uint mem_index = block_index(mem_block, mem);
 
       if (access_block == mem_block) {
         // Earlier accesses in the same block

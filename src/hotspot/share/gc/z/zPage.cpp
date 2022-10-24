@@ -142,7 +142,7 @@ void ZPage::reset_remembered_set() {
 }
 
 void ZPage::reset(ZPageAge age, ZPageResetType type) {
-  ZPageAge prev_age = _age;
+  const ZPageAge prev_age = _age;
   _age = age;
   _last_used = 0;
 
@@ -239,9 +239,9 @@ public:
       _result(NULL) {}
 
   virtual void do_object(oop obj) {
-    uintptr_t p_int = reinterpret_cast<uintptr_t>(_p);
-    uintptr_t base_int = cast_from_oop<uintptr_t>(obj);
-    uintptr_t end_int = base_int + wordSize * obj->size();
+    const uintptr_t p_int = reinterpret_cast<uintptr_t>(_p);
+    const uintptr_t base_int = cast_from_oop<uintptr_t>(obj);
+    const uintptr_t end_int = base_int + wordSize * obj->size();
     if (p_int >= base_int && p_int < end_int) {
       _result = obj;
     }

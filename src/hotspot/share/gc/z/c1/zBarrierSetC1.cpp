@@ -426,16 +426,16 @@ LIR_Opr ZBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cm
   }
 
   new_value.load_item();
-  LIR_Opr new_value_zpointer = store_barrier(access, new_value.result(), true /* is_atomic */);
+  const LIR_Opr new_value_zpointer = store_barrier(access, new_value.result(), true /* is_atomic */);
 
   cmp_value.load_item();
   cmp_value.set_destroys_register();
   color(access, cmp_value.result());
 
 #ifdef AMD64
-  LIR_Opr cmp_value_opr = FrameMap::rax_oop_opr;
+  const LIR_Opr cmp_value_opr = FrameMap::rax_oop_opr;
 #else
-  LIR_Opr cmp_value_opr = access.gen()->new_register(T_OBJECT);
+  const LIR_Opr cmp_value_opr = access.gen()->new_register(T_OBJECT);
 #endif
   access.gen()->lir()->move(cmp_value.result(), cmp_value_opr);
 

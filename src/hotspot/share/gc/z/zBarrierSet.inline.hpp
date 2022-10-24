@@ -119,7 +119,7 @@ inline zaddress ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrie
 inline zpointer ZBarrierSet::store_good(oop obj) {
   assert(ZPointerStoreGoodMask != 0, "sanity");
 
-  zaddress addr = to_zaddress(obj);
+  const zaddress addr = to_zaddress(obj);
   return ZAddress::store_good(addr);
 }
 
@@ -406,7 +406,7 @@ inline bool ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_i
 class ZStoreBarrierOopClosure : public BasicOopIterateClosure {
 public:
   virtual void do_oop(oop* p_) {
-    volatile zpointer* p = (volatile zpointer*)p_;
+    volatile zpointer* const p = (volatile zpointer*)p_;
     const zpointer ptr = ZBarrier::load_atomic(p);
     const zaddress addr = ZPointer::uncolor(ptr);
     ZBarrier::store_barrier_on_heap_oop_field(p, false /* heal */);

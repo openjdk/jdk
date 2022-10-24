@@ -155,7 +155,7 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
 }
 
 oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  const ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
   return allocator.allocate();
 }
 
@@ -181,7 +181,7 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
-  ZDriverRequest request(cause, 1, 1);
+  const ZDriverRequest request(cause, 1, 1);
   // Handle external collection requests
   switch (cause) {
   case GCCause::_wb_young_gc:

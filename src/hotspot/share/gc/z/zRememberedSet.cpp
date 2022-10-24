@@ -198,7 +198,7 @@ ZRememberedSetContainingInLiveIterator::ZRememberedSetContainingInLiveIterator(Z
 bool ZRememberedSetContainingInLiveIterator::next(ZRememberedSetContaining* containing) {
   ZRememberedSetContaining local;
   while (_iter.next(&local)) {
-    zaddress local_addr = safe(local._addr);
+    const zaddress local_addr = safe(local._addr);
     if (local_addr != _addr) {
       _addr = local_addr;
       _addr_size = ZUtils::object_size(_addr);

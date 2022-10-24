@@ -373,7 +373,7 @@ static double calculate_extra_young_gc_time(ZDirectorStats& stats) {
   const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
 
   // Calculate how much memory young collections are predicted to free.
-  size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
 
   // Calculate current YC time and predicted YC time after an old collection.
   const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
@@ -774,8 +774,8 @@ static ZDirectorHeapStats sample_heap_stats() {
 static ZDirectorStats sample_stats() {
   ZGenerationYoung* young = ZGeneration::young();
   ZGenerationOld* old = ZGeneration::old();
-  ZStatMutatorAllocRateStats mutator_alloc_rate = ZStatMutatorAllocRate::stats();
-  ZDirectorHeapStats heap = sample_heap_stats();
+  const ZStatMutatorAllocRateStats mutator_alloc_rate = ZStatMutatorAllocRate::stats();
+  const ZDirectorHeapStats heap = sample_heap_stats();
 
   ZStatCycleStats young_cycle = young->stat_cycle()->stats();
   ZStatCycleStats old_cycle = old->stat_cycle()->stats();

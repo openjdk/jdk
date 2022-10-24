@@ -221,7 +221,7 @@ void ZDriverMinor::run_service() {
 }
 
 void ZDriverMinor::stop_service() {
-  ZDriverRequest request(GCCause::_no_gc, 0, 0);
+  const ZDriverRequest request(GCCause::_no_gc, 0, 0);
   _port.send_async(request);
 }
 
@@ -455,6 +455,6 @@ void ZDriverMajor::run_service() {
 }
 
 void ZDriverMajor::stop_service() {
-  ZDriverRequest request(GCCause::_no_gc, 0, 0);
+  const ZDriverRequest request(GCCause::_no_gc, 0, 0);
   _port.send_async(request);
 }

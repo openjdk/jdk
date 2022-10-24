@@ -129,7 +129,7 @@ CollectorCounters* ZServiceabilityCounters::collector_counters(bool minor) {
 
 void ZServiceabilityCounters::update_sizes() {
   if (UsePerfData) {
-    ZMemoryUsageInfo info = compute_memory_usage_info();
+    const ZMemoryUsageInfo info = compute_memory_usage_info();
     _generation_young_counters.update_capacity(info._young_capacity);
     _generation_old_counters.update_capacity(info._old_capacity);
     _space_young_counters.update_capacity(info._young_capacity);
@@ -153,7 +153,7 @@ size_t ZServiceabilityMemoryPool::used_in_bytes() {
 }
 
 MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
-  ZMemoryUsageInfo info = compute_memory_usage_info();
+  const ZMemoryUsageInfo info = compute_memory_usage_info();
 
   if (_generation_id == ZGenerationId::young) {
     return MemoryUsage(initial_size(), info._young_used, info._young_capacity, max_size());

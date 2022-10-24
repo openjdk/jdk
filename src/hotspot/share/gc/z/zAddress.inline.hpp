@@ -69,12 +69,12 @@ inline zoffset& operator+=(zoffset& offset, size_t size) {
 }
 
 inline zoffset operator-(zoffset offset, size_t size) {
-  uintptr_t value = untype(offset) - size;
+  const uintptr_t value = untype(offset) - size;
   return to_zoffset(value);
 }
 
 inline size_t operator-(zoffset left, zoffset right) {
-  size_t diff = untype(left) - untype(right);
+  const size_t diff = untype(left) - untype(right);
   assert(diff < ZAddressOffsetMax, "Underflow");
   return diff;
 }
@@ -155,7 +155,7 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
     }
 #endif
 
-    int shift = ZPointer::load_shift_lookup(value);
+    const int shift = ZPointer::load_shift_lookup(value);
     if (!is_power_of_2(value & (ZAddressHeapBase << shift))) {
       report_is_valid_failure("Missing heap base");
       return false;
@@ -229,13 +229,13 @@ inline bool is_null(zpointer ptr) {
 }
 
 inline bool is_null_any(zpointer ptr) {
-  uintptr_t raw_addr = untype(ptr);
+  const uintptr_t raw_addr = untype(ptr);
   return (raw_addr & ~ZPointerAllMetadataMask) == 0;
 }
 
 // Is it null - colored or not?
 inline bool is_null_assert_load_good(zpointer ptr) {
-  bool ret = is_null_any(ptr);
+  const bool ret = is_null_any(ptr);
   assert(!ret || ZPointer::is_load_good(ptr), "Got bad colored null");
   return ret;
 }
@@ -256,7 +256,7 @@ inline bool is_valid(zaddress addr, bool assert_on_failure = false) {
     return true;
   }
 
-  uintptr_t value = static_cast<uintptr_t>(addr);
+  const uintptr_t value = static_cast<uintptr_t>(addr);
 
   if (value & 0x7) {
     // No low order bits
@@ -297,7 +297,7 @@ inline void dereferenceable_test(zaddress addr) {
 
 inline zaddress to_zaddress(uintptr_t value) {
   assert_is_valid(zaddress(value));
-  zaddress addr = zaddress(value);
+  const zaddress addr = zaddress(value);
   DEBUG_ONLY(dereferenceable_test(addr));
   return addr;
 }
@@ -307,7 +307,7 @@ inline zaddress to_zaddress(oopDesc* o) {
 }
 
 inline oop to_oop(zaddress addr) {
-  oop obj = cast_to_oop(addr);
+  const oop obj = cast_to_oop(addr);
   assert(!ZVerifyOops || oopDesc::is_oop_or_null(obj), "Broken oop: " PTR_FORMAT " [" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT "]",
          p2i(obj),
          *(uintptr_t*)(untype(addr) + 0x00),
@@ -404,7 +404,7 @@ inline zaddress_unsafe ZOffset::address_unsafe(zoffset offset) {
 inline zaddress ZPointer::uncolor(zpointer ptr) {
   assert(ZPointer::is_load_good(ptr) || is_null_any(ptr),
       "Should be load good when handed out: " PTR_FORMAT, untype(ptr));
-  uintptr_t raw_addr = untype(ptr);
+  const uintptr_t raw_addr = untype(ptr);
   return to_zaddress(raw_addr >> ZPointer::load_shift_lookup(raw_addr));
 }
 
@@ -415,7 +415,7 @@ inline zaddress ZPointer::uncolor_store_good(zpointer ptr) {
 
 inline zaddress_unsafe ZPointer::uncolor_unsafe(zpointer ptr) {
   assert(ZPointer::is_store_bad(ptr), "Unexpected ptr");
-  uintptr_t raw_addr = untype(ptr);
+  const uintptr_t raw_addr = untype(ptr);
   return to_zaddress_unsafe(raw_addr >> ZPointer::load_shift_lookup(raw_addr));
 }
 

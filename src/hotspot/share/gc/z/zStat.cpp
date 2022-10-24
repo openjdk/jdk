@@ -944,7 +944,7 @@ void ZStatMutatorAllocRate::sample_allocation(size_t allocation_bytes) {
     return;
   }
 
-  size_t allocated_sample = Atomic::load(&_allocated_since_sample);
+  const size_t allocated_sample = Atomic::load(&_allocated_since_sample);
 
   if (allocated_sample < _sampling_granule) {
     // Someone beat us to it
@@ -1213,7 +1213,7 @@ void ZStatCycle::at_start() {
 
 void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
   ZLocker<ZLock> locker(&_stat_lock);
-  Ticks end_of_last = _end_of_last;
+  const Ticks end_of_last = _end_of_last;
   _end_of_last = Ticks::now();
 
   if (ZDriver::major()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
@@ -1326,9 +1326,9 @@ void ZStatWorkers::at_end() {
 }
 
 double ZStatWorkers::accumulated_time() {
-  uint nworkers = _active_workers;
+  const uint nworkers = _active_workers;
   const Ticks now = Ticks::now();
-  Ticks start = _start_of_last;
+  const Ticks start = _start_of_last;
   Tickspan time = _accumulated_time;
   if (nworkers != 0) {
     for (uint i = 0; i < nworkers; ++i) {
@@ -1340,7 +1340,7 @@ double ZStatWorkers::accumulated_time() {
 
 double ZStatWorkers::accumulated_duration() {
   const Ticks now = Ticks::now();
-  Ticks start = _start_of_last;
+  const Ticks start = _start_of_last;
   Tickspan duration = _accumulated_duration;
   if (_active_workers != 0) {
     duration += now - start;
@@ -1478,7 +1478,7 @@ void ZStatRelocation::print() {
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     size_t live = 0;
     size_t bytes = 0;
-    ZPageAge age = static_cast<ZPageAge>(i);
+    const ZPageAge age = static_cast<ZPageAge>(i);
 
     auto account_page_size = [&](ZStatRelocationSummary& summary, const ZRelocationSetSelectorGroupStats& stats) {
       summary.npages += stats.npages();
@@ -1544,7 +1544,7 @@ void ZStatNMethods::print() {
 // Stat metaspace
 //
 void ZStatMetaspace::print() {
-  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  const MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
@@ -1695,7 +1695,7 @@ void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stat
 
   size_t live = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+    const ZPageAge age = static_cast<ZPageAge>(i);
     live += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
   }
   _at_mark_end.live = live;

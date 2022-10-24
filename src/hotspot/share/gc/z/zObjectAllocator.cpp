@@ -162,7 +162,7 @@ zaddress ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
 }
 
 zaddress ZObjectAllocator::alloc_object(size_t size) {
-  ZAllocationFlags flags;
+  const ZAllocationFlags flags;
   return alloc_object(size, flags);
 }
 

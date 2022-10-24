@@ -98,13 +98,13 @@ bool ZOldPagesParallelIterator::next(ZPage** page_addr)  {
       return false;
     }
 
-    BitMap::idx_t page_index = bm->get_next_one_offset(_claimed);
+    const BitMap::idx_t page_index = bm->get_next_one_offset(_claimed);
     if (page_index == bm->size()) {
       Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
       return false;
     }
 
-    BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
+    const BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
     if (res != prev) {
       // Someone else claimed
       prev = res;

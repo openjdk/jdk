@@ -60,7 +60,7 @@ static bool z_is_null_relaxed(zpointer o) {
 }
 
 static void z_verify_old_oop(zpointer* p) {
-  zpointer o = *p;
+  const zpointer o = *p;
   assert(o != zpointer::null, "Old should not contain raw null");
   if (!z_is_null_relaxed(o)) {
     if (!ZPointer::is_mark_good(o)) {
@@ -68,7 +68,7 @@ static void z_verify_old_oop(zpointer* p) {
       guarantee(ZPointer::is_marked_old(o),  BAD_OOP_ARG(o, p));
       guarantee(ZHeap::heap()->is_old(p), BAD_OOP_ARG(o, p));
     } else {
-      zaddress addr = ZPointer::uncolor(o);
+      const zaddress addr = ZPointer::uncolor(o);
       if (ZHeap::heap()->is_young(addr)) {
         // If young collection was aborted, the GC does not guarantee
         // that all old-to-young pointers have remembered set entry.
@@ -84,7 +84,7 @@ static void z_verify_old_oop(zpointer* p) {
 }
 
 static void z_verify_young_oop(zpointer* p) {
-  zpointer o = *p;
+  const zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
     guarantee(ZHeap::heap()->is_young(p), BAD_OOP_ARG(o, p));
     guarantee(ZPointer::is_marked_young(o),  BAD_OOP_ARG(o, p));
@@ -101,14 +101,14 @@ static void z_verify_root_oop_object(zaddress o, void* p) {
 
 static void z_verify_uncolored_root_oop(zaddress* p) {
   assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
-  zaddress o = *p;
+  const zaddress o = *p;
   if (!is_null(o)) {
     z_verify_root_oop_object(o, p);
   }
 }
 
 static void z_verify_possibly_weak_oop(zpointer* p) {
-  zpointer o = *p;
+  const zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
     //guarantee(ZPointer::is_store_good(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
     guarantee(ZPointer::is_marked_old(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
@@ -133,7 +133,7 @@ public:
 
     assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
 
-    zpointer o = *p;
+    const zpointer o = *p;
 
     if (z_is_null_relaxed(o)) {
       // Skip verifying nulls
@@ -147,14 +147,14 @@ public:
 
       // Minor collections could have relocated the object;
       // use load barrier to find correct object.
-      zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+      const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
       z_verify_root_oop_object(addr, p);
     } else {
       // Don't know the state of the oop
       if (is_valid(o)) {
         // it looks like a valid colored oop;
         // use load barrier to find correct object.
-        zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+        const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
         z_verify_root_oop_object(addr, p);
       }
     }
@@ -470,7 +470,7 @@ public:
 
   virtual void do_oop(oop* p_) {
     volatile zpointer* p = (volatile zpointer*)p_;
-    zpointer ptr = *p;
+    const zpointer ptr = *p;
 
     if (ZPointer::is_remembered_exact(ptr)) {
       // When the remembered bits are 11, it means that it is intentionally
@@ -553,7 +553,7 @@ void ZVerify::before_relocation(ZForwarding* forwarding) {
   ZVerifyRemsetBeforeOopClosure cl(forwarding);
 
   forwarding->object_iterate([&](oop obj) {
-    zaddress_unsafe addr = to_zaddress_unsafe(cast_from_oop<uintptr_t>(obj));
+    const zaddress_unsafe addr = to_zaddress_unsafe(cast_from_oop<uintptr_t>(obj));
     cl.set_from_addr(addr);
     obj->oop_iterate(&cl);
   });
@@ -581,7 +581,7 @@ public:
 
   virtual void do_oop(oop* p_) {
     volatile zpointer* p = (volatile zpointer*)p_;
-    zpointer ptr = Atomic::load(p);
+    const zpointer ptr = Atomic::load(p);
 
     if (ZPointer::is_remembered_exact(ptr)) {
       // When the remembered bits are 11, it means that it is intentionally
@@ -602,7 +602,7 @@ public:
       return;
     }
 
-    uintptr_t p_offset = uintptr_t(p) - untype(_to_addr);
+    const uintptr_t p_offset = uintptr_t(p) - untype(_to_addr);
     volatile zpointer* fromspace_p = (volatile zpointer*)(untype(_from_addr) + p_offset);
 
     if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(fromspace_p) != NULL) {
@@ -636,11 +636,11 @@ void ZVerify::after_relocation_internal(ZForwarding* forwarding) {
     // when relocation started, we should be able to verify trivially
     ZGeneration* from_generation = forwarding->from_age() == ZPageAge::old ? (ZGeneration*)ZGeneration::old()
                                                                            : (ZGeneration*)ZGeneration::young();
-    zaddress to_addr = from_generation->remap_object(from_addr);
+    const zaddress to_addr = from_generation->remap_object(from_addr);
 
     cl.set_from_addr(from_addr);
     cl.set_to_addr(to_addr);
-    oop to_obj = to_oop(to_addr);
+    const oop to_obj = to_oop(to_addr);
     to_obj->oop_iterate(&cl);
   });
 }

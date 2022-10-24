@@ -164,7 +164,7 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    size_t freed = ZHeap::heap()->free_empty_pages(selector->empty_pages());
+    const size_t freed = ZHeap::heap()->free_empty_pages(selector->empty_pages());
     increase_freed(freed);
     selector->clear_empty_pages();
   }
@@ -673,8 +673,8 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   uint young_life_expectancy_samples = 0;
 
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
-    size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+    const ZPageAge age = static_cast<ZPageAge>(i);
+    const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0 && young_live_last > 0) {
       young_life_expectancy_sum += double(young_live) / double(young_live_last);
       young_life_expectancy_samples++;
@@ -696,9 +696,9 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 
   uint tenuring_threshold;
   for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
-    ZPageAge age = static_cast<ZPageAge>(tenuring_threshold);
-    size_t live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
-    size_t promoted = young_live_total - young_selected_live;
+    const ZPageAge age = static_cast<ZPageAge>(tenuring_threshold);
+    const size_t live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+    const size_t promoted = young_live_total - young_selected_live;
     young_selected_live += live;
 
     if (tenuring_threshold > 0 && promoted <= promotion_threshold) {

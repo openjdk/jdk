@@ -175,7 +175,7 @@ bool ZHeap::is_in(uintptr_t addr) const {
     return false;
   }
 
-  zaddress o = to_zaddress(addr);
+  const zaddress o = to_zaddress(addr);
   const ZPage* const page = _page_table.get(o);
   if (page == NULL) {
     return false;
@@ -273,7 +273,7 @@ size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZHeap::keep_alive(oop obj) {
-  zaddress addr = to_zaddress(obj);
+  const zaddress addr = to_zaddress(obj);
   ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 

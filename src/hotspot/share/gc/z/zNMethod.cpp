@@ -317,8 +317,8 @@ oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
     return *p;
   }
 
-  bool keep_alive = (decorators & ON_PHANTOM_OOP_REF) != 0 &&
-                    (decorators & AS_NO_KEEPALIVE) == 0;
+  const bool keep_alive = (decorators & ON_PHANTOM_OOP_REF) != 0 &&
+                          (decorators & AS_NO_KEEPALIVE) == 0;
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
   // Make a local root

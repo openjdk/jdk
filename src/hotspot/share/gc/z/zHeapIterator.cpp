@@ -476,7 +476,7 @@ void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context) {
 }
 
 void ZHeapIterator::object_iterate(ObjectClosure* object_cl, uint worker_id) {
-  ZHeapIteratorContext context(this, object_cl, NULL /* field_cl */, worker_id);
+  const ZHeapIteratorContext context(this, object_cl, NULL /* field_cl */, worker_id);
 
   if (_visit_weaks) {
     object_iterate_inner<true /* VisitWeaks */>(context);
@@ -486,7 +486,7 @@ void ZHeapIterator::object_iterate(ObjectClosure* object_cl, uint worker_id) {
 }
 
 void ZHeapIterator::object_and_field_iterate(ObjectClosure* object_cl, OopFieldClosure* field_cl, uint worker_id) {
-  ZHeapIteratorContext context(this, object_cl, field_cl, worker_id);
+  const ZHeapIteratorContext context(this, object_cl, field_cl, worker_id);
 
   if (_visit_weaks) {
     object_iterate_inner<true /* VisitWeaks */>(context);

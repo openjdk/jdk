@@ -511,7 +511,7 @@ public:
     // current target page. The shared page will be different from the
     // current target page if another thread shared a page, or allocated
     // a new page.
-    ZPageAge to_age = forwarding->to_age();
+    const ZPageAge to_age = forwarding->to_age();
     if (shared(to_age) == target) {
       ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
       ZPage* to_page = alloc_page(allocator, forwarding->type(), forwarding->size());
@@ -531,7 +531,7 @@ public:
   }
 
   void share_target_page(ZPage* page) {
-    ZPageAge age = page->age();
+    const ZPageAge age = page->age();
 
     ZLocker<ZConditionLock> locker(&_lock);
     assert(_in_place, "Invalid state");
@@ -754,12 +754,12 @@ private:
       return;
     }
 
-    zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
+    const zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
     ZForwarding* forwarding = ZGeneration::young()->forwarding(addr_unsafe);
 
     if (forwarding == NULL) {
       // Object isn't being relocated
-      zaddress addr = safe(addr_unsafe);
+      const zaddress addr = safe(addr_unsafe);
       if (!add_remset_if_young(p, addr)) {
         // Not young - eagerly remap to skip adding a remset entry just to get deferred remapping
         ZBarrier::remap_young_relocated(p, ptr);
@@ -767,7 +767,7 @@ private:
       return;
     }
 
-    zaddress addr = forwarding->find(addr_unsafe);
+    const zaddress addr = forwarding->find(addr_unsafe);
 
     if (!is_null(addr)) {
       // Object has already been relocated
@@ -814,7 +814,7 @@ private:
   }
 
   bool try_relocate_object(zaddress from_addr) {
-    zaddress to_addr = try_relocate_object_inner(from_addr);
+    const zaddress to_addr = try_relocate_object_inner(from_addr);
 
     if (is_null(to_addr)) {
       return false;
@@ -883,7 +883,7 @@ private:
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
-      ZPageAge to_age = _forwarding->to_age();
+      const ZPageAge to_age = _forwarding->to_age();
       ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target(to_age));
       set_target(to_age, to_page);
       if (to_page != NULL) {
@@ -1098,7 +1098,7 @@ public:
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       ZPage* page = forwarding->page();
-      ZPageAge to_age = forwarding->to_age();
+      const ZPageAge to_age = forwarding->to_age();
       if (page->is_small()) {
         small.do_forwarding(forwarding);
       } else {
@@ -1276,7 +1276,7 @@ ZPageAge ZRelocate::compute_to_age(ZPageAge from_age) {
   if (from_age == ZPageAge::old) {
     return ZPageAge::old;
   } else {
-    uint age = static_cast<uint>(from_age);
+    const uint age = static_cast<uint>(from_age);
     if (age >= ZGeneration::young()->tenuring_threshold()) {
       return ZPageAge::old;
     }

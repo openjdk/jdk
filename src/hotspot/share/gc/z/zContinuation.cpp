@@ -99,8 +99,8 @@ void ZContinuation::ZColorStackOopClosure::do_oop(narrowOop* p) {
 }
 
 void ZContinuation::ZUncolorStackOopClosure::do_oop(oop* p) {
-  zpointer ptr = *(volatile zpointer*)p;
-  zaddress addr = ZPointer::uncolor(ptr);
+  const zpointer ptr = *(volatile zpointer*)p;
+  const zaddress addr = ZPointer::uncolor(ptr);
   *(volatile zaddress*)p = addr;
 }
 

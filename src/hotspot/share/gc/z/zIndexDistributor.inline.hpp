@@ -95,7 +95,7 @@ private:
   // Describes the how the number of indices increases when going up from the given level
   static constexpr int level_multiplier(int level) {
     assert(level < ClaimLevels, "Must be");
-    int array[ClaimLevels]{16, 16, 16};
+    constexpr int array[ClaimLevels]{16, 16, 16};
     return array[level];
   }
 
@@ -171,7 +171,7 @@ private:
 
   int claim_at(int* indices, int level) {
     const int index = claim_index(indices, level);
-    int value = claim(index);
+    const int value = claim(index);
 #if 0
     if      (level == 0) { tty->print_cr("Claim at: %d index: %d got: %d",             indices[0], index, value); }
     else if (level == 1) { tty->print_cr("Claim at: %d %d index: %d got: %d",          indices[0], indices[1], index, value); }

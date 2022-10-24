@@ -441,7 +441,7 @@ inline void ZBarrier::remap_young_relocated(volatile zpointer* p, zpointer o) {
 }
 
 inline zpointer ZBarrier::load_atomic(volatile zpointer* p) {
-  zpointer ptr = Atomic::load(p);
+  const zpointer ptr = Atomic::load(p);
   assert_is_valid(ptr);
   return ptr;
 }
@@ -702,7 +702,7 @@ inline void ZBarrier::promote_barrier_on_young_oop_field(volatile zpointer* p) {
 // Mark barrier
 //
 inline zaddress ZBarrier::mark_young_good_barrier_on_oop_field(volatile zpointer* p) {
-  zpointer o = load_atomic(p);
+  const zpointer o = load_atomic(p);
   return barrier(is_mark_young_good_fast_path, mark_young_slow_path, color_mark_young_good, p, o);
 }
 
@@ -721,7 +721,7 @@ inline void ZBarrier::store_barrier_on_heap_oop_field(volatile zpointer* p, bool
 }
 
 inline void ZBarrier::store_barrier_on_native_oop_field(volatile zpointer* p, bool heal) {
-  zpointer prev = load_atomic(p);
+  const zpointer prev = load_atomic(p);
 
   barrier(is_store_good_fast_path, native_store_slow_path, color_store_good, (heal ? p : NULL), prev);
 }

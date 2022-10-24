@@ -234,7 +234,7 @@ void ZRelocationSetSelector::select() {
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
   ZRelocationSetSelectorStats stats;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+    const ZPageAge age = static_cast<ZPageAge>(i);
     stats._small[i] = _small.stats(age);
     stats._medium[i] = _medium.stats(age);
     stats._large[i] = _large.stats(age);

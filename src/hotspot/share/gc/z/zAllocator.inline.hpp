@@ -47,7 +47,7 @@ inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {
 }
 
 inline zaddress ZAllocatorEden::alloc_object(size_t size) {
-  zaddress addr = _object_allocator.alloc_object(size);
+  const zaddress addr = _object_allocator.alloc_object(size);
 
   if (is_null(addr)) {
     ZHeap::heap()->out_of_memory();

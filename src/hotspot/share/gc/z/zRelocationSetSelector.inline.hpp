@@ -73,7 +73,7 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
     _not_selected_pages.append(page);
   }
 
-  uint age = static_cast<uint>(page->age());
+  const uint age = static_cast<uint>(page->age());
   _stats[age]._npages++;
   _stats[age]._total += size;
   _stats[age]._live += live;
@@ -82,7 +82,7 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
 inline void ZRelocationSetSelectorGroup::register_empty_page(ZPage* page) {
   const size_t size = page->size();
 
-  uint age = static_cast<uint>(page->age());
+  const uint age = static_cast<uint>(page->age());
   _stats[age]._npages++;
   _stats[age]._total += size;
   _stats[age]._empty += size;
@@ -149,7 +149,7 @@ inline void ZRelocationSetSelector::clear_empty_pages() {
 inline size_t ZRelocationSetSelector::total() const {
   size_t total = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+    const ZPageAge age = static_cast<ZPageAge>(i);
     total += _small.stats(age).total() + _medium.stats(age).total() + _large.stats(age).total();
   }
   return total;
@@ -158,7 +158,7 @@ inline size_t ZRelocationSetSelector::total() const {
 inline size_t ZRelocationSetSelector::empty() const {
   size_t total = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+    const ZPageAge age = static_cast<ZPageAge>(i);
     total += _small.stats(age).empty() + _medium.stats(age).empty() + _large.stats(age).empty();
   }
   return total;
@@ -167,7 +167,7 @@ inline size_t ZRelocationSetSelector::empty() const {
 inline size_t ZRelocationSetSelector::relocate() const {
   size_t total = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+    const ZPageAge age = static_cast<ZPageAge>(i);
     total += _small.stats(age).relocate() + _medium.stats(age).relocate() + _large.stats(age).relocate();
   }
   return total;

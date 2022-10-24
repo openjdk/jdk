@@ -124,8 +124,8 @@ inline void ZForwarding::address_unsafe_iterate_via_table(Function function) {
 
     // Find to-object
 
-    zoffset from_offset = start() + (entry.from_index() << object_alignment_shift());
-    zaddress_unsafe from_addr = ZOffset::address_unsafe(from_offset);
+    const zoffset from_offset = start() + (entry.from_index() << object_alignment_shift());
+    const zaddress_unsafe from_addr = ZOffset::address_unsafe(from_offset);
 
     // Apply function
     function(from_addr);
@@ -138,9 +138,9 @@ inline void ZForwarding::object_iterate_forwarded_via_livemap(Function function)
 
   object_iterate([&](oop obj) {
     // Find to-object
-    zaddress_unsafe from_addr = to_zaddress_unsafe(obj);
-    zaddress to_addr = this->find(from_addr);
-    oop to_obj = to_oop(to_addr);
+    const zaddress_unsafe from_addr = to_zaddress_unsafe(obj);
+    const zaddress to_addr = this->find(from_addr);
+    const oop to_obj = to_oop(to_addr);
 
     // Apply function
     function(to_obj);
@@ -157,9 +157,9 @@ inline void ZForwarding::object_iterate_forwarded_via_table(Function function) {
     }
 
     // Find to-object
-    zoffset to_offset = to_zoffset(entry.to_offset());
-    zaddress to_addr = ZOffset::address(to_offset);
-    oop to_obj = to_oop(to_addr);
+    const zoffset to_offset = to_zoffset(entry.to_offset());
+    const zaddress to_addr = ZOffset::address(to_offset);
+    const oop to_obj = to_oop(to_addr);
 
     // Apply function
     function(to_obj);
