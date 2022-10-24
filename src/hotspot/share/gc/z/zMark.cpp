@@ -311,7 +311,7 @@ public:
     // Only help out with metadata visiting
     return _visit_metadata;
   }
-  
+
   virtual void do_nmethod(nmethod* nm) {
     assert(do_metadata(), "Don't call otherwise");
     assert(!finalizable, "Can't handle finalizable marking of nmethods");
