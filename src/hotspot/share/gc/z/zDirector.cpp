@@ -760,8 +760,8 @@ bool ZDirector::wait_for_tick() {
 }
 
 static ZDirectorHeapStats sample_heap_stats() {
-  ZHeap* heap = ZHeap::heap();
-  ZCollectedHeap* collected_heap = ZCollectedHeap::heap();
+  const ZHeap* const heap = ZHeap::heap();
+  const ZCollectedHeap* const collected_heap = ZCollectedHeap::heap();
   return {
     heap->soft_max_capacity(),
     heap->used(),

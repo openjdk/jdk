@@ -47,12 +47,12 @@ inline ZStoreBarrierBuffer* ZStoreBarrierBuffer::buffer_for_store(bool heal) {
   if (heal) {
     return NULL;
   }
-  Thread* thread = Thread::current();
+  Thread* const thread = Thread::current();
   if (!thread->is_Java_thread()) {
     return NULL;
   }
 
-  ZStoreBarrierBuffer* buffer = ZThreadLocalData::store_barrier_buffer(JavaThread::cast(thread));
+  ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(JavaThread::cast(thread));
   return ZBufferStoreBarriers ? buffer : NULL;
 }
 

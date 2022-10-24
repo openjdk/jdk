@@ -114,7 +114,7 @@ static void deoptimize_allocation(JavaThread* thread) {
   assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
   const frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.is_compiled_frame(), "must be compiled");
-  nmethod* nm = caller_frame.cb()->as_nmethod();
+  const nmethod* const nm = caller_frame.cb()->as_nmethod();
   if (nm->is_compiled_by_c2()) {
     if (!caller_frame.is_deoptimized_frame()) {
       Deoptimization::deoptimize_frame(thread, caller_frame.id());

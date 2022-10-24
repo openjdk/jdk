@@ -144,7 +144,7 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
       const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
-      const char* external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
+      const char* const external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop: " PTR_FORMAT " (%s)",
                      p2i(o), external_name);
     }
@@ -307,7 +307,7 @@ uintptr_t ZNMethod::color(nmethod* nm) {
 oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
   assert((decorators & ON_WEAK_OOP_REF) == 0,
          "nmethod oops have phantom strength, not weak");
-  nmethod* nm = CodeCache::find_nmethod((void*)p);
+  nmethod* const nm = CodeCache::find_nmethod((void*)p);
   if (!is_armed(nm)) {
     // If the nmethod entry barrier isn't armed, then it has been applied
     // already. The implication is that the contents of the memory location

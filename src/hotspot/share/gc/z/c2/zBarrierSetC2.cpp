@@ -435,16 +435,16 @@ bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, 
 // This TypeFunc assumes a 64bit system
 static const TypeFunc* clone_type() {
   // Create input type (domain)
-  const Type** domain_fields = TypeTuple::fields(4);
+  const Type** const domain_fields = TypeTuple::fields(4);
   domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
   domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
   domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size lower
   domain_fields[TypeFunc::Parms + 3] = Type::HALF;            // size upper
-  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
+  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
 
   // Create result type (range)
-  const Type** range_fields = TypeTuple::fields(0);
-  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
+  const Type** const range_fields = TypeTuple::fields(0);
+  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
 
   return TypeFunc::make(domain, range);
 }
@@ -453,7 +453,7 @@ static const TypeFunc* clone_type() {
 
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
-  const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
+  const TypeAryPtr* const ary_ptr = src->get_ptr_type()->isa_aryptr();
 
   if (ac->is_clone_array() && ary_ptr != NULL) {
     BasicType bt = ary_ptr->elem()->array_element_basic_type();
@@ -465,11 +465,11 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       bt = T_LONG;
     }
 
-    Node* ctrl = ac->in(TypeFunc::Control);
-    Node* mem = ac->in(TypeFunc::Memory);
-    Node* src = ac->in(ArrayCopyNode::Src);
+    Node* const ctrl = ac->in(TypeFunc::Control);
+    Node* const mem = ac->in(TypeFunc::Memory);
+    Node* const src = ac->in(ArrayCopyNode::Src);
     Node* src_offset = ac->in(ArrayCopyNode::SrcPos);
-    Node* dest = ac->in(ArrayCopyNode::Dest);
+    Node* const dest = ac->in(ArrayCopyNode::Dest);
     Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
     Node* length = ac->in(ArrayCopyNode::Length);
 
@@ -488,16 +488,16 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
         dest_offset = src_offset;
       }
     }
-    Node* payload_src = phase->basic_plus_adr(src, src_offset);
-    Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
+    Node* const payload_src = phase->basic_plus_adr(src, src_offset);
+    Node* const payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
-    const char* copyfunc_name = "arraycopy";
+    const char*   copyfunc_name = "arraycopy";
     const address copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
 
-    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
+    const TypePtr* const raw_adr_type = TypeRawPtr::BOTTOM;
+    const TypeFunc* const call_type = OptoRuntime::fast_arraycopy_Type();
 
-    Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
+    Node* const call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
     phase->transform_later(call);
 
     phase->igvn().replace_node(ac, call);
@@ -566,7 +566,7 @@ static const Node* look_through_node(const Node* node) {
   while (node != NULL) {
     const Node* new_node = node;
     if (node->is_Mach()) {
-      const MachNode* node_mach = node->as_Mach();
+      const MachNode* const node_mach = node->as_Mach();
       if (node_mach->ideal_Opcode() == Op_CheckCastPP) {
         new_node = node->in(1);
       }
@@ -587,7 +587,7 @@ static const Node* look_through_node(const Node* node) {
 static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
   const TypePtr* adr_type = NULL;
   offset = 0;
-  const Node* base = mach->get_base_and_disp(offset, adr_type);
+  const Node* const base = mach->get_base_and_disp(offset, adr_type);
 
   if (base == NULL || base == NodeSentinel || offset < 0) {
     return NULL;
@@ -601,21 +601,21 @@ static bool is_allocation(const Node* node) {
   if (node->req() != 3) {
     return false;
   }
-  const Node* fast_node = node->in(2);
+  const Node* const fast_node = node->in(2);
   if (!fast_node->is_Mach()) {
     return false;
   }
-  const MachNode* fast_mach = fast_node->as_Mach();
+  const MachNode* const fast_mach = fast_node->as_Mach();
   if (fast_mach->ideal_Opcode() != Op_LoadP) {
     return false;
   }
-  const TypePtr* adr_type = NULL;
+  const TypePtr* const adr_type = NULL;
   intptr_t offset;
-  const Node* base = get_base_and_offset(fast_mach, offset);
+  const Node* const base = get_base_and_offset(fast_mach, offset);
   if (base == NULL || !base->is_Mach()) {
     return false;
   }
-  const MachNode* base_mach = base->as_Mach();
+  const MachNode* const base_mach = base->as_Mach();
   if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
     return false;
   }
@@ -643,7 +643,7 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
     }
 
     for (uint j = 0; j < access_dominators.size(); j++) {
-      Node* mem = access_dominators.at(j);
+     const  Node* const mem = access_dominators.at(j);
       if (mem->is_Phi()) {
         // Allocation node
         if (mem != access_obj) {
@@ -651,9 +651,9 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
         }
       } else {
         // Access node
-        MachNode* mem_mach = mem->as_Mach();
+        const MachNode* const mem_mach = mem->as_Mach();
         intptr_t mem_offset;
-        const Node* mem_obj = get_base_and_offset(mem_mach, mem_offset);
+        const Node* const mem_obj = get_base_and_offset(mem_mach, mem_offset);
 
         if (mem_obj == NULL) {
           // No information available
@@ -682,7 +682,7 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
         stack.push(access_block);
         bool safepoint_found = block_has_safepoint(access_block);
         while (!safepoint_found && stack.size() > 0) {
-          Block* block = stack.pop();
+          const Block* const block = stack.pop();
           if (visited.test_set(block->_pre_order)) {
             continue;
           }
@@ -696,7 +696,7 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
 
           // Push predecessor blocks
           for (uint p = 1; p < block->num_preds(); ++p) {
-            Block* pred = cfg->get_block_for_node(block->pred(p));
+            Block* const pred = cfg->get_block_for_node(block->pred(p));
             stack.push(pred);
           }
         }

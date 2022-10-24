@@ -170,7 +170,7 @@ void ZStackWatermark::process_head(void* context) {
 
   _jt->oops_do_no_frames(&cl, &cb_cl);
 
-  zaddress_unsafe* invisible_root = ZThreadLocalData::invisible_root(_jt);
+  zaddress_unsafe* const invisible_root = ZThreadLocalData::invisible_root(_jt);
   if (invisible_root != NULL) {
     ZUncoloredRoot::process_invisible(invisible_root, color);
   }

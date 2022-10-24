@@ -309,7 +309,8 @@ public:
   }
 
   virtual void emit_code(LIR_Assembler* ce) {
-    const ZBarrierSetAssembler* bs_asm = (const ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+    const ZBarrierSetAssembler* const bs_asm =
+        (const ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     if (_info != NULL) {
       ce->add_debug_info_for_null_check_here(_info);
     }
@@ -375,11 +376,12 @@ LIR_Opr ZBarrierSetC1::store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bo
   }
 
   LIR_Opr new_zpointer = gen->new_register(T_OBJECT);
-  ZStoreBarrierStubC1* stub = new ZStoreBarrierStubC1(access,
-                                                      new_zaddress_reg,
-                                                      new_zpointer,
-                                                      is_atomic,
-                                                      store_barrier_on_oop_field_runtime_stub(is_atomic));
+  ZStoreBarrierStubC1* const stub =
+      new ZStoreBarrierStubC1(access,
+                              new_zaddress_reg,
+                              new_zpointer,
+                              is_atomic,
+                              store_barrier_on_oop_field_runtime_stub(is_atomic));
 
   __ append(new LIR_OpZStoreBarrier(access.resolved_addr(),
                                     new_zaddress_reg,

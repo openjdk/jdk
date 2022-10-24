@@ -164,7 +164,7 @@ void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
 static void destroy_and_clear(ZPageAllocator* page_allocator, ZArray<ZPage*>* array) {
   for (int i = 0; i < array->length(); i++) {
     // Delete non-relocating promoted pages from last cycle
-    ZPage* page = array->at(i);
+    ZPage* const page = array->at(i);
     page_allocator->safe_destroy_page(page);
   }
   array->clear();
@@ -184,7 +184,7 @@ void ZRelocationSet::reset(ZPageAllocator* page_allocator) {
 
 void ZRelocationSet::register_flip_promoted(const ZArray<ZPage*>& pages) {
   ZLocker<ZLock> locker(&_promotion_lock);
-  for (ZPage* page : pages) {
+  for (ZPage* const page : pages) {
     assert(!_flip_promoted_pages.contains(page), "no duplicates allowed");
     _flip_promoted_pages.append(page);
   }

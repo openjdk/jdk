@@ -65,7 +65,7 @@ ZPage* ZPage::clone_limited() const {
 }
 
 ZPage* ZPage::clone_limited_promote_flipped() const {
-  ZPage* page = new ZPage(_type, _virtual, _physical);
+  ZPage* const page = new ZPage(_type, _virtual, _physical);
 
   // The page is still filled with the same objects, need to retain the top pointer.
   page->_top = _top;

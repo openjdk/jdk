@@ -542,7 +542,7 @@ public:
       SuspendibleThreadSet::desynchronize();
     }
     // Flush VM thread
-    Thread* thread = Thread::current();
+    Thread* const thread = Thread::current();
     _cl->do_thread(thread);
   }
 

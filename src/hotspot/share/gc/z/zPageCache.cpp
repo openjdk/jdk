@@ -222,7 +222,7 @@ void ZPageCache::flush_per_numa_lists(ZPageCacheFlushClosure* cl, ZPerNUMA<ZList
 
   // Flush lists round-robin
   while (numa_done < numa_count) {
-    ZList<ZPage>* numa_list = from->addr(numa_next);
+    ZList<ZPage>* const numa_list = from->addr(numa_next);
     if (++numa_next == numa_count) {
       numa_next = 0;
     }

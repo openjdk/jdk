@@ -358,7 +358,7 @@ void ZForwarding::relocated_remembered_fields_notify_concurrent_scan_of() {
 }
 
 bool ZForwarding::relocated_remembered_fields_published_contains(volatile zpointer* p) {
-  for (volatile zpointer* elem : _relocated_remembered_fields_array) {
+  for (volatile zpointer* const elem : _relocated_remembered_fields_array) {
     if (elem == p) {
       return true;
     }

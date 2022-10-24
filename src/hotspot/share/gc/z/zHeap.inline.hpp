@@ -71,12 +71,12 @@ inline ZPage* ZHeap::page(volatile zpointer* ptr) const {
 }
 
 inline bool ZHeap::is_object_live(zaddress addr) const {
-  ZPage* page = _page_table.get(addr);
+  const ZPage* const page = _page_table.get(addr);
   return page->is_object_live(addr);
 }
 
 inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
-  ZPage* page = _page_table.get(addr);
+  const ZPage* const page = _page_table.get(addr);
   return page->is_object_strongly_live(addr);
 }
 

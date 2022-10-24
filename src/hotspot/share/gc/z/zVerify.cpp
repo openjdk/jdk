@@ -129,7 +129,7 @@ public:
       _verify_marked_old(verify_marked_old) {}
 
   virtual void do_oop(oop* p_) {
-    zpointer* p = (zpointer*)p_;
+    zpointer* const p = (zpointer*)p_;
 
     assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
 
@@ -168,7 +168,7 @@ public:
 class ZVerifyUncoloredRootClosure : public OopClosure {
 public:
   virtual void do_oop(oop* p_) {
-    zaddress* p = (zaddress*)p_;
+    zaddress* const p = (zaddress*)p_;
     z_verify_uncolored_root_oop(p);
   }
 
@@ -196,7 +196,7 @@ public:
       _verify_weaks(verify_weaks) {}
 
   virtual void do_oop(oop* p_) {
-    zpointer* p = (zpointer*)p_;
+    zpointer* const p = (zpointer*)p_;
     if (_verify_weaks) {
       z_verify_possibly_weak_oop(p);
     } else {
@@ -223,7 +223,7 @@ public:
   ZVerifyYoungOopClosure(bool verify_weaks) : _verify_weaks(verify_weaks) {}
 
   virtual void do_oop(oop* p_) {
-    zpointer* p = (zpointer*)p_;
+    zpointer* const p = (zpointer*)p_;
     if (_verify_weaks) {
       //z_verify_possibly_weak_oop(p);
       z_verify_young_oop(p);
@@ -259,7 +259,7 @@ public:
 
   virtual void do_thread(Thread* thread) {
     JavaThread* const jt = JavaThread::cast(thread);
-    ZStackWatermark* watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
+    const ZStackWatermark* const watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
     if (watermark->processing_started_acquire()) {
       thread->oops_do_no_frames(_verify_cl, NULL);
 
@@ -469,7 +469,7 @@ public:
   }
 
   virtual void do_oop(oop* p_) {
-    volatile zpointer* p = (volatile zpointer*)p_;
+    volatile zpointer* const p = (volatile zpointer*)p_;
     const zpointer ptr = *p;
 
     if (ZPointer::is_remembered_exact(ptr)) {
@@ -522,11 +522,11 @@ void ZVerify::on_color_flip() {
   // Gather information from store barrier buffers as we currently can't verify
   // remset entries for oop locations touched by the store barrier buffer
 
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next(); ) {
-    ZStoreBarrierBuffer* buffer = ZThreadLocalData::store_barrier_buffer(jt);
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* const jt = jtiwh.next(); ) {
+    const ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
     for (int i = buffer->current(); i < (int)ZStoreBarrierBuffer::_buffer_length; ++i) {
-      volatile zpointer* p = buffer->_buffer[i]._p;
+      volatile zpointer* const p = buffer->_buffer[i]._p;
       bool created = false;
       z_verify_store_barrier_buffer_table->put_if_absent(p, true, &created);
     }
@@ -580,7 +580,7 @@ public:
   }
 
   virtual void do_oop(oop* p_) {
-    volatile zpointer* p = (volatile zpointer*)p_;
+    volatile zpointer* const p = (volatile zpointer*)p_;
     const zpointer ptr = Atomic::load(p);
 
     if (ZPointer::is_remembered_exact(ptr)) {
@@ -603,7 +603,7 @@ public:
     }
 
     const uintptr_t p_offset = uintptr_t(p) - untype(_to_addr);
-    volatile zpointer* fromspace_p = (volatile zpointer*)(untype(_from_addr) + p_offset);
+    volatile zpointer* const fromspace_p = (volatile zpointer*)(untype(_from_addr) + p_offset);
 
     if (ZBufferStoreBarriers && z_verify_store_barrier_buffer_table->get(fromspace_p) != NULL) {
       // If this from-space oop location is in the store barrier buffer, we
@@ -634,7 +634,7 @@ void ZVerify::after_relocation_internal(ZForwarding* forwarding) {
   forwarding->address_unsafe_iterate_via_table([&](zaddress_unsafe from_addr) {
     // If no field in this object was in the store barrier buffer
     // when relocation started, we should be able to verify trivially
-    ZGeneration* from_generation = forwarding->from_age() == ZPageAge::old ? (ZGeneration*)ZGeneration::old()
+    ZGeneration* const from_generation = forwarding->from_age() == ZPageAge::old ? (ZGeneration*)ZGeneration::old()
                                                                            : (ZGeneration*)ZGeneration::young();
     const zaddress to_addr = from_generation->remap_object(from_addr);
 

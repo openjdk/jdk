@@ -110,7 +110,7 @@ inline void ZUncoloredRoot::process_no_keepalive(zaddress_unsafe* p, uintptr_t c
 }
 
 inline zaddress_unsafe* ZUncoloredRoot::cast(oop* p) {
-  zaddress_unsafe* root = (zaddress_unsafe*)p;
+  zaddress_unsafe* const root = (zaddress_unsafe*)p;
   DEBUG_ONLY(assert_is_valid(*root);)
   return root;
 }

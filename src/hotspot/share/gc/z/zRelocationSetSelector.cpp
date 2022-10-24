@@ -158,7 +158,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
 
   // Finalize selection
   for (int i = selected_from; i < _live_pages.length(); i++) {
-    ZPage* page = _live_pages.at(i);
+    ZPage* const page = _live_pages.at(i);
     if (page->is_young()) {
       _not_selected_pages.append(page);
     }

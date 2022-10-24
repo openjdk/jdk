@@ -171,7 +171,7 @@ bool ZRelocateQueue::prune() {
   bool done = false;
 
   for (int i = 0; i < _queue.length();) {
-    ZForwarding* const forwarding = _queue.at(i);
+    const ZForwarding* const forwarding = _queue.at(i);
     if (forwarding->is_done()) {
       done = true;
 
@@ -430,7 +430,7 @@ public:
       _in_place_count(0) {}
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
-    ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
+    ZAllocatorForRelocation* const allocator = ZAllocator::relocation(forwarding->to_age());
     ZPage* const page = alloc_page(allocator, forwarding->type(), forwarding->size());
     if (page == NULL) {
       Atomic::inc(&_in_place_count);
@@ -513,8 +513,8 @@ public:
     // a new page.
     const ZPageAge to_age = forwarding->to_age();
     if (shared(to_age) == target) {
-      ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
-      ZPage* to_page = alloc_page(allocator, forwarding->type(), forwarding->size());
+      ZAllocatorForRelocation* const allocator = ZAllocator::relocation(forwarding->to_age());
+      ZPage* const to_page = alloc_page(allocator, forwarding->type(), forwarding->size());
       set_shared(to_age, to_page);
       if (to_page == NULL) {
         Atomic::inc(&_in_place_count);
@@ -596,7 +596,7 @@ private:
     ZForwardingCursor cursor;
 
     const size_t size = ZUtils::object_size(from_addr);
-    ZPage* to_page = target(_forwarding->to_age());
+    ZPage* const to_page = target(_forwarding->to_age());
 
     // Lookup forwarding
     {
@@ -755,7 +755,7 @@ private:
     }
 
     const zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
-    ZForwarding* forwarding = ZGeneration::young()->forwarding(addr_unsafe);
+    ZForwarding* const forwarding = ZGeneration::young()->forwarding(addr_unsafe);
 
     if (forwarding == NULL) {
       // Object isn't being relocated
@@ -1046,7 +1046,7 @@ public:
 class ZRelocateStoreBufferInstallBasePointersThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
-    JavaThread* jt = JavaThread::cast(thread);
+    JavaThread* const jt = JavaThread::cast(thread);
     ZStoreBarrierBuffer* buffer = ZThreadLocalData::store_barrier_buffer(jt);
     buffer->install_base_pointers();
   }
@@ -1097,7 +1097,7 @@ public:
     ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _generation);
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
-      ZPage* page = forwarding->page();
+      ZPage* const page = forwarding->page();
       const ZPageAge to_age = forwarding->to_age();
       if (page->is_small()) {
         small.do_forwarding(forwarding);

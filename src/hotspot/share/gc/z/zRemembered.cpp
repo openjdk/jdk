@@ -261,7 +261,7 @@ struct ZRememberedScanForwardingMeasureReleased {
 };
 
 void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) const {
-  ZRememberedScanForwardingContext* context = (ZRememberedScanForwardingContext*)context_void;
+  ZRememberedScanForwardingContext* const context = (ZRememberedScanForwardingContext*)context_void;
 
   if (forwarding->retain_page(ZGeneration::old()->relocate_queue())) {
     ZRememberedScanForwardingMeasureRetained measure(context);

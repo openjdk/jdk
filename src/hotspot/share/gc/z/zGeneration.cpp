@@ -333,7 +333,7 @@ void ZGeneration::clear_gc_timer() {
 }
 
 void ZGeneration::log_phase_switch(Phase from, Phase to) {
-  const char* str[] = {
+  const char* const str[] = {
     "Young Mark Start",
     "Young Mark End",
     "Young Relocate Start",

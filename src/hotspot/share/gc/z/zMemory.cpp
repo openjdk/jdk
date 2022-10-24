@@ -125,7 +125,7 @@ zoffset ZMemoryManager::alloc_low_address(size_t size) {
 zoffset ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocated) {
   ZLocker<ZLock> locker(&_lock);
 
-  ZMemory* area = _freelist.first();
+  ZMemory* const area = _freelist.first();
   if (area != NULL) {
     if (area->size() <= size) {
       // Smaller than or equal to requested, remove area
