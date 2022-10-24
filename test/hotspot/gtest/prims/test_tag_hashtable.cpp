@@ -66,7 +66,7 @@ TEST_VM(Jvmti_TagMapTable, AddUpdateRemove){
     int what_is_done = t.add_update_remove( p, 100);
     ASSERT_EQ(what_is_done , JvmtiTagMapTable::AddUpdateRemove::Added);
 
-    JvmtiTagMapEntry entry;
+    JvmtiTagMapEntry entry( p, 0 );
     bool found = t.find(entry, p);
 
     ASSERT_TRUE(found);
@@ -122,7 +122,7 @@ TEST_VM(Jvmti_TagMapTable, CallingAllAPI){
     ASSERT_TRUE(!t.is_empty());
 
 
-    JvmtiTagMapEntry entry;
+    JvmtiTagMapEntry entry( p, 0);
     bool found = t.find(entry, p);
 
     ASSERT_TRUE(found);

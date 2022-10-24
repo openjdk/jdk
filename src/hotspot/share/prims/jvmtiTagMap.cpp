@@ -314,6 +314,7 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
       post_callback_tag_update(_referrer,
                                _referrer_hashmap,
                                _referrer_obj_tag);
+      delete _referrer_entry;
     }
   }
 
