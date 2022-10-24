@@ -90,7 +90,7 @@ public class TestResetSelectForm {
             Color c = robot.getPixelColor(loc.x + 30, loc.y + pos);
             if (getMaxColorDiff(baseColor, c) > LIMIT) {
                 throw new RuntimeException("Unexpected List selection at " +
-                    (i+1) + ", " + baseColor + "," + c);
+                    (i + 1) + ", " + baseColor + "," + c);
             }
         }
     }
