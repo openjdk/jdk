@@ -115,13 +115,16 @@ bool JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapEntry jtme(obj,0);
   jlong* found = _rrht_table.get(jtme);
   if (found == NULL) {
+    jtme.release();
     return ;
   }
   if( _rrht_table.remove(jtme)) {
     jtme.release();
+    return;
   } else {
     assert(false,"removing object failed.");
   }
+  jtme.release();
 }
 int JvmtiTagMapTable::add_update_remove(oop obj, jlong tag){
 

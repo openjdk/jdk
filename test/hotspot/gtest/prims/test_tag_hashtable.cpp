@@ -63,31 +63,26 @@ TEST_VM(Jvmti_TagMapTable, AddUpdateRemove){
     JvmtiTagMapTable t;
 
     ASSERT_TRUE(t.is_empty());
-    int what_is_done = t.add_update_remove( p, 100);
-    ASSERT_EQ(what_is_done , JvmtiTagMapTable::AddUpdateRemove::Added);
-
-    JvmtiTagMapEntry entry( p, 0 );
-    bool found = t.find(entry, p);
-
-    ASSERT_TRUE(found);
-    ASSERT_TRUE(entry.tag() == 100 ) ;
+    t.add( p, 100);
 
 
-    what_is_done = t.add_update_remove( p, 110);
-    ASSERT_EQ(what_is_done , JvmtiTagMapTable::AddUpdateRemove::Updated);
+    JvmtiTagMapEntry* entry = t.find(p);
 
-    found = t.find(entry, p);
-
-    ASSERT_TRUE(found);
-    ASSERT_TRUE(entry.tag() == 110 ) ;
-
-    what_is_done = t.add_update_remove( p, 0);
-    ASSERT_EQ(what_is_done , JvmtiTagMapTable::AddUpdateRemove::Removed);
+    ASSERT_TRUE(entry != NULL);
+    ASSERT_TRUE(entry->tag() == 100 ) ;
 
 
-    found = t.find(entry, p);
+    t.add( p, 110);
 
-    ASSERT_TRUE(!found);
+    entry  = t.find( p);
+
+    ASSERT_TRUE(entry != NULL);
+    ASSERT_TRUE(entry->tag() == 110 ) ;
+
+    t.remove(p);
+    entry = t.find(p);
+
+    ASSERT_TRUE(entry == NULL);
 
 
 
@@ -113,44 +108,40 @@ TEST_VM(Jvmti_TagMapTable, CallingAllAPI){
     JvmtiTagMapTable t;
 
     ASSERT_TRUE(t.is_empty());
-    int what_is_done = t.add_update_remove( p, 100);
-    ASSERT_EQ(what_is_done , JvmtiTagMapTable::AddUpdateRemove::Added);
+    t.add(p, 100);
 
-    what_is_done = t.add_update_remove( q, 200);
-    ASSERT_EQ(what_is_done , JvmtiTagMapTable::AddUpdateRemove::Added);
+
+    t.add(q, 200);
+
 
     ASSERT_TRUE(!t.is_empty());
 
 
-    JvmtiTagMapEntry entry( p, 0);
-    bool found = t.find(entry, p);
+    JvmtiTagMapEntry *entry = t.find(p);
 
-    ASSERT_TRUE(found);
-    ASSERT_TRUE(entry.tag() == 100 ) ;
+    ASSERT_TRUE(entry != NULL);
+    ASSERT_TRUE(entry->tag() == 100 ) ;
 
-    found = t.find(entry, q);
+    entry = t.find(q);
 
-    ASSERT_TRUE(found);
-    ASSERT_TRUE(entry.tag() == 200 ) ;
+    ASSERT_TRUE(entry != NULL);
+    ASSERT_TRUE(entry->tag() == 200 ) ;
 
     t.remove(q);
-    found = t.find(entry, q);
-    ASSERT_TRUE(!found) ;
+    entry = t.find(q);
+    ASSERT_TRUE(entry == NULL);
 
-    t.remove(p);fflush(stderr);
-    found = t.find(entry, p);
-    ASSERT_TRUE(!found) ;
+    t.remove(p);
+    entry = t.find(p);
+    ASSERT_TRUE(entry == NULL) ;
 
     ASSERT_TRUE(t.is_empty());
 
 
     t.rehash();
 
-    what_is_done = t.add_update_remove( p, 1000);
-    what_is_done = t.add_update_remove( q, 2000);
-
-
-
+    t.add(p, 1000);
+    t.add(q, 2000);
 
     EntryClosure ec;
     t.entry_iterate( &ec);
