@@ -92,7 +92,7 @@ public:
   ZArenaHashtable(Arena* arena) :
       _arena(arena),
       _table() {
-    Copy::zero_to_bytes(&_table, sizeof(ZArenaHashtableEntry*) * _table_size);
+    Copy::zero_to_bytes(&_table, sizeof(_table));
   }
 
   void add(K key, V value) {
