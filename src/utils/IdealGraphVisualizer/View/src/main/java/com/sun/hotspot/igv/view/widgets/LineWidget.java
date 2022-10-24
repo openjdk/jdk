@@ -239,27 +239,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         g.setStroke(oldStroke);
     }
 
-    private void setHighlighted(boolean b) {
-        this.highlighted = b;
-        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
-        Set<Object> highlightedObjectsChange = new HashSet<>();
-        for (Connection c : connections) {
-            if (c.hasSlots()) {
-                highlightedObjectsChange.add(c.getTo());
-                highlightedObjectsChange.add(c.getTo().getVertex());
-                highlightedObjectsChange.add(c.getFrom());
-                highlightedObjectsChange.add(c.getFrom().getVertex());
-            }
-        }
-        if(b) {
-            highlightedObjects.addAll(highlightedObjectsChange);
-        } else {
-            highlightedObjects.removeAll(highlightedObjectsChange);
-        }
-        scene.setHighlightedObjects(highlightedObjects);
-        this.revalidate(true);
-    }
-
     private void setPopupVisible(boolean b) {
         this.popupVisible = b;
         this.revalidate(true);
@@ -273,26 +252,51 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         if (previousState.isHovered() != state.isHovered()) {
-            setRecursiveHighlighted(state.isHovered());
+            boolean enableHighlighting = state.isHovered();
+            highlightPredecessors(enableHighlighting);
+            setHighlighted(enableHighlighting);
+            recursiveHighlightSuccessors(enableHighlighting);
+            highlightVertices(enableHighlighting);
         }
     }
 
-    private void setRecursiveHighlighted(boolean b) {
-        LineWidget cur = predecessor;
-        while (cur != null) {
-            cur.setHighlighted(b);
-            cur = cur.predecessor;
+    private void highlightPredecessors(boolean enable) {
+        LineWidget predecessorLineWidget = predecessor;
+        while (predecessorLineWidget != null) {
+            predecessorLineWidget.setHighlighted(enable);
+            predecessorLineWidget = predecessorLineWidget.predecessor;
         }
-
-        highlightSuccessors(b);
-        this.setHighlighted(b);
     }
 
-    private void highlightSuccessors(boolean b) {
-        for (LineWidget s : successors) {
-            s.setHighlighted(b);
-            s.highlightSuccessors(b);
+    private void recursiveHighlightSuccessors(boolean enable) {
+        for (LineWidget successorLineWidget : successors) {
+            successorLineWidget.setHighlighted(enable);
+            successorLineWidget.recursiveHighlightSuccessors(enable);
         }
+    }
+
+    private void highlightVertices(boolean enable) {
+        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
+        Set<Object> highlightedObjectsChange = new HashSet<>();
+        for (Connection c : connections) {
+            if (c.hasSlots()) {
+                highlightedObjectsChange.add(c.getTo());
+                highlightedObjectsChange.add(c.getTo().getVertex());
+                highlightedObjectsChange.add(c.getFrom());
+                highlightedObjectsChange.add(c.getFrom().getVertex());
+            }
+        }
+        if (enable) {
+            highlightedObjects.addAll(highlightedObjectsChange);
+        } else {
+            highlightedObjects.removeAll(highlightedObjectsChange);
+        }
+        scene.setHighlightedObjects(highlightedObjects);
+    }
+
+    private void setHighlighted(boolean enable) {
+        highlighted = enable;
+        revalidate(true);
     }
 
     private void setRecursivePopupVisible(boolean b) {
