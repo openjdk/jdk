@@ -587,15 +587,20 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     // for FormatData
                     // copy string for later assembly into NumberPatterns
                     if (currentContainer instanceof KeyContainer) {
-                        String fStyle = ((KeyContainer)currentContainer).getKey();
-                        if (fStyle.equals("standard")) {
-                            pushStringEntry(qName, attributes,
-                                    currentNumberingSystem + "NumberPatterns/" + containerName.replaceFirst("Format", ""));
-                        } else if (fStyle.equals("accounting") && containerName.equals("currencyFormat")) {
-                            pushStringEntry(qName, attributes,
-                                    currentNumberingSystem + "NumberPatterns/accounting");
-                        } else {
+                        if (attributes.getValue("alt") != null) {
+                            // ignore "alphaNextToNumber", "noCurrency" for currency for now.
                             pushIgnoredContainer(qName);
+                        } else {
+                            String fStyle = ((KeyContainer)currentContainer).getKey();
+                            if (fStyle.equals("standard")) {
+                                pushStringEntry(qName, attributes,
+                                        currentNumberingSystem + "NumberPatterns/" + containerName.replaceFirst("Format", ""));
+                            } else if (fStyle.equals("accounting") && containerName.equals("currencyFormat")) {
+                                pushStringEntry(qName, attributes,
+                                        currentNumberingSystem + "NumberPatterns/accounting");
+                            } else {
+                                pushIgnoredContainer(qName);
+                            }
                         }
                     } else {
                         pushIgnoredContainer(qName);
@@ -626,14 +631,20 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 case "dateTimeFormat":
                     // for FormatData
                     // copy string for later assembly into DateTimePatterns
-                    prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                    pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + currentStyle +
+                    if (currentContainer instanceof KeyContainer kc && !"standard".equals(kc.getKey())) {
+                        // only take the standard value for now, ignoring specialized one,
+                        // such as "atTime" for "dateTimeFormat"
+                        pushIgnoredContainer(qName);
+                    } else {
+                        prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                        pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + currentStyle +
                             switch (containerName) {
                                 case "dateFormat" -> "-date";
                                 case "timeFormat" -> "-time";
                                 case "dateTimeFormat" -> "-dateTime";
                                 default -> throw new InternalError();
                             });
+                    }
                     break;
 
                 default:
@@ -763,6 +774,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "timeFormats":
         case "dateTimeFormats":
             pushContainer(qName, attributes);
+            break;
+
+        case "dateFormat":
+        case "timeFormat":
+        case "dateTimeFormat":
+            pushKeyContainer(qName, attributes, attributes.getValue("type"));
             break;
 
         case "dateFormatItem":

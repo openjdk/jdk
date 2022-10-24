@@ -103,6 +103,9 @@ class ServerConfig {
                     maxReqHeaders = Integer.getInteger(
                             "sun.net.httpserver.maxReqHeaders",
                             DEFAULT_MAX_REQ_HEADERS);
+                    if (maxReqHeaders <= 0) {
+                        maxReqHeaders = DEFAULT_MAX_REQ_HEADERS;
+                    }
 
                     maxReqTime = Long.getLong("sun.net.httpserver.maxReqTime",
                             DEFAULT_MAX_REQ_TIME);
