@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -551,6 +552,10 @@ public final class PrettyWriter extends EventPrintWriter {
         if (value instanceof Duration d) {
             if (d.getSeconds() == Long.MIN_VALUE && d.getNano() == 0)  {
                 println("N/A");
+                return true;
+            }
+            if (d.equals(ChronoUnit.FOREVER.getDuration())) {
+                println("Forever");
                 return true;
             }
             println(Utils.formatDuration(d));

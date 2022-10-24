@@ -147,7 +147,6 @@ class Method : public Metadata {
 
   static address make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
-  address from_compiled_entry_no_trampoline() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -964,9 +963,6 @@ public:
 
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(const methodHandle& m, TRAPS);
-
-  // Return if true if not all classes references in signature, including return type, has been loaded
-  static bool has_unloaded_classes_in_signature(const methodHandle& m, TRAPS);
 
   // Printing
   void print_short_name(outputStream* st = tty) const; // prints as klassname::methodname; Exposed so field engineers can debug VM

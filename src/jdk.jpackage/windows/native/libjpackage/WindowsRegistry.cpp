@@ -27,7 +27,7 @@
 #include "FileUtils.h"
 #include "ErrorHandling.h"
 
-#pragma comment(lib, "advapi32")
+// Requires linking with advapi32
 
 namespace {
 

@@ -23,14 +23,14 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.StringUtils;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.netbeans.spi.quicksearch.SearchProvider;
 import org.netbeans.spi.quicksearch.SearchRequest;

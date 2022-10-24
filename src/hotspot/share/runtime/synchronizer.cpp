@@ -241,7 +241,7 @@ ObjectMonitor* MonitorList::Iterator::next() {
 #endif // ndef DTRACE_ENABLED
 
 // This exists only as a workaround of dtrace bug 6254741
-int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
+int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   DTRACE_MONITOR_PROBE(waited, monitor, obj(), thr);
   return 0;
 }
@@ -1073,7 +1073,6 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   event->set_monitorClass(obj->klass());
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);

@@ -1376,17 +1376,18 @@ jdk.io.permissionsUseCanonicalPath=false
 jdk.tls.alpnCharset=ISO_8859_1
 
 #
-# JNDI Object Factories Filter
+# Global JNDI Object Factories Filter
 #
 # This filter is used by the JNDI runtime to control the set of object factory classes
 # which will be allowed to instantiate objects from object references returned by
 # naming/directory systems. The factory class named by the reference instance will be
 # matched against this filter. The filter property supports pattern-based filter syntax
-# with the same format as jdk.serialFilter.
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
 #
-# Each pattern is matched against the factory class name to allow or disallow it's
-# instantiation. The access to a factory class is allowed unless the filter returns
-# REJECTED.
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed if the filter returns
+# ALLOWED.
 #
 # Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
@@ -1397,6 +1398,58 @@ jdk.tls.alpnCharset=ISO_8859_1
 # The default pattern value allows any object factory class specified by the reference
 # instance to recreate the referenced object.
 #jdk.jndi.object.factoriesFilter=*
+
+#
+# Protocol Specific JNDI/LDAP Object Factories Filter
+#
+# This filter is used by the JNDI/LDAP provider implementation in the JDK to further control the
+# set of object factory classes which will be allowed to instantiate objects from object
+# references bound to LDAP contexts. The factory class named by the reference instance will
+# be matched against this filter. The filter property supports pattern-based filter syntax
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
+#
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed only when it is not rejected by this filter
+# or by the global filter defined by "jdk.jndi.object.factoriesFilter", and at least one of these
+# two filters returns ALLOWED.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# If the system property jdk.jndi.ldap.object.factoriesFilter is also specified, it supersedes
+# the security property value defined here. The default value of the property is
+# "java.naming/com.sun.jndi.ldap.**;!*".
+#
+# The default pattern value allows any object factory class defined in the java.naming module
+# to be specified by the reference instance, but rejects any other.
+#jdk.jndi.ldap.object.factoriesFilter=java.naming/com.sun.jndi.ldap.**;!*
+
+#
+# Protocol Specific JNDI/RMI Object Factories Filter
+#
+# This filter is used by the JNDI/RMI provider implementation in the JDK to further control the
+# set of object factory classes which will be allowed to instantiate objects from object
+# references bound to RMI names. The factory class named by the reference instance will
+# be matched against this filter. The filter property supports pattern-based filter syntax
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
+#
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed only when it is not rejected by this filter
+# or by the global filter defined by "jdk.jndi.object.factoriesFilter", and at least one of these
+# two filters returns ALLOWED.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# If the system property jdk.jndi.rmi.object.factoriesFilter is also specified, it supersedes
+# the security property value defined here. The default value of the property is
+# "jdk.naming.rmi/com.sun.jndi.rmi.**;!*".
+#
+# The default pattern value allows any object factory class defined in the jdk.naming.rmi module
+# to be specified by the reference instance, but rejects any other.
+#jdk.jndi.rmi.object.factoriesFilter=jdk.naming.rmi/com.sun.jndi.rmi.**;!*
 
 #
 # Policy for non-forwardable service ticket in a S4U2proxy request
