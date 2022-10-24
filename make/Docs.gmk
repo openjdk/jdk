@@ -311,7 +311,7 @@ define SetupApiDocsGenerationBody
 
     # Tell the ModuleGraph and SealedGraph taglets to generate html links to
     # soon-to-be-created svg files with module/sealed graphs.
-    $1_JAVA_ARGS += -DenableModuleGraph=true -DsealedGraphDotPath=$$($1_SEALED_GRAPHS_DIR)
+    $1_JAVA_ARGS += -DenableModuleGraph=true -DsealedDotOutputDir=$$($1_SEALED_GRAPHS_DIR)
     $$(call MakeDir, $$($1_SEALED_GRAPHS_DIR))
   endif
 

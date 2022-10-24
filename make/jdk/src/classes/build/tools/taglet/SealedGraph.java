@@ -46,8 +46,8 @@ import static jdk.javadoc.doclet.Taglet.Location.TYPE;
  * and generate the corresponding dot file.
  */
 public final class SealedGraph implements Taglet {
-    private static final String sealedGraphDotPath =
-            System.getProperty("sealedGraphDotPath");
+    private static final String sealedDotOutputDir =
+            System.getProperty("sealedDotOutputDir");
 
     private DocletEnvironment docletEnvironment;
 
@@ -76,7 +76,7 @@ public final class SealedGraph implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
-        if (sealedGraphDotPath == null || sealedGraphDotPath.isEmpty()) {
+        if (sealedDotOutputDir == null || sealedDotOutputDir.isEmpty()) {
             return "";
         }
         if (docletEnvironment == null || !(element instanceof TypeElement typeElement)) {
@@ -84,7 +84,7 @@ public final class SealedGraph implements Taglet {
         }
 
         ModuleElement module = docletEnvironment.getElementUtils().getModuleOf(element);
-        Path dotFile = Path.of(sealedGraphDotPath,
+        Path dotFile = Path.of(sealedDotOutputDir,
                 module.getQualifiedName() + "_" + typeElement.getQualifiedName() + ".dot");
 
         Set<String> exports = module.getDirectives().stream()
