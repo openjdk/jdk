@@ -49,7 +49,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="GNF">
 				<symbol>GNF</symbol>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<symbol>Le</symbol>
 			</currency>
 		</currencies>
