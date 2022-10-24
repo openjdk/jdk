@@ -1986,6 +1986,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOptimizedUpcallStubs, false,                           \
                 "Trace optimized upcall stub generation")                   \
+                                                                            \
+  product(bool, UseFastLocking, false, EXPERIMENTAL,                        \
+                "Use fast-locking instead of stack-locking")                \
 
 // end of RUNTIME_FLAGS
 

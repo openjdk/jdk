@@ -32,6 +32,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
@@ -619,6 +620,16 @@ protected:
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
   jint _hashStateZ;
+
+private:
+  LockStack _lock_stack;
+
+public:
+  LockStack& lock_stack() { return _lock_stack; }
+  const LockStack& lock_stack() const { return _lock_stack; }
+
+  static ByteSize lock_stack_current_offset()    { return byte_offset_of(Thread, _lock_stack) + LockStack::current_offset(); }
+  static ByteSize lock_stack_limit_offset()    { return byte_offset_of(Thread, _lock_stack) + LockStack::limit_offset(); }
 
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
