@@ -137,7 +137,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             }
 
             @Override
-            public void select(Widget widget, Point localLocation, boolean invertSelection)  {
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
                 Set<Vertex> vertexSet = new HashSet<>();
                 for (Connection connection : connections) {
                     if (connection.hasSlots()) {
