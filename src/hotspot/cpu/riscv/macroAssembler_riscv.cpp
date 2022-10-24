@@ -3980,9 +3980,9 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
     andi(t0, cnt, i);
     beqz(t0, l);
     for (int j = 0; j < i; j++) {
-      sd(zr, Address(ptr, j*8));
+      sd(zr, Address(ptr, j * 8));
     }
-    addi(ptr, ptr, i*8);
+    addi(ptr, ptr, i * 8);
     bind(l);
   }
   {
