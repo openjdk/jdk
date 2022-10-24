@@ -127,7 +127,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         getActions().addAction(new CustomSelectAction(new SelectProvider() {
 
             @Override
-            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection)  {
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
                 return true;
             }
 
