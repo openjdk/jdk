@@ -70,7 +70,6 @@ public class Basic {
         }
     }
 
-    // PLACEHOLDER : REMOVE --- Changes from template below
     protected static void test(String fs, String exp, Object ... args) {
         Formatter f = new Formatter(new StringBuilder(), Locale.US);
         f.format(fs, args);
@@ -80,7 +79,6 @@ public class Basic {
         f.format("foo " + fs + " bar", args);
         ck(fs, "foo " + exp + " bar", f.toString());
     }
-
 
     protected static void test(Locale l, String fs, String exp, Object ... args)
     {
@@ -167,7 +165,6 @@ public class Basic {
         else
             pass();
     }
-
 
     public static void main(String[] args) {
         BasicBoolean.test();
