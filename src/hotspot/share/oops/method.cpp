@@ -1266,15 +1266,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   return adapter->get_c2i_entry();
 }
 
-address Method::from_compiled_entry_no_trampoline() const {
-  CompiledMethod *code = Atomic::load_acquire(&_code);
-  if (code) {
-    return code->verified_entry_point();
-  } else {
-    return adapter()->get_c2i_entry();
-  }
-}
-
 // The verified_code_entry() must be called when a invoke is resolved
 // on this method.
 

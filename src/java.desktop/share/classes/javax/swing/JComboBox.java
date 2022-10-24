@@ -1721,7 +1721,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         }
 
         /*
-         * Sets the combo box editor's accessible name and descripton
+         * Sets the combo box editor's accessible name and description
          */
         private void setEditorNameAndDescription() {
             ComboBoxEditor editor = JComboBox.this.getEditor();

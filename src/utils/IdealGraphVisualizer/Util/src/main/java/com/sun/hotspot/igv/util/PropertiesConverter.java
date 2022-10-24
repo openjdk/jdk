@@ -26,7 +26,6 @@ package com.sun.hotspot.igv.util;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Property;
-import com.sun.hotspot.igv.util.StringUtils;
 
 /**
  *

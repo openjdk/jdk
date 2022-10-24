@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217721 8222756
+ * @bug 8177552 8217721 8222756 8295372
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run testng/othervm TestCompactNumber
@@ -80,6 +80,21 @@ public class TestCompactNumber {
 
     private static final NumberFormat FORMAT_SL_LONG = NumberFormat
             .getCompactNumberInstance(Locale.of("sl"), NumberFormat.Style.LONG);
+
+    private static final NumberFormat FORMAT_ES_LONG_FD1 = NumberFormat
+            .getCompactNumberInstance(Locale.of("es"), NumberFormat.Style.LONG);
+    private static final NumberFormat FORMAT_DE_LONG_FD2 = NumberFormat
+            .getCompactNumberInstance(Locale.GERMAN, NumberFormat.Style.LONG);
+    private static final NumberFormat FORMAT_IT_LONG_FD3 = NumberFormat
+            .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.LONG);
+    private static final NumberFormat FORMAT_PT_LONG_FD4 = NumberFormat
+            .getCompactNumberInstance(Locale.of("pt"), NumberFormat.Style.LONG);
+    static {
+        FORMAT_ES_LONG_FD1.setMaximumFractionDigits(1);
+        FORMAT_DE_LONG_FD2.setMaximumFractionDigits(2);
+        FORMAT_IT_LONG_FD3.setMaximumFractionDigits(3);
+        FORMAT_PT_LONG_FD4.setMaximumFractionDigits(4);
+    }
 
     @DataProvider(name = "format")
     Object[][] compactFormatData() {
@@ -339,6 +354,11 @@ public class TestCompactNumber {
             {FORMAT_SL_LONG, 2_000_000, "2 milijona"},
             {FORMAT_SL_LONG, 3_000_000, "3 milijone"},
             {FORMAT_SL_LONG, 5_000_000, "5 milijonov"},
+            // Fractional plurals
+            {FORMAT_ES_LONG_FD1, 1_234_500, "1,2 millones"},
+            {FORMAT_DE_LONG_FD2, 1_234_500, "1,23 Millionen"},
+            {FORMAT_IT_LONG_FD3, 1_234_500, "1,234 milioni"},
+            {FORMAT_PT_LONG_FD4, 1_234_500, "1,2345 milh\u00f5es"},
         };
     }
 
@@ -441,13 +461,18 @@ public class TestCompactNumber {
                 {FORMAT_SL_LONG, "2 milijona",  2_000_000L, Long.class},
                 {FORMAT_SL_LONG, "3 milijone",  3_000_000L, Long.class},
                 {FORMAT_SL_LONG, "5 milijonov", 5_000_000L, Long.class},
+                // Fractional plurals
+                {FORMAT_ES_LONG_FD1, "1,2 millones", 1_200_000L, Long.class},
+                {FORMAT_DE_LONG_FD2, "1,23 Millionen", 1_230_000L, Long.class},
+                {FORMAT_IT_LONG_FD3, "1,234 milioni", 1_234_000L, Long.class},
+                {FORMAT_PT_LONG_FD4, "1,2345 milh\u00f5es", 1_234_500L, Long.class},
         };
     }
 
     @DataProvider(name = "exceptionParse")
     Object[][] exceptionParseData() {
         return new Object[][]{
-            // compact number instance, string to parse, null (no o/p; must throws exception)
+            // compact number instance, string to parse, null (no o/p; must throw exception)
             // no number
             {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
                 + "\u0F42", null},

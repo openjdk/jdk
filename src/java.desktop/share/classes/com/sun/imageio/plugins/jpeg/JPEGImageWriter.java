@@ -1388,7 +1388,7 @@ public class JPEGImageWriter extends ImageWriter {
     /**
      * Collect all the scan info from the given metadata, and
      * organize it into the scan info array required by the
-     * IJG libray.  It is much simpler to parse out this
+     * IJG library.  It is much simpler to parse out this
      * data in Java and then just copy the data in C.
      */
     private int [] collectScans(JPEGMetadata metadata,

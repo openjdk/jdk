@@ -41,7 +41,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "metaprogramming/enableIf.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -62,6 +61,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 #if INCLUDE_JFR
@@ -552,6 +552,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
   { "UseCodeAging",                 JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
+  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -744,115 +751,6 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
   return success;
 }
 #endif
-
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  // Don't use strtol -- on 64-bit builds, "long" could be either 32- or 64-bits
-  // so the range tests could be tautological and might cause compiler warnings.
-  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
-  errno = 0; // errno is thread safe
-  long long v = strtoll(s, endptr, base);
-  if (errno != 0 || v < min_jint || v > max_jint) {
-    return false;
-  }
-  *result = static_cast<T>(v);
-  return true;
-}
-
-template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  if (s[0] == '-') {
-    return false;
-  }
-  // Don't use strtoul -- same reason as above.
-  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
-  errno = 0; // errno is thread safe
-  unsigned long long v = strtoull(s, endptr, base);
-  if (errno != 0 || v > max_juint) {
-    return false;
-  }
-  *result = static_cast<T>(v);
-  return true;
-}
-
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  errno = 0; // errno is thread safe
-  *result = strtoll(s, endptr, base);
-  return errno == 0;
-}
-
-template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  if (s[0] == '-') {
-    return false;
-  }
-  errno = 0; // errno is thread safe
-  *result = strtoull(s, endptr, base);
-  return errno == 0;
-}
-
-template<typename T>
-static bool multiply_by_1k(T& n) {
-  if (n >= std::numeric_limits<T>::min() / 1024 &&
-      n <= std::numeric_limits<T>::max() / 1024) {
-    n *= 1024;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// All of the integral types that can be used for command line options:
-//   int, uint, intx, uintx, uint64_t, size_t
-//
-// In all supported platforms, these types can be mapped to only 4 native types:
-//    {signed, unsigned} x {32-bit, 64-bit}
-//
-// We use SFINAE to pick the correct parse_integer_impl() function
-template<typename T>
-static bool parse_integer(const char *s, T* result) {
-  if (!isdigit(s[0]) && s[0] != '-') {
-    // strtoll/strtoull may allow leading spaces. Forbid it.
-    return false;
-  }
-
-  T n = 0;
-  bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
-                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
-  char* remainder;
-
-  if (!parse_integer_impl(s, &remainder, (is_hex ? 16 : 10), &n)) {
-    return false;
-  }
-
-  // Fail if no number was read at all or if the remainder contains more than a single non-digit character.
-  if (remainder == s || strlen(remainder) > 1) {
-    return false;
-  }
-
-  switch (*remainder) {
-    case 'T': case 't':
-      if (!multiply_by_1k(n)) return false;
-      // fall-through
-    case 'G': case 'g':
-      if (!multiply_by_1k(n)) return false;
-      // fall-through
-    case 'M': case 'm':
-      if (!multiply_by_1k(n)) return false;
-      // fall-through
-    case 'K': case 'k':
-      if (!multiply_by_1k(n)) return false;
-      break;
-    case '\0':
-      break;
-    default:
-      return false;
-  }
-
-  *result = n;
-  return true;
-}
 
 bool Arguments::atojulong(const char *s, julong* result) {
   return parse_integer(s, result);
@@ -2054,6 +1952,14 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+      return false;
+    }
+  }
+#endif
+
+#if INCLUDE_JFR
+  if (status && (FlightRecorderOptions || StartFlightRecording)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", addmods_count++)) {
       return false;
     }
   }

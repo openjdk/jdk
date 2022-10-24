@@ -811,7 +811,7 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
   address start = __ pc();
-
+  // B
   __ emit_data64(0x0706050403020100, relocInfo::none);
   __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
   __ emit_data64(0x1716151413121110, relocInfo::none);
@@ -820,7 +820,51 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
   __ emit_data64(0x3736353433323130, relocInfo::none);
   __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
-
+  // W
+  __ emit_data64(0x0003000200010000, relocInfo::none);
+  __ emit_data64(0x0007000600050004, relocInfo::none);
+  __ emit_data64(0x000B000A00090008, relocInfo::none);
+  __ emit_data64(0x000F000E000D000C, relocInfo::none);
+  __ emit_data64(0x0013001200110010, relocInfo::none);
+  __ emit_data64(0x0017001600150014, relocInfo::none);
+  __ emit_data64(0x001B001A00190018, relocInfo::none);
+  __ emit_data64(0x001F001E001D001C, relocInfo::none);
+  // D
+  __ emit_data64(0x0000000100000000, relocInfo::none);
+  __ emit_data64(0x0000000300000002, relocInfo::none);
+  __ emit_data64(0x0000000500000004, relocInfo::none);
+  __ emit_data64(0x0000000700000006, relocInfo::none);
+  __ emit_data64(0x0000000900000008, relocInfo::none);
+  __ emit_data64(0x0000000B0000000A, relocInfo::none);
+  __ emit_data64(0x0000000D0000000C, relocInfo::none);
+  __ emit_data64(0x0000000F0000000E, relocInfo::none);
+  // Q
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0x0000000000000001, relocInfo::none);
+  __ emit_data64(0x0000000000000002, relocInfo::none);
+  __ emit_data64(0x0000000000000003, relocInfo::none);
+  __ emit_data64(0x0000000000000004, relocInfo::none);
+  __ emit_data64(0x0000000000000005, relocInfo::none);
+  __ emit_data64(0x0000000000000006, relocInfo::none);
+  __ emit_data64(0x0000000000000007, relocInfo::none);
+  // D - FP
+  __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+  __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+  __ emit_data64(0x40A0000040800000, relocInfo::none); // 4.0f, 5.0f
+  __ emit_data64(0x40E0000040C00000, relocInfo::none); // 6.0f, 7.0f
+  __ emit_data64(0x4110000041000000, relocInfo::none); // 8.0f, 9.0f
+  __ emit_data64(0x4130000041200000, relocInfo::none); // 10.0f, 11.0f
+  __ emit_data64(0x4150000041400000, relocInfo::none); // 12.0f, 13.0f
+  __ emit_data64(0x4170000041600000, relocInfo::none); // 14.0f, 15.0f
+  // Q - FP
+  __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+  __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
+  __ emit_data64(0x4000000000000000, relocInfo::none); // 2.0d
+  __ emit_data64(0x4008000000000000, relocInfo::none); // 3.0d
+  __ emit_data64(0x4010000000000000, relocInfo::none); // 4.0d
+  __ emit_data64(0x4014000000000000, relocInfo::none); // 5.0d
+  __ emit_data64(0x4018000000000000, relocInfo::none); // 6.0d
+  __ emit_data64(0x401c000000000000, relocInfo::none); // 7.0d
   return start;
 }
 
