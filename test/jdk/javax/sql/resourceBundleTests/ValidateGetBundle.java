@@ -40,10 +40,15 @@ import org.junit.jupiter.params.provider.Arguments;
  */
 public class ValidateGetBundle{
 
-    // Resource bundle base name via a fully qualified class name
-    private static final String FULLY_QUALIFIED_CLASS_NAME = "com.sun.rowset.RowSetResourceBundle";
-    // Resource bundle base name via a path
-    private static final String PATH_TO_BUNDLE = "com/sun/rowset/RowSetResourceBundle";
+    // Data provider for testResourceBundleAccess
+    private static Stream<Arguments> bundleProvider() {
+        return Stream.of(
+                // The resource bundle should be found with the fully qualified class name
+                Arguments.of("com.sun.rowset.RowSetResourceBundle", true),
+                // The resource bundle will not be found when the path is specified
+                Arguments.of("com/sun/rowset/RowSetResourceBundle", false)
+        );
+    }
 
     /**
      * Test to validate whether the JDBC RowSet Resource bundle can be found
@@ -68,15 +73,5 @@ public class ValidateGetBundle{
             }
             System.out.printf("$$$ %s was not found as expected!", bundleName);
         }
-    }
-
-    // Data provider for testResourceBundleAccess
-    private static Stream<Arguments> bundleProvider() {
-        return Stream.of(
-                // The resource bundle should be found with the fully qualified class name
-                Arguments.of(FULLY_QUALIFIED_CLASS_NAME, true),
-                // The resource bundle will not be found when the path is specified
-                Arguments.of(PATH_TO_BUNDLE, false)
-        );
     }
 }
