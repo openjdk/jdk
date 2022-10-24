@@ -435,7 +435,7 @@ const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
 
 //------------------------------Ideal---------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
-Node *MulFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeF *t2 = phase->type(in(2))->isa_float_constant();
 
   // x * 2 -> x + x
@@ -458,7 +458,7 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
 
 //------------------------------Ideal---------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
-Node *MulDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeD *t2 = phase->type(in(2))->isa_double_constant();
 
   // x * 2 -> x + x

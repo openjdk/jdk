@@ -23,6 +23,7 @@
 
 package compiler.c2.irTests;
 
+import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 import jdk.test.lib.Utils;
@@ -58,11 +59,15 @@ public class TestMulNodeIdealization {
 
     @Run(test = "testFloat")
     public void runTestFloat() {
-        testFloat(RANDOM.nextFloat());
+        float value = RANDOM.nextFloat();
+        float interpreterResult = value * 2;
+        Asserts.assertEQ(testFloat(value), interpreterResult);
     }
 
     @Run(test = "testDouble")
     public void runTestDouble() {
-        testDouble(RANDOM.nextDouble());
+        double value = RANDOM.nextDouble();
+        double interpreterResult = value * 2;
+        Asserts.assertEQ(testDouble(value), interpreterResult);
     }
 }
