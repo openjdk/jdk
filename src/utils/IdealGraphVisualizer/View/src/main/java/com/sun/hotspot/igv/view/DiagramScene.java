@@ -1164,6 +1164,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return menu;
     }
 
+    private boolean undoRedoEnabled = true;
+
     private static class DiagramUndoRedo extends AbstractUndoableEdit {
 
         private final ModelState oldState;
@@ -1184,19 +1186,23 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         @Override
         public void redo() throws CannotRedoException {
             super.redo();
+            scene.undoRedoEnabled = false;
             oldScrollPosition = scene.getScrollPosition();
             scene.getModel().setHiddenNodes(newState.hiddenNodes);
             scene.getModel().setPositions(newState.firstPos, newState.secondPos);
             scene.setScrollPosition(newScrollPosition);
+            scene.undoRedoEnabled = true;
         }
 
         @Override
         public void undo() throws CannotUndoException {
             super.undo();
+            scene.undoRedoEnabled = false;
             newScrollPosition = scene.getScrollPosition();
             scene.getModel().setHiddenNodes(oldState.hiddenNodes);
             scene.getModel().setPositions(oldState.firstPos, oldState.secondPos);
             scene.setScrollPosition(oldScrollPosition);
+            scene.undoRedoEnabled = true;
         }
     }
 
@@ -1214,8 +1220,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void addUndo() {
         ModelState newModelState = new ModelState(model);
-        DiagramUndoRedo undoRedo = new DiagramUndoRedo(this, getScrollPosition(), modelState, newModelState);
-        getUndoRedoManager().undoableEditHappened(new UndoableEditEvent(this, undoRedo));
+        if (undoRedoEnabled) {
+            DiagramUndoRedo undoRedo = new DiagramUndoRedo(this, getScrollPosition(), modelState, newModelState);
+            getUndoRedoManager().undoableEditHappened(new UndoableEditEvent(this, undoRedo));
+        }
         modelState = newModelState;
     }
 }
