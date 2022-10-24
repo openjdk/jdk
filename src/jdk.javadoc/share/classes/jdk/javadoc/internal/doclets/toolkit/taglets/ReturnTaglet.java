@@ -42,6 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -62,7 +63,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch((ExecutableElement) owner, m -> extract(configuration.utils, m));
+            var r = docFinder.trySearch((ExecutableElement) owner, m -> Result.fromOptional(extract(configuration.utils, m))).toOptional();
             return r.map(result -> new Output(result.returnTree, result.method, result.returnTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {
@@ -95,14 +96,14 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         // TODO check for more than one @return
 
         var docFinder = utils.docFinder();
-        return docFinder.search(method, m -> extract(utils, m))
+        return docFinder.search(method, m -> Result.fromOptional(extract(utils, m))).toOptional()
                 .map(r -> writer.returnTagOutput(r.method, r.returnTree, false))
                 .orElse(null);
     }
 
-    private record Result(ReturnTree returnTree, ExecutableElement method) { }
+    private record Documentation(ReturnTree returnTree, ExecutableElement method) { }
 
-    private static Optional<Result> extract(Utils utils, ExecutableElement method) {
+    private static Optional<Documentation> extract(Utils utils, ExecutableElement method) {
         // TODO
         //  Using getBlockTags(..., Kind.RETURN) for clarity. Since @return has become a bimodal tag,
         //  Utils.getReturnTrees is now a misnomer: it returns only block returns, not all returns.
@@ -114,6 +115,6 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
                 });
         // this method should not check validity of @return tags, hence findAny and not findFirst or what have you
         return Stream.concat(blockTags, mainDescriptionTags)
-                .map(t -> new Result(t, method)).findAny();
+                .map(t -> new Documentation(t, method)).findAny();
     }
 }

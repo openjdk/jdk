@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
@@ -168,7 +169,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
             assert utils.isMethod(currentMethod); // not all executables are methods
             var docFinder = utils.docFinder();
             Optional<ExecutableElement> r = docFinder.search(currentMethod,
-                    m -> utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m));
+                    m -> Result.fromOptional(utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m))).toOptional();
             ExecutableElement method = r.orElse(currentMethod);
             TypeMirror containingType = method.getEnclosingElement().asType();
             writer.addComments(containingType, method, methodContent);

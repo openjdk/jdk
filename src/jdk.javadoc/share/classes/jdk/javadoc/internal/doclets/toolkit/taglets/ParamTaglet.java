@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -84,7 +85,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // try to inherit description of the respective parameter in an overridden method
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch(method, m -> extract(configuration.utils, m, position, param.isTypeParameter()));
+            var r = docFinder.trySearch(method, m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
+                    .toOptional();
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {
@@ -224,8 +226,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                              boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        var r = utils.docFinder().search((ExecutableElement) holder,
-                m -> extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER));
+        var r = utils.docFinder().search((ExecutableElement) holder, m -> Result.fromOptional(extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER)))
+                .toOptional();
         if (r.isPresent()) {
             String name = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)
@@ -237,9 +239,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         return result;
     }
 
-    private record Result(ParamTree paramTree, ExecutableElement method) { }
+    private record Documentation(ParamTree paramTree, ExecutableElement method) { }
 
-    private static Optional<Result> extract(Utils utils, ExecutableElement method, Integer position, boolean typeParam) {
+    private static Optional<Documentation> extract(Utils utils, ExecutableElement method, Integer position, boolean typeParam) {
         var ch = utils.getCommentHelper(method);
         List<ParamTree> tags = typeParam
                 ? utils.getTypeParamTrees(method)
@@ -249,7 +251,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 : method.getParameters();
         var positionOfName = mapNameToPosition(utils, parameters);
         return tags.stream().filter(t -> position.equals(positionOfName.get(ch.getParameterName(t))))
-                .map(t -> new Result(t, method)).findAny();
+                .map(t -> new Documentation(t, method)).findAny();
     }
 
     /**

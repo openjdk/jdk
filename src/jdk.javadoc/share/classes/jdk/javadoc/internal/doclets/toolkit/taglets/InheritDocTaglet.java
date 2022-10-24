@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -81,8 +82,8 @@ public class InheritDocTaglet extends BaseTaglet {
         if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
             try {
                 var docFinder = utils.docFinder();
-                Optional<Result> r = docFinder.trySearch(method,
-                        m -> extractMainDescription(m, isFirstSentence, utils));
+                Optional<Documentation> r = docFinder.trySearch(method,
+                        m -> Result.fromOptional(extractMainDescription(m, isFirstSentence, utils))).toOptional();
                 if (r.isPresent()) {
                     replacement = writer.commentTagsToOutput(r.get().method, null,
                             r.get().mainDescription, isFirstSentence);
@@ -116,15 +117,15 @@ public class InheritDocTaglet extends BaseTaglet {
         return replacement;
     }
 
-    private record Result(List<? extends DocTree> mainDescription, ExecutableElement method) { }
+    private record Documentation(List<? extends DocTree> mainDescription, ExecutableElement method) { }
 
-    private static Optional<Result> extractMainDescription(ExecutableElement m,
-                                                           boolean extractFirstSentenceOnly,
-                                                           Utils utils) {
+    private static Optional<Documentation> extractMainDescription(ExecutableElement m,
+                                                                boolean extractFirstSentenceOnly,
+                                                                Utils utils) {
         List<? extends DocTree> docTrees = extractFirstSentenceOnly
                 ? utils.getFirstSentenceTrees(m)
                 : utils.getFullBody(m);
-        return docTrees.isEmpty() ? Optional.empty() : Optional.of(new Result(docTrees, m));
+        return docTrees.isEmpty() ? Optional.empty() : Optional.of(new Documentation(docTrees, m));
     }
 
     @Override

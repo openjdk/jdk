@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -61,6 +60,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -168,7 +168,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                     var r = docFinder.search(executable,
                             false, // false: do not look for documentation in `executable`;
                             // if documentation were there, we would find it on step 1
-                            m -> extract(m, exceptionType, utils));
+                            m -> extract(m, exceptionType, utils)).toOptional();
                     if (r.isEmpty()) {
                         // if the result is empty, `exceptionType` will be
                         // documented on Step 3; skip it for now
@@ -364,11 +364,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // aside from trivial documentation errors, this condition
             // might arise when we found something which is not what
             // the documentation author intended
-            // TODO: add a link to the JBS issue
             throw new Failure.NotExceptionType(tag, holder, e);
         }
         var k = e.getKind();
-        assert k.isClass() || k == ElementKind.TYPE_PARAMETER : k; // JLS 8.4.6
+        assert k == ElementKind.CLASS || k == ElementKind.TYPE_PARAMETER : k; // JLS 8.4.6
         return e;
     }
 
@@ -450,18 +449,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
                    Failure.Unsupported {
-        // TODO
-        //  Consider this:
-        //  Searching tags up the hierarchy without regard to @throws {@inheritDoc}
-        //  and the `throws` clause is wrong. Some hierarchies might stop
-        //  documenting an unchecked exception and then restart it down
-        //  the hierarchy; we should probably not inherit that
-        //  exception jumping over methods that didn't
-        //  document that exception to those methods
-        //  that did. A method cannot "undocument"
-        //  @param or @return, but it can
-        //  undocument @throws.
-
         Element target = getExceptionType(tag, holder, utils);
         ElementKind kind = target.getKind();
 
@@ -469,7 +456,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         if (kind.isClass()) {
             c = method -> {
                 var tags = findByExceptionType(target, method, utils);
-                return !tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty();
+                return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
             };
         } else {
             // the basis of parameter position matching is JLS sections 8.4.2 and 8.4.4;
@@ -482,10 +469,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 // those lists must have the same number of elements
                 var typeParameterElement = method.getTypeParameters().get(i);
                 var tags = findByExceptionType(typeParameterElement, method, utils);
-                return !tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty();
+                return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
             };
         }
-        var result = utils.docFinder().search(holder, false, c);
+        var result = utils.docFinder().search(holder, false, c).toOptional();
         assert !(result.isPresent() && result.get().isEmpty());
         return result;
     }
@@ -589,9 +576,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return map;
     }
 
-    private record Result(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
+    private record Documentation(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
 
-    private static Optional<Result> extract(ExecutableElement method, TypeMirror targetExceptionType, Utils utils) {
+    private static Result<Documentation> extract(ExecutableElement method, TypeMirror targetExceptionType, Utils utils) {
         // FIXME: find substitutions?
         var ch = utils.getCommentHelper(method);
         List<ThrowsTree> tags = new LinkedList<>();
@@ -605,7 +592,17 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 tags.add(tag);
             }
         }
-        return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
+        if (tags.isEmpty()) {
+            // check if the exception is reachable through the throws clause
+            // TODO: need complete search: type variables and probably substitutions
+            Optional<? extends TypeMirror> any = method.getThrownTypes().stream().filter(targetExceptionType::equals).findAny();
+            if (any.isPresent()) {
+                return Result.CONTINUE();
+            } else {
+                return Result.SKIP();
+            }
+        }
+        return Result.TERMINATE(new Documentation(tags, method));
     }
 
     private static void errorUnknownException(BaseConfiguration configuration,

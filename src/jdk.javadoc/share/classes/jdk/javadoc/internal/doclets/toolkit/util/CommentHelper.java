@@ -56,6 +56,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -537,7 +538,10 @@ public class CommentHelper {
         Utils utils = configuration.utils;
         var docFinder = utils.docFinder();
         Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
-                (m -> utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m)));
+                (m -> {
+                    Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
+                    return Result.fromOptional(optional);
+                })).toOptional();
         return inheritedDoc.isEmpty() || inheritedDoc.get().equals(ee)
                 ? null
                 : utils.getCommentHelper(inheritedDoc.get()).getDocTreePath(dtree);

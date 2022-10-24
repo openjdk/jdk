@@ -37,6 +37,7 @@ import com.sun.source.doctree.SeeTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -60,8 +61,8 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         Element e = holder;
         if (utils.isMethod(holder)) {
             var docFinder = utils.docFinder();
-            Optional<Result> result = docFinder.search((ExecutableElement) holder,
-                    m -> extract(utils, m));
+            Optional<Documentation> result = docFinder.search((ExecutableElement) holder,
+                    m -> Result.fromOptional(extract(utils, m))).toOptional();
             if (result.isPresent()) {
                 ExecutableElement m = result.get().method();
                 tags = utils.getSeeTrees(m);
@@ -71,10 +72,10 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         return writer.seeTagOutput(e, tags);
     }
 
-    private record Result(List<? extends SeeTree> seeTrees, ExecutableElement method) { }
+    private record Documentation(List<? extends SeeTree> seeTrees, ExecutableElement method) { }
 
-    private static Optional<Result> extract(Utils utils, ExecutableElement method) {
+    private static Optional<Documentation> extract(Utils utils, ExecutableElement method) {
         List<? extends SeeTree> tags = utils.getSeeTrees(method);
-        return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
+        return tags.isEmpty() ? Optional.empty() : Optional.of(new Documentation(tags, method));
     }
 }

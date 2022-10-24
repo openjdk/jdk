@@ -36,6 +36,7 @@ import com.sun.source.doctree.SpecTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -59,8 +60,8 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         Element e = holder;
         if (utils.isMethod(holder)) {
             var docFinder = utils.docFinder();
-            Optional<Result> result = docFinder.search((ExecutableElement) holder,
-                    m -> extract(utils, m));
+            Optional<Documentation> result = docFinder.search((ExecutableElement) holder,
+                    m -> Result.fromOptional(extract(utils, m))).toOptional();
             if (result.isPresent()) {
                 ExecutableElement m = result.get().method();
                 tags = utils.getSpecTrees(m);
@@ -70,10 +71,10 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         return writer.specTagOutput(e, tags);
     }
 
-    private record Result(List<? extends SpecTree> seeTrees, ExecutableElement method) { }
+    private record Documentation(List<? extends SpecTree> seeTrees, ExecutableElement method) { }
 
-    private static Optional<Result> extract(Utils utils, ExecutableElement method) {
+    private static Optional<Documentation> extract(Utils utils, ExecutableElement method) {
         List<? extends SpecTree> tags = utils.getSpecTrees(method);
-        return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
+        return tags.isEmpty() ? Optional.empty() : Optional.of(new Documentation(tags, method));
     }
 }

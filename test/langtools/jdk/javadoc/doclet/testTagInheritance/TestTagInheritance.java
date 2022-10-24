@@ -54,9 +54,15 @@ public class TestTagInheritance extends JavadocTester {
                 + "does not override or implement any method.");
 
         //Test valid usage of inheritDoc tag.
-        for (int i = 1; i < 39; i++) {
+        for (int i = 1; i < 38; i++) {
             checkOutput("pkg/TestTagInheritance.html", true,
                     "Test " + i + " passes");
+        }
+
+        //Test valid usage of inheritDoc tag.
+        for (int i = 100; i < 101; i++) { // bad
+            checkOutput("pkg/TestTagInheritance.html", false,
+                    "Test " + i + " fails");
         }
 
         //First sentence test (6253614)

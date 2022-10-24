@@ -40,6 +40,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -168,7 +169,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         try {
             var docFinder = configuration.utils.docFinder();
             var r = docFinder.trySearch((ExecutableElement) owner,
-                    m -> extractFirst(m, configuration.utils));
+                    m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {
@@ -176,15 +177,15 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         }
     }
 
-    record Result(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }
+    record Documentation(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }
 
-    private Optional<Result> extractFirst(ExecutableElement m, Utils utils) {
+    private Optional<Documentation> extractFirst(ExecutableElement m, Utils utils) {
         List<? extends DocTree> tags = utils.getBlockTags(m, this);
         if (tags.isEmpty()) {
             return Optional.empty();
         }
         DocTree t = tags.get(0);
-        return Optional.of(new Result(t, utils.getCommentHelper(m).getDescription(t), m));
+        return Optional.of(new Documentation(t, utils.getCommentHelper(m).getDescription(t), m));
     }
 
     @Override

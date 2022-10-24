@@ -25,25 +25,23 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.Deque;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 
 public class DocFinder {
 
     /*
-     * A specialized function that accepts a method and either returns an
-     * optional result or throws a possibly checked exception, which
-     * terminates the search and transparently bubbles up the stack.
+     * A specialized function that accepts a method in the hierarchy and
+     * returns a value that controls the search or throws a possibly
+     * checked exception, which terminates the search and transparently
+     * bubbles up the stack.
      *
-     * If a method does not meet the criterion, returns an empty optional.
+     * FIXME: If a method does not meet the criterion, returns an empty optional.
      *
      * In a rare case, if a criterion performs inner searches and the search
      * client needs to disambiguate between the outer search exceptions and
@@ -80,7 +78,7 @@ public class DocFinder {
      */
     @FunctionalInterface
     public interface Criterion<T, X extends Throwable> {
-        Optional<T> apply(ExecutableElement method) throws X;
+        Result<T> apply(ExecutableElement method) throws X;
     }
 
     private final Function<ExecutableElement, ExecutableElement> overriddenMethodLookup;
@@ -100,16 +98,16 @@ public class DocFinder {
         private NoOverriddenMethodsFound() { }
     }
 
-    public <T, X extends Throwable> Optional<T> search(ExecutableElement method,
-                                                       Criterion<T, X> criterion)
+    public <T, X extends Throwable> Result<T> search(ExecutableElement method,
+                                                     Criterion<T, X> criterion)
             throws X
     {
         return search(method, true, criterion);
     }
 
-    public <T, X extends Throwable> Optional<T> search(ExecutableElement method,
-                                                       boolean includeMethod,
-                                                       Criterion<T, X> criterion)
+    public <T, X extends Throwable> Result<T> search(ExecutableElement method,
+                                                     boolean includeMethod,
+                                                     Criterion<T, X> criterion)
             throws X
     {
         try {
@@ -120,8 +118,8 @@ public class DocFinder {
         }
     }
 
-    public <T, X extends Throwable> Optional<T> trySearch(ExecutableElement method,
-                                                          Criterion<T, X> criterion)
+    public <T, X extends Throwable> Result<T> trySearch(ExecutableElement method,
+                                                        Criterion<T, X> criterion)
             throws NoOverriddenMethodsFound, X
     {
         return search0(method, false, true, criterion);
@@ -141,117 +139,122 @@ public class DocFinder {
      *  - the given method overrides no methods and
      *    the search is instructed to detect that
      */
-    private <T, X extends Throwable> Optional<T> search0(ExecutableElement method,
-                                                         boolean includeMethodInSearch,
-                                                         boolean throwExceptionIfDoesNotOverride,
-                                                         Criterion<T, X> criterion)
+    private <T, X extends Throwable> Result<T> search0(ExecutableElement method,
+                                                       boolean includeMethodInSearch,
+                                                       boolean throwExceptionIfDoesNotOverride,
+                                                       Criterion<T, X> criterion)
             throws NoOverriddenMethodsFound, X
     {
-        // if required, first check if the method overrides anything, so that
-        // the result would not depend on whether the method itself is included
-        // in the search
-        Iterator<ExecutableElement> overriddenMethods = new OverriddenMethodsHierarchy(method);
-        if (throwExceptionIfDoesNotOverride && !overriddenMethods.hasNext()) {
+        // if the "overrides" check is requested, perform it first so that we
+        // could throw the exception regardless of the search outcome on
+        // this method
+        Iterator<ExecutableElement> methods = methodsOverriddenBy(method);
+        if (throwExceptionIfDoesNotOverride && !methods.hasNext() ) {
             throw new NoOverriddenMethodsFound();
         }
-        if (includeMethodInSearch) {
-            Optional<T> r = criterion.apply(method);
-            if (r.isPresent())
-                return r;
-        }
-        while (overriddenMethods.hasNext()) {
-            ExecutableElement m = overriddenMethods.next();
-            Optional<T> r = criterion.apply(m);
-            if (r.isPresent())
-                return r;
-        }
-        return Optional.empty();
-    }
-
-    /*
-     * An iterator over methods overridden by some method.
-     *
-     * The iteration order is as defined in the Documentation Comment
-     * Specification for the Standard Doclet.
-     *
-     * This iterator can be used to create a stream; for example:
-     *
-     *     var spliterator = Spliterators.spliteratorUnknownSize(iterator,
-     *             Spliterator.ORDERED | Spliterator.NONNULL
-     *                     | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
-     *     var stream = StreamSupport.stream(spliterator, false);
-     */
-    private class OverriddenMethodsHierarchy implements Iterator<ExecutableElement> {
-
-        final Deque<LazilyAccessedImplementedMethods> path = new LinkedList<>();
-        ExecutableElement next;
-
-        public OverriddenMethodsHierarchy(ExecutableElement method) {
-            assert method.getKind() == ElementKind.METHOD : method.getKind();
-            next = method;
-            updateNext();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return next != null;
-        }
-
-        @Override
-        public ExecutableElement next() {
-            if (next == null) {
-                throw new NoSuchElementException();
-            }
-            var r = next;
-            updateNext();
+        Result<T> r = includeMethodInSearch ? criterion.apply(method) : Result.CONTINUE();
+        if (!(r instanceof Result.Continue<T>)) {
             return r;
         }
+        while (methods.hasNext()) {
+            ExecutableElement m = methods.next();
+            r = search0(m, true, false /* don't check for overrides */, criterion);
+            if (r instanceof Result.Terminate<T>) {
+                return r;
+            }
+        }
+        return r;
+    }
 
-        private void updateNext() {
-            assert next != null;
-            var superClassMethod = overriddenMethodLookup.apply(next);
-            path.push(new LazilyAccessedImplementedMethods(next));
-            if (superClassMethod != null) {
-                next = superClassMethod;
-                return;
-            }
-            while (!path.isEmpty()) {
-                var superInterfaceMethods = path.peek();
-                if (superInterfaceMethods.hasNext()) {
-                    next = superInterfaceMethods.next();
-                    return;
-                } else {
-                    path.pop();
-                }
-            }
-            next = null; // end-of-hierarchy
+    // we see overridden and implemented methods as overridden (the way JLS does)
+    private Iterator<ExecutableElement> methodsOverriddenBy(ExecutableElement method) {
+        // TODO: add laziness if required
+        var list = new ArrayList<ExecutableElement>();
+        ExecutableElement overridden = overriddenMethodLookup.apply(method);
+        if (overridden != null) {
+            list.add(overridden);
+        }
+        implementedMethodsLookup.apply(method, method).forEach(list::add);
+        return list.iterator();
+    }
+
+    // SKIP and CONTINUE could alternatively be modelled as constants of an
+    // enum that implements Control<T> in a sealed fashion. However, there
+    // are a few issues with that:
+    //
+    //   1. Since enums cannot be generic, such an enum would need to implement
+    //      Control<Object> and each use of its constants directly would
+    //      require ugly casts. Yes, helper static methods could
+    //      remediate that, but then those methods would
+    //      coexist with enum constants. That won't be
+    //      clean. (See Collections.EMPTY_LIST and
+    //      Collections.emptyList().)
+    //   2. Having pattern match on Control<T> subtypes in switch would
+    //      then require a subsequent switch on the enum.
+    //      (Result is not an enum, so it has to be
+    //      ruled out first. Then a switch could
+    //      determine a particular constant.)
+    //
+    // Terminate could be modelled as a record implementing Control<T>, but
+    // it would be a bit limiting and asymmetric with respect to other
+    // controls.
+    //
+    // For those and other reasons a simpler approach was chosen.
+
+    private static final Result<?> SKIP = new Result.Skip<>();
+    private static final Result<?> CONTINUE = new Result.Continue<>();
+
+    // only DocFinder should instantiate subtypes of Result<T>
+    public sealed interface Result<T> {
+
+        final class Skip<T> implements Result<T> {
+            private Skip() { }
         }
 
-        class LazilyAccessedImplementedMethods implements Iterator<ExecutableElement> {
+        final class Continue<T> implements Result<T> {
+            private Continue() { }
+        }
 
-            final ExecutableElement method;
-            Iterator<ExecutableElement> iterator;
+        final class Terminate<T> implements Result<T> {
 
-            public LazilyAccessedImplementedMethods(ExecutableElement method) {
-                this.method = method;
+            private final T value;
+
+            private Terminate(T value) {
+                this.value = Objects.requireNonNull(value);
+            }
+
+            public T value() {
+                return value;
             }
 
             @Override
-            public boolean hasNext() {
-                return getIterator().hasNext();
+            public Optional<T> toOptional() {
+                return Optional.of(value);
             }
+        }
 
-            @Override
-            public ExecutableElement next() {
-                return getIterator().next();
-            }
+        @SuppressWarnings("unchecked")
+        static <T> Result<T> SKIP() {
+            return (Result<T>) SKIP;
+        }
 
-            Iterator<ExecutableElement> getIterator() {
-                if (iterator != null) {
-                    return iterator;
-                }
-                return iterator = implementedMethodsLookup.apply(method, next).iterator();
-            }
+        @SuppressWarnings("unchecked")
+        static <T> Result<T> CONTINUE() {
+            return (Result<T>) CONTINUE;
+        }
+
+        static <T> Result<T> TERMINATE(T value) {
+            return new Terminate<>(value);
+        }
+
+        // A pair of convenience methods for the most typical scenario
+
+        default Optional<T> toOptional() {
+            return Optional.empty();
+        }
+
+        static <T> Result<T> fromOptional(Optional<T> optional) {
+            return optional.map(Result::TERMINATE).orElseGet(Result::CONTINUE);
         }
     }
 }

@@ -51,6 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -265,8 +266,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                     var docFinder = utils.docFinder();
                     Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
                         var firstSentenceTrees = utils.getFirstSentenceTrees(m);
-                        return firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
-                    }));
+                        Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
+                        return Result.fromOptional(optional);
+                    })).toOptional();
+                    // The fact that we use `member` for possibly unrelated tags is suspicious
                     writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
                 } else {
                     writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
