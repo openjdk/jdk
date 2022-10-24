@@ -324,7 +324,7 @@ void ZReferenceProcessor::process_worker_discovered_list(zaddress discovered_lis
 }
 
 void ZReferenceProcessor::work() {
-  SuspendibleThreadSetJoiner sts;
+  SuspendibleThreadSetJoiner sts_joiner;
 
   ZPerWorkerIterator<zaddress> iter(&_discovered_list);
   for (zaddress* start; iter.next(&start);) {
@@ -449,7 +449,7 @@ void ZReferenceProcessor::process_references() {
 
 void ZReferenceProcessor::verify_pending_references() {
 #ifdef ASSERT
-  SuspendibleThreadSetJoiner sts;
+  SuspendibleThreadSetJoiner sts_joiner;
 
   assert(!is_null(_pending_list.get()), "Should not contain colored null");
 

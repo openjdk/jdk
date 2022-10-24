@@ -862,7 +862,7 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
   size_t flushed;
 
   {
-    SuspendibleThreadSetJoiner joiner;
+    SuspendibleThreadSetJoiner sts_joiner;
     ZLocker<ZLock> locker(&_lock);
 
     // Never uncommit below min capacity. We flush out and uncommit chunks at
@@ -893,7 +893,7 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
   }
 
   {
-    SuspendibleThreadSetJoiner joiner;
+    SuspendibleThreadSetJoiner sts_joiner;
     ZLocker<ZLock> locker(&_lock);
 
     // Adjust claimed and capacity to reflect the uncommit

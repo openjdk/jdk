@@ -439,7 +439,7 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
     // Cleaning failed because we ran out of transitional IC stubs,
     // so we have to refill and try again. Refilling requires taking
     // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts;
+    SuspendibleThreadSetLeaver sts_leaver;
     InlineCacheBuffer::refill_ic_stubs();
   }
 }
