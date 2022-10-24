@@ -46,8 +46,6 @@ private:
   void inc_needs_attention();
   void dec_needs_attention();
 
-  void add_and_wait_inner(ZForwarding* forwarding);
-
   bool prune();
   ZForwarding* prune_and_claim();
 
@@ -58,8 +56,7 @@ public:
   void resize_workers(uint nworkers);
   void leave();
 
-  void add_and_wait_for_in_place_relocation(ZForwarding* forwarding);
-  bool add_and_wait(ZForwarding* forwarding);
+  void add_and_wait(ZForwarding* forwarding);
 
   ZForwarding* synchronize_poll();
   void synchronize_thread();

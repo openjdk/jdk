@@ -652,12 +652,6 @@ void ZVerify::after_relocation(ZForwarding* forwarding) {
     return;
   }
 
-  if (ZAbort::should_abort()) {
-    // We can't assume that objects were promoted to the old generation
-    // during VM shutdown, as mutators can pin objects in the young generation.
-    return;
-  }
-
   if (ZGeneration::young()->is_phase_mark() &&
       forwarding->relocated_remembered_fields_is_concurrently_scanned()) {
     // Can't verify to-space objects if concurrent YC rejected published

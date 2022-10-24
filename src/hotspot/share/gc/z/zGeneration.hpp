@@ -149,7 +149,6 @@ public:
 
   // Worker resizing
   bool should_worker_resize();
-  bool should_worker_stop();
 
   ZPageTable* page_table() const;
   const ZForwardingTable* forwarding_table() const;

@@ -312,7 +312,7 @@ public:
       _remembered.scan_forwarding(forwarding, &context);
       ZVerify::after_scan(forwarding);
 
-      if (ZGeneration::young()->should_worker_stop()) {
+      if (ZGeneration::young()->should_worker_resize()) {
         break;
       }
     };
@@ -363,7 +363,7 @@ public:
       // entries in the current active set.
       _remembered._page_table->register_found_old(page);
 
-      if (ZGeneration::young()->should_worker_stop()) {
+      if (ZGeneration::young()->should_worker_resize()) {
         break;
       }
     }

@@ -87,10 +87,6 @@ inline bool ZGeneration::should_worker_resize() {
   return _workers.should_worker_resize();
 }
 
-inline bool ZGeneration::should_worker_stop() {
-  return ZAbort::should_abort() || should_worker_resize();
-}
-
 inline ZStatHeap* ZGeneration::stat_heap() {
   return &_stat_heap;
 }

@@ -143,7 +143,7 @@ void ZRelocateQueue::leave() {
   }
 }
 
-void ZRelocateQueue::add_and_wait_inner(ZForwarding* forwarding) {
+void ZRelocateQueue::add_and_wait(ZForwarding* forwarding) {
   ZStatTimer timer(ZCriticalPhaseRelocationStall);
   ZLocker<ZConditionLock> locker(&_lock);
 
@@ -158,26 +158,9 @@ void ZRelocateQueue::add_and_wait_inner(ZForwarding* forwarding) {
     _lock.notify_all();
   }
 
-  while (!forwarding->is_done() && !ZAbort::should_abort()) {
+  while (!forwarding->is_done()) {
     _lock.wait();
   }
-}
-
-void ZRelocateQueue::add_and_wait_for_in_place_relocation(ZForwarding* forwarding) {
-  // Page is being in-place relocated and it is therefore guaranteed
-  // to be fully relocated when this call returns. No need to check
-  // and handle the case when the GC is being aborted.
-  add_and_wait_inner(forwarding);
-}
-
-bool ZRelocateQueue::add_and_wait(ZForwarding* forwarding) {
-  if (ZAbort::should_abort()) {
-    return false;
-  }
-
-  add_and_wait_inner(forwarding);
-
-  return !ZAbort::should_abort();
 }
 
 bool ZRelocateQueue::prune() {
@@ -391,14 +374,8 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
     }
 
     // Failed to relocate object. Signal and wait for a worker thread to
-    // complete relocation of this page, and then forward the object. If
-    // the GC aborts the relocation phase before the page has been relocated,
-    // then wait return false and we just forward the object in-place.
-
-    if (!_queue.add_and_wait(forwarding)) {
-      // Aborted while waiting - forward object in-place
-      return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
-    }
+    // complete relocation of this page, and then forward the object.
+    _queue.add_and_wait(forwarding);
   }
 
   // Forward object
@@ -832,13 +809,6 @@ private:
       return;
     }
 
-    if (ZAbort::should_abort() && ZHeap::heap()->is_young(to_addr)) {
-      // During VM shutdown, a mutator may pin the object before the GC relocates it.
-      // Then it will get stuck in the young generation, and hence won't really be
-      // a promotion any longer.
-      return;
-    }
-
     // Normal promotion
     update_remset_promoted(to_addr);
   }
@@ -1014,11 +984,6 @@ public:
     _forwarding = forwarding;
 
     _forwarding->page()->log_msg(" (relocate page)");
-
-    // Check if we should abort
-    if (ZAbort::should_abort()) {
-      return;
-    }
 
     ZVerify::before_relocation(_forwarding);
 
@@ -1245,7 +1210,7 @@ public:
       });
 
       SuspendibleThreadSet::yield();
-      if (ZGeneration::young()->should_worker_stop()) {
+      if (ZGeneration::young()->should_worker_resize()) {
         return;
       }
     }
@@ -1271,7 +1236,7 @@ public:
         forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
       }
 
-      if (ZGeneration::young()->should_worker_stop()) {
+      if (ZGeneration::young()->should_worker_resize()) {
         break;
       }
 

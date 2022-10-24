@@ -441,7 +441,7 @@ bool ZMark::drain(ZMarkContext* context) {
     if ((processed++ & 31) == 0) {
       // Yield once per 32 oops
       SuspendibleThreadSet::yield();
-      if (_generation->should_worker_stop()) {
+      if (ZAbort::should_abort() || _generation->should_worker_resize()) {
         return false;
       }
     }

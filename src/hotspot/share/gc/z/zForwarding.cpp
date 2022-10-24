@@ -95,7 +95,7 @@ bool ZForwarding::retain_page(ZRelocateQueue* queue) {
 
     if (ref_count < 0) {
       // Claimed
-      queue->add_and_wait_for_in_place_relocation(this);
+      queue->add_and_wait(this);
 
       // Released
       return false;
