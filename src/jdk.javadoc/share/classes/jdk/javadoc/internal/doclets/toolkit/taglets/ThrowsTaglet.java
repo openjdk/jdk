@@ -268,24 +268,39 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         alreadyDocumentedExceptions.add(exceptionType);
         var description = tag.getDescription();
         int i = indexOfInheritDoc(tag, holder);
-
         if (i == -1) {
-            // appending to an existing entry or adding a new one?
-            if (addNewEntry) {
+            // Since the description does not contain {@inheritDoc}, we either add a new entry, or
+            // append to the current one. Here's an example of when we add a new entry:
+            //
+            //     ... -> {@inheritDoc} -> <text>
+            //
+            // And here's an example of when we append to the current entry:
+            //
+            //     ... -> <text> {@inheritDoc} <text> -> <text>
+
+            // if we don't need to add a new entry, assume it has been added before
+            assert exceptionSection.debugEntryBegun() || addNewEntry;
+            if (addNewEntry) { // add a new entry?
                 exceptionSection.beginEntry(exceptionType);
             }
+            // append to the current entry
             exceptionSection.continueEntry(writer.commentTagsToOutput(holder, description));
-            if (addNewEntry) {
+            if (addNewEntry) { // if added a new entry, end it
                 exceptionSection.endEntry();
             }
         } else {
+            // Is the {@inheritDoc} that we found standalone (i.e. without preceding and following text)?
             boolean loneInheritDoc = description.size() == 1;
             assert !loneInheritDoc || i == 0 : i;
             boolean add = !loneInheritDoc && addNewEntry;
+            // we add a new entry if the {@inheritDoc} that we found has something else around
+            // it and we can add a new entry (as instructed by the parent call)
             if (add) {
                 exceptionSection.beginEntry(exceptionType);
             }
-            if (i > 0) { // if there's anything preceding {@inheritDoc}, assume the entry has been started before
+            if (i > 0) {
+                // if there's anything preceding {@inheritDoc}, assume an entry has been added before
+                assert exceptionSection.debugEntryBegun();
                 Content beforeInheritDoc = writer.commentTagsToOutput(holder, description.subList(0, i));
                 exceptionSection.continueEntry(beforeInheritDoc);
             }
@@ -461,7 +476,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 return Result.fromOptional(!tags.isEmpty() ? Optional.of(toExceptionTags(method, tags)) : Optional.empty());
             };
         } else {
-            // the basis of parameter position matching is JLS sections 8.4.2 and 8.4.4;
+            // the basis for parameter position matching is JLS sections 8.4.2 and 8.4.4
             int i = holder.getTypeParameters().indexOf(target);
             if (i == -1) {
                 throw new Failure.Unsupported(tag, holder);
@@ -546,6 +561,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
         Content build() {
             return result;
+        }
+
+        // for debugging purposes only
+        boolean debugEntryBegun() {
+            return began;
         }
     }
 
