@@ -26,13 +26,17 @@ import com.sun.rowset.JdbcRowSetResourceBundle;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 /**
  * @test
  * @bug 8294989
  * @summary Check JDBC RowSet resource bundle access
  * @modules java.sql.rowset/com.sun.rowset:+open
- * @run main/othervm ValidateGetBundle
+ * @run junit/othervm ValidateGetBundle
  */
 public class ValidateGetBundle{
 
@@ -41,19 +45,14 @@ public class ValidateGetBundle{
     // Resource bundle base name via a path
     private static final String PATH_TO_BUNDLE = "com/sun/rowset/RowSetResourceBundle";
 
-    public static void main(String[] args) {
-        // The resource bundle should be found with the fully qualified class name
-        testResourceBundleAccess(FULLY_QUALIFIED_CLASS_NAME, true);
-        // The resource bundle will not be found when the path is specified
-        testResourceBundleAccess(PATH_TO_BUNDLE, false);
-    }
-
     /**
      * Test to validate whether the JDBC RowSet Resource bundle can be found
      * @param bundleName the base name of the resource bundle
      * @param expectBundle indicates whether the resource bundle should be found
      */
-    private static void testResourceBundleAccess(String bundleName, boolean expectBundle) {
+    @ParameterizedTest
+    @MethodSource("bundleProvider")
+    void testResourceBundleAccess(String bundleName, boolean expectBundle) {
         try {
             var bundle = ResourceBundle.getBundle(bundleName,
                     Locale.US, JdbcRowSetResourceBundle.class.getModule());
@@ -69,5 +68,15 @@ public class ValidateGetBundle{
             }
             System.out.printf("$$$ %s was not found as expected!", bundleName);
         }
+    }
+
+    // Data provider for testResourceBundleAccess
+    private static Stream<Arguments> bundleProvider() {
+        return Stream.of(
+                // The resource bundle should be found with the fully qualified class name
+                Arguments.of(FULLY_QUALIFIED_CLASS_NAME, true),
+                // The resource bundle will not be found when the path is specified
+                Arguments.of(PATH_TO_BUNDLE, false)
+        );
     }
 }
