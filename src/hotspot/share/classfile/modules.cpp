@@ -237,7 +237,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
   // so no locking is needed.
 
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(module_handle);
+  ModuleEntryTable::patch_javabase_entries(THREAD, module_handle);
 
   log_info(module, load)(JAVA_BASE_NAME " location: %s",
                          location_symbol != NULL ? location_symbol->as_C_string() : "NULL");
@@ -489,7 +489,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 
   Handle java_base_module(THREAD, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(java_base_module);
+  ModuleEntryTable::patch_javabase_entries(THREAD, java_base_module);
 
   if (h_platform_loader.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");

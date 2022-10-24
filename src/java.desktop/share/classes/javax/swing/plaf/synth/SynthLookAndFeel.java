@@ -1000,6 +1000,9 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 SynthStyle style = context.getStyle();
                 int state = context.getComponentState();
 
+                if (style == null) {
+                    return;
+                }
                 // Get the current background color.
                 Color currBG = style.getColor(context, ColorType.BACKGROUND);
 

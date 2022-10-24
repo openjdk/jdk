@@ -1018,8 +1018,8 @@ void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   }
 }
 
-// The sweeper calls this and marks the nmethods here on the stack so that
-// they cannot be turned into zombies while in the queue.
+// The GC calls this and marks the nmethods here on the stack so that
+// they cannot be unloaded while in the queue.
 void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
   if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
     cf->do_code_blob(_event_data.compiled_method_load);
@@ -1076,7 +1076,7 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 }
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
-  // Post events while nmethods are still in the queue and can't be unloaded or made zombie
+  // Post events while nmethods are still in the queue and can't be unloaded.
   while (_queue_head != NULL) {
     _queue_head->event().post_compiled_method_load_event(env);
     dequeue();

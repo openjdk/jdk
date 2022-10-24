@@ -97,6 +97,7 @@ SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
 #endif // COMPILER2
 
+nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_stubs() {
@@ -995,12 +996,15 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-jlong SharedRuntime::get_java_tid(Thread* thread) {
-  if (thread != NULL && thread->is_Java_thread()) {
-    oop obj = JavaThread::cast(thread)->threadObj();
-    return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
+jlong SharedRuntime::get_java_tid(JavaThread* thread) {
+  assert(thread != NULL, "No thread");
+  if (thread == NULL) {
+    return 0;
   }
-  return 0;
+  guarantee(Thread::current() != thread || thread->is_oop_safe(),
+            "current cannot touch oops after its GC barrier is detached.");
+  oop obj = thread->threadObj();
+  return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
 }
 
 /**
@@ -1009,14 +1013,14 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
 int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
-  return dtrace_object_alloc(Thread::current(), o, o->size());
+  return dtrace_object_alloc(JavaThread::current(), o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o) {
   return dtrace_object_alloc(thread, o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();
@@ -1290,7 +1294,6 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
     callee = NULL;
   }
-  nmethodLocker nl_callee(callee);
 #ifdef ASSERT
   address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
 #endif
@@ -1386,7 +1389,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
          (!is_virtual && invoke_code == Bytecodes::_invokedynamic) ||
          ( is_virtual && invoke_code != Bytecodes::_invokestatic ), "inconsistent bytecode");
 
-  assert(caller_nm->is_alive() && !caller_nm->is_unloading(), "It should be alive");
+  assert(!caller_nm->is_unloading(), "It should not be unloading");
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
@@ -2294,7 +2297,7 @@ class MethodArityHistogram {
 
   static void add_method_to_histogram(nmethod* nm) {
     Method* method = (nm == NULL) ? NULL : nm->method();
-    if ((method != NULL) && nm->is_alive()) {
+    if (method != NULL) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -3004,6 +3007,9 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
+
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
 
   assert(method->is_native(), "must be native");
   assert(method->is_special_native_intrinsic() ||

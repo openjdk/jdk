@@ -72,6 +72,8 @@ class SharedRuntime: AllStatic {
   static UncommonTrapBlob*   _uncommon_trap_blob;
 #endif // COMPILER2
 
+  static nmethod*            _cont_doYield_stub;
+
 #ifndef PRODUCT
   // Counters
   static int64_t _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
@@ -249,6 +251,11 @@ class SharedRuntime: AllStatic {
   static SafepointBlob* polling_page_safepoint_handler_blob()  { return _polling_page_safepoint_handler_blob; }
   static SafepointBlob* polling_page_vectors_safepoint_handler_blob()  { return _polling_page_vectors_safepoint_handler_blob; }
 
+  static nmethod* cont_doYield_stub() {
+    assert(_cont_doYield_stub != nullptr, "oops");
+    return _cont_doYield_stub;
+  }
+
   // Counters
 #ifndef PRODUCT
   static address nof_megamorphic_calls_addr() { return (address)&_nof_megamorphic_calls; }
@@ -270,14 +277,14 @@ class SharedRuntime: AllStatic {
 
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o);
-  static int dtrace_object_alloc(Thread* thread, oopDesc* o);
-  static int dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size);
+  static int dtrace_object_alloc(JavaThread* thread, oopDesc* o);
+  static int dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
   // Utility method for retrieving the Java thread id, returns 0 if the
   // thread is not a well formed Java thread.
-  static jlong get_java_tid(Thread* thread);
+  static jlong get_java_tid(JavaThread* thread);
 
 
   // used by native wrappers to re-enable yellow if overflow happened in native code
@@ -498,7 +505,7 @@ class SharedRuntime: AllStatic {
                                jint length, JavaThread* thread);
 
   // handle ic miss with caller being compiled code
-  // wrong method handling (inline cache misses, zombie methods)
+  // wrong method handling (inline cache misses)
   static address handle_wrong_method(JavaThread* current);
   static address handle_wrong_method_abstract(JavaThread* current);
   static address handle_wrong_method_ic_miss(JavaThread* current);

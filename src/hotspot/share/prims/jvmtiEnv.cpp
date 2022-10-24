@@ -1182,6 +1182,8 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
 jvmtiError
 JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* current_thread = JavaThread::current();
+
+  JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread = NULL;
   oop thread_oop = NULL;
@@ -2246,7 +2248,7 @@ JvmtiEnv::GetLocalObject(jthread thread, jint depth, jint slot, jobject* value_p
   JvmtiVTMSTransitionDisabler disabler;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      current_thread, depth, slot);
@@ -2286,7 +2288,7 @@ JvmtiEnv::GetLocalInstance(jthread thread, jint depth, jobject* value_ptr){
   JvmtiVTMSTransitionDisabler disabler;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetReceiver op(this, Handle(current_thread, thread_obj),
                                    current_thread, depth);
@@ -2327,7 +2329,7 @@ JvmtiEnv::GetLocalInt(jthread thread, jint depth, jint slot, jint* value_ptr) {
   JvmtiVTMSTransitionDisabler disabler;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_INT);
@@ -2368,7 +2370,7 @@ JvmtiEnv::GetLocalLong(jthread thread, jint depth, jint slot, jlong* value_ptr) 
   JvmtiVTMSTransitionDisabler disabler;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_LONG);
@@ -2409,7 +2411,7 @@ JvmtiEnv::GetLocalFloat(jthread thread, jint depth, jint slot, jfloat* value_ptr
   JvmtiVTMSTransitionDisabler disabler;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_FLOAT);
@@ -2450,7 +2452,7 @@ JvmtiEnv::GetLocalDouble(jthread thread, jint depth, jint slot, jdouble* value_p
   JvmtiVTMSTransitionDisabler disabler;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_DOUBLE);
@@ -2492,7 +2494,7 @@ JvmtiEnv::SetLocalObject(jthread thread, jint depth, jint slot, jobject value) {
   val.l = value;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_OBJECT, val);
@@ -2528,7 +2530,7 @@ JvmtiEnv::SetLocalInt(jthread thread, jint depth, jint slot, jint value) {
   val.i = value;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_INT, val);
@@ -2564,7 +2566,7 @@ JvmtiEnv::SetLocalLong(jthread thread, jint depth, jint slot, jlong value) {
   val.j = value;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_LONG, val);
@@ -2600,7 +2602,7 @@ JvmtiEnv::SetLocalFloat(jthread thread, jint depth, jint slot, jfloat value) {
   val.f = value;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_FLOAT, val);
@@ -2636,7 +2638,7 @@ JvmtiEnv::SetLocalDouble(jthread thread, jint depth, jint slot, jdouble value) {
   val.d = value;
 
   jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
                                      depth, slot, T_DOUBLE, val);

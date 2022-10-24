@@ -291,7 +291,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ mv(reg, zr);
   } else {
-    __ movoop(reg, o, /* immediate */ true);
+    __ movoop(reg, o);
   }
 }
 
@@ -1069,7 +1069,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfil
     __ ld(t1, recv_addr);
     __ bnez(t1, next_test);
     __ sd(recv, recv_addr);
-    __ li(t1, DataLayout::counter_increment);
+    __ mv(t1, DataLayout::counter_increment);
     __ sd(t1, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))));
     __ j(*update_done);
     __ bind(next_test);
@@ -1349,7 +1349,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
   // With RVC a call instruction may get 2-byte aligned.
   // The address of the call instruction needs to be 4-byte aligned to
   // ensure that it does not span a cache line so that it can be patched.
-  __ align(4);
+  __ align(NativeInstruction::instruction_size);
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
@@ -1372,7 +1372,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  assert((__ offset() % 4) == 0, "bad alignment");
+  MacroAssembler::assert_alignment(call_pc);
   address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
@@ -1634,7 +1634,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 
     if (TypeEntries::is_type_none(current_klass)) {
       __ beqz(t1, none);
-      __ li(t0, (u1)TypeEntries::null_seen);
+      __ mv(t0, (u1)TypeEntries::null_seen);
       __ beq(t0, t1, none);
       // There is a chance that the checks above (re-reading profiling
       // data from memory) fail if another thread has just set the
@@ -1684,7 +1684,7 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
     Label ok;
     __ ld(t0, mdo_addr);
     __ beqz(t0, ok);
-    __ li(t1, (u1)TypeEntries::null_seen);
+    __ mv(t1, (u1)TypeEntries::null_seen);
     __ beq(t0, t1, ok);
     // may have been set by another thread
     __ membar(MacroAssembler::LoadLoad);
@@ -2144,16 +2144,6 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
   __ bind(done);
 }
 
-void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
-  _masm->code_section()->relocate(adr, relocInfo::poll_type);
-  int pc_offset = code_offset();
-  flush_debug_info(pc_offset);
-  info->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
-  if (info->exception_handlers() != NULL) {
-    compilation()->add_exception_handlers_for_pco(pc_offset, info->exception_handlers());
-  }
-}
-
 void LIR_Assembler::type_profile(Register obj, ciMethodData* md, Register klass_RInfo, Register k_RInfo,
                                  ciProfileData* data, Label* success, Label* failure,
                                  Label& profile_cast_success, Label& profile_cast_failure) {
@@ -2250,7 +2240,7 @@ void LIR_Assembler::store_parameter(jint c, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
   assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
-  __ li(t0, c);
+  __ mv(t0, c);
   __ sd(t0, Address(sp, offset_from_rsp_in_bytes));
 }
 

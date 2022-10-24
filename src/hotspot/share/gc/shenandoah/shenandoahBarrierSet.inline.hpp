@@ -254,7 +254,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_common(T* addr, oop value) {
   shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress() &&
                               !(ShenandoahHeap::heap()->is_gc_generation_young() && ShenandoahHeap::heap()->heap_region_containing(value)->is_old()));
   shenandoah_assert_not_in_cset_if(addr, value, value != NULL && !ShenandoahHeap::heap()->cancelled_gc());
@@ -266,12 +266,17 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
+inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+  oop_store_common(addr, value);
+}
+
+template <DecoratorSet decorators, typename BarrierSetT>
+template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_in_heap(T* addr, oop value) {
   shenandoah_assert_not_in_cset_loc_except(addr, ShenandoahHeap::heap()->cancelled_gc());
   shenandoah_assert_not_forwarded_except  (addr, value, value == NULL || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  shenandoah_assert_not_in_cset_except    (addr, value, value == NULL || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
 
-  oop_store_not_in_heap(addr, value);
+  oop_store_common(addr, value);
   ShenandoahBarrierSet::barrier_set()->write_ref_field_post<decorators>(addr, value);
 }
 

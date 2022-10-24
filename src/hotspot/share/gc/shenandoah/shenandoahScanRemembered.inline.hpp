@@ -601,8 +601,10 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           HeapWord *nextp = p + obj->size();
 
           // Can't use _scc->card_index_for_addr(endp) here because it crashes with assertion
-          // failure if nextp points to end of heap.
+          // failure if nextp points to end of heap. Must also not attempt to read past last
+          // valid index for card table.
           last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
+          last_card = MIN2(last_card, last_valid_index());
 
           bool reaches_next_cluster = (last_card > end_card_index);
           bool spans_dirty_within_this_cluster = false;

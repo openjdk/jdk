@@ -7137,7 +7137,7 @@ instruct addI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (AddI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "ADD    $dst,$src" %}
   opcode(0x03);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -7506,7 +7506,7 @@ instruct subI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (SubI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "SUB    $dst,$src" %}
   opcode(0x2B);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8179,7 +8179,7 @@ instruct andI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (AndI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "AND    $dst,$src" %}
   opcode(0x23);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8370,7 +8370,7 @@ instruct orI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (OrI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "OR     $dst,$src" %}
   opcode(0x0B);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8577,7 +8577,7 @@ instruct xorI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (XorI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "XOR    $dst,$src" %}
   opcode(0x33);
   ins_encode( OpcP, RegMem(dst, src) );
@@ -12629,7 +12629,7 @@ instruct jumpXtnd(rRegI switch_val) %{
   ins_encode %{
     // Jump to Address(table_base + switch_reg)
     Address index(noreg, $switch_val$$Register, Address::times_1);
-    __ jump(ArrayAddress($constantaddress, index));
+    __ jump(ArrayAddress($constantaddress, index), noreg);
   %}
   ins_pipe(pipe_jmp);
 %}

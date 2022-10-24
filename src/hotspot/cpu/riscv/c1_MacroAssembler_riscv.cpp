@@ -97,7 +97,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // assuming both the stack pointer and page_size have their least
   // significant 2 bits cleared and page_size is a power of 2
   sub(hdr, hdr, sp);
-  li(t0, aligned_mask - os::vm_page_size());
+  mv(t0, aligned_mask - os::vm_page_size());
   andr(hdr, hdr, t0);
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)
@@ -310,7 +310,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
@@ -323,7 +323,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-
+  assert_alignment(pc());
   nop();
 }
 

@@ -1190,6 +1190,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
     } else if (_g1h->is_user_requested_concurrent_full_gc(cause) ||
                (cause == GCCause::_codecache_GC_threshold) ||
+               (cause == GCCause::_codecache_GC_aggressive) ||
                (cause == GCCause::_wb_breakpoint)) {
       // Initiate a concurrent start.  A concurrent start must be a young only
       // GC, so the collector state must be updated to reflect this.

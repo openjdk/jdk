@@ -226,6 +226,20 @@ else
   JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
 endif
 
+# Unless we are creating a very large module, use the small tool JVM options
+JMOD_SMALL_FLAGS :=
+ifeq ($(findstring $(MODULE), java.base java.desktop jdk.localedata), )
+  JMOD_SMALL_FLAGS += $(JAVA_TOOL_FLAGS_SMALL)
+endif
+
+ifeq ($(INTERIM_JMOD), true)
+  # Interim JMODs are not shipped anywhere, so there is no reason
+  # to compress them at all.
+  JMOD_FLAGS += --compress zip-0
+else
+  JMOD_FLAGS += --compress $(JMOD_COMPRESS)
+endif
+
 # Create jmods in the support dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(eval $(call SetupExecute, create_$(JMOD_FILE), \
@@ -234,7 +248,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     OUTPUT_FILE := $(JMODS_DIR)/$(JMOD_FILE), \
     SUPPORT_DIR := $(JMODS_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) $(JMODS_DIR)/$(JMOD_FILE) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
-    COMMAND := $(JMOD) create --module-version $(VERSION_SHORT) \
+    COMMAND := $(JMOD) $(JMOD_SMALL_FLAGS) create --module-version $(VERSION_SHORT) \
         --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
         --module-path $(JMODS_DIR) $(JMOD_FLAGS) \
         --date $(SOURCE_DATE_ISO_8601) \

@@ -91,11 +91,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_Reference_get_entry();
-  address generate_Continuation_doYield_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-#ifdef AMD64
+#if defined(AMD64) || defined(AARCH64)
   address generate_currentThread();
 #endif
 #ifdef IA32
@@ -128,7 +127,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #endif // PPC
 
  public:
-  TemplateInterpreterGenerator(StubQueue* _code);
+  TemplateInterpreterGenerator();
 };
 
 #endif // !ZERO

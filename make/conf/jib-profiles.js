@@ -553,7 +553,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
+    [ "linux-x64", "macosx-aarch64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -1131,9 +1131,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "6.1",
+            version: "7",
             build_number: "1",
-            file: "bundles/jtreg-6.1+1.zip",
+            file: "bundles/jtreg-7+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1142,7 +1142,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.34+1.0"
+            revision: "1.35+1.0"
         },
 
         jcov: {

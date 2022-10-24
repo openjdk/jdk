@@ -34,21 +34,18 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "runtime/continuation.hpp"
 
 void ShenandoahMark::start_mark() {
-  // Tell the sweeper that we start a marking cycle.
-  if (!Continuations::is_gc_marking_cycle_active()) {
-    Continuations::on_gc_marking_cycle_start();
+  if (!CodeCache::is_gc_marking_cycle_active()) {
+    CodeCache::on_gc_marking_cycle_start();
   }
 }
 
 void ShenandoahMark::end_mark() {
-  // Tell the sweeper that we finished a marking cycle.
   // Unlike other GCs, we do not arm the nmethods
   // when marking terminates.
   if (!ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress()) {
-    Continuations::on_gc_marking_cycle_finish();
+    CodeCache::on_gc_marking_cycle_finish();
   }
 }
 

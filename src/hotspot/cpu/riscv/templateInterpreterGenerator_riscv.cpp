@@ -26,6 +26,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
@@ -189,8 +190,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
@@ -203,8 +203,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
@@ -217,8 +216,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
@@ -231,8 +229,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
@@ -245,8 +242,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
@@ -259,8 +255,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
@@ -274,8 +269,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -526,7 +520,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   address entry = __ pc();
   __ push(state);
   __ call_VM(noreg, runtime_entry);
-  __ fence(0xf, 0xf);
+  __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -686,7 +680,7 @@ void TemplateInterpreterGenerator::lock_method() {
     // get receiver (assume this is frequent case)
     __ ld(x10, Address(xlocals, Interpreter::local_offset_in_bytes(0)));
     __ beqz(t0, done);
-    __ load_mirror(x10, xmethod);
+    __ load_mirror(x10, xmethod, x15, t1);
 
 #ifdef ASSERT
     {
@@ -766,7 +760,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(zr, Address(sp, 8 * wordSize));
 
   // Get mirror
-  __ load_mirror(t2, xmethod);
+  __ load_mirror(t2, xmethod, x15, t1);
   if (!native_call) {
     __ ld(t0, Address(xmethod, Method::const_offset()));
     __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
@@ -786,12 +780,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // End of helpers
-
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
 
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
@@ -845,7 +833,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Load the value of the referent field.
   const Address field_address(local_0, referent_offset);
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ t1, /*tmp2*/ t0);
+  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ t0, /*tmp2*/ t1);
 
   // areturn
   __ andi(sp, x19_sender_sp, -16);  // done with stack
@@ -932,7 +920,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // x11: Method*
   // x30: sender sp
@@ -1053,7 +1041,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   assert(InterpreterRuntime::SignatureHandlerGenerator::to() == sp,
          "adjust this code");
   assert(InterpreterRuntime::SignatureHandlerGenerator::temp() == t0,
-          "adjust this code");
+         "adjust this code");
 
   // The generated handlers do not touch xmethod (the method).
   // However, large signatures cannot be cached and are generated
@@ -1073,7 +1061,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ andi(t0, t, JVM_ACC_STATIC);
     __ beqz(t0, L);
     // get mirror
-    __ load_mirror(t, xmethod);
+    __ load_mirror(t, xmethod, x28, t1);
     // copy mirror into activation frame
     __ sd(t, Address(fp, frame::interpreter_frame_oop_temp_offset * wordSize));
     // pass handle to mirror
@@ -1174,8 +1162,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ mv(t1, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
-    __ jalr(t1);
+    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1209,7 +1196,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bne(t, result_handler, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);
-    __ resolve_jobject(x10, xthread, t);
+    __ resolve_jobject(x10, t, t1);
     __ sd(x10, Address(fp, frame::interpreter_frame_oop_temp_offset * wordSize));
     // keep stack depth as expected by pushing oop which will eventually be discarded
     __ push(ltos);
@@ -1224,8 +1211,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
-    __ mv(t1, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
-    __ jalr(t1);
+    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
@@ -1326,7 +1312,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // determine code generation flags
-  const bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  const bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // t0: sender sp
   address entry_point = __ pc();
@@ -1604,7 +1590,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label L_done;
 
     __ lbu(t0, Address(xbcp, 0));
-    __ li(t1, Bytecodes::_invokestatic);
+    __ mv(t1, Bytecodes::_invokestatic);
     __ bne(t1, t0, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
@@ -1741,7 +1727,7 @@ void TemplateInterpreterGenerator::count_bytecode() {
   __ push_reg(t0);
   __ push_reg(x10);
   __ mv(x10, (address) &BytecodeCounter::_counter_value);
-  __ li(t0, 1);
+  __ mv(t0, 1);
   __ amoadd_d(zr, x10, t0, Assembler::aqrl);
   __ pop_reg(x10);
   __ pop_reg(t0);

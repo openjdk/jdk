@@ -111,7 +111,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
                                         THREAD);
-
+#if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && Arguments::is_dumping_archive()) {
     if (_pool->pool_holder()->is_shared()) {
       assert(DynamicDumpSharedSpaces, "must be");
@@ -122,6 +122,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
       cache->save_for_archive(THREAD);
     }
   }
+#endif
 
   // Clean up constant pool cache if initialize_resolved_references() failed.
   if (HAS_PENDING_EXCEPTION) {

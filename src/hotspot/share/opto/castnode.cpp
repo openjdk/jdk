@@ -248,7 +248,7 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
             } else {
               stringStream ss;
               test.dump_on(&ss);
-              fatal("unexpected comparison %s", ss.as_string());
+              fatal("unexpected comparison %s", ss.freeze());
             }
             int lo_int = (int)lo_long;
             int hi_int = (int)hi_long;

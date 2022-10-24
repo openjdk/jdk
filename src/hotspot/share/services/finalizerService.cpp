@@ -166,12 +166,6 @@ static const size_t DEFAULT_TABLE_SIZE = 2048;
 static const size_t MAX_SIZE = 24;
 static volatile bool _has_work = false;
 
-static size_t ceil_log2(size_t value) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
-  return ret;
-}
-
 class FinalizerEntryLookupResult {
  private:
   FinalizerEntry* _result;

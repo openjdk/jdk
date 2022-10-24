@@ -778,11 +778,6 @@ public:
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
 
-#ifdef ASSERT
-  // Tell whether the body contains nodes marked as reductions.
-  bool has_reduction_nodes() const;
-#endif // ASSERT
-
 #ifndef PRODUCT
   void dump_head() const;       // Dump loop head only
   void dump() const;            // Dump this loop recursively
@@ -931,6 +926,8 @@ private:
                                                 IdealLoopTree* outer_loop, Node* input_proj);
   Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* control);
   static bool skeleton_predicate_has_opaque(IfNode* iff);
+  static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
+  static bool subgraph_has_opaque(Node* n);
   static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride);

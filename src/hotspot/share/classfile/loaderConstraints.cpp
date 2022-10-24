@@ -32,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolHandle.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -110,7 +111,7 @@ class ConstraintSet {                               // copied into hashtable as 
 };
 
 
-ResourceHashtable<Symbol*, ConstraintSet, 107, ResourceObj::C_HEAP, mtClass> _loader_constraint_table;
+ResourceHashtable<SymbolHandle, ConstraintSet, 107, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _loader_constraint_table;
 
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
                                                 Handle loader,
@@ -171,8 +172,6 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
   bool created;
   ConstraintSet* set = _loader_constraint_table.put_if_absent(name, &created);
   if (created) {
-    // Increment the key refcount when putting in the table.
-    name->increment_refcount();
     set->initialize(constraint);
   } else {
     set->add_constraint(constraint);
@@ -181,7 +180,7 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
 
 class PurgeUnloadedConstraints : public StackObj {
  public:
-  bool do_entry(Symbol*& name, ConstraintSet& set) {
+  bool do_entry(SymbolHandle& name, ConstraintSet& set) {
     LogTarget(Info, class, loader, constraints) lt;
     int len = set.num_constraints();
     for (int i = len - 1; i >= 0; i--) {
@@ -242,8 +241,6 @@ class PurgeUnloadedConstraints : public StackObj {
       }
     }
     if (set.num_constraints() == 0) {
-      // decrement name refcount before freeing
-      name->decrement_refcount();
       return true;
     }
     // Don't unlink this set
@@ -454,19 +451,19 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 }
 
 void LoaderConstraintTable::verify() {
-  auto check = [&] (Symbol*& key, ConstraintSet& set) {
+  Thread* thread = Thread::current();
+  auto check = [&] (SymbolHandle& key, ConstraintSet& set) {
     // foreach constraint in the set, check the klass is in the dictionary or placeholder table.
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);
       if (probe->klass() != NULL) {
         InstanceKlass* ik = probe->klass();
-        guarantee(ik->name() == key, "name should match");
+        guarantee(key == ik->name(), "name should match");
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
         Dictionary* dictionary = loader_data->dictionary();
-        unsigned int name_hash = dictionary->compute_hash(name);
-        InstanceKlass* k = dictionary->find_class(name_hash, name);
+        InstanceKlass* k = dictionary->find_class(thread, name);
         if (k != NULL) {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
@@ -492,7 +489,7 @@ void LoaderConstraintTable::verify() {
 }
 
 void LoaderConstraintTable::print_table_statistics(outputStream* st) {
-  auto size = [&] (Symbol*& key, ConstraintSet& set) {
+  auto size = [&] (SymbolHandle& key, ConstraintSet& set) {
     // sizeof set is included in the size of the hashtable node
     int sum = 0;
     int len = set.num_constraints();
@@ -508,7 +505,7 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
 
 // Called with the system dictionary lock held
 void LoaderConstraintTable::print_on(outputStream* st) {
-  auto printer = [&] (Symbol*& key, ConstraintSet& set) {
+  auto printer = [&] (SymbolHandle& key, ConstraintSet& set) {
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);

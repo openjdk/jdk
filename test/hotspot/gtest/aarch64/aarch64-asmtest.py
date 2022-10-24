@@ -1918,6 +1918,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bic", "ZZZ"],
                        ["uzp1", "ZZZ"],
                        ["uzp2", "ZZZ"],
+                       ["fabd", "ZPZ", "m", "dn"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],

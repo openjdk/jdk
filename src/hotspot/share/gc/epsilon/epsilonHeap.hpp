@@ -124,7 +124,6 @@ public:
   // No nmethod handling
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
-  virtual void flush_nmethod(nmethod* nm) {}
   virtual void verify_nmethod(nmethod* nm) {}
 
   // No heap verification

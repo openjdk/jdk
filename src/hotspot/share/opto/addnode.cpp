@@ -77,13 +77,8 @@ static bool commute(PhaseGVN* phase, Node* add) {
 
     if ((in11 == in21 && in12 == in22) ||
         (in11 == in22 && in12 == in21)) {
-      add->set_req(1, in11);
-      add->set_req(2, in12);
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      add->set_req_X(1, in11, phase);
+      add->set_req_X(2, in12, phase);
       return true;
     }
   }
@@ -632,12 +627,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const Type *t22 = phase->type( add->in(2) );
     if( t22->singleton() && (t22 != Type::TOP) ) {  // Right input is an add of a constant?
       set_req(Address, phase->transform(new AddPNode(in(Base),in(Address),add->in(1))));
-      set_req(Offset, add->in(2));
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (add->outcnt() == 0 && igvn) {
-        // add disconnected.
-        igvn->_worklist.push((Node*)add);
-      }
+      set_req_X(Offset, add->in(2), phase); // puts add on igvn worklist if needed
       return this;              // Made progress
     }
   }

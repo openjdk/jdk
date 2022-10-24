@@ -387,7 +387,6 @@ public:
                        int                       immediate_oops_patched,
                        RTMState                  rtm_state = NoRTM);
 
-
   // Access to certain well known ciObjects.
 #define VM_CLASS_FUNC(name, ignore_s) \
   ciInstanceKlass* name() { \

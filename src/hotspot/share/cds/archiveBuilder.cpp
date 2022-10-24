@@ -109,18 +109,18 @@ void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src
 
 class RelocateEmbeddedPointers : public BitMapClosure {
   ArchiveBuilder* _builder;
-  address _dumped_obj;
+  address _buffered_obj;
   BitMap::idx_t _start_idx;
 public:
-  RelocateEmbeddedPointers(ArchiveBuilder* builder, address dumped_obj, BitMap::idx_t start_idx) :
-    _builder(builder), _dumped_obj(dumped_obj), _start_idx(start_idx) {}
+  RelocateEmbeddedPointers(ArchiveBuilder* builder, address buffered_obj, BitMap::idx_t start_idx) :
+    _builder(builder), _buffered_obj(buffered_obj), _start_idx(start_idx) {}
 
   bool do_bit(BitMap::idx_t bit_offset) {
     size_t field_offset = size_t(bit_offset - _start_idx) * sizeof(address);
-    address* ptr_loc = (address*)(_dumped_obj + field_offset);
+    address* ptr_loc = (address*)(_buffered_obj + field_offset);
 
     address old_p = *ptr_loc;
-    address new_p = _builder->get_dumped_addr(old_p);
+    address new_p = _builder->get_buffered_addr(old_p);
 
     log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
@@ -136,7 +136,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
   BitMap::idx_t start = BitMap::idx_t(src_info->ptrmap_start()); // inclusive
   BitMap::idx_t end = BitMap::idx_t(src_info->ptrmap_end());     // exclusive
 
-  RelocateEmbeddedPointers relocator(builder, src_info->dumped_addr(), start);
+  RelocateEmbeddedPointers relocator(builder, src_info->buffered_addr(), start);
   _ptrmap.iterate(&relocator, start, end);
 }
 
@@ -158,7 +158,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _dumped_to_src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
+  _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
@@ -632,10 +632,10 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   memcpy(dest, src, bytes);
   {
     bool created;
-    _dumped_to_src_obj_table.put_if_absent((address)dest, src, &created);
+    _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
-    if (_dumped_to_src_obj_table.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _dumped_to_src_obj_table table to %d", _dumped_to_src_obj_table.table_size());
+    if (_buffered_to_src_table.maybe_grow()) {
+      log_info(cds, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
     }
   }
 
@@ -646,23 +646,23 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   }
 
   log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
-  src_info->set_dumped_addr((address)dest);
+  src_info->set_buffered_addr((address)dest);
 
   _alloc_stats.record(ref->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
-address ArchiveBuilder::get_dumped_addr(address src_obj) const {
-  SourceObjInfo* p = _src_obj_table.get(src_obj);
+address ArchiveBuilder::get_buffered_addr(address src_addr) const {
+  SourceObjInfo* p = _src_obj_table.get(src_addr);
   assert(p != NULL, "must be");
 
-  return p->dumped_addr();
+  return p->buffered_addr();
 }
 
-address ArchiveBuilder::get_src_obj(address dumped_addr) const {
-  assert(is_in_buffer_space(dumped_addr), "must be");
-  address* src_obj = _dumped_to_src_obj_table.get(dumped_addr);
-  assert(src_obj != NULL && *src_obj != NULL, "must be");
-  return *src_obj;
+address ArchiveBuilder::get_source_addr(address buffered_addr) const {
+  assert(is_in_buffer_space(buffered_addr), "must be");
+  address* src_p = _buffered_to_src_table.get(buffered_addr);
+  assert(src_p != NULL && *src_p != NULL, "must be");
+  return *src_p;
 }
 
 void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* src_objs) {
@@ -676,7 +676,7 @@ void ArchiveBuilder::update_special_refs() {
     SpecialRefInfo s = _special_refs->at(i);
     size_t field_offset = s.field_offset();
     address src_obj = s.src_obj();
-    address dst_obj = get_dumped_addr(src_obj);
+    address dst_obj = get_buffered_addr(src_obj);
     intptr_t* src_p = (intptr_t*)(src_obj + field_offset);
     intptr_t* dst_p = (intptr_t*)(dst_obj + field_offset);
     assert(s.type() == MetaspaceClosure::_method_entry_ref, "only special type allowed for now");
@@ -694,7 +694,7 @@ public:
 
   virtual bool do_ref(Ref* ref, bool read_only) {
     if (ref->not_null()) {
-      ref->update(_builder->get_dumped_addr(ref->obj()));
+      ref->update(_builder->get_buffered_addr(ref->obj()));
       ArchivePtrMarker::mark_pointer(ref->addr());
     }
     return false; // Do not recurse.
@@ -829,11 +829,11 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
-// Update a Java object to point its Klass* to the new location after
-// shared archive has been compacted.
-void ArchiveBuilder::relocate_klass_ptr(oop o) {
+// Update a Java object to point its Klass* to the address whene
+// the class would be mapped at runtime.
+void ArchiveBuilder::relocate_klass_ptr_of_oop(oop o) {
   assert(DumpSharedSpaces, "sanity");
-  Klass* k = get_relocated_klass(o->klass());
+  Klass* k = get_buffered_klass(o->klass());
   Klass* requested_k = to_requested(k);
   narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
   o->set_narrow_klass(nk);
@@ -981,8 +981,8 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     Thread* current = Thread::current();
     for (int i = 0; i < src_objs->objs()->length(); i++) {
       SourceObjInfo* src_info = src_objs->at(i);
-      address src = src_info->orig_obj();
-      address dest = src_info->dumped_addr();
+      address src = src_info->source_addr();
+      address dest = src_info->buffered_addr();
       log_data(last_obj_base, dest, last_obj_base + buffer_to_runtime_delta());
       address runtime_dest = dest + buffer_to_runtime_delta();
       int bytes = src_info->size_in_bytes();

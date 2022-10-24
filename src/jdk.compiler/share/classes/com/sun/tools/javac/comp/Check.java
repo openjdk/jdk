@@ -993,7 +993,7 @@ public class Check {
         }
 
         //upward project the initializer type
-        return types.upward(t, types.captures(t));
+        return types.upward(t, types.captures(t)).baseType();
     }
 
     Type checkMethod(final Type mtype,
@@ -2575,7 +2575,7 @@ public class Check {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, m2), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source)) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2)) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
                     if (m1 == sym) {
@@ -2620,7 +2620,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getSymbolsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source))) {
+            if (!types.isSubSignature(sym.type, types.memberType(site, s))) {
                 if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                     log.error(pos,
                               Errors.NameClashSameErasureNoHide(sym, sym.location(), s, s.location()));
@@ -2724,7 +2724,6 @@ public class Check {
     void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
             MethodSymbol msym1, MethodSymbol msym2) {
         if (msym1 != msym2 &&
-                Feature.DEFAULT_METHODS.allowedInSource(source) &&
                 lint.isEnabled(LintCategory.OVERLOADS) &&
                 (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
                 (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
@@ -3749,6 +3748,22 @@ public class Check {
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
                 deferredLintHandler.report(() -> warnDivZero(pos));
             }
+        }
+    }
+
+    /**
+     *  Check for possible loss of precission
+     *  @param pos           Position for error reporting.
+     *  @param found    The computed type of the tree
+     *  @param req  The computed type of the tree
+     */
+    void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
+        if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
+            deferredLintHandler.report(() -> {
+                if (lint.isEnabled(LintCategory.LOSSY_CONVERSIONS))
+                    log.warning(LintCategory.LOSSY_CONVERSIONS,
+                            pos, Warnings.PossibleLossOfPrecision(found, req));
+            });
         }
     }
 

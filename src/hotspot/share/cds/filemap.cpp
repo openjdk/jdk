@@ -25,10 +25,12 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.inline.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -329,12 +331,12 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
-  st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_HEX, _cloned_vtables_offset);
-  st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_HEX, _serialized_data_offset);
+  st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
+  st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
   st->print_cr("- heap_begin:                     " INTPTR_FORMAT, p2i(_heap_begin));
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
-  st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_HEX, _shared_path_table_offset);
+  st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_X, _shared_path_table_offset);
   st->print_cr("- shared_path_table_size:         %d", _shared_path_table_size);
   st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
   st->print_cr("- app_module_paths_start_index:   %d", _app_module_paths_start_index);
@@ -1509,10 +1511,10 @@ void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("- is_heap_region:                 %d", _is_heap_region);
   st->print_cr("- is_bitmap_region:               %d", _is_bitmap_region);
   st->print_cr("- mapped_from_file:               %d", _mapped_from_file);
-  st->print_cr("- file_offset:                    " SIZE_FORMAT_HEX, _file_offset);
-  st->print_cr("- mapping_offset:                 " SIZE_FORMAT_HEX, _mapping_offset);
+  st->print_cr("- file_offset:                    " SIZE_FORMAT_X, _file_offset);
+  st->print_cr("- mapping_offset:                 " SIZE_FORMAT_X, _mapping_offset);
   st->print_cr("- used:                           " SIZE_FORMAT, _used);
-  st->print_cr("- oopmap_offset:                  " SIZE_FORMAT_HEX, _oopmap_offset);
+  st->print_cr("- oopmap_offset:                  " SIZE_FORMAT_X, _oopmap_offset);
   st->print_cr("- oopmap_size_in_bits:            " SIZE_FORMAT, _oopmap_size_in_bits);
   st->print_cr("- mapped_base:                    " INTPTR_FORMAT, p2i(_mapped_base));
 }
@@ -1552,10 +1554,11 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   int crc = ClassLoader::crc32(0, base, (jint)size);
   if (size > 0) {
     log_info(cds)("Shared file region (%-3s)  %d: " SIZE_FORMAT_W(8)
-                   " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08)
+                   " bytes, addr " INTPTR_FORMAT " file offset 0x%08" PRIxPTR
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
   }
+
   si->init(region, mapping_offset, size, read_only, allow_exec, crc);
 
   if (base != NULL) {
@@ -1968,7 +1971,7 @@ address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_
   if (with_current_oop_encoding_mode) {
     return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
   } else {
-    return cast_from_oop<address>(HeapShared::decode_from_archive(n));
+    return cast_from_oop<address>(ArchiveHeapLoader::decode_from_archive(n));
   }
 }
 
@@ -2014,10 +2017,10 @@ void FileMapInfo::map_or_load_heap_regions() {
   bool success = false;
 
   if (can_use_heap_regions()) {
-    if (HeapShared::can_map()) {
+    if (ArchiveHeapLoader::can_map()) {
       success = map_heap_regions();
-    } else if (HeapShared::can_load()) {
-      success = HeapShared::load_heap_regions(this);
+    } else if (ArchiveHeapLoader::can_load()) {
+      success = ArchiveHeapLoader::load_heap_regions(this);
     } else {
       log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
     }
@@ -2083,15 +2086,15 @@ address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc) {
     return start_address_as_decoded_from_archive(spc);
   } else {
     assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
-    return header()->heap_begin() + spc->mapping_offset() + HeapShared::runtime_delta();
+    return header()->heap_begin() + spc->mapping_offset() + ArchiveHeapLoader::runtime_delta();
   }
 }
 
 void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
   if (UseCompressedOops) {
-    HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
+    ArchiveHeapLoader::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
   } else {
-    HeapShared::set_runtime_delta(delta);
+    ArchiveHeapLoader::set_runtime_delta(delta);
   }
 }
 
@@ -2207,14 +2210,14 @@ void FileMapInfo::map_heap_regions_impl() {
                        MetaspaceShared::max_num_closed_heap_regions,
                        /*is_open_archive=*/ false,
                        &closed_heap_regions, &num_closed_heap_regions)) {
-    HeapShared::set_closed_regions_mapped();
+    ArchiveHeapLoader::set_closed_regions_mapped();
 
     // Now, map the open heap regions: GC can write into these regions.
     if (map_heap_regions(MetaspaceShared::first_open_heap_region,
                          MetaspaceShared::max_num_open_heap_regions,
                          /*is_open_archive=*/ true,
                          &open_heap_regions, &num_open_heap_regions)) {
-      HeapShared::set_open_regions_mapped();
+      ArchiveHeapLoader::set_open_regions_mapped();
     }
   }
 }
@@ -2222,12 +2225,12 @@ void FileMapInfo::map_heap_regions_impl() {
 bool FileMapInfo::map_heap_regions() {
   map_heap_regions_impl();
 
-  if (!HeapShared::closed_regions_mapped()) {
+  if (!ArchiveHeapLoader::closed_regions_mapped()) {
     assert(closed_heap_regions == NULL &&
            num_closed_heap_regions == 0, "sanity");
   }
 
-  if (!HeapShared::open_regions_mapped()) {
+  if (!ArchiveHeapLoader::open_regions_mapped()) {
     assert(open_heap_regions == NULL && num_open_heap_regions == 0, "sanity");
     return false;
   } else {
@@ -2334,7 +2337,7 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
   assert(bitmap_base != NULL, "must have already been mapped");
   for (int i=0; i<num_regions; i++) {
     FileMapRegion* si = space_at(i + first_region_idx);
-    HeapShared::patch_embedded_pointers(
+    ArchiveHeapLoader::patch_embedded_pointers(
       regions[i],
       (address)(space_at(MetaspaceShared::bm)->mapped_base()) + si->oopmap_offset(),
       si->oopmap_size_in_bits());

@@ -60,7 +60,7 @@ public:
 
   virtual void initialize();
 
-  virtual bool is_in_young(oop obj) const;
+  virtual bool is_in_young(const void* obj) const;
 
   bool is_dirty(MemRegion mr);
 

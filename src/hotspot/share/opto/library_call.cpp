@@ -154,7 +154,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
-    const char *msg = msg_stream.as_string();
+    const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       tty->print("%s", msg);
@@ -215,7 +215,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
     msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
-    const char *msg = msg_stream.as_string();
+    const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining_stream()->print("%s", msg);
@@ -516,7 +516,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
+  case vmIntrinsics::_doubleIsFinite:
   case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
 
   case vmIntrinsics::_numberOfLeadingZeros_i:
@@ -643,9 +645,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     return inline_fma(intrinsic_id());
-
-  case vmIntrinsics::_Continuation_doYield:
-    return inline_continuation_do_yield();
 
   case vmIntrinsics::_isDigit:
   case vmIntrinsics::_isLowerCase:
@@ -1618,12 +1617,19 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     return false;
   }
 
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
   value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+  old_map->destruct(&_gvn);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -4533,8 +4539,14 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatIsInfinite:
     result = new IsInfiniteFNode(arg);
     break;
+  case vmIntrinsics::_floatIsFinite:
+    result = new IsFiniteFNode(arg);
+    break;
   case vmIntrinsics::_doubleIsInfinite:
     result = new IsInfiniteDNode(arg);
+    break;
+  case vmIntrinsics::_doubleIsFinite:
+    result = new IsFiniteDNode(arg);
     break;
   default:
     fatal_unexpected_iid(id);
@@ -7408,15 +7420,6 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
-}
-
-bool LibraryCallKit::inline_continuation_do_yield() {
-  address call_addr = StubRoutines::cont_doYield();
-  const TypeFunc* tf = OptoRuntime::continuation_doYield_Type();
-  Node* call = make_runtime_call(RC_NO_LEAF, tf, call_addr, "doYield", TypeRawPtr::BOTTOM);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
-  return true;
 }
 
 //-------------inline_fma-----------------------------------
