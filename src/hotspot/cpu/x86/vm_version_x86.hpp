@@ -312,7 +312,7 @@ protected:
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
   /*
-   * Update next files when declaring new flags:
+   * Update following files when declaring new flags:
    * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
    * src/jdk.internal.vm.ci/share/classes/jdk.vm.ci.amd64/src/jdk/vm/ci/amd64/AMD64.java
    */
