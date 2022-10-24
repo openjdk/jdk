@@ -311,6 +311,11 @@ protected:
   static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
+  /*
+   * Update following files when declaring new flags:
+   * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
+   * src/jdk.internal.vm.ci/share/classes/jdk.vm.ci.amd64/src/jdk/vm/ci/amd64/AMD64.java
+   */
   enum Feature_Flag : uint64_t {
 #define CPU_FEATURE_FLAGS(decl) \
     decl(CX8,               "cx8",               0)  /*  next bits are from cpuid 1 (EDX) */ \
