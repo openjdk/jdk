@@ -678,10 +678,10 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     if (UseBlockZeroing) {
-      // Ensure count >= 2*CacheLineSize so that it still deserves a cbo.zero
+      // Ensure count >= 2*DEFAULT_CACHE_LINE_SIZE so that it still deserves a cbo.zero
       // after alignment.
       Label small;
-      int low_limit = MAX2(2*(CacheLineSize), BlockZeroingLowLimit) / wordSize;
+      int low_limit = MAX2(2 * DEFAULT_CACHE_LINE_SIZE, (int)BlockZeroingLowLimit) / wordSize;
       __ mv(tmp1, low_limit);
       __ blt(cnt, tmp1, small);
       __ zero_dcache_blocks(base, cnt, tmp1, tmp2);

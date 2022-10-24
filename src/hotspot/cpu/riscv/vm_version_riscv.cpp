@@ -67,19 +67,6 @@ void VM_Version::initialize() {
     }
   }
 
-  if (UseZic64b) {
-    if (CacheLineSize != 64) {
-      assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
-      warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
-      FLAG_SET_DEFAULT(CacheLineSize, 64);
-    }
-  } else {
-    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
-      warning("CacheLineSize must be a power of 2");
-      FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
-    }
-  }
-
   if (FLAG_IS_DEFAULT(UseFMA)) {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
@@ -171,12 +158,12 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz && FLAG_IS_DEFAULT(CacheLineSize)) {
+  if (UseZicboz && UseZic64b) {
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, CacheLineSize);
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 2 * DEFAULT_CACHE_LINE_SIZE);
     }
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
