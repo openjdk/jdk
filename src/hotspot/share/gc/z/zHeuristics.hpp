@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZHEURISTICS_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZHeuristics : public AllStatic {
 public:

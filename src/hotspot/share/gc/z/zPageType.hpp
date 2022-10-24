@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_ZPAGETYPE_HPP
 #define SHARE_GC_Z_ZPAGETYPE_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 enum class ZPageType : uint8_t {
   small,
   medium,

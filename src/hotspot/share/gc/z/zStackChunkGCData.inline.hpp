@@ -24,8 +24,11 @@
 #ifndef SHARE_GC_Z_ZSTACKCHUNKGCDATA_INLINE_HPP
 #define SHARE_GC_Z_ZSTACKCHUNKGCDATA_INLINE_HPP
 
-#include "gc/z/zGlobals.hpp"
 #include "gc/z/zStackChunkGCData.hpp"
+
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "oops/stackChunkOop.inline.hpp"
 
 inline ZStackChunkGCData* ZStackChunkGCData::data(stackChunkOop chunk) {
   return reinterpret_cast<ZStackChunkGCData*>(chunk->gc_data());

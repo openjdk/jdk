@@ -25,6 +25,8 @@
 #define SHARE_GC_Z_ZSTOREBARRIERBUFFER_INLINE_HPP
 
 #include "gc/z/zStoreBarrierBuffer.hpp"
+
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "runtime/thread.hpp"
 

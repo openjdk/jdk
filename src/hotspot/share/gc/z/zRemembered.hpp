@@ -28,6 +28,8 @@
 
 class OopClosure;
 class ZForwarding;
+class ZPage;
+class ZPageAllocator;
 class ZPageTable;
 struct ZRememberedSetContaining;
 template <typename T> class GrowableArrayView;

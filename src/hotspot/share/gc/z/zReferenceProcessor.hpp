@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zValue.hpp"
 
 class ConcurrentGCTimer;

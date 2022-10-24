@@ -26,6 +26,8 @@
 
 #include "gc/z/zRememberedSet.hpp"
 
+#include "utilities/bitMap.inline.hpp"
+
 inline CHeapBitMap* ZRememberedSet::current() {
   return &_bitmap[_current];
 }

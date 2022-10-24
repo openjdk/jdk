@@ -24,10 +24,11 @@
 #ifndef SHARE_GC_Z_ZUNCOLOREDROOT_INLINE_HPP
 #define SHARE_GC_Z_ZUNCOLOREDROOT_INLINE_HPP
 
+#include "gc/z/zUncoloredRoot.hpp"
+
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zUncoloredRoot.hpp"
 #include "oops/oop.hpp"
 
 template <typename ObjectFunctionT>

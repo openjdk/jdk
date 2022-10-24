@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZPAGEAGE_HPP
 #define SHARE_GC_Z_ZPAGEAGE_HPP
 
-#include <cstdint>
+#include "utilities/globalDefinitions.hpp"
 
 enum class ZPageAge : uint8_t {
   eden,

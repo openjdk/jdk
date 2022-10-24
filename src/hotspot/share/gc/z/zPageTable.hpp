@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZPAGETABLE_HPP
 #define SHARE_GC_Z_ZPAGETABLE_HPP
 
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGranuleMap.hpp"
 #include "gc/z/zIndexDistributor.hpp"
 #include "memory/allocation.hpp"
@@ -31,6 +32,7 @@
 
 class ZForwarding;
 class ZPage;
+class ZPageAllocator;
 class ZPageTable;
 
 class ZOldPagesParallelIterator {

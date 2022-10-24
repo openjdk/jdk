@@ -24,11 +24,12 @@
 #ifndef SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
 #define SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
 
+#include "gc/z/zRemembered.hpp"
+
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
-#include "gc/z/zRemembered.hpp"
 
 inline void ZRemembered::remember(volatile zpointer* p) const {
   ZPage* page = _page_table->get(p);

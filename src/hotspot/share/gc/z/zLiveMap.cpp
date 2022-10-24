@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include  "gc/z/zGeneration.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zStat.hpp"

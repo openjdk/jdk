@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZGENERATIONID_HPP
 #define SHARE_GC_Z_ZGENERATIONID_HPP
 
-#include <cstdint>
+#include "utilities/globalDefinitions.hpp"
 
 enum class ZGenerationId : uint8_t {
   young,
