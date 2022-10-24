@@ -89,38 +89,47 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
 
   bool seen_gc_safepoint = false;
 
-  for (size_t processed = 0; processed < payload_size; processed += segment_max) {
-    // Clear segment
-    uintptr_t* const start = (uintptr_t*)(mem + header + processed);
-    const size_t remaining = payload_size - processed;
-    const size_t segment = MIN2(remaining, segment_max);
-    // Usually, the young marking code has the responsibility to color
-    // raw nulls, before they end up in the old generation. However, the
-    // invisible roots are hidden from the marking code, and therefore
-    // we must color the nulls already here in the initialization. The
-    // color we choose must be store bad for any subsequent stores, regardless
-    // of how many GC flips later it will arrive. That's why we OR in 11
-    // (ZPointerRememberedMask) in the remembered bits, similar to how
-    // forgotten old oops also have 11, for the very same reason.
-    // However, we opportunistically try to color without the 11 remembered
-    // bits, hoping to not get interrupted in the middle of a GC safepoint.
-    // Most of the time, we manage to do that, and can the avoid having GC
-    // barriers trigger slow paths for this.
-    const uintptr_t colored_null = seen_gc_safepoint ? (ZPointerStoreGoodMask | ZPointerRememberedMask)
-                                                     : ZPointerStoreGoodMask;
-    const uintptr_t fill_value = is_reference_type(element_type) ? colored_null : 0;
-    ZUtils::fill(start, segment, fill_value);
+  auto initialize_memory = [&]() {
+    for (size_t processed = 0; processed < payload_size; processed += segment_max) {
+      // Clear segment
+      uintptr_t* const start = (uintptr_t*)(mem + header + processed);
+      const size_t remaining = payload_size - processed;
+      const size_t segment = MIN2(remaining, segment_max);
+      // Usually, the young marking code has the responsibility to color
+      // raw nulls, before they end up in the old generation. However, the
+      // invisible roots are hidden from the marking code, and therefore
+      // we must color the nulls already here in the initialization. The
+      // color we choose must be store bad for any subsequent stores, regardless
+      // of how many GC flips later it will arrive. That's why we OR in 11
+      // (ZPointerRememberedMask) in the remembered bits, similar to how
+      // forgotten old oops also have 11, for the very same reason.
+      // However, we opportunistically try to color without the 11 remembered
+      // bits, hoping to not get interrupted in the middle of a GC safepoint.
+      // Most of the time, we manage to do that, and can the avoid having GC
+      // barriers trigger slow paths for this.
+      const uintptr_t colored_null = seen_gc_safepoint ? (ZPointerStoreGoodMask | ZPointerRememberedMask)
+                                                       : ZPointerStoreGoodMask;
+      const uintptr_t fill_value = is_reference_type(element_type) ? colored_null : 0;
+      ZUtils::fill(start, segment, fill_value);
 
-    // Safepoint
-    yield_for_safepoint();
+      // Safepoint
+      yield_for_safepoint();
 
-    // Deal with safepoints
-    if (!seen_gc_safepoint && gc_safepoint_happened()) {
-      // The first time we observe a GC safepoint in the yield point,
-      // we have to restart processing with 11 remembered bits.
-      processed = 0;
-      seen_gc_safepoint = true;
+      // Deal with safepoints
+      if (!seen_gc_safepoint && gc_safepoint_happened()) {
+        // The first time we observe a GC safepoint in the yield point,
+        // we have to restart processing with 11 remembered bits.
+        seen_gc_safepoint = true;
+        return false;
+      }
     }
+    return true;
+  };
+
+  if (!initialize_memory()) {
+    // Re-color with 11 remset bits if we got intercepted by a GC safepoint
+    const bool result = initialize_memory();
+    assert(result, "Array initialization should always succeed the second time");
   }
 
   ZThreadLocalData::clear_invisible_root(_thread);
