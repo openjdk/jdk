@@ -627,8 +627,6 @@ static void elide_mach_barrier(MachNode* mach) {
 }
 
 void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const {
-  Block_List worklist;
-
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
