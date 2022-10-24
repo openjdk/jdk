@@ -247,10 +247,10 @@ public class TestCompactNumber {
             {FORMAT_JA_JP_SHORT, 3000.90, "3,001"},
             // BigInteger path
             {FORMAT_JA_JP_SHORT, new BigInteger("12345678901234567890"),
-                "12345679\u5146"},
+                "1235\u4EAC"},
             // BigDecimal path
             {FORMAT_JA_JP_SHORT, new BigDecimal("12345678901234567890.89"),
-                "12345679\u5146"},
+                "1235\u4EAC"},
             // less than 1000 no suffix
             {FORMAT_IT_SHORT, 499, "499"},
             // Boundary number
@@ -293,15 +293,15 @@ public class TestCompactNumber {
             {FORMAT_AS_LONG, new BigDecimal("12345678901234567890123466767.89"),
                 "\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee\u09ef\u09e6\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ee \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
             {FORMAT_BRX_SHORT, 999, "999"},
-            {FORMAT_BRX_SHORT, 999.99, "1K"},
-            {FORMAT_BRX_SHORT, 99000, "99K"},
-            {FORMAT_BRX_SHORT, 330000, "330K"},
-            {FORMAT_BRX_SHORT, 3000.90, "3K"},
-            {FORMAT_BRX_SHORT, 1000000, "1M"},
+            {FORMAT_BRX_SHORT, 999.99, "1\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 99000, "99\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 330000, "330\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 3000.90, "3\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 1000000, "1\u090f\u092e"},
             {FORMAT_BRX_SHORT, new BigInteger("12345678901234567890"),
-                    "12345679T"},
+                    "12345679\u0924\u093f"},
             {FORMAT_BRX_SHORT, new BigDecimal("12345678901234567890.89"),
-                    "12345679T"},
+                    "12345679\u0924\u093f"},
             // Less than 1000 no suffix
             {FORMAT_SW_LONG, 499, "499"},
             // Boundary number

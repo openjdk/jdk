@@ -105,7 +105,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="d">d</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -373,7 +373,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="d">d</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -507,6 +507,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
