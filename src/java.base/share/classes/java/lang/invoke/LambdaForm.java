@@ -1032,8 +1032,8 @@ class LambdaForm {
         return debugString(-1);
     }
 
-    String debugString(int level) {
-        String prefix = MethodHandle.debugPrefix(level);
+    String debugString(int indentLevel) {
+        String prefix = MethodHandle.debugPrefix(indentLevel);
         String lambdaName = lambdaName();
         StringBuilder buf = new StringBuilder(lambdaName);
         buf.append("=Lambda(");

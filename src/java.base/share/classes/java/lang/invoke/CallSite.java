@@ -28,8 +28,9 @@ package java.lang.invoke;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
-import java.util.stream.Collectors;
-import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -109,9 +110,51 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         target = makeUninitializedCallSite(type);
     }
 
-    // Hack -- avoid stack overflow and nasty nesting when the tracing code uses invokedynamic for
-    // string concat, etc.
-    static boolean block = false;
+    /**
+     * Walk the call stack and find the first method that has called
+     * MethodHandleNatives.linkCallSite(). This is the method which has the invokedynamic
+     * bytecode that is being resolved to the current CallSite. CallerFinder must
+     * used only inside the constructor of CallSite.
+     * <p>
+     * Note the use of inner classes (instead of stream/lambda) to avoid triggering
+     * further invokedynamic resolution, which would cause infinite recursion in the
+     * TRACE_CALLSITE code.
+     * <p>
+     * It's OK to use + for string concat, because java.base is compiled without
+     * the use of indy string concat.
+     */
+    private static class CallerFinder implements Function<Stream<StackWalker.StackFrame>, Object> {
+        private String caller = null;
+        private boolean foundLinkCallSite = false;
+
+        @Override
+        public Object apply(Stream<StackWalker.StackFrame> s) {
+            s.forEach(new Consumer<StackWalker.StackFrame>() {
+                @Override
+                public void accept(StackWalker.StackFrame f) {
+                    if (caller == null && foundLinkCallSite) {
+                        // Find the caller of MethodHandleNatives.linkCallSite(), which
+                        // contains the invokedynamic bytecode that has triggered the BSM.
+                        caller = f.toStackTraceElement().toString();
+                    } else if (f.getClassName().equals("java.lang.invoke.MethodHandleNatives") && 
+                               f.getMethodName().equals("linkCallSite")) {
+                        foundLinkCallSite = true; 
+                    }
+                }
+            });
+            return null;
+        }
+
+        // When the caller is found, return a human readable string like
+        // "java.base/java.util.stream.FindOps$FindSink$OfRef.<clinit>(FindOps.java:202)"
+        public String getCaller() {
+            if (caller == null) {
+                return "Unknown";
+            } else {
+                return caller;
+            }
+        }
+    }
 
     /**
      * Make a call site object equipped with an initial target method handle.
@@ -122,24 +165,14 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
     CallSite(MethodHandle target) {
         target.type();  // null check
         this.target = target;
-        if (MethodHandleStatics.TRACE_CALLSITE && !block) {
-            block = true;
-            StackWalker walker = StackWalker.getInstance();
-            List<StackWalker.StackFrame> frames = walker.walk(s -> s.collect(Collectors.toList()));
-            String caller = "Unknown";
-            boolean getCaller = false;
-            for (var f : frames) {
-                if (getCaller) {
-                    caller = f.toStackTraceElement().toString();
-                    break;
-                } else if (f.getClassName().equals("java.lang.invoke.MethodHandleNatives") && 
-                           f.getMethodName().equals("linkCallSite")) {
-                    getCaller = true; 
-                }
+        if (MethodHandleStatics.TRACE_CALLSITE) {
+            synchronized (CallSite.class) { // Avoid interleaving from concurrent threads
+                CallerFinder finder = new CallerFinder();
+                StackWalker.getInstance().walk(finder);
+                System.out.println("======== CallSite: " + finder.getCaller());
+                System.out.println("target class = " + target.getClass().getName());
+                System.out.println("target = " + target.debugString(0));
             }
-            System.out.println("======== CallSite: " + caller);
-            System.out.println(target.debugString(0));
-            block = false;
         }
     }
 

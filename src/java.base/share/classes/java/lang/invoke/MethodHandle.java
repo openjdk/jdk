@@ -1688,9 +1688,16 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
     /** Return a string with a several lines describing the method handle structure.
      *  This string would be suitable for display in an IDE debugger.
+     * @param indentLevel If negative, return only information about this MethodHandle.
+     *  Otherwise, return information about this MethodHandle and (recursively) all other
+     *  MethodHandles, if any, that are invoked directly or indirectly by this MethodHandle.
+     *  During the recursion, `indentLevel` is incremented (see
+     *  BoundMethodHandle.internalValues()) to improve readability of
+     *  the nested structure.
      */
-    String debugString(int level) {
-        return type+" : "+internalForm().debugString(level)+internalProperties(level);
+    String debugString(int indentLevel) {
+        return type + " : " + internalForm().debugString(indentLevel) +
+               internalProperties(indentLevel);
     }
     String debugString() {
         return debugString(-1);
@@ -1790,15 +1797,21 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    Object internalValues(int level) {
+    Object internalValues(int indentLevel) {
         return null;
     }
 
-    static String debugPrefix(int level) {
-        if (level <= 0) {
+    /**
+     * Various debugging methods in MethodHandle (and subclasses thereof) and LambdaForm
+     * take an `indentLevel` argument, so that {@link java.lang.invoke.MethodHandle.debugString(int)}
+     * can return nested structures in a readable fashion. This method returns a string to be
+     * prepended to each line at the specified level.
+     */
+    static String debugPrefix(int indentLevel) {
+        if (indentLevel <= 0) {
             return "";
         }
-        return new String(new char[level*4]).replace('\0', ' ');
+        return new String(new char[indentLevel*4]).replace('\0', ' ');
     }
 
     /*non-public*/
@@ -1806,7 +1819,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         return internalProperties(-1);
     }
 
-    Object internalProperties(int level) {
+    Object internalProperties(int indentLevel) {
         // Override to something to follow this.form, like "\n& FOO=bar"
         return "";
     }
