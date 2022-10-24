@@ -32,8 +32,6 @@
 #include "oops/oop.inline.hpp"
 
 inline bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
-  zpointer* cont_addr = chunk->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());
-
   if (!heap->is_allocating(to_zaddress(chunk))) {
     // An object that isn't allocating, is visible from GC tracing. Such
     // stack chunks require barriers.
