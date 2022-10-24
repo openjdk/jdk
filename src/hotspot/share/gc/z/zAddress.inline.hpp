@@ -235,9 +235,9 @@ inline bool is_null_any(zpointer ptr) {
 
 // Is it null - colored or not?
 inline bool is_null_assert_load_good(zpointer ptr) {
-  const bool ret = is_null_any(ptr);
-  assert(!ret || ZPointer::is_load_good(ptr), "Got bad colored null");
-  return ret;
+  const bool result = is_null_any(ptr);
+  assert(!result || ZPointer::is_load_good(ptr), "Got bad colored null");
+  return result;
 }
 
 // zaddress functions
@@ -296,8 +296,8 @@ inline void dereferenceable_test(zaddress addr) {
 #endif
 
 inline zaddress to_zaddress(uintptr_t value) {
-  assert_is_valid(zaddress(value));
   const zaddress addr = zaddress(value);
+  assert_is_valid(addr);
   DEBUG_ONLY(dereferenceable_test(addr));
   return addr;
 }
@@ -369,8 +369,9 @@ inline zaddress safe(zaddress_unsafe addr) {
 }
 
 inline zaddress_unsafe to_zaddress_unsafe(uintptr_t value) {
-  assert_is_valid(zaddress_unsafe(value));
-  return zaddress_unsafe(value);
+  const zaddress_unsafe addr = zaddress_unsafe(value);
+  assert_is_valid(addr);
+  return addr;
 }
 
 inline zaddress_unsafe unsafe(zaddress addr) {
