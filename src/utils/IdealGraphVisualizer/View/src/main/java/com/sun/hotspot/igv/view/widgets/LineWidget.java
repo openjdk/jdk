@@ -286,7 +286,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                 highlightedObjectsChange.add(c.getFrom().getVertex());
             }
         }
-        if(enable) {
+        if (enable) {
             highlightedObjects.addAll(highlightedObjectsChange);
         } else {
             highlightedObjects.removeAll(highlightedObjectsChange);
