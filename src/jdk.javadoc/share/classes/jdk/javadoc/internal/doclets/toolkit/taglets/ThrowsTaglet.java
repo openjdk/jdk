@@ -75,8 +75,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * 11.1.1 The Kinds of Exceptions
      *
-     *   Throwable and all its subclasses are, collectively,
-     *   the exception classes.
+     *   Throwable and all its subclasses are, collectively, the exception
+     *   classes.
      *
      * 8.4.6 Method Throws
      *
@@ -90,24 +90,29 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *     ClassType
      *     TypeVariable
      *
-     *   It is a compile-time error if an ExceptionType mentioned in
-     *   a throws clause is not a subtype (4.10) of Throwable.
+     *   It is a compile-time error if an ExceptionType mentioned in a throws
+     *   clause is not a subtype (4.10) of Throwable.
      *
-     *   Type variables are allowed in a throws clause even though
-     *   they are not allowed in a catch clause (14.20).
+     *   Type variables are allowed in a throws clause even though they are
+     *   not allowed in a catch clause (14.20).
      *
-     *   It is permitted but not required to mention unchecked
-     *   exception classes (11.1.1) in a throws clause.
+     *   It is permitted but not required to mention unchecked exception
+     *   classes (11.1.1) in a throws clause.
      *
      * 8.1.2 Generic Classes and Type Parameters
      *
-     *   It is a compile-time error if a generic class is a direct
-     *   or indirect subclass of Throwable.
+     *   It is a compile-time error if a generic class is a direct or indirect
+     *   subclass of Throwable.
      *
      * 8.8.5. Constructor Throws
      *
-     *   The throws clause for a constructor is identical in structure
-     *   and behavior to the throws clause for a method (8.4.6).
+     *   The throws clause for a constructor is identical in structure and
+     *   behavior to the throws clause for a method (8.4.6).
+     *
+     * 8.8. Constructor Declarations
+     *
+     *   Constructor declarations are ... never inherited and therefore are not
+     *   subject to hiding or overriding.
      *
      * General Comments
      * ================
@@ -158,11 +163,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             for (ThrowsTree t : exceptionTags) {
                 outputAnExceptionTagDeeply(exceptionSection, t, executable, alreadyDocumentedExceptions, typeSubstitutions, writer, utils);
             }
-            // Step 2. Document exception types from the `throws` clause.
-            //
-            // Only methods can inherit documentation, so if `executable`
-            // is a constructor, skip this step.
-            if (executable.getKind() == ElementKind.METHOD) {
+            // Step 2. Document exception types from the `throws` clause
+            if (executable.getKind() == ElementKind.METHOD) { // methods are inherited, but constructors are not (JLS 8.8)
                 var docFinder = utils.docFinder();
                 for (TypeMirror exceptionType : substitutedExceptionTypes) {
                     var r = docFinder.search(executable,
