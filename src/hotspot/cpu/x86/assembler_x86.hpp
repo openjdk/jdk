@@ -2629,8 +2629,8 @@ private:
   void pand(XMMRegister dst, XMMRegister src);
   void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void vpandq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vpandq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evpandq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpandq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // Andn packed integers
   void pandn(XMMRegister dst, XMMRegister src);
@@ -2640,8 +2640,8 @@ private:
   void por(XMMRegister dst, XMMRegister src);
   void vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpor(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void vporq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vporq(XMMRegister dst, XMMRegister nds, Address     src, int vector_len);
+  void evporq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evporq(XMMRegister dst, XMMRegister nds, Address     src, int vector_len);
 
   // Xor packed integers
   void pxor(XMMRegister dst, XMMRegister src);

@@ -173,18 +173,18 @@ void MacroAssembler::poly1305_multiply8_avx512(
   // = P2_H    A2    A1     A0                     |   = P2_H×2^130 +   A2×2^88 +   A1×2^44 +   A0×2^0
   //
   vpsrlq(TMP1, P0_L, 44, Assembler::AVX_512bit);
-  vpandq(A0, P0_L, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
+  evpandq(A0, P0_L, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
 
   vpsllq(P0_H, P0_H, 8, Assembler::AVX_512bit);
   vpaddq(P0_H, P0_H, TMP1, Assembler::AVX_512bit);
   vpaddq(P1_L, P1_L, P0_H, Assembler::AVX_512bit);
-  vpandq(A1, P1_L, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
+  evpandq(A1, P1_L, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
 
   vpsrlq(TMP1, P1_L, 44, Assembler::AVX_512bit);
   vpsllq(P1_H, P1_H, 8, Assembler::AVX_512bit);
   vpaddq(P1_H, P1_H, TMP1, Assembler::AVX_512bit);
   vpaddq(P2_L, P2_L, P1_H, Assembler::AVX_512bit);
-  vpandq(A2, P2_L, Address(polyCP, mask_42), Assembler::AVX_512bit); // Clear top 22 bits
+  evpandq(A2, P2_L, Address(polyCP, mask_42), Assembler::AVX_512bit); // Clear top 22 bits
 
   vpsrlq(TMP1, P2_L, 42, Assembler::AVX_512bit);
   vpsllq(P2_H, P2_H, 10, Assembler::AVX_512bit);
@@ -196,7 +196,7 @@ void MacroAssembler::poly1305_multiply8_avx512(
   vpsllq(P2_H, P2_H, 2, Assembler::AVX_512bit);
   vpaddq(A0, A0, P2_H, Assembler::AVX_512bit);
   vpsrlq(TMP1, A0, 44, Assembler::AVX_512bit);
-  vpandq(A0, A0, Address(polyCP, mask_44), Assembler::AVX_512bit);
+  evpandq(A0, A0, Address(polyCP, mask_44), Assembler::AVX_512bit);
   vpaddq(A1, A1, TMP1, Assembler::AVX_512bit);
 }
 
@@ -335,7 +335,7 @@ void MacroAssembler::poly1305_limbs_avx512(
   // Highest 42-bit limbs of new blocks
   vpsrlq(L2, TMP1, 24, Assembler::AVX_512bit);
   if (padMSG) {
-    vporq(L2, L2, Address(polyCP, high_bit), Assembler::AVX_512bit); // Add 2^128 to all 8 final qwords of the message
+    evporq(L2, L2, Address(polyCP, high_bit), Assembler::AVX_512bit); // Add 2^128 to all 8 final qwords of the message
   }
 
   // Middle 44-bit limbs of new blocks
@@ -344,7 +344,7 @@ void MacroAssembler::poly1305_limbs_avx512(
   vpternlogq(L1, 0xA8, TMP2, Address(polyCP, mask_44), Assembler::AVX_512bit); // (A OR B AND C)
 
   // Lowest 44-bit limbs of new blocks
-  vpandq(L0, L0, Address(polyCP, mask_44), Assembler::AVX_512bit);
+  evpandq(L0, L0, Address(polyCP, mask_44), Assembler::AVX_512bit);
 }
 
 // This function consumes as many whole 16*16-byte blocks as available in input
@@ -560,7 +560,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
 
   // T1 contains the 2 highest bits of the powers of R
   vpsllq(T1, T1, 40, Assembler::AVX_512bit);
-  vporq(B2, B2, T1, Assembler::AVX_512bit);
+  evporq(B2, B2, T1, Assembler::AVX_512bit);
 
   // Broadcast 44-bit limbs of R^4 into R0,R1,R2
   mov(t0, a0);
@@ -597,9 +597,9 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
                             polyCP);
 
   // Interleave powers of R: R^8 R^4 R^7 R^3 R^6 R^2 R^5 R
-  vporq(B0, B0, C0, Assembler::AVX_512bit);
-  vporq(B1, B1, C1, Assembler::AVX_512bit);
-  vporq(B2, B2, C2, Assembler::AVX_512bit);
+  evporq(B0, B0, C0, Assembler::AVX_512bit);
+  evporq(B1, B1, C1, Assembler::AVX_512bit);
+  evporq(B2, B2, C2, Assembler::AVX_512bit);
 
   // Broadcast R^8
   vpbroadcastq(R0, B0, Assembler::AVX_512bit);
@@ -746,13 +746,13 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
 
   // Carry propagation
   vpsrlq(T0, A0, 44, Assembler::AVX_512bit);
-  vpandq(A0, A0, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
+  evpandq(A0, A0, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
   vpaddq(A1, A1, T0, Assembler::AVX_512bit);
   vpsrlq(T0, A1, 44, Assembler::AVX_512bit);
-  vpandq(A1, A1, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
+  evpandq(A1, A1, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
   vpaddq(A2, A2, T0, Assembler::AVX_512bit);
   vpsrlq(T0, A2, 42, Assembler::AVX_512bit);
-  vpandq(A2, A2, Address(polyCP, mask_42), Assembler::AVX_512bit); // Clear top 22 bits
+  evpandq(A2, A2, Address(polyCP, mask_42), Assembler::AVX_512bit); // Clear top 22 bits
   vpsllq(T1, T0, 2, Assembler::AVX_512bit);
   vpaddq(T0, T0, T1, Assembler::AVX_512bit);
   vpaddq(A0, A0, T0, Assembler::AVX_512bit);

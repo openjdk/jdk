@@ -2000,6 +2000,7 @@ address StubGenerator::generate_base64_encodeBlock()
 }
 
 address StubGenerator::generate_poly1305_masksCP() {
+  __ align64();
   StubCodeMark mark(this, "StubRoutines", "generate_poly1305_masksCP");
   address start = __ pc();
   // OFFSET 0: high_bit
@@ -2036,7 +2037,7 @@ address StubGenerator::generate_poly1305_masksCP() {
 }
 
 address StubGenerator::generate_poly1305_processBlocks() {
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
   address start = __ pc();
   __ enter();
@@ -2603,7 +2604,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Decode all bytes within our merged input
     __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
     __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
-    __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
+    __ evporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
 
     // Check for error.  Compare (decoded | initial) to all invalid.
     // If any bytes have their high-order bit set, then we have an error.

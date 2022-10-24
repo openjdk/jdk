@@ -259,7 +259,7 @@ final class Poly1305 {
     @IntrinsicCandidate
     private static void processMultipleBlocks(byte[] input, int offset, int length, byte[] aBytes, byte[] rBytes) {
         MutableIntegerModuloP A = ipl1305.getElement(aBytes).mutable();
-        MutableIntegerModuloP R = ipl1305.getElement(rBytes).mutable();
+        IntegerModuloP R = ipl1305.getElement(rBytes).mutable();
         MutableIntegerModuloP temp = ipl1305.get0().mutable();
         while (length >= BLOCK_LENGTH) {
             temp.setValue(input, offset, BLOCK_LENGTH, (byte)0x01);
