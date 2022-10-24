@@ -37,18 +37,17 @@ import java.util.concurrent.Semaphore;
 public class SuperWaitTest {
 
     private static Semaphore threadSync = null;
+    private static volatile boolean dIsLoading = false;
 
     // Loads classes A and D, delegates for A's super class B
     private static class MyLoaderOne extends ClassLoader {
 
         ClassLoader parent;
         ClassLoader baseLoader;
-        int count;
 
         MyLoaderOne(ClassLoader parent) {
             this.parent = parent;
             this.baseLoader = null;
-            this.count = 0;
         }
 
         public void setBaseLoader(ClassLoader ldr) {
@@ -61,13 +60,17 @@ public class SuperWaitTest {
             if (name.equals("A") || name.equals("D")) {
                 ThreadPrint.println("Loading " + name);
                 if (name.equals("A")) {
-                    try {
-                        ThreadPrint.println("Waiting for " + name);
-                        threadSync.release();
-                        wait(); // let the other thread have this lock.
-                    } catch (InterruptedException ie) {}
+                    threadSync.release();  // Let the other thread start
+
+                    ThreadPrint.println("Waiting for " + name);
+                    while (!dIsLoading) {  // guard against spurious wakeup
+                        try {
+                            wait(); // let the other thread have this lock.
+                        } catch (InterruptedException ie) {}
+                    }
                 } else {
-                    notify(); // reacquire lock when superclass loading is done
+                    dIsLoading = true;
+                    notify(); // notify lock when superclass loading is done
                 }
                 byte[] classfile = ClassUnloadCommon.getClassData(name);
                 return defineClass(name, classfile, 0, classfile.length);
@@ -85,12 +88,10 @@ public class SuperWaitTest {
 
         ClassLoader parent;
         ClassLoader baseLoader;
-        int count;
 
         MyLoaderTwo(ClassLoader parent) {
             this.parent = parent;
             this.baseLoader = null;
-            this.count = 0;
         }
 
         public void setBaseLoader(ClassLoader ldr) {
@@ -102,12 +103,6 @@ public class SuperWaitTest {
             if (loadedClass != null) return loadedClass;
             if (name.equals("C") || name.equals("B")) {
                 ThreadPrint.println("Loading " + name);
-                if (name.equals("C")) {
-                    // We want loading thread 1 and 2 to be here at the same time.
-                    try {
-                        threadSync.acquire();
-                    } catch (InterruptedException ie) {}
-                }
                 byte[] classfile = ClassUnloadCommon.getClassData(name);
                 return defineClass(name, classfile, 0, classfile.length);
             } else if (name.equals("D")) {
@@ -142,12 +137,20 @@ public class SuperWaitTest {
         ldr1.setBaseLoader(ldr2);
         ldr2.setBaseLoader(ldr1);
 
+        threads[0] = new ClassLoadingThread("A", ldr1);
+        threads[1] = new ClassLoadingThread("C", ldr2);
         for (int i = 0; i < 2; i++) {
-            threads[i] = new ClassLoadingThread(ldr1, ldr2, i);
             threads[i].setName("Loading Thread #" + (i + 1));
             threads[i].start();
             System.out.println("Thread " + (i + 1) + " was started...");
+            if (i == 0) {
+                try {
+                    // Wait for the first thread to get to the wait, before starting second thread.
+                    threadSync.acquire();
+                } catch (InterruptedException ie) {}
+            }
         }
+
         if (report_success()) {
            System.out.println("PASSED");
         } else {
