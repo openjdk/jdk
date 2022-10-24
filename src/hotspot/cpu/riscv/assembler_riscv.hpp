@@ -2726,7 +2726,7 @@ public:
   INSN(cbo_inval, 0b0000000000000);
   INSN(cbo_clean, 0b0000000000001);
   INSN(cbo_flush, 0b0000000000010);
-  INSN(cbo_zero,  0b0000000001000);
+  INSN(cbo_zero,  0b0000000000100);
 
 #undef INSN
 
