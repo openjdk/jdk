@@ -209,6 +209,9 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
 void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,
                                                G1GCPhaseTimes* phase_times,
                                                uint worker_id) {
+  // We do not track timing of this phase. It is only required with class unloading
+  // disabled, which is an extremely uncommon use case and would otherwise only ever
+  // show up as "skipped" in the logs.
   if (_process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do)) {
     CodeCache::blobs_do(code_closure);
   }
