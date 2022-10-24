@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 
 // -- This file was mechanically generated: Do not edit! -- //
 
-import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
@@ -43,102 +42,6 @@ import static java.util.Calendar.*;
 
 
 public class BasicDoubleObject extends Basic {
-
-    private static void test(String fs, String exp, Object ... args) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, args);
-        ck(fs, exp, f.toString());
-
-        f = new Formatter(new StringBuilder(), Locale.US);
-        f.format("foo " + fs + " bar", args);
-        ck(fs, "foo " + exp + " bar", f.toString());
-    }
-
-    private static void test(Locale l, String fs, String exp, Object ... args)
-    {
-        Formatter f = new Formatter(new StringBuilder(), l);
-        f.format(fs, args);
-        ck(fs, exp, f.toString());
-
-        f = new Formatter(new StringBuilder(), l);
-        f.format("foo " + fs + " bar", args);
-        ck(fs, "foo " + exp + " bar", f.toString());
-    }
-
-    private static void test(String fs, Object ... args) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, args);
-        ck(fs, "fail", f.toString());
-    }
-
-    private static void test(String fs) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, "fail");
-        ck(fs, "fail", f.toString());
-    }
-
-    private static void testSysOut(String fs, String exp, Object ... args) {
-        FileOutputStream fos = null;
-        FileInputStream fis = null;
-        try {
-            PrintStream saveOut = System.out;
-            fos = new FileOutputStream("testSysOut");
-            System.setOut(new PrintStream(fos));
-            System.out.format(Locale.US, fs, args);
-            fos.close();
-
-            fis = new FileInputStream("testSysOut");
-            byte [] ba = new byte[exp.length()];
-            int len = fis.read(ba);
-            String got = new String(ba);
-            if (len != ba.length)
-                fail(fs, exp, got);
-            ck(fs, exp, got);
-
-            System.setOut(saveOut);
-        } catch (FileNotFoundException ex) {
-            fail(fs, ex.getClass());
-        } catch (IOException ex) {
-            fail(fs, ex.getClass());
-        } finally {
-            try {
-                if (fos != null)
-                    fos.close();
-                if (fis != null)
-                    fis.close();
-            } catch (IOException ex) {
-                fail(fs, ex.getClass());
-            }
-        }
-    }
-
-    private static void tryCatch(String fs, Class<?> ex) {
-        boolean caught = false;
-        try {
-            test(fs);
-        } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
-                caught = true;
-        }
-        if (!caught)
-            fail(fs, ex);
-        else
-            pass();
-    }
-
-    private static void tryCatch(String fs, Class<?> ex, Object ... args) {
-        boolean caught = false;
-        try {
-            test(fs, args);
-        } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
-                caught = true;
-        }
-        if (!caught)
-            fail(fs, ex);
-        else
-            pass();
-    }
 
 
 
