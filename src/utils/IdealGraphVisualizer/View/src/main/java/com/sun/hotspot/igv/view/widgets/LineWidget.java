@@ -132,7 +132,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             }
 
             @Override
-            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection)  {
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
                 return true;
             }
 
