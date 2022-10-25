@@ -110,7 +110,10 @@ inline void vframeStreamCommon::next() {
 }
 
 inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stub, bool process_frame, bool vthread_carrier)
-  : vframeStreamCommon(RegisterMap(thread, true, process_frame, true)) {
+  : vframeStreamCommon(RegisterMap(thread,
+                                   RegisterMap::UpdateMap::include,
+                                   process_frame ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip ,
+                                   RegisterMap::WalkContinuation::include)) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   if (!thread->has_last_Java_frame()) {

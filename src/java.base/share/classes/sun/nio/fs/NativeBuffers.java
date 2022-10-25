@@ -25,8 +25,6 @@
 
 package sun.nio.fs;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 
@@ -35,12 +33,12 @@ import jdk.internal.misc.Unsafe;
  */
 
 class NativeBuffers {
-    private static JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     private static final int TEMP_BUF_POOL_SIZE = 3;
-    private static ThreadLocal<NativeBuffer[]> threadLocal = new TerminatingThreadLocal<>() {
+    // per-carrier-thread cache of NativeBuffer(s)
+    private static final TerminatingThreadLocal<NativeBuffer[]> threadLocal = new TerminatingThreadLocal<>() {
         @Override
         protected void threadTerminated(NativeBuffer[] buffers) {
             // threadLocal may be initialized but with initialValue of null
@@ -73,7 +71,7 @@ class NativeBuffers {
      */
     static NativeBuffer getNativeBufferFromCache(int size) {
         // return from cache if possible
-        NativeBuffer[] buffers = JLA.getCarrierThreadLocal(threadLocal);
+        NativeBuffer[] buffers = threadLocal.get();
         if (buffers != null) {
             for (int i=0; i<TEMP_BUF_POOL_SIZE; i++) {
                 NativeBuffer buffer = buffers[i];
@@ -107,11 +105,11 @@ class NativeBuffers {
      */
     static void releaseNativeBuffer(NativeBuffer buffer) {
         // create cache if it doesn't exist
-        NativeBuffer[] buffers = JLA.getCarrierThreadLocal(threadLocal);
+        NativeBuffer[] buffers = threadLocal.get();
         if (buffers == null) {
             buffers = new NativeBuffer[TEMP_BUF_POOL_SIZE];
             buffers[0] = buffer;
-            JLA.setCarrierThreadLocal(threadLocal, buffers);
+            threadLocal.set(buffers);
             return;
         }
         // Put it in an empty slot if such exists

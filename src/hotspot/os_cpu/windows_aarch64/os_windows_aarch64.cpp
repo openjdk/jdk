@@ -33,6 +33,7 @@
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -211,9 +212,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
-  intptr_t *sp = (intptr_t *)uc->Sp;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+  address sp = (address)uc->Sp;
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may

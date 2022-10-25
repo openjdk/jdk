@@ -1183,7 +1183,3 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   fatal("vectorizedMismatch intrinsic is not implemented on this platform");
 }
-
-void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
-  fatal("Continuation.doYield intrinsic is not implemented on this platform");
-}

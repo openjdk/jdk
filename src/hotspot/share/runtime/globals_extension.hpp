@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,15 @@ enum JVMFlagsEnum : int {
 
 #define DEFINE_FLAG_MEMBER_SETTER(type, name, ...) FLAG_MEMBER_SETTER_(type, name)
 
+#ifdef PRODUCT
+ALL_FLAGS(IGNORE_FLAG,               // develop     : declared as const
+          IGNORE_FLAG,               // develop-pd  : declared as const
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          IGNORE_FLAG,               // not-product : is not declared
+          IGNORE_RANGE,
+          IGNORE_CONSTRAINT)
+#else
 ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
@@ -66,6 +75,7 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
+#endif
 
 #define FLAG_IS_DEFAULT(name)         (JVMFlag::is_default(FLAG_MEMBER_ENUM(name)))
 #define FLAG_IS_ERGO(name)            (JVMFlag::is_ergo(FLAG_MEMBER_ENUM(name)))

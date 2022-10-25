@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,13 +181,10 @@ public class EDIPartyName implements GeneralNameInterface {
         }
         String otherParty = ((EDIPartyName)other).party;
         if (this.party == null) {
-            if (otherParty != null)
-                return false;
+            return otherParty == null;
         } else {
-            if (!(this.party.equals(otherParty)))
-                return false;
+            return this.party.equals(otherParty);
         }
-        return true;
     }
 
     /**

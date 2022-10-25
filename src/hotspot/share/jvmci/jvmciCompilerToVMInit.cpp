@@ -95,6 +95,8 @@ address CompilerToVM::Data::dpow;
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
 
+int CompilerToVM::Data::data_section_item_alignment;
+
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
@@ -119,9 +121,9 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();
 
-  _supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
-  _heap_end_addr = _supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
-  _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord* volatile*) -1;
+  _supports_inline_contig_alloc = false;
+  _heap_end_addr = (HeapWord**) -1;
+  _heap_top_addr = (HeapWord* volatile*) -1;
 
   _max_oop_map_stack_offset = (OopMapValue::register_mask - VMRegImpl::stack2reg(0)->value()) * VMRegImpl::stack_slot_size;
   int max_oop_map_stack_index = _max_oop_map_stack_offset / VMRegImpl::stack_slot_size;
@@ -132,6 +134,8 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   symbol_clinit = (address) vmSymbols::class_initializer_name();
 
   _fields_annotations_base_offset = Array<AnnotationArray*>::base_offset_in_bytes();
+
+  data_section_item_alignment = relocInfo::addr_unit();
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {

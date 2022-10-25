@@ -29,13 +29,14 @@ import java.io.IOException;
 import java.io.Writer;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Class for containing immutable string content for HTML tags of javadoc output.
+ * Newlines are always represented by {@code \n}.
  * Any special HTML characters will be escaped if and when the content is written out.
  */
 public class Text extends Content {
+
     private final String string;
 
     public static final Text EMPTY = Text.of("");
@@ -56,6 +57,7 @@ public class Text extends Content {
      * @param content content for the object
      */
     private Text(CharSequence content) {
+        assert checkNewlines(content);
         string = content.toString();
     }
 
@@ -70,16 +72,7 @@ public class Text extends Content {
     }
 
     static int charCount(CharSequence cs) {
-        int count = 0;
-        for (int i = 0; i < cs.length(); i++) {
-            // Windows uses "\r\n" as line separator while UNIX uses "\n".
-            // Skip the "\r" to get consistent results across platforms.
-            if (cs.charAt(i) == '\r' && (i + 1 < cs.length()) && cs.charAt(i + 1) == '\n') {
-                i++;
-            }
-            count++;
-        }
-        return count;
+        return cs.length();
     }
 
     @Override
@@ -88,9 +81,57 @@ public class Text extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        out.write(Entity.escapeHtmlChars(string));
-        return string.endsWith(DocletConstants.NL);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        out.write(Entity.escapeHtmlChars(string).replace("\n", newline));
+        return string.endsWith("\n");
+    }
+
+    /**
+     * The newline character, to be used when creating {@code Content} nodes.
+     */
+    public static final String NL = "\n";
+
+    /**
+     * Returns a given string with all newlines in the form {@code \n}.
+     *
+     * The sequences of interest are {@code \n}, {@code \r\n}, and {@code \r}.
+     * {@code \n} is already in the right form, so can be ignored,
+     * leaving code to handle {@code \r\n}, and {@code \r}.
+     *
+     * @param text the string
+     * @return the string with newlines in the form {@code \n}
+     */
+    public static CharSequence normalizeNewlines(CharSequence text) {
+        // fast-track when the input is a string with no \r characters
+        if (text instanceof String s && s.indexOf('\r') != -1) {
+            return text;
+        } else {
+            var sb = new StringBuilder();
+            var s = text.toString();
+            int sLen = s.length();
+            int start = 0;
+            int pos;
+            while ((pos = s.indexOf('\r', start)) != -1) {
+                sb.append(s, start, pos);
+                sb.append('\n');
+                pos++;
+                if (pos < sLen && s.charAt(pos) == '\n') {
+                    pos++;
+                }
+                start = pos;
+            }
+            sb.append(s.substring(start));
+            return sb;
+        }
+    }
+
+    /**
+     * Check for the absence of {@code \r} characters.
+     * @param cs the characters to be checked
+     * @return {@code true} if there are no {@code \r} characters, and {@code false} otherwise
+     */
+    static boolean checkNewlines(CharSequence cs) {
+        return !cs.toString().contains("\r");
     }
 
 }

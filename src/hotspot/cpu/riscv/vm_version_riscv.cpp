@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,12 +25,10 @@
 
 #include "precompiled.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-
-#include OS_HEADER_INLINE(os)
 
 const char* VM_Version::_uarch = "";
 uint32_t VM_Version::_initial_vector_length = 0;

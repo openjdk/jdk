@@ -28,8 +28,9 @@
 #include "gc/g1/g1FullCollector.hpp"
 
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-
+#include "runtime/atomic.hpp"
 
 bool G1FullCollector::is_compacting(oop obj) const {
   return _region_attr_table.is_compacting(cast_from_oop<HeapWord *>(obj));
@@ -58,6 +59,14 @@ bool G1FullCollector::is_free(uint region_idx) const {
 void G1FullCollector::update_from_compacting_to_skip_compacting(uint region_idx) {
   _region_attr_table.verify_is_compacting(region_idx);
   _region_attr_table.set_skip_compacting(region_idx);
+}
+
+void G1FullCollector::set_compaction_top(HeapRegion* r, HeapWord* value) {
+  Atomic::store(&_compaction_tops[r->hrm_index()], value);
+}
+
+HeapWord* G1FullCollector::compaction_top(HeapRegion* r) const {
+  return Atomic::load(&_compaction_tops[r->hrm_index()]);
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP

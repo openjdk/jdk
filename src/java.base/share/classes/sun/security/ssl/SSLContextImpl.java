@@ -99,16 +99,12 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         }
         trustManager = chooseTrustManager(tm);
 
-        if (sr == null) {
-            secureRandom = new SecureRandom();
-        } else {
-            secureRandom = sr;
-        }
+        secureRandom = Objects.requireNonNullElseGet(sr, SecureRandom::new);
 
         /*
          * The initial delay of seeding the random number generator
          * could be long enough to cause the initial handshake on our
-         * first connection to timeout and fail. Make sure it is
+         * first connection to time out and fail. Make sure it is
          * primed and ready by getting some initial output from it.
          */
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
@@ -122,8 +118,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         isInitialized = true;
     }
 
-    private X509TrustManager chooseTrustManager(TrustManager[] tm)
-            throws KeyManagementException {
+    private X509TrustManager chooseTrustManager(TrustManager[] tm) {
         // We only use the first instance of X509TrustManager passed to us.
         for (int i = 0; tm != null && i < tm.length; i++) {
             if (tm[i] instanceof X509TrustManager) {
@@ -140,8 +135,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         return DummyX509TrustManager.INSTANCE;
     }
 
-    private X509ExtendedKeyManager chooseKeyManager(KeyManager[] kms)
-            throws KeyManagementException {
+    private X509ExtendedKeyManager chooseKeyManager(KeyManager[] kms) {
         for (int i = 0; kms != null && i < kms.length; i++) {
             KeyManager km = kms[i];
             if (!(km instanceof X509KeyManager)) {
@@ -477,7 +471,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             ProtocolVersion[] protocolCandidates) {
 
         List<ProtocolVersion> availableProtocols =
-                Collections.<ProtocolVersion>emptyList();
+                Collections.emptyList();
         if (protocolCandidates != null && protocolCandidates.length != 0) {
             availableProtocols = new ArrayList<>(protocolCandidates.length);
             for (ProtocolVersion p : protocolCandidates) {
@@ -973,7 +967,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             AccessController.doPrivileged(
                         new PrivilegedExceptionAction<Object>() {
                 @Override
-                public Object run() throws Exception {
+                public Object run() {
                     props.put("keyStore",  System.getProperty(
                                 "javax.net.ssl.keyStore", ""));
                     props.put("keyStoreType", System.getProperty(
@@ -1303,7 +1297,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         private static final List<CipherSuite> clientDefaultCipherSuites;
         private static final List<CipherSuite> serverDefaultCipherSuites;
 
-        private static IllegalArgumentException reservedException;
+        private static final IllegalArgumentException reservedException;
 
         // Don't want a java.lang.LinkageError for illegal system property.
         //
@@ -1460,9 +1454,8 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             String authType, Socket socket,
             boolean checkClientTrusted) throws CertificateException {
         if (socket != null && socket.isConnected() &&
-                                    socket instanceof SSLSocket) {
+                socket instanceof SSLSocket sslSocket) {
 
-            SSLSocket sslSocket = (SSLSocket)socket;
             SSLSession session = sslSocket.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
@@ -1479,9 +1472,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             // try the best to check the algorithm constraints
             AlgorithmConstraints constraints;
             if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                if (session instanceof ExtendedSSLSession) {
-                    ExtendedSSLSession extSession =
-                                    (ExtendedSSLSession)session;
+                if (session instanceof ExtendedSSLSession extSession) {
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
@@ -1519,9 +1510,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             // try the best to check the algorithm constraints
             AlgorithmConstraints constraints;
             if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                if (session instanceof ExtendedSSLSession) {
-                    ExtendedSSLSession extSession =
-                                    (ExtendedSSLSession)session;
+                if (session instanceof ExtendedSSLSession extSession) {
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
@@ -1566,7 +1555,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                 for (int i = checkedLength; i >= 0; i--) {
                     X509Certificate cert = chain[i];
                     // We don't care about the unresolved critical extensions.
-                    checker.check(cert, Collections.<String>emptySet());
+                    checker.check(cert, Collections.emptySet());
                 }
             }
         } catch (CertPathValidatorException cpve) {

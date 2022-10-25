@@ -26,8 +26,6 @@
 #ifndef CPU_PPC_FRAME_PPC_HPP
 #define CPU_PPC_FRAME_PPC_HPP
 
-#include "runtime/synchronizer.hpp"
-
   //  C frame layout on PPC-64.
   //
   //  In this figure the stack grows upwards, while memory grows
@@ -396,8 +394,6 @@
   inline void interpreter_frame_set_esp(intptr_t* esp);
   inline void interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp);
   inline void interpreter_frame_set_sender_sp(intptr_t* sender_sp);
-
-  inline intptr_t* interpreter_frame_last_sp() const;
 
   template <typename RegisterMapT>
   static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);

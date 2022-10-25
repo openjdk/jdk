@@ -338,6 +338,11 @@ inline int SignatureStream::scan_type(BasicType type) {
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
+    // If we discovered only the string of '[', this means something is wrong.
+    if (end >= limit) {
+      assert(false, "Invalid type detected");
+      return limit;
+    }
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
@@ -507,7 +512,7 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.

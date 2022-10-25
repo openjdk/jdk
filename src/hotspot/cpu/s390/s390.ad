@@ -5290,54 +5290,6 @@ instruct castVV(iRegL dst) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(Z_DISP3_SIZE);
-  format %{ "LG      $dst,$mem\t # LoadPLocked" %}
-  opcode(LG_ZOPC, LG_ZOPC);
-  ins_encode(z_form_rt_mem_opt(dst, mem));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off. Needed to pass
-// option tests.  Mem_ptr must be a memory operand, else this node
-// does not get Flag_needs_anti_dependence_check set by adlc. If this
-// is not set this node can be rematerialized which leads to errors.
-instruct storePConditional(indirect mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
-  match(Set cr (StorePConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java. Mem_ptr must be a memory
-// operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set
-// this node can be rematerialized which leads to errors.
-instruct storeLConditional(indirect mem_ptr, rarg5RegL oldval, iRegL newval, flagsReg cr) %{
-  match(Set cr (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
 // No flag versions for CompareAndSwap{P,I,L,N} because matcher can't match them.
 
 instruct compareAndSwapI_bool(iRegP mem_ptr, rarg5RegI oldval, iRegI newval, iRegI res, flagsReg cr) %{

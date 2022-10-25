@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -44,7 +45,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -61,6 +62,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
 #include <stdio.h>
@@ -529,7 +531,10 @@ extern "C" JNIEXPORT void ps() { // print stack
     if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
-    RegisterMap reg_map(p);
+    RegisterMap reg_map(p,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
@@ -633,8 +638,29 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
   os::print_location(tty, x, true);
 }
 
+// For findmethod() and findclass():
+// - The patterns are matched by StringUtils::is_star_match()
+// - class_name_pattern matches Klass::external_name(). E.g., "java/lang/Object" or "*ang/Object"
+// - method_pattern may optionally the signature. E.g., "wait", "wait:()V" or "*ai*t:(*)V"
+// - flags must be OR'ed from ClassPrinter::Mode for findclass/findmethod
+// Examples (in gdb):
+//   call findclass("java/lang/Object", 0x3)             -> find j.l.Object and disasm all of its methods
+//   call findmethod("*ang/Object*", "wait", 0xff)       -> detailed disasm of all "wait" methods in j.l.Object
+//   call findmethod("*ang/Object*", "wait:(*J*)V", 0x1) -> list all "wait" methods in j.l.Object that have a long parameter
+extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
+  Command c("findclass");
+  ClassPrinter::print_flags_help(tty);
+  ClassPrinter::print_classes(class_name_pattern, flags, tty);
+}
 
-// Need method pointer to find bcp, when not in permgen.
+extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
+                                     const char* method_pattern, int flags) {
+  Command c("findmethod");
+  ClassPrinter::print_flags_help(tty);
+  ClassPrinter::print_methods(class_name_pattern, method_pattern, flags, tty);
+}
+
+// Need method pointer to find bcp
 extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
@@ -644,6 +670,37 @@ extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
     mh->print_codes_on(tty);
   }
 }
+
+// check and decode a single u5 value
+extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
+  Command c("u5decode");
+  u1* arr = (u1*)addr;
+  size_t off = 0, lim = 5;
+  if (!UNSIGNED5::check_length(arr, off, lim)) {
+    return 0;
+  }
+  return UNSIGNED5::read_uint(arr, off, lim);
+}
+
+// Sets up a Reader from addr/limit and prints count items.
+// A limit of zero means no set limit; stop at the first null
+// or after count items are printed.
+// A count of zero or less is converted to -1, which means
+// there is no limit on the count of items printed; the
+// printing stops when an null is printed or at limit.
+// See documentation for UNSIGNED5::Reader::print(count).
+extern "C" JNIEXPORT intptr_t u5p(intptr_t addr,
+                                  intptr_t limit,
+                                  int count) {
+  Command c("u5p");
+  u1* arr = (u1*)addr;
+  if (limit && limit < addr)  limit = addr;
+  size_t lim = !limit ? 0 : (limit - addr);
+  size_t endpos = UNSIGNED5::print_count(count > 0 ? count : -1,
+                                         arr, (size_t)0, lim);
+  return addr + endpos;
+}
+
 
 // int versions of all methods to avoid having to type type casts in the debugger
 
@@ -667,6 +724,9 @@ void help() {
   tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
+  tty->print_cr("class metadata.");
+  tty->print_cr("  findclass(name_pattern, flags)");
+  tty->print_cr("  findmethod(class_name_pattern, method_pattern, flags)");
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");
@@ -685,7 +745,7 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
   Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
+  VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
 }
 
 //
@@ -705,7 +765,7 @@ extern "C" JNIEXPORT void pns2() { // print native stack
   } else {
     Thread* t = Thread::current_or_null();
     frame fr = os::current_frame();
-    VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
+    VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
   }
 }
 #endif

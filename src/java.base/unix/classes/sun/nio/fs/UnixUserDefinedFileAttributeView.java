@@ -337,13 +337,10 @@ abstract class UnixUserDefinedFileAttributeView
         throws UnixException
     {
         int size = fgetxattr(ofd, name, 0L, 0);
-        NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             long address = buffer.address();
             size = fgetxattr(ofd, name, address, size);
             fsetxattr(nfd, name, address, size);
-        } finally {
-            buffer.release();
         }
     }
 }

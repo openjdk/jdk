@@ -204,7 +204,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
 
     /**
      * Separates bgra, lcd and grayscale glyphs queued for upload, and sets the
-     * appropriate glyph set for the cache entries.
+     * appropriate glyphset for the cache entries.
      */
     protected EnumMap<XRGlyphCacheEntry.Type, List<XRGlyphCacheEntry>>
             separateGlyphTypes(List<XRGlyphCacheEntry> glyphList) {
@@ -220,7 +220,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
     }
 
     /**
-     * Copies the glyph-images into a continous buffer, required for uploading.
+     * Copies the glyph-images into a continuous buffer, required for uploading.
      */
     protected byte[] generateGlyphImageStream(List<XRGlyphCacheEntry> glyphList) {
         boolean isLCDGlyph = glyphList.get(0).getGlyphSet() == lcdGlyphSet;

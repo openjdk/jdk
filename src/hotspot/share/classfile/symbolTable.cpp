@@ -161,18 +161,12 @@ public:
   }
 };
 
-static size_t ceil_log2(size_t value) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
-  return ret;
-}
-
 void SymbolTable::create_table ()  {
   size_t start_size_log_2 = ceil_log2(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
-  _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
+  _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
 
   // Initialize the arena for global symbols, size passed in depends on CDS.
   if (symbol_alloc_arena_size == 0) {
@@ -635,7 +629,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
   ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
   for (int i = 0; i < len; i++) {
-    Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));
+    Symbol* sym = ArchiveBuilder::get_buffered_symbol(symbols->at(i));
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
@@ -783,7 +777,7 @@ bool SymbolTable::do_rehash() {
 
   // We use current size
   size_t new_size = _local_table->get_size_log2(Thread::current());
-  SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN);
+  SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {

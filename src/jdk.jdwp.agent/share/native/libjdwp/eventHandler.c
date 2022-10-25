@@ -334,9 +334,14 @@ deferEventReport(JNIEnv *env, jthread thread,
                 jlocation end;
                 error = methodLocation(method, &start, &end);
                 if (error == JVMTI_ERROR_NONE) {
-                    deferring = isBreakpointSet(clazz, method, start) ||
-                                threadControl_getInstructionStepMode(thread)
-                                    == JVMTI_ENABLE;
+                    if (isBreakpointSet(clazz, method, start)) {
+                        deferring = JNI_TRUE;
+                    } else {
+                        StepRequest* step = threadControl_getStepRequest(thread);
+                        if (step->pending && step->depth == JDWP_STEP_DEPTH(INTO)) {
+                            deferring = JNI_TRUE;
+                        }
+                    }
                     if (!deferring) {
                         threadControl_saveCLEInfo(env, thread, ei,
                                                   clazz, method, start);
@@ -457,16 +462,10 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
     }
 }
 
-/* A bagEnumerateFunction.  Create a synthetic class unload event
- * for every class no longer present.  Analogous to event_callback
- * combined with a handler in a unload specific (no event
- * structure) kind of way.
- */
-static jboolean
-synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
+/* Create a synthetic class unload event for the specified signature. */
+jboolean
+eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
 {
-    JNIEnv *env = (JNIEnv *)envVoid;
-    char *signature = *(char **)signatureVoid;
     char *classname;
     HandlerNode *node;
     jbyte eventSessionID = currentSessionID;
@@ -547,11 +546,6 @@ filterAndHandleEvent(JNIEnv *env, EventInfo *evinfo, EventIndex ei,
         HandlerNode *node;
         char        *classname;
 
-        /* We must keep track of all classes prepared to know what's unloaded */
-        if (evinfo->ei == EI_CLASS_PREPARE) {
-            classTrack_addPreparedClass(env, evinfo->clazz);
-        }
-
         node = getHandlerChain(ei)->first;
         classname = getClassname(evinfo->clazz);
 
@@ -620,39 +614,10 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     currentException = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
     JNI_FUNC_PTR(env,ExceptionClear)(env);
 
-    /* See if a garbage collection finish event happened earlier.
-     *
-     * Note: The "if" is an optimization to avoid entering the lock on every
-     *       event; garbageCollected may be zapped before we enter
-     *       the lock but then this just becomes one big no-op.
-     */
-    if ( garbageCollected > 0 ) {
-        struct bag *unloadedSignatures = NULL;
-
-        /* We want to compact the hash table of all
-         * objects sent to the front end by removing objects that have
-         * been collected.
-         */
+    /* See if a garbage collection finish event happened earlier. */
+    if ( garbageCollected > 0) {
         commonRef_compact();
-
-        /* We also need to simulate the class unload events. */
-
-        debugMonitorEnter(handlerLock);
-
-        /* Clear garbage collection counter */
         garbageCollected = 0;
-
-        /* Analyze which class unloads occurred */
-        unloadedSignatures = classTrack_processUnloads(env);
-
-        debugMonitorExit(handlerLock);
-
-        /* Generate the synthetic class unload events and/or just cleanup.  */
-        if ( unloadedSignatures != NULL ) {
-            (void)bagEnumerateOver(unloadedSignatures, synthesizeUnloadEvent,
-                             (void *)env);
-            bagDestroyBag(unloadedSignatures);
-        }
     }
 
     thread = evinfo->thread;
@@ -1540,11 +1505,6 @@ eventHandler_initialize(jbyte sessionID)
         EXIT_ERROR(error,"Can't enable thread end events");
     }
     error = threadControl_setEventMode(JVMTI_ENABLE,
-                                       EI_CLASS_PREPARE, NULL);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error,"Can't enable class prepare events");
-    }
-    error = threadControl_setEventMode(JVMTI_ENABLE,
                                        EI_GC_FINISH, NULL);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
@@ -1709,9 +1669,6 @@ installHandler(HandlerNode *node,
 
     node->handlerID = external? ++requestIdCounter : 0;
     error = eventFilterRestricted_install(node);
-    if (node->ei == EI_GC_FINISH) {
-        classTrack_activate(getEnv());
-    }
     if (error == JVMTI_ERROR_NONE) {
         insert(getHandlerChain(node->ei), node);
     }

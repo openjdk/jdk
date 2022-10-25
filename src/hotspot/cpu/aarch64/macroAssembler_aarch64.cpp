@@ -310,14 +310,12 @@ public:
     ptrdiff_t offset = target - insn_addr;
     instructions = 2;
     precond(inner != nullptr);
-    uintptr_t dest = (uintptr_t)target;
+    // Give the inner reloc a chance to modify the target.
+    address adjusted_target = target;
+    instructions = (*inner)(insn_addr, adjusted_target);
     uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
-    uintptr_t adr_page = (uintptr_t)target >> 12;
+    uintptr_t adr_page = (uintptr_t)adjusted_target >> 12;
     offset = adr_page - pc_page;
-    instructions = (*inner)(insn_addr, target);
-    // Now we extract the lower 21 bits of the signed offset field for
-    // the ADRP.
-    offset = offset << (64-21) >> (64-21);
     int offset_lo = offset & 3;
     offset >>= 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
@@ -340,8 +338,10 @@ public:
     return 2;
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
-    uintptr_t dest = (uintptr_t)target;
+    uintptr_t dest = uintptr_t(target);
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
+    dest = (dest & 0xffffffffULL) | (uintptr_t(insn_addr) & 0xffff00000000ULL);
+    target = address(dest);
     return 2;
   }
   virtual int immediate(address insn_addr, address &target) {
@@ -457,7 +457,7 @@ public:
   static int adrpMovk_impl(address insn_addr, address &target) {
     uint32_t insn2 = insn_at(insn_addr, 1);
     uint64_t dest = uint64_t(target);
-    dest = (dest & 0xffffffff) |
+    dest = (dest & 0xffff0000ffffffff) |
       ((uint64_t)Instruction_aarch64::extract(insn2, 20, 5) << 32);
     target = address(dest);
 
@@ -684,7 +684,7 @@ static inline bool target_needs_far_branch(address addr) {
   return !CodeCache::is_non_nmethod(addr);
 }
 
-void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
+void MacroAssembler::far_call(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
@@ -697,15 +697,13 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
     adrp(tmp, entry, offset);
     add(tmp, tmp, offset);
-    if (cbuf) cbuf->set_insts_mark();
     blr(tmp);
   } else {
-    if (cbuf) cbuf->set_insts_mark();
     bl(entry);
   }
 }
 
-int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
+int MacroAssembler::far_jump(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
@@ -719,10 +717,8 @@ int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
     adrp(tmp, entry, offset);
     add(tmp, tmp, offset);
-    if (cbuf) cbuf->set_insts_mark();
     br(tmp);
   } else {
-    if (cbuf) cbuf->set_insts_mark();
     b(entry);
   }
   return pc() - start;
@@ -849,63 +845,72 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
 
-// Maybe emit a call via a trampoline.  If the code cache is small
+// Check the entry target is always reachable from any branch.
+static bool is_always_within_branch_range(Address entry) {
+  const address target = entry.target();
+
+  if (!CodeCache::contains(target)) {
+    // We always use trampolines for callees outside CodeCache.
+    assert(entry.rspec().type() == relocInfo::runtime_call_type, "non-runtime call of an external target");
+    return false;
+  }
+
+  if (!MacroAssembler::far_branches()) {
+    return true;
+  }
+
+  if (entry.rspec().type() == relocInfo::runtime_call_type) {
+    // Runtime calls are calls of a non-compiled method (stubs, adapters).
+    // Non-compiled methods stay forever in CodeCache.
+    // We check whether the longest possible branch is within the branch range.
+    assert(CodeCache::find_blob(target) != NULL &&
+          !CodeCache::find_blob(target)->is_compiled(),
+          "runtime call of compiled method");
+    const address right_longest_branch_start = CodeCache::high_bound() - NativeInstruction::instruction_size;
+    const address left_longest_branch_start = CodeCache::low_bound();
+    const bool is_reachable = Assembler::reachable_from_branch_at(left_longest_branch_start, target) &&
+                              Assembler::reachable_from_branch_at(right_longest_branch_start, target);
+    return is_reachable;
+  }
+
+  return false;
+}
+
+// Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size) {
+address MacroAssembler::trampoline_call(Address entry) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
-  bool need_trampoline = far_branches();
-  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(entry.target())) {
-    // If it is a runtime call of an address outside small CodeCache,
-    // we need to check whether it is in range.
-    address target = entry.target();
-    assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
-    // Case 1: -------T-------L====CodeCache====H-------
-    //                ^-------longest branch---|
-    // Case 2: -------L====CodeCache====H-------T-------
-    //                |-------longest branch ---^
-    address longest_branch_start = (target < CodeCache::low_bound()) ? CodeCache::high_bound() - NativeInstruction::instruction_size
-                                                                     : CodeCache::low_bound();
-    need_trampoline = !reachable_from_branch_at(longest_branch_start, target);
-  }
+  address target = entry.target();
 
-  // We need a trampoline if branches are far.
-  if (need_trampoline) {
-    bool in_scratch_emit_size = false;
-#ifdef COMPILER2
-    if (check_emit_size) {
+  if (!is_always_within_branch_range(entry)) {
+    if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
-      CompileTask* task = ciEnv::current()->task();
-      in_scratch_emit_size =
-        (task != NULL && is_c2_compile(task->comp_level()) &&
-         Compile::current()->output()->in_scratch_emit_size());
-    }
-#endif
-    if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
-      if (stub == NULL) {
-        postcond(pc() == badAddress);
-        return NULL; // CodeCache is full
+      if (entry.rspec().type() == relocInfo::runtime_call_type) {
+        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+        code()->share_trampoline_for(entry.target(), offset());
+      } else {
+        address stub = emit_trampoline_stub(offset(), target);
+        if (stub == NULL) {
+          postcond(pc() == badAddress);
+          return NULL; // CodeCache is full
+        }
       }
     }
+    target = pc();
   }
 
-  if (cbuf) cbuf->set_insts_mark();
+  address call_pc = pc();
   relocate(entry.rspec());
-  if (!need_trampoline) {
-    bl(entry.target());
-  } else {
-    bl(pc());
-  }
-  // just need to return a non-null address
-  postcond(pc() != badAddress);
-  return pc();
-}
+  bl(target);
 
+  postcond(pc() != badAddress);
+  return call_pc;
+}
 
 // Emit a trampoline stub for a call to a target which is too far away.
 //
@@ -1885,25 +1890,6 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
   return Address(Rd);
 }
 
-void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
-  if (UseLSE) {
-    mov(tmp, 1);
-    ldadd(Assembler::word, tmp, zr, counter_addr);
-    return;
-  }
-  Label retry_load;
-  if (VM_Version::supports_stxr_prefetch())
-    prfm(Address(counter_addr), PSTL1STRM);
-  bind(retry_load);
-  // flush and load exclusive from the memory location
-  ldxrw(tmp, counter_addr);
-  addw(tmp, tmp, 1);
-  // if we store+flush with no intervening write tmp will be zero
-  stxrw(tmp2, tmp, counter_addr);
-  cbnzw(tmp2, retry_load);
-}
-
-
 int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
                                     bool want_remainder, Register scratch)
 {
@@ -2072,7 +2058,7 @@ int MacroAssembler::load_signed_byte32(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
   case  8:  ldr(dst, src); break;
   case  4:  ldrw(dst, src); break;
@@ -2082,7 +2068,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
   case  8:  str(src, dst); break;
   case  4:  strw(src, dst); break;
@@ -2205,7 +2191,7 @@ int MacroAssembler::push(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
+  regs[count++] = zr->raw_encoding();
   count &= ~1;  // Only push an even number of regs
 
   if (count) {
@@ -2235,7 +2221,7 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
+  regs[count++] = zr->raw_encoding();
   count &= ~1;
 
   for (int i = 2; i < count; i += 2) {
@@ -2390,9 +2376,9 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegisterImpl::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2427,9 +2413,9 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegisterImpl::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2460,7 +2446,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1
-    cmpptr(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+    cmpptr(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
     br(Assembler::EQ, ok);
     stop(msg);
     bind(ok);
@@ -2470,7 +2456,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 }
 #endif
 
-void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
   Label done, not_weak;
   cbz(value, done);           // Use NULL as-is.
 
@@ -2479,13 +2465,13 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
-                 Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+                 Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
   verify_oop(value);
   b(done);
 
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp1, tmp2);
   verify_oop(value);
   bind(done);
 }
@@ -2594,7 +2580,7 @@ void MacroAssembler::reinit_heapbase()
     if (Universe::is_fully_initialized()) {
       mov(rheapbase, CompressedOops::ptrs_base());
     } else {
-      lea(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+      lea(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
       ldr(rheapbase, Address(rheapbase));
     }
   }
@@ -2627,8 +2613,7 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2670,8 +2655,7 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2712,8 +2696,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     compare_eq(result, expected, size);
   } else {
     Label retry_load, done;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     load_exclusive(result, addr, size, acquire);
     compare_eq(result, expected, size);
@@ -2771,8 +2754,7 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
     result = different(prev, incr, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  if (VM_Version::supports_stxr_prefetch())                             \
-    prfm(Address(addr), PSTL1STRM);                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   OP(rscratch1, result, incr);                                          \
@@ -2802,8 +2784,7 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
     result = different(prev, newv, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  if (VM_Version::supports_stxr_prefetch())                             \
-    prfm(Address(addr), PSTL1STRM);                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   STXR(rscratch1, newv, addr);                                          \
@@ -2922,8 +2903,8 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
                                     int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   push(RegSet::range(r0, r29), sp); // integer registers except lr & sp
   if (save_vectors && use_sve && sve_vector_size_in_bytes > 16) {
-    sub(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
-    for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+    sub(sp, sp, sve_vector_size_in_bytes * FloatRegister::number_of_registers);
+    for (int i = 0; i < FloatRegister::number_of_registers; i++) {
       sve_str(as_FloatRegister(i), Address(sp, i));
     }
   } else {
@@ -2938,7 +2919,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
   }
   if (save_vectors && use_sve && total_predicate_in_bytes > 0) {
     sub(sp, sp, total_predicate_in_bytes);
-    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_registers; i++) {
       sve_str(as_PRegister(i), Address(sp, i));
     }
   }
@@ -2947,16 +2928,16 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
 void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
                                    int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   if (restore_vectors && use_sve && total_predicate_in_bytes > 0) {
-    for (int i = PRegisterImpl::number_of_saved_registers - 1; i >= 0; i--) {
+    for (int i = PRegister::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_PRegister(i), Address(sp, i));
     }
     add(sp, sp, total_predicate_in_bytes);
   }
   if (restore_vectors && use_sve && sve_vector_size_in_bytes > 16) {
-    for (int i = FloatRegisterImpl::number_of_registers - 1; i >= 0; i--) {
+    for (int i = FloatRegister::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_FloatRegister(i), Address(sp, i));
     }
-    add(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
+    add(sp, sp, sve_vector_size_in_bytes * FloatRegister::number_of_registers);
   } else {
     int step = (restore_vectors ? 8 : 4) * wordSize;
     for (int i = 0; i <= 28; i += 4)
@@ -4052,34 +4033,33 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2) {
   // OopHandle::resolve is an indirection.
-  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);
+  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp1, tmp2);
 }
 
 // ((WeakHandle)result).resolve();
-void MacroAssembler::resolve_weak_handle(Register rresult, Register rtmp) {
-  assert_different_registers(rresult, rtmp);
+void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2) {
+  assert_different_registers(result, tmp1, tmp2);
   Label resolved;
 
   // A null weak handle resolves to null.
-  cbz(rresult, resolved);
+  cbz(result, resolved);
 
   // Only 64 bit platforms support GCs that require a tmp register
-  // Only IN_HEAP loads require a thread_tmp register
   // WeakHandle::resolve is an indirection like jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 rresult, Address(rresult), rtmp, /*tmp_thread*/noreg);
+                 result, Address(result), tmp1, tmp2);
   bind(resolved);
 }
 
-void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {
+void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, Register tmp2) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
   ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
   ldr(dst, Address(dst, mirror_offset));
-  resolve_oop_handle(dst, tmp);
+  resolve_oop_handle(dst, tmp1, tmp2);
 }
 
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
@@ -4401,48 +4381,48 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
 
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Register dst, Address src,
-                                    Register tmp1, Register thread_tmp) {
+                                    Register tmp1, Register tmp2) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2);
   } else {
-    bs->load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->load_at(this, decorators, type, dst, src, tmp1, tmp2);
   }
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
-                                     Address dst, Register src,
-                                     Register tmp1, Register thread_tmp) {
+                                     Address dst, Register val,
+                                     Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
-                                   Register thread_tmp, DecoratorSet decorators) {
-  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+                                   Register tmp2, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2);
 }
 
 void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
-                                            Register thread_tmp, DecoratorSet decorators) {
-  access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
+                                            Register tmp2, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, tmp2);
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
-                                    Register thread_tmp, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
+                                    Register tmp2, Register tmp3, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
@@ -4452,11 +4432,8 @@ Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
   return Address((address)obj, rspec);
 }
 
-// Move an oop into a register.  immediate is true if we want
-// immediate instructions and nmethod entry barriers are not enabled.
-// i.e. we are not going to patch this instruction while the code is being
-// executed by another thread.
-void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
+// Move an oop into a register.
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == NULL) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -4471,15 +4448,12 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   }
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
-  // nmethod entry barrier necessitate using the constant pool. They have to be
-  // ordered with respected to oop accesses.
-  // Using immediate literals would necessitate ISBs.
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if ((bs->barrier_set_nmethod() != NULL && !bs->barrier_set_assembler()->nmethod_code_patching()) || !immediate) {
+  if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
+    mov(dst, Address((address)obj, rspec));
+  } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
-  } else
-    mov(dst, Address((address)obj, rspec));
+  }
 
 }
 
@@ -4516,16 +4490,6 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
-}
-
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register t1,
-                                   Label& slow_case) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
 }
 
 void MacroAssembler::verify_tlab() {

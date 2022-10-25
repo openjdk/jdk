@@ -280,7 +280,7 @@ public:
                      size_t initial_log_table_size = InitialLogTableSize) :
     _inserted_card(false),
     _mm(mm),
-    _table(mm, initial_log_table_size) {
+    _table(mm, initial_log_table_size, false) {
   }
 
   ~G1CardSetHashTable() {

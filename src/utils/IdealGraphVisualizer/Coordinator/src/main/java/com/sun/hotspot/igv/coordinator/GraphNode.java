@@ -23,25 +23,16 @@
  */
 package com.sun.hotspot.igv.coordinator;
 
-import com.sun.hotspot.igv.coordinator.actions.CloneGraphAction;
-import com.sun.hotspot.igv.coordinator.actions.DiffGraphAction;
-import com.sun.hotspot.igv.coordinator.actions.DiffGraphCookie;
-import com.sun.hotspot.igv.coordinator.actions.GraphCloneCookie;
-import com.sun.hotspot.igv.coordinator.actions.GraphOpenCookie;
-import com.sun.hotspot.igv.coordinator.actions.GraphRemoveCookie;
+import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import javax.swing.Action;
 import org.openide.actions.OpenAction;
-import org.openide.nodes.AbstractNode;
-import org.openide.nodes.Children;
-import org.openide.nodes.NodeAdapter;
-import org.openide.nodes.NodeEvent;
-import org.openide.nodes.NodeMemberEvent;
-import org.openide.nodes.Sheet;
+import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.AbstractLookup;
@@ -52,13 +43,28 @@ import org.openide.util.lookup.InstanceContent;
  * @author Thomas Wuerthinger
  */
 public class GraphNode extends AbstractNode {
+
     private InputGraph graph;
+    private boolean selected = false;
 
     /** Creates a new instance of GraphNode */
     public GraphNode(InputGraph graph) {
         this(graph, new InstanceContent());
     }
 
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        fireDisplayNameChange(null, null);
+        fireIconChange();
+    }
+
+    public String getHtmlDisplayName() {
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
+        if (selected) {
+            htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
+        }
+        return htmlDisplayName;
+    }
     private GraphNode(InputGraph graph, InstanceContent content) {
         super(Children.LEAF, new AbstractLookup(content));
         this.graph = graph;
@@ -102,7 +108,11 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Image getIcon(int i) {
-        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph.png");
+        if (selected) {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph_selected.png");
+        } else {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph.png");
+        }
     }
 
     @Override
@@ -112,12 +122,12 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Action[] getActions(boolean b) {
-        return new Action[]{(Action) DiffGraphAction.findObject(DiffGraphAction.class, true), (Action) CloneGraphAction.findObject(CloneGraphAction.class, true), (Action) OpenAction.findObject(OpenAction.class, true)};
+        return new Action[]{DiffGraphAction.findObject(DiffGraphAction.class, true), CloneGraphAction.findObject(CloneGraphAction.class, true), OpenAction.findObject(OpenAction.class, true)};
     }
 
     @Override
     public Action getPreferredAction() {
-        return (Action) OpenAction.findObject(OpenAction.class, true);
+        return OpenAction.findObject(OpenAction.class, true);
     }
 
     @Override

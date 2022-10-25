@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@
 #include "unittest.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/threads.hpp"
+#ifdef _WIN32
+#include "os_windows.hpp"
+#endif
 
 static size_t small_page_size() {
   return os::vm_page_size();

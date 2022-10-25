@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "os_posix.hpp"
 #include "services/attachListener.hpp"
 
 #include <unistd.h>

@@ -795,7 +795,6 @@ debugInit_reset(JNIEnv *env)
     threadControl_reset();
     util_reset();
     commonRef_reset(env);
-    classTrack_reset();
 
     /*
      * If this is a server, we are now ready to accept another connection.

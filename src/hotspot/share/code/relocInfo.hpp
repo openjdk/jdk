@@ -25,8 +25,11 @@
 #ifndef SHARE_CODE_RELOCINFO_HPP
 #define SHARE_CODE_RELOCINFO_HPP
 
-#include "runtime/os.hpp"
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/osInfo.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class nmethod;
 class CodeBlob;
@@ -269,6 +272,7 @@ class relocInfo {
     runtime_call_w_cp_type  = 14, // Runtime call which may load its target from the constant pool
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
+    entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -309,6 +313,7 @@ class relocInfo {
     visitor(section_word) \
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
+    visitor(entry_guard) \
 
 
  public:
@@ -883,6 +888,19 @@ public:
   }
 };
 
+class entry_guard_Relocation : public Relocation {
+  friend class RelocIterator;
+
+public:
+  entry_guard_Relocation() : Relocation(relocInfo::entry_guard_type) { }
+
+  static RelocationHolder spec() {
+    RelocationHolder rh = newHolder();
+    new(rh) entry_guard_Relocation();
+    return rh;
+  }
+};
+
 // A CallRelocation always points at a call instruction.
 // It is PC-relative on most machines.
 class CallRelocation : public Relocation {
@@ -1246,7 +1264,7 @@ class external_word_Relocation : public DataRelocation {
   // Some address looking values aren't safe to treat as relocations
   // and should just be treated as constants.
   static bool can_be_relocated(address target) {
-    assert(target == NULL || (uintptr_t)target >= (uintptr_t)os::vm_page_size(), INTPTR_FORMAT, (intptr_t)target);
+    assert(target == NULL || (uintptr_t)target >= (uintptr_t)OSInfo::vm_page_size(), INTPTR_FORMAT, (intptr_t)target);
     return target != NULL;
   }
 

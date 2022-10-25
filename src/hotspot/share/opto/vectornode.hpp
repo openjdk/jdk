@@ -1449,6 +1449,7 @@ class VectorBlendNode : public VectorNode {
   }
 
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }
@@ -1504,7 +1505,6 @@ class VectorMaskCastNode : public VectorNode {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
-  static Node* makeCastNode(PhaseGVN* phase, Node* in1, const TypeVect * vt);
   virtual int Opcode() const;
 };
 

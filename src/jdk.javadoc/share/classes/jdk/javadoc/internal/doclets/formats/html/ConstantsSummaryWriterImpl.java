@@ -92,7 +92,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public Content getContentsHeader() {
-        return new HtmlTree(TagName.UL);
+        return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
     @Override
@@ -116,13 +116,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        bodyContents.addMainContent(div);
         Content headingContent = contents.contentsHeading;
         var heading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent);
         var section = HtmlTree.SECTION(HtmlStyle.packages, heading);
         section.add(content);
-        div.add(section);
-        bodyContents.addMainContent(div);
+        bodyContents.addMainContent(section);
     }
 
     @Override
@@ -182,7 +182,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         }
         caption.add(classLink);
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);

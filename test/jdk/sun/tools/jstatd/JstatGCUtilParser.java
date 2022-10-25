@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,22 +39,22 @@ import jdk.test.lib.Utils;
 public class JstatGCUtilParser {
 
     public enum GcStatisticsType {
-        INTEGER, DOUBLE, PERCENTAGE, PERCENTAGE_OR_DASH;
+        INTEGER, DOUBLE, PERCENTAGE, PERCENTAGE_OR_DASH, INTEGER_OR_DASH, DOUBLE_OR_DASH;
     }
 
     public enum GcStatistics {
-        S0(GcStatisticsType.PERCENTAGE),
-        S1(GcStatisticsType.PERCENTAGE),
-        E(GcStatisticsType.PERCENTAGE),
+        S0(GcStatisticsType.PERCENTAGE_OR_DASH),
+        S1(GcStatisticsType.PERCENTAGE_OR_DASH),
+        E(GcStatisticsType.PERCENTAGE_OR_DASH),
         O(GcStatisticsType.PERCENTAGE),
         M(GcStatisticsType.PERCENTAGE_OR_DASH),
         CCS(GcStatisticsType.PERCENTAGE_OR_DASH),
-        YGC(GcStatisticsType.INTEGER),
-        YGCT(GcStatisticsType.DOUBLE),
-        FGC(GcStatisticsType.INTEGER),
-        FGCT(GcStatisticsType.DOUBLE),
-        CGC(GcStatisticsType.INTEGER),
-        CGCT(GcStatisticsType.DOUBLE),
+        YGC(GcStatisticsType.INTEGER_OR_DASH),
+        YGCT(GcStatisticsType.DOUBLE_OR_DASH),
+        FGC(GcStatisticsType.INTEGER_OR_DASH),
+        FGCT(GcStatisticsType.DOUBLE_OR_DASH),
+        CGC(GcStatisticsType.INTEGER_OR_DASH),
+        CGCT(GcStatisticsType.DOUBLE_OR_DASH),
         GCT(GcStatisticsType.DOUBLE);
 
         private final GcStatisticsType type;
@@ -93,21 +93,25 @@ public class JstatGCUtilParser {
             for (int i = 0; i < values().length; i++) {
                 GcStatisticsType type = values()[i].getType();
                 String value = valueArray[i].trim();
-                if (type.equals(GcStatisticsType.INTEGER)) {
+                if ((type.equals(GcStatisticsType.PERCENTAGE_OR_DASH)
+                     || type.equals(GcStatisticsType.INTEGER_OR_DASH)
+                     || type.equals(GcStatisticsType.DOUBLE_OR_DASH))
+                    && value.equals("-")) {
+                    continue;
+                }
+                if (type.equals(GcStatisticsType.INTEGER)
+                    || type.equals(GcStatisticsType.INTEGER_OR_DASH)) {
                     NumberFormat.getInstance().parse(value).intValue();
-                    break;
+                    continue;
                 }
-                if (type.equals(GcStatisticsType.DOUBLE)) {
+                if (type.equals(GcStatisticsType.DOUBLE)
+                    || type.equals(GcStatisticsType.DOUBLE_OR_DASH)) {
                     NumberFormat.getInstance().parse(value).doubleValue();
-                    break;
-                }
-                if (type.equals(GcStatisticsType.PERCENTAGE_OR_DASH) &&
-                        value.equals("-")) {
-                    break;
+                    continue;
                 }
                 double percentage = NumberFormat.getInstance().parse(value).doubleValue();
                 assertTrue(0 <= percentage && percentage <= 100,
-                        "Not a percentage: " + value);
+                        "Not a percentage. value: " + value + " percentage: " + percentage);
             }
         }
 

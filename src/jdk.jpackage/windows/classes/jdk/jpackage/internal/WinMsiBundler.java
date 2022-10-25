@@ -513,11 +513,11 @@ public class WinMsiBundler  extends AbstractBundler {
         }
 
         // Copy standard l10n files.
-        for (String loc : Arrays.asList("en", "ja", "zh_CN")) {
+        for (String loc : Arrays.asList("de", "en", "ja", "zh_CN")) {
             String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            try (InputStream is = OverridableResource.readDefault(fname)) {
-                Files.copy(is, CONFIG_ROOT.fetchFrom(params).resolve(fname));
-            }
+            createResource(fname, params)
+                    .setCategory(I18N.getString("resource.wxl-file"))
+                    .saveToFile(configDir.resolve(fname));
         }
 
         createResource("main.wxs", params)
@@ -563,16 +563,36 @@ public class WinMsiBundler  extends AbstractBundler {
             wixPipeline.addLightOptions("-sice:ICE91");
         }
 
-        final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
-                I18N.getString("resource.wxl-file-name")).toAbsolutePath();
+        // Filter out custom l10n files that were already used to
+        // override primary l10n files. Ignore case filename comparison,
+        // both lists are expected to be short.
+        List<Path> primaryWxlFiles = getWxlFilesFromDir(params, CONFIG_ROOT);
+        List<Path> customWxlFiles = getWxlFilesFromDir(params, RESOURCE_DIR).stream()
+                .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
+                        primary.getFileName().toString().equalsIgnoreCase(
+                                custom.getFileName().toString())))
+                .peek(custom -> Log.verbose(MessageFormat.format(
+                        I18N.getString("message.using-custom-resource"),
+                                String.format("[%s]", I18N.getString("resource.wxl-file")),
+                                custom.getFileName().toString())))
+                .toList();
 
-        wixPipeline.addLightOptions("-loc", primaryWxlFile.toString());
+        // All l10n files are supplied to WiX with "-loc", but only
+        // Cultures from custom files and a single primary Culture are
+        // included into "-cultures" list
+        for (var wxl : primaryWxlFiles) {
+            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+        }
 
         List<String> cultures = new ArrayList<>();
-        for (var wxl : getCustomWxlFiles(params)) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().toString());
+        for (var wxl : customWxlFiles) {
+            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
+
+        // Append a primary culture bases on runtime locale.
+        final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
+                I18N.getString("resource.wxl-file-name"));
         cultures.add(getCultureFromWxlFile(primaryWxlFile));
 
         // Build ordered list of unique cultures.
@@ -586,10 +606,10 @@ public class WinMsiBundler  extends AbstractBundler {
         return msiOut;
     }
 
-    private static List<Path> getCustomWxlFiles(Map<String, ? super Object> params)
-            throws IOException {
-        Path resourceDir = RESOURCE_DIR.fetchFrom(params);
-        if (resourceDir == null) {
+    private static List<Path> getWxlFilesFromDir(Map<String, ? super Object> params,
+            StandardBundlerParam<Path> pathParam) throws IOException {
+        Path dir = pathParam.fetchFrom(params);
+        if (dir == null) {
             return Collections.emptyList();
         }
 
@@ -597,7 +617,7 @@ public class WinMsiBundler  extends AbstractBundler {
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(
                 glob);
 
-        try (var walk = Files.walk(resourceDir, 1)) {
+        try (var walk = Files.walk(dir, 1)) {
             return walk
                     .filter(Files::isReadable)
                     .filter(pathMatcher::matches)

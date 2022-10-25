@@ -421,7 +421,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   // collection set's current size
   set_recorded_rs_length(_inc_recorded_rs_length);
 
-  double predicted_base_time_ms = _policy->predict_base_elapsed_time_ms(pending_cards);
+  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards);
   double predicted_eden_time = _inc_predicted_non_copy_time_ms + _policy->predict_eden_copy_time_ms(eden_region_length);
   double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
 

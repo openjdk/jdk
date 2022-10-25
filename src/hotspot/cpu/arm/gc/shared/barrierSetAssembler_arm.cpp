@@ -143,50 +143,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj, Register obj_end, Register tmp1, Register tmp2,
-                                 RegisterOrConstant size_expression, Label& slow_case) {
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    __ b(slow_case);
-    return;
-  }
-
-  CollectedHeap* ch = Universe::heap();
-
-  const Register top_addr = tmp1;
-  const Register heap_end = tmp2;
-
-  if (size_expression.is_register()) {
-    assert_different_registers(obj, obj_end, top_addr, heap_end, size_expression.as_register());
-  } else {
-    assert_different_registers(obj, obj_end, top_addr, heap_end);
-  }
-
-  bool load_const = VM_Version::supports_movw();
-  if (load_const) {
-    __ mov_address(top_addr, (address)Universe::heap()->top_addr());
-  } else {
-    __ ldr(top_addr, Address(Rthread, JavaThread::heap_top_addr_offset()));
-  }
-  // Calculate new heap_top by adding the size of the object
-  Label retry;
-  __ bind(retry);
-  __ ldr(obj, Address(top_addr));
-  __ ldr(heap_end, Address(top_addr, (intptr_t)ch->end_addr() - (intptr_t)ch->top_addr()));
-  __ add_rc(obj_end, obj, size_expression);
-  // Check if obj_end wrapped around, i.e., obj_end < obj. If yes, jump to the slow case.
-  __ cmp(obj_end, obj);
-  __ b(slow_case, lo);
-  // Update heap_top if allocation succeeded
-  __ cmp(obj_end, heap_end);
-  __ b(slow_case, hi);
-
-  __ atomic_cas_bool(obj, obj_end, top_addr, 0, heap_end/*scratched*/);
-  __ b(retry, ne);
-
-  incr_allocated_bytes(masm, size_expression, tmp1);
-}
-
-// Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj, Register obj_end, Register tmp1,
                                  RegisterOrConstant size_expression, Label& slow_case) {
   const Register tlab_end = tmp1;

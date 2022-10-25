@@ -53,6 +53,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
@@ -268,10 +269,10 @@ bool os::have_special_privileges() {
 }
 
 
-// This method is  a periodic task to check for misbehaving JNI applications
+// This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here.
 // For Windows at the moment does nothing
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
@@ -615,8 +616,10 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ").",
-    os::current_thread_id());
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), p2i(thread->stack_base()),
+                       p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -1696,7 +1699,6 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-#if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
   ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
@@ -1705,29 +1707,6 @@ int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
     buf[len - 1] = '\0';
   }
   return result;
-#else
-  // Before Visual Studio 2015, vsnprintf is not C99 compliant, so use
-  // _vsnprintf, whose behavior seems to be *mostly* consistent across
-  // versions.  However, when len == 0, avoid _vsnprintf too, and just
-  // go straight to _vscprintf.  The output is going to be truncated in
-  // that case, except in the unusual case of empty output.  More
-  // importantly, the documentation for various versions of Visual Studio
-  // are inconsistent about the behavior of _vsnprintf when len == 0,
-  // including it possibly being an error.
-  int result = -1;
-  if (len > 0) {
-    result = _vsnprintf(buf, len, fmt, args);
-    // If output (including NUL terminator) is truncated, the buffer
-    // won't be NUL terminated.  Add the trailing NUL specified by C99.
-    if ((result < 0) || ((size_t)result >= len)) {
-      buf[len - 1] = '\0';
-    }
-  }
-  if (result < 0) {
-    result = _vscprintf(fmt, args);
-  }
-  return result;
-#endif // _MSC_VER dispatch
 }
 
 static inline time_t get_mtime(const char* filename) {
@@ -2239,6 +2218,15 @@ static void jdk_misc_signal_init() {
 
   // Add a CTRL-C handler
   SetConsoleCtrlHandler(consoleHandler, TRUE);
+
+  // Initialize sigbreakHandler.
+  // The actual work for handling CTRL-BREAK is performed by the Signal
+  // Dispatcher thread, which is created and started at a much later point,
+  // see os::initialize_jdk_signal_support(). Any CTRL-BREAK received
+  // before the Signal Dispatcher thread is started is queued up via the
+  // pending_signals[SIGBREAK] counter, and will be processed by the
+  // Signal Dispatcher thread in a delayed fashion.
+  os::signal(SIGBREAK, os::user_handler());
 }
 
 void os::signal_notify(int sig) {
@@ -2676,7 +2664,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
       if (in_java) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
 
@@ -2695,9 +2683,9 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (in_java &&
         (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
           exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
       }
@@ -2726,7 +2714,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // Check for UD trap caused by NOP patching.
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != NULL && cb->is_compiled()) {
           CompiledMethod* cm = cb->as_compiled_method();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
@@ -2859,11 +2847,6 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
 #endif
 
 // Virtual Memory
-
-int os::vm_page_size() { return os::win32::vm_page_size(); }
-int os::vm_allocation_granularity() {
-  return os::win32::vm_allocation_granularity();
-}
 
 // Windows large page support is available on Windows 2003. In order to use
 // large page memory, the administrator must first assign additional privilege
@@ -3160,7 +3143,7 @@ void os::large_page_init() {
   }
 
   _large_page_size = large_page_init_decide_size();
-  const size_t default_page_size = (size_t) vm_page_size();
+  const size_t default_page_size = (size_t) os::vm_page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes.add(_large_page_size);
   }
@@ -3879,8 +3862,6 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_vm_page_size              = 0;
-int    os::win32::_vm_allocation_granularity = 0;
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
@@ -3896,8 +3877,8 @@ bool   os::win32::_has_exit_bug              = true;
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
-  _vm_page_size    = si.dwPageSize;
-  _vm_allocation_granularity = si.dwAllocationGranularity;
+  OSInfo::set_vm_page_size(si.dwPageSize);
+  OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
   set_processor_count(si.dwNumberOfProcessors);
@@ -4211,7 +4192,7 @@ void os::init(void) {
 
   win32::initialize_system_info();
   win32::setmode_streams();
-  _page_sizes.add(win32::vm_page_size());
+  _page_sizes.add(os::vm_page_size());
 
   // This may be overridden later when argument processing is done.
   FLAG_SET_ERGO(UseLargePagesIndividualAllocation, false);
@@ -4325,7 +4306,8 @@ jint os::init_2(void) {
 
   SymbolEngine::recalc_search_path();
 
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal, and install CTRL-C and
+  // CTRL-BREAK handlers.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
@@ -5935,4 +5917,17 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       }
     }
   }
+}
+
+// File conventions
+const char* os::file_separator() { return "\\"; }
+const char* os::line_separator() { return "\r\n"; }
+const char* os::path_separator() { return ";"; }
+
+void os::print_user_info(outputStream* st) {
+  // not implemented yet
+}
+
+void os::print_active_locale(outputStream* st) {
+  // not implemented yet
 }

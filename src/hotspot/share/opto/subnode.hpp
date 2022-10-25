@@ -143,13 +143,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
-
-#ifndef PRODUCT
-  // CmpNode and subclasses include all data inputs (until hitting a control
-  // boundary) in their related node set, as well as all outputs until and
-  // including eventual control nodes and their projections.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -361,7 +354,6 @@ public:
   bool is_counted_loop_exit_test();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -580,6 +572,8 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseLNode--------------------------------
@@ -590,6 +584,8 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP

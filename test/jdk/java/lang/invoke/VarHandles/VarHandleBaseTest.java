@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,14 @@ import static org.testng.Assert.*;
 
 abstract class VarHandleBaseTest {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attempts with delay on failure.
+    // Be mindful of worst-case total time on test, which would be at
+    // roughly (delay*attempts) milliseconds.
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     interface ThrowingRunnable {
         void run() throws Throwable;
@@ -496,6 +503,16 @@ abstract class VarHandleBaseTest {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), vh.varType());
             assertEquals(mt.parameterType(mt.parameterCount() - 1), vh.varType());
+        }
+    }
+
+    static void weakDelay() {
+        try {
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
+        } catch (InterruptedException ie) {
+            // Do nothing.
         }
     }
 }
