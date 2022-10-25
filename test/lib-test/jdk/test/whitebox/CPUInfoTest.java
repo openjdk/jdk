@@ -64,7 +64,8 @@ public class CPUInfoTest {
                     "avx512_vnni",  "clflush",          "clflushopt",        "clwb",
                     "avx512_vbmi2", "avx512_vbmi",      "rdtscp",            "rdpid",
                     "hv",           "fsrm",             "avx512_bitalg",     "gfni",
-                    "f16c"
+                    "f16c",         "pku",              "ospke",             "cet_ibt",
+                    "cet_ss"
                     );
             // @formatter:on
             // Checkstyle: resume

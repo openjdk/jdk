@@ -4904,7 +4904,7 @@ operand iRegP()
   match(iRegP_R0);
   //match(iRegP_R2);
   //match(iRegP_R4);
-  //match(iRegP_R5);
+  match(iRegP_R5);
   match(thread_RegP);
   op_cost(0);
   format %{ %}

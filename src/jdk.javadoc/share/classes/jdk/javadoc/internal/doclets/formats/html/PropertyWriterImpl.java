@@ -154,8 +154,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
-        return new Table(HtmlStyle.summaryTable)
+    protected Table<Element> createSummaryTable() {
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setCaption(contents.properties)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
