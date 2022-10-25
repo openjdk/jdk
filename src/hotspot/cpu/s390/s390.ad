@@ -810,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
