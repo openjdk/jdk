@@ -608,12 +608,11 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   if( _matrule && _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
-        strcmp(_matrule->_rChild->_opType,"StrHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
         strcmp(_matrule->_rChild->_opType,"CountPositives" )==0 ||
         strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ||
-        strcmp(_matrule->_rChild->_opType,"AryHashCode")==0 ))
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
@@ -896,10 +895,9 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 
   if( _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
-        strcmp(_matrule->_rChild->_opType,"AryHashCode")==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"StrHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrInflatedCopy"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrCompressedCopy" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 ||

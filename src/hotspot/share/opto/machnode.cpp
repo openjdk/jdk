@@ -207,12 +207,6 @@ const RegMask &MachNode::in_RegMask( uint idx ) const {
   while( idx >= skipped+num_edges ) {
     skipped += num_edges;
     opcnt++;                          // Bump operand count
-    if (opcnt >= numopnds) {
-      tty->print_cr("unexpected opcnt: %d numopnds: %d idx: %d skipped: %d", opcnt, numopnds, idx, skipped);
-      for (uint i = 0; i < opcnt; i++) {
-        tty->print_cr("    _opnds[%d] = %d", i, _opnds[i]->num_edges());
-      }
-    }
     assert( opcnt < numopnds, "Accessing non-existent operand" );
 
     num_edges = _opnds[opcnt]->num_edges(); // leaves for next operand

@@ -2443,9 +2443,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_VectorizedHashCode: {
-#ifndef PRODUCT
-      tty->print_cr("Op_VectorizedHashCode binary restructuring, num nodes req %d max %d", n->req(), n->len());
-#endif
       Node* pair = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair);
       n->del_req(3);

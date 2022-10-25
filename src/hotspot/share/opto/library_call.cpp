@@ -5927,7 +5927,7 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   assert(callee()->signature()->size() == 2, "vectorizedHashCode has 2 parameters");
   Node* arg1 = argument(0);
   Node* mode = argument(1);
-  
+
   arg1 = must_be_not_null(arg1, true);
   if (mode == top()) {
     return false; // failed input validation
@@ -5940,9 +5940,6 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   VectorizedHashCodeNode::HashMode mode_value = (VectorizedHashCodeNode::HashMode)mode_t->get_con();
 
   BasicType bt = VectorizedHashCodeNode::adr_basic_type(mode_value);
-#ifndef PRODUCT
-  tty->print_cr("inline_vectorizedHashCode %d %d", mode_value, bt);
-#endif
   // Get start addr and length of first argument
   Node* arg1_start  = array_element_address(arg1, intcon(0), bt);
   Node* arg1_cnt    = load_array_length(arg1);
