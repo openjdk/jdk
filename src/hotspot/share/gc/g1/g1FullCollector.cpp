@@ -182,6 +182,8 @@ void G1FullCollector::prepare_collection() {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
   }
+  // Need cleared claim bits for the mark phase.
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
