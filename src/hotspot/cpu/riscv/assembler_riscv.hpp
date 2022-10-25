@@ -2746,7 +2746,7 @@ public:
 
   INSN(prefetch_i, 0b0000000000000);
   INSN(prefetch_r, 0b0000000000001);
-  INSN(prefetch_w, 0b0000000000010);
+  INSN(prefetch_w, 0b0000000000011);
 
 #undef INSN
 
