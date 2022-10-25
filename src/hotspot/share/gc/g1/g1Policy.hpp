@@ -145,11 +145,13 @@ private:
   double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
   double predict_region_copy_time_ms(HeapRegion* hr) const;
+  double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool include_remset, bool for_young_only_phase) const;
 
 public:
 
+  double predict_eden_other_time_ms(uint count) const;
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
   double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
