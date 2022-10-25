@@ -984,7 +984,7 @@ void ZStatMutatorAllocRate::sample_allocation(size_t allocation_bytes) {
   _last_sample_time = now;
 
   log_debug(gc, alloc)("Mutator Allocation Rate: %.1fMB/s Predicted: %.1fMB/s, Avg: %.1f(+/-%.1f)MB/s",
-                       bytes_per_second,
+                       bytes_per_second / M,
                        _rate.predict_next() / M,
                        _rate.avg() / M,
                        _rate.sd() / M);
