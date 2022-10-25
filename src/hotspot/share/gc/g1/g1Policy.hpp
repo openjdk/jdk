@@ -35,6 +35,7 @@
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 

@@ -208,6 +208,13 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
                             new_young_list_target_length,
                             new_young_list_max_length);
 
+  // Write back. This is not an attempt to control visibility order to other threads
+  // here; all the revising of the young gen length are best effort to keep pause time.
+  // E.g. we could be "too late" revising young gen upwards to avoid GC because
+  // there is some time left, or some threads could get different values for stopping
+  // allocation.
+  // That is "fine" - at most this will schedule a GC (hopefully only a little) too
+  // early or too late.
   Atomic::store(&_young_list_desired_length, new_young_list_desired_length);
   Atomic::store(&_young_list_target_length, new_young_list_target_length);
   Atomic::store(&_young_list_max_length, new_young_list_max_length);
