@@ -37,8 +37,8 @@
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 
-static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collection", true /* minor */);
-static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection", false /* minor */);
+static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Collection", true /* minor */);
+static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Collection", false /* minor */);
 
 template <typename DriverT>
 class ZGCCauseSetter : public GCCauseSetter {
