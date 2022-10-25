@@ -658,7 +658,7 @@ void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks&
 
   set_used_at_start(ZHeap::heap()->used());
 
-  log_info(gc, start)("%s (%s)", name(), GCCause::to_string(cause));
+  log_info(gc)("%s (%s)", name(), GCCause::to_string(cause));
 }
 
 void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
