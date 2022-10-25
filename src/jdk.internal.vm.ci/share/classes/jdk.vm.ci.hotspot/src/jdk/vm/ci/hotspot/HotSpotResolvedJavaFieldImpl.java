@@ -45,7 +45,8 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     private JavaType type;
 
     /**
-     * Value of {@code fieldDescriptor::access_flags()}.
+     * Offset (in bytes) of field from start of its storage container (i.e. {@code instanceOop} or
+     * {@code Klass*}).
      */
     private final int offset;
 
@@ -143,6 +144,10 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     }
 
+    /**
+     * Gets the offset (in bytes) of field from start of its storage container (i.e.
+     * {@code instanceOop} or {@code Klass*}).
+     */
     @Override
     public int getOffset() {
         return offset;
