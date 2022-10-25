@@ -169,12 +169,20 @@ class markWord {
     return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
-    return ((value() & lock_mask_in_place) == locked_value);
+    return !UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
   }
   BasicLock* locker() const {
     assert(has_locker(), "check");
     return (BasicLock*) value();
   }
+
+  bool is_fast_locked() const {
+    return UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
+  }
+  markWord set_fast_locked() const {
+    return markWord(value() & ~lock_mask_in_place);
+  }
+
   bool has_monitor() const {
     return ((value() & lock_mask_in_place) == monitor_value);
   }
