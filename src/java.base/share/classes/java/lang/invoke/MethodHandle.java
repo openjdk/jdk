@@ -1811,7 +1811,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         if (indentLevel <= 0) {
             return "";
         }
-        return new String(new char[indentLevel*4]).replace('\0', ' ');
+        return "    ".repeat(indentLevel);
     }
 
     /*non-public*/

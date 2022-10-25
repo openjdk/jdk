@@ -28,9 +28,6 @@ package java.lang.invoke;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -111,63 +108,6 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
     }
 
     /**
-     * Walk the call stack and find the first method that has called
-     * MethodHandleNatives.linkCallSite(). This is the method which has the invokedynamic
-     * bytecode that is being resolved to the current CallSite. CallerFinder must
-     * used only inside the constructor of CallSite.
-     * <p>
-     * Note the use of inner classes (instead of stream/lambda) to avoid triggering
-     * further invokedynamic resolution, which would cause infinite recursion in the
-     * TRACE_CALLSITE code.
-     * <p>
-     * It's OK to use + for string concat, because java.base is compiled without
-     * the use of indy string concat.
-     */
-    private static class CallerFinder implements Function<Stream<StackWalker.StackFrame>, Object> {
-        private String caller = null;
-        private boolean foundLinkCallSite = false;
-        private String bsm = "Unknown";
-        private StackWalker.StackFrame lastFrame;
-
-        @Override
-        public Object apply(Stream<StackWalker.StackFrame> s) {
-            s.forEach(new Consumer<StackWalker.StackFrame>() {
-                @Override
-                public void accept(StackWalker.StackFrame f) {
-                    String className = f.getClassName();
-                    if (className.equals("java.lang.invoke.MethodHandleNatives") && f.getMethodName().equals("linkCallSite")) {
-                        foundLinkCallSite = true;
-                    } else if (caller == null && foundLinkCallSite) {
-                        // Find the caller of MethodHandleNatives.linkCallSite(), which
-                        // contains the invokedynamic bytecode that has triggered the BSM.
-                        caller = f.toStackTraceElement().toString();
-                    } else if (className.equals("java.lang.invoke.BootstrapMethodInvoker") && f.getMethodName().equals("invoke")) {
-                        if (lastFrame != null) {
-                            bsm = lastFrame.toStackTraceElement().toString();
-                        }
-                    }
-                    lastFrame = f;
-                }
-            });
-            return null;
-        }
-
-        // When the caller is found, return a human readable string like
-        // "java.base/java.util.stream.FindOps$FindSink$OfRef.<clinit>(FindOps.java:202)"
-        public String getCaller() {
-            if (caller == null) {
-                return "Unknown";
-            } else {
-                return caller;
-            }
-        }
-
-        public String getBSM() {
-            return bsm;
-        }
-    }
-
-    /**
      * Make a call site object equipped with an initial target method handle.
      * @param target the method handle which will be the initial target of the call site
      * @throws NullPointerException if the proposed target is null
@@ -176,16 +116,6 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
     CallSite(MethodHandle target) {
         target.type();  // null check
         this.target = target;
-        if (MethodHandleStatics.TRACE_CALLSITE) {
-            synchronized (CallSite.class) { // Avoid interleaving from concurrent threads
-                CallerFinder finder = new CallerFinder();
-                StackWalker.getInstance().walk(finder);
-                System.out.println("======== CallSite: " + finder.getCaller());
-                System.out.println("BSM = " + finder.getBSM());
-                System.out.println("target class = " + target.getClass().getName());
-                System.out.println("target = " + target.debugString(0));
-            }
-        }
     }
 
     /**

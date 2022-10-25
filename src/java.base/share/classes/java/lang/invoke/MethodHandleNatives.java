@@ -31,6 +31,9 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
@@ -281,6 +284,12 @@ class MethodHandleNatives {
                                               type,
                                               staticArguments,
                                               caller);
+        if (TRACE_METHOD_LINKAGE) {
+            MethodHandle target = callSite.getTarget();
+            System.out.println("linkCallSite target class => " + target.getClass().getName());
+            System.out.println("linkCallSite target => " + target.debugString(0));
+        }
+
         if (callSite instanceof ConstantCallSite) {
             appendixResult[0] = callSite.dynamicInvoker();
             return Invokers.linkToTargetMethod(type);
@@ -298,13 +307,33 @@ class MethodHandleNatives {
         Object bsmReference = bootstrapMethod.internalMemberName();
         if (bsmReference == null)  bsmReference = bootstrapMethod;
         String staticArglist = staticArglistForTrace(staticArguments);
-        System.out.println("linkCallSite "+caller.getName()+" "+
+        String callerName = caller.getName();
+        String[] callerInfo = new String[] {callerName};
+        StackWalker.getInstance().walk(new Function<Stream<StackWalker.StackFrame>, Object>() {
+            // We use inner classes (instead of stream/lambda) to avoid triggering
+            // further invokedynamic resolution, which would cause infinite recursion.
+            // It's OK to use + for string concat, because java.base is compiled without
+            // the use of indy string concat.
+            @Override
+            public Object apply(Stream<StackWalker.StackFrame> s) {
+                s.forEach(new Consumer<StackWalker.StackFrame>() {
+                    @Override
+                    public void accept(StackWalker.StackFrame f) {
+                        if (!"java.lang.invoke.MethodHandleNatives".equals(f.getClassName()) && callerInfo[0] == callerName) {
+                            callerInfo[0] = f.toStackTraceElement().toString();
+                        }
+                    }
+                });
+                return null;
+            }
+        });
+        System.out.println("linkCallSite "+callerInfo[0]+" "+
                            bsmReference+" "+
                            name+type+"/"+staticArglist);
         try {
             MemberName res = linkCallSiteImpl(caller, bootstrapMethod, name, type,
                                               staticArguments, appendixResult);
-            System.out.println("linkCallSite => "+res+" + "+appendixResult[0]);
+            System.out.println("linkCallSite linkage => "+res+" + "+appendixResult[0]);
             return res;
         } catch (Throwable ex) {
             ex.printStackTrace(); // print now in case exception is swallowed

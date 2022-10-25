@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ class MethodHandleStatics {
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
     static final boolean TRACE_RESOLVE;
-    static final boolean TRACE_CALLSITE;
     static final int COMPILE_THRESHOLD;
     static final boolean LOG_LF_COMPILATION_FAILURE;
     static final int DONT_INLINE_THRESHOLD;
@@ -77,8 +76,6 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE"));
         TRACE_RESOLVE = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_RESOLVE"));
-        TRACE_CALLSITE = Boolean.parseBoolean(
-                props.getProperty("java.lang.invoke.MethodHandle.TRACE_CALLSITE"));
         COMPILE_THRESHOLD = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", "0"));
         LOG_LF_COMPILATION_FAILURE = Boolean.parseBoolean(
