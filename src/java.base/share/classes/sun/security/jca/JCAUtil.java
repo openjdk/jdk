@@ -105,8 +105,8 @@ public final class JCAUtil {
             PublicKey pKey = x509.getPublicKey();
             String algId = x509.getSigAlgName();
             String serNum = x509.getSerialNumber().toString(16);
-            String subject = x509.getSubjectX500Principal().getName();
-            String issuer = x509.getIssuerX500Principal().getName();
+            String subject = x509.getSubjectX500Principal().toString();
+            String issuer = x509.getIssuerX500Principal().toString();
             String keyType = pKey.getAlgorithm();
             int length = KeyUtil.getKeySize(pKey);
             int hashCode = x509.hashCode();

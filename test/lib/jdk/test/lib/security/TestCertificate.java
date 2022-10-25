@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ public enum TestCertificate {
     // Issuer: CN=Intermediate CA Cert, O=SomeCompany
     // Validity: Tue Aug 30 14:37:19 PDT 2016 to Wed Aug 30 14:37:19 PDT 2017
     ONE("1000",
-        "CN=SSLCertificate,O=SomeCompany",
-        "CN=Intermediate CA Cert,O=SomeCompany",
+        "CN=SSLCertificate, O=SomeCompany",
+        "CN=Intermediate CA Cert, O=SomeCompany",
         -1063259762,
         "-----BEGIN CERTIFICATE-----\n" +
         "MIIDnTCCAoWgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwNTEUMBIGA1UEChMLU29t\n" +
@@ -70,8 +70,8 @@ public enum TestCertificate {
     // Issuer: CN=Root CA Cert, O=SomeCompany
     // Validity: Sun Aug 07 14:37:19 PDT 2016 to Tue Aug 07 14:37:19 PDT 2018
     TWO("64",
-        "CN=Intermediate CA Cert,O=SomeCompany",
-        "CN=Root CA Cert,O=SomeCompany",
+        "CN=Intermediate CA Cert, O=SomeCompany",
+        "CN=Root CA Cert, O=SomeCompany",
         -927189373,
         "-----BEGIN CERTIFICATE-----\n" +
         "MIIDdjCCAl6gAwIBAgIBZDANBgkqhkiG9w0BAQsFADAtMRQwEgYDVQQKEwtTb21l\n" +
@@ -98,8 +98,8 @@ public enum TestCertificate {
     // Issuer: CN=Root CA Cert, O=SomeCompany
     // Validity: Fri Jul 08 14:37:18 PDT 2016 to Fri Jun 28 14:37:18 PDT 2019
     ROOT_CA("1",
-        "CN=Root CA Cert,O=SomeCompany",
-        "CN=Root CA Cert,O=SomeCompany",
+        "CN=Root CA Cert, O=SomeCompany",
+        "CN=Root CA Cert, O=SomeCompany",
         -1299818863,
         "-----BEGIN CERTIFICATE-----\n" +
         "MIIDODCCAiCgAwIBAgIBATANBgkqhkiG9w0BAQsFADAtMRQwEgYDVQQKEwtTb21l\n" +
