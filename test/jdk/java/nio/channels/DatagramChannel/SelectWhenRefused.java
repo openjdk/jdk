@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,17 @@
  */
 
 /* @test
- * @bug 6935563 7044870
+ * @bug 6935563 7044870 8293696
  * @summary Test that Selector does not select an unconnected DatagramChannel when
  *    ICMP port unreachable received
+ * @run main/othervm SelectWhenRefused
  */
 
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.net.*;
 import java.io.IOException;
+import java.util.Set;
 
 public class SelectWhenRefused {
 
@@ -53,6 +55,7 @@ public class SelectWhenRefused {
             sendDatagram(dc, refuser);
             int n = sel.select(2000);
             if (n > 0) {
+                logUnexpectedWakeup(dc, sel.selectedKeys());
                 sel.selectedKeys().clear();
                 // BindException will be thrown if another service is using
                 // our expected refuser port, cannot run just exit.
@@ -68,7 +71,10 @@ public class SelectWhenRefused {
                 if (n > 0) {
                     sel.selectedKeys().clear();
                     try {
-                        n = dc.read(ByteBuffer.allocate(100));
+                        var buf = ByteBuffer.allocate(100);
+                        n = dc.read(buf);
+                        var message = new String(buf.array());
+                        System.out.format("received %s at %s%n", message, dc.getLocalAddress());
                         throw new RuntimeException("Unexpected datagram received");
                     } catch (PortUnreachableException pue) {
                         // expected
@@ -82,6 +88,7 @@ public class SelectWhenRefused {
             sendDatagram(dc, refuser);
             n = sel.select(2000);
             if (n > 0) {
+                logUnexpectedWakeup(dc, sel.selectedKeys());
                 throw new RuntimeException("Unexpected wakeup after disconnect");
             }
 
@@ -98,5 +105,23 @@ public class SelectWhenRefused {
     {
         ByteBuffer bb = ByteBuffer.wrap("Greetings!".getBytes());
         dc.send(bb, remote);
+    }
+
+    static void logUnexpectedWakeup(DatagramChannel dc, Set<SelectionKey> selectedKeys) {
+        for (SelectionKey key : selectedKeys) {
+            if (!key.isValid() || !key.isReadable()) {
+                System.out.println("Invalid or unreadable key: " + key);
+                return;
+            }
+            try {
+                System.out.println("Attempting to read datagram from key: " + key);
+                ByteBuffer buf = ByteBuffer.allocate(100);
+                SocketAddress sa = dc.receive(buf);
+                String message = new String(buf.array());
+                System.out.format("received %s from %s%n", message, sa);
+            } catch (IOException io) {
+                System.out.println("Unable to read from datagram " + io);
+            }
+        }
     }
 }
