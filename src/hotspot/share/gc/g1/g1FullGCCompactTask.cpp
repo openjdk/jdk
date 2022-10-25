@@ -121,8 +121,6 @@ G1FullGCCompactTask::G1FullGCCompactTask(G1FullCollector* collector) :
   G1FullGCTask("G1 Compact Task", collector),
   _collector(collector),
   _claimer(collector->workers()) {
-  // Need cleared claim bits for the next concurrent marking.
-  ClassLoaderDataGraph::clear_claimed_marks();
 }
 
 

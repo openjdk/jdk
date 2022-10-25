@@ -222,6 +222,9 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
+  // Need cleared claim bits for the next concurrent marking.
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
