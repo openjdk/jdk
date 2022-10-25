@@ -314,10 +314,11 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
       post_callback_tag_update(_referrer,
                                _referrer_hashmap,
                                _referrer_obj_tag);
-    }
-    if (_referrer_entry != NULL){
-      _referrer_entry->release();
-      delete _referrer_entry;
+      if (_referrer_entry != NULL){
+        _referrer_entry->release();
+         delete _referrer_entry;
+        _referrer_entry = NULL;
+      }
     }
   }
 
