@@ -30,8 +30,6 @@ import java.nio.charset.*;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -813,6 +811,7 @@ class UnixPath implements Path {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public Path toRealPath(LinkOption... options) throws IOException {
         checkRead();
 
@@ -831,7 +830,7 @@ class UnixPath implements Path {
         // if not resolving links then eliminate "." and also ".."
         // where the previous element is not a link.
         UnixPath result = fs.rootDirectory();
-        for (int i=0; i<absolute.getNameCount(); i++) {
+        for (int i = 0; i < absolute.getNameCount(); i++) {
             UnixPath element = absolute.getName(i);
 
             // eliminate "."
@@ -861,7 +860,7 @@ class UnixPath implements Path {
             result = result.resolve(element);
         }
 
-        // check file exists (without following links)
+        // check whether file exists (without following links)
         try {
             UnixFileAttributes.get(result, false);
         } catch (UnixException x) {
@@ -874,29 +873,66 @@ class UnixPath implements Path {
 
         UnixPath path = fs.rootDirectory();
 
+        SecurityManager sm = System.getSecurityManager();
+
         // Traverse the result obtained above from the root downward, leaving
         // any '..' elements intact, and replacing other elements with the
-        // entry in the same directory to which it is equal ignoring case
+        // entry in the same directory which has an equal key
         for (int i = 0; i < result.getNameCount(); i++ ) {
             UnixPath elt = result.getName(i);
-            String els = elt.toString();
 
             // If the element is "..", append it directly and continue
-            if (els.equals("..")) {
+            if (elt.toString().equals("..")) {
                 path = path.resolve(elt);
                 continue;
             }
 
+            // Derive full path to element and check readability
+            UnixPath eltPath = path.resolve(elt);
+            if (sm != null)
+                sm.checkRead(eltPath.getPathForPermissionCheck());
+
+            // Derive element key
+            UnixFileAttributes attrs = null;
+            try {
+                attrs = UnixFileAttributes.get(eltPath, false);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(result);
+            }
+            final UnixFileKey eltKey = attrs.fileKey();
+
+            // Check readbility of path thus far
+            if (sm != null)
+                sm.checkRead(path.getPathForPermissionCheck());
+
+            // Filter entries whose UnixFileKey equals 'eltKey'
+            DirectoryStream.Filter<Path> filter = (p) -> {
+                UnixFileAttributes attributes = null;
+                try {
+                    attributes = UnixFileAttributes.get(toUnixPath(p), false);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(this);
+                }
+                UnixFileKey key = attributes.fileKey();
+                return key.equals(eltKey);
+            };
+
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
-            // name is equal ignoring case to the name of the current element
-            try (Stream<Path> entries = Files.list(path)) {
-                Predicate<Path> predicate =
-                    (f) -> f.getFileName().toString().equalsIgnoreCase(els);
-                Optional<Path> op = entries.filter(predicate).findFirst();
+            // key is equal to the key of the current element
+            try (DirectoryStream<Path> entries =
+                getFileSystem().provider().newDirectoryStream(path, filter)) {
+                boolean found = false;
+                for (Path entry : entries) {
+                    path = path.resolve(entry.getFileName());
+                    found = true;
+                    break;
+                }
 
-                // Use entry if found, otherwise use the current element
-                path = path.resolve(op.isPresent() ? op.get() : elt);
+                // Fallback which should never happen
+                if (!found) {
+                    path = path.resolve(elt);
+                }
             }
         }
 
