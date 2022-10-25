@@ -179,6 +179,7 @@ public:
   BitMapIterator remset_iterator_limited_current(uintptr_t l_offset, size_t size);
   BitMapIterator remset_iterator_limited_previous(uintptr_t l_offset, size_t size);
 
+  zaddress_unsafe find_base_unsafe(volatile zpointer* p);
   zaddress_unsafe find_base(volatile zpointer* p);
 
   template <typename Function>

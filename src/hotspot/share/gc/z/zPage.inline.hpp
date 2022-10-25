@@ -390,6 +390,24 @@ inline bool ZPage::was_remembered(volatile zpointer* p) {
   return _remembered_set.at_previous(l_offset);
 }
 
+
+inline zaddress_unsafe ZPage::find_base_unsafe(volatile zpointer* p) {
+  if (is_large()) {
+    return ZOffset::address_unsafe(start());
+  }
+
+  // Note: when thinking about excluding looking at the index corresponding to
+  // the field address p, it's important to note that for medium pages both p
+  // and it's associated base could map to the same index.
+  const BitMap::idx_t index = bit_index(zaddress(uintptr_t(p)));
+  const BitMap::idx_t base_index = _livemap.find_base_bit(index);
+  if (base_index == BitMap::idx_t(-1)) {
+    return zaddress_unsafe::null;
+  } else {
+    return ZOffset::address_unsafe(offset_from_bit_index(base_index));
+  }
+}
+
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
   assert_zpage_mark_state();
 

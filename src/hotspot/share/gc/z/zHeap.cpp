@@ -388,7 +388,16 @@ bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {
             return true;
           }
         } else {
+          // TODO: This part is probably broken, but register printing recovers from crashes
           st->print_raw("Unreliable ");
+          zaddress_unsafe base = page->find_base_unsafe((volatile zpointer*) to_print);
+          if (base == zaddress_unsafe::null) {
+            st->print_raw_cr("Cannot find base");
+          } else if (untype(base) != untype(to_print)) {
+            st->print_raw_cr("Internal address");
+            print_location(st, untype(base));
+            return true;
+          }
           st->cr();
         }
       } else {
