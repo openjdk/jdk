@@ -44,6 +44,17 @@
 <p>The make system can generate a Visual Studio project for the Hotspot native source. After configuring, the project is generated using:</p>
 <pre class="shell"><code>make hotspot-ide-project</code></pre>
 <p>This creates a file named <code>jvm.vcxproj</code> in <code>ide\hotspot-visualstudio</code> subfolder of the build output folder. The file can be opened in Visual Studio via <code>File -&gt; Open -&gt; Project/Solution</code>.</p>
+<h4 id="eclipse-cdt">Eclipse CDT</h4>
+<p>The make system can generate an Eclipse CDT Workspace that enables Eclipse indexing for the C and C++ sources throughout the entire codebase, as well as registering all common make targets to be runnable from the Eclipse explorer. This can be done after configuring by running:</p>
+<pre class="shell"><code>make eclipse-native-env</code></pre>
+<p>After this is run, simply open and import the workspace in Eclipse through <code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and at <code>Import source</code> click on the directory <code>ide\eclipse</code>, which can be found in the build output folder.</p>
+<p>Setting up an Eclipse Workspace is relatively lightweight compared to other supported IDEs, but requires that your CDT installation has Cross GCC support enabled at the moment, even if you aren't cross compiling. The Visual C++ compiler is, at present, not supported as an indexer.</p>
+<p>If desired, you can instead request make to only include indexing support for just the Java Virtual Machine instead of the entire native codebase, by running:</p>
+<pre class="shell"><code>make eclipse-hotspot-env</code></pre>
+<p>A quick tip for development with Eclipse in general, which also applies to indexing the Java sources in the JDK (see below), is to enable dark mode before doing so. Trust us, it looks much better than Eclipse's default look and feel. ;)</p>
+<p>If you think your particular Eclipse installation can handle the strain, the make system also supports generating a combined Java and C/C++ Workspace for Eclipse which can then conveniently switch between Java and C/C++ natures during development by running:</p>
+<pre class="shell"><code>make eclipse-dev-env</code></pre>
+<p>Do note that this generates all features that come with both Java and C/C++ natures.</p>
 <h4 id="compilation-database">Compilation Database</h4>
 <p>The make system can generate generic native code indexing support in the form of a <a href="https://clang.llvm.org/docs/JSONCompilationDatabase.html">Compilation Database</a> that can be used by many different IDEs and source code indexers.</p>
 <pre class="shell"><code>make compile-commands</code></pre>
@@ -56,5 +67,10 @@
 <p>To use it, choose <code>File -&gt; Open...</code> in IntelliJ and select the folder where you ran the above script.</p>
 <p>Next, configure the project SDK in IntelliJ. Open <code>File -&gt; Project Structure -&gt; Project</code> and select <code>build/&lt;config&gt;/images/jdk</code> as the SDK to use.</p>
 <p>In order to run the tests from the IDE, you can use the JTReg plugin. Instructions for building and using the plugin can be found <a href="https://github.com/openjdk/jtreg/tree/master/plugins/idea">here</a>.</p>
+<h4 id="eclipse">Eclipse</h4>
+<p>Eclipse JDT is a widely used Java IDE and has been for a very long time, being a popular choice alongside IntelliJ IDEA for Java development. Likewise, the JDK now includes support for developing its Java sources with Eclipse, which can be achieved by setting up a Java Workspace by running:</p>
+<pre class="shell"><code>make eclipse-java-env</code></pre>
+<p>After the workspace has been generated you can import it in the same way as you would with Eclipse CDT by following <code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and selecting the <code>ide\eclipse</code> directory in the build output folder. The Java Workspace comes with an automatically generated Ant buildfile to match the CDT's managed make targets, which you can invoke by dragging onto the Eclipse Ant view in the sidebar.</p>
+<p>A common bug with Eclipse is that running an Ant target will trigger the building of every single codebase it knows of. To avoid this pitfall and the headaches that come with it, head to <code>External Tools Configurations -&gt; Ant Build -&gt; &lt;build.xml&gt; -&gt; Build</code> and make sure the <code>Build before launch</code> option is unchecked.</p>
 </body>
 </html>

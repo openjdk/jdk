@@ -56,6 +56,49 @@ This creates a file named `jvm.vcxproj` in `ide\hotspot-visualstudio`
 subfolder of the build output folder. The file can be opened in Visual Studio
 via `File -> Open -> Project/Solution`.
 
+#### Eclipse CDT
+
+The make system can generate an Eclipse CDT Workspace that enables Eclipse
+indexing for the C and C++ sources throughout the entire codebase, as well as
+registering all common make targets to be runnable from the Eclipse explorer.
+This can be done after configuring by running:
+
+```shell
+make eclipse-native-env
+```
+
+After this is run, simply open and import the workspace in Eclipse through
+`File -> Import -> Projects from Folder or Archive` and at `Import source`
+click on the directory `ide\eclipse`, which can be found in the build output
+folder.
+
+Setting up an Eclipse Workspace is relatively lightweight compared to other
+supported IDEs, but requires that your CDT installation has Cross GCC support
+enabled at the moment, even if you aren't cross compiling. The Visual C++
+compiler is, at present, not supported as an indexer.
+
+If desired, you can instead request make to only include indexing support for
+just the Java Virtual Machine instead of the entire native codebase, by running:
+
+```shell
+make eclipse-hotspot-env
+```
+
+A quick tip for development with Eclipse in general, which also applies to indexing
+the Java sources in the JDK (see below), is to enable dark mode before doing so.
+Trust us, it looks much better than Eclipse's default look and feel. ;)
+
+If you think your particular Eclipse installation can handle the strain, the make
+system also supports generating a combined Java and C/C++ Workspace for Eclipse
+which can then conveniently switch between Java and C/C++ natures during development
+by running:
+
+```shell
+make eclipse-dev-env
+```
+
+Do note that this generates all features that come with both Java and C/C++ natures.
+
 #### Compilation Database
 
 The make system can generate generic native code indexing support in the form of
@@ -96,3 +139,25 @@ as the SDK to use.
 In order to run the tests from the IDE, you can use the JTReg plugin.
 Instructions for building and using the plugin can be found
 [here](https://github.com/openjdk/jtreg/tree/master/plugins/idea).
+
+#### Eclipse
+
+Eclipse JDT is a widely used Java IDE and has been for a very long time, being a
+popular choice alongside IntelliJ IDEA for Java development. Likewise, the JDK now
+includes support for developing its Java sources with Eclipse, which can be
+achieved by setting up a Java Workspace by running:
+
+```shell
+make eclipse-java-env
+```
+
+After the workspace has been generated you can import it in the same way as you would
+with Eclipse CDT by following `File -> Import -> Projects from Folder or Archive` and
+selecting the `ide\eclipse` directory in the build output folder. The Java Workspace
+comes with an automatically generated Ant buildfile to match the CDT's managed make
+targets, which you can invoke by dragging onto the Eclipse Ant view in the sidebar.
+
+A common bug with Eclipse is that running an Ant target will trigger the building of
+every single codebase it knows of. To avoid this pitfall and the headaches that come
+with it, head to `External Tools Configurations -> Ant Build -> <build.xml> -> Build`
+and make sure the `Build before launch` option is unchecked.
