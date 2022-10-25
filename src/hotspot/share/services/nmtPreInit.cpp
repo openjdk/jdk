@@ -41,11 +41,24 @@ static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::fre
 static const size_t malloc_alignment = 2 * sizeof(void*); // could we use max_align_t?
 STATIC_ASSERT(is_aligned(sizeof(NMTPreInitAllocation), malloc_alignment));
 
+// To keep matters simple we just raise a fatal error on OOM. Since preinit allocation
+// is just used for pre-VM-initialization mallocs, none of which are optional, we don't
+// need a finer grained error handling.
+static void fail_oom(size_t size) {
+  vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "VM early initialization phase");
+}
+
 // --------- NMTPreInitAllocation --------------
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
   const size_t outer_size = sizeof(NMTPreInitAllocation) + payload_size;
+  if (outer_size < payload_size) {
+    fail_oom(payload_size);
+  }
   void* p = raw_malloc(outer_size);
+  if (p == nullptr) {
+    fail_oom(outer_size);
+  }
   NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(payload_size);
   return a;
 }
@@ -54,7 +67,13 @@ NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* 
   assert(old->next == NULL, "unhang from map first");
   // We just reallocate the old block, header and all.
   const size_t new_outer_size = sizeof(NMTPreInitAllocation) + new_payload_size;
+  if (new_outer_size < new_payload_size) {
+    fail_oom(new_payload_size);
+  }
   void* p = raw_realloc(old, new_outer_size);
+  if (p == nullptr) {
+    fail_oom(new_outer_size);
+  }
   // re-stamp header with new size
   NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(new_payload_size);
   return a;
