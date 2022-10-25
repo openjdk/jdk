@@ -608,16 +608,28 @@ jdk_core_manual_no_input = \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
     java/util/zip/ZipFile/TestZipFile.java \
+    java/util/zip/ZipFile/TestTooManyEntries.java \
     javax/net/ssl/compatibility/AlpnTest.java \
     javax/net/ssl/compatibility/BasicConnectTest.java \
     javax/net/ssl/compatibility/HrrTest.java \
     javax/net/ssl/compatibility/SniTest.java \
     jdk/nio/zipfs/TestLocOffsetFromZip64EF.java \
+    jdk/nio/zipfs/LargeCompressedEntrySizeTest.java \
     java/util/ArrayList/Bug8146568.java \
-    java/util/Vector/Bug8148174.java
+    java/util/Vector/Bug8148174.java \
+    java/foreign/TestMatrix.java \
+    com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
+    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
+    java/beans/Performance/Test7184799.java \
+    java/beans/Performance/TestIntrospector.java \
+    java/beans/Performance/TestVetoableChangeSupport.java \
+    java/beans/Performance/Test7122740.java \
+    java/beans/Performance/TestPropertyChangeSupport.java
 
 jdk_core_manual_no_input_security = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
+    com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
+    com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
     com/sun/security/auth/callback/TextCallbackHandler/Default.java \
     com/sun/security/auth/callback/TextCallbackHandler/Password.java \
     com/sun/security/sasl/gsskerb/AuthOnly.java \
@@ -635,6 +647,7 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestMultiplePresent.java \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
+    sun/security/krb5/config/native/TestDynamicStore.java \
     sun/security/tools/jarsigner/compatibility/Compatibility.java \
     java/security/Policy/Root/Root.java
 
