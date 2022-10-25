@@ -194,19 +194,23 @@ void G1Policy::update_young_length_bounds() {
 }
 
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
-  uint old_young_list_target_length = _young_list_target_length;
+  uint old_young_list_target_length = young_list_target_length();
 
-  _young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
-  _young_list_target_length = calculate_young_target_length(_young_list_desired_length);
-  _young_list_max_length = calculate_young_max_length(_young_list_target_length);
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
+  uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
+  uint new_young_list_max_length = calculate_young_max_length(new_young_list_target_length);
 
   log_trace(gc, ergo, heap)("Young list length update: pending cards %zu rs_length %zu old target %u desired: %u target: %u max: %u",
                             pending_cards,
                             rs_length,
                             old_young_list_target_length,
-                            _young_list_desired_length,
-                            _young_list_target_length,
-                            _young_list_max_length);
+                            new_young_list_desired_length,
+                            new_young_list_target_length,
+                            new_young_list_max_length);
+
+  Atomic::store(&_young_list_desired_length, new_young_list_desired_length);
+  Atomic::store(&_young_list_target_length, new_young_list_target_length);
+  Atomic::store(&_young_list_max_length, new_young_list_max_length);
 }
 
 // Calculates desired young gen length. It is calculated from:
@@ -1088,14 +1092,12 @@ double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_onl
 
 bool G1Policy::should_allocate_mutator_region() const {
   uint young_list_length = _g1h->young_regions_count();
-  uint young_list_target_length = _young_list_target_length;
-  return young_list_length < young_list_target_length;
+  return young_list_length < young_list_target_length();
 }
 
 bool G1Policy::can_expand_young_list() const {
   uint young_list_length = _g1h->young_regions_count();
-  uint young_list_max_length = _young_list_max_length;
-  return young_list_length < young_list_max_length;
+  return young_list_length < young_list_max_length();
 }
 
 bool G1Policy::use_adaptive_young_list_length() const {
@@ -1125,7 +1127,7 @@ uint G1Policy::calculate_young_max_length(uint target_young_length) const {
   uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
     double perc = (double) GCLockerEdenExpansionPercent / 100.0;
-    double expansion_region_num_d = perc * (double) _young_list_target_length;
+    double expansion_region_num_d = perc * (double)young_list_target_length();
     // We use ceiling so that if expansion_region_num_d is > 0.0 (but
     // less than 1.0) we'll get 1.
     expansion_region_num = (uint) ceil(expansion_region_num_d);
@@ -1138,7 +1140,7 @@ uint G1Policy::calculate_young_max_length(uint target_young_length) const {
 // Calculates survivor space parameters.
 void G1Policy::update_survivors_policy() {
   double max_survivor_regions_d =
-                 (double) _young_list_target_length / (double) SurvivorRatio;
+                 (double)young_list_target_length() / (double) SurvivorRatio;
 
   // Calculate desired survivor size based on desired max survivor regions (unconstrained
   // by remaining heap). Otherwise we may cause undesired promotions as we are
