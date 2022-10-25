@@ -36,7 +36,6 @@ import java.util.concurrent.Semaphore;
 
 public class SuperWaitTest {
 
-    private static Semaphore threadSync = null;
     private static volatile boolean dIsLoading = false;
 
     // Loads classes A and D, delegates for A's super class B
@@ -60,8 +59,6 @@ public class SuperWaitTest {
             if (name.equals("A") || name.equals("D")) {
                 ThreadPrint.println("Loading " + name);
                 if (name.equals("A")) {
-                    threadSync.release();  // Let the other thread start
-
                     ThreadPrint.println("Waiting for " + name);
                     while (!dIsLoading) {  // guard against spurious wakeup
                         try {
@@ -129,7 +126,6 @@ public class SuperWaitTest {
 
     public static void main(java.lang.String[] unused) {
         // t1 loads (A,CL1) extends (B,CL2); t2 loads (C,CL2) extends (D,CL1)
-        threadSync = new Semaphore(0);
 
         ClassLoader appLoader = SuperWaitTest.class.getClassLoader();
         MyLoaderOne ldr1 = new MyLoaderOne(appLoader);
@@ -143,12 +139,6 @@ public class SuperWaitTest {
             threads[i].setName("Loading Thread #" + (i + 1));
             threads[i].start();
             System.out.println("Thread " + (i + 1) + " was started...");
-            if (i == 0) {
-                try {
-                    // Wait for the first thread to get to the wait, before starting second thread.
-                    threadSync.acquire();
-                } catch (InterruptedException ie) {}
-            }
         }
 
         if (report_success()) {
