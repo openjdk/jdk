@@ -5004,7 +5004,37 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
   // or verify that it wasn't changed (with -Xcheck:jni flag).
   if (VM_Version::supports_sse()) {
     if (RestoreMXCSROnJNICalls) {
+      // 0x00007ffff673a7d3 <+51>:	movsd  xmm9,QWORD PTR [rip+0x46c3e5]        # 0x7ffff6ba6bc0
+      // 0x00007ffff673a7db <+59>:	movsd  xmm8,QWORD PTR [rip+0x9bb82d]        # 0x7ffff70f6010 <_ZL6thresh>
+
+      // 0x00007ffff673a7e6 <+70>:	addsd  xmm8,xmm9
+      // 0x00007ffff673a7ea <+74>:	ucomisd xmm8,xmm9
+      // 0x00007ffff673a7ee <+78>:	jnp    0x7ffff673a860 <_ZN2os5Linux13dlopen_helperEPKcPci+192>
+      // 0x00007ffff673a7f0 <+80>:	movsd  xmm8,QWORD PTR [rip+0x46c3d0]        # 0x7ffff6ba6bc8
+      // 0x00007ffff673a7f8 <+88>:	movsd  xmm9,QWORD PTR [rip+0x9bb810]        # 0x7ffff70f6010 <_ZL6thresh>
+      // 0x00007ffff673a800 <+96>:	movapd xmm10,xmm8
+      // 0x00007ffff673a804 <+100>:	subsd  xmm10,xmm9
+      // 0x00007ffff673a808 <+104>:	ucomisd xmm10,xmm8
+      // 0x00007ffff673a80c <+108>:	jp     0x7ffff673a818 <_ZN2os5Linux13dlopen_helperEPKcPci+120>
+      // 0x00007ffff673a80e <+110>:	jne    0x7ffff673a818 <_ZN2os5Linux13dlopen_helperEPKcPci+120>
+
+
+
+      Label FAIL, DONE;
+      movsd(xmm9, ExternalAddress(StubRoutines::x86::addr_unity()), rsi);
+      movsd(xmm8, ExternalAddress(StubRoutines::x86::addr_thresh()), rsi);
+      addsd(xmm8, xmm9);
+      ucomisd(xmm8, xmm9);
+      jcc(Assembler::equal, FAIL);
+      xorpd(xmm9, ExternalAddress(StubRoutines::x86::double_sign_flip()), rsi);
+      subsd(xmm9, xmm8);
+      ucomisd(xmm8, xmm9);
+      jcc(Assembler::notEqual, DONE);
+
+      bind(FAIL);
       ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rscratch);
+      bind(DONE);
+
     } else if (CheckJNICalls) {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
