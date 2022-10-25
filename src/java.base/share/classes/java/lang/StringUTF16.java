@@ -414,21 +414,7 @@ final class StringUTF16 {
     }
 
     public static int hashCode(byte[] value) {
-        int len = value.length >> 1;
-        int result, index;
-        if (len < 8) {
-            result = 0;
-            index = 0;
-        } else {
-            long vresult = ArraysSupport.vectorizedHashCode(value, Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    len, 0, 1, true);
-            index = (int)(vresult >> 32L);
-            result = (int)(vresult & 0xffffffffL);
-        }
-        for (; index < len; index++) {
-            result = 31 * result + getChar(value, index);
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(value, ArraysSupport.UTF16);
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {

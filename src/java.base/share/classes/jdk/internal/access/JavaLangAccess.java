@@ -341,6 +341,16 @@ public interface JavaLangAccess {
     String newStringUTF8NoRepl(byte[] bytes, int off, int len);
 
     /**
+     * Get the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     * @return the char value
+     */
+    char getUTF16Char(byte[] bytes, int index);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode

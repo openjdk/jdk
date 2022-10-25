@@ -2453,7 +2453,9 @@ public final class System {
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
-
+            public char getUTF16Char(byte[] bytes, int index) {
+                return StringUTF16.getChar(bytes, index);
+            }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }

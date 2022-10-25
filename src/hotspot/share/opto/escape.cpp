@@ -795,6 +795,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       add_final_edges_unsafe_access(n, opcode);
       break;
     }
+    case Op_VectorizedHashCode:
     case Op_AryEq:
     case Op_CountPositives:
     case Op_StrComp:

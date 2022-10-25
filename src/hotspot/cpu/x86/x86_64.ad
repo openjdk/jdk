@@ -311,21 +311,6 @@ reg_class int_rdx_reg(RDX);
 // Singleton class for RDI int register
 reg_class int_rdi_reg(RDI);
 
-// Singleton class for RSI int register
-reg_class int_rsi_reg(RSI);
-
-// Singleton class for R8 int register
-reg_class int_r8_reg(R8);
-
-// Singleton class for R9 int register
-reg_class int_r9_reg(R9);
-
-// Singleton class for R10 int register
-reg_class int_r10_reg(R10);
-
-// Singleton class for R11 int register
-reg_class int_r11_reg(R11);
-
 // Singleton class for instruction pointer
 // reg_class ip_reg(RIP);
 
@@ -3477,56 +3462,6 @@ operand rdi_RegI()
   match(rRegI);
 
   format %{ "RDI" %}
-  interface(REG_INTER);
-%}
-
-operand rsi_RegI()
-%{
-  constraint(ALLOC_IN_RC(int_rsi_reg));
-  match(RegI);
-  match(rRegI);
-
-  format %{ "RSI" %}
-  interface(REG_INTER);
-%}
-
-operand r8_RegI()
-%{
-  constraint(ALLOC_IN_RC(int_r8_reg));
-  match(RegI);
-  match(rRegI);
-
-  format %{ "R8" %}
-  interface(REG_INTER);
-%}
-
-operand r9_RegI()
-%{
-  constraint(ALLOC_IN_RC(int_r9_reg));
-  match(RegI);
-  match(rRegI);
-
-  format %{ "R9" %}
-  interface(REG_INTER);
-%}
-
-operand r10_RegI()
-%{
-  constraint(ALLOC_IN_RC(int_r10_reg));
-  match(RegI);
-  match(rRegI);
-
-  format %{ "R10" %}
-  interface(REG_INTER);
-%}
-
-operand r11_RegI()
-%{
-  constraint(ALLOC_IN_RC(int_r11_reg));
-  match(RegI);
-  match(rRegI);
-
-  format %{ "R11" %}
   interface(REG_INTER);
 %}
 
@@ -12030,61 +11965,6 @@ instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI
   ins_pipe( pipe_slow );
 %}
 
-/*
-// fast string hashCode
-instruct string_hashcodeL(rdi_RegP str1, rsi_RegI cnt1, rbx_RegI result,
-                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
-                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
-                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                          legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3,
-                          rFlagsReg cr)
-%{
-  predicate(UseAVX >= 2 && (((StrHashCodeNode*)n)->encoding() == StrIntrinsicNode::LL));
-  match(Set result (StrHashCode (Binary str1 cnt1)));
-  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
-         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL str1, USE_KILL cnt1, KILL cr);
-
-  format %{ "String HashCode byte[] $str1,$cnt1 -> $result   // KILL all" %}
-  ins_encode %{
-    __ arrays_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                      $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
-                      $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
-                      $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
-                      $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                      $tmp_vec13$$XMMRegister, T_BYTE, true);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct string_hashcodeU(rdi_RegP str1, rsi_RegI cnt1, rbx_RegI result,
-                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
-                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
-                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                          legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3,
-                          rFlagsReg cr)
-%{
-  predicate(UseAVX >= 2 && (((StrHashCodeNode*)n)->encoding() == StrIntrinsicNode::UU));
-  match(Set result (StrHashCode (Binary str1 cnt1)));
-  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
-         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL str1, USE_KILL cnt1, KILL cr);
-
-  format %{ "String HashCode char[] $str1,$cnt1 -> $result   // KILL all" %}
-  ins_encode %{
-    __ arrays_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                      $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
-                      $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
-                      $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
-                      $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                      $tmp_vec13$$XMMRegister, T_CHAR, true);
-  %}
-  ins_pipe( pipe_slow );
-%}
-*/
-
 // fast array equals
 instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
                        legRegD tmp1, legRegD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
@@ -12150,136 +12030,156 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-/*
-instruct array_hashcodeI(rdi_RegP ary1, rax_RegI result,
+instruct arrays_hashcodeLatin1(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, r11_RegI tmp4,
+                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3,
                          rFlagsReg cr)
 %{
-  predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_INT));
-  match(Set result (AryHashCode ary1));
+  predicate(UseAVX >= 2 && ((VectorizedHashCodeNode*)n)->mode() == VectorizedHashCodeNode::LATIN1);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL ary1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
-  format %{ "Array HashCode int[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode byte[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
-    __ arrays_hashcode($ary1$$Register, $tmp4$$Register, $result$$Register,
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                       $tmp_vec13$$XMMRegister, T_INT, false);
+                       $tmp_vec13$$XMMRegister, VectorizedHashCodeNode::LATIN1);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct array_hashcodeS(rdi_RegP ary1, rax_RegI result,
-                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
-                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
-                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, r11_RegI tmp4,
-                         rFlagsReg cr)
+instruct arrays_hashcodeUTF16(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
 %{
-  predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_SHORT));
-  match(Set result (AryHashCode ary1));
+  predicate(UseAVX >= 2 && ((VectorizedHashCodeNode*)n)->mode() == VectorizedHashCodeNode::UTF16);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL ary1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
-  format %{ "Array HashCode short[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode prim[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
-    __ arrays_hashcode($ary1$$Register, $tmp4$$Register, $result$$Register,
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                       $tmp_vec13$$XMMRegister, T_SHORT, false);
+                       $tmp_vec13$$XMMRegister, VectorizedHashCodeNode::UTF16);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct array_hashcodeC(rdi_RegP ary1, rax_RegI result,
-                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
-                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
-                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, r11_RegI tmp4,
-                         rFlagsReg cr)
+instruct arrays_hashcodeB(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
 %{
-  predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_CHAR));
-  match(Set result (AryHashCode ary1));
+  predicate(UseAVX >= 2 && ((VectorizedHashCodeNode*)n)->mode() == VectorizedHashCodeNode::BYTE);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL ary1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
-  format %{ "Array HashCode char[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
   ins_encode %{
-    __ arrays_hashcode($ary1$$Register, $tmp4$$Register, $result$$Register,
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                       $tmp_vec13$$XMMRegister, T_CHAR, false);
+                       $tmp_vec13$$XMMRegister, VectorizedHashCodeNode::BYTE);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct array_hashcodeB(rdi_RegP ary1, rax_RegI result,
-                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
-                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
-                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, r11_RegI tmp4,
-                         rFlagsReg cr)
+instruct arrays_hashcodeC(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
 %{
-  predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_BYTE));
-  match(Set result (AryHashCode ary1));
+  predicate(UseAVX >= 2 && ((VectorizedHashCodeNode*)n)->mode() == VectorizedHashCodeNode::CHAR);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL ary1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
-  format %{ "Array HashCode byte[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
   ins_encode %{
-    __ arrays_hashcode($ary1$$Register, $tmp4$$Register, $result$$Register,
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                       $tmp_vec13$$XMMRegister, T_BYTE, false);
+                       $tmp_vec13$$XMMRegister, VectorizedHashCodeNode::CHAR);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct array_hashcodeF(rdi_RegP ary1, rax_RegI result,
-                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
-                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
-                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, r11_RegI tmp4,
-                         rFlagsReg cr)
+instruct arrays_hashcodeS(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
 %{
-  predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_FLOAT));
-  match(Set result (AryHashCode ary1));
+  predicate(UseAVX >= 2 && ((VectorizedHashCodeNode*)n)->mode() == VectorizedHashCodeNode::SHORT);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL ary1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
-  format %{ "Array HashCode float[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
   ins_encode %{
-    __ arrays_hashcode($ary1$$Register, $tmp4$$Register, $result$$Register,
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                       $tmp_vec13$$XMMRegister, T_FLOAT, false);
+                       $tmp_vec13$$XMMRegister, VectorizedHashCodeNode::SHORT);
   %}
   ins_pipe( pipe_slow );
-%}*/
+%}
+
+instruct arrays_hashcodeI(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
+%{
+  predicate(UseAVX >= 2 && ((VectorizedHashCodeNode*)n)->mode() == VectorizedHashCodeNode::INT);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
+         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+
+  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                       $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                       $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                       $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                       $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                       $tmp_vec13$$XMMRegister, VectorizedHashCodeNode::INT);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 instruct count_positives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
                          legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)

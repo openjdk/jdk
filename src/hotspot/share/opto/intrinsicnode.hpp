@@ -169,14 +169,40 @@ class CountPositivesNode: public StrIntrinsicNode {
 //------------------------------VectorizedHashCodeNode----------------------
 class VectorizedHashCodeNode: public Node {
  public:
-  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* offset, Node* length, Node* start, Node* scale, Node* unsign)
-    : Node(control, ary_mem, offset, length, start, scale, unsign) {};
+  // Possible hashing modes, corresponding to the primitive being encoded,
+  // as well as adjusting for special treatment of various encoding of String
+  // arrays. Must correspond to declared constants in jdk.internal.util.ArraysSupport
+  typedef enum HashModes { LATIN1, UTF16, BYTE, CHAR, SHORT, INT, FLOAT } HashMode;
+ private:
+  HashMode _mode;
+ public:
+  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, HashMode mode)
+    : Node(control, ary_mem, arg1, cnt1), _mode(mode) {};
+  bool is_unsigned() const { return _mode == LATIN1 || _mode == UTF16 || _mode == CHAR; }
+  HashMode mode() const { return _mode; }
+  static BasicType adr_basic_type(HashMode mode) {
+    switch (mode) {
+    case LATIN1:
+    case BYTE:
+      return T_BYTE;
+    case UTF16:
+    case CHAR:
+      return T_CHAR;
+    case SHORT:
+      return T_SHORT;
+    case INT:
+      return T_INT;
+    default:
+      ShouldNotReachHere();
+      return T_ILLEGAL;
+    }
+  }
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
-  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::get_array_body_type(adr_basic_type(_mode)); }
   virtual uint match_edge(uint idx) const;
-  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
 };

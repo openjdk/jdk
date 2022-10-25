@@ -191,21 +191,7 @@ final class StringLatin1 {
     }
 
     public static int hashCode(byte[] value) {
-        int len = value.length;
-        int result, index;
-        if (len < 16) {
-            index = 0;
-            result = 0;
-        } else {
-            long vresult = ArraysSupport.vectorizedHashCode(value, Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    len, 0, 0,  true);
-            index = (int)(vresult >> 32);
-            result = (int)(vresult & 0xffffffffL);
-        }
-        for (; index < len; index++) {
-            result = 31 * result + (value[index] & 0xff);
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(value, ArraysSupport.LATIN1);
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {

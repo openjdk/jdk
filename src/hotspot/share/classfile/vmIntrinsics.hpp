@@ -340,7 +340,7 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_vectorizedHashCode,       jdk_internal_util_ArraysSupport, vectorizedHashCode_name,  vectorizedHashCode_signature, F_S)   \
    do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
-   do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;JIIIZ)J")                           \
+   do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;B)I")                              \
                                                                                                                         \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
    do_name(     compress_name,                                   "compress")                                            \

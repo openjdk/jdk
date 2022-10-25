@@ -4270,16 +4270,8 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        final int len = a.length;
         int result = 1;
-        int index = 0;
-        if (len >= 16) {
-            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_LONG_BASE_OFFSET,
-                    len, 1, ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE, /* unsigned */ false);
-            index = (int)(vresult >> 32);
-            result = (int)vresult;
-        }
-        for (; index < len; index++) {
+        for (int index = 0; index < a.length; index++) {
             long element = a[index];
             int elementHash = (int)(element ^ (element >>> 32));
             result = 31 * result + elementHash;
@@ -4307,19 +4299,7 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        final int len = a.length;
-        int result = 1;
-        int index = 0;
-        if (len >= 16) {
-            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_INT_BASE_OFFSET,
-                    len, 1, ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE, /* unsigned */ false);
-            index = (int)(vresult >> 32);
-            result = (int)vresult;
-        }
-        for (; index < len; index++) {
-            result = 31 * result + a[index];
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.INT);
     }
 
     /**
@@ -4342,19 +4322,7 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        final int len = a.length;
-        int result = 1;
-        int index = 0;
-        if (len >= 16) {
-            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_SHORT_BASE_OFFSET,
-                    len, 1, ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE, /* unsigned */ false);
-            index = (int)(vresult >> 32);
-            result = (int)vresult;
-        }
-        for (; index < len; index++) {
-            result = 31 * result + a[index];
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.SHORT);
     }
 
     /**
@@ -4377,19 +4345,7 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        final int len = a.length;
-        int result = 1;
-        int index = 0;
-        if (len >= 16) {
-            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_CHAR_BASE_OFFSET,
-                    len, 1, ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE, /* unsigned */ true);
-            index = (int)(vresult >> 32);
-            result = (int)vresult;
-        }
-        for (; index < len; index++) {
-            result = 31 * result + a[index];
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.CHAR);
     }
 
     /**
@@ -4412,19 +4368,7 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        final int len = a.length;
-        int result = 1;
-        int index = 0;
-        if (len >= 16) {
-            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    len, result, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE, /* unsigned */ false);
-            index = (int)(vresult >> 32);
-            result = (int)vresult;
-        }
-        for (; index < len; index++) {
-            result = 31 * result + a[index];
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.BYTE);
     }
 
     /**
