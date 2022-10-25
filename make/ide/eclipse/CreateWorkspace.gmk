@@ -307,7 +307,7 @@ define SetupEclipseWorkspaceBody
     $$(call EmitLinkedDirectory, src/hotspot,$(TOPDIR)/src/hotspot)
 
   endif
-  
+
   ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
     $$(foreach src,$(NATIVE_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
   endif
