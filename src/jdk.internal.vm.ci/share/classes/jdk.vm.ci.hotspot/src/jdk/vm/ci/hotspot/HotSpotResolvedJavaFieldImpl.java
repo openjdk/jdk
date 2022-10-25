@@ -64,10 +64,13 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         this.holder = holder;
         this.type = type;
         this.index = (short) index;
-        assert this.index == index;
-        assert offset != -1;
-        assert offset == (int) offset : "offset larger than int";
+        if (getIndex() != index) {
+            throw new IllegalArgumentException("index is too big for a short: " + index);
+        }
         this.offset = (int) offset;
+        if (offset == -1 || getOffset() != offset) {
+            throw new IllegalArgumentException("offset is -1 or larger than an int: " + offset);
+        }
         this.modifiers = modifiers;
     }
 
