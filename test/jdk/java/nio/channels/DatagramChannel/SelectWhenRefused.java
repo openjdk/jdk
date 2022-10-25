@@ -71,9 +71,9 @@ public class SelectWhenRefused {
                 if (n > 0) {
                     sel.selectedKeys().clear();
                     try {
-                        var buf = ByteBuffer.allocate(100);
+                        ByteBuffer buf = ByteBuffer.allocate(100);
                         n = dc.read(buf);
-                        var message = new String(buf.array());
+                        String message = new String(buf.array());
                         System.out.format("received %s at %s%n", message, dc.getLocalAddress());
                         throw new RuntimeException("Unexpected datagram received");
                     } catch (PortUnreachableException pue) {
