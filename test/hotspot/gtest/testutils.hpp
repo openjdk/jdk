@@ -53,6 +53,8 @@ public:
 // Convenience asserts
 #define ASSERT_NOT_NULL(p)  ASSERT_NE(p2i(p), 0)
 #define ASSERT_NULL(p)      ASSERT_EQ(p2i(p), 0)
+#define EXPECT_NOT_NULL(p)  EXPECT_NE(p2i(p), 0)
+#define EXPECT_NULL(p)      EXPECT_EQ(p2i(p), 0)
 
 #define ASSERT_ALIGN(p, n) ASSERT_TRUE(is_aligned(p, n))
 
