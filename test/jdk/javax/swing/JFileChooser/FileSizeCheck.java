@@ -21,95 +21,238 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8288882
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @requires (os.family == "linux")
- * @summary To test if the 1-Empty-File size shows 0.0 KB and other files show correct size.
- * @run main/manual FileSizeCheck
- */
-
+import java.awt.AWTException;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Robot;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
+import javax.swing.AbstractButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+/*
+ * @test
+ * @bug 8288882
+ * @key headful
+ * @requires (os.family == "linux")
+ * @summary Verifies if the size of an empty file is shown as 0.0 KB
+ *          as well as checks the displayed file sizes are rounded up
+ * @run main FileSizeCheck
+ */
 public class FileSizeCheck {
-    private static Path[] tempFilePaths;
-    private static final String INSTRUCTIONS =
-            "Click on the \"Details\" button in right-top corner.\n\n" +
-                    "Scroll Down if required. \n\n" +
-                    "Test 1: If the size of 1st-Empty-File shows 0.0 KB\n" +
-                    "Test 2: If the size of 2nd-File-1-Byte shows 0.1 KB\n" +
-                    "Test 3: If the size of 3rd-File-160-Byte shows 0.2 KB\n" +
-                    "Test 3: If the size of 4th-File-299-Byte shows 0.3 KB\n" +
-                    "Test 4: If the size of 5th-File-900-Byte shows 0.9 KB\n" +
-                    "Test 6: If the size of 6th-File-901-Byte shows 1.0 KB\n" +
-                    "Test 7: If the size of 7th-File-999-KB shows 999.0 KB\n" +
-                    "Test 8: If the size of 8th-File-1000-KB shows 1.0 MB\n" +
-                    "Test 9: If the size of 9th-File-2.8-MB shows 2.8 MB\n\n" +
-                           "press PASS.\n\n";
+    private enum FileSize {
+        F0(    0, "0.0 KB"),
+        F1(    1, "0.1 KB"),
 
-    public static void test() {
-        JFrame frame = new JFrame("JFileChooser File Size test");
-        JFileChooser fc = new JFileChooser();
-        fc.setControlButtonsAreShown(false);
-        Path dir = Paths.get(".");
-        String[] tempFilesName = {"1st-Empty-File", "2nd-File-1-Byte", "3rd-File-160-Byte",
-                "4th-File-299-Byte", "5th-File-900-Byte", "6th-File-901-Byte",
-                "7th-File-999-KB", "8th-File-1000-KB", "9th-File-2.8-MB"};
+        F99(  99, "0.1 KB"),
+        F100(100, "0.1 KB"),
+        F101(101, "0.2 KB"),
+        F149(149, "0.2 KB"),
+        F150(150, "0.2 KB"),
+        F151(151, "0.2 KB"),
+        F900(900, "0.9 KB"),
+        F901(901, "1.0 KB"),
 
-        int[] tempFilesSize = {0, 1, 160, 299, 900, 901, 999_000, 1_000_000, 2_800_000};
+        F999_000(999_000, "999.0 KB"),
+        F999_001(999_001, "999.1 KB"),
+        F999_900(999_900, "999.9 KB"),
+        F999_901(999_901,   "1.0 MB"),
 
-        tempFilePaths = new Path[tempFilesName.length];
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+        F1_000_000(1_000_000, "1.0 MB"),
+        F1_000_001(1_000_001, "1.1 MB"),
+        F1_000_900(1_000_900, "1.1 MB"),
+        F1_001_000(1_001_000, "1.1 MB"),
+        F1_100_000(1_100_000, "1.1 MB"),
+        F1_100_001(1_100_001, "1.2 MB"),
 
-        // Create temp files
-        try {
-            for (int i = 0; i < tempFilePaths.length; i++) {
-                tempFilePaths[i] = dir.resolve(tempFilesName[i]);
-                if (!Files.exists(tempFilePaths[i])){
-                    RandomAccessFile f = new RandomAccessFile(tempFilePaths[i].toFile(), "rw");
-                    f.setLength(tempFilesSize[i]);
-                    f.close();
+        F2_800_000(2_800_000, "2.8 MB"),
+
+//        F1_000_000_000(1_000_000_000, "1.0 GB"),
+//        F1_000_000_001(1_000_000_001, "1.1 GB"),
+        ;
+
+        public final String name;
+        public final long size;
+        public final String renderedSize;
+
+        private Path path;
+
+        FileSize(long size, String renderedSize) {
+            this.name = String.format("%03d-%010d.test", ordinal(), size);
+            this.size = size;
+            this.renderedSize = renderedSize;
+        }
+
+        public void create(final Path parent) {
+            path = parent.resolve(name);
+            if (!Files.exists(path)) {
+                try (var f = new RandomAccessFile(path.toFile(), "rw")) {
+                    f.setLength(size);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
-            fc.setCurrentDirectory(dir.toFile());
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
         }
+
+        public void delete() {
+            try {
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Don't propagate
+            }
+        }
+    }
+
+    private static JFrame frame;
+    private static JFileChooser fc;
+
+    private static final AtomicReference<String> error = new AtomicReference<>();
+
+    private static void createUI() {
+        // Create temp files
+        Path dir = Paths.get(".");
+        Arrays.stream(FileSize.values())
+              .forEach(f -> f.create(dir));
+
+        fc = new JFileChooser();
+        fc.setControlButtonsAreShown(false);
+        fc.setCurrentDirectory(dir.toFile());
+
+        frame = new JFrame("JFileChooser File Size test");
+        frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         frame.add(fc);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    }
+
+    private static void disposeUI() {
+        if (frame != null) {
+            frame.dispose();
+        }
     }
 
     public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions",
-                INSTRUCTIONS, 5, 19, 35);
+            InvocationTargetException, AWTException {
+        Locale.setDefault(Locale.US);
         try {
-            SwingUtilities.invokeAndWait(FileSizeCheck::test);
-            passFailJFrame.awaitAndCheck();
-        } finally {
-            try {
-                for (int i = 0; i < tempFilePaths.length; ++i) {
-                    Files.deleteIfExists(tempFilePaths[i]);
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            final Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(FileSizeCheck::createUI);
+
+            robot.waitForIdle();
+            robot.delay(500);
+            SwingUtilities.invokeAndWait(FileSizeCheck::clickDetails);
+
+            robot.waitForIdle();
+            robot.delay(500);
+            SwingUtilities.invokeAndWait(FileSizeCheck::checkFileSizes);
+
+            if (error.get() != null) {
+                throw new Error(error.get());
             }
+        } finally {
+            Arrays.stream(FileSize.values())
+                  .forEach(FileSize::delete);
+
+            SwingUtilities.invokeAndWait(FileSizeCheck::disposeUI);
         }
     }
-}
 
+    private static void checkFileSizes() {
+        final JTable table = findTable(fc);
+        if (table == null) {
+            throw new Error("Didn't find JTable in JFileChooser");
+        }
+
+        String firstError = null;
+        int row = findFirstFileRow(table);
+        for (FileSize f : FileSize.values()) {
+            String fcSize = getCellRenderedText(table, row++, 1);
+            if (!f.renderedSize.equals(fcSize)) {
+                String errMsg = "Wrong rendered size for " + f + ": "
+                                + fcSize + " vs. " + f.renderedSize;
+                if (firstError == null) {
+                    firstError = errMsg;
+                }
+                System.err.println(errMsg);
+            }
+        }
+        if (firstError != null) {
+            error.set(firstError);
+        }
+    }
+
+    private static int findFirstFileRow(final JTable table) {
+        for (int i = 0; i < table.getRowCount(); i++) {
+            if (FileSize.F0.name.equals(getCellRenderedText(table, i, 0))) {
+                return i;
+            }
+        }
+        throw new Error("Didn't find the first file name in the table");
+    }
+
+    private static String getCellRenderedText(final JTable table,
+                                              final int row,
+                                              final int column) {
+        Component renderer =
+                table.getCellRenderer(row, column)
+                     .getTableCellRendererComponent(table,
+                                                    table.getValueAt(row, column),
+                                                    false, false,
+                                                    row, column);
+        return ((JLabel) renderer).getText();
+    }
+
+    private static void clickDetails() {
+        AbstractButton details = findDetailsButton(fc);
+        if (details == null) {
+            throw new Error("Didn't find 'Details' button in JFileChooser");
+        }
+        details.doClick();
+    }
+
+    private static AbstractButton findDetailsButton(final Container container) {
+        Component result = findComponent(container,
+                c -> c instanceof JToggleButton button
+                     && "Details".equals(button.getToolTipText()));
+        return (AbstractButton) result;
+    }
+
+    private static JTable findTable(final Container container) {
+        Component result = findComponent(container,
+                                         c -> c instanceof JTable);
+        return (JTable) result;
+    }
+
+    private static Component findComponent(final Container container,
+                                           final Predicate<Component> predicate) {
+        for (Component child : container.getComponents()) {
+            if (predicate.test(child)) {
+                return child;
+            }
+            if (child instanceof Container cont && cont.getComponentCount() > 0) {
+                Component result = findComponent(cont, predicate);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+}
