@@ -62,9 +62,9 @@ class G1Analytics: public CHeapObj<mtGC> {
   G1PhaseDependentSeq _pending_cards_seq;
   G1PhaseDependentSeq _rs_length_seq;
   G1PhaseDependentSeq _rs_length_diff_seq;
-
   // The cost to copy a byte in ms.
-  TruncatedSeq _copy_cost_per_byte_ms_seq;
+  G1PhaseDependentSeq _copy_cost_per_byte_ms_seq;
+
   TruncatedSeq _constant_other_time_ms_seq;
   TruncatedSeq _young_other_cost_per_region_ms_seq;
   TruncatedSeq _non_young_other_cost_per_region_ms_seq;
@@ -131,7 +131,7 @@ public:
   void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
   void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
   void report_rs_length_diff(double rs_length_diff, bool for_young_only_phase);
-  void report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_rebuild_in_progress);
+  void report_cost_per_byte_ms(double cost_per_byte_ms, bool for_young_only_phase);
   void report_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_non_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_constant_other_time_ms(double constant_other_time_ms);
@@ -152,9 +152,7 @@ public:
   double predict_card_merge_time_ms(size_t card_num, bool for_young_only_phase) const;
   double predict_card_scan_time_ms(size_t card_num, bool for_young_only_phase) const;
 
-  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const;
-
-  double predict_object_copy_time_ms(size_t bytes_to_copy, bool during_concurrent_mark) const;
+  double predict_object_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const;
 
   double predict_constant_other_time_ms() const;
 
