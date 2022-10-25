@@ -69,7 +69,7 @@ public final class HideAction extends ModelAwareAction {
         Set<Integer> selectedNodes = model.getSelectedNodes();
         HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
         nodes.addAll(selectedNodes);
-        model.showNot(nodes);
+        model.setHiddenNodes(nodes);
     }
 
     @Override

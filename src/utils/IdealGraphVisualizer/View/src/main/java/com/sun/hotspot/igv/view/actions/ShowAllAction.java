@@ -65,7 +65,7 @@ public final class ShowAllAction extends ModelAwareAction {
 
     @Override
     public void performAction(DiagramViewModel model) {
-        model.showNot(new HashSet<>());
+        model.setHiddenNodes(new HashSet<>());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class OfflineTesting {
         HttpClient client = getClient();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/"))
+                .uri(URI.create("https://openjdk.org/"))
                 .build();
 
         client.sendAsync(request, BodyHandlers.ofString())
@@ -83,7 +83,7 @@ public class OfflineTesting {
         HttpClient client = getClient();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/"))
+                .uri(URI.create("https://openjdk.org/"))
                 .build();
 
         client.sendAsync(request, BodyHandlers.ofByteArray())
@@ -115,7 +115,7 @@ public class OfflineTesting {
                 "</html>");
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/notFound"))
+                .uri(URI.create("https://openjdk.org/notFound"))
                 .build();
 
         client.sendAsync(request, BodyHandlers.ofString())
@@ -136,7 +136,7 @@ public class OfflineTesting {
                 headersOf("Connection",  "keep-alive"));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/echo"))
+                .uri(URI.create("https://openjdk.org/echo"))
                 .POST(BodyPublishers.ofString("Hello World"))
                 .build();
 
@@ -156,7 +156,7 @@ public class OfflineTesting {
                 headersOf("Connection",  "keep-alive"));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/echo"))
+                .uri(URI.create("https://openjdk.org/echo"))
                 .POST(BodyPublishers.ofString("Hello chegar!!"))
                 .build();
 

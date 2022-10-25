@@ -1266,15 +1266,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   return adapter->get_c2i_entry();
 }
 
-address Method::from_compiled_entry_no_trampoline() const {
-  CompiledMethod *code = Atomic::load_acquire(&_code);
-  if (code) {
-    return code->verified_entry_point();
-  } else {
-    return adapter()->get_c2i_entry();
-  }
-}
-
 // The verified_code_entry() must be called when a invoke is resolved
 // on this method.
 
@@ -1730,20 +1721,6 @@ bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
   return sig_is_loaded;
 }
 
-bool Method::has_unloaded_classes_in_signature(const methodHandle& m, TRAPS) {
-  ResourceMark rm(THREAD);
-  for(ResolvingSignatureStream ss(m()); !ss.is_done(); ss.next()) {
-    if (ss.type() == T_OBJECT) {
-      // Do not use ss.is_reference() here, since we don't care about
-      // unloaded array component types.
-      Klass* klass = ss.as_klass_if_loaded(THREAD);
-      assert(!HAS_PENDING_EXCEPTION, "as_klass_if_loaded contract");
-      if (klass == NULL) return true;
-    }
-  }
-  return false;
-}
-
 // Exposed so field engineers can debug VM
 void Method::print_short_name(outputStream* st) const {
   ResourceMark rm;
@@ -1834,18 +1811,15 @@ void Method::print_name(outputStream* st) const {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-void Method::print_codes_on(outputStream* st) const {
-  print_codes_on(0, code_size(), st);
+void Method::print_codes_on(outputStream* st, int flags) const {
+  print_codes_on(0, code_size(), st, flags);
 }
 
-void Method::print_codes_on(int from, int to, outputStream* st) const {
+void Method::print_codes_on(int from, int to, outputStream* st, int flags) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   methodHandle mh (thread, (Method*)this);
-  BytecodeStream s(mh);
-  s.set_interval(from, to);
-  BytecodeTracer::set_closure(BytecodeTracer::std_closure());
-  while (s.next() >= 0) BytecodeTracer::trace(mh, s.bcp(), st);
+  BytecodeTracer::print_method_codes(mh, from, to, st, flags);
 }
 
 CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {
@@ -2322,6 +2296,8 @@ bool Method::is_valid_method(const Method* m) {
     return false;
   } else if ((intptr_t(m) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
+    return false;
+  } else if (!os::is_readable_range(m, m + 1)) {
     return false;
   } else if (m->is_shared()) {
     return CppVtables::is_valid_shared_method(m);

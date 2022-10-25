@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.nio.file.Path;
 import java.rmi.server.ExportException;
 
@@ -521,6 +522,7 @@ public class RmiBootstrapTest extends RmiTestBase {
      **/
     private String testConfiguration(File file) throws IOException, InterruptedException {
 
+        final String loopback = InetAddress.getLoopbackAddress().getHostAddress();
         for (int i = 0; i < MAX_GET_FREE_PORT_TRIES; i++) {
             try {
                 int port = jdk.test.lib.Utils.getFreePort();
@@ -536,9 +538,12 @@ public class RmiBootstrapTest extends RmiTestBase {
                 final String config = (path == null) ? "Default config file" : path;
 
                 System.out.println("***");
-                System.out.println("*** Testing configuration (port=" + port + "): " + path);
+                System.out.println("*** Testing configuration (host= " + loopback
+                        + " port=" + port + "): " + path);
                 System.out.println("***");
 
+                System.setProperty("com.sun.management.jmxremote.host", loopback);
+                System.setProperty("java.rmi.server.hostname", loopback);
                 System.setProperty("com.sun.management.jmxremote.port", Integer.toString(port));
                 if (path != null) {
                     System.setProperty("com.sun.management.config.file", path);
