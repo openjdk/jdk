@@ -142,8 +142,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, SOCKETADDRESS *sa, int *port);
 
-void platformInit();
-
 JNIEXPORT jint JNICALL NET_GetPortFromSockaddr(SOCKETADDRESS *sa);
 
 JNIEXPORT jboolean JNICALL

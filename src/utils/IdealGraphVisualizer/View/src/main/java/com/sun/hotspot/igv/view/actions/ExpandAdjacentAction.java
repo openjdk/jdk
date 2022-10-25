@@ -58,7 +58,7 @@ abstract public class ExpandAdjacentAction extends CallableSystemAction {
                 }
             }
 
-            editor.getModel().showAll(figures);
+            editor.getModel().showFigures(figures);
         }
     }
 

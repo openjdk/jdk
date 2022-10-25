@@ -1265,7 +1265,6 @@ enableEvents(HandlerNode *node)
         case EI_THREAD_END:
         case EI_VM_INIT:
         case EI_VM_DEATH:
-        case EI_CLASS_PREPARE:
         case EI_GC_FINISH:
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
@@ -1326,7 +1325,6 @@ disableEvents(HandlerNode *node)
         case EI_THREAD_END:
         case EI_VM_INIT:
         case EI_VM_DEATH:
-        case EI_CLASS_PREPARE:
         case EI_GC_FINISH:
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
