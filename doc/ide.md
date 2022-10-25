@@ -84,20 +84,22 @@ just the Java Virtual Machine instead of the entire native codebase, by running:
 make eclipse-hotspot-env
 ```
 
-A quick tip for development with Eclipse in general, which also applies to indexing
-the Java sources in the JDK (see below), is to enable dark mode before doing so.
-Trust us, it looks much better than Eclipse's default look and feel. ;)
+A quick tip for development with Eclipse in general, which also applies to
+indexing the Java sources in the JDK (see below), is to enable dark mode
+before doing so. Trust us, it looks much better than Eclipse's default look
+and feel. ;)
 
-If you think your particular Eclipse installation can handle the strain, the make
-system also supports generating a combined Java and C/C++ Workspace for Eclipse
-which can then conveniently switch between Java and C/C++ natures during development
-by running:
+If you think your particular Eclipse installation can handle the strain, the
+make system also supports generating a combined Java and C/C++ Workspace for
+Eclipse which can then conveniently switch between Java and C/C++ natures
+during development by running:
 
 ```shell
 make eclipse-dev-env
 ```
 
-Do note that this generates all features that come with both Java and C/C++ natures.
+Do note that this generates all features that come with both Java and C/C++
+natures.
 
 #### Compilation Database
 
@@ -142,22 +144,26 @@ Instructions for building and using the plugin can be found
 
 #### Eclipse
 
-Eclipse JDT is a widely used Java IDE and has been for a very long time, being a
-popular choice alongside IntelliJ IDEA for Java development. Likewise, the JDK now
-includes support for developing its Java sources with Eclipse, which can be
-achieved by setting up a Java Workspace by running:
+Eclipse JDT is a widely used Java IDE and has been for a very long time, being
+a popular choice alongside IntelliJ IDEA for Java development. Likewise, the
+JDK now includes support for developing its Java sources with Eclipse, which
+can be achieved by setting up a Java Workspace by running:
 
 ```shell
 make eclipse-java-env
 ```
 
-After the workspace has been generated you can import it in the same way as you would
-with Eclipse CDT by following `File -> Import -> Projects from Folder or Archive` and
-selecting the `ide\eclipse` directory in the build output folder. The Java Workspace
-comes with an automatically generated Ant buildfile to match the CDT's managed make
-targets, which you can invoke by dragging onto the Eclipse Ant view in the sidebar.
+After the workspace has been generated you can import it in the same way as
+you would with Eclipse CDT:
 
-A common bug with Eclipse is that running an Ant target will trigger the building of
-every single codebase it knows of. To avoid this pitfall and the headaches that come
-with it, head to `External Tools Configurations -> Ant Build -> <build.xml> -> Build`
-and make sure the `Build before launch` option is unchecked.
+Follow `File -> Import -> Projects from Folder or Archive` and select the
+`ide\eclipse` directory in the build output folder. The Java Workspace comes with
+an automatically generated Ant buildfile to match the CDT's managed make targets,
+which you can invoke by dragging onto the Eclipse Ant view in the sidebar.
+
+A common bug with Eclipse is that running an Ant target will trigger the building
+of every single codebase it knows of. To avoid this pitfall and the headaches
+that come with it, head to:
+
+`External Tools Configurations -> Ant Build -> <build.xml> -> Build` and make sure
+the `Build before launch` option is unchecked.
