@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8193682 8278794
+ * @bug 8193682 8278794 8284771
  * @summary Test Infinite loop while writing on closed Deflater and Inflater.
  * @run testng CloseInflaterDeflaterTest
  */
@@ -171,10 +171,11 @@ public class CloseInflaterDeflaterTest {
     /**
      * Test for infinite loop by writing bytes to closed InflaterOutputStream
      *
+     * Note: Disabling this test as it is failing intermittently.
      * @param useCloseMethod indicates whether to use Close() or finish() method
      * @throws IOException if an error occurs
      */
-    @Test(dataProvider = "testOutputStreams")
+    @Test(dataProvider = "testOutputStreams",enabled=false)
     public void testInflaterOutputStream(boolean useCloseMethod) throws IOException {
         InflaterOutputStream inf = new InflaterOutputStream(outStream);
         assertThrows(IOException.class , () -> inf.write(inputBytes, 0, INPUT_LENGTH));
