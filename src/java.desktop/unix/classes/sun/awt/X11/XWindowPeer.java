@@ -430,7 +430,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
     void setIconHints(java.util.List<IconInfo> icons) {
         //This does nothing for XWindowPeer,
-        //It's overriden in XDecoratedPeer
+        //It's overridden in XDecoratedPeer
     }
 
     private static ArrayList<IconInfo> defaultIconInfo;
@@ -486,7 +486,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     //This bug is regression for
     //5025858: Resizing a decorated frame triggers componentResized event twice.
     //Since events are not posted from Component.setBounds we need to send them here.
-    //Note that this function is overriden in XDecoratedPeer so event
+    //Note that this function is overridden in XDecoratedPeer so event
     //posting is not changing for decorated peers
     public void setBounds(int x, int y, int width, int height, int op) {
         XToolkit.awtLock();
@@ -565,7 +565,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     /*
-     * Retrives real native focused window and converts it into Java peer.
+     * Retrieves real native focused window and converts it into Java peer.
      */
     static XWindowPeer getNativeFocusedWindowPeer() {
         XBaseWindow baseWindow = XToolkit.windowToXWindow(xGetInputFocus());
@@ -575,7 +575,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     /*
-     * Retrives real native focused window and converts it into Java window.
+     * Retrieves real native focused window and converts it into Java window.
      */
     static Window getNativeFocusedWindow() {
         XWindowPeer peer = getNativeFocusedWindowPeer();
@@ -765,7 +765,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         } else {
             // ICCCM 4.1.5 states that a real ConfigureNotify will be sent when
             // a window is resized but the client can not tell if the window was
-            // moved or not. The client should consider the position as unkown
+            // moved or not. The client should consider the position as unknown
             // and use TranslateCoordinates to find the actual position.
             //
             // TODO this should be the default for every case.
@@ -1199,7 +1199,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // This doesn't make the application unusable though looks quite ugly.
         // Probobly we need to find some hint to assign to our Security
         // Warning window in order to exclude it from the snapping option.
-        // We are not currently aware of existance of such a property.
+        // We are not currently aware of existence of such a property.
         if (warningWindow != null) {
             // We can't use the coordinates stored in the XBaseWindow since
             // they are zeros for decorated frames.
@@ -1943,7 +1943,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public boolean requestWindowFocus(long time, boolean timeProvided) {
         focusLog.fine("Request for window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
-        // If this is Window and its owner Frame is active we can be sure request succedded.
+        // If this is Window and its owner Frame is active we can be sure request succeeded.
         Window ownerWindow  = XWindowPeer.getDecoratedOwner((Window)target);
         Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
@@ -1968,7 +1968,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return false;
     }
 
-    // This method is to be overriden in XDecoratedPeer.
+    // This method is to be overridden in XDecoratedPeer.
     void setActualFocusedWindow(XWindowPeer actualFocusedWindow) {
     }
 
@@ -2226,7 +2226,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             }
 
             // note that we need to pass dragging events to the grabber (6390326)
-            // see comment above for more inforamtion.
+            // see comment above for more information.
             if (!containsGlobal(scaleDown(xme.get_x_root()),
                                 scaleDown(xme.get_y_root()))
                     && !dragging) {

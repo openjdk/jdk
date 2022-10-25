@@ -53,10 +53,10 @@
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
-  _alloc_failure_waiters_lock(Mutex::safepoint - 1, "ShenandoahAllocFailureGC_lock", true),
-  _gc_waiters_lock(Mutex::safepoint - 1, "ShenandoahRequestedGC_lock", true),
-  _control_lock(Mutex::nosafepoint - 1, "ShenandoahControlGC_lock", true),
-  _regulator_lock(Mutex::nosafepoint - 1, "ShenandoahRegulatorGC_lock", true),
+  _alloc_failure_waiters_lock(Mutex::safepoint - 2, "ShenandoahAllocFailureGC_lock", true),
+  _gc_waiters_lock(Mutex::safepoint - 2, "ShenandoahRequestedGC_lock", true),
+  _control_lock(Mutex::nosafepoint - 2, "ShenandoahControlGC_lock", true),
+  _regulator_lock(Mutex::nosafepoint - 2, "ShenandoahRegulatorGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _requested_generation(GenerationMode::GLOBAL),

@@ -1248,7 +1248,7 @@ public class Utilities {
      * they might not be in the same order found in the model, or they just
      * might not allow access to some of the locations in the model.
      * <p>
-     * This implementation assumes the views are layed out in a logical
+     * This implementation assumes the views are laid out in a logical
      * manner. That is, that the view at index x + 1 is visually after
      * the View at index x, and that the View at index x - 1 is visually
      * before the View at x. There is support for reversing this behavior
