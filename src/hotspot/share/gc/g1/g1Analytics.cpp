@@ -80,10 +80,10 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _card_scan_to_merge_ratio_seq(TruncatedSeqLength),
     _cost_per_card_scan_ms_seq(TruncatedSeqLength),
     _cost_per_card_merge_ms_seq(TruncatedSeqLength),
+    _cost_per_byte_copied_ms_seq(TruncatedSeqLength),
     _pending_cards_seq(TruncatedSeqLength),
     _rs_length_seq(TruncatedSeqLength),
     _rs_length_diff_seq(TruncatedSeqLength),
-    _copy_cost_per_byte_ms_seq(TruncatedSeqLength),
     _constant_other_time_ms_seq(TruncatedSeqLength),
     _young_other_cost_per_region_ms_seq(TruncatedSeqLength),
     _non_young_other_cost_per_region_ms_seq(TruncatedSeqLength),
@@ -106,7 +106,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   _cost_per_card_scan_ms_seq.set_initial(young_only_cost_per_card_scan_ms_defaults[index]);
   _rs_length_seq.set_initial(0);
   _rs_length_diff_seq.set_initial(0.0);
-  _copy_cost_per_byte_ms_seq.set_initial(cost_per_byte_ms_defaults[index]);
+  _cost_per_byte_copied_ms_seq.set_initial(cost_per_byte_ms_defaults[index]);
 
   _constant_other_time_ms_seq.add(constant_other_time_ms_defaults[index]);
   _young_other_cost_per_region_ms_seq.add(young_other_cost_per_region_ms_defaults[index]);
@@ -197,7 +197,7 @@ void G1Analytics::report_rs_length_diff(double rs_length_diff, bool for_young_on
 }
 
 void G1Analytics::report_cost_per_byte_ms(double cost_per_byte_ms, bool for_young_only_phase) {
-  _copy_cost_per_byte_ms_seq.add(cost_per_byte_ms, for_young_only_phase);
+  _cost_per_byte_copied_ms_seq.add(cost_per_byte_ms, for_young_only_phase);
 }
 
 void G1Analytics::report_young_other_cost_per_region_ms(double other_cost_per_region_ms) {
@@ -253,7 +253,7 @@ double G1Analytics::predict_card_scan_time_ms(size_t card_num, bool for_young_on
 }
 
 double G1Analytics::predict_object_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const {
-  return bytes_to_copy * predict_zero_bounded(&_copy_cost_per_byte_ms_seq, for_young_only_phase);
+  return bytes_to_copy * predict_zero_bounded(&_cost_per_byte_copied_ms_seq, for_young_only_phase);
 }
 
 double G1Analytics::predict_constant_other_time_ms() const {

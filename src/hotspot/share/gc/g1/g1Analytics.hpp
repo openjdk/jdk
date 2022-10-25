@@ -55,15 +55,14 @@ class G1Analytics: public CHeapObj<mtGC> {
 
   // The cost to scan a card during young-only and mixed gcs in ms.
   G1PhaseDependentSeq _cost_per_card_scan_ms_seq;
-
   // The cost to merge a card during young-only and mixed gcs in ms.
   G1PhaseDependentSeq _cost_per_card_merge_ms_seq;
+  // The cost to copy a byte in ms.
+  G1PhaseDependentSeq _cost_per_byte_copied_ms_seq;
 
   G1PhaseDependentSeq _pending_cards_seq;
   G1PhaseDependentSeq _rs_length_seq;
   G1PhaseDependentSeq _rs_length_diff_seq;
-  // The cost to copy a byte in ms.
-  G1PhaseDependentSeq _copy_cost_per_byte_ms_seq;
 
   TruncatedSeq _constant_other_time_ms_seq;
   TruncatedSeq _young_other_cost_per_region_ms_seq;
