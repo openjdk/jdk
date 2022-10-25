@@ -352,21 +352,49 @@ bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {
 
   if (colored || uncolored) {
     const char* const desc       = uncolored
-        ? "an uncolored"         : !colored
-        ? "an invalid"           : ZPointer::is_load_good(obj)
+        ? "an uncolored"         : ZPointer::is_load_good(obj)
         ? "a good"
         : "a bad";
 
     st->print(PTR_FORMAT " is %s oop: ", addr, desc);
 
-    const zaddress to_print      = uncolored
-        ? zaddress(addr)         : !colored
-        ? zaddress::null         : ZPointer::is_load_good(obj)
+    const zaddress to_print           = uncolored
+        ? zaddress(addr)              : ZPointer::is_load_good(obj)
         ? ZPointer::uncolor(obj)
         : zaddress::null;
 
-    if (LocationPrinter::is_valid_obj((void*)untype(to_print))) {
+    if (to_print == zaddress::null) {
+      if (ZPointer::is_load_good(obj)) {
+        st->print_raw_cr("NULL");
+      } else {
+        st->print_raw_cr("Unreliable");
+
+        // obj is not load good but let us still investigate what is there
+        os::print_location(st, untype(ZPointer::uncolor_unsafe(obj)), false);
+        return false;
+      }
+    } else if (LocationPrinter::is_valid_obj((void*)untype(to_print))) {
       to_oop(to_print)->print_on(st);
+    } else {
+      if (ZHeap::is_in(untype(to_print))) {
+        ZPage* page = ZHeap::page(to_print);
+        if (page->is_relocatable() && page->is_marked() && !ZGeneration::generation(page->generation_id())->is_phase_mark()) {
+          zaddress_unsafe base = page->find_base((volatile zpointer*) to_print);
+          if (base == zaddress_unsafe::null) {
+            st->print_raw_cr("Cannot find base");
+          } else if (untype(base) != untype(to_print)) {
+            st->print_raw_cr("Internal address");
+            print_location(st, untype(base));
+            return true;
+          }
+        } else {
+          st->print_raw("Unreliable ");
+          st->cr();
+        }
+      } else {
+        st->print_raw_cr("not in heap");
+      }
+      return false;
     }
 
     return true;
