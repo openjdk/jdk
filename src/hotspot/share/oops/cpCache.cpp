@@ -636,15 +636,15 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
     st->print_cr(" -     Method: " INTPTR_FORMAT " %s", p2i(m), m->external_name());
     st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]", 
-               flag_state(), has_local_signature(), has_appendix(), 
-               is_forced_virtual(), is_final(), is_vfinal(), 
+               flag_state(), has_local_signature(), has_appendix(),
+               is_forced_virtual(), is_final(), is_vfinal(),
                indy_resolution_failed(), parameter_size());
     st->print_cr(" - tos: %s\n - local signature: %01x\n"
           " - has appendix: %01x\n - forced virtual: %01x\n"
           " - final: %01x\n - virtual Final: %01x\n - resolution Failed: %01x\n"
-          " - num Parameters: %02x", 
-               type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(), 
-               is_forced_virtual(), is_final(), is_vfinal(), 
+          " - num Parameters: %02x",
+               type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
+               is_forced_virtual(), is_final(), is_vfinal(),
                indy_resolution_failed(), parameter_size());
     if ((bytecode_1() == Bytecodes::_invokehandle ||
        bytecode_1() == Bytecodes::_invokedynamic)) {
@@ -665,12 +665,11 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
   else if (is_field_entry()) {
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
-    st->print_cr(" - flag values: [%02x|0|1|0|0|0|%01x|%01x|0|0|%04x]", 
+    st->print_cr(" - flag values: [%02x|0|1|0|0|0|%01x|%01x|0|0|%04x]",
                flag_state(), is_final(), is_volatile(), field_index());
     st->print_cr(" - tos: %s\n - final: %d\n - volatile: %d\n - field index: %04x",
           type2name(as_BasicType(flag_state())), is_final(), is_volatile(), field_index());
   }
-
   st->print_cr("                 -------------");
 }
 
