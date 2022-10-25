@@ -36,7 +36,7 @@ import java.util.concurrent.Semaphore;
 
 public class SuperWaitTest {
 
-    private static volatile boolean dIsLoading = false;
+    private static boolean dIsLoading = false;
 
     // Loads classes A and D, delegates for A's super class B
     private static class MyLoaderOne extends ClassLoader {
