@@ -140,7 +140,7 @@ public final class MetadataLoader {
     }
 
     private final List<TypeElement> types;
-    private final Map<String, List<AnnotationElement>> anotationElements = new HashMap<>();
+    private final Map<String, List<AnnotationElement>> anotationElements = HashMap.newHashMap(16);
     private final Map<String, AnnotationElement> categories = new HashMap<>();
 
     MetadataLoader(DataInputStream dis) throws IOException {
@@ -273,7 +273,7 @@ public final class MetadataLoader {
 
     private Map<String, Type> buildTypeMap() {
         Map<String, Type> typeMap = HashMap.newHashMap(types.size());
-        Map<String, Type> knownTypeMap = new HashMap<>();
+        Map<String, Type> knownTypeMap = HashMap.newHashMap(16);
         for (Type kt : Type.getKnownTypes()) {
             typeMap.put(kt.getName(), kt);
             knownTypeMap.put(kt.getName(), kt);
