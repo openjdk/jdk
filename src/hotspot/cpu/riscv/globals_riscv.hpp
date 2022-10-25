@@ -89,15 +89,15 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, max_jint)                                                     \
   product(intx, CacheLineSize, DEFAULT_CACHE_LINE_SIZE,                          \
           "Size in bytes of a CPU cache line")                                   \
-          range(wordSize, max_jint)                                          \
+          range(wordSize, max_jint)                                              \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
   /* For now we're going to be safe and add the I/O bits to userspace fences. */ \
   product(bool, UseConservativeFence, true,                                      \
           "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
-  product(bool, UseRVA20U64, false, EXPERIMENTAL, "Use RVA20U64 profile")           \
-  product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")           \
+  product(bool, UseRVA20U64, false, EXPERIMENTAL, "Use RVA20U64 profile")        \
+  product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
   product(bool, UseRVV, false, EXPERIMENTAL, "Use RVV instructions")             \
   product(bool, UseRVC, false, EXPERIMENTAL, "Use RVC instructions")             \
   product(bool, UseZba, false, EXPERIMENTAL, "Use Zba instructions")             \
