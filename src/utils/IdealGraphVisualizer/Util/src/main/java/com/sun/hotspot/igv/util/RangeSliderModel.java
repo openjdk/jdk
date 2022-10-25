@@ -38,30 +38,12 @@ import java.util.List;
 public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> {
 
     // Warning: Update setData method if fields are added
-    private ChangedEvent<RangeSliderModel> changedEvent;
-    private ChangedEvent<RangeSliderModel> colorChangedEvent;
+    private final ChangedEvent<RangeSliderModel> changedEvent;
+    private final ChangedEvent<RangeSliderModel> colorChangedEvent;
     private List<String> positions;
     private int firstPosition;
     private int secondPosition;
     private List<Color> colors;
-
-    public void setData(RangeSliderModel model) {
-        boolean changed = false;
-        changed |= (positions != model.positions);
-        positions = model.positions;
-        changed |= (firstPosition != model.firstPosition);
-        firstPosition = model.firstPosition;
-        changed |= (secondPosition != model.secondPosition);
-        secondPosition = model.secondPosition;
-        boolean colorChanged = (colors != model.colors);
-        colors = model.colors;
-        if (changed) {
-            changedEvent.fire();
-        }
-        if (colorChanged) {
-            colorChangedEvent.fire();
-        }
-    }
 
     public RangeSliderModel(List<String> positions) {
         assert positions.size() > 0;
@@ -89,12 +71,6 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
 
     public List<Color> getColors() {
         return colors;
-    }
-
-    public RangeSliderModel copy() {
-        RangeSliderModel newModel = new RangeSliderModel(positions);
-        newModel.setData(this);
-        return newModel;
     }
 
     public List<String> getPositions() {
