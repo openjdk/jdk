@@ -60,6 +60,15 @@ size_t MemoryCounter::peak_size() const {
 }
 #endif
 
+// Total malloc invocation count
+size_t MallocMemorySnapshot::total_count() const {
+  size_t amount = 0;
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    amount += _malloc[index].malloc_count();
+  }
+  return amount;
+}
+
 // Total malloc'd memory amount
 size_t MallocMemorySnapshot::total() const {
   size_t amount = 0;
