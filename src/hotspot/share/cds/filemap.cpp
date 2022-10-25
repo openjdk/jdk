@@ -895,7 +895,7 @@ bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, Growable
     assert(strlen(shared_path(j)->name()) > (size_t)dumptime_prefix_len, "sanity");
     const char* dumptime_path = shared_path(j)->name() + dumptime_prefix_len;
     assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
-    const char* runtime_path = runtime_path = rp_array->at(i)  + runtime_prefix_len;
+    const char* runtime_path = rp_array->at(i)  + runtime_prefix_len;
     if (!os::same_files(dumptime_path, runtime_path)) {
       return true;
     }
