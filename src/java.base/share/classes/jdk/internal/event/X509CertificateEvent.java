@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ package jdk.internal.event;
  */
 
 public final class X509CertificateEvent extends Event {
-    private final static X509CertificateEvent EVENT = new X509CertificateEvent();
+    private static final X509CertificateEvent EVENT = new X509CertificateEvent();
 
     /**
      * Returns {@code true} if event is enabled, {@code false} otherwise.
