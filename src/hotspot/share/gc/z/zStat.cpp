@@ -694,7 +694,7 @@ ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
 void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   ZCollectedHeap::heap()->print_heap_before_gc();
 
-  log_info(gc, phases, start)("%s", name());
+  log_info(gc, phases)("%s", name());
 }
 
 void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {

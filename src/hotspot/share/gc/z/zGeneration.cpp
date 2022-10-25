@@ -65,13 +65,13 @@
 #include "utilities/events.hpp"
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
-  ZStatPhaseGeneration("Generation Collection (Minor)", ZGenerationId::young),
-  ZStatPhaseGeneration("Generation Collection (Major Full Preclean)", ZGenerationId::young),
-  ZStatPhaseGeneration("Generation Collection (Major Full Roots)", ZGenerationId::young),
-  ZStatPhaseGeneration("Generation Collection (Major Partial Roots)", ZGenerationId::young)
+  ZStatPhaseGeneration("Young Generation", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Promote All)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Collect Roots)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation", ZGenerationId::young)
 };
 
-static const ZStatPhaseGeneration ZPhaseGenerationOld("Generation Collection (Major)", ZGenerationId::old);
+static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation", ZGenerationId::old);
 
 static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start", ZGenerationId::young);
 static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Major)", ZGenerationId::young);
