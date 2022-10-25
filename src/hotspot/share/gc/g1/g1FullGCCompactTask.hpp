@@ -42,8 +42,10 @@ class G1FullGCCompactTask : public G1FullGCTask {
   void compact_region(HeapRegion* hr);
 
 public:
-  G1FullGCCompactTask(G1FullCollector* collector);
-
+  G1FullGCCompactTask(G1FullCollector* collector) :
+    G1FullGCTask("G1 Compact Task", collector),
+    _collector(collector),
+    _claimer(collector->workers()) { }
   void work(uint worker_id);
   void serial_compaction();
 
