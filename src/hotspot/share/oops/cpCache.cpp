@@ -635,7 +635,7 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
     st->print_cr(" -     Method: " INTPTR_FORMAT " %s", p2i(m), m->external_name());
-    st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]", 
+    st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]",
                flag_state(), has_local_signature(), has_appendix(),
                is_forced_virtual(), is_final(), is_vfinal(),
                indy_resolution_failed(), parameter_size());
