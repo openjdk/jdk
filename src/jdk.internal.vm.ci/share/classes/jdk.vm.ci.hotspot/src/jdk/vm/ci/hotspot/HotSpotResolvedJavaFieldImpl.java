@@ -22,10 +22,10 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
 
 import java.lang.annotation.Annotation;
 
@@ -53,24 +53,18 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     /**
      * Value of {@code fieldDescriptor::index()}.
      */
-    private final short index;
+    private final int index;
 
     /**
      * This value contains all flags as stored in the VM including internal ones.
      */
     private final int modifiers;
 
-    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, long offset, int modifiers, int index) {
+    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int modifiers, int index) {
         this.holder = holder;
         this.type = type;
-        this.index = (short) index;
-        if (getIndex() != index) {
-            throw new IllegalArgumentException("index is too big for a short: " + index);
-        }
-        this.offset = (int) offset;
-        if (offset == -1 || getOffset() != offset) {
-            throw new IllegalArgumentException("offset is -1 or larger than an int: " + offset);
-        }
+        this.index = index;
+        this.offset = offset;
         this.modifiers = modifiers;
     }
 
