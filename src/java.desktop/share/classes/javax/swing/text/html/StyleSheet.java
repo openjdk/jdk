@@ -1421,7 +1421,7 @@ public class StyleSheet extends StyleContext {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
         @SuppressWarnings("unchecked")
         Vector<SelectorMapping> tempVector = sb.getVector();
-        HashSet<SelectorMapping> tempHashSet = sb.getHashSet();
+        HashSet<SelectorMapping> alreadyChecked = sb.getHashSet();
         // Determine all the Styles that are appropriate, placing them
         // in tempVector
         try {
@@ -1432,7 +1432,7 @@ public class StyleSheet extends StyleContext {
                                                    tagString, false);
             if (childMapping != null) {
                 getStyles(childMapping, tempVector, tags, ids, classes, 1,
-                          numElements, tempHashSet);
+                          numElements, alreadyChecked);
             }
             if (classes[0] != null) {
                 String className = classes[0];
@@ -1440,13 +1440,13 @@ public class StyleSheet extends StyleContext {
                                        tagString + "." + className, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes, 1,
-                              numElements, tempHashSet);
+                              numElements, alreadyChecked);
                 }
                 childMapping = mapping.getChildSelectorMapping(
                                        "." + className, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashSet);
+                              1, numElements, alreadyChecked);
                 }
             }
             if (ids[0] != null) {
@@ -1455,13 +1455,13 @@ public class StyleSheet extends StyleContext {
                                        tagString + "#" + idName, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashSet);
+                              1, numElements, alreadyChecked);
                 }
                 childMapping = mapping.getChildSelectorMapping(
                                        "#" + idName, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashSet);
+                              1, numElements, alreadyChecked);
                 }
             }
             // Create a new Style that will delegate to all the matching
