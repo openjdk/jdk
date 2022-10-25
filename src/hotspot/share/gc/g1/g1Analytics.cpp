@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _prev_collection_pause_end_ms(0.0),
     _concurrent_refine_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _dirtied_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _dirtied_cards_in_thread_buffers_seq(new TruncatedSeq(TruncatedSeqLength)),
     _card_scan_to_merge_ratio_seq(TruncatedSeqLength),
     _cost_per_card_scan_ms_seq(TruncatedSeqLength),
     _cost_per_card_merge_ms_seq(TruncatedSeqLength),
@@ -125,6 +126,10 @@ double G1Analytics::predict_in_unit_interval(TruncatedSeq const* seq) const {
   return _predictor->predict_in_unit_interval(seq);
 }
 
+size_t G1Analytics::predict_size(TruncatedSeq const* seq) const {
+  return (size_t)predict_zero_bounded(seq);
+}
+
 double G1Analytics::predict_zero_bounded(TruncatedSeq const* seq) const {
   return _predictor->predict_zero_bounded(seq);
 }
@@ -170,6 +175,10 @@ void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
 
 void G1Analytics::report_dirtied_cards_rate_ms(double cards_per_ms) {
   _dirtied_cards_rate_ms_seq->add(cards_per_ms);
+}
+
+void G1Analytics::report_dirtied_cards_in_thread_buffers(size_t cards) {
+  _dirtied_cards_in_thread_buffers_seq->add(double(cards));
 }
 
 void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_only_phase) {
@@ -230,6 +239,10 @@ double G1Analytics::predict_concurrent_refine_rate_ms() const {
 
 double G1Analytics::predict_dirtied_cards_rate_ms() const {
   return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
+}
+
+size_t G1Analytics::predict_dirtied_cards_in_thread_buffers() const {
+  return predict_size(_dirtied_cards_in_thread_buffers_seq);
 }
 
 size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_only_phase) const {
