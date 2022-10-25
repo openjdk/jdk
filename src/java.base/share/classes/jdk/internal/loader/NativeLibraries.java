@@ -385,7 +385,21 @@ public final class NativeLibraries {
                 throw new InternalError("Native library " + name + " has been loaded");
             }
 
-            return load(this, name, isBuiltin, isJNI, loadLibraryOnlyIfPresent);
+            return load(this, name, isBuiltin, isJNI, throwExceptionIfFail());
+        }
+
+        @SuppressWarnings("removal")
+        private boolean throwExceptionIfFail() {
+            if (loadLibraryOnlyIfPresent) return true;
+
+            // If the file exists but fails to load, UnsatisfiedLinkException thrown by the VM
+            // will include the error message from dlopen to provide diagnostic information
+            return AccessController.doPrivileged(new PrivilegedAction<>() {
+                public Boolean run() {
+                    File file = new File(name);
+                    return file.exists();
+                }
+            });
         }
     }
 
