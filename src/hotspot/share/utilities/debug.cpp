@@ -638,7 +638,6 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
   os::print_location(tty, x, true);
 }
 
-<<<<<<< HEAD
 // For findmethod() and findclass():
 // - The patterns are matched by StringUtils::is_star_match()
 // - class_name_pattern matches Klass::external_name(). E.g., "java/lang/Object" or "*ang/Object"
@@ -651,47 +650,14 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
 extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
   Command c("findclass");
   ClassPrinter::print_flags_help(tty);
-=======
-// flags must be OR'ed from ClassPrinter::Mode for the next 5 functions.
-// Examples (in gdb):
-//   call findclass("java/lang/Object", 0x3)
-//   call findmethod("*ang/Object*", "wait", 0x7)
-//   call findmethod2("*ang/Object*", "wait", "(J*", 0x1)
-extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
-  Command c("findclass");
->>>>>>> Prints interpreted values for CPCache entry flags
   ClassPrinter::print_classes(class_name_pattern, flags, tty);
 }
 
 extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
-<<<<<<< HEAD
                                      const char* method_pattern, int flags) {
   Command c("findmethod");
   ClassPrinter::print_flags_help(tty);
   ClassPrinter::print_methods(class_name_pattern, method_pattern, flags, tty);
-=======
-                                     const char* method_name_pattern, int flags) {
-  Command c("findmethod");
-  ClassPrinter::print_methods(class_name_pattern, method_name_pattern, flags, tty);
-}
-
-extern "C" JNIEXPORT void findmethod2(const char* class_name_pattern,
-                                      const char* method_name_pattern,
-                                      const char* method_signature_pattern, int flags) {
-  Command c("findmethod2");
-  ClassPrinter::print_methods(class_name_pattern, method_name_pattern,
-                              method_signature_pattern, flags, tty);
-}
-
-extern "C" JNIEXPORT void printclass(intptr_t k, int flags) {
-  Command c("printclass");
-  ClassPrinter::print_class((InstanceKlass*)k, flags, tty);
-}
-
-extern "C" JNIEXPORT void printmethod(intptr_t m, int flags) {
-  Command c("printmethod");
-  ClassPrinter::print_method((Method*)m, flags, tty);
->>>>>>> Prints interpreted values for CPCache entry flags
 }
 
 // Need method pointer to find bcp
@@ -759,16 +725,8 @@ void help() {
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
   tty->print_cr("class metadata.");
-<<<<<<< HEAD
   tty->print_cr("  findclass(name_pattern, flags)");
   tty->print_cr("  findmethod(class_name_pattern, method_pattern, flags)");
-=======
-  tty->print_cr("  findclass(name, flags)");
-  tty->print_cr("  findmethod(classname, methodname, flags)");
-  tty->print_cr("  findmethod2(classname, methodname, methodsig, flags)");
-  tty->print_cr("  printclass(klass, flags)");
-  tty->print_cr("  printmethod(method, flags)");
->>>>>>> Prints interpreted values for CPCache entry flags
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");
