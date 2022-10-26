@@ -238,8 +238,6 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
-
-        getModel().getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getModel() {

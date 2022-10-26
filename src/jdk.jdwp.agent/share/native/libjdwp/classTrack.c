@@ -69,6 +69,21 @@ cbTrackingClassPrepare(jvmtiEnv* jvmti_env, JNIEnv *env, jthread thread, jclass 
 }
 
 /*
+ * It's ok to get WRONG_PHASE errors once the vm is dead. We can just
+ * ignore the event in that case.
+ */
+static jboolean
+is_wrong_phase(jvmtiError error)
+{
+    if (error == JVMTI_ERROR_WRONG_PHASE) {
+        JDI_ASSERT(gdata->vmDead);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+
+/*
  * Add a class to the prepared class hash table.
  */
 static void
@@ -78,14 +93,20 @@ addPreparedClass(JNIEnv *env, jclass klass)
 
     char* signature;
     error = classSignature(klass, &signature, NULL);
+    if (is_wrong_phase(error)) {
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"signature");
     }
 
-    if (gdata && gdata->assertOn) {
+    if (gdata->assertOn) {
         // Check if already tagged.
         jlong tag;
         error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(trackingEnv, klass, &tag);
+        if (is_wrong_phase(error)) {
+            return;
+        }
         if (error != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error, "Unable to GetTag with class trackingEnv");
         }
@@ -99,6 +120,9 @@ addPreparedClass(JNIEnv *env, jclass klass)
     }
 
     error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(trackingEnv, klass, ptr_to_jlong(signature));
+    if (is_wrong_phase(error)) {
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         jvmtiDeallocate(signature);
         EXIT_ERROR(error,"SetTag");
