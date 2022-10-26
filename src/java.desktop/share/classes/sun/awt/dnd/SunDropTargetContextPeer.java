@@ -259,7 +259,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
         if (df.isRepresentationClassRemote() &&
             currentDA != DnDConstants.ACTION_LINK) {
-            throw new InvalidDnDOperationException("only ACTION_LINK is permissable for transfer of java.rmi.Remote objects");
+            throw new InvalidDnDOperationException("only ACTION_LINK is permissible for transfer of java.rmi.Remote objects");
         }
 
         final long format = lFormat.longValue();
@@ -281,7 +281,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
                 throw new InvalidDnDOperationException(e.getMessage());
             }
         } else {
-            throw new IOException("no native data was transfered");
+            throw new IOException("no native data was transferred");
         }
     }
 

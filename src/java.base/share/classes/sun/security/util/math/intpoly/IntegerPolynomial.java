@@ -329,9 +329,10 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     }
 
     protected void setLimbsValuePositive(BigInteger v, long[] limbs) {
-        BigInteger mod = BigInteger.valueOf(1 << bitsPerLimb);
+        assert bitsPerLimb < 32;
+        long limbMask = (1L << bitsPerLimb) - 1;
         for (int i = 0; i < limbs.length; i++) {
-            limbs[i] = v.mod(mod).longValue();
+            limbs[i] = v.intValue() & limbMask;
             v = v.shiftRight(bitsPerLimb);
         }
     }

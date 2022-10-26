@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "utilities/pair.hpp"
+#include "utilities/ticks.hpp"
 
 // A G1Policy makes policy decisions that determine the
 // characteristics of the collector.  Examples include:
@@ -104,8 +105,6 @@ class G1Policy: public CHeapObj<mtGC> {
 
   size_t _rs_length;
 
-  size_t _rs_length_prediction;
-
   size_t _pending_cards_at_gc_start;
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
@@ -147,8 +146,8 @@ private:
 public:
 
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_gc) const;
-  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_gc) const;
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -194,10 +193,10 @@ private:
   double _mark_cleanup_start_sec;
 
   // Updates the internal young gen maximum and target and desired lengths.
-  // If no rs_length parameter is passed, predict the RS length using the
-  // prediction model, otherwise use the given rs_length as the prediction.
+  // If no parameters are passed, predict pending cards and the RS length using
+  // the prediction model.
   void update_young_length_bounds();
-  void update_young_length_bounds(size_t rs_length);
+  void update_young_length_bounds(size_t pending_cards, size_t rs_length);
 
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
@@ -225,15 +224,12 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
   // The GCLocker might cause us to need more regions than the target. Calculate
   // the maximum number of regions to use in that case.
   uint calculate_young_max_length(uint target_young_length) const;
-
-  void update_rs_length_prediction();
-  void update_rs_length_prediction(size_t prediction);
 
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
@@ -295,10 +291,12 @@ public:
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length_if_necessary(size_t rs_length);
+  void revise_young_list_target_length(size_t rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
+
+  void record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
@@ -393,6 +391,10 @@ public:
   }
 
   bool use_adaptive_young_list_length() const;
+
+  // Return an estimate of the number of bytes used in young gen.
+  // precondition: holding Heap_lock
+  size_t estimate_used_young_bytes_locked() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 

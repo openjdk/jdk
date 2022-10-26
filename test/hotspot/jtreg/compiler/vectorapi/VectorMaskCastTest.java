@@ -54,7 +54,7 @@ import jdk.test.lib.Utils;
 // supplement, we add more tests for vector mask cast operations, which could be intrinsified
 // by c2 compiler to generate vector/mask instructions on supported targets.
 //
-// [1] https://bugs.openjdk.java.net/browse/JDK-8259610
+// [1] https://bugs.openjdk.org/browse/JDK-8259610
 
 public class VectorMaskCastTest {
 
