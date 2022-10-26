@@ -95,7 +95,7 @@ Eclipse which can then conveniently switch between Java and C/C++ natures
 during development by running:
 
 ```shell
-make eclipse-dev-env
+make eclipse-full-env
 ```
 
 Do note that this generates all features that come with both Java and C/C++

@@ -272,7 +272,7 @@ $(eval $(call SetupTarget, eclipse-native-env, \
     TARGET := workspace-native, \
 ))
 
-$(eval $(call SetupTarget, eclipse-dev-env, \
+$(eval $(call SetupTarget, eclipse-full-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
 ))
 

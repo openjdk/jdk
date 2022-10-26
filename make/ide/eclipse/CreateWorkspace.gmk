@@ -27,6 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include MakeIO.gmk
 include Utils.gmk
 include Modules.gmk
 
@@ -76,39 +77,39 @@ JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
 NATIVE_DIRS := $(strip $(foreach module, $(call FindAllModules), \
     $(patsubst $(TOPDIR)/%,%,$(call FindModuleNativeDirs, $(module)))))
 
-EmitEmptyLine = $(file >> $(1),)
+EmitEmptyLine = $(call AppendFile,,$(1))
 
 # Important note: We only run strip on our own relative source directories
 # Absolute paths should not be passed to strip!
 
 EmitLinkedDirectory = \
-    $(file >> $(WORKSPACE_FILE),        <link>) \
-    $(file >> $(WORKSPACE_FILE),            <name>$(strip $(1))</name>) \
-    $(file >> $(WORKSPACE_FILE),            <type>2</type>) \
-    $(file >> $(WORKSPACE_FILE),            <location>$(subst \\,/,$(call FixPath, $(2)))</location>) \
-    $(file >> $(WORKSPACE_FILE),        </link>)
+    $(call AppendFile,        <link>, $(WORKSPACE_FILE)) \
+    $(call AppendFile,            <name>$(strip $(1))</name>, $(WORKSPACE_FILE)) \
+    $(call AppendFile,            <type>2</type>, $(WORKSPACE_FILE)) \
+    $(call AppendFile,            <location>$(subst \\,/,$(call FixPath, $(2)))</location>, $(WORKSPACE_FILE)) \
+    $(call AppendFile,        </link>, $(WORKSPACE_FILE))
 
 EmitNativeDir = \
-    $(file >> $(NATIVE_FILE),                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$(strip $(1))"/>)
+    $(call AppendFile,                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$(strip $(1))"/>, $(NATIVE_FILE))
 
 # This is so named because Eclipse is able to create virtual make targets that call
 # to the real target which can have a different name. For now we don't need to use
 # this functionality that Eclipse provides.
 EmitMatchingMakeTarget = \
-    $(file >> $(NATIVE_FILE),            <target name="$(strip $(1))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">) \
-    $(file >> $(NATIVE_FILE),                <buildCommand>$(MAKE_EXE)</buildCommand>) \
-    $(file >> $(NATIVE_FILE),                <buildArguments>-C $(call FixPath, $(TOPDIR))</buildArguments>) \
-    $(file >> $(NATIVE_FILE),                <buildTarget>$(strip $(1))</buildTarget>) \
-    $(file >> $(NATIVE_FILE),                <stopOnError>true</stopOnError>) \
-    $(file >> $(NATIVE_FILE),                <useDefaultCommand>false</useDefaultCommand>) \
-    $(file >> $(NATIVE_FILE),                <runAllBuilders>true</runAllBuilders>) \
-    $(file >> $(NATIVE_FILE),            </target>)
+    $(call AppendFile,            <target name="$(strip $(1))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">, $(NATIVE_FILE)) \
+    $(call AppendFile,                <buildCommand>$(MAKE_EXE)</buildCommand>, $(NATIVE_FILE)) \
+    $(call AppendFile,                <buildArguments>-C $(call FixPath, $(TOPDIR))</buildArguments>, $(NATIVE_FILE)) \
+    $(call AppendFile,                <buildTarget>$(strip $(1))</buildTarget>, $(NATIVE_FILE)) \
+    $(call AppendFile,                <stopOnError>true</stopOnError>, $(NATIVE_FILE)) \
+    $(call AppendFile,                <useDefaultCommand>false</useDefaultCommand>, $(NATIVE_FILE)) \
+    $(call AppendFile,                <runAllBuilders>true</runAllBuilders>, $(NATIVE_FILE)) \
+    $(call AppendFile,            </target>, $(NATIVE_FILE))
 
 # Similar reasoning to EmitMatchingMakeTarget
 EmitMatchingAntTarget = \
-    $(file >> $(ANT_BUILDFILE),    <target name="$(strip $(1))">) \
-    $(file >> $(ANT_BUILDFILE),        <call-make args = "$(strip $(1))"/>) \
-    $(file >> $(ANT_BUILDFILE),    </target>) \
+    $(call AppendFile,    <target name="$(strip $(1))">, $(ANT_BUILDFILE)) \
+    $(call AppendFile,        <call-make args = "$(strip $(1))"/>, $(ANT_BUILDFILE)) \
+    $(call AppendFile,    </target>, $(ANT_BUILDFILE)) \
     $(call EmitEmptyLine, $(ANT_BUILDFILE))
 
 ################################################################################
@@ -135,56 +136,56 @@ define SetupEclipseWorkspaceBody
   $$(shell mkdir -p $(IDE_OUTPUTDIR))
 
   # Start with the Workspace file first
-  $$(file > $(WORKSPACE_FILE),<?xml version="1.0" encoding="UTF-8"?>)
-  $$(file >> $(WORKSPACE_FILE),<projectDescription>)
-  $$(file >> $(WORKSPACE_FILE),    <name>OpenJDK</name>)
-  $$(file >> $(WORKSPACE_FILE),    <comment></comment>)
-  $$(file >> $(WORKSPACE_FILE),    <projects>)
-  $$(file >> $(WORKSPACE_FILE),    </projects>)
-  $$(file >> $(WORKSPACE_FILE),    <buildSpec>)
+  $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(WORKSPACE_FILE))
+  $$(call AppendFile,<projectDescription>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <name>Java SE</name>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <comment></comment>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <projects>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    </projects>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <buildSpec>, $(WORKSPACE_FILE))
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
-    $$(file >> $(WORKSPACE_FILE),        <buildCommand>)
-    $$(file >> $(WORKSPACE_FILE),            <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>)
-    $$(file >> $(WORKSPACE_FILE),            <triggers>clean,full,incremental,</triggers>)
-    $$(file >> $(WORKSPACE_FILE),            <arguments>)
-    $$(file >> $(WORKSPACE_FILE),            </arguments>)
-    $$(file >> $(WORKSPACE_FILE),        </buildCommand>)
-    $$(file >> $(WORKSPACE_FILE),        <buildCommand>)
-    $$(file >> $(WORKSPACE_FILE),            <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>)
-    $$(file >> $(WORKSPACE_FILE),            <triggers>full,incremental,</triggers>)
-    $$(file >> $(WORKSPACE_FILE),            <arguments>)
-    $$(file >> $(WORKSPACE_FILE),            </arguments>)
-    $$(file >> $(WORKSPACE_FILE),        </buildCommand>)
+    $$(call AppendFile,        <buildCommand>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            <triggers>clean,full,incremental,</triggers>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            <arguments>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            </arguments>, $(WORKSPACE_FILE))
+    $$(call AppendFile,        </buildCommand>, $(WORKSPACE_FILE))
+    $$(call AppendFile,        <buildCommand>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            <triggers>full,incremental,</triggers>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            <arguments>, $(WORKSPACE_FILE))
+    $$(call AppendFile,            </arguments>, $(WORKSPACE_FILE))
+    $$(call AppendFile,        </buildCommand>, $(WORKSPACE_FILE))
   endif
 
-  $$(file >> $(WORKSPACE_FILE),    </buildSpec>)
-  $$(file >> $(WORKSPACE_FILE),    <natures>)
+  $$(call AppendFile,    </buildSpec>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <natures>, $(WORKSPACE_FILE))
 
   ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
 
-  	$$(file > $(CLASSPATH_FILE),<?xml version="1.0" encoding="UTF-8"?>)
-    $$(file >> $(CLASSPATH_FILE),<classpath>)
+    $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(CLASSPATH_FILE))
+    $$(call AppendFile,<classpath>, $(CLASSPATH_FILE))
 
     # Eclipse crashes when processing multiple module-info.java files
     # This is an annoying bug that has not been fixed for some time now
-    $$(foreach src,$(JAVA_DIRS),$$(file >> $(CLASSPATH_FILE),    <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>))
+    $$(foreach src,$(JAVA_DIRS),$$(call AppendFile,    <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>, $(CLASSPATH_FILE)))
 
-    $$(file >> $(CLASSPATH_FILE),</classpath>)
+    $$(call AppendFile,</classpath>, $(CLASSPATH_FILE))
 
-    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.jdt.core.javanature</nature>)
+    $$(call AppendFile,        <nature>org.eclipse.jdt.core.javanature</nature>, $(WORKSPACE_FILE))
 
-    $$(file > $(ANT_BUILDFILE),<project name="OpenJDK">)
+    $$(call WriteFile,<project name="Java SE">, $(ANT_BUILDFILE))
 
     $$(call EmitEmptyLine, $(ANT_BUILDFILE))
-    $$(file >> $(ANT_BUILDFILE),    <macrodef name="call-make">)
-    $$(file >> $(ANT_BUILDFILE),        <attribute name="args"/>)
-    $$(file >> $(ANT_BUILDFILE),        <sequential>)
-    $$(file >> $(ANT_BUILDFILE),            <exec executable="$(MAKE_EXE)" dir="$$(call FixPath, $(TOPDIR))" failonerror="true">)
-    $$(file >> $(ANT_BUILDFILE),                <arg line="@{args}"/>)
-    $$(file >> $(ANT_BUILDFILE),            </exec>)
-    $$(file >> $(ANT_BUILDFILE),        </sequential>)
-    $$(file >> $(ANT_BUILDFILE),    </macrodef>)
+    $$(call AppendFile,    <macrodef name="call-make">, $(ANT_BUILDFILE))
+    $$(call AppendFile,        <attribute name="args"/>, $(ANT_BUILDFILE))
+    $$(call AppendFile,        <sequential>, $(ANT_BUILDFILE))
+    $$(call AppendFile,            <exec executable="$(MAKE_EXE)" dir="$$(call FixPath, $(TOPDIR))" failonerror="true">, $(ANT_BUILDFILE))
+    $$(call AppendFile,                <arg line="@{args}"/>, $(ANT_BUILDFILE))
+    $$(call AppendFile,            </exec>, $(ANT_BUILDFILE))
+    $$(call AppendFile,        </sequential>, $(ANT_BUILDFILE))
+    $$(call AppendFile,    </macrodef>, $(ANT_BUILDFILE))
     $$(call EmitEmptyLine, $(ANT_BUILDFILE))
 
     # For now just expose the same targets we do with the regular make system
@@ -204,51 +205,51 @@ define SetupEclipseWorkspaceBody
     $$(call EmitMatchingAntTarget, test-image)
     $$(call EmitMatchingAntTarget, clean)
 
-    $$(file >> $(ANT_BUILDFILE),</project>)
+    $$(call AppendFile,</project>, $(ANT_BUILDFILE))
 
   endif
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
 
-    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.core.cnature</nature>)
-    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.core.ccnature</nature>)
-    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>)
-    $$(file >> $(WORKSPACE_FILE),        <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>)
+    $$(call AppendFile,        <nature>org.eclipse.cdt.core.cnature</nature>, $(WORKSPACE_FILE))
+    $$(call AppendFile,        <nature>org.eclipse.cdt.core.ccnature</nature>, $(WORKSPACE_FILE))
+    $$(call AppendFile,        <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>, $(WORKSPACE_FILE))
+    $$(call AppendFile,        <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>, $(WORKSPACE_FILE))
 
     # Now emit the native file
-    $$(file > $(NATIVE_FILE),<?xml version="1.0" encoding="UTF-8" standalone="no"?>)
-    $$(file >> $(NATIVE_FILE),<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">)
-    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="scannerConfiguration">)
-    $$(file >> $(NATIVE_FILE),        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>)
-    $$(file >> $(NATIVE_FILE),    </storageModule>)
+    $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(NATIVE_FILE))
+    $$(call AppendFile,<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">, $(NATIVE_FILE))
+    $$(call AppendFile,    <storageModule moduleId="scannerConfiguration">, $(NATIVE_FILE))
+    $$(call AppendFile,        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>, $(NATIVE_FILE))
+    $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>)
+    $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="org.eclipse.cdt.core.settings">)
-    $$(file >> $(NATIVE_FILE),        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)">)
-    $$(file >> $(NATIVE_FILE),            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>)
+    $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.core.settings">, $(NATIVE_FILE))
+    $$(call AppendFile,        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)">, $(NATIVE_FILE))
+    $$(call AppendFile,            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(file >> $(NATIVE_FILE),            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" moduleId="org.eclipse.cdt.core.settings" name="OpenJDK">)
-    $$(file >> $(NATIVE_FILE),                <externalSettings/>)
-    $$(file >> $(NATIVE_FILE),                <extensions>)
-    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>)
-    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
-    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
-    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
-    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>)
-    $$(file >> $(NATIVE_FILE),                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>)
-    $$(file >> $(NATIVE_FILE),                </extensions>)
-    $$(file >> $(NATIVE_FILE),            </storageModule>)
+    $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" moduleId="org.eclipse.cdt.core.settings" name="Java SE">, $(NATIVE_FILE))
+    $$(call AppendFile,                <externalSettings/>, $(NATIVE_FILE))
+    $$(call AppendFile,                <extensions>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                </extensions>, $(NATIVE_FILE))
+    $$(call AppendFile,            </storageModule>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(file >> $(NATIVE_FILE),            <storageModule moduleId="cdtBuildSystem" version="4.0.0">)
-    $$(file >> $(NATIVE_FILE),                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" name="OpenJDK" parent="org.eclipse.cdt.build.core.emptycfg">)
-    $$(file >> $(NATIVE_FILE),                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10).$(call RandomDigits, 9)" name="/" resourcePath="">)
-    $$(file >> $(NATIVE_FILE),                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">)
-    $$(file >> $(NATIVE_FILE),                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>)
-    $$(file >> $(NATIVE_FILE),                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>)
-    $$(file >> $(NATIVE_FILE),                        </toolChain>)
-    $$(file >> $(NATIVE_FILE),                    </folderInfo>)
-    $$(file >> $(NATIVE_FILE),                    <sourceEntries>)
+    $$(call AppendFile,            <storageModule moduleId="cdtBuildSystem" version="4.0.0">, $(NATIVE_FILE))
+    $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" name="Java SE" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
+    $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
+    $$(call AppendFile,                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">, $(NATIVE_FILE))
+    $$(call AppendFile,                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                        </toolChain>, $(NATIVE_FILE))
+    $$(call AppendFile,                    </folderInfo>, $(NATIVE_FILE))
+    $$(call AppendFile,                    <sourceEntries>, $(NATIVE_FILE))
 
     # This is always emitted, no matter which of the 3 natures were selected
     $$(call EmitNativeDir, src/hotspot)
@@ -257,14 +258,14 @@ define SetupEclipseWorkspaceBody
       $$(foreach src,$(NATIVE_DIRS),$$(call EmitNativeDir, $$(src)))
     endif
 
-    $$(file >> $(NATIVE_FILE),                    </sourceEntries>)
-    $$(file >> $(NATIVE_FILE),                </configuration>)
-    $$(file >> $(NATIVE_FILE),            </storageModule>)
-    $$(file >> $(NATIVE_FILE),        </cconfiguration>)
-    $$(file >> $(NATIVE_FILE),    </storageModule>)
+    $$(call AppendFile,                    </sourceEntries>, $(NATIVE_FILE))
+    $$(call AppendFile,                </configuration>, $(NATIVE_FILE))
+    $$(call AppendFile,            </storageModule>, $(NATIVE_FILE))
+    $$(call AppendFile,        </cconfiguration>, $(NATIVE_FILE))
+    $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(file >> $(NATIVE_FILE),    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">)
-    $$(file >> $(NATIVE_FILE),        <buildTargets>)
+    $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">, $(NATIVE_FILE))
+    $$(call AppendFile,        <buildTargets>, $(NATIVE_FILE))
 
     # Omitted: reconfigure and dist-clean
     # The former is sensitive to the make, shell and environment used
@@ -285,14 +286,14 @@ define SetupEclipseWorkspaceBody
     $$(call EmitMatchingMakeTarget, test-image)
     $$(call EmitMatchingMakeTarget, clean)
 
-    $$(file >> $(NATIVE_FILE),        </buildTargets>)
-    $$(file >> $(NATIVE_FILE),    </storageModule>)
-    $$(file >> $(NATIVE_FILE),</cproject>)
+    $$(call AppendFile,        </buildTargets>, $(NATIVE_FILE))
+    $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
+    $$(call AppendFile,</cproject>, $(NATIVE_FILE))
 
   endif
 
-  $$(file >> $(WORKSPACE_FILE),    </natures>)
-  $$(file >> $(WORKSPACE_FILE),    <linkedResources>)
+  $$(call AppendFile,    </natures>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <linkedResources>, $(WORKSPACE_FILE))
 
   ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
     $$(foreach src,$(JAVA_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
@@ -312,8 +313,8 @@ define SetupEclipseWorkspaceBody
     $$(foreach src,$(NATIVE_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
   endif
 
-  $$(file >> $(WORKSPACE_FILE),    </linkedResources>)
-  $$(file >> $(WORKSPACE_FILE),</projectDescription>)
+  $$(call AppendFile,    </linkedResources>, $(WORKSPACE_FILE))
+  $$(call AppendFile,</projectDescription>, $(WORKSPACE_FILE))
 
 endef
 

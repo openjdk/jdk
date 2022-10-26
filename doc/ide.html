@@ -53,7 +53,7 @@
 <pre class="shell"><code>make eclipse-hotspot-env</code></pre>
 <p>A quick tip for development with Eclipse in general, which also applies to indexing the Java sources in the JDK (see below), is to enable dark mode before doing so. Trust us, it looks much better than Eclipse's default look and feel. ;)</p>
 <p>If you think your particular Eclipse installation can handle the strain, the make system also supports generating a combined Java and C/C++ Workspace for Eclipse which can then conveniently switch between Java and C/C++ natures during development by running:</p>
-<pre class="shell"><code>make eclipse-dev-env</code></pre>
+<pre class="shell"><code>make eclipse-full-env</code></pre>
 <p>Do note that this generates all features that come with both Java and C/C++ natures.</p>
 <h4 id="compilation-database">Compilation Database</h4>
 <p>The make system can generate generic native code indexing support in the form of a <a href="https://clang.llvm.org/docs/JSONCompilationDatabase.html">Compilation Database</a> that can be used by many different IDEs and source code indexers.</p>
