@@ -86,8 +86,9 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     public void assertCompletion(String code, boolean isSmart, String... expected) {
         List<String> completions = computeCompletions(code, isSmart);
-        assertEquals(completions, Arrays.asList(expected), "Command: " + code + ", output: " +
-                completions.toString());
+        List<String> expectedL = Arrays.asList(expected);
+        assertEquals(completions, expectedL, "Command: " + code + ", output: " +
+                completions.toString() + ", expected: " + expectedL.toString());
     }
 
     private List<String> computeCompletions(String code, boolean isSmart) {
@@ -453,6 +454,7 @@ public class CommandCompletionTest extends ReplToolTesting {
                                                .spliterator(),
                                     false)
                             .filter(p -> Files.exists(p))
+                            .distinct()
                             .collect(Collectors.toList());
     }
 }
