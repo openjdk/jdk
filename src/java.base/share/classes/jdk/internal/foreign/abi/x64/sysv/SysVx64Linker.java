@@ -54,7 +54,7 @@ public final class SysVx64Linker extends AbstractLinker {
     }
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
-        return CallArranger.arrangeDowncall(inferredMethodType, function);
+        return CallArranger.arrangeDowncall(inferredMethodType, function, options);
     }
 
     @Override

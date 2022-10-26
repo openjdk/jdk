@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,15 +20,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.foreign.abi;
 
-// must keep in sync with StubLocations in VM code
-public enum StubLocations {
-    TARGET_ADDRESS,
-    RETURN_BUFFER,
-    CAPTURED_STATE_MASK;
+#include "precompiled.hpp"
+#include "downcallLinker.hpp"
 
-    public VMStorage storage(byte type) {
-        return new VMStorage(type, (short) 8, ordinal());
-    }
+#include <cerrno>
+#ifdef _WIN64
+#include <Windows.h>
+#include <Winsock2.h>
+#endif
+
+void DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) {
+  // keep in synch with jdk.internal.foreign.abi.PreservableValues
+  enum PreservableValues {
+    NONE = 0,
+    GET_LAST_ERROR = 1,
+    WSA_GET_LAST_ERROR = 1 << 1,
+    ERRNO = 1 << 2
+  };
+#ifdef _WIN64
+  if (captured_state_mask & GET_LAST_ERROR) {
+    *value_ptr = GetLastError();
+    value_ptr++;
+  }
+  if (captured_state_mask & WSA_GET_LAST_ERROR) {
+    *value_ptr = WSAGetLastError();
+    value_ptr++;
+  }
+#endif
+  if (captured_state_mask & ERRNO) {
+    *value_ptr = errno;
+  }
 }

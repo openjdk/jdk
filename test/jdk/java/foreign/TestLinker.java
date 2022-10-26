@@ -27,6 +27,7 @@
  * @run testng TestLinker
  */
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.foreign.FunctionDescriptor;
@@ -45,6 +46,29 @@ public class TestLinker extends NativeTestHelper {
         MethodHandle mh2 = linker.downcallHandle(descriptor, Linker.Option.firstVariadicArg(1));
         // assert that these are 2 distinct link request. No caching allowed
         assertNotSame(mh1, mh2);
+    }
+
+    @DataProvider
+    public static Object[][] invalidIndexCases() {
+        return new Object[][]{
+                { -1, },
+                { 42, },
+        };
+    }
+
+    @Test(dataProvider = "invalidIndexCases",
+          expectedExceptions = IllegalArgumentException.class,
+          expectedExceptionsMessageRegExp = ".*not in bounds for descriptor.*")
+    public void testInvalidOption(int invalidIndex) {
+        Linker.Option option = Linker.Option.firstVariadicArg(invalidIndex);
+        FunctionDescriptor desc = FunctionDescriptor.ofVoid();
+        Linker.nativeLinker().downcallHandle(desc, option); // throws
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+          expectedExceptionsMessageRegExp = ".*Unknown name.*")
+    public void testInvalidPreservedValueName() {
+        Linker.Option.captureCallState("foo"); // throws
     }
 
 }

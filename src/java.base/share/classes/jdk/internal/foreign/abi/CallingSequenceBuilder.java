@@ -47,6 +47,7 @@ public class CallingSequenceBuilder {
             GetPropertyAction.privilegedGetProperty("java.lang.foreign.VERIFY_BINDINGS", "true"));
 
     private final ABIDescriptor abi;
+    private final LinkerOptions linkerOptions;
 
     private final boolean forUpcall;
     private final List<List<Binding>> inputBindings = new ArrayList<>();
@@ -55,9 +56,10 @@ public class CallingSequenceBuilder {
     private MethodType mt = MethodType.methodType(void.class);
     private FunctionDescriptor desc = FunctionDescriptor.ofVoid();
 
-    public CallingSequenceBuilder(ABIDescriptor abi, boolean forUpcall) {
+    public CallingSequenceBuilder(ABIDescriptor abi, boolean forUpcall, LinkerOptions linkerOptions) {
         this.abi = abi;
         this.forUpcall = forUpcall;
+        this.linkerOptions = linkerOptions;
     }
 
     public final CallingSequenceBuilder addArgumentBindings(Class<?> carrier, MemoryLayout layout,
@@ -95,6 +97,11 @@ public class CallingSequenceBuilder {
         MethodType callerMethodType;
         MethodType calleeMethodType;
         if (!forUpcall) {
+            if (linkerOptions.hasCapturedCallState()) {
+                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                        Binding.unboxAddress(),
+                        Binding.vmStore(abi.capturedStateStorage(), long.class)));
+            }
             addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
                 Binding.unboxAddress(),
                 Binding.vmStore(abi.targetAddrStorage(), long.class)));
@@ -117,7 +124,7 @@ public class CallingSequenceBuilder {
             calleeMethodType = mt;
         }
         return new CallingSequence(forUpcall, callerMethodType, calleeMethodType, desc, needsReturnBuffer,
-                returnBufferSize, allocationSize, inputBindings, outputBindings);
+                returnBufferSize, allocationSize, inputBindings, outputBindings, linkerOptions);
     }
 
     private MethodType computeCallerTypeForUpcall() {

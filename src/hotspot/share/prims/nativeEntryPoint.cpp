@@ -36,7 +36,8 @@
 #include "runtime/jniHandles.inline.hpp"
 
 JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
-                                      jobjectArray arg_moves, jobjectArray ret_moves, jboolean needs_return_buffer))
+                                      jobjectArray arg_moves, jobjectArray ret_moves,
+                                      jboolean needs_return_buffer, jint captured_state_mask))
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
 
@@ -74,8 +75,9 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
     output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
   }
 
-  return (jlong) DowncallLinker::make_downcall_stub(
-    basic_type, pslots, ret_bt, abi, input_regs, output_regs, needs_return_buffer)->code_begin();
+  return (jlong) DowncallLinker::make_downcall_stub(basic_type, pslots, ret_bt, abi,
+                                                    input_regs, output_regs,
+                                                    needs_return_buffer, captured_state_mask)->code_begin();
 JNI_END
 
 JNI_ENTRY(jboolean, NEP_freeDowncallStub(JNIEnv* env, jclass _unused, jlong invoker))
@@ -95,7 +97,7 @@ JNI_END
 #define VM_STORAGE_ARR "[Ljdk/internal/foreign/abi/VMStorage;"
 
 static JNINativeMethod NEP_methods[] = {
-  {CC "makeDowncallStub", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "Z)J", FN_PTR(NEP_makeDowncallStub)},
+  {CC "makeDowncallStub", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "ZI)J", FN_PTR(NEP_makeDowncallStub)},
   {CC "freeDowncallStub0", CC "(J)Z", FN_PTR(NEP_freeDowncallStub)},
 };
 

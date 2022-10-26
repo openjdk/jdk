@@ -119,7 +119,7 @@ public abstract class CallArranger {
     }
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
-        CallingSequenceBuilder csb = new CallingSequenceBuilder(C, forUpcall);
+        CallingSequenceBuilder csb = new CallingSequenceBuilder(C, forUpcall, options);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);

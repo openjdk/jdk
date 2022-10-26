@@ -84,7 +84,11 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        CallingSequenceBuilder csb = new CallingSequenceBuilder(CSysV, forUpcall);
+        return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
+    }
+
+    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
+        CallingSequenceBuilder csb = new CallingSequenceBuilder(CSysV, forUpcall, options);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -115,8 +119,8 @@ public class CallArranger {
         return new Bindings(csb.build(), returnInMemory, argCalc.storageCalculator.nVectorReg);
     }
 
-    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
-        Bindings bindings = getBindings(mt, cDesc, false);
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(CSysV, bindings.callingSequence).getBoundMethodHandle();
         handle = MethodHandles.insertArguments(handle, handle.type().parameterCount() - 1, bindings.nVectorArgs);

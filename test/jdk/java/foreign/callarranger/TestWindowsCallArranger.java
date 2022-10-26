@@ -196,7 +196,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
                 C_INT, C_DOUBLE, C_INT, C_DOUBLE, C_DOUBLE);
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(
                 ADDRESS, C_INT, C_DOUBLE, C_INT, C_DOUBLE, C_DOUBLE);
-        CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false, LinkerOptions.of(firstVariadicArg(2)));
+        CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false, LinkerOptions.forDowncall(fd, firstVariadicArg(2)));
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();

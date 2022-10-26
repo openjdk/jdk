@@ -45,6 +45,7 @@ class DowncallStubGenerator : public StubCodeGenerator {
   const GrowableArray<VMStorage>& _output_registers;
 
   bool _needs_return_buffer;
+  int _captured_state_mask;
 
   int _frame_complete;
   int _frame_size_slots;
@@ -57,7 +58,8 @@ public:
                          const ABIDescriptor& abi,
                          const GrowableArray<VMStorage>& input_registers,
                          const GrowableArray<VMStorage>& output_registers,
-                         bool needs_return_buffer)
+                         bool needs_return_buffer,
+                         int captured_state_mask)
    : StubCodeGenerator(buffer, PrintMethodHandleStubs),
      _signature(signature),
      _num_args(num_args),
@@ -66,6 +68,7 @@ public:
      _input_registers(input_registers),
      _output_registers(output_registers),
      _needs_return_buffer(needs_return_buffer),
+     _captured_state_mask(captured_state_mask),
      _frame_complete(0),
      _frame_size_slots(0),
      _oop_maps(NULL) {
@@ -94,10 +97,13 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 const ABIDescriptor& abi,
                                                 const GrowableArray<VMStorage>& input_registers,
                                                 const GrowableArray<VMStorage>& output_registers,
-                                                bool needs_return_buffer) {
-  int locs_size  = 64;
+                                                bool needs_return_buffer,
+                                                int captured_state_mask) {
+  int locs_size = 64;
   CodeBuffer code("nep_invoker_blob", native_invoker_code_size, locs_size);
-  DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi, input_registers, output_registers, needs_return_buffer);
+  DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi,
+                          input_registers, output_registers,
+                          needs_return_buffer, captured_state_mask);
   g.generate();
   code.log_section_sizes("nep_invoker_blob");
 
@@ -156,6 +162,10 @@ void DowncallStubGenerator::generate() {
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch1);
   if (_needs_return_buffer) {
     locs.set_frame_data(StubLocations::RETURN_BUFFER, allocated_frame_size);
+    allocated_frame_size += 8;
+  }
+  if (_captured_state_mask != 0) {
+    locs.set_frame_data(StubLocations::CAPTURED_STATE_MASK, allocated_frame_size);
     allocated_frame_size += 8;
   }
 
@@ -219,6 +229,34 @@ void DowncallStubGenerator::generate() {
       }
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  if (_captured_state_mask != 0) {
+    __ block_comment("{ save thread local");
+    __ vzeroupper();
+
+    if(should_save_return_value) {
+      out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
+    }
+
+    __ movptr(c_rarg0, Address(rsp, locs.data_offset(StubLocations::CAPTURED_STATE_MASK)));
+    __ movl(c_rarg1, _captured_state_mask);
+    __ mov(r12, rsp); // remember sp
+    __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+    __ andptr(rsp, -16); // align stack as required by ABI
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, DowncallLinker::capture_state)));
+    __ mov(rsp, r12); // restore sp
+    __ reinit_heapbase();
+
+    if(should_save_return_value) {
+      out_reg_spiller.generate_fill(_masm, spill_rsp_offset);
+    }
+
+    __ block_comment("} save thread local");
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
 
   __ block_comment("{ thread native2java");
   __ restore_cpu_control_state_after_jni(rscratch1);
