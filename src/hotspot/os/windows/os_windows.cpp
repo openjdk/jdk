@@ -1237,8 +1237,6 @@ void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
 
-const char* os::dll_file_extension() { return ".dll"; }
-
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
