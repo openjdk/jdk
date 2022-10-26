@@ -52,6 +52,18 @@ public class GraphNode extends AbstractNode {
         this(graph, new InstanceContent());
     }
 
+    @Override
+    public boolean canRename() {
+        return true;
+    }
+
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+        graph.setName(name);
+        fireDisplayNameChange(null, null);
+    }
+
     public void setSelected(boolean selected) {
         this.selected = selected;
         fireDisplayNameChange(null, null);

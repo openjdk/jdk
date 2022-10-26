@@ -146,6 +146,18 @@ public class FolderNode extends AbstractNode {
     }
 
     @Override
+    public boolean canRename() {
+        return true;
+    }
+
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+        children.getFolder().setName(name);
+        fireDisplayNameChange(null, null);
+    }
+
+    @Override
     public String getDisplayName() {
         return children.getFolder().getDisplayName();
     }

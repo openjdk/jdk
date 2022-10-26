@@ -220,7 +220,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return parentGroup.getPrev(this);
     }
 
-    private void setName(String name) {
+    public void setName(String name) {
         this.getProperties().setProperty("name", name);
     }
 

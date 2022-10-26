@@ -34,10 +34,12 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
 
     private final List<FolderElement> elements;
     private final ChangedEvent<GraphDocument> changedEvent;
+    private String displayName;
 
     public GraphDocument() {
         elements = new ArrayList<>();
         changedEvent = new ChangedEvent<>(this);
+        displayName = "GraphDocument";
     }
 
     public void clear() {
@@ -62,8 +64,13 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
     }
 
     @Override
+    public void setName(String name) {
+        displayName = name;
+    }
+
+    @Override
     public String getDisplayName() {
-        return "GraphDocument";
+        return displayName;
     }
 
     @Override
