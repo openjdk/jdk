@@ -1149,22 +1149,22 @@ TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
 
 class CHTParallelScanTask: public WorkerTask {
   TestTable* _cht;
-  TestTable::BucketsClaimer* _bucket_claimer;
+  TestTable::ScanTask* _scan_task;
   size_t *_total_scanned;
 
 public:
   CHTParallelScanTask(TestTable* cht,
-                      TestTable::BucketsClaimer* bc,
+                      TestTable::ScanTask* bc,
                       size_t *total_scanned) :
     WorkerTask("CHT Parallel Scan"),
     _cht(cht),
-    _bucket_claimer(bc),
+    _scan_task(bc),
     _total_scanned(total_scanned)
   { }
 
   void work(uint worker_id) {
     ChtCountScan par_scan;
-    _cht->do_safepoint_scan(par_scan, _bucket_claimer);
+    _scan_task->do_safepoint_scan(par_scan);
     Atomic::add(_total_scanned, par_scan._count);
   }
 };
@@ -1199,9 +1199,9 @@ public:
 
   void doit() {
     size_t total_scanned = 0;
-    TestTable::BucketsClaimer bucket_claimer(_cht, 64);
+    TestTable::ScanTask scan_task(_cht, 64);
 
-    CHTParallelScanTask task(_cht, &bucket_claimer, &total_scanned);
+    CHTParallelScanTask task(_cht, &scan_task, &total_scanned);
     CHTWorkers::run_task(&task);
 
      EXPECT_TRUE(total_scanned == (size_t)_num_items) << " Should scan all inserted items: " << total_scanned;

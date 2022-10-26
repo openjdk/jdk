@@ -1150,7 +1150,27 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // Here we skip protection,
   // thus no other thread may use this table at the same time.
   InternalTable* table = get_table();
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
+  do_scan_for_range(scan_f, 0, table->_size, table);
+
+  // If there is a paused resize we also need to visit the already resized items.
+  table = get_new_table();
+  if (table == NULL) {
+    return;
+  }
+  DEBUG_ONLY(if (table == POISON_PTR) { return; })
+
+  do_scan_for_range(scan_f, 0, table->_size, table);
+}
+
+template <typename CONFIG, MEMFLAGS F>
+template <typename FUNC>
+inline bool ConcurrentHashTable<CONFIG, F>::
+  do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
+{
+  assert(start_idx < stop_idx, "Must be");
+  assert(stop_idx <= table->_size, "Must be");
+
+  for (size_t bucket_it = start_idx; bucket_it < stop_idx; ++bucket_it) {
     Bucket* bucket = table->get_bucket(bucket_it);
     // If bucket have a redirect the items will be in the new table.
     // We must visit them there since the new table will contain any
@@ -1158,25 +1178,13 @@ inline void ConcurrentHashTable<CONFIG, F>::
     // If the bucket don't have redirect flag all items is in this table.
     if (!bucket->have_redirect()) {
       if(!visit_nodes(bucket, scan_f)) {
-        return;
+        return false;
       }
     } else {
       assert(bucket->is_locked(), "Bucket must be locked.");
     }
   }
-  // If there is a paused resize we also need to visit the already resized items.
-  table = get_new_table();
-  if (table == NULL) {
-    return;
-  }
-  DEBUG_ONLY(if (table == POISON_PTR) { return; })
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
-    Bucket* bucket = table->get_bucket(bucket_it);
-    assert(!bucket->is_locked(), "Bucket must be unlocked.");
-    if (!visit_nodes(bucket, scan_f)) {
-      return;
-    }
-  }
+  return true;
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1295,120 +1303,6 @@ inline bool ConcurrentHashTable<CONFIG, F>::
     }
   }
   unlock_resize_lock(thread);
-  return true;
-}
-
-template <typename CONFIG, MEMFLAGS F>
-class ConcurrentHashTable<CONFIG, F>::BucketsClaimer {
-  using InternalTable = ConcurrentHashTable<CONFIG, F>::InternalTable;
-
-  ConcurrentHashTable<CONFIG, F>* _cht;
-
-  struct InternalTableClaimer {
-    volatile size_t _next;
-    size_t _limit;
-    size_t _size;
-    InternalTable* _table;
-
-    InternalTableClaimer() : _next(0), _limit(0), _size(0), _table(nullptr) { }
-
-    InternalTableClaimer(size_t claim_size, InternalTable* table) :
-      InternalTableClaimer()
-    {
-      set(claim_size, table);
-    }
-
-    void set(size_t claim_size, InternalTable* table) {
-      assert(table != nullptr, "precondition");
-      _limit = table->_size;
-      _size  = MIN2(claim_size, _limit);
-      _table = table;
-    }
-
-    bool claim(size_t* start, size_t* stop, InternalTable** table) {
-      if (Atomic::load(&_next) < _limit) {
-        size_t claimed = Atomic::fetch_and_add(&_next, _size);
-        if (claimed < _limit) {
-          *start = claimed;
-          *stop  = MIN2(claimed + _size, _limit);
-          *table = _table;
-          return true;
-        }
-      }
-      return false;
-    }
-  };
-
-  InternalTableClaimer _table_claimer;
-  // If there is a paused resize, we need to claim items already
-  // moved to the new resized table.
-  InternalTableClaimer _new_table_claimer;
-public:
-  BucketsClaimer(ConcurrentHashTable<CONFIG, F>* cht, size_t claim_size) :
-    _cht(cht),
-    _table_claimer(claim_size, _cht->_table),
-    _new_table_claimer()
-  {
-    InternalTable* new_table = _cht->get_new_table();
-
-    if (new_table == nullptr) { return; }
-
-    DEBUG_ONLY(if (new_table == POISON_PTR) { return; })
-
-    _new_table_claimer.set(claim_size, new_table);
-  }
-
-  // Returns true if you succeeded to claim the range [start, stop).
-  bool claim(size_t* start, size_t* stop, InternalTable** table) {
-    if (_table_claimer.claim(start, stop, table)) {
-      return true;
-    }
-
-    // If there is a paused resize, we also need to operate on the already resized items.
-    if (_new_table_claimer._limit == 0) {
-      assert(_cht->get_new_table() == nullptr || _cht->get_new_table() == POISON_PTR, "Precondition");
-      return false;
-    }
-    return _new_table_claimer.claim(start, stop, table);
-  }
-};
-
-template <typename CONFIG, MEMFLAGS F>
-template <typename SCAN_FUNC>
-inline void ConcurrentHashTable<CONFIG, F>::
-  do_safepoint_scan(SCAN_FUNC& scan_f, BucketsClaimer* bucket_claimer)
-{
-  assert(SafepointSynchronize::is_at_safepoint(),
-         "must only be called in a safepoint");
-  size_t start_idx = 0, stop_idx = 0;
-  InternalTable* table = nullptr;
-  while (bucket_claimer->claim(&start_idx, &stop_idx, &table)) {
-    assert(table != nullptr, "precondition");
-    if (!do_scan_for_range(scan_f, start_idx, stop_idx, table)) {
-      return;
-    }
-    table = nullptr;
-  }
-}
-
-template <typename CONFIG, MEMFLAGS F>
-template <typename FUNC>
-inline bool ConcurrentHashTable<CONFIG, F>::
-  do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
-{
-  assert(start_idx < stop_idx, "Must be");
-  assert(stop_idx <= table->_size, "Must be");
-  for (size_t bucket_it = start_idx; bucket_it < stop_idx; ++bucket_it) {
-    Bucket* bucket = table->get_bucket(bucket_it);
-    // If bucket has a redirect, the items will be in the new table.
-    if (!bucket->have_redirect()) {
-      if(!visit_nodes(bucket, scan_f)) {
-        return false;
-      }
-    } else {
-      assert(bucket->is_locked(), "Bucket must be locked.");
-    }
-  }
   return true;
 }
 
