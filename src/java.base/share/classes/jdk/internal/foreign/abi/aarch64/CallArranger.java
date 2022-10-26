@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,21 +186,13 @@ public abstract class CallArranger {
             this.forArguments = forArguments;
         }
 
+        void alignStack(long alignment) {
+            stackOffset = Utils.alignUp(stackOffset, alignment);
+        }
+
         VMStorage stackAlloc(long size, long alignment) {
             assert forArguments : "no stack returns";
-            // Implementation limit: each arg must take up at least an 8 byte stack slot (on the Java side)
-            // There is currently no way to address stack offsets that are not multiples of 8 bytes
-            // The VM can only address multiple-of-4-bytes offsets, which is also not good enough for some ABIs
-            // see JDK-8283462 and related issues
-            long stackSlotAlignment = Math.max(alignment, STACK_SLOT_SIZE);
-            long alignedStackOffset = Utils.alignUp(stackOffset, stackSlotAlignment);
-            // macos-aarch64 ABI potentially requires addressing stack offsets that are not multiples of 8 bytes
-            // Reject such call types here, to prevent undefined behavior down the line
-            // Reject if the above stack-slot-aligned offset does not match the offset the ABI really wants
-            // Except for variadic arguments, which _are_ passed at 8-byte-aligned offsets
-            if (requiresSubSlotStackPacking() && alignedStackOffset != Utils.alignUp(stackOffset, alignment)
-                    && !forVarArgs) // varargs are given a pass on all aarch64 ABIs
-                throw new UnsupportedOperationException("Call type not supported on this platform");
+            long alignedStackOffset = Utils.alignUp(stackOffset, alignment);
 
             short encodedSize = (short) size;
             assert (encodedSize & 0xFFFF) == size;
@@ -212,7 +204,10 @@ public abstract class CallArranger {
         }
 
         VMStorage stackAlloc(MemoryLayout layout) {
-            return stackAlloc(layout.byteSize(), layout.byteAlignment());
+            long stackSlotAlignment = requiresSubSlotStackPacking() && !forVarArgs
+                    ? layout.byteAlignment()
+                    : Math.max(layout.byteAlignment(), STACK_SLOT_SIZE);
+            return stackAlloc(layout.byteSize(), stackSlotAlignment);
         }
 
         VMStorage[] regAlloc(int type, int count) {
@@ -243,6 +238,26 @@ public abstract class CallArranger {
             }
 
             return storage[0];
+        }
+
+        VMStorage[] nextStorageForHFA(GroupLayout group) {
+            final int nFields = group.memberLayouts().size();
+            VMStorage[] regs = regAlloc(StorageType.VECTOR, nFields);
+            if (regs == null && requiresSubSlotStackPacking() && !forVarArgs) {
+                // For the ABI variants that pack arguments spilled to the
+                // stack, HFA arguments are spilled as if their individual
+                // fields had been allocated separately rather than as if the
+                // struct had been spilled as a whole.
+
+                VMStorage[] slots = new VMStorage[nFields];
+                for (int i = 0; i < nFields; i++) {
+                    slots[i] = stackAlloc(group.memberLayouts().get(i));
+                }
+
+                return slots;
+            } else {
+                return regs;
+            }
         }
 
         void adjustForVarArgs() {
@@ -280,6 +295,12 @@ public abstract class CallArranger {
                         .vmStore(storage, type);
                 offset += STACK_SLOT_SIZE;
             }
+
+            if (requiresSubSlotStackPacking()) {
+                // Pad to the next stack slot boundary instead of packing
+                // additional arguments into the unused space.
+                storageCalculator.alignStack(STACK_SLOT_SIZE);
+            }
         }
 
         protected void spillStructBox(Binding.Builder bindings, MemoryLayout layout) {
@@ -298,6 +319,12 @@ public abstract class CallArranger {
                         .vmLoad(storage, type)
                         .bufferStore(offset, type);
                 offset += STACK_SLOT_SIZE;
+            }
+
+            if (requiresSubSlotStackPacking()) {
+                // Pad to the next stack slot boundary instead of packing
+                // additional arguments into the unused space.
+                storageCalculator.alignStack(STACK_SLOT_SIZE);
             }
         }
 
@@ -360,8 +387,7 @@ public abstract class CallArranger {
                 case STRUCT_HFA: {
                     assert carrier == MemorySegment.class;
                     GroupLayout group = (GroupLayout)layout;
-                    VMStorage[] regs = storageCalculator.regAlloc(
-                        StorageType.VECTOR, group.memberLayouts().size());
+                    VMStorage[] regs = storageCalculator.nextStorageForHFA(group);
                     if (regs != null) {
                         long offset = 0;
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
@@ -458,8 +484,7 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     GroupLayout group = (GroupLayout) layout;
-                    VMStorage[] regs = storageCalculator.regAlloc(
-                            StorageType.VECTOR, group.memberLayouts().size());
+                    VMStorage[] regs = storageCalculator.nextStorageForHFA(group);
                     if (regs != null) {
                         long offset = 0;
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
