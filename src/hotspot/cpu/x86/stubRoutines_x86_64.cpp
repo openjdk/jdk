@@ -32,6 +32,8 @@
 // a description of how to extend it, see the stubRoutines.hpp file.
 
 jint    StubRoutines::x86::_mxcsr_std = 0;
+double  StubRoutines::x86::_unity;
+double  StubRoutines::x86::_thresh;
 
 address StubRoutines::x86::_get_previous_sp_entry = NULL;
 

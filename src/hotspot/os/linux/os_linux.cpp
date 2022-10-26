@@ -1742,6 +1742,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return NULL;
 }
 
+static const double unity = 0x1.0p-1020;
+static const volatile double thresh = 0x0.0000000000003p-1022;
+
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
                                 int ebuflen) {
   // Save and restore the floating-point environment around dlopen().
@@ -1752,13 +1755,18 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
   // that might depend on these FPU features for performance and/or
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
-  fenv_t curr_fenv;
-  int rtn = fegetenv(&curr_fenv);
-  assert(rtn == 0, "fegetnv must succeed");
+  fenv_t default_fenv;
+  {
+    int rtn = fegetenv(&default_fenv);
+    assert(rtn == 0, "fegetnv must succeed");
+  }
   void * result = ::dlopen(filename, RTLD_LAZY);
-  rtn = fesetenv(&curr_fenv);
-  assert(rtn == 0, "fesetenv must succeed");
-
+  if (unity + (thresh) == unity || -unity - (thresh) == -unity) {
+    asm("nop");
+    // int rtn = fesetenv(&default_fenv);
+    // assert(rtn == 0, "fesetenv must succeed");
+    // assert(epsilon + hide(epsilon) != 0, "fsetenv didn't work");
+  }
   if (result == NULL) {
     const char* error_report = ::dlerror();
     if (error_report == NULL) {

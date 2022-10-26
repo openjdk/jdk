@@ -544,7 +544,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   # CXXFLAGS C++ language level for all of JDK, including Hotspot.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LANGSTD_CXXFLAGS="-std=c++14"
+    LANGSTD_CXXFLAGS="-std=gnu++14"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     LANGSTD_CXXFLAGS="-std:c++14"
   else

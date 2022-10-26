@@ -5018,9 +5018,29 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
       // 0x00007ffff673a80c <+108>:	jp     0x7ffff673a818 <_ZN2os5Linux13dlopen_helperEPKcPci+120>
       // 0x00007ffff673a80e <+110>:	jne    0x7ffff673a818 <_ZN2os5Linux13dlopen_helperEPKcPci+120>
 
+      // constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
 
+      // {
+      //   Label ok_ret;
+      //   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
+      //   const Address mxcsr_save(rsp, 0);
 
-      Label FAIL, DONE;
+      //   push(rax);
+      //   subptr(rsp, wordSize);      // allocate a temp location
+      //   stmxcsr(mxcsr_save);
+      //   movl(rax, mxcsr_save);
+      //   andl(rax, MXCSR_MASK);
+      //   cmp32(rax, mxcsr_std, rsi);
+      //   jcc(Assembler::equal, ok_ret);
+
+      //   ldmxcsr(mxcsr_std, rsi);
+
+      //   bind(ok_ret);
+      //   addptr(rsp, wordSize);
+      //   pop(rax);
+      // }
+
+    Label FAIL, DONE;
       movsd(xmm9, ExternalAddress(StubRoutines::x86::addr_unity()), rsi);
       movsd(xmm8, ExternalAddress(StubRoutines::x86::addr_thresh()), rsi);
       addsd(xmm8, xmm9);
