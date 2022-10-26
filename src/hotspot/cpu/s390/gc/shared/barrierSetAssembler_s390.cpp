@@ -71,13 +71,11 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   }
 }
 
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == nullptr) {
     return;
   }
-
-  assert_different_registers(tmp, Z_R1_scratch);
 
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
@@ -85,10 +83,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
     __ load_const(Z_R1_scratch, (uint64_t)StubRoutines::zarch::nmethod_entry_barrier()); // 2*6 bytes
 
     // Load value from current java object:
-    __ z_lg(tmp, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread); // 6 bytes
+    __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
-    __ z_cfi(tmp, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
+    __ z_cfi(Z_R0_scratch, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
     __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes

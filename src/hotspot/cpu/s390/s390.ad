@@ -899,7 +899,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(&_masm, Z_R0_scratch);
+    bs->nmethod_entry_barrier(&_masm);
   }
 
   C->output()->set_frame_complete(cbuf.insts_size());
