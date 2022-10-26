@@ -1629,7 +1629,14 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
     } else {
       if (on_heap
           && *fv.location != 0 && *fv.location > -100 && *fv.location < 100
-          && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))) {
+#if !defined(PPC64)
+          && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
+#else  // !defined(PPC64)
+          && (strcmp(fv.description, "sender_sp") == 0 || strcmp(fv.description, "top_frame_sp") == 0 ||
+              strcmp(fv.description, "esp") == 0 || strcmp(fv.description, "monitors") == 0 ||
+              strcmp(fv.description, "locals") == 0 || strstr(fv.description, " method "))
+#endif //!defined(PPC64)
+          ) {
         st->print_cr(" " INTPTR_FORMAT ": %18d %s", p2i(fv.location), (int)*fv.location, fv.description);
       } else {
         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);

@@ -125,6 +125,11 @@ public:
   intptr_t* entryFP() const { return _entry->entry_fp(); }
   address   entryPC() const { return _entry->entry_pc(); }
   int argsize()       const { assert(_entry->argsize() >= 0, ""); return _entry->argsize(); }
+  int entry_frame_extension() const {
+    // the entry frame is extended if the bottom frame has stack arguments
+    assert(_entry->argsize() >= 0, "");
+    return _entry->argsize() == 0 ? _entry->argsize() : _entry->argsize() + frame::metadata_words_at_top;
+  }
   void set_argsize(int value) { _entry->set_argsize(value); }
 
   bool is_empty() const { return last_nonempty_chunk() == nullptr; }

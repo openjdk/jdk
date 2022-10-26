@@ -199,7 +199,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void static_dload_or_store(int which_local, LoadOrStore direction);
 
   void save_interpreter_state(Register scratch);
-  void restore_interpreter_state(Register scratch, bool bcp_and_mdx_only = false);
+  void restore_interpreter_state(Register scratch, bool bcp_and_mdx_only = false, bool restore_top_frame_sp = false);
 
   void increment_backedge_counter(const Register Rcounters, Register Rtmp, Register Rtmp2, Register Rscratch);
 

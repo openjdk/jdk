@@ -752,10 +752,10 @@ REGISTER_DECLARATION(FloatRegister, F13_ARG13,  F13); // volatile
 // Register declarations to be used in frame manager assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 REGISTER_DECLARATION(Register, R14_bcp,        R14);
-REGISTER_DECLARATION(Register, R15_esp,        R15);
+REGISTER_DECLARATION(Register, R15_esp,        R15);      // slot below top of expression stack for ld/st with update
 REGISTER_DECLARATION(FloatRegister, F15_ftos,  F15);
 REGISTER_DECLARATION(Register, R16_thread,     R16);      // address of current thread
-REGISTER_DECLARATION(Register, R17_tos,        R17);      // address of Java tos (prepushed).
+REGISTER_DECLARATION(Register, R17_tos,        R17);      // The interpreter's top of (expression) stack cache register
 REGISTER_DECLARATION(Register, R18_locals,     R18);      // address of first param slot (receiver).
 REGISTER_DECLARATION(Register, R19_method,     R19);      // address of current method
 #ifndef DONT_USE_REGISTER_DEFINES

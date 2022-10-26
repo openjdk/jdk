@@ -95,7 +95,7 @@ public:
 
   static inline address* return_pc_address(const frame& f);
   static address return_pc(const frame& f);
-  static void patch_sender_sp(frame& f, intptr_t* sp);
+  static void patch_sender_sp(frame& f, const frame& caller);
 
   static int size(const frame& f, InterpreterOopMap* mask);
   static int size(const frame& f);

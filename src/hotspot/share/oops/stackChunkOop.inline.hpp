@@ -98,7 +98,7 @@ inline void stackChunkOopDesc::set_cont_raw(oop value)    {  jdk_internal_vm_Sta
 template<DecoratorSet decorators>
 inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
-inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize(); }
+inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize() - frame::metadata_words_at_top; }
 
 inline HeapWord* stackChunkOopDesc::start_of_stack() const {
    return (HeapWord*)(cast_from_oop<intptr_t>(as_oop()) + InstanceStackChunkKlass::offset_of_stack());
@@ -123,7 +123,7 @@ inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
 
 inline bool stackChunkOopDesc::is_empty() const {
   assert(sp() <= stack_size(), "");
-  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize()),
+  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize() - frame::metadata_words_at_top),
     "sp: %d size: %d argsize: %d", sp(), stack_size(), argsize());
   return sp() == stack_size();
 }
@@ -135,8 +135,8 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 }
 
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
-  HeapWord* start = (HeapWord*)start_address() + sp() - frame::sender_sp_offset;
+#if (defined(X86) || defined(AARCH64) || defined(PPC64)) && !defined(ZERO)
+  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words_at_bottom;
 #else
   Unimplemented();
   HeapWord* start = NULL;

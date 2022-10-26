@@ -89,7 +89,7 @@ inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const fr
   return NULL;
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
   Unimplemented();
 }
 

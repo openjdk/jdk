@@ -100,7 +100,8 @@ inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const fr
   return (address*)(f.fp() + frame::return_addr_offset);
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
+  intptr_t* sp = caller.unextended_sp();
   assert(f.is_interpreted_frame(), "");
   intptr_t* la = f.addr_at(frame::interpreter_frame_sender_sp_offset);
   *la = f.is_heap_frame() ? (intptr_t)(sp - f.fp()) : (intptr_t)sp;
