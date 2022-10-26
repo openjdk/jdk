@@ -3674,6 +3674,265 @@ class StubGenerator: public StubCodeGenerator {
   };
 #endif // COMPILER2
 
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - int[]   SHA.state
+  //   c_rarg2   - int     offset
+  //   c_rarg3   - int     limit
+  //
+  address generate_sha256_implCompress(bool multi_block, const char *name) {
+    static const uint32_t round_consts[64] = {
+      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+      0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+      0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+      0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+      0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+      0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+      0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+      0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+      0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+    };
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf   = c_rarg0;
+    Register state = c_rarg1;
+    Register ofs   = c_rarg2;
+    Register limit = c_rarg3;
+
+    Label multi_block_loop;
+
+    __ enter();
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vle32_v(v16, c_rarg1);
+    __ add(c_rarg1, c_rarg1, 16);
+    __ vle32_v(v17, c_rarg1);
+
+    __ bind(multi_block_loop);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vle32_v(v20, c_rarg0);
+    __ add(c_rarg0, c_rarg0, 16);
+    __ vle32_v(v21, c_rarg0);
+    __ add(c_rarg0, c_rarg0, 16);
+    __ vle32_v(v22, c_rarg0);
+    __ add(c_rarg0, c_rarg0, 16);
+    __ vle32_v(v23, c_rarg0);
+    __ add(c_rarg0, c_rarg0, 16);
+
+    __ vsetivli(x0, 16, Assembler::e8, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vid_v(v24);
+    __ vxor_vi(v24, v24, 0x3);
+    __ vrgather_vv(v10, v20, v24);
+    __ vrgather_vv(v11, v21, v24);
+    __ vrgather_vv(v12, v22, v24);
+    __ vrgather_vv(v13, v23, v24);
+    __ vrgather_vv(v26, v16, v24);
+    __ vrgather_vv(v27, v17, v24);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+
+    __ vid_v(v31);
+    __ vadd_vi(v30, v31, 2);
+    __ vmsltu_vi(v0, v31, 2);
+    __ vrgather_vv(v17, v26, v30, Assembler::v0_t);
+    __ vmerge_vvm(v17, v27, v17);
+    __ vadd_vi(v30, v31, -2);
+    __ vnot_v(v0, v0);
+    __ vrgather_vv(v16, v27, v30, Assembler::v0_t);
+    __ vmerge_vvm(v16, v26, v16);
+
+    __ vid_v(v0);
+    __ vmseq_vi(v0, v0, 0x0);
+
+    __ la(t0, ExternalAddress((address)round_consts));
+
+    // Quad-round 0 (+0, Wt from oldest to newest in v10->v11->v12->v13)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13); // Generate W[19:16]
+
+    // Quad-round 1 (+1, v11->v12->v13->v10)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10); // Generate W[23:20]
+
+    // Quad-round 2 (+2, v12->v13->v10->v11)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11); // Generate W[27:24]
+
+    // Quad-round 3 (+3, v13->v10->v11->v12)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12); // Generate W[31:28]
+
+    // Quad-round 4 (+0, v10->v11->v12->v13)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13); // Generate W[35:32]
+
+    // Quad-round 5 (+1, v11->v12->v13->v10)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10); // Generate W[39:36]
+
+    // Quad-round 6 (+2, v12->v13->v10->v11)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11); // Generate W[43:40]
+
+    // Quad-round 7 (+3, v13->v10->v11->v12)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12); // Generate W[47:44]
+
+    // Quad-round 8 (+0, v10->v11->v12->v13)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13); // Generate W[51:48]
+
+    // Quad-round 9 (+1, v11->v12->v13->v10)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10); // Generate W[55:52]
+
+    // Quad-round 10 (+2, v12->v13->v10->v11)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11); // Generate W[59:56]
+
+    // Quad-round 11 (+3, v13->v10->v11->v12)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12); // Generate W[63:60]
+
+    // Quad-round 12 (+0, v10->v11->v12->v13)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+
+    // Quad-round 13 (+1, v11->v12->v13->v10)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+
+    // Quad-round 14 (+2, v12->v13->v10->v11)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+
+    // Quad-round 15 (+3, v13->v10->v11->v12)
+    __ vl1re32_v(v15, t0);
+    __ add(t0, t0, 16);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+
+    __ vid_v(v31);
+
+    __ vadd_vi(v30, v31, 2);
+    __ vmsltu_vi(v0, v31, 2);
+    __ vrgather_vv(v19, v16, v30, Assembler::v0_t);
+    __ vmerge_vvm(v19, v17, v19);
+    __ vadd_vi(v30, v31, -2);
+    __ vnot_v(v0, v0);
+    __ vrgather_vv(v18, v17, v30, Assembler::v0_t);
+    __ vmerge_vvm(v18, v16, v18);
+
+    __ vadd_vv(v18, v26, v18);
+    __ vadd_vv(v19, v27, v19);
+
+    __ vsetivli(x0, 16, Assembler::e8, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vid_v(v24);
+    __ vxor_vi(v24, v24, 0x3);
+
+    __ vrgather_vv(v16, v18, v24);
+    __ vrgather_vv(v17, v19, v24);
+
+    if (multi_block) {
+      __ add(ofs, ofs, 64);
+      __ ble(ofs, limit, multi_block_loop);
+      __ mv(c_rarg0, ofs); // return ofs
+    }
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vle32_v(v17, c_rarg1);
+    __ add(c_rarg1, c_rarg1, -16);
+    __ vle32_v(v16, c_rarg1);
+
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -3959,6 +4218,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
 #endif
+
+    if (UseSHA256Intrinsics) {
+      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(false, "sha256_implCompress");
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true,  "sha256_implCompressMB");
+    }
 
     generate_compare_long_strings();
 
