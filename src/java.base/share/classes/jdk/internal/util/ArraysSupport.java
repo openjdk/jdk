@@ -203,7 +203,7 @@ public class ArraysSupport {
     }
 
     private static int hashCode(byte[] value) {
-        int result = 0;
+        int result = 1;
         for (int index = 0; index < value.length; index++) {
             result = 31 * result + (value[index]);
         }
@@ -211,7 +211,7 @@ public class ArraysSupport {
     }
 
     private static int hashCode(char[] value) {
-        int result = 0;
+        int result = 1;
         for (int index = 0; index < value.length; index++) {
             result = 31 * result + (value[index]);
         }
@@ -219,7 +219,7 @@ public class ArraysSupport {
     }
 
     private static int hashCode(short[] value) {
-        int result = 0;
+        int result = 1;
         for (int index = 0; index < value.length; index++) {
             result = 31 * result + (value[index]);
         }
@@ -227,7 +227,7 @@ public class ArraysSupport {
     }
 
     private static int hashCode(int[] value) {
-        int result = 0;
+        int result = 1;
         for (int index = 0; index < value.length; index++) {
             result = 31 * result + (value[index]);
         }

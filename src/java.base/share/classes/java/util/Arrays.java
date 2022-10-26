@@ -4271,8 +4271,7 @@ public class Arrays {
             return 0;
         }
         int result = 1;
-        for (int index = 0; index < a.length; index++) {
-            long element = a[index];
+        for (long element : a) {
             int elementHash = (int)(element ^ (element >>> 32));
             result = 31 * result + elementHash;
         }
