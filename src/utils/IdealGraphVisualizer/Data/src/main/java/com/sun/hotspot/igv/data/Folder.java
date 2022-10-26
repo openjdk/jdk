@@ -27,6 +27,7 @@ import java.util.List;
 
 public interface Folder {
     void setName(String name);
+    String getName();
     String getDisplayName();
     List<? extends FolderElement> getElements();
     void removeElement(FolderElement element);

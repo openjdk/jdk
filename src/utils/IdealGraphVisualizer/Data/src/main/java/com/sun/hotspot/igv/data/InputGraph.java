@@ -229,7 +229,6 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public void setName(String name) {
         getProperties().setProperty("name", name);
-        System.out.println("InputGraph setName() " + name);
         displayNameChangedEvent.fire();
     }
 
