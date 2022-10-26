@@ -1667,7 +1667,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
   if (UseAVX > 1) {
-    if (FLAG_IS_DEFAULT(UseVectorizedHashCodeInstrinsic)) {
+    if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
       FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
     }
   } else if (UseVectorizedHashCodeIntrinsic) {
