@@ -74,6 +74,7 @@ static jbyte currentSessionID;
 
 /* Counter of active callbacks and flag for vm_death */
 static int      active_callbacks   = 0;
+static volatile jboolean waiting_for_active_callbacks = JNI_FALSE;
 static jboolean vm_death_callback_active = JNI_FALSE;
 static jrawMonitorID callbackLock;
 static jrawMonitorID callbackBlock;
@@ -132,6 +133,10 @@ static jrawMonitorID callbackBlock;
                 debugMonitorEnter(callbackBlock);                       \
                 debugMonitorExit(callbackBlock);                        \
             } else {                                                    \
+                /* Notify anyone waiting for callbacks to exit during reset */ \
+                if (waiting_for_active_callbacks && active_callbacks == 0) {        \
+                    debugMonitorNotifyAll(callbackLock);                \
+                }                                                       \
                 debugMonitorExit(callbackLock);                         \
             }                                                           \
         }                                                               \
@@ -1509,8 +1514,9 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
-    /* Only enable vthread events if vthread support is enabled. */
-    if (gdata->vthreadsSupported) {
+    /* Only enable vthread START and END events if we want to remember
+       vthreads when no debugger is connected. */
+    if (gdata->vthreadsSupported && gdata->rememberVThreadsWhenDisconnected) {
         error = threadControl_setEventMode(JVMTI_ENABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
         if (error != JVMTI_ERROR_NONE) {
@@ -1583,6 +1589,32 @@ eventHandler_initialize(jbyte sessionID)
 }
 
 void
+eventHandler_onConnect() {
+    debugMonitorEnter(handlerLock);
+
+    /* Enable vthread START and END events if they are not already always enabled.
+     * They are always enabled if we are remembering vthreads when no debugger is
+     * connected. Otherwise they are only enabled when connected because they can be very
+     * noisy and hurt performance a lot.
+     */
+    if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
+        jvmtiError error;
+        error = threadControl_setEventMode(JVMTI_ENABLE,
+                                           EI_VIRTUAL_THREAD_START, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread start events");
+        }
+        error = threadControl_setEventMode(JVMTI_ENABLE,
+                                           EI_VIRTUAL_THREAD_END, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread end events");
+        }
+    }
+
+    debugMonitorExit(handlerLock);
+}
+
+void
 eventHandler_reset(jbyte sessionID)
 {
     int i;
@@ -1595,6 +1627,24 @@ eventHandler_reset(jbyte sessionID)
      * the invoke completions can sneak through.
      */
     threadControl_detachInvokes();
+
+    /* Disable vthread START and END events unless we are remembering vthreads
+     * when no debugger is connected. We do this because these events can
+     * be very noisy and hurt performance a lot.
+     */
+    if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
+        jvmtiError error;
+        error = threadControl_setEventMode(JVMTI_DISABLE,
+                                           EI_VIRTUAL_THREAD_START, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread start events");
+        }
+        error = threadControl_setEventMode(JVMTI_DISABLE,
+                                           EI_VIRTUAL_THREAD_END, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread end events");
+        }
+    }
 
     /* Reset the event helper thread, purging all queued and
      * in-process commands.
@@ -1610,6 +1660,25 @@ eventHandler_reset(jbyte sessionID)
     currentSessionID = sessionID;
 
     debugMonitorExit(handlerLock);
+}
+
+void
+eventHandler_waitForActiveCallbacks()
+{
+    /*
+     * Wait for active callbacks to complete. It is ok if more callbacks come in
+     * after this point. This is being done so threadControl_reset() can safely
+     * remove all vthreads without worry that they might be referenced in an active
+     * callback. The only callbacks enabled at this point are the permanent ones,
+     * and they never involve vthreads.
+     */
+    waiting_for_active_callbacks = JNI_TRUE;
+    debugMonitorEnter(callbackLock);
+    while (active_callbacks > 0) {
+        debugMonitorWait(callbackLock);
+    }
+    debugMonitorExit(callbackLock);
+    waiting_for_active_callbacks = JNI_FALSE;
 }
 
 void
