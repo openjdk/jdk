@@ -52,9 +52,7 @@ static void fail_oom(size_t size) {
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
   const size_t outer_size = sizeof(NMTPreInitAllocation) + payload_size;
-  if (outer_size < payload_size) {
-    fail_oom(payload_size);
-  }
+  guarantee(outer_size > payload_size, "Overflow");
   void* p = raw_malloc(outer_size);
   if (p == nullptr) {
     fail_oom(outer_size);
@@ -67,9 +65,7 @@ NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* 
   assert(old->next == NULL, "unhang from map first");
   // We just reallocate the old block, header and all.
   const size_t new_outer_size = sizeof(NMTPreInitAllocation) + new_payload_size;
-  if (new_outer_size < new_payload_size) {
-    fail_oom(new_payload_size);
-  }
+  guarantee(new_outer_size > new_payload_size, "Overflow");
   void* p = raw_realloc(old, new_outer_size);
   if (p == nullptr) {
     fail_oom(new_outer_size);
