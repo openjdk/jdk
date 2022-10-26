@@ -2782,7 +2782,8 @@ threadControl_reset(void)
          * the only callbacks enabled are the permanent ones, and they never involve vthreads.
          */
         eventHandler_waitForActiveCallbacks();
-        /* Now that event callbacks have exited, we can reacquire the threadLock, which
+        /*
+         * Now that event callbacks have exited, we can reacquire the threadLock, which
          * is needed before before calling removeVThreads().
          */
         debugMonitorEnter(threadLock);

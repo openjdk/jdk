@@ -133,8 +133,8 @@ static jrawMonitorID callbackBlock;
                 debugMonitorEnter(callbackBlock);                       \
                 debugMonitorExit(callbackBlock);                        \
             } else {                                                    \
-                /* Notify anyone waiting for callbacks to exit during reset */ \
-                if (waiting_for_active_callbacks && active_callbacks == 0) {        \
+                /* Notify anyone waiting for callbacks to exit */       \
+                if (waiting_for_active_callbacks && active_callbacks == 0) { \
                     debugMonitorNotifyAll(callbackLock);                \
                 }                                                       \
                 debugMonitorExit(callbackLock);                         \
@@ -1514,8 +1514,10 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
-    /* Only enable vthread START and END events if we want to remember
-       vthreads when no debugger is connected. */
+    /*
+     * Only enable vthread START and END events if we want to remember
+     * vthreads when no debugger is connected.
+     */
     if (gdata->vthreadsSupported && gdata->rememberVThreadsWhenDisconnected) {
         error = threadControl_setEventMode(JVMTI_ENABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
@@ -1592,10 +1594,11 @@ void
 eventHandler_onConnect() {
     debugMonitorEnter(handlerLock);
 
-    /* Enable vthread START and END events if they are not already always enabled.
+    /*
+     * Enable vthread START and END events if they are not already always enabled.
      * They are always enabled if we are remembering vthreads when no debugger is
-     * connected. Otherwise they are only enabled when connected because they can be very
-     * noisy and hurt performance a lot.
+     * connected. Otherwise they are only enabled when connected because they can
+     * be very noisy and hurt performance a lot.
      */
     if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
         jvmtiError error;
