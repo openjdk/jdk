@@ -31,9 +31,6 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
@@ -307,27 +304,7 @@ class MethodHandleNatives {
         Object bsmReference = bootstrapMethod.internalMemberName();
         if (bsmReference == null)  bsmReference = bootstrapMethod;
         String staticArglist = staticArglistForTrace(staticArguments);
-        String callerName = caller.getName();
-        String[] callerInfo = new String[] {callerName};
-        StackWalker.getInstance().walk(new Function<Stream<StackWalker.StackFrame>, Object>() {
-            // We use inner classes (instead of stream/lambda) to avoid triggering
-            // further invokedynamic resolution, which would cause infinite recursion.
-            // It's OK to use + for string concat, because java.base is compiled without
-            // the use of indy string concat.
-            @Override
-            public Object apply(Stream<StackWalker.StackFrame> s) {
-                s.forEach(new Consumer<StackWalker.StackFrame>() {
-                    @Override
-                    public void accept(StackWalker.StackFrame f) {
-                        if (!"java.lang.invoke.MethodHandleNatives".equals(f.getClassName()) && callerInfo[0] == callerName) {
-                            callerInfo[0] = f.toStackTraceElement().toString();
-                        }
-                    }
-                });
-                return null;
-            }
-        });
-        System.out.println("linkCallSite "+callerInfo[0]+" "+
+        System.out.println("linkCallSite "+getCallerInfo(caller)+" "+
                            bsmReference+" "+
                            name+type+"/"+staticArglist);
         try {
@@ -340,6 +317,20 @@ class MethodHandleNatives {
             System.out.println("linkCallSite => throw "+ex);
             throw ex;
         }
+    }
+
+    /**
+     * Return a human-readable description of the caller. Something like
+     * "java.base/java.security.Security.<clinit>(Security.java:82)"
+     */
+    private static String getCallerInfo(Class<?> caller) {
+        for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+            if (e.getClassName().equals(caller.getName())) {
+                return e.toString();
+            }
+        }
+        // fallback if the caller is somehow missing from the stack.
+        return caller.getName();
     }
 
     // this implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
