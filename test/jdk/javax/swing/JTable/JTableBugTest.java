@@ -57,7 +57,7 @@ public class JTableBugTest {
                 frame.getContentPane().add(tbl);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
-	    });
+            });
         } finally {
             Thread.sleep(1000);
             SwingUtilities.invokeAndWait(() -> {
