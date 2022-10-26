@@ -63,14 +63,14 @@ public class TestFileChooserSingleDirectorySelection  {
             robot.delay(1000);
 
             Point pt = fileChooser.getLocationOnScreen();
-            ClickMouse(pt);
+            int frameHeight = frame.getHeight();
+            ClickMouse(pt, 0, frameHeight, 50);
 
             pt = getSelectedFilesButton.getLocationOnScreen();
-            robot.mouseMove(pt.x + getSelectedFilesButton.getWidth() / 2,
-                            pt.y + getSelectedFilesButton.getHeight() / 2);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(100);
+            int btnWidth = getSelectedFilesButton.getWidth();
+            int btnHeight = getSelectedFilesButton.getHeight();
+            ClickMouse(pt, btnWidth, btnHeight, 0);
+
             if (!passed)
                 throw new RuntimeException("getSelectedFiles returned empty array.");
             else
@@ -87,7 +87,7 @@ public class TestFileChooserSingleDirectorySelection  {
     private static void createAndShowUI() {
         frame = new JFrame("Test File Chooser Single Directory Selection");
         frame.getContentPane().setLayout(new BorderLayout());
-        fileChooser = new JFileChooser();
+        fileChooser = new JFileChooser("user.home");
         fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setControlButtonsAreShown(false);
@@ -112,8 +112,8 @@ public class TestFileChooserSingleDirectorySelection  {
         frame.setVisible(true);
     }
 
-    private static void ClickMouse(Point point) {
-        robot.mouseMove(point.x + 50 , point.y + frame.getHeight()/2);
+    private static void ClickMouse(Point point, int width, int height, int xOffset) {
+        robot.mouseMove(point.x + width/2 + xOffset , point.y + height/2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(100);
