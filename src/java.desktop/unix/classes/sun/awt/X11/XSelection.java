@@ -723,7 +723,7 @@ final class XSelection {
                     XSelectionEvent xse = ev.get_xselection();
                     // Ignore the SelectionNotify event if it is not the response to our last request.
                     if (propertyGetter != null && xse.get_time() == lastRequestServerTime) {
-                        // The property will be None in case of convertion failure.
+                        // The property will be None in case of conversion failure.
                         if (xse.get_property() == selectionPropertyAtom.getAtom()) {
                             propertyGetter.execute();
                             propertyGetter = null;

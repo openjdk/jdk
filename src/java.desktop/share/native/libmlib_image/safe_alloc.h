@@ -29,7 +29,7 @@
 #include "j2d_md.h"
 
 /*
- * Macroses defined below are wrappers for alloc functions
+ * Macros defined below are wrappers for alloc functions
  * that perform buffer size calculation with integer overflow
  * check.
  */

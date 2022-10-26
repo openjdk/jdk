@@ -757,7 +757,7 @@ address decode_env::decode_instructions(address start, address end, address orig
 
 void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
   int sz = buflen - offset;
-  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
+  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, JNI_LIB_SUFFIX);
   if (written < sz) { // written successfully, not truncated.
     if (Verbose) st->print_cr("Trying to load: %s", buf);
     return os::dll_load(buf, ebuf, ebuflen);
