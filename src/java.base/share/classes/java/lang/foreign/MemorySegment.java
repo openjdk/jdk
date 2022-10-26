@@ -398,6 +398,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
+ * @sealedGraph
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
@@ -549,7 +550,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * can be computed as follows:
      *
      * {@snippet lang=java :
-     * other.address() - segment.baseAddress()
+     * other.address() - segment.address()
      * }
      *
      * If the segments share the same address, {@code 0} is returned. If
@@ -881,7 +882,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a Java string constructed from the bytes read from the given starting address up to (but not including)
      * the first {@code '\0'} terminator character (assuming one is found).
      * @throws IllegalArgumentException if the size of the UTF-8 string is greater than the largest string supported by the platform.
-     * @throws IndexOutOfBoundsException if {@code S + offset > byteSize()}, where {@code S} is the size of the UTF-8
+     * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code S + offset > byteSize()}, where {@code S} is the size of the UTF-8
      * string (including the terminator character).
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
@@ -907,7 +908,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param offset offset in bytes (relative to this segment address) at which this access operation will occur.
      *               the final address of this write operation can be expressed as {@code address() + offset}.
      * @param str the Java string to be written into this segment.
-     * @throws IndexOutOfBoundsException if {@code str.getBytes().length() + offset >= byteSize()}.
+     * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code str.getBytes().length() + offset >= byteSize()}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread other than the thread owning
