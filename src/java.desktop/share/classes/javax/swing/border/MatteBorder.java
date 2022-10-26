@@ -102,7 +102,7 @@ public class MatteBorder extends EmptyBorder
      * @param borderInsets the insets of the border
      * @param tileIcon the icon to be used for tiling the border
      * @throws {@code NullPointerException} if {@code borderInsets}
-     *      *   is {@code null}
+     *          is {@code null}
      * @since 1.3
      */
     public MatteBorder(Insets borderInsets, Icon tileIcon)   {
@@ -169,7 +169,9 @@ public class MatteBorder extends EmptyBorder
     /**
      * Reinitialize the insets parameter with this Border's current Insets.
      * @param c the component for which this border insets value applies
-     * @param insets the object to be reinitialized
+     * @param insets the object to be
+     * @throws {@code NullPointerException} if {@code insets}
+     *         is {@code null}
      * @since 1.3
      */
     public Insets getBorderInsets(Component c, Insets insets) {

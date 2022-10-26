@@ -104,6 +104,8 @@ public class EmptyBorder extends AbstractBorder implements Serializable
      * Reinitialize the insets parameter with this Border's current Insets.
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
+     * @throws {@code NullPointerException} if {@code insets}
+     *          is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.left = left;
