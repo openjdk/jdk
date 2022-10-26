@@ -204,6 +204,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
   size_t header_size;
   size_t base_archive_name_size = 0;
   size_t base_archive_name_offset = 0;
+  size_t longest_common_prefix_size = 0;
   if (is_static()) {
     c_header_size = sizeof(FileMapHeader);
     header_size = c_header_size;
@@ -221,24 +222,30 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     }
     FREE_C_HEAP_ARRAY(const char, default_base_archive_name);
   }
+  ResourceMark rm;
+  GrowableArray<const char*>* app_cp_array = create_dumptime_app_classpath_array();
+  int len = app_cp_array->length();
+  longest_common_prefix_size = longest_common_app_classpath_prefix_len(len, app_cp_array);
   _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
   memset((void*)_header, 0, header_size);
   _header->populate(this,
                     core_region_alignment,
                     header_size,
                     base_archive_name_size,
-                    base_archive_name_offset);
+                    base_archive_name_offset,
+                    longest_common_prefix_size);
 }
 
 void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
                              size_t header_size, size_t base_archive_name_size,
-                             size_t base_archive_name_offset) {
+                             size_t base_archive_name_offset, size_t common_app_classpath_prefix_size) {
   // 1. We require _generic_header._magic to be at the beginning of the file
   // 2. FileMapHeader also assumes that _generic_header is at the beginning of the file
   assert(offset_of(FileMapHeader, _generic_header) == 0, "must be");
   set_header_size((unsigned int)header_size);
   set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
+  set_common_app_classpath_prefix_size((unsigned int)common_app_classpath_prefix_size);
   set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
 
@@ -311,6 +318,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- crc:                            0x%08x", crc());
   st->print_cr("- version:                        0x%x", version());
   st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
+  st->print_cr("- common_app_classpath_size:      " UINT32_FORMAT, common_app_classpath_prefix_size());
   st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
   st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
 
@@ -808,6 +816,17 @@ bool FileMapInfo::check_paths_existence(const char* paths) {
   return exist;
 }
 
+GrowableArray<const char*>* FileMapInfo::create_dumptime_app_classpath_array() {
+  Arguments::assert_is_dumping_archive();
+  GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
+  ClassPathEntry* cpe = ClassLoader::app_classpath_entries();
+  while (cpe != NULL) {
+    path_array->append(cpe->name());
+    cpe = cpe->next();
+  }
+  return path_array;
+}
+
 GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
   GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
   JavaThread* current = JavaThread::current();
@@ -842,23 +861,48 @@ bool FileMapInfo::classpath_failure(const char* msg, const char* name) {
   return false;
 }
 
-bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array) {
+unsigned int FileMapInfo::longest_common_app_classpath_prefix_len(int num_paths,
+                                                                  GrowableArray<const char*>* rp_array) {
+  if (num_paths == 0) {
+    return 0;
+  }
+  unsigned int pos;
+  for (pos = 0; ; pos++) {
+    for (int i = 0; i < num_paths; i++) {
+      if (rp_array->at(i)[pos] != '\0' && rp_array->at(i)[pos] == rp_array->at(0)[pos]) {
+        continue;
+      }
+
+      // search backward for the pos before the file separator char
+      while (pos > 0 && rp_array->at(0)[--pos] != *os::file_separator());
+      // return the file separator char position
+      return pos + 1;
+    }
+  }
+  return 0;
+}
+
+bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array,
+                              unsigned int dumptime_prefix_len, unsigned int runtime_prefix_len) {
   int i = 0;
   int j = shared_path_start_idx;
-  bool mismatch = false;
-  while (i < num_paths && !mismatch) {
+  while (i < num_paths) {
     while (shared_path(j)->from_class_path_attr()) {
       // shared_path(j) was expanded from the JAR file attribute "Class-Path:"
       // during dump time. It's not included in the -classpath VM argument.
       j++;
     }
-    if (!os::same_files(shared_path(j)->name(), rp_array->at(i))) {
-      mismatch = true;
+    assert(strlen(shared_path(j)->name()) > (size_t)dumptime_prefix_len, "sanity");
+    const char* dumptime_path = shared_path(j)->name() + dumptime_prefix_len;
+    assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
+    const char* runtime_path = rp_array->at(i)  + runtime_prefix_len;
+    if (!os::same_files(dumptime_path, runtime_path)) {
+      return true;
     }
     i++;
     j++;
   }
-  return mismatch;
+  return false;
 }
 
 bool FileMapInfo::validate_boot_class_paths() {
@@ -912,7 +956,7 @@ bool FileMapInfo::validate_boot_class_paths() {
         // check the full runtime boot path, must match with dump time
         num = rp_len;
       }
-      mismatch = check_paths(1, num, rp_array);
+      mismatch = check_paths(1, num, rp_array, 0, 0);
     } else {
       // create_path_array() ignores non-existing paths. Although the dump time and runtime boot classpath lengths
       // are the same initially, after the call to create_path_array(), the runtime boot classpath length could become
@@ -961,9 +1005,20 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
 
     int j = header()->app_class_paths_start_index();
-    mismatch = check_paths(j, shared_app_paths_len, rp_array);
+    mismatch = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
     if (mismatch) {
-      return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
+      // To facilitate app deployment, we allow the JAR files to be moved *together* to
+      // a different location, as long as they are still stored under the same directory
+      // structure. E.g., the following is OK.
+      //     java -Xshare:dump -cp /a/Foo.jar:/a/b/Bar.jar  ...
+      //     java -Xshare:auto -cp /x/y/Foo.jar:/x/y/b/Bar.jar  ...
+      unsigned int dumptime_prefix_len = header()->common_app_classpath_prefix_size();
+      unsigned int runtime_prefix_len = longest_common_app_classpath_prefix_len(shared_app_paths_len, rp_array);
+      mismatch = check_paths(j, shared_app_paths_len, rp_array,
+                             dumptime_prefix_len, runtime_prefix_len);
+      if (mismatch) {
+        return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
+      }
     }
   }
   return true;
@@ -991,7 +1046,7 @@ bool FileMapInfo::check_module_paths() {
   }
   ResourceMark rm;
   GrowableArray<const char*>* rp_array = create_path_array(rp);
-  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array);
+  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array, 0, 0);
 }
 
 bool FileMapInfo::validate_shared_path_table() {
@@ -1205,6 +1260,10 @@ public:
       return false;
     }
 
+    if (!check_common_app_classpath_prefix_len()) {
+      return false;
+    }
+
     // All fields in the GenericCDSFileMapHeader has been validated.
     _is_valid = true;
     return true;
@@ -1281,6 +1340,16 @@ public:
         }
         _base_archive_name = name;
       }
+    }
+
+    return true;
+  }
+
+  bool check_common_app_classpath_prefix_len() {
+    int common_path_size = _header->_common_app_classpath_prefix_size;
+    if (common_path_size < 0) {
+      FileMapInfo::fail_continue("common app classpath prefix len < 0");
+      return false;
     }
     return true;
   }
@@ -1364,8 +1433,9 @@ bool FileMapInfo::init_from_file(int fd) {
   if (base_offset != 0 && name_size != 0) {
     if (header_size != base_offset + name_size) {
       log_info(cds)("_header_size: " UINT32_FORMAT, header_size);
-      log_info(cds)("base_archive_name_size: " UINT32_FORMAT, name_size);
-      log_info(cds)("base_archive_name_offset: " UINT32_FORMAT, base_offset);
+      log_info(cds)("common_app_classpath_size: " UINT32_FORMAT, header()->common_app_classpath_prefix_size());
+      log_info(cds)("base_archive_name_size: " UINT32_FORMAT, header()->base_archive_name_size());
+      log_info(cds)("base_archive_name_offset: " UINT32_FORMAT, header()->base_archive_name_offset());
       FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
       return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,10 @@ import java.util.Vector;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.ldap.Control;
-import javax.naming.spi.*;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 final class LdapBindingEnumeration
         extends AbstractLdapNamingEnumeration<Binding> {
@@ -76,8 +77,8 @@ final class LdapBindingEnumeration
         cn.add(atom);
 
         try {
-            obj = DirectoryManager.getObjectInstance(obj, cn, homeCtx,
-                homeCtx.envprops, attrs);
+            obj = NamingManagerHelper.getDirObjectInstance(obj, cn, homeCtx,
+                    homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
 
         } catch (NamingException e) {
             throw e;
