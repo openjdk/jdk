@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,13 @@ import sun.reflect.misc.ReflectUtil;
  */
 public final class JARSoundbankReader extends SoundbankReader {
 
+    /*
+     * Name of the system property that enables the Jar soundbank loading
+     * true if jar sound bank is allowed to be loaded
+     * default is false
+     */
+    private final static String JAR_SOUNDBANK_ENABLED = "jdk.sound.jarsoundbank";
+
     private static boolean isZIP(URL url) {
         boolean ok = false;
         try {
@@ -70,8 +77,10 @@ public final class JARSoundbankReader extends SoundbankReader {
     @SuppressWarnings("deprecation")
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
-        if (!isZIP(url))
+        Objects.requireNonNull(url);
+        if (!Boolean.getBoolean(JAR_SOUNDBANK_ENABLED) || !isZIP(url))
             return null;
+
         ArrayList<Soundbank> soundbanks = new ArrayList<>();
         URLClassLoader ucl = URLClassLoader.newInstance(new URL[]{url});
         InputStream stream = ucl.getResourceAsStream(
@@ -116,6 +125,7 @@ public final class JARSoundbankReader extends SoundbankReader {
     @Override
     public Soundbank getSoundbank(File file)
             throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(file);
         return getSoundbank(file.toURI().toURL());
     }
 }
