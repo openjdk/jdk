@@ -338,9 +338,13 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   {
     ZSaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
-    int32_t offset = 0;
-    __ la_patchable(t0, stub->slow_path(), offset);
-    __ jalr(x1, t0, offset);
+
+    Address target(stub->slow_path());
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
   }
 
   // Stub exit

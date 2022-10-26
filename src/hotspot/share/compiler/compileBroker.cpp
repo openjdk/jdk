@@ -1960,7 +1960,7 @@ void CompileBroker::init_compiler_thread_log() {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);
         }
-        CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file_name, fp, thread_id);
+        CompileLog* log = new(mtCompiler) CompileLog(file_name, fp, thread_id);
         if (log == NULL) {
           fclose(fp);
           return;
@@ -2093,11 +2093,13 @@ CompilerDirectives* DirectivesStack::_bottom = NULL;
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   task->print_ul();
-  if (PrintCompilation) {
+  elapsedTimer time;
+
+  DirectiveSet* directive = task->directive();
+  if (directive->PrintCompilationOption) {
     ResourceMark rm;
     task->print_tty();
   }
-  elapsedTimer time;
 
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
@@ -2114,19 +2116,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool should_break = false;
   const int task_level = task->comp_level();
   AbstractCompiler* comp = task->compiler();
-
-  DirectiveSet* directive;
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
     // native.  The NoHandleMark before the transition should catch
     // any cases where this occurs in the future.
     methodHandle method(thread, task->method());
-    assert(!method->is_native(), "no longer compile natives");
 
-    // Look up matching directives
-    directive = DirectivesStack::getMatchingDirective(method, comp);
-    task->set_directive(directive);
+    assert(!method->is_native(), "no longer compile natives");
 
     // Update compile information when using perfdata.
     if (UsePerfData) {

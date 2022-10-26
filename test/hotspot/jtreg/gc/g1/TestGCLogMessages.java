@@ -129,6 +129,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Evacuate Collection Set
         new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),
@@ -300,7 +301,6 @@ public class TestGCLogMessages {
     }
 
     LogMessageWithLevel concurrentStartMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Clear Claimed Marks", Level.DEBUG),
         new LogMessageWithLevel("Reset Marking State", Level.DEBUG),
         new LogMessageWithLevel("Note Start Of Mark", Level.DEBUG),
     };
