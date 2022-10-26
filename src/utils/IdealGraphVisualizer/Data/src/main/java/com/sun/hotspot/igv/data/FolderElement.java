@@ -27,5 +27,6 @@ public interface FolderElement {
 
     Folder getParent();
     String getName();
+    String getDisplayName();
     void setParent(Folder parent);
 }

@@ -95,7 +95,11 @@ public class FolderNode extends AbstractNode {
         @Override
         public void changed(Object source) {
             addNotify();
-         }
+            for (Node node : getNodes()) {
+                // refresh the display name
+                node.setDisplayName(node.getDisplayName());
+            }
+        }
     }
 
     @Override
@@ -128,7 +132,7 @@ public class FolderNode extends AbstractNode {
         if (folder instanceof FolderElement) {
             final FolderElement folderElement = (FolderElement) folder;
             this.setDisplayName(folderElement.getName());
-            content.add((RemoveCookie) () -> {
+            this.content.add((RemoveCookie) () -> {
                 children.destroyNodes(children.getNodes());
                 folderElement.getParent().removeElement(folderElement);
             });
@@ -141,21 +145,17 @@ public class FolderNode extends AbstractNode {
         fireIconChange();
     }
 
+    @Override
+    public String getDisplayName() {
+        return children.getFolder().getDisplayName();
+    }
+
     public String getHtmlDisplayName() {
         String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
         if (selected) {
             htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
         }
         return htmlDisplayName;
-    }
-
-    public void init(String name, List<Group> groups) {
-        this.setDisplayName(name);
-        children.addNotify();
-
-        for (Group g : groups) {
-            content.add(g);
-        }
     }
 
     public boolean isRootNode() {

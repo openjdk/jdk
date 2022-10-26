@@ -136,8 +136,8 @@ public final class EditorTopComponent extends TopComponent {
         associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
         diagramViewModel.getDiagramChangedEvent().addListener(model -> {
-            setDisplayName(model.getGraph().getName());
-            setToolTipText(model.getGroup().getName());
+            setDisplayName(model.getGraph().getDisplayName());
+            setToolTipText(model.getGroup().getDisplayName());
             graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
         });
 

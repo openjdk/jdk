@@ -45,7 +45,6 @@ import org.openide.util.Lookup;
  */
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
-    // Warning: Update setData method if fields are added
     private final Group group;
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;

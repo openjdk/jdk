@@ -62,6 +62,11 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
     }
 
     @Override
+    public String getDisplayName() {
+        return "GraphDocument";
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 

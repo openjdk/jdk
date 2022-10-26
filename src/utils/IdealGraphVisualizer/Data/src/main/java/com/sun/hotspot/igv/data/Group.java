@@ -103,6 +103,11 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
+    public String getDisplayName() {
+        return getParent().getElements().indexOf(this) + " - " + getName();
+    }
+
+    @Override
     public String getName() {
         return getProperties().get("name");
     }

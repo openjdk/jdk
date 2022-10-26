@@ -65,6 +65,12 @@ public class GraphNode extends AbstractNode {
         }
         return htmlDisplayName;
     }
+
+    @Override
+    public String getDisplayName() {
+        return graph.getDisplayName();
+    }
+
     private GraphNode(InputGraph graph, InstanceContent content) {
         super(Children.LEAF, new AbstractLookup(content));
         this.graph = graph;

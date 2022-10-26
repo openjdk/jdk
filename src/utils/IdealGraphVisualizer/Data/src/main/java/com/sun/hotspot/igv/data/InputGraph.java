@@ -229,6 +229,15 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return getProperties().get("name");
     }
 
+    @Override
+    public String getDisplayName() {
+        if (isDiffGraph) {
+            return firstGraph.getDisplayName() + " Δ " + secondGraph.getDisplayName();
+        } else {
+            return getGroup().getGraphs().indexOf(this) + ". " + getName();
+        }
+    }
+
     public Collection<InputNode> getNodes() {
         return Collections.unmodifiableCollection(nodes.values());
     }
