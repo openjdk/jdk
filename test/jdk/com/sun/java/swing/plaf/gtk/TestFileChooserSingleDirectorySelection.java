@@ -92,11 +92,11 @@ public class TestFileChooserSingleDirectorySelection  {
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setControlButtonsAreShown(false);
 
-	    getSelectedFilesButton = new JButton();
+        getSelectedFilesButton = new JButton();
         getSelectedFilesButton.setText("Print selected Files");
         getSelectedFilesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-	        passed = false;
+            passed = false;
                 File files[] = fileChooser.getSelectedFiles();
                 if(files.length != 0) {
                     passed = true;
