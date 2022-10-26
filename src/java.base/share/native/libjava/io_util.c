@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,63 +51,6 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
         JNU_ThrowIOExceptionWithLastError(env, "Read error");
     }
     return ret & 0xFF;
-}
-
-#define SHORT_SIZE 2
-#define INT_SIZE   4
-#define LONG_SIZE  8
-
-jlong
-readN(JNIEnv *env, jobject this, jfieldID fid, jint len) {
-    if (len == 1) {
-        return readSingle(env, this, fid);
-    }
-    char *buf = NULL;
-    if (len == SHORT_SIZE) {
-      char stackBuf[SHORT_SIZE];
-      buf = stackBuf;
-    }
-    if (len == INT_SIZE) {
-      char stackBuf[INT_SIZE];
-      buf = stackBuf;
-    }
-    if (len == LONG_SIZE) {
-      char stackBuf[LONG_SIZE];
-      buf = stackBuf;
-    }
-
-    FD fd = getFD(env, this, fid);
-    if (fd == -1) {
-        JNU_ThrowIOException(env, "Stream Closed");
-        return -1;
-    }
-    jint nread = IO_Read(fd, buf, len);
-    if (nread == -1) {
-        JNU_ThrowByName(env, "java/io/EOFException", NULL);
-        return -1;
-    }
-
-    if (len == SHORT_SIZE) {
-        return ((*buf) << 8) + (*(buf + 1) & 0xFF);
-    }
-    if (len == INT_SIZE) {
-        return ((*buf) << 24) +
-               ((*(buf + 1) & 0xFF) << 16) +
-               ((*(buf + 2) & 0xFF) << 8) +
-               ((*(buf + 3) & 0xFF));
-    }
-    if (len == LONG_SIZE) {
-        return ((((jlong) *(buf)) << 56) +
-                (((jlong) (*(buf + 1)) & 0xFF) << 48) +
-                (((jlong) (*(buf + 2)) & 0xFF) << 40) +
-                (((jlong) (*(buf + 3)) & 0xFF) << 32) +
-                (((jlong) (*(buf + 4)) & 0xFF) << 24) +
-                ((*(buf + 5) & 0xFF) << 16) +
-                ((*(buf + 6) & 0xFF) << 8) +
-                ((*(buf + 7) & 0xFF)));
-    }
-    JNU_ThrowByName(env, "java/lang/IllegalArgumentException", NULL);
-    return -1;
 }
 
 /* The maximum size of a stack-allocated buffer.

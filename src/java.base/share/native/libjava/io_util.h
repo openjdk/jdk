@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ extern jfieldID IO_append_fdID;
  */
 
 jint readSingle(JNIEnv *env, jobject this, jfieldID fid);
-jlong readN(JNIEnv *env, jobject this, jfieldID fid, jint length);
 jint readBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
                jint len, jfieldID fid);
 void writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid);

@@ -67,9 +67,9 @@ Java_java_io_RandomAccessFile_open0(JNIEnv *env,
     fileOpen(env, this, path, raf_fd, flags);
 }
 
-JNIEXPORT jlong JNICALL
-Java_java_io_RandomAccessFile_read0(JNIEnv *env, jobject this, jint length) {
-    return readN(env, this, raf_fd, length);
+JNIEXPORT jint JNICALL
+Java_java_io_RandomAccessFile_read0(JNIEnv *env, jobject this) {
+    return readSingle(env, this, raf_fd);
 }
 
 JNIEXPORT jint JNICALL

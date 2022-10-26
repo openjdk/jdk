@@ -75,6 +75,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private volatile boolean closed;
 
+    private final byte[] readBuffer = new byte[8];
+
     private static final int O_RDONLY = 1;
     private static final int O_RDWR =   2;
     private static final int O_SYNC =   4;
@@ -367,19 +369,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                          end-of-file has been reached.
      */
     public int read() throws IOException {
-        return (int) read(1);
-    }
-
-   private long read(int length) throws IOException {
         long comp = Blocker.begin();
         try {
-            return read0(length);
+            return read0();
         } finally {
             Blocker.end(comp);
         }
     }
 
-    private native long read0(int length) throws IOException;
+    private native int read0() throws IOException;
 
     /**
      * Reads a sub array as a sequence of bytes.
@@ -804,7 +802,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final short readShort() throws IOException {
-        return (short) read(2);
+        return (short) readUnsignedShort();
     }
 
     /**
@@ -828,7 +826,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final int readUnsignedShort() throws IOException {
-        return (int) read(2);
+        readFully(readBuffer, 0, 2);
+        return Bits.getUnsignedShort(readBuffer, 0);
     }
 
     /**
@@ -852,7 +851,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final char readChar() throws IOException {
-        return (char) read(2);
+        return (char) readUnsignedShort();
     }
 
     /**
@@ -876,7 +875,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final int readInt() throws IOException {
-        return (int) read(4);
+        readFully(readBuffer, 0, 4);
+        return Bits.getInt(readBuffer, 0);
     }
 
     /**
@@ -908,7 +908,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final long readLong() throws IOException {
-        return read(8);
+        readFully(readBuffer, 0, 8);
+        return Bits.getLong(readBuffer, 0);
     }
 
     /**
