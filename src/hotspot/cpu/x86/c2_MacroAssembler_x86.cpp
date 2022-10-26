@@ -3524,9 +3524,11 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   jcc(Assembler::greaterEqual, LONG_VECTOR_LOOP_BEGIN);
   // }
 
-  // result += vcoef0[0];
-  movdl(tmp, vcoef0);
-  addl(result, tmp);
+  // result += vcoef0[0]; -- for the non-String cases that have a starting point of constant 1
+  if (!is_string_hashcode) {
+    movdl(tmp, vcoef0);
+    addl(result, tmp);
+  }
 
   // result += vresult.reduceLanes(ADD);
   for (int idx = 0; idx < 4; idx++) {

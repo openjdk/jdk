@@ -2387,12 +2387,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
-    case Op_VectorCmpMasked: {
-      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
-      n->set_req(2, pair1);
-      n->del_req(3);
-      break;
-    }
     case Op_MacroLogicV: {
       Node* pair1 = new BinaryNode(n->in(1), n->in(2));
       Node* pair2 = new BinaryNode(n->in(3), n->in(4));
@@ -2442,12 +2436,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(4);
       break;
     }
-    case Op_VectorizedHashCode: {
-      Node* pair = new BinaryNode(n->in(2), n->in(3));
-      n->set_req(2, pair);
-      n->del_req(3);
-      break;
-    }
     case Op_FmaD:
     case Op_FmaF:
     case Op_FmaVD:
@@ -2468,6 +2456,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_VectorizedHashCode:
+    case Op_VectorCmpMasked:
     case Op_CopySignD:
     case Op_SignumVF:
     case Op_SignumVD:
