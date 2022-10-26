@@ -104,25 +104,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton draft="contributed">ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a z</pattern>
+							<pattern draft="contributed">h:mm:ss a z</pattern>
 							<datetimeSkeleton draft="contributed">ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a</pattern>
+							<pattern draft="contributed">h:mm:ss a</pattern>
 							<datetimeSkeleton draft="contributed">ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="contributed">h:mm a</pattern>
+							<pattern draft="contributed">h:mm a</pattern>
 							<datetimeSkeleton draft="contributed">ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -155,6 +155,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="weekday">
 				<displayName draft="contributed">Día de la semana</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
 			</field>
 			<field type="minute">
 				<displayName draft="contributed">Minuto</displayName>
