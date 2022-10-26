@@ -13,6 +13,7 @@ public class ForEachPatterns {
     public static void main(String[] args) {
 
         List<Point>   in                  = List.of(new Point(1, 2), new Point(2, 3));
+        List<IPoint>  in_iface            = List.of(new Point(1, 2), new Point(2, 3));
         List          inRaw               = List.of(new Point(1, 2), new Point(2, 3), new Frog(3, 4));
         List<PointEx> inWithPointEx       = List.of(new PointEx(1, 2));
         byte[]        inBytes             = { (byte) 127, (byte) 127 };
@@ -27,6 +28,7 @@ public class ForEachPatterns {
         assertEquals(8, arrayEnhancedFor(inArray));
         assertEquals(8, iteratorEnhancedForWithBinding(in));
         assertEquals(8, simpleDecostructionPatternWithAccesses(in));
+        assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, null, NullPointerException.class);
         assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, inWithNull, MatchException.class);
         assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, inWithNullComponent, NullPointerException.class);
         assertEx(ForEachPatterns::simpleDecostructionPatternException, inWithPointEx, MatchException.class);
@@ -38,6 +40,7 @@ public class ForEachPatterns {
         assertEquals(3, returnFromEnhancedFor(in));
         assertEquals(0, breakFromEnhancedFor(in));
         assertEquals(254, primitiveWidening(inBytes));
+        assertEquals(8, sealedRecordPassBaseType(in_iface));
     }
 
     static int iteratorEnhancedFor(List<Point> points) {
@@ -110,6 +113,16 @@ public class ForEachPatterns {
             if (i == 1) break;
             else result += a + b;
         }
+        return result;
+    }
+
+    static int sealedRecordPassBaseType(List<IPoint> points) {
+        int result = 0;
+
+        for(Point(var x, var y) : points) {
+            result += (x + y);
+        }
+
         return result;
     }
 

@@ -1573,7 +1573,7 @@ public class Attr extends JCTree.Visitor {
 
                 Type clazztype = recordPattern.type;
 
-                chk.checkType(tree.expr.pos(), tree.elementType, clazztype);
+                checkCastablePattern(tree.expr.pos(), tree.elementType, clazztype);
 
                 recordPatternEnv.tree = tree; // before, we were not in loop!
                 try {
