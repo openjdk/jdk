@@ -283,7 +283,7 @@ public class URLFromURITest {
             if (isFileBased && host == null) {
                 host = "";
             }
-            
+
             assertEquals(host, url.getHost(), input + ": host");
             if (host != null) {
                 String userInfo = uri.getRawUserInfo();
