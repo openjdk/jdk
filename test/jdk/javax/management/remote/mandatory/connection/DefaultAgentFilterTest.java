@@ -306,7 +306,9 @@ public class DefaultAgentFilterTest {
         }
         try {
             // Add custom filter on command-line.
-            testDefaultAgent(null, "-Dcom.sun.management.jmxremote.serial.filter.pattern=\"java.lang.*;java.math.BigInteger;java.math.BigDecimal;java.util.*;javax.management.openmbean.*;javax.management.ObjectName;java.rmi.MarshalledObject;javax.security.auth.Subject;DefaultAgentFilterTest$MyTestObject;!*\"");
+            testDefaultAgent(null, "-Dcom.sun.management.jmxremote.serial.filter.pattern=\"java.lang.*;java.math.BigInteger;"
+                             + "java.math.BigDecimal;java.util.*;javax.management.openmbean.*;javax.management.ObjectName;"
+                             + "java.rmi.MarshalledObject;javax.security.auth.Subject;DefaultAgentFilterTest$MyTestObject;!*\"");
             System.out.println("----\tTest PASSED: with custom filter on command-line");
         } catch (Exception ex) {
             System.out.println(ex);
