@@ -239,7 +239,7 @@ private:
 
 
 // For reliable macro expansion involving pragmas
-#define JP_PRAGMA(string) _Pragma(#string)
+#define JP_PRAGMA(str) _Pragma(#str)
 
 //
 // Helpers to define CA functions.
