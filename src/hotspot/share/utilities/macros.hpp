@@ -31,7 +31,7 @@
 // recommended that you use it in the latter case. For macros defined to
 // raw C++ syntax (such as , . { or &) it will not work properly, if at
 // all, since that is not what it is intended for.
-// 
+//
 // - When the macro is defined but empty, it expands to ~(~+ 0) == 0 &&
 // ~(~+ 1) == 1, which works out 0 == 0 && 1 == 1 (the double negation ~~
 // being an identity operator).
@@ -44,7 +44,7 @@
 // - When the macro is defined to a non - numeric value, the preprocessor
 // reduces all unknown symbols to 0, and we get the previous case with n == 0
 // once more. This works even for C++ keywords.
-// 
+//
 // Weakness: This does not work with string literals or empty chars.
 #define IS_EMPTY_VALUE(VALUE) ~(~VALUE + 0) == 0 && ~(~VALUE + 1) == 1
 
