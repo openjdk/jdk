@@ -40,6 +40,18 @@ static void closeFileDescriptor(JNIEnv *env, int fd) {
 }
 
 JNIEXPORT void JNICALL
+Java_sun_nio_ch_UnixDispatcher_init(JNIEnv *env, jclass clazz)
+{
+    int sp[2];
+    if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
+        return;
+    }
+    preCloseFD = sp[0];
+    close(sp[1]);
+}
+
+JNIEXPORT void JNICALL
 Java_sun_nio_ch_UnixDispatcher_close0(JNIEnv *env, jclass clazz, jobject fdo)
 {
     jint fd = fdval(env, fdo);
@@ -54,16 +66,4 @@ Java_sun_nio_ch_UnixDispatcher_preClose0(JNIEnv *env, jclass clazz, jobject fdo)
         if (dup2(preCloseFD, fd) < 0)
             JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
     }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_UnixDispatcher_init(JNIEnv *env, jclass clazz)
-{
-    int sp[2];
-    if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
-        return;
-    }
-    preCloseFD = sp[0];
-    close(sp[1]);
 }
