@@ -25,7 +25,30 @@
 #ifndef SHARE_UTILITIES_MACROS_HPP
 #define SHARE_UTILITIES_MACROS_HPP
 
-// For when Pragmas need to be reliably nested in macros, also handles
+// For detecting in the preprocessor whether a macro definition is empty.
+// Although it's meant for checking macro values, it can also be used on
+// macros defined to identifiers or even C++ keywords, but it's not
+// recommended that you use it in the latter case. For macros defined to
+// raw C++ syntax (such as , . { or &) it will not work properly, if at
+// all, since that is not what it is intended for.
+// 
+// - When the macro is defined but empty, it expands to ~(~+ 0) == 0 &&
+// ~(~+ 1) == 1, which works out 0 == 0 && 1 == 1 (the double negation ~~
+// being an identity operator).
+// - When the macro is defined to a numeric value, say n, it expands to
+// ~(~n + 0) == 0 && ~(~n + 1) == 1. On the left hand side of &&, the
+// expression ~(~n + 0) == 0 evaluates to n == 0. But with n == 0, the
+// right hand side evaluates to ~(~0 + 1) == 1, with ~0 being - 1 to
+// ~(-1 + 1) == 1, then ~0 == 1 and finally - 1 == 1, which obviously
+// is false.
+// - When the macro is defined to a non - numeric value, the preprocessor
+// reduces all unknown symbols to 0, and we get the previous case with n == 0
+// once more. This works even for C++ keywords.
+// 
+// Weakness: This does not work with string literals or empty chars.
+#define IS_EMPTY_VALUE(VALUE) ~(~VALUE + 0) == 0 && ~(~VALUE + 1) == 1
+
+// For when Pragmas need to be reliably nested in macros. Also handles
 // quotation marks, so use sites are not required to pass string literals
 #define PRAGMA(str) _Pragma(#str)
 
