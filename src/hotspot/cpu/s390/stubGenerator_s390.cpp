@@ -2887,7 +2887,7 @@ class StubGenerator: public StubCodeGenerator {
     // Check return val of vm call
     // if (return val != 0)
     // return to caller
-    __ z_bcr(Assembler::bcondNotZero, Z_R14);
+    __ z_bcr(Assembler::bcondZero, Z_R14);
 
     // Pop frame built in prologue.
     __ pop_frame();
