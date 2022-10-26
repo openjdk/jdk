@@ -28,13 +28,11 @@ import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
+import java.beans.PropertyChangeEvent;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import org.openide.nodes.AbstractNode;
-import org.openide.nodes.Children;
-import org.openide.nodes.Node;
-import org.openide.nodes.Sheet;
+import java.util.Objects;
+import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
@@ -49,7 +47,7 @@ public class FolderNode extends AbstractNode {
     private final FolderChildren children;
     // NetBeans node corresponding to each opened graph. Used to highlight the
     // focused graph in the Outline window.
-    private static final Map<InputGraph, GraphNode> graphNode = new HashMap<>();
+    private static final Map<InputGraph, GraphNode> graphNodeMap = new HashMap<>();
     private boolean selected = false;
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
@@ -66,14 +64,33 @@ public class FolderNode extends AbstractNode {
         }
 
         @Override
-        protected Node[] createNodes(FolderElement e) {
-            if (e instanceof InputGraph) {
-                InputGraph g = (InputGraph) e;
-                GraphNode n = new GraphNode(g);
-                graphNode.put(g, n);
-                return new Node[]{n};
-            } else if (e instanceof Folder) {
-                return new Node[]{new FolderNode((Folder) e)};
+        protected Node[] createNodes(FolderElement folderElement) {
+
+            if (folderElement instanceof InputGraph) {
+                InputGraph inputGraph = (InputGraph) folderElement;
+                GraphNode graphNode = new GraphNode(inputGraph);
+                graphNodeMap.put(inputGraph, graphNode);
+                graphNode.addNodeListener(new NodeAdapter() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent ev) {
+                        if (Objects.equals(ev.getPropertyName(), "displayName")) {
+
+                            folderElement.getDisplayNameChangedEvent().fire();
+                        }
+                    }
+                });
+                return new Node[]{graphNode};
+            } else if (folderElement instanceof Group) {
+                FolderNode folderNode = new FolderNode((Group) folderElement);
+                folderNode.addNodeListener(new NodeAdapter() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent ev) {
+                        if (Objects.equals(ev.getPropertyName(), "displayName")) {
+                            folderElement.getDisplayNameChangedEvent().fire();
+                        }
+                    }
+                });
+                return new Node[]{folderNode};
             } else {
                 return null;
             }
@@ -83,7 +100,7 @@ public class FolderNode extends AbstractNode {
         protected void destroyNodes(Node[] nodes) {
             for (Node n : nodes) {
                 // Each node is only present once in the graphNode map.
-                graphNode.values().remove(n);
+                graphNodeMap.values().remove(n);
             }
         }
 
@@ -181,11 +198,11 @@ public class FolderNode extends AbstractNode {
     }
 
     public static void clearGraphNodeMap() {
-        graphNode.clear();
+        graphNodeMap.clear();
     }
 
     public static GraphNode getGraphNode(InputGraph graph) {
-        return graphNode.get(graph);
+        return graphNodeMap.get(graph);
     }
 
     public Folder getFolder() {

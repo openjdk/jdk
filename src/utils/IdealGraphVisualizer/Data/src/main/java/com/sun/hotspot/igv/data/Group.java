@@ -34,6 +34,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     private final List<InputGraph> graphs;
     private InputMethod method;
     private final transient ChangedEvent<Group> changedEvent;
+    private final ChangedEvent<Group> displayNameChangedEvent = new ChangedEvent<>(this);
+
     private Folder parent;
 
     public Group(Folder parent) {
@@ -107,9 +109,14 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         return getParent().getElements().indexOf(this) + " - " + getName();
     }
 
+    public ChangedEvent<Group> getDisplayNameChangedEvent() {
+        return displayNameChangedEvent;
+    }
+
     @Override
     public void setName(String name) {
         getProperties().setProperty("name", name);
+        displayNameChangedEvent.fire();
     }
 
     @Override

@@ -25,6 +25,7 @@ package com.sun.hotspot.igv.data;
 
 public interface FolderElement {
 
+    ChangedEvent<? extends FolderElement> getDisplayNameChangedEvent();
     Folder getParent();
     String getName();
     String getDisplayName();

@@ -38,29 +38,32 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final Map<String, InputBlock> blocks;
     private final List<InputBlockEdge> blockEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
-    private boolean isDiffGraph;
+    private final boolean isDiffGraph;
     private InputGraph firstGraph;
     private InputGraph secondGraph;
-
+    private final ChangedEvent<InputGraph> displayNameChangedEvent = new ChangedEvent<>(this);
 
     public InputGraph(InputGraph firstGraph, InputGraph secondGraph) {
-        this(firstGraph.getName() + " Δ " + secondGraph.getName());
+        this(firstGraph.getName() + " Δ " + secondGraph.getName(), true);
         assert !firstGraph.isDiffGraph() && !secondGraph.isDiffGraph();
         this.firstGraph = firstGraph;
         this.secondGraph = secondGraph;
-        isDiffGraph = true;
+        this.firstGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+        this.secondGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
     }
 
     public InputGraph(String name) {
+        this(name, false);
+    }
+
+    private InputGraph(String name, boolean isDifferenceGraph) {
         setName(name);
         nodes = new LinkedHashMap<>();
         edges = new ArrayList<>();
         blocks = new LinkedHashMap<>();
         blockEdges = new ArrayList<>();
         nodeToBlock = new LinkedHashMap<>();
-        firstGraph = null;
-        secondGraph = null;
-        isDiffGraph = false;
+        isDiffGraph = isDifferenceGraph;
     }
 
     public boolean isDiffGraph() {
@@ -220,8 +223,14 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return parentGroup.getPrev(this);
     }
 
+    public ChangedEvent<InputGraph> getDisplayNameChangedEvent() {
+        return displayNameChangedEvent;
+    }
+
     public void setName(String name) {
-        this.getProperties().setProperty("name", name);
+        getProperties().setProperty("name", name);
+        System.out.println("InputGraph setName() " + name);
+        displayNameChangedEvent.fire();
     }
 
     @Override
@@ -234,8 +243,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         if (isDiffGraph) {
             return firstGraph.getDisplayName() + " Δ " + secondGraph.getDisplayName();
         } else {
-            return getGroup().getGraphs().indexOf(this) + ". " + getName();
+            return getIndex() + ". " + getName();
         }
+    }
+
+    public int getIndex() {
+        return getGroup().getGraphs().indexOf(this);
     }
 
     public Collection<InputNode> getNodes() {

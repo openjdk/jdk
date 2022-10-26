@@ -135,18 +135,21 @@ public final class EditorTopComponent extends TopComponent {
         content.add(diagramViewModel);
         associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
-        diagramViewModel.getDiagramChangedEvent().addListener(model -> {
-            setDisplayName(model.getGraph().getDisplayName());
-            setToolTipText(model.getGroup().getDisplayName());
-            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
-        });
-
         Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
         if (group.getParent() instanceof GraphDocument) {
             final GraphDocument doc = (GraphDocument) group.getParent();
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
+        graph.getDisplayNameChangedEvent().addListener(g -> setDisplayName(g.getDisplayName()));
+        group.getDisplayNameChangedEvent().addListener(g -> setToolTipText(g.getDisplayName()));
+
+        diagramViewModel.getDiagramChangedEvent().addListener(model -> {
+            setDisplayName(model.getGraph().getDisplayName());
+            setToolTipText(model.getGroup().getDisplayName());
+            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
+        });
+        diagramViewModel.getGraphChangedEvent().addListener(model -> model.getGraph().getDisplayNameChangedEvent().addListener(g -> setDisplayName(g.getDisplayName())));
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
