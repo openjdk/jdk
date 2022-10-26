@@ -57,8 +57,8 @@ public final class MetadataRepository {
     private static final JVM jvm = JVM.getJVM();
     private static final MetadataRepository instance = new MetadataRepository();
 
-    private final List<EventType> nativeEventTypes = new ArrayList<>(100);
-    private final List<EventControl> nativeControls = new ArrayList<EventControl>(100);
+    private final List<EventType> nativeEventTypes = new ArrayList<>(150);
+    private final List<EventControl> nativeControls = new ArrayList<EventControl>(nativeEventTypes.size());
     private final TypeLibrary typeLibrary = TypeLibrary.getInstance();
     private final SettingsManager settingsManager = new SettingsManager();
     private final Map<String, Class<? extends Event>> mirrors = new HashMap<>();
