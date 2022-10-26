@@ -133,6 +133,8 @@ public:
   void print_on(outputStream* st) const;
   void print_extended_on(outputStream* st) const;
   bool print_location(outputStream* st, uintptr_t addr) const;
+  bool print_location(outputStream* st, zaddress addr) const;
+  bool print_location(outputStream* st, zpointer ptr) const;
 
   // Verification
   bool is_oop(uintptr_t addr) const;

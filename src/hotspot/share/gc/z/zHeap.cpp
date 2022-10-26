@@ -346,68 +346,94 @@ void ZHeap::print_extended_on(outputStream* st) const {
 
 bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {
   // Intentionally unchecked cast
-  const zpointer obj = zpointer(addr);
   const bool uncolored = is_valid(zaddress(addr));
   const bool colored = is_valid(zpointer(addr));
+  if (colored && uncolored) {
+    // Should not reach here
+    return false;
+  }
 
-  if (colored || uncolored) {
-    const char* const desc       = uncolored
-        ? "an uncolored"         : ZPointer::is_load_good(obj)
-        ? "a good"
-        : "a bad";
+  if (colored) {
+    return print_location(st, zpointer(addr));
+  }
 
-    st->print(PTR_FORMAT " is %s oop: ", addr, desc);
+  if (uncolored) {
+    return print_location(st, zaddress(addr));
+  }
 
-    const zaddress to_print           = uncolored
-        ? zaddress(addr)              : ZPointer::is_load_good(obj)
-        ? ZPointer::uncolor(obj)
-        : zaddress::null;
+  return false;
+}
 
-    if (to_print == zaddress::null) {
-      if (ZPointer::is_load_good(obj)) {
-        st->print_raw_cr("NULL");
-      } else {
-        st->print_raw_cr("Unreliable");
+bool ZHeap::print_location(outputStream* st, zaddress addr) const {
+  assert(is_valid(addr), "must be");
 
-        // obj is not load good but let us still investigate what is there
-        os::print_location(st, untype(ZPointer::uncolor_unsafe(obj)), false);
-        return false;
-      }
-    } else if (LocationPrinter::is_valid_obj((void*)untype(to_print))) {
-      to_oop(to_print)->print_on(st);
-    } else {
-      if (ZHeap::is_in(untype(to_print))) {
-        ZPage* page = ZHeap::page(to_print);
-        if (page->is_relocatable() && page->is_marked() && !ZGeneration::generation(page->generation_id())->is_phase_mark()) {
-          zaddress_unsafe base = page->find_base((volatile zpointer*) to_print);
-          if (base == zaddress_unsafe::null) {
-            st->print_raw_cr("Cannot find base");
-          } else if (untype(base) != untype(to_print)) {
-            st->print_raw_cr("Internal address");
-            print_location(st, untype(base));
-            return true;
-          }
-        } else {
-          // TODO: This part is probably broken, but register printing recovers from crashes
-          st->print_raw("Unreliable ");
-          zaddress_unsafe base = page->find_base_unsafe((volatile zpointer*) to_print);
-          if (base == zaddress_unsafe::null) {
-            st->print_raw_cr("Cannot find base");
-          } else if (untype(base) != untype(to_print)) {
-            st->print_raw_cr("Internal address");
-            print_location(st, untype(base));
-            return true;
-          }
-          st->cr();
-        }
-      } else {
-        st->print_raw_cr("not in heap");
-      }
-      return false;
-    }
+  st->print(PTR_FORMAT " is a zaddress: ", untype(addr));
 
+  if (addr == zaddress::null) {
+    st->print_raw_cr("NULL");
     return true;
   }
 
+  if (!ZHeap::is_in(untype(addr))) {
+    st->print_raw_cr("not in heap");
+    return false;
+  }
+
+  if (LocationPrinter::is_valid_obj((void*)untype(addr))) {
+    to_oop(addr)->print_on(st);
+    return true;
+  }
+
+  ZPage* const page = ZHeap::page(addr);
+  zaddress_unsafe base;
+
+  if (page->is_relocatable() && page->is_marked() && !ZGeneration::generation(page->generation_id())->is_phase_mark()) {
+    base = page->find_base((volatile zpointer*) addr);
+  } else {
+    // TODO: This part is probably broken, but register printing recovers from crashes
+    st->print_raw("Unreliable ");
+    base = page->find_base_unsafe((volatile zpointer*) addr);
+  }
+
+  if (base == zaddress_unsafe::null) {
+    st->print_raw_cr("Cannot find base");
+    return false;
+  }
+
+  if (untype(base) == untype(addr)) {
+    st->print_raw_cr("Bad mark info/base");
+    return false;
+  }
+
+  st->print_raw_cr("Internal address");
+  print_location(st, untype(base));
+  return true;
+}
+
+bool ZHeap::print_location(outputStream* st, zpointer ptr) const {
+  assert(is_valid(ptr), "must be");
+
+  st->print(PTR_FORMAT " is %s zpointer: ", untype(ptr),
+            ZPointer::is_load_good(ptr) ? "a good" : "a bad");
+
+  if (!ZPointer::is_load_good(ptr)) {
+    st->print_cr("decoded " PTR_FORMAT, untype(ZPointer::uncolor_unsafe(ptr)));
+    // ptr is not load good but let us still investigate the uncolored address
+    return print_location(st, untype(ZPointer::uncolor_unsafe(ptr)));
+  }
+
+  const zaddress addr =  ZPointer::uncolor(ptr);
+
+  if (addr == zaddress::null) {
+    st->print_raw_cr("NULL");
+    return true;
+  }
+
+  if (LocationPrinter::is_valid_obj((void*)untype(addr))) {
+    to_oop(addr)->print_on(st);
+    return true;
+  }
+
+  st->print_cr("invalid object " PTR_FORMAT,  untype(addr));
   return false;
 }
