@@ -169,7 +169,7 @@ public class MatteBorder extends EmptyBorder
     /**
      * Reinitialize the insets parameter with this Border's current Insets.
      * @param c the component for which this border insets value applies
-     * @param insets the object to be
+     * @param insets the object to be reinitialized
      * @throws {@code NullPointerException} if {@code insets}
      *         is {@code null}
      * @since 1.3
