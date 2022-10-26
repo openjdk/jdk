@@ -3922,13 +3922,13 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(v18, __ T8B, v18, v29);
     __ eor(v19, __ T8B, v19, v30);
     __ eor(v20, __ T8B, v20, v31);
-    __ b(rounds24_loop);
+    __ b(rounds24_loop); // block_size == 168, SHAKE128
 
     __ BIND(sha3_512_or_sha3_384);
     __ ld1(v25, v26, __ T8B, __ post(buf, 16));
     __ eor(v7, __ T8B, v7, v25);
     __ eor(v8, __ T8B, v8, v26);
-    __ tbz(block_size, 5, rounds24_loop);
+    __ tbz(block_size, 5, rounds24_loop); // SHA3-512
 
     // SHA3-384
     __ ld1(v27, v28, v29, v30, __ T8B, __ post(buf, 32));
