@@ -684,6 +684,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                            JComponent.getManagingFocusForwardTraversalKeys());
         setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
                            JComponent.getManagingFocusBackwardTraversalKeys());
+        initializeLocalVars();
         if (cm == null) {
             cm = createDefaultColumnModel();
             autoCreateColumnsFromModel = true;
@@ -703,7 +704,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
         setModel(dm);
 
-        initializeLocalVars();
+
         updateUI();
     }
 
