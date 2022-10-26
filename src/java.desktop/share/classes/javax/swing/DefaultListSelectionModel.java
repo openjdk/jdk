@@ -629,7 +629,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     }
 
     private void setState(int index, boolean state) {
-//        System.out.println("index " + index + " state " + state);
         if (state) {
             set(index);
         }
@@ -649,10 +648,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     public void insertIndexInterval(int index, int length, boolean before)
     {
         if (length < 0 || index < 0) {
-            return;
+            throw new IndexOutOfBoundsException("index or length is negative");
         }
         if (index + length < 0) {
-            return;
+            length = Integer.MAX_VALUE - index;
         }
         /* The first new index will appear at insMinIndex and the last
          * one will appear at insMaxIndex
@@ -664,11 +663,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          * index-1 if before is true, index+1 if it's false (i.e. with
          * insMinIndex).
          */
-        if (length + maxIndex < 0) {
-            maxIndex = Integer.MAX_VALUE - length;
-        }
-        for(int i = maxIndex; i >= insMinIndex; i--) {
-            //System.out.println("insertIndex " + i + " length " + length);
+        for(int i = maxIndex; (i+length) >= 0 && i >= insMinIndex; i--) {
             setState(i + length, value.get(i));
         }
 
@@ -676,7 +671,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          */
         boolean setInsertedValues = ((getSelectionMode() == SINGLE_SELECTION) ?
                                         false : value.get(index));
-
         for(int i = insMinIndex; i >=0 && i <= insMaxIndex; i++) {
             setState(i, setInsertedValues);
         }
@@ -720,7 +714,9 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
                 setState(i, false);
             }
 
-            // TODO Update anchor and lead - min and max should be updated automatically
+            if (this.anchorIndex != -1 || this.leadIndex != -1) {
+                updateLeadAnchorIndices(-1, -1);
+            }
             return;
         }
 
@@ -731,9 +727,8 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          */
         for (int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
             setState(i, (i <= Integer.MAX_VALUE - gapLength)
-                    && (i + gapLength >= minIndex)
-                    && value.get(i + gapLength));
-
+                        && (i + gapLength >= minIndex)
+                        && value.get(i + gapLength));
         }
 
 
