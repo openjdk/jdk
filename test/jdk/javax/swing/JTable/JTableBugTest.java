@@ -22,9 +22,10 @@
  */
 
 /* @test
-   @bug 6257207
-   @summary Verifies if JTable.getDefaultEditor throws NullPointerException
-   @run main JTableBugTest
+ * @bug 6257207
+ * @key headful
+ * @summary Verifies if JTable.getDefaultEditor throws NullPointerException
+ * @run main JTableBugTest
  */
 import java.awt.Component;
 import javax.swing.JFrame;
@@ -35,26 +36,40 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.SwingUtilities;
 
 public class JTableBugTest {
-    public static void main(String[] args)  {
-        JFrame frame = new JFrame();
-        frame.setSize(100, 100);
+    private static JFrame frame;
 
-        DefaultTableModel myModel = new DefaultTableModel();
-        myModel.addColumn("Col1");
-        myModel.addColumn("Col2");
-        myModel.addColumn("Col3");
-        myModel.addRow(new Object[]{"item1.1", "item1.2", "item1.3"});
-        myModel.addRow(new Object[]{"item2.1", "item2.2", "item2.3"});
-        MyTable tbl = new MyTable(myModel);
-        frame.getContentPane().add(tbl);
-        frame.setVisible(true);
+    public static void main(String[] args) throws Exception {
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame();
+                frame.setSize(100, 100);
+
+                DefaultTableModel myModel = new DefaultTableModel();
+                myModel.addColumn("Col1");
+                myModel.addColumn("Col2");
+                myModel.addColumn("Col3");
+                myModel.addRow(new Object[]{"item1.1", "item1.2", "item1.3"});
+                myModel.addRow(new Object[]{"item2.1", "item2.2", "item2.3"});
+                MyTable tbl = new MyTable(myModel);
+                frame.getContentPane().add(tbl);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+	    });
+        } finally {
+            Thread.sleep(1000);
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
     static class MyTable extends JTable implements TableModelListener {
-        public MyTable(TableModel model)
-        {
+        public MyTable(TableModel model) {
             super(model);
         }
 
