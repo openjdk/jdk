@@ -630,11 +630,12 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
   st->print_cr(" - bytecode 2: %s %02x", Bytecodes::name(bytecode_2()), bytecode_2());
   st->print_cr(" - cp index: %5d", constant_pool_index());
   if (is_method_entry()) {
+    ResourceMark rm;
     constantPoolHandle cph(Thread::current(), cache->constant_pool());
     Method* m = method_if_resolved(cph);
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
-    st->print_cr(" -     Method: " INTPTR_FORMAT " %s", p2i(m), m->external_name());
+    st->print_cr(" -     Method: " INTPTR_FORMAT " %s", p2i(m), m != nullptr ? m->external_name() : nullptr);
     st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]",
                flag_state(), has_local_signature(), has_appendix(),
                is_forced_virtual(), is_final(), is_vfinal(),
@@ -662,7 +663,8 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
       }
     }
   }
-  else if (is_field_entry()) {
+  else {
+    assert(is_field_entry(), "must be a field entry");
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
     st->print_cr(" - flag values: [%02x|0|1|0|0|0|%01x|%01x|0|0|%04x]",
