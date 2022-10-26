@@ -46,8 +46,6 @@ import jdk.jfr.Period;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.SettingControl;
-import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.RequestEngine.RequestHook;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
