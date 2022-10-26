@@ -86,10 +86,10 @@
 
 // Disable warning attribute over the scope of the affected statement.
 // The name serves only to document the intended function.
-#define ALLOW_C_FUNCTION(name, ...)                          \
-  PRAGMA_DIAG_PUSH                                           \
-  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")          \
-  __VA_ARGS__                                                \
+#define ALLOW_C_FUNCTION(name, ...)                     \
+  PRAGMA_DIAG_PUSH                                      \
+  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")     \
+  __VA_ARGS__                                           \
   PRAGMA_DIAG_POP
 
 #endif // gcc10+
