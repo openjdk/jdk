@@ -92,6 +92,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes
     __ z_bcr(Assembler::bcondNotEqual, Z_R1_scratch); // 2 bytes
 
+    // Fall through to method body.
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 

@@ -2884,17 +2884,15 @@ class StubGenerator: public StubCodeGenerator {
     __ pop_frame();
     __ restore_return_pc();
 
-    // Check return val of vm call
-    // if (return val != 0)
-    // return to caller
+    // Check return val of VM-Call
     __ z_bcr(Assembler::bcondZero, Z_R14);
 
     // Pop frame built in prologue.
+    // Required so wrong_method_stub can deduce caller.
     __ pop_frame();
     __ restore_return_pc();
 
-    // O.W. call indicates deoptimization required
-    // Get handle to wrong-method-stub for s390
+    // VM-Call indicates deoptimization required
     __ load_const_optimized(Z_R1_scratch, SharedRuntime::get_handle_wrong_method_stub());
     __ z_br(Z_R1_scratch);
 
