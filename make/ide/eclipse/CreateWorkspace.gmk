@@ -29,33 +29,6 @@ include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
 
-# Language Settings Providers example
-# <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-# <project>
-#     <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.3911442301" name="Java SE">
-#         <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
-#             <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">
-#                 <language id="org.eclipse.cdt.core.g++">
-#                     <resource project-relative-path="">
-#                         <entry kind="macro" name="PRODUCT" value=""/>
-#                         <entry kind="macro" name="_WINDOWS" value=""/>
-#                     </resource>
-#                 </language>
-#             </provider>
-#             <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuildCommandParser" id="org.eclipse.cdt.managedbuilder.core.GCCBuildCommandParser" keep-relative-paths="false" name="CDT GCC Build Output Parser" parameter="([^/\\\\]*)((g?cc)|([gc]\+\+)|(clang))" prefer-non-shared="true" store-entries-with-project="true"/>
-#             <provider class="org.eclipse.cdt.internal.build.crossgcc.CrossGCCBuiltinSpecsDetector" console="false" env-hash="1294172661456" id="org.eclipse.cdt.build.crossgcc.CrossGCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT Cross GCC Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">
-#                 <language-scope id="org.eclipse.cdt.core.gcc"/>
-#                 <language-scope id="org.eclipse.cdt.core.g++"/>
-#             </provider>
-#             <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="false" env-hash="1294172661456" id="org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT GCC Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">
-#                 <language-scope id="org.eclipse.cdt.core.gcc"/>
-#                 <language-scope id="org.eclipse.cdt.core.g++"/>
-#             </provider>
-#             <provider build-parser-id="" cdb-modified-time="" class="org.eclipse.cdt.managedbuilder.internal.language.settings.providers.CompilationDatabaseParser" id="org.eclipse.cdt.managedbuilder.core.CompilationDatabaseParser" name="Compilation Database Parser" prefer-non-shared="true" store-entries-with-project="true"/>
-#         </extension>
-#     </configuration>
-# </project>
-
 SINGLE_DOLLAR:=$
 
 IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
