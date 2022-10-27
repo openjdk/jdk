@@ -80,7 +80,7 @@ final class SettingsManager {
         private void addToMap(Map<String, Set<String>> map, String attribute, String value) {
             Set<String> values = map.get(attribute);
             if (values == null) {
-                values = new HashSet<String>(5);
+                values = HashSet.newHashSet(4);
                 map.put(attribute, values);
             }
             values.add(value);
@@ -173,7 +173,7 @@ final class SettingsManager {
     }
 
     private Map<String, InternalSetting> createSettingsMap(List<Map<String,String>> activeSettings) {
-        Map<String, InternalSetting> map = new LinkedHashMap<>(activeSettings.size());
+        Map<String, InternalSetting> map = LinkedHashMap.newLinkedHashMap(activeSettings.size());
         for (Map<String, String> rec : activeSettings) {
             for (InternalSetting internal : makeInternalSettings(rec)) {
                 InternalSetting is = map.get(internal.getSettingsId());
@@ -188,7 +188,7 @@ final class SettingsManager {
     }
 
     private Collection<InternalSetting> makeInternalSettings(Map<String, String> rec) {
-        Map<String, InternalSetting> internals = new LinkedHashMap<>();
+        Map<String, InternalSetting> internals = LinkedHashMap.newLinkedHashMap(rec.size());
         for (Map.Entry<String, String> entry : rec.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();

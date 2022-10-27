@@ -26,12 +26,10 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
-import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.MirrorEvent;
-import jdk.jfr.internal.Type;
 
 @Category("Java Application")
 @Label("Java Thread Sleep")

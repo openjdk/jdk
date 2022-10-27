@@ -84,7 +84,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return middleWidget.isHitAt(localLocation);
     }
 
-    public FigureWidget(final Figure f, WidgetAction hoverAction, WidgetAction selectAction, DiagramScene scene, Widget parent) {
+    public FigureWidget(final Figure f, DiagramScene scene, Widget parent) {
         super(scene);
 
         assert this.getScene() != null;
