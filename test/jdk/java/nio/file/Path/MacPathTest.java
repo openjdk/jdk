@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7130915
+ * @bug 7130915 8289689
  * @summary Tests file path with nfc/nfd forms on MacOSX
  * @requires (os.family == "mac")
  * @library /test/lib ..
@@ -34,14 +34,26 @@
  *        jdk.test.lib.process.*
  *        TestUtil MacPath
  * @run main MacPathTest
+ * @run main/othervm -Djava.nio.file.Path.ENABLE_FILE_NAME_ENCODING=true MacPathTest
  */
 
 import jdk.test.lib.process.ProcessTools;
 
 public class MacPathTest {
+    private static final String FILE_NAME_ENCODING_PROPERTY =
+        "java.nio.file.Path.ENABLE_FILE_NAME_ENCODING";
+    private static final boolean ENABLE_FILE_NAME_ENCODING =
+        Boolean.getBoolean(FILE_NAME_ENCODING_PROPERTY);
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(MacPath.class.getName());
+        ProcessBuilder pb;
+        if (ENABLE_FILE_NAME_ENCODING) {
+            String option = ENABLE_FILE_NAME_ENCODING ?
+                "-D" + FILE_NAME_ENCODING_PROPERTY + "=true" : "";
+            pb = ProcessTools.createTestJvm(option, MacPath.class.getName());
+        } else {
+            pb = ProcessTools.createTestJvm(MacPath.class.getName());
+        }
         pb.environment().put("LC_ALL", "en_US.UTF-8");
         ProcessTools.executeProcess(pb)
                     .outputTo(System.out)

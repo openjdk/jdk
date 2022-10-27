@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,12 @@ import static sun.nio.fs.MacOSXNativeDispatcher.*;
 
 class MacOSXFileSystem extends BsdFileSystem {
 
+    private static final String PROPERTY_ENABLE_FILE_NAME_ENCODING =
+        "java.nio.file.Path.ENABLE_FILE_NAME_ENCODING";
+
+    private static final boolean ENCODE_FILE_NAMES =
+        Boolean.getBoolean(PROPERTY_ENABLE_FILE_NAME_ENCODING);
+
     MacOSXFileSystem(UnixFileSystemProvider provider, String dir) {
         super(provider, dir);
     }
@@ -46,21 +52,25 @@ class MacOSXFileSystem extends BsdFileSystem {
 
     @Override
     String normalizeNativePath(String path) {
-        for (int i = 0; i < path.length(); i++) {
-            char c = path.charAt(i);
-            if (c > 0x80)
-                return new String(normalizepath(path.toCharArray(),
+        if (ENCODE_FILE_NAMES) {
+            for (int i = 0; i < path.length(); i++) {
+                char c = path.charAt(i);
+                if (c > 0x80)
+                    return new String(normalizepath(path.toCharArray(),
                                   kCFStringNormalizationFormD));
+            }
         }
         return path;
     }
 
     @Override
     String normalizeJavaPath(String path) {
-        for (int i = 0; i < path.length(); i++) {
-            if (path.charAt(i) > 0x80)
-                return new String(normalizepath(path.toCharArray(),
-                                  kCFStringNormalizationFormC));
+        if (ENCODE_FILE_NAMES) {
+            for (int i = 0; i < path.length(); i++) {
+                if (path.charAt(i) > 0x80)
+                    return new String(normalizepath(path.toCharArray(),
+                                      kCFStringNormalizationFormC));
+            }
         }
         return path;
     }
