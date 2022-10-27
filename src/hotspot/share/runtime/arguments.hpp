@@ -43,7 +43,7 @@ class JVMFlag;
 extern "C" {
   typedef void (JNICALL *abort_hook_t)(void);
   typedef void (JNICALL *exit_hook_t)(jint code);
-  typedef jint (ATTRIBUTE_PRINTF(2, 0) JNICALL *vfprintf_hook_t)(FILE *fp, const char *format, va_list args);
+  typedef ATTRIBUTE_PRINTF(2, 0) jint (JNICALL *vfprintf_hook_t)(FILE *fp, const char *format, va_list args);
 }
 
 // Obsolete or deprecated -XX flag.
