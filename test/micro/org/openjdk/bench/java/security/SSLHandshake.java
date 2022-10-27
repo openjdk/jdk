@@ -77,6 +77,8 @@ public class SSLHandshake {
 
     @Setup(Level.Trial)
     public void init() throws Exception {
+        // System.setProperty("jdk.tls.namedGroups", "secp256r1");
+
         KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
 
