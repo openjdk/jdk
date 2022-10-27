@@ -238,8 +238,6 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
-
-        getModel().getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getModel() {
@@ -323,33 +321,25 @@ public final class EditorTopComponent extends TopComponent {
         }
     }
 
-    public void setSelectedFigures(List<Figure> list) {
-        scene.setSelection(list);
-        scene.centerFigures(list);
-    }
-
-    public void setSelectedNodes(Set<InputNode> nodes) {
-        List<Figure> list = new ArrayList<>();
-        Set<Integer> ids = new HashSet<>();
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
+        Set<Integer> ids = new HashSet<>(getModel().getSelectedNodes());
         for (InputNode n : nodes) {
             ids.add(n.getId());
         }
+        Set<Figure> selectedFigures = new HashSet<>();
         for (Figure f : getDiagram().getFigures()) {
             if (ids.contains(f.getInputNode().getId())) {
-                list.add(f);
+                selectedFigures.add(f);
             }
         }
-        setSelectedFigures(list);
+        scene.setFigureSelection(selectedFigures);
+        if (centerSelection) {
+            scene.centerFigures(selectedFigures);
+        }
     }
 
-    public void setSelectedNodes(InputBlock b) {
-        List<Figure> list = new ArrayList<>();
-        for (Figure f : getDiagram().getFigures()) {
-            if (f.getBlock().getInputBlock() == b) {
-                list.add(f);
-            }
-        }
-        setSelectedFigures(list);
+    public void clearSelectedNodes() {
+        scene.setFigureSelection(Collections.emptySet());
     }
 
     public Rectangle getSceneBounds() {
