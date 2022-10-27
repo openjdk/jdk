@@ -1052,7 +1052,7 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
 
 void ZStat::run_service() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
-  LogTarget(Info, gc, stats) log;
+  LogTarget(Debug, gc, stats) log;
 
   ZStatSampler::sort();
 
@@ -1062,6 +1062,12 @@ void ZStat::run_service() {
     if (should_print(log)) {
       print(log, history);
     }
+  }
+
+  // At exit print the final stats
+  LogTarget(Info, gc, stats) exit_log;
+  if (exit_log.is_enabled()) {
+    print(exit_log, history);
   }
 
   delete [] history;
