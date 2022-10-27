@@ -347,19 +347,28 @@ class MacroAssembler: public Assembler {
   static void membar_mask_to_pred_succ(uint32_t order_constraint, uint32_t& predecessor, uint32_t& successor) {
     predecessor = (order_constraint >> 2) & 0x3;
     successor = order_constraint & 0x3;
-
-    // extend rw -> iorw:
-    // 01(w) -> 0101(ow)
-    // 10(r) -> 1010(ir)
-    // 11(rw)-> 1111(iorw)
-    if (UseConservativeFence) {
-      predecessor |= predecessor << 2;
-      successor |= successor << 2;
-    }
   }
 
   static int pred_succ_to_membar_mask(uint32_t predecessor, uint32_t successor) {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
+  }
+
+  void fence(uint32_t predecessor, uint32_t successor) {
+    if (UseZtso) {
+      // do not emit fence if it's not at least a StoreLoad fence
+      if (!((predecessor & w) && (successor & r))) {
+        return;
+      }
+    }
+    if (UseConservativeFence) {
+      // extend rw -> iorw:
+      // 01(w) -> 0101(ow)
+      // 10(r) -> 1010(ir)
+      // 11(rw)-> 1111(iorw)
+      predecessor |= (predecessor & 0b11) << 2;
+      successor |= (successor & 0b11) << 2;
+    }
+    Assembler::fence(predecessor, successor);
   }
 
   // prints msg, dumps registers and stops execution
@@ -1146,6 +1155,31 @@ public:
         vse8_v(store_data, base, vm);
         break;
     }
+  }
+
+  void vl1re8_v(VectorRegister Vd, Register Rs)  { vl1r_v(Vd, Rs, 0b000, true); }
+  void vl1re16_v(VectorRegister Vd, Register Rs) { vl1r_v(Vd, Rs, 0b101, true); }
+  void vl1re32_v(VectorRegister Vd, Register Rs) { vl1r_v(Vd, Rs, 0b110, true); }
+  void vl1re64_v(VectorRegister Vd, Register Rs) { vl1r_v(Vd, Rs, 0b111, true); }
+  void vl2re8_v(VectorRegister Vd, Register Rs)  { vl2r_v(Vd, Rs, 0b000, true); }
+  void vl2re16_v(VectorRegister Vd, Register Rs) { vl2r_v(Vd, Rs, 0b101, true); }
+  void vl2re32_v(VectorRegister Vd, Register Rs) { vl2r_v(Vd, Rs, 0b110, true); }
+  void vl2re64_v(VectorRegister Vd, Register Rs) { vl2r_v(Vd, Rs, 0b111, true); }
+  void vl4re8_v(VectorRegister Vd, Register Rs)  { vl4r_v(Vd, Rs, 0b000, true); }
+  void vl4re16_v(VectorRegister Vd, Register Rs) { vl4r_v(Vd, Rs, 0b101, true); }
+  void vl4re32_v(VectorRegister Vd, Register Rs) { vl4r_v(Vd, Rs, 0b110, true); }
+  void vl4re64_v(VectorRegister Vd, Register Rs) { vl4r_v(Vd, Rs, 0b111, true); }
+  void vl8re8_v(VectorRegister Vd, Register Rs)  { vl8r_v(Vd, Rs, 0b000, true); }
+  void vl8re16_v(VectorRegister Vd, Register Rs) { vl8r_v(Vd, Rs, 0b101, true); }
+  void vl8re32_v(VectorRegister Vd, Register Rs) { vl8r_v(Vd, Rs, 0b110, true); }
+  void vl8re64_v(VectorRegister Vd, Register Rs) { vl8r_v(Vd, Rs, 0b111, true); }
+
+  void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
+    vxor_vi(Vd, Vs, -1, vm);
+  }
+
+  void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+    vmsleu_vi(Vd, Vs2, imm-1, vm);
   }
 
   static const int zero_words_block_size;

@@ -1242,6 +1242,10 @@ enum VectorMask {
   INSN(vnmsac_vv, 0b1010111, 0b010, 0b101111);
   INSN(vmacc_vv,  0b1010111, 0b010, 0b101101);
 
+  // Vector Register Gather Instructions
+  INSN(vrgather_vv,     0b1010111, 0b000, 0b001100);
+  INSN(vrgatherei16_vv, 0b1010111, 0b000, 0b001110);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -1502,6 +1506,28 @@ enum VectorMask {
 
 #undef INSN
 
+#define INSN(NAME, op, funct3, vm, funct6)                                   \
+  void NAME(VectorRegister Vd, VectorRegister Vs1, VectorRegister Vs2) {     \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
+  }
+
+  // Vector Integer Merge Instructions
+  INSN(vmerge_vvm,  0b1010111, 0b000, 0b0, 0b010111);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, vm, funct6)                                   \
+  void NAME(VectorRegister Vd, VectorRegister Vs1, VectorRegister Vs2) {     \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
+  }
+
+  // Vector SHA-2 Instructions
+  INSN(vsha2ms_vv,  0b0001011, 0b000, 0b1, 0b100000);
+  INSN(vsha2cl_vv,  0b0001011, 0b000, 0b1, 0b100001);
+  INSN(vsha2ch_vv,  0b0001011, 0b000, 0b1, 0b100010);
+
+#undef INSN
+
 #define INSN(NAME, op, funct3, Vs2, vm, funct6)                            \
   void NAME(VectorRegister Vd, int32_t imm) {                              \
     guarantee(is_imm_in_range(imm, 5, 0), "imm is invalid");               \
@@ -1597,6 +1623,9 @@ enum Nf {
 
   // Vector Load/Store Instructions
   INSN(vl1r_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
+  INSN(vl2r_v, 0b0000111, 0b01000, 0b1, 0b00, g2);
+  INSN(vl4r_v, 0b0000111, 0b01000, 0b1, 0b00, g4);
+  INSN(vl8r_v, 0b0000111, 0b01000, 0b1, 0b00, g8);
 
 #undef INSN
 
@@ -1607,6 +1636,9 @@ enum Nf {
 
   // Vector Load/Store Instructions
   INSN(vs1r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g1);
+  INSN(vs2r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g2);
+  INSN(vs4r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g4);
+  INSN(vs8r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g8);
 
 #undef INSN
 
