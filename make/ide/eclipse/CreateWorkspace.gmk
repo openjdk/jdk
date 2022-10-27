@@ -29,8 +29,6 @@ include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
 
-SINGLE_DOLLAR:=$
-
 IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
 
 CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath
@@ -316,25 +314,22 @@ define SetupEclipseWorkspaceBody
     # Get the compiler environment settings out of the way
     # Note that the Managed Build Setting Entries are left out, this is intentional as
     # we don't want to mix the CDT Managed Builder with make if we don't need it
-    $$(call AppendFile,            <provider class="org.eclipse.cdt.internal.build.crossgcc.CrossGCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.build.crossgcc.CrossGCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT Cross GCC Built-in Compiler Settings" parameter="$$(SINGLE_DOLLAR){COMMAND} $$(SINGLE_DOLLAR){FLAGS} -E -P -v -dD &quot;$$(SINGLE_DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,            <provider class="org.eclipse.cdt.internal.build.crossgcc.CrossGCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.build.crossgcc.CrossGCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT Cross GCC Built-in Compiler Settings" parameter="$$(DOLLAR){COMMAND} $$(DOLLAR){FLAGS} -E -P -v -dD &quot;$$(DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.gcc"/>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.g++"/>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,            </provider>, $(LANGUAGE_SETTINGS))
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
     # Eclipse seems to work without this, but I'll leave this here in case we suddenly
-    # need it in the future if the way Language Settings Providers work suddenly change
-    # in the future.
-    # This would also be helpful for when we eventually make this system more flexible
-    # and able to work with Visual C++ too.
-    # $$(call AppendFile,            <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT GCC Built-in Compiler Settings" parameter="$$(SINGLE_DOLLAR){COMMAND} $$(SINGLE_DOLLAR){FLAGS} -E -P -v -dD &quot;$$(SINGLE_DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
+    # need it if the way Language Settings Providers work suddenly change in the future.
+    # This would also be helpful for when we eventually make this system more flexible and able to work with Visual C++ too.
+    # $$(call AppendFile,            <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT GCC Built-in Compiler Settings" parameter="$$(DOLLAR){COMMAND} $$(DOLLAR){FLAGS} -E -P -v -dD &quot;$$(DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.gcc"/>, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.g++"/>, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,            </provider>, $(LANGUAGE_SETTINGS))
     # $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
-    # Now for the tricky part: Setting up the proper environment and macros that were defined
-    # during configure...
+    # Now for the tricky part: Setting up the proper environment and macros that were defined during configure...
     $$(call AppendFile,            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
     #                <language id="org.eclipse.cdt.core.g++">
     #                    <resource project-relative-path="">
