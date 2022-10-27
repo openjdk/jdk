@@ -137,7 +137,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
       __ add(r, _base, _offset);
     else
       __ sub(r, _base, -_offset);
-      break;
+    break;
   }
   case base_plus_offset_reg: {
     __ add(r, _base, _index, _ext.op(), MAX2(_ext.shift(), 0));

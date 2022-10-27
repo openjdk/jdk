@@ -241,16 +241,16 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param target the content to which the links will be added
      */
     public void addAllClassesAndInterfacesSummary(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
+                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.records, e -> utils.isRecord(e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
@@ -279,7 +279,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                                   TableHeader tableHeader, Content summaryContent,
                                   boolean showModules) {
         if (!packages.isEmpty()) {
-            Table table = new Table(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(label)
                     .setHeader(tableHeader);

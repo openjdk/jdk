@@ -74,12 +74,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">a. m.</dayPeriod>
@@ -88,12 +88,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">a. m.</dayPeriod>
@@ -126,22 +126,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a z</pattern>
+							<pattern draft="contributed">h:mm:ss a z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a</pattern>
+							<pattern draft="contributed">h:mm:ss a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="contributed">h:mm a</pattern>
+							<pattern draft="contributed">h:mm a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
