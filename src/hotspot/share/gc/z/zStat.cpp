@@ -984,7 +984,8 @@ public:
         _width(width),
         _width_next(width_next) {}
 
-    ZColumn left(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+    ATTRIBUTE_PRINTF(2, 3)
+    ZColumn left(const char* fmt, ...) {
       va_list va;
 
       va_start(va, fmt);
@@ -999,7 +1000,8 @@ public:
       return next();
     }
 
-    ZColumn right(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+    ATTRIBUTE_PRINTF(2, 3)
+    ZColumn right(const char* fmt, ...) {
       va_list va;
 
       va_start(va, fmt);
@@ -1022,7 +1024,8 @@ public:
       return next();
     }
 
-    ZColumn center(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+    ATTRIBUTE_PRINTF(2, 3)
+    ZColumn center(const char* fmt, ...) {
       va_list va;
 
       va_start(va, fmt);

@@ -80,7 +80,8 @@ class xmlStream : public outputStream {
   outputStream* out()                            { return _out; }
 
   // helpers for writing XML elements
-  void          va_tag(bool push, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
+  ATTRIBUTE_PRINTF(3, 0)
+  void          va_tag(bool push, const char* format, va_list ap);
   virtual void see_tag(const char* tag, bool push) NOT_DEBUG({});
   virtual void pop_tag(const char* tag) NOT_DEBUG({});
 
@@ -109,29 +110,43 @@ class xmlStream : public outputStream {
   int unflushed_count() { return (int)(out()->count() - _last_flush); }
 
   // writing complete XML elements
-  void          elem(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void    begin_elem(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void      end_elem(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3)
+  void          elem(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 3)
+  void    begin_elem(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 3)
+  void      end_elem(const char* format, ...);
   void      end_elem();
-  void          head(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void    begin_head(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void      end_head(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3)
+  void          head(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 3)
+  void    begin_head(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 3)
+  void      end_head(const char* format, ...);
   void      end_head();
-  void          done(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);  // xxx_done event, plus tail
+  ATTRIBUTE_PRINTF(2, 3)
+  void          done(const char* format, ...);  // xxx_done event, plus tail
   void          done_raw(const char * kind);
   void          tail(const char* kind);
 
   // va_list versions
-  void       va_elem(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
-  void va_begin_elem(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
-  void       va_head(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
-  void va_begin_head(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
-  void       va_done(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+  ATTRIBUTE_PRINTF(2, 0)
+  void       va_elem(const char* format, va_list ap);
+  ATTRIBUTE_PRINTF(2, 0)
+  void va_begin_elem(const char* format, va_list ap);
+  ATTRIBUTE_PRINTF(2, 0)
+  void       va_head(const char* format, va_list ap);
+  ATTRIBUTE_PRINTF(2, 0)
+  void va_begin_head(const char* format, va_list ap);
+  ATTRIBUTE_PRINTF(2, 0)
+  void       va_done(const char* format, va_list ap);
 
   // write text (with quoting of special XML characters <>&'" etc.)
   outputStream* text() { return _text; }
-  void          text(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void       va_text(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0) {
+  ATTRIBUTE_PRINTF(2, 3)
+  void          text(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 0)
+  void       va_text(const char* format, va_list ap) {
     text()->vprint(format, ap);
   }
 

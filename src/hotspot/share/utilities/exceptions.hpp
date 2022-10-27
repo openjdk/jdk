@@ -144,8 +144,9 @@ class Exceptions {
 
   // There is no THROW... macro for this method. Caller should remember
   // to do a return after calling it.
+  ATTRIBUTE_PRINTF(5, 6)
   static void fthrow(JavaThread* thread, const char* file, int line, Symbol* name,
-                     const char* format, ...) ATTRIBUTE_PRINTF(5, 6);
+                     const char* format, ...);
 
   // Create and initialize a new exception
   static Handle new_exception(JavaThread* thread, Symbol* name,
