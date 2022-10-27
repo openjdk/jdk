@@ -58,6 +58,7 @@ jobs:
           - 'jdk/tier1 part 1'
           - 'jdk/tier1 part 2'
           - 'jdk/tier1 part 3'
+          - 'jdk/tier3 jdk_vector'
           - 'langtools/tier1'
           - 'hs/tier1 common'
           - 'hs/tier1 compiler'
@@ -74,6 +75,9 @@ jobs:
 
           - test-name: 'jdk/tier1 part 3'
             test-suite: 'test/jdk/:tier1_part3'
+
+          - test-name: 'jdk/tier3 jdk_vector'
+            test-suite: 'test/jdk/:jdk_vector'
 
           - test-name: 'langtools/tier1'
             test-suite: 'test/langtools/:tier1'
