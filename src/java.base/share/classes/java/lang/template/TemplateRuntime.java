@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
@@ -212,6 +213,8 @@ public final class TemplateRuntime {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
+    private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+
     /**
      * Return the types of a {@link StringTemplate StringTemplate's} values.
      *
@@ -247,6 +250,65 @@ public final class TemplateRuntime {
             result.add(value == null ? Object.class : value.getClass());
         }
         return result;
+    }
+
+    /**
+     * Return {@link MethodHandle MethodHandles} to access a
+     * {@link StringTemplate StringTemplate's} values.
+     *
+     * @param st  StringTemplate to examine
+     *
+     * @return list of {@link MethodHandle MethodHandles}
+     *
+     * @throws NullPointerException if st is null
+     *
+     * @implNote The default method determines if the {@link StringTemplate}
+     * was synthesized by the compiler, then the MethodHandles are precisely those of the
+     * embedded expressions fields, otherwise this method returns getters for the values list.
+     */
+    static List<MethodHandle> valueGetters(StringTemplate st) {
+        Objects.requireNonNull(st, "st must not be null");
+        List<MethodHandle> result = new ArrayList<>();
+        Class<?> tsClass = st.getClass();
+        if (tsClass.isSynthetic()) {
+            try {
+                for (int i = 0; ; i++) {
+                    Field field = tsClass.getDeclaredField("x" + i);
+                    result.add(JLIA.unreflectField(field, false));
+                }
+            } catch (NoSuchFieldException ex) {
+                // End of fields
+            } catch (ReflectiveOperationException | SecurityException ex) {
+                throw new InternalError(ex);
+            }
+
+            return result;
+        }
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            MethodHandle getter = lookup.findStatic(TemplateRuntime.class, "getValue",
+                MethodType.methodType(Object.class, int.class, StringTemplate.class));
+            int size = st.values().size();
+            for (int index = 0; index < size; index++) {
+                result.add(MethodHandles.insertArguments(getter, 0, index));
+            }
+            return result;
+        } catch (ReflectiveOperationException | SecurityException ex) {
+            throw new InternalError(ex);
+        }
+    }
+
+    /**
+     * Private ethod used by {@link TemplateRuntime#valueGetters(StringTemplate)}
+     * to access values.
+     *
+     * @param index values index
+     * @param st    the {@link StringTemplate}
+     *
+     * @return value at index
+     */
+    private static Object getValue(int index, StringTemplate st) {
+        return st.values().get(index);
     }
 
     /**

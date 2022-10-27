@@ -25,6 +25,7 @@
 
 package java.lang.template;
 
+import java.lang.invoke.MethodHandle;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -178,7 +179,7 @@ public interface StringTemplate {
     }
 
     /**
-     * Return the types of a {@link StringTemplate StringTemplate's} values.
+     * Return the types of this {@link StringTemplate StringTemplate's} values.
      *
      * @return list of value types
      *
@@ -188,6 +189,20 @@ public interface StringTemplate {
      */
     default public List<Class<?>> valueTypes() {
         return TemplateRuntime.valueTypes(this);
+    }
+
+    /**
+     * Return {@link MethodHandle MethodHandles} to access this
+     * {@link StringTemplate StringTemplate's} values.
+     *
+     * @return list of value types
+     *
+     * @implNote The default method determines if the {@link java.lang.template.StringTemplate}
+     * was synthesized by the compiler, then the types are precisely those of the
+     * embedded expressions, otherwise this method returns the values list types.
+     */
+    default public List<MethodHandle> valueGetters() {
+        return TemplateRuntime.valueGetters(this);
     }
 
     /**
