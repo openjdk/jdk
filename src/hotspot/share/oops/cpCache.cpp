@@ -650,14 +650,14 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
     if ((bytecode_1() == Bytecodes::_invokehandle ||
        bytecode_1() == Bytecodes::_invokedynamic)) {
       oop appendix = appendix_if_resolved(cph);
-      if (m != NULL) {
+      if (m != nullptr) {
         st->print_cr("  Method%s: " INTPTR_FORMAT " %s.%s%s",
                     m->is_native() ? " (native)" : "",
                     p2i(m),
                     m->method_holder()->name()->as_C_string(),
                     m->name()->as_C_string(), m->signature()->as_C_string());
       }
-      if (appendix != NULL) {
+      if (appendix != nullptr) {
         st->print("  appendix: ");
         appendix->print_on(st);
       }
