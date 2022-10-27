@@ -13,85 +13,227 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ar_001">Kiarabu sanifu</language>
+			<language type="alt">Kialtai cha Kusini</language>
 			<language type="arq">Kiarabu cha Aljeria</language>
-			<language type="as">Kiasamisi</language>
+			<language type="atj">Kiatikameku</language>
+			<language type="az">Kiazabaijani</language>
+			<language type="ban">Kibalini</language>
+			<language type="bho">Kibojpuri</language>
+			<language type="bn">Kibangla</language>
+			<language type="ce">Kichechen</language>
+			<language type="ceb">Kisebuano</language>
+			<language type="ch">Kichamoro</language>
+			<language type="chk">Kichuuki</language>
 			<language type="chr">Kicheroki</language>
+			<language type="ckb">Kikurdi cha Kati</language>
+			<language type="ckb" alt="menu">Kikurdi, Kati</language>
+			<language type="ckb" alt="variant">Kikurdi, Sorani</language>
+			<language type="clc">Kichilkotini</language>
+			<language type="crg">Kimichif</language>
+			<language type="crk">Kikrii cha Chini</language>
+			<language type="crm">Kimoosekrii</language>
+			<language type="crr">Kialgiki cha Carolina</language>
+			<language type="csw">Kikrii cha Kinamasi</language>
 			<language type="cu">Kislovakia cha Kanisa la Jadi</language>
+			<language type="cy">Kiwels</language>
+			<language type="de_AT">Kijerumani cha Austria</language>
+			<language type="de_CH">Kijerumani cha Kawaida cha Uswisi</language>
+			<language type="dje">Kizama</language>
+			<language type="en_AU">Kiingereza cha Australia</language>
+			<language type="en_CA">Kiingereza cha Kanada</language>
+			<language type="en_GB">Kiingereza cha Uingereza</language>
+			<language type="en_GB" alt="short">Kiingereza cha Uingereza</language>
+			<language type="en_US">Kiingereza cha Marekani</language>
+			<language type="en_US" alt="short">Kiingereza cha Marekani)</language>
+			<language type="es_419">Kihispania cha Amerika Kusini</language>
+			<language type="es_ES">Kihispania cha Ulaya</language>
+			<language type="es_MX">Kihispania cha Meksiko</language>
+			<language type="fa_AF">Kidari</language>
+			<language type="ff">Kifula</language>
+			<language type="fo">Kifaro</language>
+			<language type="fr_CA">Kifaransa cha Kanada</language>
+			<language type="fr_CH">Kifaransa cha Uswisi</language>
+			<language type="frr">Kifrisi cha Kaskazini</language>
+			<language type="fur">Kifriuli</language>
+			<language type="fy">Kifrisi cha Magharibi</language>
 			<language type="gaa">Kiga</language>
+			<language type="gez">Kigiiz</language>
+			<language type="gil">Kigilbert</language>
 			<language type="grc">Kigiriki cha Kale</language>
+			<language type="gv">Kimaniksi</language>
 			<language type="gwi">Kigwichʼin</language>
+			<language type="haw">Kihawaii</language>
+			<language type="hi_Latn" alt="variant">Kihindi na Kiingereza</language>
+			<language type="hr">Kikroeshia</language>
 			<language type="hsb">Kisorbia cha Juu</language>
+			<language type="ht">Kikrioli cha Haiti</language>
 			<language type="hup">Kihupa</language>
-			<language type="hy">Kiamenia</language>
+			<language type="hur">Kihalkomelem</language>
+			<language type="ia">Lugha ya kimataifa</language>
+			<language type="ig">Kiibo</language>
+			<language type="ii">Kiiyi cha Sichuan</language>
+			<language type="ikt">Kiinuktitut cha Kanada Magharibi</language>
+			<language type="ilo">Kiiloko</language>
 			<language type="inh">Kiingushi</language>
+			<language type="is">Kiaisilandi</language>
 			<language type="jbo">Kilojbani</language>
 			<language type="kac">Kikachini</language>
+			<language type="kbd">Kikabadi</language>
+			<language type="kea">Kikabuvedi</language>
 			<language type="khq">Kikoyrachiini</language>
+			<language type="kj">Kikuanyama</language>
+			<language type="kk">Kikazaki</language>
 			<language type="kkj">Kikako</language>
-			<language type="km">Kikhmeri</language>
-			<language type="kn">Kikanada</language>
+			<language type="km">Kikhema</language>
 			<language type="koi">Kikomipermyak</language>
-			<language type="kru">Kikurukh</language>
+			<language type="kpe">Kikpele</language>
+			<language type="krc">Kikarachaybalka</language>
+			<language type="krl">Kakareli</language>
+			<language type="kru">Kikuruki</language>
+			<language type="ksb">Kisambala</language>
+			<language type="ksh">Kikolon</language>
+			<language type="kum">Kikumyk</language>
+			<language type="kw">Kikoni</language>
+			<language type="ky">Kikirigizi</language>
 			<language type="lag">Kilangi</language>
 			<language type="lam">Kilamba</language>
-			<language type="li">Kilimbugishi</language>
+			<language type="lez">Kilezighi</language>
+			<language type="li">Kilimbugi</language>
+			<language type="luy">Kiluyia</language>
+			<language type="mak">Kimakasaa</language>
+			<language type="mas">Kimasai</language>
 			<language type="mdf">Kimoksha</language>
+			<language type="mfe">Kimorisi</language>
+			<language type="mh">Kimashali</language>
 			<language type="mic">Kimi'kmak</language>
 			<language type="mk">Kimasedonia</language>
-			<language type="moh">Kimohoki</language>
+			<language type="ml">Kimalayalam</language>
+			<language type="moh">Kimohok</language>
+			<language type="mos">Kimosi</language>
+			<language type="mus">Kimuskogii</language>
+			<language type="mwl">Kimiranda</language>
+			<language type="my">Kibama</language>
+			<language type="nds">Kijerumani cha Chini</language>
 			<language type="nnh">Kiingiemboon</language>
 			<language type="nqo">Kiin’ko</language>
+			<language type="nr">Kindebele cha Kusini</language>
+			<language type="oc">Kiositia</language>
+			<language type="ojc">Kiojibwa cha Kati</language>
 			<language type="or">Kiodia</language>
-			<language type="pcm">Kipijini cha Nigeria</language>
-			<language type="ro_MD">Kimoldova cha Romania</language>
+			<language type="pag">Kipangasini</language>
+			<language type="pcm">Kipijini cha Naijeria</language>
+			<language type="pt_BR">Kireno cha Brazili</language>
+			<language type="pt_PT">Kireno cha Ulaya</language>
+			<language type="rm">Kirumi</language>
+			<language type="rwk">Kirwa</language>
+			<language type="sba">Kingambei</language>
+			<language type="sc">Kisadini</language>
+			<language type="scn">Kisisilia</language>
 			<language type="ses">Kikoyraborosenni</language>
+			<language type="shn">Kishani</language>
 			<language type="shu">Kiarabu cha Chadi</language>
+			<language type="slh">Kilushootseed cha Kusini</language>
 			<language type="srn">Kisranantongo</language>
+			<language type="st">Kisotho cha Kusini</language>
+			<language type="str">Kisali cha Straits</language>
+			<language type="su">Kisundani</language>
 			<language type="sw_CD">Kiswahili cha Kongo</language>
 			<language type="swb">Kikomoro</language>
 			<language type="syr">Kisiria</language>
+			<language type="tce">Kituchone cha Kusini</language>
+			<language type="tem">Kitimne</language>
+			<language type="tgx">Kitagi</language>
+			<language type="tht">Kitahlti</language>
+			<language type="tn">Kiswana</language>
+			<language type="tok">Kitokipona</language>
+			<language type="ts">Kisonga</language>
+			<language type="ttm">Kituchone cha Kaskazini</language>
 			<language type="tw">Kitwi</language>
+			<language type="tzm">Kitamazight cha Atlas ya Kati</language>
 			<language type="udm">Kiudumurti</language>
 			<language type="ug">Kiuiguri</language>
-			<language type="zgh">Kitamazighati Sanifu cha Moroko</language>
+			<language type="uk">Kiukreni</language>
+			<language type="umb">Kiumbundu</language>
+			<language type="wa">Kiwaluni</language>
+			<language type="wae">Kiwalsa</language>
+			<language type="wal">Kiwolaitta</language>
+			<language type="war">Kiwarai</language>
+			<language type="wo">Kiwolof</language>
+			<language type="xh">Kikhosa</language>
+			<language type="yav">Kiyangbeni</language>
+			<language type="yi">Kiyidi</language>
+			<language type="zgh">Kitamazight cha Kawaida cha Moroko</language>
 			<language type="zh" alt="menu">Kichina, Kimandarini</language>
-			<language type="zh_Hans" alt="long">Kichina cha Kimandarini Rahisi</language>
-			<language type="zh_Hant" alt="long">Kichina cha Kimandarini cha Jadi</language>
+			<language type="zh_Hans">Kichina Kilichorahisishwa</language>
+			<language type="zh_Hans" alt="long">Kichina cha Kimandarini Kilichorahisishwa</language>
+			<language type="zh_Hant">Kichina cha Kawaida</language>
+			<language type="zh_Hant" alt="long">Kichina cha Kimandarini cha Kawaida</language>
 		</languages>
 		<scripts>
+			<script type="Beng">Kibangla</script>
 			<script type="Brai">Breli</script>
+			<script type="Cans">Silabi za Asili Zilizounganishwa za Kanada</script>
+			<script type="Cher">Kicherokii</script>
+			<script type="Cyrl">Kikrili</script>
 			<script type="Ethi">Kihabeshi</script>
-			<script type="Hebr">Kihibrania</script>
+			<script type="Hanb">Kihan chenye Kibopomofo</script>
+			<script type="Hans">Kilichorahisishwa</script>
+			<script type="Hans" alt="stand-alone">Kihan Kilichorahisishwa</script>
 			<script type="Hira">Kihiragana</script>
+			<script type="Hrkt">Silabi za Kijapani</script>
 			<script type="Jamo">Kijamo</script>
-			<script type="Mymr">Kimyama</script>
+			<script type="Khmr">Kikhema</script>
+			<script type="Mtei">Kimeiteimayek</script>
+			<script type="Mymr">Kimyanma</script>
+			<script type="Nkoo">Kiin’ko</script>
+			<script type="Olck">Kiolchiki</script>
 			<script type="Orya">Kiodia</script>
+			<script type="Sund">Kisundani</script>
+			<script type="Syrc">Kisiria</script>
 			<script type="Taml">Kitamili</script>
+			<script type="Yiii">Kiiyi</script>
+			<script type="Zmth">Mwandiko wa kihisabati</script>
 		</scripts>
 		<territories>
+			<territory type="001">dunia</territory>
+			<territory type="011">Afrika Magharibi</territory>
+			<territory type="014">Afrika Mashariki</territory>
+			<territory type="015">Afrika Kaskazini</territory>
+			<territory type="030">Asia Mashariki</territory>
+			<territory type="034">Asia Kusini</territory>
+			<territory type="035">Kusini Mashariki mwa Asia</territory>
+			<territory type="039">Ulaya Kusini</territory>
+			<territory type="057">Maikronesia</territory>
+			<territory type="061">Polinesia</territory>
+			<territory type="145">Asia Magharibi</territory>
+			<territory type="151">Ulaya Mashariki</territory>
+			<territory type="154">Ulaya Kaskazini</territory>
+			<territory type="155">Ulaya Magharibi</territory>
 			<territory type="202">Kusini mwa Jangwa la Sahara</territory>
 			<territory type="AF">Afghanistani</territory>
+			<territory type="AG">Antigua na Babuda</territory>
 			<territory type="AI">Anguila</territory>
 			<territory type="AQ">Antaktika</territory>
 			<territory type="AZ">Azabajani</territory>
+			<territory type="BB">Babados</territory>
 			<territory type="BJ">Benini</territory>
+			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Bhutani</territory>
 			<territory type="BY">Belarusi</territory>
 			<territory type="CC">Visiwa vya Kokos (Keeling)</territory>
 			<territory type="CD">Kongo - Kinshasa</territory>
 			<territory type="CV">Kepuvede</territory>
+			<territory type="CW">Kurakao</territory>
 			<territory type="EA">Keuta na Melilla</territory>
 			<territory type="EC">Ekwado</territory>
 			<territory type="GA">Gaboni</territory>
-			<territory type="GL">Grinilandi</territory>
 			<territory type="GP">Gwadelupe</territory>
-			<territory type="GS">Visiwa vya Jojia ya Kusini na Sandwich ya Kusini</territory>
+			<territory type="GS">Visiwa vya Jojia Kusini na Sandwich Kusini</territory>
+			<territory type="GT">Gwatemala</territory>
 			<territory type="GU">Guami</territory>
 			<territory type="HR">Kroashia</territory>
 			<territory type="IO">Himaya ya Uingereza katika Bahari Hindi</territory>
 			<territory type="JO">Yordani</territory>
-			<territory type="KY">Visiwa vya Kaimani</territory>
 			<territory type="LA">Laosi</territory>
 			<territory type="LB">Lebanoni</territory>
 			<territory type="LI">Lishenteni</territory>
@@ -102,7 +244,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MC">Monako</territory>
 			<territory type="MK">Masedonia</territory>
 			<territory type="MM">Myama (Burma)</territory>
-			<territory type="MQ">Martiniki</territory>
 			<territory type="MS">Montserati</territory>
 			<territory type="NC">Nyukaledonia</territory>
 			<territory type="NE">Nijeri</territory>
@@ -112,26 +253,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PF">Polinesia ya Ufaransa</territory>
 			<territory type="PG">Papua Guinea Mpya</territory>
 			<territory type="PL">Polandi</territory>
-			<territory type="PR">Puetoriko</territory>
+			<territory type="PM">St. Pierre na Miquelon</territory>
+			<territory type="PR">Pwetoriko</territory>
 			<territory type="PS">Himaya za Palestina</territory>
 			<territory type="PY">Paragwai</territory>
 			<territory type="QA">Katari</territory>
+			<territory type="QO">Eneo la Oceania</territory>
 			<territory type="SG">Singapuri</territory>
-			<territory type="SR">Surinamu</territory>
 			<territory type="ST">Sao Tome na Prinsipe</territory>
+			<territory type="SV">Elsalvado</territory>
 			<territory type="SY">Shamu</territory>
 			<territory type="TD">Chadi</territory>
 			<territory type="TH">Thailandi</territory>
 			<territory type="TM">Turukimenstani</territory>
 			<territory type="TW">Taiwani</territory>
 			<territory type="UA">Ukreni</territory>
+			<territory type="US" alt="short">Marekani</territory>
 			<territory type="UY">Urugwai</territory>
 			<territory type="VA">Mji wa Vatikani</territory>
 			<territory type="VG">Visiwa vya Virgin vya Uingereza</territory>
 			<territory type="VI">Visiwa vya Virgin vya Marekani</territory>
-			<territory type="XA">Kiinitoni cha kigeni</territory>
-			<territory type="XB">Pseudo-Bidi</territory>
+			<territory type="XA">Lafudhi za Kigeni</territory>
+			<territory type="XB">Lugha Bandia</territory>
 			<territory type="YT">Mayote</territory>
+			<territory type="ZZ">Eneo Lisilojulikana</territory>
 		</territories>
 		<keys>
 			<key type="hc">Kipindi cha saa (12 dhidi ya 24)</key>
@@ -183,11 +328,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'saa' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'saa' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -203,24 +354,98 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'saa' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'saa' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
 		</calendars>
 		<timeZoneNames>
 			<zone type="Etc/UTC">
 				<long>
-					<standard>Saa ya Ulimwenguni</standard>
+					<standard>Saa ya Dunia</standard>
 				</long>
 			</zone>
-			<zone type="Antarctica/Macquarie">
-				<exemplarCity>Makwuarie</exemplarCity>
-			</zone>
 			<zone type="America/Barbados">
-				<exemplarCity>Babadosi</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Bermuda">
-				<exemplarCity>Bamuda</exemplarCity>
+				<exemplarCity>Babados</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
 				<exemplarCity>Kostarika</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>kurakao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Krismasi</exemplarCity>
@@ -234,9 +459,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Guadeloupe">
 				<exemplarCity>Guadalupe</exemplarCity>
 			</zone>
-			<zone type="America/Port-au-Prince">
-				<exemplarCity>Bandari ya au-Prince</exemplarCity>
-			</zone>
 			<zone type="America/Jamaica">
 				<exemplarCity>Jamaika</exemplarCity>
 			</zone>
@@ -249,11 +471,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Macau">
 				<exemplarCity>Makao</exemplarCity>
 			</zone>
-			<zone type="America/Martinique">
-				<exemplarCity>Matinikiu</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maldivi</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Pwetoriko</exemplarCity>
 			</zone>
 			<zone type="Asia/Singapore">
 				<exemplarCity>Singapoo</exemplarCity>
@@ -281,6 +503,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saa za Afghanistani</standard>
 				</long>
 			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Saa za Afrika Magharibi</generic>
+					<standard>Saa za Wastani za Afrika Magharibi</standard>
+					<daylight>Saa za Majira ya Joto za Afrika Magharibi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Saa za Amazon</generic>
+					<standard>Saa za Wastani za Amazon</standard>
+					<daylight>Saa za Majira ya Joto za Amazon</daylight>
+				</long>
+			</metazone>
 			<metazone type="Argentina">
 				<long>
 					<generic>Saa za Ajentina</generic>
@@ -295,6 +531,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Magharibi mwa Ajentina</daylight>
 				</long>
 			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Saa za Armenia</generic>
+					<standard>Saa za Wastani za Armenia</standard>
+					<daylight>Saa za Majira ya Joto za Armenia</daylight>
+				</long>
+			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
 					<generic>Saa za Magharibi mwa Austrialia ya Kati</generic>
@@ -307,6 +550,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saa za Azabajani</generic>
 					<standard>Saa za Wastani za Azabajani</standard>
 					<daylight>Saa za Majira ya Joto za Azabajani</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Saa za Azores</generic>
+					<standard>Saa za Wastani za Azores</standard>
+					<daylight>Saa za Majira ya Joto za Azores</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
@@ -333,6 +583,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saa za Kepuvede</generic>
 					<standard>Saa za Wastani za Kepuvede</standard>
 					<daylight>Saa za Majira ya Joto za Kepuvede</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Saa za Choibalsan</generic>
+					<standard>Saa za Wastani za Choibalsan</standard>
+					<daylight>Saa za Majira ya Joto za Choibalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
@@ -363,6 +620,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Kisiwa cha Easter</daylight>
 				</long>
 			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Saa za Ulaya ya Kati</generic>
+					<standard>Saa za Wastani za Ulaya ya Kati</standard>
+					<daylight>Saa za Majira ya Joto za Ulaya ya Kati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Saa za Mashariki mwa Ulaya</generic>
+					<standard>Saa za Wastani za Mashariki mwa Ulaya</standard>
+					<daylight>Saa za Majira ya Joto za Mashariki mwa Ulaya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Saa za Magharibi mwa Ulaya</generic>
+					<standard>Saa za Wastani za Magharibi mwa Ulaya</standard>
+					<daylight>Saa za Majira ya Joto za Magharibi mwa Ulaya</daylight>
+				</long>
+			</metazone>
 			<metazone type="French_Guiana">
 				<long>
 					<standard>Saa za Guiana</standard>
@@ -375,9 +653,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Jiojia</daylight>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Saa za Greenland Mashariki</generic>
+					<standard>Saa za Wastani za Greenland Mashariki</standard>
+					<daylight>Saa za Majira ya Joto za Greenland Mashariki</daylight>
+				</long>
+			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Saa za Wastani za Ghuba</standard>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Saa za Hong Kong</generic>
+					<standard>Saa za Wastani za Hong Kong</standard>
+					<daylight>Saa za Majira ya Joto za Hong Kong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Saa za Hovd</generic>
+					<standard>Saa za Wastani za Hovd</standard>
+					<daylight>Saa za Majira ya Joto za Hovd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Iran">
@@ -385,6 +684,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saa za Irani</generic>
 					<standard>Saa za Wastani za Irani</standard>
 					<daylight>Saa za Mchana za Irani</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Saa za Irkutsk</generic>
+					<standard>Saa za Wastani za Irkutsk</standard>
+					<daylight>Saa za Majira ya Joto za Irkutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
@@ -404,9 +710,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saa za Kazakistani Magharibi</standard>
 				</long>
 			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Saa za Krasnoyarsk</generic>
+					<standard>Saa za Wastani za Krasnoyask</standard>
+					<daylight>Saa za Majira ya Joto za Krasnoyarsk</daylight>
+				</long>
+			</metazone>
 			<metazone type="Macquarie">
 				<long>
 					<standard>Saa za Makwuarie</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Saa za Magadan</generic>
+					<standard>Saa za Wastani za Magadan</standard>
+					<daylight>Saa za Majira ya Joto za Magadan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
@@ -417,6 +737,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Maldives">
 				<long>
 					<standard>Saa za Maldivi</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Saa za Morisi</generic>
+					<standard>Saa za Wastani za Morisi</standard>
+					<daylight>Saa za Majira ya Joto za Morisi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Northwest">
@@ -433,9 +760,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Ulaanbaatar</daylight>
 				</long>
 			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Saa za Moscow</generic>
+					<standard>Saa za Wastani za Moscow</standard>
+					<daylight>Saa za Majira ya Joto za Moscow</daylight>
+				</long>
+			</metazone>
 			<metazone type="Myanmar">
 				<long>
-					<standard>Saa za Myama</standard>
+					<standard>Saa za Myanma</standard>
 				</long>
 			</metazone>
 			<metazone type="Nepal">
@@ -457,6 +791,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Mchana za Nyuzilandi</daylight>
 				</long>
 			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>Saa za Kisiwa cha Norfolk</generic>
+					<standard>Saa za Wastani za Kisiwa cha Norfolk</standard>
+					<daylight>Saa za Majira ya Joto za Kisiwa cha Norfolk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Saa za Novosibirsk</generic>
+					<standard>Saa za Wastani za Novosibirsk</standard>
+					<daylight>Saa za Majira ya Joto za Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Saa za Omsk</generic>
+					<standard>Saa za Wastani za Omsk</standard>
+					<daylight>Saa za Majira ya Joto za Omsk</daylight>
+				</long>
+			</metazone>
 			<metazone type="Pakistan">
 				<long>
 					<generic>Saa za Pakistani</generic>
@@ -476,9 +831,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Paragwai</daylight>
 				</long>
 			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Saa za Peru</generic>
+					<standard>Saa za Wastani za Peru</standard>
+					<daylight>Saa za Majira ya Joto za Peru</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Saa za Ufilipino</generic>
+					<standard>Saa za Wastani za Ufilipino</standard>
+					<daylight>Saa za Majira ya Joto za Ufilipino</daylight>
+				</long>
+			</metazone>
 			<metazone type="Phoenix_Islands">
 				<long>
 					<standard>Saa za Visiwa vya Finiksi</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Saa za Sakhalin</generic>
+					<standard>Saa za Wastani za Sakhalin</standard>
+					<daylight>Saa za Majira ya Joto za Sakhalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Saa za Samoa</generic>
+					<standard>Saa za Wastani za Samoa</standard>
+					<daylight>Saa za Mchana za Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
@@ -496,6 +879,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saaza Tajikistani</standard>
 				</long>
 			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Saa za Tonga</generic>
+					<standard>Saa za Wastani za Tonga</standard>
+					<daylight>Saa za Majira ya Joto za Tonga</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Saa za Turkmenistani</generic>
@@ -505,7 +895,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>Saa za Uruagwai</generic>
+					<generic>Saa za Urugwai</generic>
 					<standard>Saa za Wastani za Urugwai</standard>
 					<daylight>Saa za Majira ya Joto za Urugwai</daylight>
 				</long>
@@ -515,6 +905,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saa za Uzbekistani</generic>
 					<standard>Saa za wastani za Uzbekistani</standard>
 					<daylight>Saa za Majira ya Joto za Uzbekistani</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Saa za Vanuatu</generic>
+					<standard>Saa za Wastani za Vanuatu</standard>
+					<daylight>Saa za Majira ya Joto za Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Saa za Vladivostok</generic>
+					<standard>Saa za Wastani za Vladivostok</standard>
+					<daylight>Saa za Majira ya Joto za Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Saa za Volgograd</generic>
+					<standard>Saa za Wastani za Volgograd</standard>
+					<daylight>Saa za Majira ya Joto za Volgograd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Saa za Yakutsk</generic>
+					<standard>Saa za Wastani za Yakutsk</standard>
+					<daylight>Saa za Majira ya Joto za Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Saa za Yekaterinburg</generic>
+					<standard>Saa za Wastani za Yekaterinburg</standard>
+					<daylight>Saa za Majira ya Joto za Yekaterinburg</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -579,6 +1004,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 		</decimalFormats>
 		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000000" count="one">¤ M0;¤-M0</pattern>
@@ -601,6 +1031,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">¤ T000;¤-T000</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">

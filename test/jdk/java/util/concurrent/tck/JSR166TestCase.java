@@ -287,7 +287,7 @@ public class JSR166TestCase extends TestCase {
      * May be initialized from any of:
      * - the "jsr166.delay.factor" system property
      * - the "test.timeout.factor" system property (as used by jtreg)
-     *   See: http://openjdk.java.net/jtreg/tag-spec.html
+     *   See: https://openjdk.org/jtreg/tag-spec.html
      * - hard-coded fuzz factor when using a known slowpoke VM
      */
     private static final float delayFactor = delayFactor();
@@ -769,7 +769,7 @@ public class JSR166TestCase extends TestCase {
      * Returns the shortest timed delay. This can be scaled up for
      * slow machines using the jsr166.delay.factor system property,
      * or via jtreg's -timeoutFactor: flag.
-     * http://openjdk.java.net/jtreg/command-help.html
+     * https://openjdk.org/jtreg/command-help.html
      */
     protected long getShortDelay() {
         return (long) (50 * delayFactor);

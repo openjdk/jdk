@@ -755,7 +755,7 @@ SplashScreenThread(void *param) {
         XMapRaised(splash->display, splash->window);
         SplashUpdateShape(splash);
         SplashRedrawWindow(splash);
-        //map the splash co-ordinates as per system scale
+        //map the splash coordinates as per system scale
         splash->x /= splash->scaleFactor;
         splash->y /= splash->scaleFactor;
         SplashEventLoop(splash);

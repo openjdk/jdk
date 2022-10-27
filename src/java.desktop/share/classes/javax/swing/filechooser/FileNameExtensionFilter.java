@@ -106,7 +106,7 @@ public final class FileNameExtensionFilter extends FileFilter {
             // NOTE: we tested implementations using Maps, binary search
             // on a sorted list and this implementation. All implementations
             // provided roughly the same speed, most likely because of
-            // overhead associated with java.io.File. Therefor we've stuck
+            // overhead associated with java.io.File. Therefore we've stuck
             // with the simple lightweight approach.
             String fileName = f.getName();
             int i = fileName.lastIndexOf('.');
