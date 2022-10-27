@@ -590,6 +590,18 @@ void InterpreterMacroAssembler::d2ieee() {
 }
 #endif // _LP64
 
+// ResolvedInvokedynamicInfo <newcode>
+void InterpreterMacroAssembler::get_invokedynamic_entry(Register cache, Register tmp, int bcp_offset) {
+  Register index = tmp;
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+  movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
+  movptr(cache, Address(cache, ConstantPoolCache::invokedynamic_entries_offset()));
+
+  int entry_size = sizeof(ResolvedInvokeDynamicInfo);
+  imull(tmp, index, entry_size);
+  lea(cache, Address(cache, tmp, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
+}
+
 // Java Expression Stack
 
 void InterpreterMacroAssembler::pop_ptr(Register r) {
