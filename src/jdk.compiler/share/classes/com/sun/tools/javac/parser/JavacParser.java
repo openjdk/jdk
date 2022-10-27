@@ -660,6 +660,10 @@ public class JavacParser implements Parser {
      */
     JCExpression stringTemplate(JCExpression processor) {
         checkSourceLevel(Feature.STRING_TEMPLATES);
+        // Disable standalone string templates
+        if (processor == null) {
+            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ProcessorMissingFromStringTemplateExpression);
+        }
         int oldmode = mode;
         selectExprMode();
         Token stringToken = token;

@@ -47,7 +47,7 @@ import jdk.internal.javac.PreviewFeature;
  * plus the string of characters following the last embedded expression. The order
  * of the strings is left to right as they appear in the string template.
  * For example; {@snippet :
- * StringTemplate st = "The \{name} and \{address} of the resident.";
+ * StringTemplate st = RAW."The \{name} and \{address} of the resident.";
  * List<String> fragments = st.fragments();
  * }
  * {@code fragments} will be equivalent to <code>List.of("The ", " and ", " of the resident.")</code>.
@@ -62,7 +62,7 @@ import jdk.internal.javac.PreviewFeature;
  * {@snippet :
  * int x = 10;
  * int y = 20;
- * StringTemplate st = "\{x} + \{y} = \{x + y}";
+ * StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
  * List<Object> values = st.values();
  * }
  * {@code values} will be the equivalent of <code>List.of(x, y, x + y)</code>.
@@ -81,7 +81,7 @@ import jdk.internal.javac.PreviewFeature;
  * The {@link StringTemplate#process(ValidatingProcessor)} method supplies an
  * alternative to using string template expressions.
  * {@snippet :
- * String result = "\{x} + \{y} = \{x + y}".process(STR);
+ * String result = RAW."\{x} + \{y} = \{x + y}".process(STR);
  * }
  * In addition to string template expressions, the factory methods
  * {@link StringTemplate#of(String)} and {@link StringTemplate#of(List, List)}
@@ -117,7 +117,7 @@ public interface StringTemplate {
      * of characters preceeding each of the embedded expressions plus the
      * string of characters following the last embedded expression. In the
      * example: {@snippet :
-     * StringTemplate st = "The student \{student} is in \{teacher}'s class room.";
+     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
      * List<String> fragments = st.fragments(); // @highlight substring="fragments()"
      * }
      * <code>fragments</code> will be equivalent to
@@ -132,8 +132,8 @@ public interface StringTemplate {
     /**
      * Returns an immutable list of embedded expression results. In the example:
      * {@snippet :
-     * StringTemplate stringTemplate = "\{x} + \{y} = \{x + y}";
-     * List<Object> values = stringTemplate.values(); // @highlight substring="values()"
+     * StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
+     * List<Object> values = st.values(); // @highlight substring="values()"
      * }
      * <code>values</code> will be equivalent to <code>List.of(x, y, x + y)</code>
      *
@@ -155,7 +155,7 @@ public interface StringTemplate {
      * This method can be used as an alternative to string template expressions. For example,
      * {@snippet :
      * String result1 = STR."\{x} + \{y} = \{x + y}";
-     * String result2 = "\{x} + \{y} = \{x + y}".process(STR); // @highlight substring="process"
+     * String result2 = RAW."\{x} + \{y} = \{x + y}".process(STR); // @highlight substring="process"
      * }
      * produces an equivalent result for both {@code result1} and {@code result2}.
      *
@@ -327,8 +327,8 @@ public interface StringTemplate {
     /**
       * Combine one or more {@link StringTemplate StringTemplates} to produce a combined {@link StringTemplate}.
       * {@snippet :
-      * StringTemplate st = StringTemplate.combine("\{a}", "\{b}", "\{c}");
-      * assert st.interpolate().equals("\{a}\{b}\{c}");
+      * StringTemplate st = StringTemplate.combine(RAW."\{a}", RAW."\{b}", RAW."\{c}");
+      * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
       * }
       *
       * @param sts  one or more {@link StringTemplate}

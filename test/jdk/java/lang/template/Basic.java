@@ -72,11 +72,11 @@ public class Basic {
         int a = 10;
         int b = 20;
 
-        StringTemplate st0 = "\{x} + \{y} = \{x + y}";
-        StringTemplate st1 = "\{a} + \{b} = \{a + b}";
-        StringTemplate st2 = "\{x} + \{y} = \{x + y}!";
+        StringTemplate st0 = RAW."\{x} + \{y} = \{x + y}";
+        StringTemplate st1 = RAW."\{a} + \{b} = \{a + b}";
+        StringTemplate st2 = RAW."\{x} + \{y} = \{x + y}!";
         x++;
-        StringTemplate st3 = "\{x} + \{y} = \{x + y}";
+        StringTemplate st3 = RAW."\{x} + \{y} = \{x + y}";
 
         if (!st0.equals(st1)) throw new RuntimeException("st0 != st1");
         if (st0.equals(st2)) throw new RuntimeException("st0 == st2");
@@ -94,10 +94,10 @@ public class Basic {
 
         ASSERT(STR."\{x} \{y}", x + " " + y);
         ASSERT(STR."\{x + y}", "" + (x + y));
-        ASSERT(STR.process("\{x} \{y}"), x + " " + y);
-        ASSERT(STR.process("\{x + y}"), "" + (x + y));
-        ASSERT(("\{x} \{y}").process(STR), x + " " + y);
-        ASSERT(("\{x + y}").process(STR), "" + (x + y));
+        ASSERT(STR.process(RAW."\{x} \{y}"), x + " " + y);
+        ASSERT(STR.process(RAW."\{x + y}"), "" + (x + y));
+        ASSERT((RAW."\{x} \{y}").process(STR), x + " " + y);
+        ASSERT((RAW."\{x + y}").process(STR), "" + (x + y));
     }
 
     /*
@@ -107,7 +107,7 @@ public class Basic {
         int x = 10;
         int y = 20;
 
-        StringTemplate st = "\{x} + \{y} = \{x + y}";
+        StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
         ASSERT(st.values(), List.of(x, y, x + y));
         ASSERT(st.fragments(), List.of("", " + ", " = ", ""));
         ASSERT(st.interpolate(), x + " + " + y + " = " + (x + y));
@@ -119,7 +119,7 @@ public class Basic {
     static void limitsTests() {
         int x = 9;
 
-        StringTemplate ts250 = """
+        StringTemplate ts250 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -155,7 +155,7 @@ public class Basic {
                9999999999
                """);
 
-        StringTemplate ts251 = """
+        StringTemplate ts251 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -191,7 +191,7 @@ public class Basic {
                9999999999 9
                """);
 
-        StringTemplate ts252 = """
+        StringTemplate ts252 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -227,7 +227,7 @@ public class Basic {
                9999999999 99
                """);
 
-        StringTemplate ts253 = """
+        StringTemplate ts253 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -263,7 +263,7 @@ public class Basic {
                9999999999 999
                """);
 
-        StringTemplate ts254 = """
+        StringTemplate ts254 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -299,7 +299,7 @@ public class Basic {
                9999999999 9999
                """);
 
-        StringTemplate ts255 = """
+        StringTemplate ts255 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -335,7 +335,7 @@ public class Basic {
                9999999999 99999
                """);
 
-        StringTemplate ts256 = """
+        StringTemplate ts256 = RAW."""
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
              \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x} \{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}\{x}
@@ -417,13 +417,13 @@ public class Basic {
         ASSERT(tsNoValues.interpolate(), STR."No Values");
 
         int x = 10, y = 20;
-        StringTemplate src = "\{x} + \{y} = \{x + y}";
+        StringTemplate src = RAW."\{x} + \{y} = \{x + y}";
         StringTemplate tsValues = StringTemplate.of(src.fragments(), src.values());
         ASSERT(tsValues.fragments(), List.of("", " + ", " = ", ""));
         ASSERT(tsValues.values(), List.of(x, y, x + y));
         ASSERT(tsValues.interpolate(), x + " + " + y + " = " + (x + y));
         ASSERT(StringTemplate.combine(src, src).interpolate(),
-                "\{x} + \{y} = \{x + y}\{x} + \{y} = \{x + y}".interpolate());
+                RAW."\{x} + \{y} = \{x + y}\{x} + \{y} = \{x + y}".interpolate());
         ASSERT(src.valueTypes().get(0), int.class);
         ASSERT(src.valueTypes().get(1), int.class);
         ASSERT(src.valueTypes().get(2), int.class);
@@ -480,7 +480,6 @@ public class Basic {
         try {
             int x = 10;
             int y = 20;
-            ASSERT(RAW."\{x} + \{y} = \{x + y}", "\{x} + \{y} = \{x + y}");
             ASSERT(processor0."\{x} + \{y} = \{x + y}", "10 + 20 = 30");
             ASSERT(processor1."\{x} + \{y} = \{x + y}", "10 + 20 = 30");
             ASSERT(processor2."\{x} + \{y} = \{x + y}", "10 + 20 = 30");

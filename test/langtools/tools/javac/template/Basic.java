@@ -62,7 +62,7 @@ public class Basic {
             "float",
             "double"
         }) {
-            compPass(type + " x = 10; " + type + "  y = 20; StringTemplate result = \"\\{x} + \\{y} = \\{x + y}\";");
+            compPass(type + " x = 10; " + type + "  y = 20; StringTemplate result = RAW.\"\\{x} + \\{y} = \\{x + y}\";");
         }
     }
 
@@ -72,23 +72,23 @@ public class Basic {
     static void missingPartsTest() {
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{x";
+            StringTemplate result = RAW."\\{x";
         """);
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{{x}";
+            StringTemplate result = RAW."\\{{x}";
         """);
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{x + }";
+            StringTemplate result = RAW."\\{x + }";
         """);
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{ * x }";
+            StringTemplate result = RAW."\\{ * x }";
         """);
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{ (x + x }";
+            StringTemplate result = RAW."\\{ (x + x }";
         """);
     }
 
@@ -99,21 +99,21 @@ public class Basic {
         compPass("""
             int x = 10;
             int[] y = new int[] { 10, 20, 30 };
-            StringTemplate result1 = "\\{x + 1}";
-            StringTemplate result2 = "\\{x + x}";
-            StringTemplate result3 = "\\{x - x}";
-            StringTemplate result4 = "\\{x * x}";
-            StringTemplate result5 = "\\{x / x}";
-            StringTemplate result6 = "\\{x % x}";
-            StringTemplate result7 = "\\{x + (x + x)}";
-            StringTemplate result8 = "\\{y[x - 9]}";
-            StringTemplate result9 = "\\{System.out}";
-            StringTemplate result10 = \"""
+            StringTemplate result1 = RAW."\\{x + 1}";
+            StringTemplate result2 = RAW."\\{x + x}";
+            StringTemplate result3 = RAW."\\{x - x}";
+            StringTemplate result4 = RAW."\\{x * x}";
+            StringTemplate result5 = RAW."\\{x / x}";
+            StringTemplate result6 = RAW."\\{x % x}";
+            StringTemplate result7 = RAW."\\{x + (x + x)}";
+            StringTemplate result8 = RAW."\\{y[x - 9]}";
+            StringTemplate result9 = RAW."\\{System.out}";
+            StringTemplate result10 = RAW.\"""
                     \\{ "a string" }
                     \""";
                     """);
         compPass("""
-            StringTemplate result = \"""
+            StringTemplate result = RAW.\"""
                  \\{
                      new Collection<String>() {
                           @Override public int size() { return 0; }
@@ -141,22 +141,22 @@ public class Basic {
     static void invalidExpressionsTest() {
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{ (x == x }";
+            StringTemplate result = RAW."\\{ (x == x }";
         """);
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{ true ?  : x - 1 }";
+            StringTemplate result = RAW."\\{ true ?  : x - 1 }";
         """);
         compFail("""
-             String result = "\\{ 'a }";
-        """);
-        compFail("""
-            int x = 10;
-            StringTemplate result = "\\{ Math.min(, x - 1) }";
+             String result = RAW."\\{ 'a }";
         """);
         compFail("""
             int x = 10;
-            StringTemplate result = "\\{ \\tx }";
+            StringTemplate result = RAW."\\{ Math.min(, x - 1) }";
+        """);
+        compFail("""
+            int x = 10;
+            StringTemplate result = RAW."\\{ \\tx }";
         """);
     }
 
@@ -187,6 +187,7 @@ public class Basic {
         String source = """
             import java.lang.template.*;
             import java.util.*;
+            import static java.lang.template.StringTemplate.RAW;
             public class TEST {
                 public static void main(String... arg) {
             """ +
@@ -215,6 +216,7 @@ public class Basic {
         String source = """
             import java.lang.template.*;
             import java.util.*;
+            import static java.lang.template.StringTemplate.RAW;
             public class TEST {
                 public static void main(String... arg) {
             """ +
