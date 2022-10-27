@@ -44,7 +44,7 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class GraphNode extends AbstractNode {
 
-    private InputGraph graph;
+    private final InputGraph graph;
     private boolean selected = false;
 
     /** Creates a new instance of GraphNode */
@@ -73,6 +73,7 @@ public class GraphNode extends AbstractNode {
         fireIconChange();
     }
 
+    @Override
     public String getHtmlDisplayName() {
         String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
         if (selected) {

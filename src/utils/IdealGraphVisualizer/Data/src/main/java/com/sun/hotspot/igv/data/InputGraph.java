@@ -42,6 +42,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private InputGraph firstGraph;
     private InputGraph secondGraph;
     private final ChangedEvent<InputGraph> displayNameChangedEvent = new ChangedEvent<>(this);
+    private final ChangedEvent<InputGraph> indexChangedEvent = new ChangedEvent<>(this);
 
     public InputGraph(InputGraph firstGraph, InputGraph secondGraph) {
         this(firstGraph.getName() + " Δ " + secondGraph.getName(), true);
@@ -49,7 +50,9 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         this.firstGraph = firstGraph;
         this.secondGraph = secondGraph;
         this.firstGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
-        this.secondGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+        this.secondGraph.getIndexChangedEvent().addListener(l -> indexChangedEvent.fire());
+        this.firstGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+        this.secondGraph.getIndexChangedEvent().addListener(l -> indexChangedEvent.fire());
     }
 
     public InputGraph(String name) {
@@ -223,10 +226,23 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return parentGroup.getPrev(this);
     }
 
+    @Override
+    public void updateNameAndIndex() {
+        indexChangedEvent.fire();
+        displayNameChangedEvent.fire();
+    }
+
+    @Override
+    public ChangedEvent<InputGraph> getIndexChangedEvent() {
+        return indexChangedEvent;
+    }
+
+    @Override
     public ChangedEvent<InputGraph> getDisplayNameChangedEvent() {
         return displayNameChangedEvent;
     }
 
+    @Override
     public void setName(String name) {
         getProperties().setProperty("name", name);
         displayNameChangedEvent.fire();

@@ -26,7 +26,6 @@ package com.sun.hotspot.igv.coordinator;
 import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.data.FolderElement;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GroupCallback;

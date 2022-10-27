@@ -28,10 +28,8 @@ import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
-import java.beans.PropertyChangeEvent;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
@@ -65,32 +63,13 @@ public class FolderNode extends AbstractNode {
 
         @Override
         protected Node[] createNodes(FolderElement folderElement) {
-
             if (folderElement instanceof InputGraph) {
                 InputGraph inputGraph = (InputGraph) folderElement;
                 GraphNode graphNode = new GraphNode(inputGraph);
                 graphNodeMap.put(inputGraph, graphNode);
-                graphNode.addNodeListener(new NodeAdapter() {
-                    @Override
-                    public void propertyChange(PropertyChangeEvent ev) {
-                        if (Objects.equals(ev.getPropertyName(), "displayName")) {
-
-                            folderElement.getDisplayNameChangedEvent().fire();
-                        }
-                    }
-                });
                 return new Node[]{graphNode};
             } else if (folderElement instanceof Group) {
-                FolderNode folderNode = new FolderNode((Group) folderElement);
-                folderNode.addNodeListener(new NodeAdapter() {
-                    @Override
-                    public void propertyChange(PropertyChangeEvent ev) {
-                        if (Objects.equals(ev.getPropertyName(), "displayName")) {
-                            folderElement.getDisplayNameChangedEvent().fire();
-                        }
-                    }
-                });
-                return new Node[]{folderNode};
+                return new Node[]{new FolderNode((Group) folderElement)};
             } else {
                 return null;
             }
@@ -102,20 +81,20 @@ public class FolderNode extends AbstractNode {
                 // Each node is only present once in the graphNode map.
                 graphNodeMap.values().remove(n);
             }
+            for (Node node : getNodes()) {
+                node.setDisplayName(node.getDisplayName());
+            }
         }
 
         @Override
         public void addNotify() {
-            this.setKeys(folder.getElements());
+            super.addNotify();
+            setKeys(folder.getElements());
         }
 
         @Override
         public void changed(Object source) {
             addNotify();
-            for (Node node : getNodes()) {
-                // refresh the display name
-                node.setDisplayName(node.getDisplayName());
-            }
         }
     }
 
@@ -182,6 +161,7 @@ public class FolderNode extends AbstractNode {
         return children.getFolder().getDisplayName();
     }
 
+    @Override
     public String getHtmlDisplayName() {
         String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
         if (selected) {

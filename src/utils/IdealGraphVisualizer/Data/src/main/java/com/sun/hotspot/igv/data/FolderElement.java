@@ -24,10 +24,12 @@
 package com.sun.hotspot.igv.data;
 
 public interface FolderElement {
-
+    void updateNameAndIndex();
+    ChangedEvent<? extends FolderElement> getIndexChangedEvent();
     ChangedEvent<? extends FolderElement> getDisplayNameChangedEvent();
-    Folder getParent();
+    void setName(String name);
     String getName();
     String getDisplayName();
     void setParent(Folder parent);
+    Folder getParent();
 }
