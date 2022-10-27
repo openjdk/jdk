@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,9 +135,23 @@ public class dispose003a {
                                  break;
                              } else if (instruction.equals("check_alive")) {
                                  log1("checking on: thread2.isAlive");
-                                 if (test_thread.isAlive()) {
-                                     test_thread.resume();
+                                 // There is no sync between vm.dispose() and test_thread
+                                 // let give thread some time to complete
+                                 boolean isAlive = test_thread.isAlive();
+                                 for (int attempt = 0; attempt < 10; i++) {
+                                     isAlive = test_thread.isAlive();
+                                     if (!isAlive) {
+                                         break;
+                                     }
+                                     try {
+                                         Thread.sleep(attempt * 1000);
+                                     } catch (InterruptedException ie) {
+                                     }
+                                 }
+                                 if (isAlive) {
                                      pipe.println("alive");
+                                     logErr("ERROR thread is alive after vm.dispose()");
+                                     exitCode = FAILED;
                                  } else {
                                      pipe.println("not_alive");
                                  }
