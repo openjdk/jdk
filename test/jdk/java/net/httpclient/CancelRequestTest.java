@@ -58,6 +58,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.Reference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -377,6 +378,13 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isDone(), true);
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
+
+            var error = TRACKER.check(1,
+                    (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
+                    "subscribers for testGetSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    false);
+            Reference.reachabilityFence(client);
+            if (error != null) throw error;
         }
     }
 
@@ -481,6 +489,13 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isDone(), true);
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
+
+            var error = TRACKER.check(1,
+                    (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
+                    "subscribers for testPostSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    false);
+            Reference.reachabilityFence(client);
+            if (error != null) throw error;
         }
     }
 
@@ -536,6 +551,13 @@ public class CancelRequestTest implements HttpServerAdapters {
                 assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
                 throw failed;
             }
+
+            var error = TRACKER.check(1,
+                    (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
+                    "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    false);
+            Reference.reachabilityFence(client);
+            if (error != null) throw error;
         }
     }
 

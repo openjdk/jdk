@@ -348,6 +348,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_extract();
   bool inline_vector_insert();
   bool inline_vector_compress_expand();
+  bool inline_index_vector();
 
   Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
