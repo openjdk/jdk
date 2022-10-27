@@ -811,6 +811,8 @@ class MacroAssembler: public Assembler {
   void load_mirror_from_const_method(Register mirror, Register const_method);
   void load_method_holder(Register holder, Register method);
 
+  void resolve_weak_handle(const Address& addr, Register result, Register tmp1, Register tmp2);
+
   //--------------------------
   //---  Operations on arrays.
   //--------------------------

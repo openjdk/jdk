@@ -4188,6 +4188,17 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
   resolve_oop_handle(mirror);
 }
 
+void MacroAssembler::resolve_weak_handle(const Address& addr, Register result, Register tmp1, Register tmp2) {
+  Label resolved;
+
+  // A null weak handle resolves to null.
+  z_cfi(result, 0);
+  z_bre(resolved);
+
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, addr, result, tmp1, tmp2);
+  bind(resolved);
+}
+
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   mem2reg_opt(holder, Address(method, Method::const_offset()));
   mem2reg_opt(holder, Address(holder, ConstMethod::constants_offset()));

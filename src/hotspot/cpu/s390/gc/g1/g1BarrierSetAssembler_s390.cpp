@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -214,6 +214,8 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   __ bind(callRuntime);
 
+  const int nbytes_save = (5 + 8) * BytesPerWord;
+
   // Save some registers (inputs and result) over runtime call
   // by spilling them into the top frame.
   if (Robj != noreg && Robj->is_volatile()) {
@@ -236,11 +238,13 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   // Push frame to protect top frame with return pc and spilled register values.
   __ save_return_pc();
-  __ push_frame_abi160(0); // Will use Z_R0 as tmp.
+  __ push_frame_abi160(nbytes_save); // Will use Z_R0 as tmp.
+  __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
 
   // Rpre_val may be destroyed by push_frame().
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), Rpre_save, Z_thread);
 
+  __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
   __ pop_frame();
   __ restore_return_pc();
 
