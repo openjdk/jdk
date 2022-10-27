@@ -35,7 +35,6 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     private InputMethod method;
     private final transient ChangedEvent<Group> changedEvent;
     private final ChangedEvent<Group> displayNameChangedEvent = new ChangedEvent<>(this);
-    private final ChangedEvent<Group> indexChangedEvent = new ChangedEvent<>(this);
 
     private Folder parent;
 
@@ -76,7 +75,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
             getChangedEvent().fire();
         }
         for (InputGraph inputGraph : graphs) {
-            inputGraph.updateNameAndIndex();
+            assert inputGraph.getDisplayNameChangedEvent() != null;
+            inputGraph.getDisplayNameChangedEvent().fire();
         }
     }
 
@@ -106,17 +106,6 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
             sb.append('\n');
         }
         return sb.toString();
-    }
-
-    @Override
-    public void updateNameAndIndex() {
-        indexChangedEvent.fire();
-        displayNameChangedEvent.fire();
-    }
-
-    @Override
-    public ChangedEvent<Group> getIndexChangedEvent() {
-        return indexChangedEvent;
     }
 
     @Override

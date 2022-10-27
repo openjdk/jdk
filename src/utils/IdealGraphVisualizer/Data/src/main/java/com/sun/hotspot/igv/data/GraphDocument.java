@@ -100,7 +100,7 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
             getChangedEvent().fire();
         }
         for (FolderElement folderElement : elements) {
-            folderElement.updateNameAndIndex();
+            folderElement.getDisplayNameChangedEvent().fire();
         }
     }
 

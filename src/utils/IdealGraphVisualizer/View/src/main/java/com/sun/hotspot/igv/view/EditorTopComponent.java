@@ -141,15 +141,17 @@ public final class EditorTopComponent extends TopComponent {
             final GraphDocument doc = (GraphDocument) group.getParent();
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
-        graph.getDisplayNameChangedEvent().addListener(g -> setDisplayName(g.getDisplayName()));
-        group.getDisplayNameChangedEvent().addListener(g -> setToolTipText(g.getDisplayName()));
+
+        diagramViewModel.addTitleCallback(changedGraph -> {
+            setDisplayName(changedGraph.getDisplayName());
+            setToolTipText(diagramViewModel.getGroup().getDisplayName());
+        });
 
         diagramViewModel.getDiagramChangedEvent().addListener(model -> {
             setDisplayName(model.getGraph().getDisplayName());
             setToolTipText(model.getGroup().getDisplayName());
             graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
         });
-        diagramViewModel.getGraphChangedEvent().addListener(model -> model.getGraph().getDisplayNameChangedEvent().addListener(g -> setDisplayName(g.getDisplayName())));
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
