@@ -2718,6 +2718,38 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   }
 }
 
+// <newcode>
+void TemplateTable::resolve_invokedynamic_entry(int byte_no, Register indy_entry, Register tmp) {
+  Bytecodes::Code code = bytecode();
+  Label resolved;
+
+  __ get_field_entry(indy_entry, tmp, 1);
+  assert(byte_no == TemplateTable::f1_byte || byte_no == TemplateTable::f2_byte, "Sanity check");
+  Register byte_code = tmp;
+    if (byte_no == f1_byte) {
+    __ movb(byte_code, Address(indy_entry, CPFieldEntry::b1_offset()));
+  } else {
+    __ movb(byte_code, Address(indy_entry, CPFieldEntry::b2_offset()));
+  }
+  __ cmpl(byte_code, code);
+  __ jcc(Assembler::equal, resolved);
+
+  __ movl(byte_code, code);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache), byte_code);
+  // Update registers with resolved info
+  __ get_field_entry(indy_entry, tmp, 1);
+
+  __ bind(resolved);
+}
+
+void TemplateTable::load_invokedynamic_entry(Register obj,
+                               Register fentry,
+                               Register off,
+                               Register flags,
+                               bool is_static) {
+  // do stuff
+}
+
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register method,
                                                Register itable_index,
@@ -3565,6 +3597,8 @@ void TemplateTable::prepare_invoke(int byte_no,
   __ save_bcp();
 
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
+  // <newcode> load resolvedinvokedynamic_info here
+
 
   // maybe push appendix to arguments (just before return address)
   if (is_invokedynamic || is_invokehandle) {

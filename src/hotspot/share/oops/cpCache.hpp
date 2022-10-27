@@ -410,11 +410,11 @@ class ConstantPoolCache: public MetaspaceObj {
     u2 _resolved_info_index;
     u2 _cp_index;
 
-    InvokeDynamicInfo(int resolved_info_index, int cp_index) : 
-          _resolved_info_index(resolved_info_index), 
+    InvokeDynamicInfo(int resolved_info_index, int cp_index) :
+          _resolved_info_index(resolved_info_index),
           _cp_index(cp_index) {}
-    InvokeDynamicInfo() : 
-          _resolved_info_index(0), 
+    InvokeDynamicInfo() :
+          _resolved_info_index(0),
           _cp_index(0) {}
   };
 
@@ -440,7 +440,7 @@ class ConstantPoolCache: public MetaspaceObj {
   uint64_t             _gc_epoch;
 
   Array<ResolvedInvokeDynamicInfo>* _resolved_invokedynamic_info_array;
-  
+
   CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
   // Sizing
@@ -461,7 +461,7 @@ class ConstantPoolCache: public MetaspaceObj {
   static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
-                                     const intStack& invokedynamic_references_map, 
+                                     const intStack& invokedynamic_references_map,
                                      const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
                                      TRAPS);
 
@@ -487,13 +487,14 @@ class ConstantPoolCache: public MetaspaceObj {
         _resolved_invokedynamic_info_array->at(i).print_on(st);
     }
   }
-  int resolved_invokedynamicinfo_length() const { 
-    return _resolved_invokedynamic_info_array->length(); 
+  int resolved_invokedynamicinfo_length() const {
+    return _resolved_invokedynamic_info_array->length();
   }
   Array<ResolvedInvokeDynamicInfo>* resolved_invokedynamic_info_array() { return _resolved_invokedynamic_info_array; }
 
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
+  static int invokedynamic_entries_offset()        { return offset_of(ConstantPoolCache, _resolved_invokedynamic_info_array); }
 
 #if INCLUDE_CDS
   void remove_unshareable_info();
