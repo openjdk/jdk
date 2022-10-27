@@ -198,8 +198,8 @@ public interface StringTemplate {
      * @return list of value types
      *
      * @implNote The default method determines if the {@link java.lang.template.StringTemplate}
-     * was synthesized by the compiler, then the types are precisely those of the
-     * embedded expressions, otherwise this method returns the values list types.
+     * was synthesized by the compiler, then the MethodHandles are precisely those of the
+     * embedded expressions fields, otherwise this method returns getters for the values list.
      */
     default public List<MethodHandle> valueGetters() {
         return TemplateRuntime.valueGetters(this);
