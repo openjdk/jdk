@@ -69,6 +69,10 @@ class riscv {
 
   static address _method_entry_barrier;
 
+  static address _prefetch_i;
+  static address _prefetch_r;
+  static address _prefetch_w;
+
   static bool _completed;
 
  public:
@@ -147,6 +151,18 @@ class riscv {
 
   static address method_entry_barrier() {
     return _method_entry_barrier;
+  }
+
+  static address prefetch_i() {
+    return _prefetch_i;
+  }
+
+  static address prefetch_r() {
+    return _prefetch_r;
+  }
+
+  static address prefetch_w() {
+    return _prefetch_w;
   }
 
   static bool complete() {

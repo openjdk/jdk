@@ -54,5 +54,8 @@ address StubRoutines::riscv::_string_indexof_linear_uu = NULL;
 address StubRoutines::riscv::_string_indexof_linear_ul = NULL;
 address StubRoutines::riscv::_large_byte_array_inflate = NULL;
 address StubRoutines::riscv::_method_entry_barrier = NULL;
+address StubRoutines::riscv::_prefetch_i = NULL;
+address StubRoutines::riscv::_prefetch_r = NULL;
+address StubRoutines::riscv::_prefetch_w = NULL;
 
 bool StubRoutines::riscv::_completed = false;

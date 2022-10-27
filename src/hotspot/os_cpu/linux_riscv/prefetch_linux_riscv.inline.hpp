@@ -27,12 +27,22 @@
 #define OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP
 
 #include "runtime/prefetch.hpp"
+#include "runtime/stubRoutines.hpp"
 
-
-inline void Prefetch::read (const void *loc, intx interval) {
+inline void Prefetch::read(const void *loc, intx interval) {
+    void (*stub)(const void*, intptr_t) =
+        (void (*)(const void*, intptr_t))StubRoutines::riscv::prefetch_r();
+    if (interval >= 0 && stub != NULL) {
+        stub(loc, interval);
+    }
 }
 
 inline void Prefetch::write(void *loc, intx interval) {
+    void (*stub)(const void*, intptr_t) =
+        (void (*)(const void*, intptr_t))StubRoutines::riscv::prefetch_w();
+    if (interval >= 0 && stub != NULL) {
+        stub(loc, interval);
+    }
 }
 
 #endif // OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP

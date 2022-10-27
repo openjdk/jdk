@@ -2460,6 +2460,34 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_prefetch(bool i, bool r, bool w) {
+    assert(i ^ r ^ w, "exactly one of i, r, or w must be set");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines",
+                      i ? "prefetch_i" :
+                      r ? "prefetch_r" :
+                          "prefetch_w");
+
+    address start = __ pc();
+    Label LOOP;
+
+    const Register base = c_rarg0, interval = c_rarg1, first = t0, last = t1;
+
+    __ andi(first, base, ~(CacheLineSize - 1));
+    __ addi(interval, interval, -1);
+    __ add(last, base, interval);
+    __ andi(last, last, ~(CacheLineSize - 1));
+    __ bind(LOOP);
+    if (i) __ prefetch_i(first, 0);
+    if (r) __ prefetch_r(first, 0);
+    if (w) __ prefetch_w(first, 0);
+    __ addi(first, first, CacheLineSize);
+    __ ble(first, last, LOOP);
+    __ ret();
+    return start;
+  }
+
   // x10  = result
   // x11  = str1
   // x12  = cnt1
@@ -3966,6 +3994,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != NULL) {
       StubRoutines::riscv::_method_entry_barrier = generate_method_entry_barrier();
+    }
+
+    if (UseZicbop) {
+      StubRoutines::riscv::_prefetch_i = generate_prefetch(/*i*/true, /*r*/false, /*w*/false);
+      StubRoutines::riscv::_prefetch_r = generate_prefetch(/*i*/false, /*r*/true, /*w*/false);
+      StubRoutines::riscv::_prefetch_w = generate_prefetch(/*i*/false, /*r*/false, /*w*/true);
     }
 
     StubRoutines::riscv::set_completed();
