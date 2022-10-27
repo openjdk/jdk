@@ -469,13 +469,13 @@ public class TestExceptionTypeMatching extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 Child1.java:5: warning: @inheritDoc for exception-type type parameters not declared by a method is unsupported; \
-                document such exception types directly without inheritance
+                document such exception types directly
                     /** @throws T {@inheritDoc} */
                                 ^
                 """);
         checkOutput(Output.OUT, true, """
                 Child2.java:5: warning: @inheritDoc for exception-type type parameters not declared by a method is unsupported; \
-                document such exception types directly without inheritance
+                document such exception types directly
                     /** @throws T {@inheritDoc} */
                                 ^
                 """);

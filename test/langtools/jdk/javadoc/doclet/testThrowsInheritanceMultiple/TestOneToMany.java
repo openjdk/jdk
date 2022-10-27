@@ -565,7 +565,7 @@ public class TestOneToMany extends JavadocTester {
                        """);
     }
 
-//    @Test
+    @Test
     public void testDeeperError(Path base) throws Exception {
         var src = base.resolve("src");
         tb.writeJavaFiles(src, """
@@ -610,11 +610,17 @@ public class TestOneToMany extends JavadocTester {
                 "-sourcepath", src.toString(),
                 "x");
         checkExit(Exit.ERROR);
-        checkOutput(Output.OUT, true, """
-                I2.java:6: error: @inheritDoc cannot be used within this tag
-                     * @throws MyRuntimeException "{@inheritDoc}"
-                       ^
-                       """);
+        new OutputChecker(Output.OUT)
+                .setExpectFound(true)
+                .checkAnyOf(
+                        """
+                        I2.java:6: error: @inheritDoc cannot be used within this tag
+                             * @throws MyRuntimeException '{@inheritDoc}'
+                               ^""",
+                        """
+                        I1.java:6: error: @inheritDoc cannot be used within this tag
+                             * @throws MyRuntimeException "{@inheritDoc}"
+                               ^""");
     }
 
     @Test
