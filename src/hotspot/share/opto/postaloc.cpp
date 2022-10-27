@@ -30,7 +30,7 @@
 
 // See if this register (or pairs, or vector) already contains the value.
 static bool register_contains_value(Node* val, OptoReg::Name reg, int n_regs,
-                                    Node_List& value) {
+                                    const Node_List value) {
   for (int i = 0; i < n_regs; i++) {
     OptoReg::Name nreg = OptoReg::add(reg,-i);
     if (value[nreg] != val)
