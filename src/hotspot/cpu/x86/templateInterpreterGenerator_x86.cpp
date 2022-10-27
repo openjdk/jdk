@@ -644,7 +644,13 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
   __ movptr(rdx, Address(rdx, ConstantPool::cache_offset_in_bytes()));
   __ push(rdx); // set constant pool cache
-  __ push(rlocals); // set locals pointer
+
+  __ movptr(rax, rlocals);
+  __ subptr(rax, rbp);
+  __ shrptr(rax, Interpreter::logStackElementSize);  // rax = rlocals - fp();
+  // Now &fp()[rax] == rlocals
+  __ push(rax); // set relativized locals
+
   if (native_call) {
     __ push(0); // no bcp
   } else {

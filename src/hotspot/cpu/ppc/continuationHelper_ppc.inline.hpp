@@ -170,7 +170,7 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) {
-  return (intptr_t*)f.at(ijava_idx(locals)) + 1; // exclusive (will not be copied), so we add 1 word
+  return (intptr_t*)f.at_relative(ijava_idx(locals)) + 1; // exclusive (will not be copied), so we add 1 word
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize_incl_metadata, bool callee_interpreted) {

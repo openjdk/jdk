@@ -308,6 +308,14 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   return &unextended_sp()[index];
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
+}
+
 // sender_sp
 
 intptr_t* frame::interpreter_frame_sender_sp() const {
@@ -512,7 +520,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 

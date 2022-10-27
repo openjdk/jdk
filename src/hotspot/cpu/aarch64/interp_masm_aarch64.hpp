@@ -76,6 +76,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ldr(rlocals, Address(rfp, frame::interpreter_frame_locals_offset * wordSize));
+    lea(rlocals, Address(rfp, rlocals, Address::lsl(3)));
   }
 
   void restore_constant_pool_cache() {

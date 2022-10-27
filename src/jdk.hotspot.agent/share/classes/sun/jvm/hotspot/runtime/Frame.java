@@ -276,7 +276,7 @@ public abstract class Frame implements Cloneable {
   public abstract Address addressOfInterpreterFrameLocals();
 
   public Address addressOfInterpreterFrameLocal(int slot) {
-    return addressOfInterpreterFrameLocals().getAddressAt(0).addOffsetTo(-slot * VM.getVM().getAddressSize());
+    return addressOfInterpreterFrameLocals().addOffsetTo(-slot * VM.getVM().getAddressSize());
   }
 
   // FIXME: not yet implementable

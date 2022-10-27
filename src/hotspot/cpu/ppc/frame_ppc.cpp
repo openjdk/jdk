@@ -230,6 +230,16 @@ frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   return frame(sender_sp(), sender_pc, unextended_sp);
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  *addr_at(ijava_idx(locals)) = (intptr_t) (locs - fp());
+}
+
+// sender_sp
+
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*)at(ijava_idx(sender_sp));
@@ -322,7 +332,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 

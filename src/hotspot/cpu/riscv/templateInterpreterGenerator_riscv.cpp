@@ -746,15 +746,18 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(xmethod, Address(sp, 7 * wordSize));
   __ sd(ProfileInterpreter ? t0 : zr, Address(sp, 6 * wordSize));
 
+  __ sd(ra, Address(sp, 11 * wordSize));
+  __ sd(fp, Address(sp, 10 * wordSize));
+  __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
+
   __ ld(xcpool, Address(xmethod, Method::const_offset()));
   __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
   __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
-  __ sd(xlocals, Address(sp, 2 * wordSize));
-
-  __ sd(ra, Address(sp, 11 * wordSize));
-  __ sd(fp, Address(sp, 10 * wordSize));
-  __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
+  __ sub(t0, xlocals, fp);
+  __ srli(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
+  // Now &fp()[t0] == xlocals
+  __ sd(t0, Address(sp, 2 * wordSize));
 
   // set sender sp
   // leave last_sp as null

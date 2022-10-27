@@ -33,7 +33,6 @@
 
 // This file specializes the assembler with interpreter-specific macros
 
-
 class InterpreterMacroAssembler: public MacroAssembler {
 
  public:
@@ -73,7 +72,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void save_bcp()                                          { str(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_bcp()                                       { ldr(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
-  void restore_locals()                                    { ldr(Rlocals, Address(FP, frame::interpreter_frame_locals_offset * wordSize)); }
+  void restore_locals() {
+    ldr(Rlocals, Address(FP, frame::interpreter_frame_locals_offset * wordSize));
+    add(Rlocals, FP, AsmOperand(Rlocals, lsl, LogBytesPerWord));
+  }
   void restore_method()                                    { ldr(Rmethod, Address(FP, frame::interpreter_frame_method_offset * wordSize)); }
   void restore_dispatch();
 

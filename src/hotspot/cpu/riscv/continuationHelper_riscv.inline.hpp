@@ -130,7 +130,7 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) { // exclusive; this will not be copied with the frame
-  return (intptr_t*)f.at(frame::interpreter_frame_locals_offset) + 1; // exclusive, so we add 1 word
+  return (intptr_t*)f.at_relative(frame::interpreter_frame_locals_offset) + 1; // exclusive, so we add 1 word
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {

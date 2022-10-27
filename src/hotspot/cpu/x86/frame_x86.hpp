@@ -41,6 +41,7 @@
 //    [pointer to locals     ]                   = locals()             locals_offset
 //    [constant pool cache   ]                   = cache()              cache_offset
 //    [methodData            ]                   = mdp()                mdx_offset
+//    [klass of method       ]                   = mirror()             mirror_offset
 //    [Method*               ]                   = method()             method_offset
 //    [last sp               ]                   = last_sp()            last_sp_offset
 //    [old stack pointer     ]                     (sender_sp)          sender_sp_offset

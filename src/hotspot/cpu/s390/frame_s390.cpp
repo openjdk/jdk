@@ -182,6 +182,13 @@ bool frame::is_interpreted_frame() const {
   return Interpreter::contains(pc());
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  ijava_state_unchecked()->locals = (uint64_t)locs;
+}
+
 // sender_sp
 
 intptr_t* frame::interpreter_frame_sender_sp() const {

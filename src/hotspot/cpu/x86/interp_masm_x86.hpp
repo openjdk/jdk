@@ -75,6 +75,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     movptr(_locals_register, Address(rbp, frame::interpreter_frame_locals_offset * wordSize));
+    lea(_locals_register, Address(rbp, _locals_register, Address::times_ptr));
   }
 
   // Helpers for runtime call arguments/results

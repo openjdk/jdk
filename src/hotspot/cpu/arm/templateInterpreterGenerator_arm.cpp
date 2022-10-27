@@ -654,7 +654,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
   __ ldr(Rtemp, Address(Rtemp, ConstantPool::cache_offset_in_bytes()));
   __ push(Rtemp);                                      // set constant pool cache
-  __ push(Rlocals);                                    // set locals pointer
+  __ sub(Rtemp, Rlocals, FP);
+  __ logical_shift_right(Rtemp, Rtemp, Interpreter::logStackElementSize); // Rtemp = Rlocals - fp();
+  // Now &fp()[Rtemp] == Rlocals
+  __ push(Rtemp);                                      // set relativized locals
   __ push(Rbcp);                                       // set bcp
   __ push(R0);                                         // reserve word for pointer to expression stack bottom
   __ str(SP, Address(SP, 0));                          // set expression stack bottom

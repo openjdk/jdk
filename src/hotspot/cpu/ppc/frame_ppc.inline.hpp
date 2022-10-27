@@ -187,8 +187,9 @@ inline frame::ijava_state* frame::get_ijava_state() const {
   return (ijava_state*) ((uintptr_t)fp() - ijava_state_size);
 }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return (intptr_t**)addr_at(ijava_idx(locals));
+inline intptr_t* frame::interpreter_frame_locals() const {
+  intptr_t n = *addr_at(ijava_idx(locals));
+  return &fp()[n]; // return relativized locals
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
