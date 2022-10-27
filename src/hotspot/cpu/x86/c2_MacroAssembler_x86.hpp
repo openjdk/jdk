@@ -302,7 +302,7 @@ public:
 
   // helper functions for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
-  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
+  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype, bool is_string_hashcode);
   void arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype);
   void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
   void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);

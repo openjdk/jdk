@@ -172,7 +172,7 @@ class VectorizedHashCodeNode: public Node {
   // Possible hashing modes, corresponding to the primitive being encoded,
   // as well as adjusting for special treatment of various encoding of String
   // arrays. Must correspond to declared constants in jdk.internal.util.ArraysSupport
-  typedef enum HashModes { LATIN1, UTF16, BYTE, CHAR, SHORT, INT, FLOAT } HashMode;
+  typedef enum HashModes { LATIN1 = 0, UTF16 = 1, BYTE = 2, CHAR = 3, SHORT = 4, INT = 5 } HashMode;
  private:
   HashMode _mode;
  public:

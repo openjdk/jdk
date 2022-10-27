@@ -194,42 +194,42 @@ public class ArraysSupport {
         };
     }
 
-    private static int latin1HashCode(byte[] value) {
+    private static int latin1HashCode(byte[] a) {
         int result = 0;
-        for (int index = 0; index < value.length; index++) {
-            result = 31 * result + (value[index] & 0xff);
+        for (byte value : a) {
+            result = 31 * result + (value & 0xff);
         }
         return result;
     }
 
-    private static int hashCode(byte[] value) {
+    private static int hashCode(byte[] a) {
         int result = 1;
-        for (int index = 0; index < value.length; index++) {
-            result = 31 * result + (value[index]);
+        for (byte value : a) {
+            result = 31 * result + value;
         }
         return result;
     }
 
-    private static int hashCode(char[] value) {
+    private static int hashCode(char[] a) {
         int result = 1;
-        for (int index = 0; index < value.length; index++) {
-            result = 31 * result + (value[index]);
+        for (char value : a) {
+            result = 31 * result + value;
         }
         return result;
     }
 
-    private static int hashCode(short[] value) {
+    private static int hashCode(short[] a) {
         int result = 1;
-        for (int index = 0; index < value.length; index++) {
-            result = 31 * result + (value[index]);
+        for (short value : a) {
+            result = 31 * result + value;
         }
         return result;
     }
 
-    private static int hashCode(int[] value) {
+    private static int hashCode(int[] a) {
         int result = 1;
-        for (int index = 0; index < value.length; index++) {
-            result = 31 * result + (value[index]);
+        for (int value : a) {
+            result = 31 * result + value;
         }
         return result;
     }

@@ -12064,7 +12064,7 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct arrays_hashcodeLatin1(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+instruct arrays_hashcodeLatin1(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
@@ -12075,7 +12075,7 @@ instruct arrays_hashcodeLatin1(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP result, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
   format %{ "Array HashCode byte[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
@@ -12090,7 +12090,7 @@ instruct arrays_hashcodeLatin1(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct arrays_hashcodeUTF16(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+instruct arrays_hashcodeUTF16(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
@@ -12100,7 +12100,8 @@ instruct arrays_hashcodeUTF16(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP result, USE_KILL ary1, USE_KILL cnt1,
+         KILL cr);
 
   format %{ "Array HashCode prim[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
@@ -12115,7 +12116,7 @@ instruct arrays_hashcodeUTF16(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct arrays_hashcodeB(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+instruct arrays_hashcodeB(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
@@ -12125,9 +12126,10 @@ instruct arrays_hashcodeB(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP result, USE_KILL ary1, USE_KILL cnt1,
+         KILL cr);
 
-  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode byte[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
     __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
@@ -12140,7 +12142,7 @@ instruct arrays_hashcodeB(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct arrays_hashcodeC(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+instruct arrays_hashcodeC(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
@@ -12150,9 +12152,10 @@ instruct arrays_hashcodeC(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP result, USE_KILL ary1, USE_KILL cnt1,
+         KILL cr);
 
-  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode char[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
     __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
@@ -12165,7 +12168,7 @@ instruct arrays_hashcodeC(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct arrays_hashcodeS(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+instruct arrays_hashcodeS(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
@@ -12175,9 +12178,10 @@ instruct arrays_hashcodeS(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP result, USE_KILL ary1, USE_KILL cnt1,
+         KILL cr);
 
-  format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
+  format %{ "Array HashCode prim[] $ary1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
     __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
@@ -12190,7 +12194,7 @@ instruct arrays_hashcodeS(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct arrays_hashcodeI(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
+instruct arrays_hashcodeI(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
@@ -12200,7 +12204,7 @@ instruct arrays_hashcodeI(rdi_RegP ary1, rcx_RegI cnt1, rax_RegI result,
   match(Set result (VectorizedHashCode (Binary ary1 cnt1)));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
          TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
-         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1, KILL cr);
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP result, USE_KILL ary1, USE_KILL cnt1, KILL cr);
 
   format %{ "Array HashCode prim[] $ary1 -> $result   // KILL all" %}
   ins_encode %{

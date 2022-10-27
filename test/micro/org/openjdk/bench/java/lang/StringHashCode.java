@@ -143,5 +143,10 @@ public class StringHashCode {
         public int defaultLatin1() throws Throwable {
             return (int)defaultLatin1HashCodeMH.invokeExact(latin1);
         }
+
+        @Benchmark
+        public int defaultUTF16() throws Throwable {
+            return (int)defaultUTF16HashCodeMH.invokeExact(utf16);
+        }
     }
 }

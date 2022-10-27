@@ -36,6 +36,7 @@ public class HashCode {
             "禅道修行を志した雲水は、一般に参禅のしきたりを踏んだうえで一人の師につき、各地にある専門道場と呼ばれる養成寺院に入門し、与えられた公案に取り組むことになる。公案は、師家（老師）から雲水が悟りの境地へと進んで行くために手助けとして課す問題であり、悟りの境地に達していない人には容易に理解し難い難問だが、屁理屈や詭弁が述べられているわけではなく、頓知や謎かけとも異なる。"
     };
 
+    byte[][] zeroes = new byte[64][];
     private static byte[][] testBytes = new byte[tests.length][];
     private static short[][] testShorts = new short[tests.length][];
     private static char[][] testChars = new char[tests.length][];
@@ -45,6 +46,25 @@ public class HashCode {
     private static int[] expectedUnsigned = { 1, 63, 128, 536518979, -1174896354, 584369596, -2025326028};
 
     public static void main(String[] args) throws Exception {
+        int zeroResult = 1;
+        System.out.println("Checking zeroes");
+        for (int i = 0; i < zeroes.length; i++) {
+            byte[] zeroes = new byte[i];
+            for (int j = 0; j < i; j++) {
+                zeroes[j] = 0;
+            }
+            for (int j = 0; j < 10000; j++) {
+                int hashCode = Arrays.hashCode(zeroes);
+                if (hashCode != zeroResult) {
+                    throw new RuntimeException("byte[] \"" + Arrays.toString(zeroes) + "\": "
+                            + " e = " + zeroResult
+                            + ", hashCode = " + hashCode
+                            + ", repetition = " + j);
+                }
+            }
+            zeroResult *= 31;
+        }
+
         for (int i = 0; i < tests.length; i++) {
             testBytes[i] = tests[i].getBytes("UTF-8");
             int len = testBytes[i].length;
@@ -65,26 +85,30 @@ public class HashCode {
                 if (hashCode != e) {
                     throw new RuntimeException("byte[] \"" + Arrays.toString(testBytes[i]) + "\": "
                             + " e = " + e
-                            + ", hashCode = " + hashCode);
+                            + ", hashCode = " + hashCode
+                            + ", repetition = " + j);
                 }
                 hashCode = Arrays.hashCode(testShorts[i]);
                 if (hashCode != e) {
                     throw new RuntimeException("short[] \"" + Arrays.toString(testShorts[i]) + "\": "
                             + " e = " + e
-                            + ", hashCode = " + hashCode);
+                            + ", hashCode = " + hashCode
+                            + ", repetition = " + j);
                 }
                 hashCode = Arrays.hashCode(testInts[i]);
                 if (hashCode != e) {
                     throw new RuntimeException("int[] \"" + Arrays.toString(testInts[i]) + "\": "
                             + " e = " + e
-                            + ", hashCode = " + hashCode);
+                            + ", hashCode = " + hashCode
+                            + ", repetition = " + j);
                 }
                 e = expectedUnsigned[i];
                 hashCode = Arrays.hashCode(testChars[i]);
                 if (hashCode != e) {
                     throw new RuntimeException("char[] \"" + Arrays.toString(testChars[i]) + "\": "
                             + " e = " + e
-                            + ", hashCode = " + hashCode);
+                            + ", hashCode = " + hashCode
+                            + ", repetition = " + j);
                 }
             }
         }
