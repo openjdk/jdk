@@ -32,6 +32,8 @@
 class outputStream;
 class Thread;
 
+static unsigned __stdcall thread_native_entry(Thread*);
+
 class os::win32 {
   friend class os;
   friend unsigned __stdcall thread_native_entry(Thread*);
