@@ -264,6 +264,12 @@ define SetupEclipseWorkspaceBody
     # This is always emitted, no matter which of the 3 natures were selected
     $$(call EmitNativeDir, src/hotspot)
 
+    ifeq ($$($1_NATURE), HOTSPOT)
+      # HotSpot still needs these source directories even if indexing for only it is requested
+      $$(foreach src,$$(strip $$(patsubst $(TOPDIR)/%,%/include,$$(call FindModuleNativeDirs, java.base))),$$(call EmitNativeDir, $$(src)))
+      $$(call EmitNativeDir, src/java.base/share/native/libjimage)
+    endif
+
     ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
       $$(foreach src,$(NATIVE_DIRS),$$(call EmitNativeDir, $$(src)))
     endif
@@ -334,7 +340,7 @@ define SetupEclipseWorkspaceBody
     #                <language id="org.eclipse.cdt.core.g++">
     #                    <resource project-relative-path="">
     #                        <entry kind="macro" name="PRODUCT" value=""/>
-    #                         <entry kind="macro" name="_WINDOWS" value=""/>
+    #                        <entry kind="macro" name="_WINDOWS" value=""/>
     #                    </resource>
     #                </language>
     $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
@@ -361,6 +367,12 @@ define SetupEclipseWorkspaceBody
 
     $$(call EmitLinkedDirectory, src/hotspot,$(TOPDIR)/src/hotspot)
 
+  endif
+
+  ifeq ($$($1_NATURE), HOTSPOT)
+    # HotSpot still needs these source directories even if indexing for only it is requested
+    $$(foreach src,$$(strip $$(patsubst $(TOPDIR)/%,%/include,$$(call FindModuleNativeDirs, java.base))),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
+    $$(call EmitLinkedDirectory, src/java.base/share/native/libjimage,$(TOPDIR)/src/java.base/share/native/libjimage)
   endif
 
   ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
