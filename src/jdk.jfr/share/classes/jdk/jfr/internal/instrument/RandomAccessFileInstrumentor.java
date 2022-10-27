@@ -43,7 +43,6 @@ final class RandomAccessFileInstrumentor {
 
     private String path;
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read() throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -71,7 +70,6 @@ final class RandomAccessFileInstrumentor {
         return result;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[]) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -96,7 +94,6 @@ final class RandomAccessFileInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[], int off, int len) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -121,7 +118,6 @@ final class RandomAccessFileInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(int b) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
@@ -143,7 +139,6 @@ final class RandomAccessFileInstrumentor {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[]) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
@@ -165,7 +160,6 @@ final class RandomAccessFileInstrumentor {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[], int off, int len) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;

@@ -13,13 +13,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ar_001">ዘመናዊ ምዱብ ዓረብ</language>
-			<language type="nds_NL">ትሑት ሳክሰን</language>
-			<language type="nl_BE">ፍላሚሽ</language>
-			<language type="zh_Hans">ቀሊል ቻይንኛ</language>
-			<language type="zh_Hans" alt="long">ቀሊል ማንዳሪን ቻይንኛ</language>
-			<language type="zh_Hant">ባህላዊ ቻይንኛ</language>
-			<language type="zh_Hant" alt="long">ባህላዊ ማንዳሪን ቻይንኛ</language>
+			<language type="sr">ሰርብኛ</language>
 		</languages>
 	</localeDisplayNames>
 	<characters>

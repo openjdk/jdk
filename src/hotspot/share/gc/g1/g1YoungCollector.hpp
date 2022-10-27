@@ -99,6 +99,8 @@ class G1YoungCollector {
 
   void set_young_collection_default_active_worker_threads();
 
+  void flush_dirty_card_queues();
+
   void pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* pss);
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set

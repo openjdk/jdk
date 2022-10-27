@@ -35,10 +35,14 @@
 #ifndef SYS_membarrier
   #if defined(AMD64)
   #define SYS_membarrier 324
+  #elif defined(X86)
+  #define SYS_membarrier 375
   #elif defined(PPC64)
   #define SYS_membarrier 365
   #elif defined(AARCH64)
   #define SYS_membarrier 283
+  #elif defined(ALPHA)
+  #define SYS_membarrier 517
   #else
   #error define SYS_membarrier for the arch
   #endif

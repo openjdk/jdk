@@ -116,7 +116,7 @@ final class Print extends Command {
                 foundEventFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--events", filter);
-                eventFilters.add(Filters.createEventTypeFilter(filter));
+                eventFilters.add(Filters.createEventTypeFilter(filter, List.of()));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -125,7 +125,7 @@ final class Print extends Command {
                 foundCategoryFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--categories", filter);
-                eventFilters.add(Filters.createCategoryFilter(filter));
+                eventFilters.add(Filters.createCategoryFilter(filter, List.of()));
             }
             if (acceptOption(options, "--stack-depth")) {
                 String value = options.pop();

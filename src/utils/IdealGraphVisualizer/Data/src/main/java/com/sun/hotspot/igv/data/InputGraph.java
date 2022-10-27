@@ -31,13 +31,13 @@ import java.util.*;
  */
 public class InputGraph extends Properties.Entity implements FolderElement {
 
-    private Map<Integer, InputNode> nodes;
-    private List<InputEdge> edges;
+    private final Map<Integer, InputNode> nodes;
+    private final List<InputEdge> edges;
     private Folder parent;
     private Group parentGroup;
-    private Map<String, InputBlock> blocks;
-    private List<InputBlockEdge> blockEdges;
-    private Map<Integer, InputBlock> nodeToBlock;
+    private final Map<String, InputBlock> blocks;
+    private final List<InputBlockEdge> blockEdges;
+    private final Map<Integer, InputBlock> nodeToBlock;
     private boolean isDiffGraph;
     private InputGraph firstGraph;
     private InputGraph secondGraph;
@@ -64,7 +64,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public boolean isDiffGraph() {
-        return this.isDiffGraph;
+        return isDiffGraph;
     }
 
     public InputGraph getFirstGraph() {
@@ -114,7 +114,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
         Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
         for(InputNode n : this.getNodes()) {
-            result.put(n, new ArrayList<InputEdge>());
+            result.put(n, new ArrayList<>());
         }
 
         for(InputEdge e : this.edges) {
@@ -173,16 +173,6 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         blocks.clear();
         blockEdges.clear();
         nodeToBlock.clear();
-    }
-
-    public void setEdge(int fromIndex, int toIndex, int from, int to) {
-        assert fromIndex == ((char)fromIndex) : "Downcast must be safe";
-        assert toIndex == ((char)toIndex) : "Downcast must be safe";
-
-        InputEdge edge = new InputEdge((char)fromIndex, (char)toIndex, from, to);
-        if(!this.getEdges().contains(edge)) {
-            this.addEdge(edge);
-        }
     }
 
     public void ensureNodesInBlocks() {
@@ -304,7 +294,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public InputBlock addArtificialBlock() {
         InputBlock b = addBlock("(no block)");
-        b.setArtificial(true);
+        b.setArtificial();
         return b;
     }
 

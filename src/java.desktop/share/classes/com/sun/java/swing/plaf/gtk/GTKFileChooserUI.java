@@ -1383,7 +1383,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public String getName() {
             // As SynthComboBoxRenderer's are asked for a size BEFORE they
-            // are parented getName is overriden to force the name to be
+            // are parented getName is overridden to force the name to be
             // ComboBox.renderer if it isn't set. If we didn't do this the
             // wrong style could be used for size calculations.
             String name = super.getName();
