@@ -137,8 +137,8 @@ public class dispose003a {
                                  log1("checking on: thread2.isAlive");
                                  // There is no sync between vm.dispose() and test_thread
                                  // let give thread some time to complete
-                                 boolean isAlive = test_thread.isAlive();
-                                 for (int attempt = 0; attempt < 10; i++) {
+                                 boolean isAlive = true;
+                                 for (int attempt = 0; attempt < 5; i++) {
                                      isAlive = test_thread.isAlive();
                                      if (!isAlive) {
                                          break;
