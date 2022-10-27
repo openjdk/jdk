@@ -52,10 +52,6 @@
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
-  product(bool, PrintSharedDictionary, false,                               \
-          "If PrintSharedArchiveAndExit is true, also print the shared "    \
-          "dictionary")                                                     \
-                                                                            \
   product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \

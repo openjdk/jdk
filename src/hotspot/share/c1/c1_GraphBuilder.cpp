@@ -1902,7 +1902,7 @@ void GraphBuilder::check_args_for_profiling(Values* obj_args, int expected) {
   bool ignored_will_link;
   ciSignature* declared_signature = NULL;
   ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-  assert(expected == obj_args->max_length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+  assert(expected == obj_args->capacity() || real_target->is_method_handle_intrinsic(), "missed on arg?");
 #endif
 }
 
@@ -1913,7 +1913,7 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   if (obj_args == NULL) {
     return NULL;
   }
-  int s = obj_args->max_length();
+  int s = obj_args->capacity();
   // if called through method handle invoke, some arguments may have been popped
   for (int i = start, j = 0; j < s && i < args->length(); i++) {
     if (args->at(i)->type()->is_object_kind()) {
@@ -3968,9 +3968,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       int start = 0;
       Values* obj_args = args_list_for_profiling(callee, start, has_receiver);
       if (obj_args != NULL) {
-        int s = obj_args->max_length();
+        int s = obj_args->capacity();
         // if called through method handle invoke, some arguments may have been popped
-        for (int i = args_base+start, j = 0; j < obj_args->max_length() && i < state()->stack_size(); ) {
+        for (int i = args_base+start, j = 0; j < obj_args->capacity() && i < state()->stack_size(); ) {
           Value v = state()->stack_at_inc(i);
           if (v->type()->is_object_kind()) {
             obj_args->push(v);

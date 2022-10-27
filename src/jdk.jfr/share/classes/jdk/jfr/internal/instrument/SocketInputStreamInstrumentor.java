@@ -42,7 +42,6 @@ final class SocketInputStreamInstrumentor {
     private SocketInputStreamInstrumentor() {
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[], int off, int length) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.SOCKET_READ;
