@@ -200,8 +200,6 @@ jdk_time = \
 
 jdk_rmi = \
     java/rmi \
-    -java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
-    -java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java \
     sun/rmi
 
 jdk_security1 = \
@@ -255,7 +253,6 @@ jdk_instrument = \
 
 jdk_jmx = \
     javax/management \
-    -javax/management/remote/nonLocalAccess/NonLocalJMXRemoteTest.java \
     com/sun/jmx
 
 jdk_jdi = \
