@@ -1492,11 +1492,11 @@ enum VectorMask {
 
   // Vector Mask-Register Logical Instructions
   INSN(vmxnor_mm,   0b1010111, 0b010, 0b1, 0b011111);
-  INSN(vmorn_mm,  0b1010111, 0b010, 0b1, 0b011100);
+  INSN(vmorn_mm,    0b1010111, 0b010, 0b1, 0b011100);
   INSN(vmnor_mm,    0b1010111, 0b010, 0b1, 0b011110);
   INSN(vmor_mm,     0b1010111, 0b010, 0b1, 0b011010);
   INSN(vmxor_mm,    0b1010111, 0b010, 0b1, 0b011011);
-  INSN(vmandn_mm, 0b1010111, 0b010, 0b1, 0b011000);
+  INSN(vmandn_mm,   0b1010111, 0b010, 0b1, 0b011000);
   INSN(vmnand_mm,   0b1010111, 0b010, 0b1, 0b011101);
   INSN(vmand_mm,    0b1010111, 0b010, 0b1, 0b011001);
 
