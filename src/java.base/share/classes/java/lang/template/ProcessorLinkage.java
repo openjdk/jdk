@@ -46,16 +46,16 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public sealed interface ProcessorLinkage permits FormatProcessor {
-	/**
-	 * Construct a {@link MethodHandle} that constructs a result based on the
-	 * bootstrap method information.
-	 *
-	 * @param fragments  string template fragments
-	 * @param type       method type
-	 *
-	 * @return {@link MethodHandle} for the processor applied to template
-	 *
-	 * @throws NullPointerException if any of the arguments are null
-	 */
-	MethodHandle linkage(List<String> fragments, MethodType type);
+    /**
+     * Construct a {@link MethodHandle} that constructs a result based on the
+     * bootstrap method information.
+     *
+     * @param fragments  string template fragments
+     * @param type       method type
+     *
+     * @return {@link MethodHandle} for the processor applied to template
+     *
+     * @throws NullPointerException if any of the arguments are null
+     */
+    MethodHandle linkage(List<String> fragments, MethodType type);
 }
