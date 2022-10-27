@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6935563 7044870 8293696
+ * @bug 6935563 7044870
  * @summary Test that Selector does not select an unconnected DatagramChannel when
  *    ICMP port unreachable received
  * @run main/othervm SelectWhenRefused
@@ -37,6 +37,10 @@ import java.util.Set;
 public class SelectWhenRefused {
 
     public static void main(String[] args) throws IOException {
+        //If another datagram test interferes with this test ignoreStrayWakeup
+        // will be set to true, and the loop below will retry the test
+        boolean ignoreStrayWakeup;
+
         DatagramChannel dc1 = DatagramChannel.open().bind(new InetSocketAddress(0));
         int port = dc1.socket().getLocalPort();
 
@@ -51,48 +55,62 @@ public class SelectWhenRefused {
             dc.configureBlocking(false);
             dc.register(sel, SelectionKey.OP_READ);
 
-            /* Test 1: not connected so ICMP port unreachable should not be received */
-            sendDatagram(dc, refuser);
-            int n = sel.select(2000);
-            if (n > 0) {
-                logUnexpectedWakeup(dc, sel.selectedKeys());
-                sel.selectedKeys().clear();
-                // BindException will be thrown if another service is using
-                // our expected refuser port, cannot run just exit.
-                DatagramChannel.open().bind(refuser).close();
-                throw new RuntimeException("Unexpected wakeup");
-            }
+            for (;;) {
+                /* Test 1: not connected so ICMP port unreachable should not be received */
+                sendDatagram(dc, refuser);
+                int n = sel.select(2000);
+                if (n > 0) {
+                    ignoreStrayWakeup = checkUnexpectedWakeup(dc, sel.selectedKeys());
+                    sel.selectedKeys().clear();
+                    if (ignoreStrayWakeup) {
+                        continue;
+                    }
+                    // BindException will be thrown if another service is using
+                    // our expected refuser port, cannot run just exit.
+                    DatagramChannel.open().bind(refuser).close();
+                    throw new RuntimeException("Unexpected wakeup");
+                }
 
-            /* Test 2: connected so ICMP port unreachable may be received */
-            dc.connect(refuser);
-            try {
+                /* Test 2: connected so ICMP port unreachable may be received */
+                dc.connect(refuser);
+                try {
+                    sendDatagram(dc, refuser);
+                    n = sel.select(2000);
+                    if (n > 0) {
+                        sel.selectedKeys().clear();
+                        try {
+                            ByteBuffer buf = ByteBuffer.allocate(100);
+                            SocketAddress sa = dc.receive(buf);
+                            String message = new String(buf.array());
+                            System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
+                            //If any received data contains the message from sendDatagram then return true
+                            if (message.contains("Greetings!")) {
+                                throw new RuntimeException("Unexpected datagram received");
+                            }
+                            //unexpected datagram received from elsewhere, retry
+                            continue;
+                        } catch (PortUnreachableException pue) {
+                            // expected
+                        }
+                    }
+                } finally {
+                    dc.disconnect();
+                }
+
+                /* Test 3: not connected so ICMP port unreachable should not be received */
                 sendDatagram(dc, refuser);
                 n = sel.select(2000);
                 if (n > 0) {
+                    ignoreStrayWakeup = checkUnexpectedWakeup(dc, sel.selectedKeys());
                     sel.selectedKeys().clear();
-                    try {
-                        ByteBuffer buf = ByteBuffer.allocate(100);
-                        n = dc.read(buf);
-                        String message = new String(buf.array());
-                        System.out.format("received %s at %s%n", message, dc.getLocalAddress());
-                        throw new RuntimeException("Unexpected datagram received");
-                    } catch (PortUnreachableException pue) {
-                        // expected
+                    if (ignoreStrayWakeup) {
+                        continue;
                     }
+                    throw new RuntimeException("Unexpected wakeup after disconnect");
                 }
-            } finally {
-                dc.disconnect();
+                break;
             }
-
-            /* Test 3: not connected so ICMP port unreachable should not be received */
-            sendDatagram(dc, refuser);
-            n = sel.select(2000);
-            if (n > 0) {
-                logUnexpectedWakeup(dc, sel.selectedKeys());
-                throw new RuntimeException("Unexpected wakeup after disconnect");
-            }
-
-        } catch(BindException e) {
+        } catch (BindException e) {
             // Do nothing, some other test has used this port
         } finally {
             sel.close();
@@ -107,11 +125,11 @@ public class SelectWhenRefused {
         dc.send(bb, remote);
     }
 
-    static void logUnexpectedWakeup(DatagramChannel dc, Set<SelectionKey> selectedKeys) {
+    static boolean checkUnexpectedWakeup(DatagramChannel dc, Set<SelectionKey> selectedKeys) {
         for (SelectionKey key : selectedKeys) {
             if (!key.isValid() || !key.isReadable()) {
                 System.out.println("Invalid or unreadable key: " + key);
-                return;
+                continue;
             }
             try {
                 System.out.println("Attempting to read datagram from key: " + key);
@@ -119,9 +137,14 @@ public class SelectWhenRefused {
                 SocketAddress sa = dc.receive(buf);
                 String message = new String(buf.array());
                 System.out.format("received %s from %s%n", message, sa);
+                //If any received data contains the message from sendDatagram then return true
+                if (message.contains("Greetings!")) {
+                    return true;
+                }
             } catch (IOException io) {
                 System.out.println("Unable to read from datagram " + io);
             }
         }
+        return false;
     }
 }
