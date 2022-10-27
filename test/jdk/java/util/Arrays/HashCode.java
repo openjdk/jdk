@@ -46,25 +46,6 @@ public class HashCode {
     private static int[] expectedUnsigned = { 1, 63, 128, 536518979, -1174896354, 584369596, -2025326028};
 
     public static void main(String[] args) throws Exception {
-        int zeroResult = 1;
-        System.out.println("Checking zeroes");
-        for (int i = 0; i < zeroes.length; i++) {
-            byte[] zeroes = new byte[i];
-            for (int j = 0; j < i; j++) {
-                zeroes[j] = 0;
-            }
-            for (int j = 0; j < 10000; j++) {
-                int hashCode = Arrays.hashCode(zeroes);
-                if (hashCode != zeroResult) {
-                    throw new RuntimeException("byte[] \"" + Arrays.toString(zeroes) + "\": "
-                            + " e = " + zeroResult
-                            + ", hashCode = " + hashCode
-                            + ", repetition = " + j);
-                }
-            }
-            zeroResult *= 31;
-        }
-
         for (int i = 0; i < tests.length; i++) {
             testBytes[i] = tests[i].getBytes("UTF-8");
             int len = testBytes[i].length;
@@ -78,39 +59,99 @@ public class HashCode {
             }
         }
 
-        for (int i = 0; i < tests.length; i++) {
-            for (int j = 0; j < 20_000; j++) {
-                int e = expected[i];
-                int hashCode = Arrays.hashCode(testBytes[i]);
-                if (hashCode != e) {
-                    throw new RuntimeException("byte[] \"" + Arrays.toString(testBytes[i]) + "\": "
-                            + " e = " + e
-                            + ", hashCode = " + hashCode
-                            + ", repetition = " + j);
+        boolean failed = false;
+        try {
+            int zeroResult = 1;
+            for (int i = 0; i < 64; i++) {
+                byte[] zeroes = new byte[i];
+                for (int j = 0; j < 10_000; j++) {
+                    int hashCode = Arrays.hashCode(zeroes);
+                    if (hashCode != zeroResult) {
+                        throw new RuntimeException("byte[] \"" + Arrays.toString(zeroes) + "\": "
+                                + " e = " + zeroResult
+                                + ", hashCode = " + hashCode
+                                + ", repetition = " + j);
+                    }
                 }
-                hashCode = Arrays.hashCode(testShorts[i]);
-                if (hashCode != e) {
-                    throw new RuntimeException("short[] \"" + Arrays.toString(testShorts[i]) + "\": "
-                            + " e = " + e
-                            + ", hashCode = " + hashCode
-                            + ", repetition = " + j);
-                }
-                hashCode = Arrays.hashCode(testInts[i]);
-                if (hashCode != e) {
-                    throw new RuntimeException("int[] \"" + Arrays.toString(testInts[i]) + "\": "
-                            + " e = " + e
-                            + ", hashCode = " + hashCode
-                            + ", repetition = " + j);
-                }
-                e = expectedUnsigned[i];
-                hashCode = Arrays.hashCode(testChars[i]);
-                if (hashCode != e) {
-                    throw new RuntimeException("char[] \"" + Arrays.toString(testChars[i]) + "\": "
-                            + " e = " + e
-                            + ", hashCode = " + hashCode
-                            + ", repetition = " + j);
+                zeroResult *= 31;
+            }
+            for (int i = 0; i < tests.length; i++) {
+                for (int j = 0; j < 20_000; j++) {
+                    int e = expected[i];
+                    int hashCode = Arrays.hashCode(testBytes[i]);
+                    if (hashCode != e) {
+                        throw new RuntimeException("byte[] \"" + Arrays.toString(testBytes[i]) + "\": "
+                                + " e = " + e
+                                + ", hashCode = " + hashCode
+                                + ", repetition = " + j);
+                    }
                 }
             }
+            System.out.println("byte[] tests passed");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            failed = true;
+        }
+
+        try {
+            for (int i = 0; i < tests.length; i++) {
+                for (int j = 0; j < 20_000; j++) {
+                    int e = expected[i];
+                    int hashCode = Arrays.hashCode(testShorts[i]);
+                    if (hashCode != e) {
+                        throw new RuntimeException("short[] \"" + Arrays.toString(testShorts[i]) + "\": "
+                                + " e = " + e
+                                + ", hashCode = " + hashCode
+                                + ", repetition = " + j);
+                    }
+                }
+            }
+            System.out.println("short[] tests passed");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            failed = true;
+        }
+
+        try {
+            for (int i = 0; i < tests.length; i++) {
+                for (int j = 0; j < 20_000; j++) {
+                    int e = expected[i];
+                    int hashCode = Arrays.hashCode(testInts[i]);
+                    if (hashCode != e) {
+                        throw new RuntimeException("int[] \"" + Arrays.toString(testInts[i]) + "\": "
+                                + " e = " + e
+                                + ", hashCode = " + hashCode
+                                + ", repetition = " + j);
+                    }
+                }
+            }
+            System.out.println("int[] tests passed");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            failed = true;
+        }
+
+        try {
+            for (int i = 0; i < tests.length; i++) {
+                for (int j = 0; j < 20_000; j++) {
+                    int e = expectedUnsigned[i];
+                    int hashCode = Arrays.hashCode(testChars[i]);
+                    if (hashCode != e) {
+                        throw new RuntimeException("char[] \"" + Arrays.toString(testChars[i]) + "\": "
+                                + " e = " + e
+                                + ", hashCode = " + hashCode
+                                + ", repetition = " + j);
+                    }
+                }
+            }
+            System.out.println("char[] tests passed");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            failed = true;
+        }
+
+        if (failed) {
+            throw new RuntimeException("Some tests failed");
         }
     }
 }
