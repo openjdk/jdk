@@ -94,7 +94,8 @@ public class NonLocalJMXRemoteTest {
 
     static final String[] instructions = new String[]{
             "This is a manual test that requires rmiregistry run on a different host"
-                    + ". Login or ssh to a different host and invoke:\n\n"
+                    + ". Login or ssh to a different host, install the latest JDK "
+                    + "build and invoke:\n\n"
                     + "$JDK_HOME/bin/rmiregistry \\\n"
                     + "-J-Dcom.sun.management.jmxremote.port=8888 \\\n"
                     + "-J-Dcom.sun.management.jmxremote.local.only=false \\\n"
@@ -105,7 +106,8 @@ public class NonLocalJMXRemoteTest {
                     + "host and the port separated by a semicolon below and continue "
                     + "the test.",
             "This is a manual test that requires rmiregistry run on a different host"
-                    + ". Login or ssh to a different host and invoke :\n"
+                    + ". Login or ssh to a different host, install the latest JDK "
+                    + "build and invoke :\n"
                     + "(Stop the current running rmi server by typing Ctrl-C)\n\n"
                     + "$JDK_HOME/bin/rmiregistry \\\n"
                     + "-J-Dcom.sun.management.jmxremote.port=8888 \\\n"

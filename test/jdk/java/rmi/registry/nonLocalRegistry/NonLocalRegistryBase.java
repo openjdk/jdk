@@ -28,7 +28,8 @@ import javax.swing.*;
 public class NonLocalRegistryBase {
     static final String instructions =
             "This is a manual test that requires rmiregistry run on a different host"
-                    + ". Login or ssh to a different host and invoke:\n\n"
+                    + ". Login or ssh to a different host, install the latest JDK "
+                    + "build and invoke:\n\n"
                     + "$JDK_HOME/bin/rmiregistry"
                     + "\n\nRegistry service is run in the background without any "
                     + "output. Enter the hostname or IP address of the different "
