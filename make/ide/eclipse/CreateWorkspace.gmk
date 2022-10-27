@@ -231,6 +231,9 @@ define SetupEclipseWorkspaceBody
     $$(call EmitEmptyLine, $(NATIVE_FILE))
     $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10)" moduleId="org.eclipse.cdt.core.settings" name="Java SE">, $(NATIVE_FILE))
     $$(call AppendFile,                <externalSettings/>, $(NATIVE_FILE))
+
+    # For some strange reason Eclipse requires the binary parsers be listed for the
+    # workspace to be recognised as a C/C++ one
     $$(call AppendFile,                <extensions>, $(NATIVE_FILE))
     $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>, $(NATIVE_FILE))
     $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
@@ -246,6 +249,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 10).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
     $$(call AppendFile,                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">, $(NATIVE_FILE))
     $$(call AppendFile,                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.1546530650" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>, $(NATIVE_FILE))
     $$(call AppendFile,                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>, $(NATIVE_FILE))
     $$(call AppendFile,                        </toolChain>, $(NATIVE_FILE))
     $$(call AppendFile,                    </folderInfo>, $(NATIVE_FILE))
