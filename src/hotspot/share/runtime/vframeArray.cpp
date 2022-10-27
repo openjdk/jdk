@@ -457,7 +457,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                       RegisterMap::WalkContinuation::skip);
       vframe* f = vframe::new_vframe(iframe(), &map, thread);
       f->print_on(&ls);
-      if (WizardMode && Verbose) method()->print_codes_on(&ls);
+      if (lm.is_trace()) method()->print_codes_on(&ls);
       ls.cr();
     }
   }
