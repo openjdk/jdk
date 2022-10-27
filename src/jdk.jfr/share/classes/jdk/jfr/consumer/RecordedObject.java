@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -755,6 +756,10 @@ public sealed class RecordedObject
      * the following types: {@code long}, {@code int}, {@code short}, {@code char},
      * and {@code byte}.
      * <p>
+     * If the committed event value was {@code Long.MAX_VALUE},
+     * regardless of the unit set by {@code @Timespan}, this method returns
+     * {@link ChronoUnit#FOREVER}.
+     * <p>
      * It's possible to index into a nested object using {@code "."} (for example,
      * {@code "aaa.bbb"}).
      * <p>
@@ -810,6 +815,9 @@ public sealed class RecordedObject
         }
         if (timespan == Long.MIN_VALUE) {
             return Duration.ofSeconds(Long.MIN_VALUE, 0);
+        }
+        if (timespan == Long.MAX_VALUE) {
+            return ChronoUnit.FOREVER.getDuration();
         }
         Timespan ts = v.getAnnotation(Timespan.class);
         if (ts != null) {

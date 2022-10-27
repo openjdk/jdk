@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
-import sun.security.util.*;
+import sun.security.util.BitArray;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
 
 /**
  * Represent the CRL Reason Flags.

@@ -26,8 +26,6 @@ package sun.security.util;
 
 import java.security.spec.AlgorithmParameterSpec;
 
-import sun.security.util.ObjectIdentifier;
-
 /**
  * This immutable class is used when randomly generating a key pair and the
  * consumer only specifies the length of the key and therefore a curve for that
@@ -38,7 +36,7 @@ import sun.security.util.ObjectIdentifier;
  */
 public class ECKeySizeParameterSpec implements AlgorithmParameterSpec {
 
-    private int keySize;
+    private final int keySize;
 
     /**
      * Creates a parameter specification for EC curve

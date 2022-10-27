@@ -655,6 +655,11 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
+  // Check for overflow.
+  if (outer_size < size) {
+    return NULL;
+  }
+
   ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == NULL) {
     return NULL;
@@ -933,6 +938,11 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   long minutes = (sec/60) - (days * 1440) - (hours * 60);
   if (startStr == NULL) startStr = "";
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
+}
+
+void os::print_tos(outputStream* st, address sp) {
+  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
 }
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {

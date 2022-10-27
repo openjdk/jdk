@@ -1963,7 +1963,7 @@ public class JEditorPane extends JTextComponent {
              * as appropriate for that link.
              * <p>
              * E.g. from HTML:
-             *   &lt;a href="http://openjdk.java.net"&gt;OpenJDK&lt;/a&gt;
+             *   &lt;a href="https://openjdk.org"&gt;OpenJDK&lt;/a&gt;
              * this method would return a String containing the text:
              * 'OpenJDK'.
              * <p>

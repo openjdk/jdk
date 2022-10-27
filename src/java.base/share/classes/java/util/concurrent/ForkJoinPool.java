@@ -1815,9 +1815,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * returning source id or retry indicator.
      *
      * @param w caller's WorkQueue
-     * @param prevSrc the previous queue stolen from in current phase, or 0
+     * @param prevSrc the two previous queues (if nonzero) stolen from in current phase, packed as int
      * @param r random seed
-     * @return id of queue if taken, negative if none found, prevSrc for retry
+     * @return the next prevSrc value to use, or negative if none found
      */
     private int scan(WorkQueue w, int prevSrc, int r) {
         WorkQueue[] qs = queues;
@@ -1835,10 +1835,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                 else if (t != null && WorkQueue.casSlotToNull(a, k, t)) {
                     q.base = nb;
                     w.source = src;
-                    if (prevSrc == 0 && q.base == nb && a[nk] != null)
-                        signalWork();           // propagate
+                    if (src + (src << SWIDTH) != prevSrc &&
+                        q.base == nb && a[nk] != null)
+                        signalWork();           // propagate at most twice/run
                     w.topLevelExec(t, q);
-                    return src;
+                    return src + (prevSrc << SWIDTH);
                 }
                 else if (q.array != a || a[k] != null || a[nk] != null)
                     return prevSrc;             // revisit

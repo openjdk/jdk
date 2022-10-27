@@ -91,7 +91,7 @@ public class FileMapInfo {
     // FileMapHeader* header = info->_header
     Address info = getStatic_AddressField(FileMapInfo_type, "_current_info");
     Address header = get_AddressField(FileMapInfo_type, info, "_header");
-    headerObj = (FileMapHeader) VMObjectFactory.newObject(FileMapInfo.FileMapHeader.class, header);
+    headerObj = VMObjectFactory.newObject(FileMapHeader.class, header);
 
     // char* mapped_base_address = header->_mapped_base_address
     // size_t cloned_vtable_offset = header->_cloned_vtable_offset

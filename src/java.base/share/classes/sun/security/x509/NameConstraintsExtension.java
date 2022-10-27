@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ implements CertAttrSet<String>, Cloneable {
     private boolean minMaxValid = false;
 
     // Recalculate hasMin and hasMax flags.
-    private void calcMinMax() throws IOException {
+    private void calcMinMax() {
         hasMin = false;
         hasMax = false;
         if (excluded != null) {
@@ -442,8 +442,8 @@ implements CertAttrSet<String>, Cloneable {
         X500Name subject = X500Name.asX500Name(subjectPrincipal);
 
         // Check subject as an X500Name
-        if (subject.isEmpty() == false) {
-            if (verify(subject) == false) {
+        if (!subject.isEmpty()) {
+            if (!verify(subject)) {
                 return false;
             }
         }
@@ -609,9 +609,7 @@ implements CertAttrSet<String>, Cloneable {
                     return true; // name is definitely OK, so break out of loop
                 }
             }
-            if (sameType) {
-                return false;
-            }
+            return !sameType;
         }
         return true;
     }

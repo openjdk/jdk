@@ -118,7 +118,7 @@ class Access: public AllStatic {
   template <DecoratorSet expected_mo_decorators>
   static void verify_heap_oop_decorators() {
     const DecoratorSet heap_oop_decorators = AS_DECORATOR_MASK | ON_DECORATOR_MASK |
-                                             IN_HEAP | IS_ARRAY | IS_NOT_NULL;
+                                             IN_HEAP | IS_ARRAY | IS_NOT_NULL | IS_DEST_UNINITIALIZED;
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 

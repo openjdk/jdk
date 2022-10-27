@@ -110,9 +110,11 @@ class oopDesc;
 
 // Format 32-bit quantities.
 #define INT32_FORMAT             "%"          PRId32
+#define INT32_FORMAT_X           "0x%"        PRIx32
 #define INT32_FORMAT_X_0         "0x%08"      PRIx32
 #define INT32_FORMAT_W(width)    "%"   #width PRId32
 #define UINT32_FORMAT            "%"          PRIu32
+#define UINT32_FORMAT_X          "0x%"        PRIx32
 #define UINT32_FORMAT_X_0        "0x%08"      PRIx32
 #define UINT32_FORMAT_W(width)   "%"   #width PRIu32
 
@@ -786,10 +788,7 @@ extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack ele
 extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a char*
 extern BasicType name2type(const char* name);
 
-inline const char* type2name(BasicType t) {
-  assert((uint)t < T_CONFLICT + 1, "invalid type");
-  return type2name_tab[t];
-}
+const char* type2name(BasicType t);
 
 inline jlong max_signed_integer(BasicType bt) {
   if (bt == T_INT) {

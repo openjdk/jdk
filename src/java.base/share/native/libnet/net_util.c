@@ -30,7 +30,7 @@
 
 int IPv4_supported();
 int IPv6_supported();
-int reuseport_supported();
+int reuseport_supported(int ipv6_available);
 
 static int IPv4_available;
 static int IPv6_available;
@@ -80,8 +80,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
 
     /* check if SO_REUSEPORT is supported on this platform */
-    REUSEPORT_available = reuseport_supported();
-    platformInit();
+    REUSEPORT_available = reuseport_supported(IPv6_available);
 
     return JNI_VERSION_1_2;
 }

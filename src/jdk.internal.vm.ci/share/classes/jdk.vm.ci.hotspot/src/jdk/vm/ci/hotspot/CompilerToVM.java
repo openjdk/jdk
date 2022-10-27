@@ -1175,10 +1175,9 @@ final class CompilerToVM {
     native boolean isTrustedForIntrinsics(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Releases the resources backing the global JNI {@code handle}. This is equivalent to the
-     * {@code DeleteGlobalRef} JNI function.
+     * Releases all oop handles whose referent is null.
      */
-    native void deleteGlobalHandle(long handle);
+    native void releaseClearedOopHandles();
 
     /**
      * Gets the failed speculations pointed to by {@code *failedSpeculationsAddress}.

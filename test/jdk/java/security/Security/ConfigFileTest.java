@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
 
+import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Optional;
@@ -35,11 +36,19 @@ import java.util.Optional;
 /*
  * @test
  * @summary Throw error if default java.security file is missing
- * @bug 8155246
+ * @bug 8155246 8292297 8292177
  * @library /test/lib
  * @run main ConfigFileTest
  */
 public class ConfigFileTest {
+
+    private static final String EXPECTED_DEBUG_OUTPUT =
+        "Initial security property: crypto.policy=unlimited";
+
+    private static final String UNEXPECTED_DEBUG_OUTPUT =
+            "Initial security property: postInitTest=shouldNotRecord";
+
+    private static boolean overrideDetected = false;
 
     public static void main(String[] args) throws Exception {
         Path copyJdkDir = Path.of("./jdk-8155246-tmpdir");
@@ -50,39 +59,86 @@ public class ConfigFileTest {
 
         if (args.length == 1) {
             // set up is complete. Run code to exercise loading of java.security
-            System.out.println(Arrays.toString(Security.getProviders()));
+            Provider[] provs = Security.getProviders();
+            Security.setProperty("postInitTest", "shouldNotRecord");
+            System.out.println(Arrays.toString(provs) + "NumProviders: " + provs.length);
         } else {
             Files.createDirectory(copyJdkDir);
             Path jdkTestDir = Path.of(Optional.of(System.getProperty("test.jdk"))
                             .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
             );
 
-            copyJDKMinusJavaSecurity(jdkTestDir, copyJdkDir);
+            copyJDK(jdkTestDir, copyJdkDir);
             String extraPropsFile = Path.of(System.getProperty("test.src"), "override.props").toString();
 
             // exercise some debug flags while we're here
-            // launch JDK without java.security file being present or specified
-            exerciseSecurity(copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+            // regular JDK install - should expect success
+            exerciseSecurity(0, "java",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
                     "-Djava.security.debug=all", "-Djavax.net.debug=all", "ConfigFileTest", "runner");
+
+            // given an overriding security conf file that doesn't exist, we shouldn't
+            // overwrite the properties from original/master security conf file
+            exerciseSecurity(0, "SUN version",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties==file:///" + extraPropsFile + "badFileName",
+                    "ConfigFileTest", "runner");
+
+            // test JDK launch with customized properties file
+            exerciseSecurity(0, "NumProviders: 6",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties==file:///" + extraPropsFile,
+                    "ConfigFileTest", "runner");
+
+            // delete the master conf file
+            Files.delete(Path.of(copyJdkDir.toString(), "conf",
+                    "security","java.security"));
+
+            // launch JDK without java.security file being present or specified
+            exerciseSecurity(1, "Error loading java.security file",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "ConfigFileTest", "runner");
 
             // test the override functionality also. Should not be allowed since
             // "security.overridePropertiesFile=true" Security property is missing.
-            exerciseSecurity(copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+            exerciseSecurity(1, "Error loading java.security file",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
                     "-Djava.security.debug=all", "-Djavax.net.debug=all",
-                    "-Djava.security.properties==file://" + extraPropsFile, "ConfigFileTest", "runner");
+                    "-Djava.security.properties==file:///" + extraPropsFile, "ConfigFileTest", "runner");
+
+            if (!overrideDetected) {
+                throw new RuntimeException("Override scenario not seen");
+            }
         }
     }
 
-    private static void exerciseSecurity(String... args) throws Exception {
+    private static void exerciseSecurity(int exitCode, String output, String... args) throws Exception {
         ProcessBuilder process = new ProcessBuilder(args);
         OutputAnalyzer oa = ProcessTools.executeProcess(process);
-        oa.shouldHaveExitValue(1).shouldContain("java.security file missing");
+        oa.shouldHaveExitValue(exitCode)
+                .shouldContain(output);
+
+        // extra checks on debug output
+        if (exitCode != 1) {
+            if (oa.getStderr().contains("overriding other security properties files!")) {
+                overrideDetected = true;
+                // master file is not in use - only provider properties are set in custom file
+                oa.shouldContain("security.provider.2=SunRsaSign")
+                        .shouldNotContain(EXPECTED_DEBUG_OUTPUT)
+                        .shouldNotContain(UNEXPECTED_DEBUG_OUTPUT);
+            } else {
+                oa.shouldContain(EXPECTED_DEBUG_OUTPUT)
+                        .shouldNotContain(UNEXPECTED_DEBUG_OUTPUT);
+            }
+        }
     }
 
-    private static void copyJDKMinusJavaSecurity(Path src, Path dst) throws Exception {
+    private static void copyJDK(Path src, Path dst) throws Exception {
         Files.walk(src)
             .skip(1)
-            .filter(p -> !p.toString().endsWith("java.security"))
             .forEach(file -> {
                 try {
                     Files.copy(file, dst.resolve(src.relativize(file)), StandardCopyOption.COPY_ATTRIBUTES);
