@@ -52,7 +52,7 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
     STRIPFLAGS="-g"
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    STRIPFLAGS="-S"
+    STRIPFLAGS="--version"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     STRIPFLAGS="-X32_64"
   fi
