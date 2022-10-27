@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ VectorSet::VectorSet(Arena* arena) {
 void VectorSet::init(Arena* arena) {
   _size = 2;
   _data = NEW_ARENA_ARRAY(arena, uint32_t, 2);
-  _data_size = 2;
   _set_arena = arena;
   _data[0] = 0;
   _data[1] = 0;
@@ -50,12 +49,11 @@ void VectorSet::init(Arena* arena) {
 void VectorSet::grow(uint new_word_capacity) {
   assert(new_word_capacity < (1U << 30), "");
   uint x = next_power_of_2(new_word_capacity);
-  if (x > _data_size) {
+  if (x > _size) {
     _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
-    _data_size = x;
+    Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));
+    _size = x;
   }
-  Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));
-  _size = x;
 }
 
 // Insert a member into an existing Set.
@@ -77,3 +75,46 @@ bool VectorSet::is_empty() const {
   }
   return true;
 }
+
+VectorSet& VectorSet::operator &=(const VectorSet& vs) {
+  if (vs._size > _size) {
+    grow(vs._size);
+
+    for (uint i = 0; i < vs._size; ++i) {
+      _data[i] &= vs._data[i];
+    }
+  } else {
+    for (uint i = 0; i < vs._size; ++i) {
+      _data[i] &= vs._data[i];
+    }
+
+    for (uint i = vs._size; i < _size; ++i) {
+      _data[i] = 0;
+    }
+  }
+
+  return *this;
+}
+
+#ifndef PRODUCT
+void VectorSet::print_on(outputStream* st) const {
+  st->print("VectorSet(" PTR_FORMAT ")", p2i(this));
+  if (is_empty()) {
+    st->print_cr(" empty");
+    return;
+  }
+
+  bool first = false;
+  for (uint i = 0; i < (_size << word_bits); ++i) {
+    if (test(i)) {
+      if (!first) {
+        st->print(" [%u", i);
+        first = true;
+      } else {
+        st->print(",%u", i);
+      }
+    }
+  }
+  st->print_cr("]");
+}
+#endif

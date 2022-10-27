@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,8 @@ private:
 
   // Used 32-bit words
   uint       _size;
-  uint32_t*  _data;
   // Allocated words
-  uint       _data_size;
+  uint32_t*  _data;
   Arena*     _set_arena;
 
   void init(Arena* arena);
@@ -63,6 +62,8 @@ public:
   void clear() {
     reset();
   }
+
+  VectorSet& operator &=(const VectorSet& vs);
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if (visited.test(idx)) return;
@@ -110,6 +111,10 @@ public:
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
   }
+
+#ifndef PRODUCT
+  void print_on(outputStream* st) const override;
+#endif // PRODUCT
 };
 
 #endif // SHARE_LIBADT_VECTSET_HPP
