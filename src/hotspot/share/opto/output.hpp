@@ -58,6 +58,12 @@ enum {
   initial_const_capacity =   4 * 1024
 };
 
+enum {
+  c2_max_scratch_buffer_size = 7 * K,
+  c2_average_code_buffer_size = 10 * K, // 95% of nmethods fit into 10 KB,
+  c2_max_code_buffer_size = 100 * K,    // though some methods take up to 100 KB
+};
+
 class BufferSizingData {
 public:
   int _stub;

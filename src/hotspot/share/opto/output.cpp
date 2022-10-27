@@ -1374,6 +1374,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
     total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
+  assert(total_req < c2_max_code_buffer_size, "sanity");
   cb->initialize(total_req, _buf_sizes._reloc);
 
   // Have we run out of code space?
@@ -3281,6 +3282,7 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     ResourceMark rm;
     _scratch_const_size = const_size;
     int size = C2Compiler::initial_code_buffer_size(const_size);
+    assert(size < c2_max_scratch_buffer_size, "sanity");
     blob = BufferBlob::create("Compile::scratch_buffer", size);
     // Record the buffer blob for next time.
     set_scratch_buffer_blob(blob);

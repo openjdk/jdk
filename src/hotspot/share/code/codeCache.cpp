@@ -219,10 +219,8 @@ void CodeCache::initialize_heaps() {
   code_buffers_size += c1_count * Compiler::code_buffer_size();
 #endif
 #ifdef COMPILER2
-  // C2 scratch buffers (see Compile::init_scratch_buffer_blob())
   const int c2_count = CompilationPolicy::c2_count();
-  // Initial size of constant table (this may be increased if a compiled method needs more space)
-  code_buffers_size += c2_count * C2Compiler::initial_code_buffer_size();
+  code_buffers_size += c2_count * C2Compiler::code_buffer_size_upper_estimation(c2_count);
 #endif
 
   // Increase default non_nmethod_size to account for compiler buffers

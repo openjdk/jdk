@@ -200,7 +200,7 @@ void CompilerConfig::set_client_emulation_mode_flags() {
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
   }
   if (FLAG_IS_DEFAULT(NonNMethodCodeHeapSize)) {
-    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 5*M);
+    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 3*M);
   }
   if (FLAG_IS_DEFAULT(CodeCacheExpansionSize)) {
     FLAG_SET_ERGO(CodeCacheExpansionSize, 32*K);

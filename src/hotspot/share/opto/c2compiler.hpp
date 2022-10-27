@@ -71,6 +71,16 @@ public:
 
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size(int const_size = initial_const_capacity);
+
+  // a reasonable upper bound on the average size of C2 compiler buffers
+  static int code_buffer_size_upper_estimation(int compiler_threads_number) {
+    if (compiler_threads_number < 8) {
+      return c2_max_scratch_buffer_size + c2_max_code_buffer_size;
+    } else {
+      // huge methods are rare creatures, dont waste a code heap space
+      return c2_max_scratch_buffer_size + (c2_max_code_buffer_size + c2_average_code_buffer_size) / 2;
+    }
+  }
 };
 
 #endif // SHARE_OPTO_C2COMPILER_HPP

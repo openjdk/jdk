@@ -47,7 +47,7 @@ define_pd_global(intx, InitialCodeCacheSize,         160*K);
 define_pd_global(intx, ReservedCodeCacheSize,        32*M );
 define_pd_global(intx, NonProfiledCodeHeapSize,      13*M );
 define_pd_global(intx, ProfiledCodeHeapSize,         14*M );
-define_pd_global(intx, NonNMethodCodeHeapSize,       5*M  );
+define_pd_global(intx, NonNMethodCodeHeapSize,       3*M  );
 define_pd_global(bool, ProfileInterpreter,           false);
 define_pd_global(intx, CodeCacheExpansionSize,       32*K );
 define_pd_global(uintx, CodeCacheMinBlockLength,     1);

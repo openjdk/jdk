@@ -81,7 +81,7 @@ define_pd_global(bool, IdealizeClearArrayNode,       true);
 define_pd_global(uintx, ReservedCodeCacheSize,       48*M);
 define_pd_global(uintx, NonProfiledCodeHeapSize,     21*M);
 define_pd_global(uintx, ProfiledCodeHeapSize,        22*M);
-define_pd_global(uintx, NonNMethodCodeHeapSize,      5*M );
+define_pd_global(uintx, NonNMethodCodeHeapSize,      3*M );
 define_pd_global(uintx, CodeCacheMinBlockLength,     6);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 

@@ -447,6 +447,14 @@ void CompilationPolicy::initialize() {
       // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
       int log_cpu = log2i(os::active_processor_count());
       int loglog_cpu = log2i(MAX2(log_cpu, 1));
+      // number of cpu / number of c1+c2 threads:
+      //     1-3:  2=1+1
+      //     4-7:  3=1+2
+      //    8-15:  4=1+3
+      //   16-31: 12=4+8
+      //   32-63: 15=5+10
+      //  64-127: 18=6+12
+      // 128-255: 21=7+14
       count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
       // Make sure there is enough space in the code cache to hold all the compiler buffers
       size_t c1_size = 0;
@@ -455,7 +463,7 @@ void CompilationPolicy::initialize() {
 #endif
       size_t c2_size = 0;
 #ifdef COMPILER2
-      c2_size = C2Compiler::initial_code_buffer_size();
+      c2_size = C2Compiler::code_buffer_size_upper_estimation(count);
 #endif
       size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
       int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
