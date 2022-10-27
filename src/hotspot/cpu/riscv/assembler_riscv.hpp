@@ -1282,7 +1282,7 @@ enum VectorMask {
   }
 
   // Vector Single-Width Floating-Point Reduction Instructions
-  INSN(vfredsum_vs,   0b1010111, 0b001, 0b000001);
+  INSN(vfredusum_vs,  0b1010111, 0b001, 0b000001);
   INSN(vfredosum_vs,  0b1010111, 0b001, 0b000011);
   INSN(vfredmin_vs,   0b1010111, 0b001, 0b000101);
   INSN(vfredmax_vs,   0b1010111, 0b001, 0b000111);
@@ -1596,7 +1596,7 @@ enum Nf {
   }
 
   // Vector Load/Store Instructions
-  INSN(vl1r_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
+  INSN(vl1re8_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
 
 #undef INSN
 
@@ -1617,8 +1617,8 @@ enum Nf {
   }
 
   // Vector Unit-Stride Instructions
-  INSN(vle1_v, 0b0000111, 0b000, 0b01011, 0b00, 0b0);
-  INSN(vse1_v, 0b0100111, 0b000, 0b01011, 0b00, 0b0);
+  INSN(vlm_v, 0b0000111, 0b000, 0b01011, 0b00, 0b0);
+  INSN(vsm_v, 0b0100111, 0b000, 0b01011, 0b00, 0b0);
 
 #undef INSN
 
