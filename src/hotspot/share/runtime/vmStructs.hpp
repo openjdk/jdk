@@ -187,14 +187,16 @@ private:
 
 #ifdef ASSERT
 
+extern char *space_def_foo;
+
 // This macro checks the type of a VMStructEntry by comparing pointer types
 #define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
- {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
+  {typeName *dummyObj = (typeName *)space_def_foo; type* dummy = &dummyObj->fieldName; \
   assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
 
 // This macro checks the type of a volatile VMStructEntry by comparing pointer types
 #define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \
- {typedef type dummyvtype; typeName *dummyObj = NULL; volatile dummyvtype* dummy = &dummyObj->fieldName; }
+ {typedef type dummyvtype; typeName *dummyObj = (typeName *)space_def_foo; volatile dummyvtype* dummy = &dummyObj->fieldName; }
 
 // This macro checks the type of a static VMStructEntry by comparing pointer types
 #define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \

@@ -63,7 +63,8 @@ InlineTree::InlineTree(Compile* c,
     _caller_jvms->set_bci(caller_jvms->bci());
     assert(!caller_jvms->should_reexecute(), "there should be no reexecute bytecode with inlining");
   }
-  assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
+  assert(_caller_jvms == NULL
+         || _caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
   assert((caller_tree == NULL ? 0 : caller_tree->stack_depth() + 1) == stack_depth(), "correct (redundant) depth parameter");
   assert(caller_bci == this->caller_bci(), "correct (redundant) bci parameter");
   // Update hierarchical counts, count_inline_bcs() and count_inlines()

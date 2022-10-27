@@ -138,11 +138,13 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #define FORMAT64_MODIFIER "ll"
 #endif // _LP64
 
+extern char *space_def_foo;
+
 // gcc warns about applying offsetof() to non-POD object or calculating
 // offset directly when base address is NULL. Use 16 to get around the
 // warning. The -Wno-invalid-offsetof option could be used to suppress
 // this warning, but we instead just avoid the use of offsetof().
-#define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
+#define offset_of(klass,field) (size_t)((char*)&(((klass*)space_def_foo)->field) - space_def_foo)
 
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"

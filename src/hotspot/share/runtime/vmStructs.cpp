@@ -142,6 +142,9 @@
 #include "opto/vectornode.hpp"
 #endif // COMPILER2
 
+char space_def_foo_array[1024];
+char *space_def_foo = space_def_foo_array;
+
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
 // Only the macros currently needed have been defined.
