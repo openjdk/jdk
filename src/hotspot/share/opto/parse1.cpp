@@ -1306,7 +1306,6 @@ void Parse::Block::init_graph(Parse* outer) {
   _num_successors = ns;
   _all_successors = ns+ne;
   _successors = (ns+ne == 0) ? NULL : NEW_RESOURCE_ARRAY(Block*, ns+ne);
-  int p = 0;
   for (int i = 0; i < ns+ne; i++) {
     ciTypeFlow::Block* tf2 = (i < ns) ? tfs->at(i) : tfe->at(i-ns);
     Block* block2 = outer->rpo_at(tf2->rpo());
@@ -1331,6 +1330,17 @@ void Parse::Block::init_graph(Parse* outer) {
       assert(block1->start() != block2->start(), "successors have unique bcis");
     }
     #endif
+  }
+
+  if (DoPartialEscapeAnalysis) {
+    GrowableArray<ciTypeFlow::Block*>* tfp = flow()->predecessors();
+    int np = tfp->length();
+    _predecessors = np > 0 ? NEW_RESOURCE_ARRAY(Block*, np) : nullptr;
+    for (int i = 0; i < np; ++i) {
+      ciTypeFlow::Block* tf2 = tfp->at(i);
+      Block* block2 = outer->rpo_at(tf2->rpo());
+      _predecessors[i] = block2;
+    }
   }
 }
 

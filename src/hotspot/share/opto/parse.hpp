@@ -168,6 +168,7 @@ class Parse : public GraphKit {
     int                _num_successors; // Includes only normal control flow.
     int                _all_successors; // Include exception paths also.
     Block**            _successors;
+    Block**            _predecessors;
     PEAState           _state; // Keep track all allocations
 
    public:
@@ -218,6 +219,12 @@ class Parse : public GraphKit {
       return _successors[i];
     }
     Block* successor_for_bci(int bci);
+
+    Block* predecessor_at(int i) const {
+      assert(DoPartialEscapeAnalysis, "_predecessors is only available when DoPartialEscapeAnalysis is ON");
+      assert(i < _pred_count, "");
+      return _predecessors[i];
+    }
 
     int start() const                      { return flow()->start(); }
     int limit() const                      { return flow()->limit(); }
