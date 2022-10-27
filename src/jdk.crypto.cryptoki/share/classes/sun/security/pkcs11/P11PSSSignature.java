@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ final class P11PSSSignature extends SignatureSpi {
             mdLen = DIGEST_LENGTHS.get(digestAlg);
         } catch (NullPointerException npe) {
             throw new SignatureException("Unsupported digest: " +
-                    digestAlg, npe);
+                    digestAlg);
         }
         int saltLen = Integer.min(mdLen, (key.length() >> 3) - mdLen -2);
         return new PSSParameterSpec(digestAlg,
