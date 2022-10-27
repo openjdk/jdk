@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,9 @@ public class dispose005a {
                              } else {
                                  log1("checking on: testedThread.isAlive");
                                  if (!test_thread.done) {
-                                     test_thread.resume();
                                      pipe.println("alive");
+                                     exitCode = FAILED;
+                                     break;
                                  } else {
                                      pipe.println("not_alive");
                                  }

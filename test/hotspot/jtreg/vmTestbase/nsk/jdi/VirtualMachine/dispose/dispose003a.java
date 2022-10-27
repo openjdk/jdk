@@ -128,30 +128,18 @@ public class dispose003a {
                          while (true) {
                              instruction = pipe.readln();
                              if (instruction.equals("check_done")) {
-                                 if (test_thread.isAlive()) {
+                                 if (Utils.isAlive(test_thread)) {
                                      logErr("ERROR: thread2 thread is still alive");
                                      exitCode = FAILED;
                                  }
                                  break;
                              } else if (instruction.equals("check_alive")) {
                                  log1("checking on: thread2.isAlive");
-                                 // There is no sync between vm.dispose() and test_thread
-                                 // let give thread some time to complete
-                                 boolean isAlive = true;
-                                 for (int attempt = 0; attempt < 5; i++) {
-                                     isAlive = test_thread.isAlive();
-                                     if (!isAlive) {
-                                         break;
-                                     }
-                                     try {
-                                         Thread.sleep(attempt * 1000);
-                                     } catch (InterruptedException ie) {
-                                     }
-                                 }
-                                 if (isAlive) {
+                                 if (Utils.isAlive(test_thread)) {
                                      pipe.println("alive");
                                      logErr("ERROR thread is alive after vm.dispose()");
                                      exitCode = FAILED;
+                                     break;
                                  } else {
                                      pipe.println("not_alive");
                                  }
