@@ -54,7 +54,12 @@ public class ClassUnloadEventTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            runDebuggee();
+            try {
+                runDebuggee();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
         } else {
             runDebugger();
         }
@@ -96,7 +101,11 @@ public class ClassUnloadEventTest {
                     Class.forName(CLASS_NAME_PREFIX + index, true, loader);
                 }
             } catch (Exception e) {
+<<<<<<< HEAD
+                throw new RuntimeException("Failed to create Sample class", e);
+=======
                 throw new RuntimeException("Failed to create Sample class");
+>>>>>>> 5977ce5adf85c2fb9b1dd62ed250f6d4f05a613c
             }
         }
         loader = null;
@@ -109,6 +118,11 @@ public class ClassUnloadEventTest {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
         }
+<<<<<<< HEAD
+
+        System.out.println("Exiting debuggee");
+=======
+>>>>>>> 5977ce5adf85c2fb9b1dd62ed250f6d4f05a613c
     }
 
     private static void runDebugger() throws Exception {
@@ -169,6 +183,24 @@ public class ClassUnloadEventTest {
             eventSet.resume();
         }
 
+<<<<<<< HEAD
+        /* Dump debuggee output. */
+        Process p = vm.process();
+        BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        String line = in.readLine();
+        while (line != null) {
+            System.out.println("stdout: " + line);
+            line = in.readLine();
+        }
+        line = err.readLine();
+        while (line != null) {
+            System.out.println("stderr: " + line);
+            line = err.readLine();
+        }
+
+=======
+>>>>>>> 5977ce5adf85c2fb9b1dd62ed250f6d4f05a613c
         if (unloadedSampleClasses.size() != NUM_CLASSES) {
             throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
         }
@@ -183,7 +215,11 @@ public class ClassUnloadEventTest {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
         arguments.get("main").setValue(ClassUnloadEventTest.class.getName());
+<<<<<<< HEAD
+        arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=info -Xlog:gc");
+=======
         arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI");
+>>>>>>> 5977ce5adf85c2fb9b1dd62ed250f6d4f05a613c
         return launchingConnector.launch(arguments);
     }
 }
