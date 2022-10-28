@@ -540,8 +540,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 return toResult(exceptionType, method, tags);
             };
         } else {
-            // type parameters are matched by position; the basis for position matching
-            // is JLS sections 8.4.2 and 8.4.4
+            // Type parameters declared by a method are matched by position; the basis for
+            // such position matching is JLS sections 8.4.2 and 8.4.4. We don't match
+            // type parameters not declared by a method (e.g. declared by the
+            // enclosing class or interface) because
             criterion = method -> {
                 // TODO: add a test for the throws clause mentioning
                 //  a type parameter which is not declared by holder
@@ -560,26 +562,17 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Result<Map<ThrowsTree, ExecutableElement>> result;
         try {
             result = utils.docFinder().trySearch(holder, criterion);
-        } catch (Failure f) {
+        } catch (Failure.NotExceptionType
+                 | Failure.ExceptionTypeNotFound
+                 | Failure.UnsupportedTypeParameter x) {
             // Here's why we do this ugly exception processing: the language does not allow us to
             // instantiate the exception type parameter in criterion with a union of specific
             // exceptions (i.e. Failure.ExceptionTypeNotFound | Failure.NotExceptionType),
             // so we instantiate it with a general Failure. We then refine the specific
             // exception being thrown, from the general exception we caught.
-            if (f instanceof Failure.NotExceptionType ne) {
-                throw ne;
-            } else if (f instanceof Failure.ExceptionTypeNotFound nf) {
-                throw nf;
-            } else if (f instanceof Failure.Invalid i) {
-                throw i;
-            } else if (f instanceof Failure.UnsupportedTypeParameter u) {
-                throw u;
-            } else {
-                // TODO: instead of if-else, use pattern matching for switch for both
-                //  readability and exhaustiveness when it's available
-                // sadly, this way we lose all benefits of compile-time checking
-                throw newAssertionError(f);
-            }
+            throw x;
+        } catch (Failure f) {
+            throw newAssertionError(f);
         }
         if (result instanceof Result.Conclude<Map<ThrowsTree, ExecutableElement>> c) {
             return c.value();
