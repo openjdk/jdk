@@ -57,7 +57,8 @@ inline int ObjectMonitor::waiters() const {
 }
 
 inline bool ObjectMonitor::has_owner() const {
-  return owner_raw() != DEFLATER_MARKER;
+  void* owner = owner_raw();
+  return owner != NULL && owner != DEFLATER_MARKER;
 }
 
 // Returns NULL if DEFLATER_MARKER is observed.
