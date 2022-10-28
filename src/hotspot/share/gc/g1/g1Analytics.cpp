@@ -69,14 +69,14 @@ static double non_young_other_cost_per_region_ms_defaults[] = {
 
 G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _predictor(predictor),
-    _recent_gc_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-    _concurrent_mark_remark_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-    _concurrent_mark_cleanup_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-    _alloc_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _recent_gc_times_ms(NumPrevPausesForHeuristics),
+    _concurrent_mark_remark_times_ms(NumPrevPausesForHeuristics),
+    _concurrent_mark_cleanup_times_ms(NumPrevPausesForHeuristics),
+    _alloc_rate_ms_seq(TruncatedSeqLength),
     _prev_collection_pause_end_ms(0.0),
-    _concurrent_refine_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _dirtied_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _dirtied_cards_in_thread_buffers_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _concurrent_refine_rate_ms_seq(TruncatedSeqLength),
+    _dirtied_cards_rate_ms_seq(TruncatedSeqLength),
+    _dirtied_cards_in_thread_buffers_seq(TruncatedSeqLength),
     _card_scan_to_merge_ratio_seq(TruncatedSeqLength),
     _cost_per_card_scan_ms_seq(TruncatedSeqLength),
     _cost_per_card_merge_ms_seq(TruncatedSeqLength),
@@ -87,21 +87,21 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _constant_other_time_ms_seq(TruncatedSeqLength),
     _young_other_cost_per_region_ms_seq(TruncatedSeqLength),
     _non_young_other_cost_per_region_ms_seq(TruncatedSeqLength),
-    _cost_per_byte_ms_during_cm_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
+    _cost_per_byte_ms_during_cm_seq(TruncatedSeqLength),
+    _recent_prev_end_times_for_all_gcs_sec(NumPrevPausesForHeuristics),
     _long_term_pause_time_ratio(0.0),
     _short_term_pause_time_ratio(0.0) {
 
   // Seed sequences with initial values.
-  _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
+  _recent_prev_end_times_for_all_gcs_sec.add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
   int index = MIN2(ParallelGCThreads - 1, 7u);
 
   // Start with inverse of maximum STW cost.
-  _concurrent_refine_rate_ms_seq->add(1/cost_per_logged_card_ms_defaults[0]);
+  _concurrent_refine_rate_ms_seq.add(1/cost_per_logged_card_ms_defaults[0]);
   // Some applications have very low rates for logging cards.
-  _dirtied_cards_rate_ms_seq->add(0.0);
+  _dirtied_cards_rate_ms_seq.add(0.0);
 
   _card_scan_to_merge_ratio_seq.set_initial(young_card_scan_to_merge_ratio_defaults[index]);
   _cost_per_card_scan_ms_seq.set_initial(young_only_cost_per_card_scan_ms_defaults[index]);
@@ -114,8 +114,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   _non_young_other_cost_per_region_ms_seq.add(non_young_other_cost_per_region_ms_defaults[index]);
 
   // start conservatively (around 50ms is about right)
-  _concurrent_mark_remark_times_ms->add(0.05);
-  _concurrent_mark_cleanup_times_ms->add(0.20);
+  _concurrent_mark_remark_times_ms.add(0.05);
+  _concurrent_mark_cleanup_times_ms.add(0.20);
 }
 
 bool G1Analytics::enough_samples_available(TruncatedSeq const* seq) {
@@ -147,20 +147,20 @@ double G1Analytics::predict_zero_bounded(G1PhaseDependentSeq const* seq, bool fo
 }
 
 int G1Analytics::num_alloc_rate_ms() const {
-  return _alloc_rate_ms_seq->num();
+  return _alloc_rate_ms_seq.num();
 }
 
 void G1Analytics::report_concurrent_mark_remark_times_ms(double ms) {
-  _concurrent_mark_remark_times_ms->add(ms);
+  _concurrent_mark_remark_times_ms.add(ms);
 }
 
 void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
-  _alloc_rate_ms_seq->add(alloc_rate);
+  _alloc_rate_ms_seq.add(alloc_rate);
 }
 
 void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_time_ms) {
   double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
-  double gc_pause_time_ms = _recent_gc_times_ms->sum() - _recent_gc_times_ms->oldest() + pause_time_ms;
+  double gc_pause_time_ms = _recent_gc_times_ms.sum() - _recent_gc_times_ms.oldest() + pause_time_ms;
   _long_term_pause_time_ratio = gc_pause_time_ms / long_interval_ms;
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
@@ -170,15 +170,15 @@ void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_ti
 }
 
 void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
-  _concurrent_refine_rate_ms_seq->add(cards_per_ms);
+  _concurrent_refine_rate_ms_seq.add(cards_per_ms);
 }
 
 void G1Analytics::report_dirtied_cards_rate_ms(double cards_per_ms) {
-  _dirtied_cards_rate_ms_seq->add(cards_per_ms);
+  _dirtied_cards_rate_ms_seq.add(cards_per_ms);
 }
 
 void G1Analytics::report_dirtied_cards_in_thread_buffers(size_t cards) {
-  _dirtied_cards_in_thread_buffers_seq->add(double(cards));
+  _dirtied_cards_in_thread_buffers_seq.add(double(cards));
 }
 
 void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_only_phase) {
@@ -199,7 +199,7 @@ void G1Analytics::report_rs_length_diff(double rs_length_diff, bool for_young_on
 
 void G1Analytics::report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_rebuild_in_progress) {
   if (mark_or_rebuild_in_progress) {
-    _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
+    _cost_per_byte_ms_during_cm_seq.add(cost_per_byte_ms);
   } else {
     _copy_cost_per_byte_ms_seq.add(cost_per_byte_ms);
   }
@@ -226,23 +226,23 @@ void G1Analytics::report_rs_length(double rs_length, bool for_young_only_phase) 
 }
 
 double G1Analytics::predict_alloc_rate_ms() const {
-  if (enough_samples_available(_alloc_rate_ms_seq)) {
-    return predict_zero_bounded(_alloc_rate_ms_seq);
+  if (enough_samples_available(&_alloc_rate_ms_seq)) {
+    return predict_zero_bounded(&_alloc_rate_ms_seq);
   } else {
     return 0.0;
   }
 }
 
 double G1Analytics::predict_concurrent_refine_rate_ms() const {
-  return predict_zero_bounded(_concurrent_refine_rate_ms_seq);
+  return predict_zero_bounded(&_concurrent_refine_rate_ms_seq);
 }
 
 double G1Analytics::predict_dirtied_cards_rate_ms() const {
-  return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
+  return predict_zero_bounded(&_dirtied_cards_rate_ms_seq);
 }
 
 size_t G1Analytics::predict_dirtied_cards_in_thread_buffers() const {
-  return predict_size(_dirtied_cards_in_thread_buffers_seq);
+  return predict_size(&_dirtied_cards_in_thread_buffers_seq);
 }
 
 size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_only_phase) const {
@@ -258,10 +258,10 @@ double G1Analytics::predict_card_scan_time_ms(size_t card_num, bool for_young_on
 }
 
 double G1Analytics::predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const {
-  if (!enough_samples_available(_cost_per_byte_ms_during_cm_seq)) {
+  if (!enough_samples_available(&_cost_per_byte_ms_during_cm_seq)) {
     return (1.1 * bytes_to_copy) * predict_zero_bounded(&_copy_cost_per_byte_ms_seq);
   } else {
-    return bytes_to_copy * predict_zero_bounded(_cost_per_byte_ms_during_cm_seq);
+    return bytes_to_copy * predict_zero_bounded(&_cost_per_byte_ms_during_cm_seq);
   }
 }
 
@@ -286,11 +286,11 @@ double G1Analytics::predict_non_young_other_time_ms(size_t non_young_num) const 
 }
 
 double G1Analytics::predict_remark_time_ms() const {
-  return predict_zero_bounded(_concurrent_mark_remark_times_ms);
+  return predict_zero_bounded(&_concurrent_mark_remark_times_ms);
 }
 
 double G1Analytics::predict_cleanup_time_ms() const {
-  return predict_zero_bounded(_concurrent_mark_cleanup_times_ms);
+  return predict_zero_bounded(&_concurrent_mark_cleanup_times_ms);
 }
 
 size_t G1Analytics::predict_rs_length(bool for_young_only_phase) const {
@@ -303,19 +303,19 @@ size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
 }
 
 double G1Analytics::oldest_known_gc_end_time_sec() const {
-  return _recent_prev_end_times_for_all_gcs_sec->oldest();
+  return _recent_prev_end_times_for_all_gcs_sec.oldest();
 }
 
 double G1Analytics::most_recent_gc_end_time_sec() const {
-  return _recent_prev_end_times_for_all_gcs_sec->last();
+  return _recent_prev_end_times_for_all_gcs_sec.last();
 }
 
 void G1Analytics::update_recent_gc_times(double end_time_sec,
                                          double pause_time_ms) {
-  _recent_gc_times_ms->add(pause_time_ms);
-  _recent_prev_end_times_for_all_gcs_sec->add(end_time_sec);
+  _recent_gc_times_ms.add(pause_time_ms);
+  _recent_prev_end_times_for_all_gcs_sec.add(end_time_sec);
 }
 
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {
-  _concurrent_mark_cleanup_times_ms->add(ms);
+  _concurrent_mark_cleanup_times_ms.add(ms);
 }

@@ -38,17 +38,17 @@ class G1Analytics: public CHeapObj<mtGC> {
   const G1Predictions* _predictor;
 
   // These exclude marking times.
-  TruncatedSeq* _recent_gc_times_ms;
+  TruncatedSeq _recent_gc_times_ms;
 
-  TruncatedSeq* _concurrent_mark_remark_times_ms;
-  TruncatedSeq* _concurrent_mark_cleanup_times_ms;
+  TruncatedSeq _concurrent_mark_remark_times_ms;
+  TruncatedSeq _concurrent_mark_cleanup_times_ms;
 
-  TruncatedSeq* _alloc_rate_ms_seq;
+  TruncatedSeq _alloc_rate_ms_seq;
   double        _prev_collection_pause_end_ms;
 
-  TruncatedSeq* _concurrent_refine_rate_ms_seq;
-  TruncatedSeq* _dirtied_cards_rate_ms_seq;
-  TruncatedSeq* _dirtied_cards_in_thread_buffers_seq;
+  TruncatedSeq _concurrent_refine_rate_ms_seq;
+  TruncatedSeq _dirtied_cards_rate_ms_seq;
+  TruncatedSeq _dirtied_cards_in_thread_buffers_seq;
   // The ratio between the number of scanned cards and actually merged cards, for
   // young-only and mixed gcs.
   G1PhaseDependentSeq _card_scan_to_merge_ratio_seq;
@@ -69,10 +69,10 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq _young_other_cost_per_region_ms_seq;
   TruncatedSeq _non_young_other_cost_per_region_ms_seq;
 
-  TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
+  TruncatedSeq _cost_per_byte_ms_during_cm_seq;
 
   // Statistics kept per GC stoppage, pause or full.
-  TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
+  TruncatedSeq _recent_prev_end_times_for_all_gcs_sec;
 
   // Cached values for long and short term pause time ratios. See
   // compute_pause_time_ratios() for how they are computed.
