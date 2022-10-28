@@ -49,12 +49,17 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
   # FIXME: we should really only export STRIPFLAGS from here, not POST_STRIP_CMD.
   if test "x$STRIP" != x; then
     AC_MSG_CHECKING([how to run strip])
+
     # Easy cheat: Check strip variant by passing --version as an argument.
     # Different types of strip have varying command line syntaxes for querying their
     # version string, and all noisily fail if the provided version option is not
     # recognised.
+    #
+    # The actual version string or failure to execute strip are hidden by redirection
+    # to config.log with 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
+
     if $STRIP "--version" 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
-      # gcc and clang strip use --version
+      # strip accompanying gcc and clang use --version
       STRIPFLAGS="--strip-debug"
     elif $STRIP "-V" 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
       # IBM strip that AIX uses only supports -V
