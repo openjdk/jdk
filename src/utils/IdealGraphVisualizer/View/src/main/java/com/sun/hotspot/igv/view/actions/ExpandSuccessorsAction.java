@@ -33,7 +33,7 @@ public final class ExpandSuccessorsAction extends ExpandAdjacentAction {
 
     @Override
     public void performAction() {
-        expandFigures(Figure::getPredecessors);
+        expandFigures(Figure::getSuccessors);
     }
 
     @Override

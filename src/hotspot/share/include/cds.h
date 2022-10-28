@@ -73,6 +73,8 @@ typedef struct GenericCDSFileMapHeader {
   int          _crc;                      // header crc checksum, start from _base_archive_name_offset
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
+  unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
+                                                  //    0 if no common prefix exists
   unsigned int _base_archive_name_offset; // offset where the base archive name is stored
                                           //   static archive:  0
                                           //   dynamic archive:
@@ -85,6 +87,7 @@ typedef struct GenericCDSFileMapHeader {
                                           //   dynamic:
                                           //     0 for default base archive
                                           //     non-zero for non-default base archive
+
 } GenericCDSFileMapHeader;
 
 // This type is used by the Serviceability Agent to access the contents of

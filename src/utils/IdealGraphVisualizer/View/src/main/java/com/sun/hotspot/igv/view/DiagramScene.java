@@ -32,9 +32,7 @@ import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.LinearLayoutManager;
 import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
-import com.sun.hotspot.igv.util.ColorIcon;
-import com.sun.hotspot.igv.util.DoubleClickAction;
-import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.*;
 import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import com.sun.hotspot.igv.view.actions.CustomizablePanAction;
 import com.sun.hotspot.igv.view.actions.MouseZoomAction;
@@ -70,7 +68,7 @@ import org.openide.util.lookup.InstanceContent;
  *
  * @author Thomas Wuerthinger
  */
-public class DiagramScene extends ObjectScene implements DiagramViewer {
+public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleClickHandler {
 
     private final CustomizablePanAction panAction;
     private final WidgetAction hoverAction;
@@ -186,26 +184,26 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     @Override
-    public void centerFigures(List<Figure> figures) {
-        Rectangle overall = null;
+    public void centerFigures(Collection<Figure> figures) {
         getModel().showFigures(figures);
-        for (Figure f : figures) {
-            FigureWidget fw = getWidget(f);
-            if (fw != null) {
-                Rectangle r = fw.getBounds();
-                Point p = fw.getLocation();
-                assert r != null;
-                Rectangle r2 = new Rectangle(p.x, p.y, r.width, r.height);
-
-                if (overall == null) {
-                    overall = r2;
-                } else {
-                    overall = overall.union(r2);
+        Rectangle overallRect = null;
+        for (Figure figure : figures) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget != null) {
+                Rectangle bounds = figureWidget.getBounds();
+                if (bounds != null) {
+                    Point location = figureWidget.getLocation();
+                    Rectangle figureRect = new Rectangle(location.x, location.y, bounds.width, bounds.height);
+                    if (overallRect == null) {
+                        overallRect = figureRect;
+                    } else {
+                        overallRect = overallRect.union(figureRect);
+                    }
                 }
             }
         }
-        if (overall != null) {
-            centerRectangle(overall);
+        if (overallRect != null) {
+            centerRectangle(overallRect);
         }
     }
 
@@ -221,7 +219,15 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         @Override
         public void filteredChanged(SelectionCoordinator source) {
-            gotoSelection(source.getSelectedObjects());
+            Set<Integer> ids = source.getSelectedObjects();
+            Set<Figure> figures = new HashSet<>();
+            for (Figure f : getModel().getDiagram().getFigures()) {
+                if (ids.contains(f.getInputNode().getId())) {
+                    figures.add(f);
+                }
+            }
+            centerFigures(figures);
+            setSelectedObjects(idSetToObjectSet(ids));
             validate();
         }
     };
@@ -285,6 +291,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         // and the selection action (below) will handle the event
         panAction = new CustomizablePanAction(MouseEvent.BUTTON1_DOWN_MASK);
         getActions().addAction(panAction);
+
+        // handle default double-click, when not handled by other DoubleClickHandler
+        getActions().addAction(new DoubleClickAction(this));
 
         selectAction = new CustomSelectAction(new SelectProvider() {
             public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
@@ -375,7 +384,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
                 }
             }
 
-            setSelectedObjects(selectedObjects);
+            Set<Object> symmetricDiff = new HashSet<>(getSelectedObjects());
+            symmetricDiff.addAll(selectedObjects);
+            Set<Object> tmp = new HashSet<>(getSelectedObjects());
+            tmp.retainAll(selectedObjects);
+            symmetricDiff.removeAll(tmp);
+            setSelectedObjects(symmetricDiff);
         };
         getActions().addAction(ActionFactory.createRectangularSelectAction(rectangularSelectDecorator, selectLayer, rectangularSelectProvider));
 
@@ -487,46 +501,42 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return getModel().getHiddenNodes().isEmpty();
     }
 
-    public Action createGotoAction(final Figure f) {
-        final DiagramScene diagramScene = this;
-        String name = f.getLines()[0];
-
+    public Action createGotoAction(final Figure figure) {
+        String name = figure.getLines()[0];
         name += " (";
-
-        if (f.getCluster() != null) {
-            name += "B" + f.getCluster().toString();
+        if (figure.getCluster() != null) {
+            name += "B" + figure.getCluster().toString();
         }
-        final boolean hidden = !getWidget(f, FigureWidget.class).isVisible();
-        if (hidden) {
-            if (f.getCluster() != null) {
+        boolean isHidden = !getWidget(figure, FigureWidget.class).isVisible();
+        if (isHidden) {
+            if (figure.getCluster() != null) {
                 name += ", ";
             }
             name += "hidden";
         }
         name += ")";
-        Action a = new AbstractAction(name, new ColorIcon(f.getColor())) {
-
+        Action action = new AbstractAction(name, new ColorIcon(figure.getColor())) {
             @Override
             public void actionPerformed(ActionEvent e) {
-                diagramScene.gotoFigure(f);
+                setFigureSelection(Collections.singleton(figure));
+                centerFigures(Collections.singleton(figure));
             }
         };
 
-        a.setEnabled(true);
-        return a;
+        action.setEnabled(true);
+        return action;
     }
 
-    public Action createGotoAction(final Block b) {
-        final DiagramScene diagramScene = this;
-        String name = "B" + b.getInputBlock().getName();
-        Action a = new AbstractAction(name) {
+    public Action createGotoAction(final Block block) {
+        String name = "B" + block.getInputBlock().getName();
+        Action action = new AbstractAction(name) {
             @Override
             public void actionPerformed(ActionEvent e) {
-                diagramScene.gotoBlock(b);
+                gotoBlock(block);
             }
         };
-        a.setEnabled(true);
-        return a;
+        action.setEnabled(true);
+        return action;
     }
 
     private void update() {
@@ -561,7 +571,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
                 f.setWidth(maxWidth.get(f.getBlock().getInputBlock()));
             }
 
-            FigureWidget w = new FigureWidget(f, hoverAction, selectAction, this, mainLayer);
+            FigureWidget w = new FigureWidget(f, this, mainLayer);
             w.getActions().addAction(ActionFactory.createPopupMenuAction(w));
             w.getActions().addAction(selectAction);
             w.getActions().addAction(hoverAction);
@@ -588,7 +598,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
             for (InputBlock bn : d.getInputBlocks()) {
-                BlockWidget w = new BlockWidget(this, d, bn);
+                BlockWidget w = new BlockWidget(this, bn);
+                w.getActions().addAction(new DoubleClickAction(w));
                 w.setVisible(false);
                 addObject(bn, w);
                 blockLayer.addChild(w);
@@ -891,6 +902,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         // and the selection action handles it instead
     }
 
+    @Override
+    public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
+        setSelectedObjects(Collections.emptySet());
+    }
+
     private class ConnectionSet {
 
         private Set<Connection> connections;
@@ -932,38 +948,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return result;
     }
 
-    private void gotoSelection(Set<Integer> ids) {
-
-        Rectangle overall = null;
-        Set<Integer> hiddenNodes = new HashSet<>(getModel().getHiddenNodes());
-        hiddenNodes.removeAll(ids);
-        getModel().setHiddenNodes(hiddenNodes);
-
-        Set<Object> objects = idSetToObjectSet(ids);
-        for (Object o : objects) {
-
-            Widget w = getWidget(o);
-            if (w != null) {
-                Rectangle r = w.getBounds();
-                Point p = w.convertLocalToScene(new Point(0, 0));
-
-                assert r != null;
-                Rectangle r2 = new Rectangle(p.x, p.y, r.width, r.height);
-
-                if (overall == null) {
-                    overall = r2;
-                } else {
-                    overall = overall.union(r2);
-                }
-            }
-        }
-        if (overall != null) {
-            centerRectangle(overall);
-        }
-
-        setSelectedObjects(objects);
-    }
-
     private void centerRectangle(Rectangle r) {
         Rectangle rect = convertSceneToView(r);
         Rectangle viewRect = scrollPane.getViewport().getViewRect();
@@ -986,7 +970,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     @Override
-    public void setSelection(Collection<Figure> list) {
+    public void setFigureSelection(Set<Figure> list) {
         super.setSelectedObjects(new HashSet<>(list));
     }
 
@@ -1002,10 +986,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     @Override
     public UndoRedo getUndoRedo() {
         return getUndoRedoManager();
-    }
-
-    private boolean isVisible(Figure f) {
-        return !getModel().getHiddenNodes().contains(f.getInputNode().getId());
     }
 
     @Override
@@ -1120,31 +1100,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             relayout(oldVisibleWidgets);
         }
         validate();
-    }
-
-    private void showFigure(Figure f) {
-        HashSet<Integer> newHiddenNodes = new HashSet<>(getModel().getHiddenNodes());
-        newHiddenNodes.remove(f.getInputNode().getId());
-        getModel().setHiddenNodes(newHiddenNodes);
-    }
-
-    private void centerWidget(Widget w) {
-        Rectangle r = w.getBounds();
-        Point p = w.getLocation();
-        assert r != null;
-        centerRectangle(new Rectangle(p.x, p.y, r.width, r.height));
-    }
-
-    public void gotoFigure(final Figure f) {
-        if (!isVisible(f)) {
-            showFigure(f);
-        }
-
-        FigureWidget fw = getWidget(f);
-        if (fw != null) {
-            centerWidget(fw);
-            setSelection(Collections.singletonList(f));
-        }
     }
 
     public JPopupMenu createPopupMenu() {
