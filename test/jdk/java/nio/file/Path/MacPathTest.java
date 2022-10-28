@@ -34,14 +34,14 @@
  *        jdk.test.lib.process.*
  *        TestUtil MacPath
  * @run main MacPathTest
- * @run main/othervm -Djava.nio.file.Path.ENABLE_FILE_NAME_ENCODING=true MacPathTest
+ * @run main/othervm -Djdk.nio.path.useNormalizationFormD=true MacPathTest
  */
 
 import jdk.test.lib.process.ProcessTools;
 
 public class MacPathTest {
     private static final String FILE_NAME_ENCODING_PROPERTY =
-        "java.nio.file.Path.ENABLE_FILE_NAME_ENCODING";
+        "jdk.nio.path.useNormalizationFormD";
     private static final boolean ENABLE_FILE_NAME_ENCODING =
         Boolean.getBoolean(FILE_NAME_ENCODING_PROPERTY);
 

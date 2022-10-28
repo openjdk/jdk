@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MacPath {
+    private static final String FILE_NAME_ENCODING_PROPERTY =
+        "jdk.nio.path.useNormalizationFormD";
 
     public static void main(String args[]) throws Throwable {
         System.out.printf("sun.jnu.encoding=%s, file.encoding=%s%n",
@@ -82,8 +84,7 @@ public class MacPath {
         throws Throwable
     {
         String fname = null;
-        Normalizer.Form form =
-            Boolean.getBoolean("java.nio.file.Path.ENABLE_FILE_NAME_ENCODING") ?
+        Normalizer.Form form = Boolean.getBoolean(FILE_NAME_ENCODING_PROPERTY) ?
             Normalizer.Form.NFD : Normalizer.Form.NFC;
         String dname_nfd = Normalizer.normalize(dname, form);
         String fname_nfd = Normalizer.normalize(fname_nfc, form);

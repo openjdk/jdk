@@ -26,6 +26,7 @@
 package sun.nio.fs;
 
 import java.util.regex.Pattern;
+import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.MacOSXNativeDispatcher.*;
 
@@ -36,10 +37,15 @@ import static sun.nio.fs.MacOSXNativeDispatcher.*;
 class MacOSXFileSystem extends BsdFileSystem {
 
     private static final String PROPERTY_ENABLE_FILE_NAME_ENCODING =
-        "java.nio.file.Path.ENABLE_FILE_NAME_ENCODING";
+        "jdk.nio.path.useNormalizationFormD";
 
-    private static final boolean ENCODE_FILE_NAMES =
-        Boolean.getBoolean(PROPERTY_ENABLE_FILE_NAME_ENCODING);
+    private static final boolean ENCODE_FILE_NAMES;
+
+    static {
+        final String name = PROPERTY_ENABLE_FILE_NAME_ENCODING;
+        String value = GetPropertyAction.privilegedGetProperty(name);
+        ENCODE_FILE_NAMES = "true".equalsIgnoreCase(value);
+    }
 
     MacOSXFileSystem(UnixFileSystemProvider provider, String dir) {
         super(provider, dir);
