@@ -40,7 +40,6 @@ private:
 
 protected:
   static const char* _uarch;
-  static uint32_t _cache_line_size;
   static uint32_t _initial_vector_length;
   static void get_os_cpu_info();
   static uint32_t get_current_vector_length();
@@ -67,8 +66,6 @@ public:
   };
 
   static void initialize_cpu_information(void);
-
-  static int cache_line_size() { return _cache_line_size; }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
