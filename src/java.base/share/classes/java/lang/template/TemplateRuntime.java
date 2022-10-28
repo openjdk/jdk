@@ -357,17 +357,18 @@ public final class TemplateRuntime {
      *
      * @return combined {@link StringTemplate}
      *
-     * @throws NullPointerException if sts is null
+     * @throws NullPointerException if sts is null or if any element of sts is null
      */
     static StringTemplate combine(StringTemplate... sts) {
         Objects.requireNonNull(sts, "sts must not be null");
         if (sts.length == 0) {
-            StringTemplate.of("");
+            return StringTemplate.of("");
         } else if (sts.length == 1) {
-            return sts[0];
+            return Objects.requireNonNull(sts[0], "string templates should not be null");
         }
         int size = 0;
         for (StringTemplate st : sts) {
+            Objects.requireNonNull(st, "string templates should not be null");
             size += st.values().size();
         }
         String[] fragments = new String[size + 1];
