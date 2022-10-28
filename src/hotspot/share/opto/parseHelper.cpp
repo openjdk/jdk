@@ -364,18 +364,7 @@ PEAState& PEAState::operator=(const PEAState& init) {
   return *this;
 }
 
-EscapedState* PEAState::materialize(GraphKit* parser, AllocateNode* alloc, Node* ctrl) {
-  Node* obj = nullptr;
-  // identity
-  _alias.iterate([&](Node* key, AllocateNode* value) {
-    if (value == alloc) {
-      obj = key;
-      return false;
-    } else {
-      return true;
-    }
-  });
-
+EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* map) {
 #ifndef PRODUCT
   if (Verbose) {
     tty->print("PEA materializes a virtual object: ");
@@ -383,25 +372,38 @@ EscapedState* PEAState::materialize(GraphKit* parser, AllocateNode* alloc, Node*
   }
 #endif
 
-  JVMState* jvms = parser->sync_jvms();
-  SafePointNode* map = jvms->map();
-  parser->kill_dead_locals();
-  parser->clean_stack(jvms->sp());
-  jvms->set_should_reexecute(false);
+  if (map == nullptr) {
+    JVMState* jvms = kit->sync_jvms();
+    map = kit->map();
+
+    kit->kill_dead_locals();
+    kit->clean_stack(jvms->sp());
+    jvms->set_should_reexecute(false);
+  }
 
   // clean up map/jvms before we clone a new AllocateNode.
-  AllocateNode* allocx  = new AllocateNode(parser->C, alloc->tf(), map->control(), alloc->memory(), alloc->i_o(),
-                                            alloc->in(AllocateNode::AllocSize),
-                                            alloc->in(AllocateNode::KlassNode),
-                                            alloc->in(AllocateNode::InitialTest));
-
+  AllocateNode* allocx  = new AllocateNode(kit->C, alloc->tf(), map->control(), alloc->memory(), alloc->i_o(),
+                                           alloc->in(AllocateNode::AllocSize),
+                                           alloc->in(AllocateNode::KlassNode),
+                                           alloc->in(AllocateNode::InitialTest));
+  Node* obj = alloc->result_cast();
   const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
-  Node* objx = parser->set_output_for_allocation(allocx, oop_type);
+  Node* objx = kit->set_output_for_allocation(allocx, oop_type);
 
-  if (allocx->in(0) != ctrl) {
-    allocx->set_req(0, ctrl);
-  }
   EscapedState* escaped = new EscapedState(objx);
   _state.put(alloc, escaped);
+
+  // update all locals which alias with alloc
+  for (int i=0; i< kit->jvms()->loc_size(); ++i) {
+    Node* lv = kit->local(i);
+
+    if (is_alias(lv) == alloc) { // update local variable.
+      kit->set_local(i, objx);
+    }
+  }
   return escaped;
+}
+
+void PEAState::merge(const PEAState& incoming) {
+
 }

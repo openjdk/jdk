@@ -62,21 +62,26 @@ class EscapedState: public ObjectState {
 template<typename K, typename V>
 using PEAMap = ResourceHashtable<K, V, 17, /*table_size*/
                           ResourceObj::RESOURCE_AREA, mtCompiler>;
+// forward declaration
 class GraphKit;
+
+using ObjID = AllocateNode*;
+
 class PEAState {
-  PEAMap<AllocateNode*, ObjectState*> _state;
-  PEAMap<Node*, AllocateNode*>        _alias;
+  friend class Parse;
+  PEAMap<ObjID, ObjectState*> _state;
+  PEAMap<Node*, ObjID>        _alias;
 
   State& intersect(const State& rhs);
 
  public:
   PEAState& operator=(const PEAState& init);
 
-  ObjectState* get_object_state(AllocateNode* alloc) const {
-    return *(_state.get(alloc));
+  ObjectState* get_object_state(ObjID id) const {
+    return *(_state.get(id));
   }
 
-  AllocateNode* is_alias(Node* node) const {
+  ObjID is_alias(Node* node) const {
     if (_alias.contains(node)) {
       return *(_alias.get(node));
     } else {
@@ -85,9 +90,9 @@ class PEAState {
   }
 
   void add_new_allocation(Node* obj);
-  State& merge(const State& merge);
+  void merge(const PEAState& merge);
 
-  EscapedState* materialize(GraphKit* parser, AllocateNode* alloc, Node* ctrl);
+  EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
 };
 
 #endif // SHARE_OPTO_PARTIAL_ESCAPE_HPP

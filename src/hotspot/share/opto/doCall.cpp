@@ -664,7 +664,7 @@ void Parse::do_call() {
       AllocateNode* alloc = state.is_alias(arg);
 
       if (alloc != nullptr && state.get_object_state(alloc)->is_virtual()) {
-          EscapedState* es = state.materialize(this, alloc, ctrl);
+          EscapedState* es = state.materialize(this, alloc);
           Node* objx = es->get_materialized_value();
           set_argument(i, objx);
           AllocateNode* allocx = objx->in(1)->in(0)->as_Allocate();
