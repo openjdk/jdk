@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@
  *          java.base/sun.security.util
  */
 
-import java.io.*;
 import java.util.Arrays;
 
 import sun.security.pkcs.PKCS9Attribute;
+import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
 import jdk.test.lib.hexdump.HexPrinter;
@@ -57,7 +57,7 @@ public class UnknownAttribute {
         if (p2.isKnown()) {
             throw new Exception();
         }
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        DerOutputStream bout = new DerOutputStream();
         p2.derEncode(bout);
         HexPrinter.simple().dest(System.err).format(bout.toByteArray());
         if (!Arrays.equals(data, bout.toByteArray())) {
@@ -75,7 +75,7 @@ public class UnknownAttribute {
         if (p3.isKnown()) {
             throw new Exception();
         }
-        bout = new ByteArrayOutputStream();
+        bout = new DerOutputStream();
         p3.derEncode(bout);
         if (!Arrays.equals(data, bout.toByteArray())) {
             throw new Exception();
