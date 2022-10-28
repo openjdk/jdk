@@ -85,6 +85,8 @@ public abstract class AbstractBorder implements Border, Serializable
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
      * @return the <code>insets</code> object
+     * @throws {@code NullPointerException} if {@code insets}
+     *         is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.left = insets.top = insets.right = insets.bottom = 0;
