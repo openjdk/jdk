@@ -3349,7 +3349,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   const bool is_string_hashcode = hashMode == VectorizedHashCodeNode::LATIN1 || hashMode == VectorizedHashCodeNode::UTF16;
   const bool is_unsigned = is_string_hashcode || hashMode == VectorizedHashCodeNode::CHAR;
   const int elsize = arrays_hashcode_elsize(eltype);
-  const bool generate_vectorized_loop = is_string_hashcode; // disabled for non-String uses for now due some issue with the coefficient expansion
+  // vector loops does not currently support short and signed byte arrays for now, need to figure out how to properly sign-extend when loading into vectors
+  const bool generate_vectorized_loop = is_unsigned || hashMode == VectorizedHashCodeNode::INT;
 
   // int result = 0|1;
   movl(result, is_string_hashcode ? 0 : 1);
@@ -3515,19 +3516,27 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
     arrays_hashcode_elvcast(vtmp[idx], eltype);
     vpmulld(vtmp[idx], vtmp[idx], vcoef[idx], Assembler::AVX_256bit);
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
-    vpmulld(vcoef[idx], vcoef[idx], vnext, Assembler::AVX_256bit);
   }
   // i -= 32;
   subl(index, 32);
   // i >= 0;
   cmpl(index, 0);
-  jcc(Assembler::greaterEqual, LONG_VECTOR_LOOP_BEGIN);
+  jccb(Assembler::less, LONG_VECTOR_LOOP_END);
+  for (int idx = 0; idx < 4; idx++) {
+    vpmulld(vcoef[idx], vcoef[idx], vnext, Assembler::AVX_256bit);
+  }
+  jmp(LONG_VECTOR_LOOP_BEGIN);
+  // }
+
+  bind(LONG_VECTOR_LOOP_END);
   // }
 
   // result += vcoef0[0]; -- for the non-String cases that have a starting point of constant 1
   if (!is_string_hashcode) {
-    movdl(tmp, vcoef0);
-    addl(result, tmp);
+    movdl(coef, vcoef0);
+    movl(tmp, 31);
+    imull(coef, tmp);
+    addl(result, coef);
   }
 
   // result += vresult.reduceLanes(ADD);
