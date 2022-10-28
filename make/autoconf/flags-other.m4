@@ -46,12 +46,7 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
 AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
 [
   ## Setup strip.
-
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    $STRIP "-h"
-  else
-    $STRIP "-V"
-  fi
+  AC_MSG_CHECKING([how to run strip])
 
   # FIXME: we should really only export STRIPFLAGS from here, not POST_STRIP_CMD.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -62,6 +57,7 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
     STRIPFLAGS="-X32_64"
   fi
 
+  AC_MSG_RESULT($STRIPFLAGS)
   AC_SUBST(STRIPFLAGS)
 ])
 
