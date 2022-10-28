@@ -1541,7 +1541,7 @@ public final class Main {
                 subjectPubKey,
                 signerSubjectKeyId);
         info.set(X509CertInfo.EXTENSIONS, ext);
-        X509CertImpl cert = new X509CertImpl(info);
+        X509CertImpl cert = X509CertImpl.newX509CertImpl(info);
         cert.sign(privateKey, sigAlgName);
         dumpCert(cert, out);
         for (Certificate ca: keyStore.getCertificateChain(alias)) {
@@ -3244,7 +3244,7 @@ public final class Main {
                 null);
         certInfo.set(X509CertInfo.EXTENSIONS, ext);
         // Sign the new certificate
-        X509CertImpl newCert = new X509CertImpl(certInfo);
+        X509CertImpl newCert = X509CertImpl.newX509CertImpl(certInfo);
         newCert.sign(privKey, sigAlgName);
 
         // Store the new certificate as a single-element certificate chain

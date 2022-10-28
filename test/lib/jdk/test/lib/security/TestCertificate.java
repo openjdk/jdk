@@ -23,9 +23,15 @@
 
 package jdk.test.lib.security;
 
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
+
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.SequenceInputStream;
+import java.security.*;
 import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -167,6 +173,24 @@ public enum TestCertificate {
         // Get the encoded form of the CertPath we made
         byte[] encoded = cp.getEncoded("PKCS7");
         CERTIFICATE_FACTORY.generateCertPath(new ByteArrayInputStream(encoded), "PKCS7");
+    }
+
+    public static void certAndGenTest() throws CertificateException {
+        CertAndKeyGen ckg;
+        try {
+            ckg = new CertAndKeyGen("RSA", "SHA256withRSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Unexpected failure", e);
+        }
+        // just some arbitrary dates
+        long validity = (System.currentTimeMillis() + 10_000L)/1000L + 3600;
+        Date firstDate = new Date(System.currentTimeMillis());
+        ckg.generate(2048);
+        try {
+            ckg.getSelfCertificate(new X500Name("CN=Me"), firstDate, validity);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new RuntimeException("Unexpected failure", e);
+        }
     }
 
     public static void generateChain(boolean selfSignedTest, boolean trustAnchorCert) throws Exception {

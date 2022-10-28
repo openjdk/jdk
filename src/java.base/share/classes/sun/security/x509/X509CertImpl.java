@@ -188,20 +188,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
     }
 
-    // helper methods to record certificate, if necessary, after construction
-    // certificates from JCA generateCertificate calls are already recorded (where necessary)
-    public static X509CertImpl newX509CertImpl(byte[] certData) throws CertificateException {
-        var cert = new X509CertImpl(certData);
-        JCAUtil.tryCommitCertEvent(cert);
-        return cert;
-    }
-
-    public static X509CertImpl newX509CertImpl(DerValue derVal) throws CertificateException {
-        var cert = new X509CertImpl(derVal);
-        JCAUtil.tryCommitCertEvent(cert);
-        return cert;
-    }
-
     /**
      * unmarshals an X.509 certificate from an input stream.  If the
      * certificate is RFC1421 hex-encoded, then it must begin with
@@ -317,6 +303,26 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             signedCert = null;
             throw new CertificateException("Unable to initialize, " + e, e);
         }
+    }
+
+    // helper methods to record certificate, if necessary, after construction
+    // certificates from JCA generateCertificate calls are already recorded (where necessary)
+    public static X509CertImpl newX509CertImpl(byte[] certData) throws CertificateException {
+        var cert = new X509CertImpl(certData);
+        JCAUtil.tryCommitCertEvent(cert);
+        return cert;
+    }
+
+    public static X509CertImpl newX509CertImpl(DerValue derVal) throws CertificateException {
+        var cert = new X509CertImpl(derVal);
+        JCAUtil.tryCommitCertEvent(cert);
+        return cert;
+    }
+
+    public static X509CertImpl newX509CertImpl(X509CertInfo certInfo) throws CertificateException {
+        var cert = new X509CertImpl(certInfo);
+        JCAUtil.tryCommitCertEvent(cert);
+        return cert;
     }
 
     /**

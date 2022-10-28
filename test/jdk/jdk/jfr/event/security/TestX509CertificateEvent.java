@@ -39,6 +39,7 @@ import jdk.test.lib.security.TestCertificate;
  * @summary Enhance the security libraries to record events of interest
  * @key jfr
  * @requires vm.hasJFR
+ * @modules java.base/sun.security.x509 java.base/sun.security.tools.keytool
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.security.TestX509CertificateEvent
  */
@@ -51,20 +52,26 @@ public class TestX509CertificateEvent {
             // Generate twice to make sure we (now) capture all generate cert events
             TestCertificate.ONE.certificate();
             TestCertificate.TWO.certificate();
-        }, 4);
+        }, 4, true);
 
         testCall(() -> {
             // test generateCertificates method
             TestCertificate.certificates();
-        }, 2);
+        }, 2, true);
 
         testCall(() -> {
             // test generateCertPath method
             TestCertificate.certPath();
-        }, 4);
+        }, 4, true);
+
+        testCall(() -> {
+            // test CertAndKeyGen functionality
+            // most interesting in just detecting this cert being created
+            TestCertificate.certAndGenTest();
+        }, 1, false);
     }
 
-    private static void testCall(VoidFunction f, int expected) throws Throwable {
+    private static void testCall(VoidFunction f, int expected, boolean runAsserts) throws Throwable {
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.X509Certificate);
             recording.start();
@@ -72,8 +79,10 @@ public class TestX509CertificateEvent {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
-            assertEvent(events, TestCertificate.ONE);
-            assertEvent(events, TestCertificate.TWO);
+            if (runAsserts) {
+                assertEvent(events, TestCertificate.ONE);
+                assertEvent(events, TestCertificate.TWO);
+            }
         }
     }
 
