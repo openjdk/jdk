@@ -1845,20 +1845,6 @@ void SuperWord::filter_packs() {
 #endif
 }
 
-// Clear the unused cmove pack and its related packs from superword candidate packset.
-void SuperWord::remove_cmove_and_related_packs(Node_List* cmove_pk) {
-  Node* cmove = cmove_pk->at(0);
-  Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
-  if (my_pack(bol)) {
-    remove_pack(my_pack(bol));
-  }
-  Node* cmp = bol->in(1);
-  if (my_pack(cmp)) {
-    remove_pack(my_pack(cmp));
-  }
-  remove_pack(cmove_pk);
-}
-
 //------------------------------merge_packs_to_cmovd---------------------------
 // Merge qualified CMoveD into new vector-nodes
 // We want to catch this pattern and subsume CmpD and Bool into CMoveD
@@ -1882,17 +1868,12 @@ void SuperWord::remove_cmove_and_related_packs(Node_List* cmove_pk) {
 //                   \ v /
 //                   CMoveD
 //
-// Also delete unqualified CMove pack from the packset and clear all info.
 
 void SuperWord::merge_packs_to_cmovd() {
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* pk = _packset.at(i);
-    if (_cmovev_kit.is_cmove_pack_candidate(pk)) {
-      if (_cmovev_kit.can_merge_cmove_pack(pk)) {
-        _cmovev_kit.make_cmove_pack(pk);
-      } else {
-        remove_cmove_and_related_packs(pk);
-      }
+    if (_cmovev_kit.can_merge_cmove_pack(pk)) {
+      _cmovev_kit.make_cmove_pack(pk);
     }
   }
 
@@ -1933,22 +1914,18 @@ Node* CMoveKit::is_CmpD_candidate(Node* def) const {
   return use;
 }
 
-bool CMoveKit::is_cmove_pack_candidate(Node_List* cmove_pk) {
-  Node* cmove = cmove_pk->at(0);
-  if ((cmove->Opcode() != Op_CMoveF && cmove->Opcode() != Op_CMoveD) ||
-      pack(cmove) != NULL /* already in the cmove pack */) {
-    return false;
-  }
-  return true;
-}
-
 // Determine if the current pack is an ideal cmove pack, and if its related packs,
 // i.e. bool node pack and cmp node pack, can be successfully merged for vectorization.
 bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
   Node* cmove = cmove_pk->at(0);
 
+  if (!SuperWord::is_cmove_fp_opcode(cmove->Opcode()) ||
+      pack(cmove) != NULL /* already in the cmove pack */) {
+    return false;
+  }
+
   if (cmove->in(0) != NULL) {
-    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmove_pack: CMove %d has control flow, escaping...", cmove->_idx); cmove->dump();})
+    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: CMove %d has control flow, escaping...", cmove->_idx); cmove->dump();})
     return false;
   }
 
@@ -1958,7 +1935,7 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
       !_sw->same_generation(bol, cmove) ||
       bol->in(0) != NULL || // BoolNode has control flow!!
       _sw->my_pack(bol) == NULL) {
-      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmove_pack: Bool %d does not fit CMove %d for building vector, escaping...", bol->_idx, cmove->_idx); bol->dump();})
+      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Bool %d does not fit CMove %d for building vector, escaping...", bol->_idx, cmove->_idx); bol->dump();})
     return false;
   }
   Node_List* bool_pk = _sw->my_pack(bol);
@@ -1972,7 +1949,7 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
       !_sw->same_generation(cmp, cmove) ||
       cmp->in(0) != NULL || // CmpNode has control flow!!
       _sw->my_pack(cmp) == NULL) {
-      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmove_pack: Cmp %d does not fit CMove %d for building vector, escaping...", cmp->_idx, cmove->_idx); cmp->dump();})
+      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Cmp %d does not fit CMove %d for building vector, escaping...", cmp->_idx, cmove->_idx); cmp->dump();})
     return false;
   }
   Node_List* cmp_pk = _sw->my_pack(cmp);
@@ -1981,7 +1958,7 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
   }
 
   if (!test_cmpd_pack(cmp_pk, cmove_pk)) {
-    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmove_pack: cmp pack for Cmp %d failed vectorization test", cmp->_idx); cmp->dump();})
+    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: cmp pack for Cmp %d failed vectorization test", cmp->_idx); cmp->dump();})
     return false;
   }
 
@@ -2099,6 +2076,9 @@ bool SuperWord::implemented(Node_List* p) {
       // integer subword types with superword vectorization.
       // See JDK-8294816 for miscompilation issues with shorts.
       return false;
+    } else if (is_cmove_fp_opcode(opc)) {
+      retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
+      NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
     } else {
       // Vector unsigned right shift for signed subword types behaves differently
       // from Java Spec. But when the shift amount is a constant not greater than
@@ -2108,7 +2088,6 @@ bool SuperWord::implemented(Node_List* p) {
         opc = Op_RShiftI;
       }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
-      NOT_PRODUCT(if(retValue && is_trace_cmov() && is_cmov_pack(p)) {tty->print_cr("SWPointer::implemented: found cmpd pack"); print_pack(p);})
     }
   }
   return retValue;
@@ -3717,16 +3696,6 @@ void SuperWord::remove_pack_at(int pos) {
     set_my_pack(s, NULL);
   }
   _packset.remove_at(pos);
-}
-
-//------------------------------remove_pack------------------------------
-// Remove the pack in the packset
-void SuperWord::remove_pack(Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    Node* s = p->at(i);
-    set_my_pack(s, NULL);
-  }
-  _packset.remove(p);
 }
 
 void SuperWord::packset_sort(int n) {

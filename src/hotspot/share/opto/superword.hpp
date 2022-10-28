@@ -215,9 +215,7 @@ class CMoveKit {
   Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
   Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
   Node* is_CmpD_candidate(Node* nd) const; // otherwise return NULL
-  // If the input pack is a cmove candidate, return true, otherwise return false.
-  bool is_cmove_pack_candidate(Node_List* cmove_pk);
-  // Determine if the current cmove pack can be vectorized.
+  // Determine if the current pack is a cmove candidate that can be vectorized.
   bool can_merge_cmove_pack(Node_List* cmove_pk);
   void make_cmove_pack(Node_List* cmovd_pk);
   bool test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk);
@@ -455,9 +453,10 @@ class SuperWord : public ResourceObj {
   // my_pack
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
-  // is pack good for converting into one vector node replacing 12 nodes of Cmp, Bool, CMov
+  // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   bool is_cmov_pack(Node_List* p);
   bool is_cmov_pack_internal_node(Node_List* p, Node* nd) { return is_cmov_pack(p) && !nd->is_CMove(); }
+  static bool is_cmove_fp_opcode(int opc) { return (opc == Op_CMoveF || opc == Op_CMoveD); }
   // For pack p, are all idx operands the same?
   bool same_inputs(Node_List* p, int idx);
   // CloneMap utilities
@@ -540,8 +539,6 @@ class SuperWord : public ResourceObj {
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
-  // Clear the unused cmove pack and its related packs from superword candidate packset.
-  void remove_cmove_and_related_packs(Node_List* cmove_pk);
   // Merge CMoveD into new vector-nodes
   void merge_packs_to_cmovd();
   // Adjust the memory graph for the packed operations
@@ -590,8 +587,6 @@ class SuperWord : public ResourceObj {
   Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
-  // Remove the pack in the packset
-  void remove_pack(Node_List* p);
   // Return the node executed first in pack p.
   Node* executed_first(Node_List* p);
   // Return the node executed last in pack p.
