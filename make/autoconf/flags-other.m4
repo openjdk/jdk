@@ -48,9 +48,7 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
   ## Setup strip.
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    $ECHO "" > macos.strip
-    $STRIP "-v" macos.strip
-    $RM macos.strip
+    $STRIP "-h"
   else
     $STRIP "-V"
   fi
