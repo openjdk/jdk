@@ -973,7 +973,14 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       }
       // Fall thru so we only have one place that installs the hash in
       // the ObjectMonitor.
-    } else if (current->is_lock_owned((address)mark.locker())) {
+    } else if (mark.is_fast_locked() && current->lock_stack().contains(obj)) {
+      // This is a fast lock owned by the calling thread so use the
+      // markWord from the object.
+      hash = mark.hash();
+      if (hash != 0) {                  // if it has a hash, just return it
+        return hash;
+      }
+    } else if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
       // This is a stack lock owned by the calling thread so fetch the
       // displaced markWord from the BasicLock on the stack.
       temp = mark.displaced_mark_helper();
@@ -1297,7 +1304,10 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     // The INFLATING value is transient.
     // Currently, we spin/yield/park and poll the markword, waiting for inflation to finish.
     // We could always eliminate polling by parking the thread on some auxiliary list.
-    if (mark == markWord::INFLATING()) {
+    // NOTE: We need to check UseFastLocking here, because with fast-locking, the header
+    // may legitimately be zero: cleared lock-bits and all upper header bits zero.
+    // With fast-locking, the INFLATING protocol is not used.
+    if (mark == markWord::INFLATING() && !UseFastLocking) {
       read_stable_mark(object);
       continue;
     }
@@ -1313,8 +1323,51 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     // the odds of inflation contention.
 
     LogStreamHandle(Trace, monitorinflation) lsh;
+    if (mark.is_fast_locked()) {
+      assert(UseFastLocking, "can only happen with fast-locking");
+      ObjectMonitor* monitor = new ObjectMonitor(object);
+      monitor->set_header(mark.set_unlocked());
+      LockStack& lock_stack = current->lock_stack();
+      bool own = lock_stack.contains(object);
+      if (own) {
+        // Owned by us.
+        monitor->set_owner_from(NULL, current);
+      } else {
+        // Owned by somebody else.
+        monitor->set_owner_anonymous();
+      }
+      markWord monitor_mark = markWord::encode(monitor);
+      markWord witness = object->cas_set_mark(monitor_mark, mark);
+      if (witness == mark) {
+        // Success! Return inflated monitor.
+        if (own) {
+          lock_stack.remove(object);
+        }
+        // Once the ObjectMonitor is configured and object is associated
+        // with the ObjectMonitor, it is safe to allow async deflation:
+        _in_use_list.add(monitor);
+
+        // Hopefully the performance counters are allocated on distinct
+        // cache lines to avoid false sharing on MP systems ...
+        OM_PERFDATA_OP(Inflations, inc());
+        if (log_is_enabled(Trace, monitorinflation)) {
+          ResourceMark rm(current);
+          lsh.print_cr("inflate(locked): object=" INTPTR_FORMAT ", mark="
+                       INTPTR_FORMAT ", type='%s'", p2i(object),
+                       object->mark().value(), object->klass()->external_name());
+        }
+        if (event.should_commit()) {
+          post_monitor_inflate_event(&event, object, cause);
+        }
+        return monitor;
+      } else {
+        delete monitor;
+        continue;
+      }
+    }
 
     if (mark.has_locker()) {
+      assert(!UseFastLocking, "can not happen with fast-locking");
       ObjectMonitor* m = new ObjectMonitor(object);
       // Optimistically prepare the ObjectMonitor - anticipate successful CAS
       // We do this before the CAS in order to minimize the length of time

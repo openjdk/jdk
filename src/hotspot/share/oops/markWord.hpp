@@ -192,7 +192,9 @@ class markWord {
     return (ObjectMonitor*) (value() ^ monitor_value);
   }
   bool has_displaced_mark_helper() const {
-    return ((value() & unlocked_value) == 0);
+    intptr_t lockbits = value() & lock_mask_in_place;
+    return UseFastLocking ? lockbits == monitor_value   // monitor?
+                          : lockbits != unlocked_value; // monitor | stack-locked?
   }
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;

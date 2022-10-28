@@ -3774,33 +3774,44 @@ encode %{
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      // Set tmp to be (markWord of object | UNLOCK_VALUE).
-      __ orr(tmp, disp_hdr, markWord::unlocked_value);
+      if (UseFastLocking) {
+        Label slow;
+        __ fast_lock(oop, disp_hdr, tmp, rscratch1, slow);
 
-      // Initialize the box. (Must happen before we update the object mark!)
-      __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+        // Indicate success at cont.
+        __ cmp(oop, oop);
+        __ b(cont);
+        __ bind(slow);
+        __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+      } else {
+        // Set tmp to be (markWord of object | UNLOCK_VALUE).
+        __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
-      // Compare object markWord with an unlocked value (tmp) and if
-      // equal exchange the stack address of our box with object markWord.
-      // On failure disp_hdr contains the possibly locked markWord.
-      __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-                 /*release*/ true, /*weak*/ false, disp_hdr);
-      __ br(Assembler::EQ, cont);
+        // Initialize the box. (Must happen before we update the object mark!)
+        __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+        // Compare object markWord with an unlocked value (tmp) and if
+        // equal exchange the stack address of our box with object markWord.
+        // On failure disp_hdr contains the possibly locked markWord.
+        __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
+                   /*release*/ true, /*weak*/ false, disp_hdr);
+        __ br(Assembler::EQ, cont);
 
-      // If the compare-and-exchange succeeded, then we found an unlocked
-      // object, will have now locked it will continue at label cont
+        assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
-      // Check if the owner is self by comparing the value in the
-      // markWord of object (disp_hdr) with the stack pointer.
-      __ mov(rscratch1, sp);
-      __ sub(disp_hdr, disp_hdr, rscratch1);
-      __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-      // If condition is true we are cont and hence we can store 0 as the
-      // displaced header in the box, which indicates that it is a recursive lock.
-      __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-      __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+        // If the compare-and-exchange succeeded, then we found an unlocked
+        // object, will have now locked it will continue at label cont
+
+        // Check if the owner is self by comparing the value in the
+        // markWord of object (disp_hdr) with the stack pointer.
+        __ mov(rscratch1, sp);
+        __ sub(disp_hdr, disp_hdr, rscratch1);
+        __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+        // If condition is true we are cont and hence we can store 0 as the
+        // displaced header in the box, which indicates that it is a recursive lock.
+        __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
+        __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      }
     } else {
       __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
     }
@@ -3817,13 +3828,14 @@ encode %{
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
 
-    // Store a non-null value into the box to avoid looking like a re-entrant
-    // lock. The fast-path monitor unlock code checks for
-    // markWord::monitor_value so use markWord::unused_mark which has the
-    // relevant bit set, and also matches ObjectSynchronizer::enter.
-    __ mov(tmp, (address)markWord::unused_mark().value());
-    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
+    if (!UseFastLocking) {
+      // Store a non-null value into the box to avoid looking like a re-entrant
+      // lock. The fast-path monitor unlock code checks for
+      // markWord::monitor_value so use markWord::unused_mark which has the
+      // relevant bit set, and also matches ObjectSynchronizer::enter.
+      __ mov(tmp, (address)markWord::unused_mark().value());
+      __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    }
     __ br(Assembler::EQ, cont); // CAS success means locking succeeded
 
     __ cmp(rscratch1, rthread);
@@ -3855,7 +3867,7 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    if (!UseHeavyMonitors) {
+    if (!UseHeavyMonitors && !UseFastLocking) {
       // Find the lock address and load the displaced header from the stack.
       __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
@@ -3866,15 +3878,27 @@ encode %{
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
+    __ tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      // Check if it is still a light weight lock, this is is true if we
-      // see the stack address of the basicLock in the markWord of the
-      // object.
+      if (UseFastLocking) {
+        Label slow;
+        __ fast_unlock(oop, tmp, box, disp_hdr, slow);
 
-      __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-                 /*release*/ true, /*weak*/ false, tmp);
+        // Indicate success at cont.
+        __ cmp(oop, oop);
+        __ b(cont);
+
+        __ bind(slow);
+        __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+      } else {
+        // Check if it is still a light weight lock, this is is true if we
+        // see the stack address of the basicLock in the markWord of the
+        // object.
+
+        __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
+                   /*release*/ true, /*weak*/ false, tmp);
+      }
     } else {
       __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
     }
@@ -3886,6 +3910,18 @@ encode %{
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
+
+    if (UseFastLocking) {
+      // If the owner is anonymous, we need to fix it -- in the slow-path.
+      Label L;
+      __ ldr(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+      __ cmp(disp_hdr, (unsigned char)(intptr_t) ANONYMOUS_OWNER);
+      __ br(Assembler::NE, L);
+      __ tst(oop, oop); // Indicate failure at cont -- dive into slow-path.
+      __ b(cont);
+      __ bind(L);
+    }
+
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
 
     Label notRecursive;

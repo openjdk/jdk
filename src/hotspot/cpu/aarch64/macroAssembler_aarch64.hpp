@@ -33,6 +33,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+
 class OopMap;
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -1546,6 +1547,9 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+
+  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.
