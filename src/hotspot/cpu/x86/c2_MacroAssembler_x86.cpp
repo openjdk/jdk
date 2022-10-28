@@ -3364,7 +3364,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   }
 
   // } else if (cnt1 < 32) {
-  
+
   if (generate_vectorized_loop) {
     cmpl(cnt1, 32);
     jcc(Assembler::greaterEqual, LONG);
