@@ -28,7 +28,6 @@ package java.util;
 import java.io.IOException;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.StringConcatFactory.StringConcatItem;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -89,7 +88,7 @@ final class FormatterBuilder {
         try {
             MethodHandle mh = LOOKUP.findConstructor(cls, methodType);
 
-            return mh.asType(mh.type().changeReturnType(StringConcatItem.class));
+            return mh.asType(mh.type().changeReturnType(FormatConcatItem.class));
         } catch (ReflectiveOperationException e) {
             throw new AssertionError("Missing constructor in " +
                     cls + ": " + methodType);
@@ -156,15 +155,15 @@ final class FormatterBuilder {
 
     private static final MethodHandle FIFillLeft_MH =
              findStringConcatItemConstructor(FormatItemFillLeft.class,
-                    int.class, StringConcatItem.class);
+                    int.class, FormatConcatItem.class);
 
     private static final MethodHandle FIFillRight_MH =
             findStringConcatItemConstructor(FormatItemFillRight.class,
-                     int.class, StringConcatItem.class);
+                     int.class, FormatConcatItem.class);
 
     private static final MethodHandle FIUpper_MH =
             findStringConcatItemConstructor(FormatItemUpper.class,
-                    StringConcatItem.class);
+                    FormatConcatItem.class);
 
     private static final MethodHandle FINull_MH =
             findStringConcatItemConstructor(FormatItemNull.class);

@@ -28,7 +28,6 @@ package java.util;
 import java.io.IOException;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.StringConcatFactory.StringConcatItem;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
@@ -121,7 +120,7 @@ class FormatItem {
     /**
      * Decimal value format item.
      */
-    static final class FormatItemDecimal implements StringConcatItem {
+    static final class FormatItemDecimal implements FormatConcatItem {
         private final char groupingSeparator;
         private final char zeroDigit;
         private final char minusSign;
@@ -214,7 +213,7 @@ class FormatItem {
     /**
      * Hexadecimal format item.
      */
-    static final class FormatItemHexadecimal implements StringConcatItem {
+    static final class FormatItemHexadecimal implements FormatConcatItem {
         private final int width;
         private final boolean hasPrefix;
         private final long value;
@@ -262,7 +261,7 @@ class FormatItem {
     /**
      * Hexadecimal format item.
      */
-    static final class FormatItemOctal implements StringConcatItem {
+    static final class FormatItemOctal implements FormatConcatItem {
         private final int width;
         private final boolean hasPrefix;
         private final long value;
@@ -309,7 +308,7 @@ class FormatItem {
     /**
      * Boolean format item.
      */
-    static final class FormatItemBoolean implements StringConcatItem {
+    static final class FormatItemBoolean implements FormatConcatItem {
         private final boolean value;
 
         FormatItemBoolean(boolean value) {
@@ -345,7 +344,7 @@ class FormatItem {
     /**
      * Character format item.
      */
-    static final class FormatItemCharacter implements StringConcatItem {
+    static final class FormatItemCharacter implements FormatConcatItem {
         private final char value;
 
         FormatItemCharacter(char value) {
@@ -369,7 +368,7 @@ class FormatItem {
     /**
      * String format item.
      */
-    static final class FormatItemString implements StringConcatItem {
+    static final class FormatItemString implements FormatConcatItem {
         private String value;
 
         FormatItemString(String value) {
@@ -390,7 +389,7 @@ class FormatItem {
     /**
      * FormatSpecifier format item.
      */
-    static final class FormatItemFormatSpecifier implements StringConcatItem {
+    static final class FormatItemFormatSpecifier implements FormatConcatItem {
         private StringBuilder sb;
 
         FormatItemFormatSpecifier(FormatSpecifier fs, Locale locale, Object value) {
@@ -423,11 +422,15 @@ class FormatItem {
         }
     }
 
-    protected abstract static class FormatItemModifier implements StringConcatItem {
+    protected static abstract sealed class FormatItemModifier implements FormatConcatItem
+        permits FormatItemFillLeft,
+                FormatItemFillRight,
+                FormatItemUpper
+    {
         private final long itemLengthCoder;
-        protected final StringConcatItem item;
+        protected final FormatConcatItem item;
 
-        FormatItemModifier(StringConcatItem item) {
+        FormatItemModifier(FormatConcatItem item) {
             this.itemLengthCoder = item.mix(0L);
             this.item = item;
         }
@@ -441,19 +444,20 @@ class FormatItem {
         }
 
         @Override
-        abstract public long mix(long lengthCoder);
+        public abstract long mix(long lengthCoder);
 
         @Override
-        abstract public long prepend(long lengthCoder, byte[] buffer) throws Throwable;
+        public abstract long prepend(long lengthCoder, byte[] buffer) throws Throwable;
     }
 
     /**
      * Fill left format item.
      */
-    static final class FormatItemFillLeft extends FormatItemModifier {
+    static final class FormatItemFillLeft extends FormatItemModifier
+            implements FormatConcatItem {
         private final int width;
 
-        FormatItemFillLeft(int width, StringConcatItem item) {
+        FormatItemFillLeft(int width, FormatConcatItem item) {
             super(item);
             this.width = Integer.max(length(), width);
         }
@@ -479,10 +483,11 @@ class FormatItem {
     /**
      * Fill right format item.
      */
-    static final class FormatItemFillRight extends FormatItemModifier {
+    static final class FormatItemFillRight extends FormatItemModifier
+            implements FormatConcatItem {
         private final int width;
 
-        FormatItemFillRight(int width, StringConcatItem item) {
+        FormatItemFillRight(int width, FormatConcatItem item) {
             super(item);
             this.width = Integer.max(length(), width);
         }
@@ -510,8 +515,9 @@ class FormatItem {
     /**
      * To upper case format item.
      */
-    static final class FormatItemUpper extends FormatItemModifier {
-        FormatItemUpper(StringConcatItem item) {
+    static final class FormatItemUpper extends FormatItemModifier
+            implements FormatConcatItem {
+        FormatItemUpper(FormatConcatItem item) {
             super(item);
         }
 
@@ -539,7 +545,7 @@ class FormatItem {
     /**
      * Null format item.
      */
-    static final class FormatItemNull implements StringConcatItem {
+    static final class FormatItemNull implements FormatConcatItem {
         FormatItemNull() {
         }
 

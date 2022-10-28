@@ -32,7 +32,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.StringConcatFactory.StringConcatItem;
+import java.util.FormatConcatItem;
 
 /**
  * Helper for string concatenation. These methods are mostly looked up with private lookups
@@ -136,7 +136,7 @@ final class StringConcatHelper {
      * @since 19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static long mix(long lengthCoder, StringConcatItem value) {
+    static long mix(long lengthCoder, FormatConcatItem value) {
         lengthCoder = value.mix(lengthCoder);
 
         return checkOverflow(lengthCoder);
@@ -346,7 +346,7 @@ final class StringConcatHelper {
     }
 
     /**
-     * Prepends the stringly representation of StringConcatItem value into buffer,
+     * Prepends the stringly representation of FormatConcatItem value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
      * @param indexCoder final char index in the buffer, along with coder packed
@@ -358,11 +358,11 @@ final class StringConcatHelper {
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     private static long prepend(long indexCoder, byte[] buf,
-                                StringConcatItem value) {
+                                FormatConcatItem value) {
         try {
             return value.prepend(indexCoder, buf);
         } catch (Throwable ex) {
-            throw new AssertionError("StringConcatItem prepend error", ex);
+            throw new AssertionError("FormatConcatItem prepend error", ex);
         }
     }
 
@@ -380,7 +380,7 @@ final class StringConcatHelper {
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     static long prepend(long indexCoder, byte[] buf,
-                        StringConcatItem value, String prefix) {
+                        FormatConcatItem value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
         if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;

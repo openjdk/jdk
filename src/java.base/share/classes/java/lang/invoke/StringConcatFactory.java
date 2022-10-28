@@ -112,6 +112,8 @@ public final class StringConcatFactory {
      * While the maximum number of argument slots that indy call can handle is 253,
      * we do not use all those slots, to let the strategies with MethodHandle
      * combinators to use some arguments.
+     *
+     * @since 20
      */
     public static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
 
@@ -711,7 +713,7 @@ public final class StringConcatFactory {
         MethodHandle prepend = PREPENDERS[idx];
         if (prepend == null) {
             if (idx == STRING_CONCAT_ITEM) {
-                cl = StringConcatItem.class;
+                cl = FormatConcatItem.class;
             }
             PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
@@ -733,7 +735,7 @@ public final class StringConcatFactory {
         if (cl == boolean.class)                         return BOOLEAN_IDX;
         if (cl == char.class)                            return CHAR_IDX;
         if (cl == long.class)                            return LONG_IDX;
-        if (StringConcatItem.class.isAssignableFrom(cl)) return STRING_CONCAT_ITEM;
+        if (FormatConcatItem.class.isAssignableFrom(cl)) return STRING_CONCAT_ITEM;
         throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
@@ -1032,33 +1034,6 @@ public final class StringConcatFactory {
     }
 
     /**
-     * Implementations of this class provide information necessary to
-     * assist {@link StringConcatFactory} perform optimal addition.
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public interface StringConcatItem {
-        /**
-         * Calculate the length of the insertion.
-         *
-         * @param lengthCoder current value of the length + coder
-         * @return adjusted value of the length + coder
-         */
-        long mix(long lengthCoder);
-
-        /**
-         * Insert content into buffer prior to the current length.
-         *
-         * @param lengthCoder current value of the length + coder
-         * @param buffer      buffer to right into
-         *
-         * @return adjusted value of the length + coder
-         *
-         * @throws Throwable if fails to prepend value (unusual).
-         */
-        long prepend(long lengthCoder, byte[] buffer) throws Throwable;
-    }
-
-    /**
      * Simplified concatenation method to facilitate {@link StringTemplate}
      * concatenation. This method returns a single concatenation method that
      * interleaves fragments and values. fragment|value|fragment|value|...|value|fragment.
@@ -1074,7 +1049,7 @@ public final class StringConcatFactory {
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
      *
-     * @since 19
+     * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplate(
@@ -1107,10 +1082,10 @@ public final class StringConcatFactory {
             }
 
             boolean isSpecialized = ptype.isPrimitive();
-            boolean isStringConcatItem = StringConcatItem.class.isAssignableFrom(ptype);
+            boolean isFormatConcatItem = FormatConcatItem.class.isAssignableFrom(ptype);
             Class<?> ttype = isSpecialized ? promoteIntType(ptype) :
-                             isStringConcatItem ? StringConcatItem.class : Object.class;
-            MethodHandle filter = isStringConcatItem ? null : stringifierFor(ttype);
+                             isFormatConcatItem ? FormatConcatItem.class : Object.class;
+            MethodHandle filter = isFormatConcatItem ? null : stringifierFor(ttype);
 
             if (filter != null) {
                 filters[pos] = filter;
@@ -1196,7 +1171,7 @@ public final class StringConcatFactory {
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
      *
-     * @since 19
+     * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static List<MethodHandle> makeConcatWithTemplateCluster(
@@ -1272,7 +1247,7 @@ public final class StringConcatFactory {
      * @throws StringConcatException If any of the linkage invariants are violated
      * @throws NullPointerException If any of the incoming arguments is null
      *
-     * @since 19
+     * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplateGetters(
