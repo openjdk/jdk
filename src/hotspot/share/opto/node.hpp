@@ -1525,8 +1525,10 @@ protected:
   void   grow( uint i );        // Grow array node to fit
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
-    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
-    clear();
+    if (a != NULL) {
+      _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+      clear();
+    }
   }
 
   Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
@@ -1549,6 +1551,7 @@ public:
 
 class Node_List : public Node_Array {
   friend class VMStructs;
+  static Node_List _empty_list;  // static sentinel
   uint _cnt;
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
@@ -1576,6 +1579,13 @@ public:
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
+
+  // If a Node_List *is null, return a reference to an empty sentinel
+  static Node_List &wrap(Node_List *list) {
+    if (list != NULL) return *list;
+    return _empty_list;
+  }
+  bool is_null() { return this == &_empty_list; }
 };
 
 //------------------------------Unique_Node_List-------------------------------

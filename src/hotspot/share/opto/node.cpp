@@ -62,6 +62,8 @@ extern int nodes_created;
 #pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
 
+Node_List Node_List::_empty_list((Arena*)NULL);
+
 #ifdef ASSERT
 
 //-------------------------- construct_node------------------------------------

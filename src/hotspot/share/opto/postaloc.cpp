@@ -30,7 +30,7 @@
 
 // See if this register (or pairs, or vector) already contains the value.
 static bool register_contains_value(Node* val, OptoReg::Name reg, int n_regs,
-                                    const Node_List value) {
+                                    const Node_List &value) {
   for (int i = 0; i < n_regs; i++) {
     OptoReg::Name nreg = OptoReg::add(reg,-i);
     if (value[nreg] != val)
@@ -87,7 +87,7 @@ int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_
   }
   _cfg.unmap_node_from_block(old);
   OptoReg::Name old_reg = lrgs(_lrg_map.live_range_id(old)).reg();
-  if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
+  if( ! regnd->is_null() && (*regnd)[old_reg]==old ) { // Instruction is currently available?
     value->map(old_reg,NULL);  // Yank from value/regnd maps
     regnd->map(old_reg,NULL);  // This register's value is now unknown
   }
@@ -161,7 +161,7 @@ int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current
 // Use the prior value instead of the current value, in an effort to make
 // the current value go dead.  Return block iterator adjustment, in case
 // we yank some instructions from this block.
-int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *current_block, Node_List *value, Node_List *regnd ) {
+int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *current_block, Node_List &value, Node_List &regnd ) {
   // No effect?
   if( def == n->in(idx) ) return 0;
   // Def is currently dead and can be removed?  Do not resurrect
@@ -207,7 +207,7 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
   _post_alloc++;
 
   // Is old def now dead?  We successfully yanked a copy?
-  return yank_if_dead(old,current_block,value,regnd);
+  return yank_if_dead(old,current_block,&value,&regnd);
 }
 
 
@@ -229,7 +229,7 @@ Node *PhaseChaitin::skip_copies( Node *c ) {
 
 //------------------------------elide_copy-------------------------------------
 // Remove (bypass) copies along Node n, edge k.
-int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *value, Node_List *regnd, bool can_change_regs ) {
+int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &value, Node_List &regnd, bool can_change_regs ) {
   int blk_adjust = 0;
 
   uint nk_idx = _lrg_map.live_range_id(n->in(k));
@@ -257,7 +257,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
     return blk_adjust;          // Only check stupid copies!
 
   // Loop backedges won't have a value-mapping yet
-  if( value == NULL ) return blk_adjust;
+  if( &value == NULL ) return blk_adjust;
 
   // Skip through all copies to the _value_ being used.  Do not change from
   // int to pointer.  This attempts to jump through a chain of copies, where
@@ -273,9 +273,9 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
   // See if it happens to already be in the correct register!
   // (either Phi's direct register, or the common case of the name
   // never-clobbered original-def register)
-  if (register_contains_value(val, val_reg, n_regs, *value)) {
-    blk_adjust += use_prior_register(n,k,(*regnd)[val_reg],current_block,value,regnd);
-    if( n->in(k) == (*regnd)[val_reg] ) // Success!  Quit trying
+  if (register_contains_value(val, val_reg, n_regs, value)) {
+    blk_adjust += use_prior_register(n,k,regnd[val_reg],current_block,value,regnd);
+    if( n->in(k) == regnd[val_reg] ) // Success!  Quit trying
       return blk_adjust;
   }
 
@@ -304,7 +304,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
       if (ignore_self) continue;
     }
 
-    Node *vv = (*value)[reg];
+    Node *vv = value[reg];
     // For scalable register, number of registers may be inconsistent between
     // "val_reg" and "reg". For example, when "val" resides in register
     // but "reg" is located in stack.
@@ -325,7 +325,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
         last = (n_regs-1); // Looking for the last part of a set
       }
       if ((reg&last) != last) continue; // Wrong part of a set
-      if (!register_contains_value(vv, reg, n_regs, *value)) continue; // Different value
+      if (!register_contains_value(vv, reg, n_regs, value)) continue; // Different value
     }
     if( vv == val ||            // Got a direct hit?
         (t && vv && vv->bottom_type() == t && vv->is_Mach() &&
@@ -333,9 +333,9 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
       assert( !n->is_Phi(), "cannot change registers at a Phi so easily" );
       if( OptoReg::is_stack(nk_reg) || // CISC-loading from stack OR
           OptoReg::is_reg(reg) || // turning into a register use OR
-          (*regnd)[reg]->outcnt()==1 ) { // last use of a spill-load turns into a CISC use
-        blk_adjust += use_prior_register(n,k,(*regnd)[reg],current_block,value,regnd);
-        if( n->in(k) == (*regnd)[reg] ) // Success!  Quit trying
+          regnd[reg]->outcnt()==1 ) { // last use of a spill-load turns into a CISC use
+        blk_adjust += use_prior_register(n,k,regnd[reg],current_block,value,regnd);
+        if( n->in(k) == regnd[reg] ) // Success!  Quit trying
           return blk_adjust;
       } // End of if not degrading to a stack
     } // End of if found value in another register
@@ -352,13 +352,13 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
 //
 bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
                                               Block *current_block,
-                                              Node_List* value, Node_List* regnd,
+                                              Node_List& value, Node_List& regnd,
                                               OptoReg::Name nreg, OptoReg::Name nreg2) {
-  if ((*value)[nreg] != val && val->is_Con() &&
-      (*value)[nreg] != NULL && (*value)[nreg]->is_Con() &&
-      (nreg2 == OptoReg::Bad || (*value)[nreg] == (*value)[nreg2]) &&
-      (*value)[nreg]->bottom_type() == val->bottom_type() &&
-      (*value)[nreg]->as_Mach()->rule() == val->as_Mach()->rule()) {
+  if (value[nreg] != val && val->is_Con() &&
+      value[nreg] != NULL && value[nreg]->is_Con() &&
+      (nreg2 == OptoReg::Bad || value[nreg] == value[nreg2]) &&
+      value[nreg]->bottom_type() == val->bottom_type() &&
+      value[nreg]->as_Mach()->rule() == val->as_Mach()->rule()) {
     // This code assumes that two MachNodes representing constants
     // which have the same rule and the same bottom type will produce
     // identical effects into a register.  This seems like it must be
@@ -376,7 +376,7 @@ bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
       if (use->is_Proj() && use->outcnt() == 0) {
         // Kill projections have no users and one input
         use->set_req(0, C->top());
-        yank_if_dead(use, current_block, value, regnd);
+        yank_if_dead(use, current_block, &value, &regnd);
         --i; --imax;
       }
     }
@@ -535,7 +535,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
       Block* pb = _cfg.get_block_for_node(block->pred(j));
       // Remove copies along phi edges
       for (uint k = 1; k < phi_dex; k++) {
-        elide_copy(block->get_node(k), j, block, blk2value[pb->_pre_order], blk2regnd[pb->_pre_order], false);
+        elide_copy(block->get_node(k), j, block,
+                   Node_List::wrap(blk2value[pb->_pre_order]),
+                   Node_List::wrap(blk2regnd[pb->_pre_order]), false);
       }
       if (blk2value[pb->_pre_order]) { // Have a mapping on this edge?
         // See if this predecessor's mappings have been used by everybody
@@ -691,7 +693,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
       // Remove copies along input edges
       for (k = 1; k < n->req(); k++) {
-        j -= elide_copy(n, k, block, &value, &regnd, two_adr != k);
+        j -= elide_copy(n, k, block, value, regnd, two_adr != k);
       }
 
       // Unallocated Nodes define no registers
@@ -723,7 +725,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         // then 'n' is a useless copy.  Do not update the register->node
         // mapping so 'n' will go dead.
         if( value[nreg] != val ) {
-          if (eliminate_copy_of_constant(val, n, block, &value, &regnd, nreg, OptoReg::Bad)) {
+          if (eliminate_copy_of_constant(val, n, block, value, regnd, nreg, OptoReg::Bad)) {
             j -= replace_and_yank_if_dead(n, nreg, block, value, regnd);
           } else {
             // Update the mapping: record new Node defined by the register
@@ -768,7 +770,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
           nreg_lo = tmp.find_first_elem();
         }
         if (value[nreg] != val || value[nreg_lo] != val) {
-          if (eliminate_copy_of_constant(val, n, block, &value, &regnd, nreg, nreg_lo)) {
+          if (eliminate_copy_of_constant(val, n, block, value, regnd, nreg, nreg_lo)) {
             j -= replace_and_yank_if_dead(n, nreg, block, value, regnd);
           } else {
             regnd.map(nreg   , n );
