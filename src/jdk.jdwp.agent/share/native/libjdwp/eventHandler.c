@@ -74,7 +74,6 @@ static jbyte currentSessionID;
 
 /* Counter of active callbacks and flag for vm_death */
 static int      active_callbacks   = 0;
-static volatile jboolean waiting_for_active_callbacks = JNI_FALSE;
 static jboolean vm_death_callback_active = JNI_FALSE;
 static jrawMonitorID callbackLock;
 static jrawMonitorID callbackBlock;
@@ -134,7 +133,7 @@ static jrawMonitorID callbackBlock;
                 debugMonitorExit(callbackBlock);                        \
             } else {                                                    \
                 /* Notify anyone waiting for callbacks to exit */       \
-                if (waiting_for_active_callbacks && active_callbacks == 0) { \
+                if (active_callbacks == 0) {                            \
                     debugMonitorNotifyAll(callbackLock);                \
                 }                                                       \
                 debugMonitorExit(callbackLock);                         \
@@ -1676,11 +1675,9 @@ eventHandler_waitForActiveCallbacks()
      * and they never involve vthreads.
      */
     debugMonitorEnter(callbackLock);
-    waiting_for_active_callbacks = JNI_TRUE;
     while (active_callbacks > 0) {
         debugMonitorWait(callbackLock);
     }
-    waiting_for_active_callbacks = JNI_FALSE;
     debugMonitorExit(callbackLock);
 }
 
