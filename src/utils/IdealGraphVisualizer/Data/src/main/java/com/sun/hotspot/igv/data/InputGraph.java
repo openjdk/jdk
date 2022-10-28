@@ -250,7 +250,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         if (isDiffGraph) {
             return firstGraph.getDisplayName() + " Δ " + secondGraph.getDisplayName();
         } else {
-            return getIndex() + ". " + getName();
+            return getIndex()+1 + ". " + getName();
         }
     }
 
