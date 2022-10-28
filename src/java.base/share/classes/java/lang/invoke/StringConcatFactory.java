@@ -33,7 +33,11 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.template.StringTemplate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.FormatConcatItem;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -493,7 +497,7 @@ public final class StringConcatFactory {
             // Use int as the logical type for subword integral types
             // (byte and short). char and boolean require special
             // handling so don't change the logical type of those
-            ptypes[i] = promoteIntType(ptypes[i]);
+            ptypes[i] = promoteToIntType(ptypes[i]);
             // Object, float and double will be eagerly transformed
             // into a (non-null) String as a first step after invocation.
             // Set up to use String as the logical type for such arguments
@@ -996,7 +1000,7 @@ public final class StringConcatFactory {
     /**
      * Promote integral types to int.
      */
-    private static Class<?> promoteIntType(Class<?> t) {
+    private static Class<?> promoteToIntType(Class<?> t) {
         // use int for subword integral types; still need special mixers
         // and prependers for char, boolean
         return t == byte.class || t == short.class ? int.class : t;
@@ -1059,6 +1063,7 @@ public final class StringConcatFactory {
     {
         Objects.requireNonNull(fragments, "fragments is null");
         Objects.requireNonNull(ptypes, "ptypes is null");
+        ptypes = List.copyOf(ptypes);
 
         if (fragments.size() != ptypes.size() + 1) {
             throw new StringConcatException("fragments size not equal ptypes size plus one");
@@ -1083,7 +1088,7 @@ public final class StringConcatFactory {
 
             boolean isSpecialized = ptype.isPrimitive();
             boolean isFormatConcatItem = FormatConcatItem.class.isAssignableFrom(ptype);
-            Class<?> ttype = isSpecialized ? promoteIntType(ptype) :
+            Class<?> ttype = isSpecialized ? promoteToIntType(ptype) :
                              isFormatConcatItem ? FormatConcatItem.class : Object.class;
             MethodHandle filter = isFormatConcatItem ? null : stringifierFor(ttype);
 

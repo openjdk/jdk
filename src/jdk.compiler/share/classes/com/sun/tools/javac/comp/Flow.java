@@ -1511,7 +1511,7 @@ public class Flow {
 
             if (processor != null) {
                 scan(processor);
-                Type interfaceType = types.asSuper(processor.type, syms.templateProcessorType.tsym);
+                Type interfaceType = types.asSuper(processor.type, syms.validatingProcessorType.tsym);
 
                 if (interfaceType != null) {
                     List<Type> typeArguments = interfaceType.getTypeArguments();

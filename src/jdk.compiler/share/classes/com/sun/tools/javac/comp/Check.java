@@ -4131,7 +4131,7 @@ public class Check {
 
     public Type checkProcessorType(JCExpression processor, Type resultType, Env<AttrContext> env) {
         Type processorType = processor.type;
-        Type interfaceType = types.asSuper(processorType, syms.templateProcessorType.tsym);
+        Type interfaceType = types.asSuper(processorType, syms.validatingProcessorType.tsym);
 
         if (interfaceType != null) {
             List<Type> typeArguments = interfaceType.getTypeArguments();

@@ -503,7 +503,7 @@ public final class TransLiterals extends TreeTranslator {
                     indyType,
                     staticArgValues.toArray(new LoadableConstant[0])
             );
-            JCFieldAccess qualifier = make.Select(make.Type(syms.templateProcessorType), dynSym.name);
+            JCFieldAccess qualifier = make.Select(make.Type(syms.validatingProcessorType), dynSym.name);
             qualifier.sym = dynSym;
             qualifier.type = tree.type;
             JCExpression process = make.Apply(List.nil(), qualifier, args);
@@ -513,7 +513,7 @@ public final class TransLiterals extends TreeTranslator {
 
         JCExpression createProcessorPerformMethodCall(JCExpression stringTemplate) {
             MethodSymbol appyMeth = lookupMethod(tree.pos(), names.process,
-                    syms.templateProcessorType, List.of(syms.stringTemplateType));
+                    syms.validatingProcessorType, List.of(syms.stringTemplateType));
             JCExpression applySelect = make.Select(processor, appyMeth);
             JCExpression process = make.Apply(null, applySelect, List.of(stringTemplate))
                     .setType(syms.objectType);

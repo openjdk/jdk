@@ -103,7 +103,6 @@ public class ArgumentAttr extends JCTree.Visitor {
     private final JCDiagnostic.Factory diags;
     private final Attr attr;
     private final Symtab syms;
-    private final Types types;
     private final Log log;
 
     /** Attribution environment to be used. */
@@ -128,7 +127,6 @@ public class ArgumentAttr extends JCTree.Visitor {
         diags = JCDiagnostic.Factory.instance(context);
         attr = Attr.instance(context);
         syms = Symtab.instance(context);
-        types = Types.instance(context);
         log = Log.instance(context);
     }
 

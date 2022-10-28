@@ -237,7 +237,7 @@ public class Symtab {
     // For string templates
     public final Type stringTemplateType;
     public final Type templateRuntimeType;
-    public final Type templateProcessorType;
+    public final Type validatingProcessorType;
     public final Type processorLinkage;
 
     /** The symbol representing the length field of an array.
@@ -628,7 +628,7 @@ public class Symtab {
         // For string templates
         stringTemplateType = enterClass("java.lang.template.StringTemplate");
         templateRuntimeType = enterClass("java.lang.template.TemplateRuntime");
-        templateProcessorType = enterClass("java.lang.template.ValidatingProcessor");
+        validatingProcessorType = enterClass("java.lang.template.ValidatingProcessor");
         processorLinkage = enterClass("java.lang.template.ProcessorLinkage");
 
         // Enter a synthetic class that is used to mark internal
