@@ -406,7 +406,7 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   if (inn->isa_oopptr() && _type->isa_oopptr()) {
     return ConstraintCastNode::Value(phase);
   }
-  
+
   const TypePtr *in_type = inn->isa_ptr();
   const TypePtr *my_type = _type->isa_ptr();
   const Type *result = _type;

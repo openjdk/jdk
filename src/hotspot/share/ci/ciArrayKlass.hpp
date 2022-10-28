@@ -56,7 +56,7 @@ public:
   bool is_array_klass() const { return true; }
 
   static ciArrayKlass* make(ciType* element_type);
-  
+
   static GrowableArray<ciInstanceKlass*>* interfaces();
 };
 

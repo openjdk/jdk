@@ -3116,7 +3116,7 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 // Convenience common pre-built type.
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
-TypePtr::InterfaceSet::InterfaceSet() 
+TypePtr::InterfaceSet::InterfaceSet()
   : _list(Compile::current()->type_arena(), 0, 0, NULL) {
 }
 
@@ -3194,7 +3194,7 @@ TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::union_with(const InterfaceSet& o
   int i = 0;
   int j = 0;
   while (i < _list.length() || j < other._list.length()) {
-    while (i < _list.length() && 
+    while (i < _list.length() &&
            (j >= other._list.length() ||
             compare(_list.at(i), other._list.at(j)) < 0)) {
       result.raw_add(_list.at(i));
@@ -3234,7 +3234,7 @@ TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::intersection_with(const Interfac
   int i = 0;
   int j = 0;
   while (i < _list.length() || j < other._list.length()) {
-    while (i < _list.length() && 
+    while (i < _list.length() &&
            (j >= other._list.length() ||
             compare(_list.at(i), other._list.at(j)) < 0)) {
       i++;
@@ -4104,7 +4104,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     const TypePtr* speculative = xmeet_speculative(tinst);
     int depth = meet_inline_depth(tinst->inline_depth());
     InterfaceSet interfaces = meet_interfaces(tinst);
-    
+
     ciKlass* tinst_klass = tinst->klass();
     ciKlass* this_klass  = klass();
 
@@ -4260,7 +4260,7 @@ template<class T> TypePtr::MeetResult TypePtr::meet_instptr(PTR& ptr, InterfaceS
   }
 
   interfaces = this_interfaces.intersection_with(other_interfaces);
-    
+
   // Now we find the LCA of Java classes
   ciKlass* k = this_klass->least_common_ancestor(other_klass);
 

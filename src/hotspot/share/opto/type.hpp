@@ -900,9 +900,9 @@ protected:
 
     static int compare(ciKlass* const &, ciKlass* const & k2);
   };
-  
+
   static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, bool trust_interface);
-  
+
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 protected:
@@ -1101,7 +1101,7 @@ protected:
   ciKlass*      _klass;       // Klass object
 
   const InterfaceSet _interfaces;
-  
+
   // Does the type exclude subclasses of the klass?  (Inexact == polymorphic.)
   bool          _klass_is_exact;
   bool          _is_ptr_to_narrowoop;
@@ -1119,7 +1119,7 @@ protected:
   int meet_instance_id(int uid) const;
 
   InterfaceSet meet_interfaces(const TypeOopPtr* other) const;
-  
+
   // Do not allow interface-vs.-noninterface joins to collapse to top.
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 
@@ -1392,7 +1392,7 @@ class TypeAryPtr : public TypeOopPtr {
   ciKlass* compute_klass(DEBUG_ONLY(bool verify = false)) const;
 
   // A pointer to delay allocation to Type::Initialize_shared()
-  
+
   static InterfaceSet* _array_interfaces;
   ciKlass* exact_klass_helper() const;
   // Only guaranteed non null for array of basic types
