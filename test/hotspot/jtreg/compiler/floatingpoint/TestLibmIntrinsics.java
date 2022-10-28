@@ -53,13 +53,6 @@ public class TestLibmIntrinsics {
         return Math.pow(pi, Math.sin(Math.cos(Math.tan(Math.log(Math.log10(Math.exp(pi)))))));
     }
 
-    static void proofread(double ans) {
-        if (Math.abs(ans - expected) > 1e8) {
-            System.out.println("actual = " + ans + " but expected = " + expected);
-            throw new RuntimeException("Test Failed");
-        }
-    }
-
     static public void main(String[] args) throws NoSuchMethodException {
         Method test_method = compiler.floatingpoint.TestLibmIntrinsics.class.getDeclaredMethod("m");
 
@@ -83,7 +76,5 @@ public class TestLibmIntrinsics {
             System.out.println("interpreter = " + interpreter_result + " c1 = " + c1_result + " c2 = " + c2_result);
             throw new RuntimeException("Test Failed");
         }
-
-        proofread(interpreter_result);
     }
 }
