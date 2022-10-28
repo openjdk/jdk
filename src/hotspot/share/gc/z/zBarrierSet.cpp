@@ -106,25 +106,51 @@ void ZBarrierSet::on_thread_detach(Thread* thread) {
   ZGeneration::old()->mark_flush_and_free(thread);
 }
 
-void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-  if (ZHeap::heap()->is_old(to_zaddress(new_obj))) {
-    RegisterMap reg_map(thread, RegisterMap::UpdateMap::skip,
-                                RegisterMap::ProcessFrames::include,
-                                RegisterMap::WalkContinuation::skip);
-    frame runtime_frame = thread->last_frame();
-    assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
-    frame caller_frame = runtime_frame.sender(&reg_map);
-    assert(caller_frame.is_compiled_frame(), "must be compiled");
-    nmethod* nm = caller_frame.cb()->as_nmethod();
-    if (nm->is_compiled_by_c2()) {
-      // We promised C2 that its allocations would end up in young gen. This object
-      // breaks that promise. Take a few steps in the interpreter instead, which has
-      // no such assumptions about where an object resides.
-      if (!caller_frame.is_deoptimized_frame()) {
-        Deoptimization::deoptimize_frame(thread, caller_frame.id());
-      }
+static void deoptimize_allocation(JavaThread* thread) {
+  RegisterMap reg_map(thread, RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
+  frame runtime_frame = thread->last_frame();
+  assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
+  frame caller_frame = runtime_frame.sender(&reg_map);
+  assert(caller_frame.is_compiled_frame(), "must be compiled");
+  nmethod* nm = caller_frame.cb()->as_nmethod();
+  if (nm->is_compiled_by_c2()) {
+    if (!caller_frame.is_deoptimized_frame()) {
+      Deoptimization::deoptimize_frame(thread, caller_frame.id());
     }
   }
+}
+
+void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+  ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
+  const ZPageAge age = page->age();
+  if (age == ZPageAge::old) {
+    // We promised C2 that its allocations would end up in young gen. This object
+    // breaks that promise. Take a few steps in the interpreter instead, which has
+    // no such assumptions about where an object resides.
+    deoptimize_allocation(thread);
+    return;
+  }
+
+  if (!ZGeneration::young()->is_phase_mark_complete()) {
+    return;
+  }
+
+  if (!page->is_relocatable()) {
+    return;
+  }
+
+  if (ZRelocate::compute_to_age(age) != ZPageAge::old) {
+    return;
+  }
+
+  // If the object is young, we have to still be careful that it isn't racingly
+  // about to get promoted to the old generation. That causes issues when null
+  // pointers are supposed to be coloured, but the JIT is a bit sloppy and
+  // reinitializes memory with raw nulls. We detect this situation and detune
+  // rather than relying on the JIT to never be sloppy with redundant initialization.
+  deoptimize_allocation(thread);
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {
