@@ -47,6 +47,13 @@ class MethodLivenessResult : public ResourceBitMap {
 
   void set_is_valid() { _is_valid = true; }
   bool is_valid() const { return _is_valid; }
+
+#ifdef ASSERT
+  bool at(idx_t index) const {
+    assert(is_valid(), "reading invalid");
+    return ResourceBitMap::at(index);
+  }
+#endif
 };
 
 class MethodLiveness : public ResourceObj {

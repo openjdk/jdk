@@ -162,7 +162,7 @@ class Parse : public GraphKit {
     bool               _is_handler;     // is this block an exception handler?
     bool               _has_merged_backedge; // does this block have merged backedge?
     SafePointNode*     _start_map;      // all values flowing into this block
-    MethodLivenessResult _live_locals;  // lazily initialized liveness bitmap
+    mutable MethodLivenessResult _live_locals;  // lazily initialized liveness bitmap
     bool               _has_predicates; // Were predicates added before parsing of the loop head?
 
     int                _num_successors; // Includes only normal control flow.
@@ -171,6 +171,13 @@ class Parse : public GraphKit {
     Block**            _predecessors;
     PEAState           _state; // Keep track all allocations
 
+    const MethodLivenessResult& liveness() const {
+      if (!_live_locals.is_valid()) {
+        _live_locals = flow()->outer()->method()->liveness_at_bci(start());
+      }
+      assert(_live_locals.is_valid(), "sanity check");
+      return _live_locals;
+    }
    public:
 
     // Set up the block data structure itself.

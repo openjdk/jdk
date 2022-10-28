@@ -1289,7 +1289,7 @@ Parse::Block::Block(Parse* outer, int rpo) : _live_locals() {
   _successors = NULL;
   assert(pred_count() == 0 && preds_parsed() == 0, "sanity");
   assert(!(is_merged() || is_parsed() || is_handler() || has_merged_backedge()), "sanity");
-  assert(_live_locals.size() == 0, "sanity");
+  assert(!_live_locals.is_valid(), "sanity");
 
   // entry point has additional predecessor
   if (flow()->is_start())  _pred_count++;
@@ -1370,14 +1370,10 @@ const Type* Parse::Block::stack_type_at(int i) const {
 
 //-----------------------------local_type_at-----------------------------------
 const Type* Parse::Block::local_type_at(int i) const {
-  // Make dead locals fall to bottom.
-  if (_live_locals.size() == 0) {
-    MethodLivenessResult live_locals = flow()->outer()->method()->liveness_at_bci(start());
-    // This bitmap can be zero length if we saw a breakpoint.
-    // In such cases, pretend they are all live.
-    ((Block*)this)->_live_locals = live_locals;
-  }
-  if (_live_locals.size() > 0 && !_live_locals.at(i))
+  // This bitmap can be zero length if we saw a breakpoint.
+  // In such cases, pretend they are all live.
+  auto live_locals = liveness();
+  if (live_locals.size() > 0 && !live_locals.at(i))
     return Type::BOTTOM;
 
   return get_type(flow()->local_type_at(i));
