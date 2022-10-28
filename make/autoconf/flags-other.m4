@@ -46,13 +46,17 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
 AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
 [
   ## Setup strip.
-  # FIXME: should this really be per platform, or should it be per toolchain type?
-  # strip is not provided by clang; so guessing platform makes most sense.
+
+  # Just probing for now, --version/-V both work for llvm-strip and GNU strip,
+  # while -V works for aix strip. So far there doesn't seem to be a way to do
+  # this for MacOS/XCode strip...
+  $STRIP "-V"
+
   # FIXME: we should really only export STRIPFLAGS from here, not POST_STRIP_CMD.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
     STRIPFLAGS="-g"
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    STRIPFLAGS="-v"
+    STRIPFLAGS="-S"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     STRIPFLAGS="-X32_64"
   fi
