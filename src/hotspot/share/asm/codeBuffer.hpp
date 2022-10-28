@@ -454,7 +454,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _insts.initialize_outer(this,  SECT_INSTS);
     _stubs.initialize_outer(this,  SECT_STUBS);
 
-    // default value. should be changed if vectorization requires large aligned constants
+    // Default is to align on 8 bytes. A compiler can change this
+    // if larger alignment (e.g., 32-byte vector masks) is required.
     _const_section_alignment = (int) sizeof(jdouble);
 
 #ifndef PRODUCT
