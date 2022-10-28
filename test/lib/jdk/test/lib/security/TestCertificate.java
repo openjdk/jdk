@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,9 @@
 package jdk.test.lib.security;
 
 import java.io.ByteArrayInputStream;
-import java.security.cert.CertPath;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
+import java.io.SequenceInputStream;
+import java.security.cert.*;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -156,6 +152,21 @@ public enum TestCertificate {
     public X509Certificate certificate() throws CertificateException {
         ByteArrayInputStream is = new ByteArrayInputStream(encoded.getBytes());
         return (X509Certificate) CERTIFICATE_FACTORY.generateCertificate(is);
+    }
+
+    public static Collection<? extends Certificate> certificates() throws CertificateException {
+        ByteArrayInputStream is1 = new ByteArrayInputStream((TestCertificate.ONE.encoded + "\n").getBytes());
+        ByteArrayInputStream is2 = new ByteArrayInputStream(TestCertificate.TWO.encoded.getBytes());
+        return CERTIFICATE_FACTORY.generateCertificates(new SequenceInputStream(is1, is2));
+    }
+
+    public static void certPath() throws CertificateException {
+        CertPath cp = CERTIFICATE_FACTORY.generateCertPath(List.of(TestCertificate.ONE.certificate(),
+                TestCertificate.TWO.certificate()));
+
+        // Get the encoded form of the CertPath we made
+        byte[] encoded = cp.getEncoded("PKCS7");
+        CERTIFICATE_FACTORY.generateCertPath(new ByteArrayInputStream(encoded), "PKCS7");
     }
 
     public static void generateChain(boolean selfSignedTest, boolean trustAnchorCert) throws Exception {

@@ -23,7 +23,6 @@
 
 package jdk.jfr.event.security;
 
-import java.security.cert.CertificateFactory;
 import java.util.List;
 
 import jdk.jfr.Recording;
@@ -35,7 +34,7 @@ import jdk.test.lib.security.TestCertificate;
 
 /*
  * @test
- * @bug 8148188
+ * @bug 8148188 8292033
  * @summary Enhance the security libraries to record events of interest
  * @key jfr
  * @requires vm.hasJFR
@@ -43,21 +42,35 @@ import jdk.test.lib.security.TestCertificate;
  * @run main/othervm jdk.jfr.event.security.TestX509CertificateEvent
  */
 public class TestX509CertificateEvent {
-    public static void main(String[] args) throws Exception {
-        try (Recording recording = new Recording()) {
-            recording.enable(EventNames.X509Certificate);
-            recording.start();
-
+    public static void main(String[] args) throws Throwable {
+        testCall(() -> {
+            // test regular cert construction
             TestCertificate.ONE.certificate();
             TestCertificate.TWO.certificate();
             // Generate twice to make sure we (now) capture all generate cert events
             TestCertificate.ONE.certificate();
             TestCertificate.TWO.certificate();
+        }, 4);
 
+        testCall(() -> {
+            // test generateCertificates method
+            TestCertificate.certificates();
+        }, 2);
+
+        testCall(() -> {
+            // test generateCertPath method
+            TestCertificate.certPath();
+        }, 4);
+    }
+
+    private static void testCall(jdk.test.lib.jfr.VoidFunction f, int expected) throws Throwable {
+        try (Recording recording = new Recording()) {
+            recording.enable(EventNames.X509Certificate);
+            recording.start();
+            f.run();
             recording.stop();
-
             List<RecordedEvent> events = Events.fromRecording(recording);
-            Asserts.assertEquals(events.size(), 4, "Incorrect number of X509Certificate events");
+            Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
             assertEvent(events, TestCertificate.ONE);
             assertEvent(events, TestCertificate.TWO);
         }

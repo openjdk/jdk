@@ -1450,7 +1450,7 @@ public final class Main {
         }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
-        X509CertImpl signerCertImpl = new X509CertImpl(encoded);
+        X509CertImpl signerCertImpl = X509CertImpl.newX509CertImpl(encoded);
         X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
                 X509CertImpl.NAME + "." + X509CertImpl.INFO);
         X500Name issuer = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
@@ -1520,7 +1520,7 @@ public final class Main {
             if (signerCert instanceof X509CertImpl) {
                 certImpl = (X509CertImpl) signerCert;
             } else {
-                certImpl = new X509CertImpl(signerCert.getEncoded());
+                certImpl = X509CertImpl.newX509CertImpl(signerCert.getEncoded());
             }
 
             // To enforce compliance with RFC 5280 section 4.2.1.1: "Where a key
@@ -1566,7 +1566,7 @@ public final class Main {
         }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
-        X509CertImpl signerCertImpl = new X509CertImpl(encoded);
+        X509CertImpl signerCertImpl = X509CertImpl.newX509CertImpl(encoded);
         X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
                 X509CertImpl.NAME + "." + X509CertImpl.INFO);
         X500Name owner = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
@@ -1967,7 +1967,7 @@ public final class Main {
             if (signerCert instanceof X509CertImpl) {
                 signerCertImpl = (X509CertImpl) signerCert;
             } else {
-                signerCertImpl = new X509CertImpl(signerCert.getEncoded());
+                signerCertImpl = X509CertImpl.newX509CertImpl(signerCert.getEncoded());
             }
 
             X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
@@ -3201,7 +3201,7 @@ public final class Main {
         // convert to X509CertImpl, so that we can modify selected fields
         // (no public APIs available yet)
         byte[] encoded = oldCert.getEncoded();
-        X509CertImpl certImpl = new X509CertImpl(encoded);
+        X509CertImpl certImpl = X509CertImpl.newX509CertImpl(encoded);
         X509CertInfo certInfo = (X509CertInfo)certImpl.get(X509CertImpl.NAME
                                                            + "." +
                                                            X509CertImpl.INFO);

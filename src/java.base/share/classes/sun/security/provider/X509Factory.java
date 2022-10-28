@@ -472,7 +472,7 @@ public class X509Factory extends CertificateFactorySpi {
             }
         } catch (ParsingException e) {
             while (data != null) {
-                coll.add(new X509CertImpl(data));
+                coll.add(X509CertImpl.newX509CertImpl(data));
                 data = readOneBlock(pbis);
             }
         }

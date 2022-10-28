@@ -240,7 +240,7 @@ public class X509CertificatePair {
                         }
                         opt = opt.data.getDerValue();
                         forward = X509Factory.intern
-                                        (new X509CertImpl(opt.toByteArray()));
+                                        (X509CertImpl.newX509CertImpl(opt.toByteArray()));
                     }
                     break;
                 case TAG_REVERSE:
@@ -251,7 +251,7 @@ public class X509CertificatePair {
                         }
                         opt = opt.data.getDerValue();
                         reverse = X509Factory.intern
-                                        (new X509CertImpl(opt.toByteArray()));
+                                        (X509CertImpl.newX509CertImpl(opt.toByteArray()));
                     }
                     break;
                 default:
