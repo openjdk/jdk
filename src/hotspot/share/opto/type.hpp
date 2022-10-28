@@ -871,6 +871,7 @@ public:
 // and the class will be inherited from.
 class TypePtr : public Type {
   friend class TypeNarrowPtr;
+  friend class Type;
 protected:
   class InterfaceSet {
   private:
