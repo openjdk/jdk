@@ -768,7 +768,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_clang_splashscreen_png.c := incompatible-pointer-types, \
       DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations, \
       DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
-      DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4267 4244, \
+      DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \

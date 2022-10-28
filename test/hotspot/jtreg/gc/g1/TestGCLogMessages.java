@@ -301,7 +301,6 @@ public class TestGCLogMessages {
     }
 
     LogMessageWithLevel concurrentStartMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Clear Claimed Marks", Level.DEBUG),
         new LogMessageWithLevel("Reset Marking State", Level.DEBUG),
         new LogMessageWithLevel("Note Start Of Mark", Level.DEBUG),
     };

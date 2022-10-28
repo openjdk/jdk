@@ -647,9 +647,6 @@ class os: AllStatic {
   static struct dirent* readdir(DIR* dirp);
   static int            closedir(DIR* dirp);
 
-  // Dynamic library extension
-  static const char*    dll_file_extension();
-
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
 

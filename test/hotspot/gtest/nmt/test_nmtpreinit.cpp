@@ -90,6 +90,25 @@ public:
     os::free(NULL);                      // free(null)
     DEBUG_ONLY(NMTPreInit::verify();)
 
+    // This should result in a fatal native oom error from NMT preinit with a clear error message.
+    // It should not result in a SEGV or anything similar. Unfortunately difficult to test
+    // automatically.
+    // Uncomment to test manually.
+
+    // case 1: overflow
+    // os_malloc(SIZE_MAX);
+
+    // case 2: failing malloc
+    // os_malloc(SIZE_MAX - M);
+
+    // case 3: overflow in realloc
+    // void* p = os_malloc(10);
+    // p = os_realloc(p, SIZE_MAX);
+
+    // case 4: failing realloc
+    // void* p = os_malloc(10);
+    // p = os_realloc(p, SIZE_MAX - M);
+
     log_state();
   }
   void test_post() {
