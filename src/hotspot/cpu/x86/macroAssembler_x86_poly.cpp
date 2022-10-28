@@ -798,12 +798,12 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   vpxorq(R2, R2, R2, Assembler::AVX_512bit);
   vpxorq(R1P, R1P, R1P, Assembler::AVX_512bit);
   vpxorq(R2P, R2P, R2P, Assembler::AVX_512bit);
-  evmovdquq(A0, Address(rsp, 64*3), Assembler::AVX_512bit);
-  evmovdquq(A0, Address(rsp, 64*4), Assembler::AVX_512bit);
-  evmovdquq(A0, Address(rsp, 64*5), Assembler::AVX_512bit);
-  evmovdquq(A0, Address(rsp, 64*0), Assembler::AVX_512bit);
-  evmovdquq(A0, Address(rsp, 64*1), Assembler::AVX_512bit);
-  evmovdquq(A0, Address(rsp, 64*2), Assembler::AVX_512bit);
+  evmovdquq(Address(rsp, 64*3), A0, Assembler::AVX_512bit);
+  evmovdquq(Address(rsp, 64*4), A0, Assembler::AVX_512bit);
+  evmovdquq(Address(rsp, 64*5), A0, Assembler::AVX_512bit);
+  evmovdquq(Address(rsp, 64*0), A0, Assembler::AVX_512bit);
+  evmovdquq(Address(rsp, 64*1), A0, Assembler::AVX_512bit);
+  evmovdquq(Address(rsp, 64*2), A0, Assembler::AVX_512bit);
   addq(rsp, 512/8*6); // (powers of R)
 }
 

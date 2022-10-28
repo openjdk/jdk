@@ -144,6 +144,7 @@ public class Poly1305KAT {
 
     private static boolean runSingleTest(TestData testData) throws Exception {
         Poly1305 authenticator = new Poly1305();
+        authenticator.katTesting = true;
         authenticator.engineInit(new SecretKeySpec(testData.key, 0, testData.key.length, "Poly1305"), null);
         authenticator.engineUpdate(testData.input, 0, testData.input.length);
         byte[] tag = authenticator.engineDoFinal();

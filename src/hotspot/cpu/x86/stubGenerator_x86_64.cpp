@@ -2000,7 +2000,7 @@ address StubGenerator::generate_base64_encodeBlock()
 }
 
 address StubGenerator::generate_poly1305_masksCP() {
-  __ align64();
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", "generate_poly1305_masksCP");
   address start = __ pc();
   // OFFSET 0: high_bit
@@ -2037,7 +2037,7 @@ address StubGenerator::generate_poly1305_masksCP() {
 }
 
 address StubGenerator::generate_poly1305_processBlocks() {
-  __ align64();
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
   address start = __ pc();
   __ enter();

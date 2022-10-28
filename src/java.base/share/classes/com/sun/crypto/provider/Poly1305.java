@@ -172,7 +172,7 @@ final class Poly1305 {
             // Intrinsic code; need to extract a and r into bytes
             // Choice of 1024 is arbitrary, need enough data blocks to amortize conversion overhead
             // and not affect platforms without intrinsic support
-            int blockMultipleLength = (len/BLOCK_LENGTH) * BLOCK_LENGTH;
+            int blockMultipleLength = len & (~(BLOCK_LENGTH-1));
             byte[] aBytes = this.a.asByteArray(BLOCK_LENGTH+1);
             byte[] rBytes = this.r.asByteArray(BLOCK_LENGTH);
 
@@ -283,7 +283,7 @@ final class Poly1305 {
      * the R value, and instantiate IntegerModuloP objects to R and S's
      * numeric values.
      */
-    private void setRSVals() { //throws InvalidKeyException {
+    private void setRSVals() throws InvalidKeyException {
         // Clamp the bytes in the "r" half of the key.
         keyBytes[3] &= 15;
         keyBytes[7] &= 15;
@@ -293,25 +293,27 @@ final class Poly1305 {
         keyBytes[8] &= (byte)252;
         keyBytes[12] &= (byte)252;
 
-        // This should be enabled, but Poly1305KAT would fail
-        // byte keyIsZero = 0;
-        // for (int i = 0; i < RS_LENGTH; i++) {
-        //     keyIsZero |= keyBytes[i];
-        // }
-        // if (keyIsZero == 0) {
-        //     throw new InvalidKeyException("R is set to zero");
-        // }
+        byte keyIsZero = 0;
+        for (int i = 0; i < RS_LENGTH; i++) {
+            keyIsZero |= keyBytes[i];
+        }
+        if (keyIsZero == 0 && !katTesting) {
+            throw new InvalidKeyException("R is set to zero");
+        }
 
-        // keyIsZero = 0;
-        // for (int i = RS_LENGTH; i < 2*RS_LENGTH; i++) {
-        //     keyIsZero |= keyBytes[i];
-        // }
-        // if (keyIsZero == 0) {
-        //     throw new InvalidKeyException("S is set to zero");
-        // }
+        keyIsZero = 0;
+        for (int i = RS_LENGTH; i < 2*RS_LENGTH; i++) {
+            keyIsZero |= keyBytes[i];
+        }
+        if (keyIsZero == 0 && !katTesting) {
+            throw new InvalidKeyException("S is set to zero");
+        }
 
         // Create IntegerModuloP elements from the r and s values
         r = ipl1305.getElement(keyBytes, 0, RS_LENGTH, (byte)0);
         s = ipl1305.getElement(keyBytes, RS_LENGTH, RS_LENGTH, (byte)0);
     }
+
+    // KAT testing expects R and/or S to be set to 0 for some tests
+    static boolean katTesting = false;
 }
