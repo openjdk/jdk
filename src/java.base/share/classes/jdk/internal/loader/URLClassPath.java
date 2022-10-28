@@ -607,7 +607,7 @@ public class URLClassPath {
             URL url;
             try {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(base, ParseUtil.encodePath(name, false));
+                var _unused = url = new URL(base, ParseUtil.encodePath(name, false));
             } catch (MalformedURLException e) {
                 return null;
             }
@@ -644,7 +644,7 @@ public class URLClassPath {
             final URL url;
             try {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(base, ParseUtil.encodePath(name, false));
+                var _unused = url = new URL(base, ParseUtil.encodePath(name, false));
             } catch (MalformedURLException e) {
                 return null;
             }
@@ -875,7 +875,7 @@ public class URLClassPath {
                     nm = name;
                 }
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(getBaseURL(), ParseUtil.encodePath(nm, false));
+                var _unused = url = new URL(getBaseURL(), ParseUtil.encodePath(nm, false));
                 if (check) {
                     URLClassPath.check(url);
                 }
@@ -1007,7 +1007,7 @@ public class URLClassPath {
 
                     try{
                         @SuppressWarnings("deprecation")
-                        var tmp = url = new URL(csu, jarName);
+                        var _unused = url = new URL(csu, jarName);
                         String urlNoFragString = URLUtil.urlNoFragString(url);
                         if ((newLoader = (JarLoader)lmap.get(urlNoFragString)) == null) {
                             /* no loader has been set up for this jar file
@@ -1235,7 +1235,7 @@ public class URLClassPath {
             path = ParseUtil.decode(path);
             dir = (new File(path)).getCanonicalFile();
             @SuppressWarnings("deprecation")
-            var tmp = normalizedBase = new URL(getBaseURL(), ".");
+            var _unused = normalizedBase = new URL(getBaseURL(), ".");
         }
 
         /*
@@ -1255,7 +1255,7 @@ public class URLClassPath {
             final URL url;
             try {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
+                var _unused = url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
 
                 if (url.getFile().startsWith(normalizedBase.getFile()) == false) {
                     // requested resource had ../..'s in path

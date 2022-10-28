@@ -522,7 +522,7 @@ public final class TransformerImpl extends Transformer
                 }
                 else if (systemId.startsWith("http:")) {
                     @SuppressWarnings("deprecation")
-                    var tmp = url = new URL(systemId);
+                    URL _unused = url = new URL(systemId);
                     final URLConnection connection = url.openConnection();
                     _tohFactory.setOutputStream(_ostream = connection.getOutputStream());
                     return _tohFactory.getSerializationHandler();

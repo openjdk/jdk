@@ -225,7 +225,7 @@ public final class SplashScreen {
                     if (fileName != null) {
                         if (jarName != null) {
                             @SuppressWarnings("deprecation")
-                            var tmp = imageURL =
+                            var _unused = imageURL =
                                     new URL("jar:"+(new File(jarName).toURL().toString())+"!/"+fileName);
                         } else {
                             imageURL = new File(fileName).toURL();

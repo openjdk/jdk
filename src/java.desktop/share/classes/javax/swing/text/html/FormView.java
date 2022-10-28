@@ -517,14 +517,14 @@ public class FormView extends ComponentView implements ActionListener {
         URL actionURL;
         try {
             @SuppressWarnings("deprecation")
-            var tmp = actionURL = (action == null)
+            var _unused = actionURL = (action == null)
                 ? new URL(base.getProtocol(), base.getHost(),
                                         base.getPort(), base.getFile())
                 : new URL(base, action);
             if (!isPostMethod) {
                 String query = data.toString();
                 @SuppressWarnings("deprecation")
-                var tmp2 = actionURL = new URL(actionURL + "?" + query);
+                var _unused2 = actionURL = new URL(actionURL + "?" + query);
             }
         } catch (MalformedURLException e) {
             actionURL = null;

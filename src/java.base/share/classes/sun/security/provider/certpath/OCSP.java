@@ -184,7 +184,7 @@ public final class OCSP {
 
             if (encodedGetReq.length() <= 255) {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(encodedGetReq.toString());
+                var _unused = url = new URL(encodedGetReq.toString());
                 con = (HttpURLConnection)url.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);

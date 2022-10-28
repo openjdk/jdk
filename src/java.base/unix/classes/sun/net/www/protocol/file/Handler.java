@@ -78,7 +78,7 @@ public class Handler extends URLStreamHandler {
 
         try {
             @SuppressWarnings("deprecation")
-            var tmp = ru = new URL("ftp", host, u.getFile() +
+            var _unused = ru = new URL("ftp", host, u.getFile() +
                              (u.getRef() == null ? "": "#" + u.getRef()));
             if (p != null) {
                 uc = ru.openConnection(p);

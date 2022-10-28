@@ -109,7 +109,7 @@ public final class NativePRNG extends SecureRandomSpi {
             }
             try {
                 @SuppressWarnings("deprecation")
-                var tmp = egdUrl = new URL(egdSource);
+                var _unused = egdUrl = new URL(egdSource);
                 if (!egdUrl.getProtocol().equalsIgnoreCase("file")) {
                     return null;
                 }

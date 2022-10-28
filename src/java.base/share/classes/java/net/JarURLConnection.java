@@ -173,7 +173,7 @@ public abstract class JarURLConnection extends URLConnection {
         }
 
         @SuppressWarnings("deprecation")
-        var tmp = jarFileURL = new URL(spec.substring(0, separator++));
+        var _unused = jarFileURL = new URL(spec.substring(0, separator++));
 
         /*
          * The url argument may have had a runtime fragment appended, so
@@ -182,7 +182,7 @@ public abstract class JarURLConnection extends URLConnection {
          */
         if ("runtime".equals(url.getRef())) {
             @SuppressWarnings("deprecation")
-            var rtmp = jarFileURL = new URL(jarFileURL, "#runtime");
+            var _unused2 = jarFileURL = new URL(jarFileURL, "#runtime");
         }
         entryName = null;
 

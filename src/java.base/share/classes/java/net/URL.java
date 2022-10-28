@@ -482,7 +482,7 @@ public final class URL implements java.io.Serializable {
      * @see        SecurityManager#checkPermission
      * @see        java.net.NetPermission
      * @deprecated
-     * Use {@link #fromURI(URI, URLStreamHandler)} to construct an instance of URL
+     * Use {@link #of(URI, URLStreamHandler)} to construct an instance of URL
      * associated with a custom protocol handler.
      * See the note on <a href="#constructor-deprecation">constructor deprecation</a>
      * for more details.
@@ -676,7 +676,7 @@ public final class URL implements java.io.Serializable {
      * @see        java.net.URLStreamHandler#parseURL(java.net.URL,
      *                  java.lang.String, int, int)
      * @deprecated
-     * Use {@link #fromURI(URI, URLStreamHandler)} to construct an instance of URL
+     * Use {@link #of(URI, URLStreamHandler)} to construct an instance of URL
      * associated with a custom protocol handler.
      * See the note on <a href="#constructor-deprecation">constructor deprecation</a>
      * for more details.
@@ -849,7 +849,7 @@ public final class URL implements java.io.Serializable {
      *
      * @since 20
      */
-    public static URL fromURI(URI uri, URLStreamHandler streamHandler)
+    public static URL of(URI uri, URLStreamHandler streamHandler)
         throws MalformedURLException {
         if (!uri.isAbsolute()) {
             throw new IllegalArgumentException("URI is not absolute");
@@ -888,7 +888,7 @@ public final class URL implements java.io.Serializable {
 
         // slow path (will work for non-canonical forms of jrt: too)
 
-        if ("url".equals(protocol)) {;
+        if ("url".equalsIgnoreCase(protocol)) {;
             String uristr = uri.toString();
             try {
                 URI inner = new URI(uristr.substring(4));
@@ -1831,7 +1831,7 @@ public final class URL implements java.io.Serializable {
 
         try {
             @SuppressWarnings("deprecation")
-            var tmp = replacementURL = new URL(urlString);
+            var _unused = replacementURL = new URL(urlString);
         } catch (MalformedURLException mEx) {
             resetState();
             InvalidObjectException invoEx = new InvalidObjectException(

@@ -156,7 +156,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
                     !host.equalsIgnoreCase("localhost")) {
 
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL("file", "", "//" + host + url.getPath());
+                var _unused = url = new URL("file", "", "//" + host + url.getPath());
             }
         }
         return url;

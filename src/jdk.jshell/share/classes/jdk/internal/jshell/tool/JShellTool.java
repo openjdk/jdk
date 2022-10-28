@@ -3078,7 +3078,7 @@ public class JShellTool implements MessageHandler {
                     } catch (InvalidPathException ipe) {
                         try {
                             @SuppressWarnings("deprecation")
-                            var tmp = url = new URL(filename);
+                            var _unused = url = new URL(filename);
                             if (url.getProtocol().equalsIgnoreCase("file")) {
                                 path = Paths.get(url.toURI());
                             }
@@ -3094,7 +3094,7 @@ public class JShellTool implements MessageHandler {
                         if (url == null) {
                             try {
                                 @SuppressWarnings("deprecation")
-                                var tmp = url = new URL(filename);
+                                var _unused = url = new URL(filename);
                             } catch (MalformedURLException mue) {
                                 throw new FileNotFoundException(filename);
                             }

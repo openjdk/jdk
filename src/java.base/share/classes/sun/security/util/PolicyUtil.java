@@ -111,7 +111,7 @@ public class PolicyUtil {
                 URL passURL;
                 try {
                     @SuppressWarnings("deprecation")
-                    var tmp = passURL = new URL(storePassURL);
+                    var _unused = passURL = new URL(storePassURL);
                     // absolute URL
                 } catch (MalformedURLException e) {
                     // relative URL
@@ -119,7 +119,7 @@ public class PolicyUtil {
                         throw e;
                     }
                     @SuppressWarnings("deprecation")
-                    var tmp = passURL = new URL(policyUrl, storePassURL);
+                    var _unused = passURL = new URL(policyUrl, storePassURL);
                 }
 
                 if (debug != null) {
@@ -141,7 +141,7 @@ public class PolicyUtil {
                 URL keyStoreUrl;
                 try {
                     @SuppressWarnings("deprecation")
-                    var tmp = keyStoreUrl = new URL(keyStoreName);
+                    var _unused = keyStoreUrl = new URL(keyStoreName);
                     // absolute URL
                 } catch (MalformedURLException e) {
                     // relative URL
@@ -149,7 +149,7 @@ public class PolicyUtil {
                         throw e;
                     }
                     @SuppressWarnings("deprecation")
-                    var tmp = keyStoreUrl = new URL(policyUrl, keyStoreName);
+                    var _unused = keyStoreUrl = new URL(policyUrl, keyStoreName);
                 }
 
                 if (debug != null) {

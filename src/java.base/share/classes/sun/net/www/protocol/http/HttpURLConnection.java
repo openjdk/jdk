@@ -3997,16 +3997,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     @SuppressWarnings("deprecation")
-    private static URL newURL(String spec)
-            throws MalformedURLException
-    {
+    private static URL newURL(String spec) throws MalformedURLException {
         return new URL(spec);
     }
 
     @SuppressWarnings("deprecation")
-    private static URL newURL(URL context, String spec)
-            throws MalformedURLException
-    {
+    private static URL newURL(URL context, String spec) throws MalformedURLException {
         return new URL(context, spec);
     }
 }

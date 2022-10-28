@@ -72,7 +72,7 @@ class FrameView extends ComponentView implements HyperlinkListener {
             try {
                 URL base = ((HTMLDocument)elem.getDocument()).getBase();
                 @SuppressWarnings("deprecation")
-                var tmp = src = new URL(base, srcAtt);
+                var _unused = src = new URL(base, srcAtt);
                 htmlPane = new FrameEditorPane();
                 htmlPane.addHyperlinkListener(this);
                 JEditorPane host = getHostPane();
@@ -375,7 +375,7 @@ class FrameView extends ComponentView implements HyperlinkListener {
 
             Object postData = movePostData(htmlPane, null);
             @SuppressWarnings("deprecation")
-            var tmp = src = new URL(base, srcAtt);
+            var _unused = src = new URL(base, srcAtt);
             if (oldPage.equals(src) && (src.getRef() == null) && (postData == null)) {
                 return;
             }

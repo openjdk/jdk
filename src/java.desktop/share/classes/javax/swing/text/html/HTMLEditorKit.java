@@ -970,7 +970,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             try {
                 URL base = hdoc.getBase();
                 @SuppressWarnings("deprecation")
-                var tmp = u = new URL(base, href);
+                var _unused = u = new URL(base, href);
                 // Following is a workaround for 1.2, in which
                 // new URL("file://...", "#...") causes the filename to
                 // be lost.
@@ -981,7 +981,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     if (baseFile != null && newFile != null &&
                         !newFile.startsWith(baseFile)) {
                         @SuppressWarnings("deprecation")
-                        var tmp2 = u = new URL(base, baseFile + href);
+                        var _unused2 = u = new URL(base, baseFile + href);
                     }
                 }
             } catch (MalformedURLException m) {
@@ -1016,7 +1016,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 URL u;
                 try {
                     @SuppressWarnings("deprecation")
-                    var tmp = u = new URL(doc.getBase(), this.href);
+                    var _unused = u = new URL(doc.getBase(), this.href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1030,7 +1030,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 URL u;
                 try {
                     @SuppressWarnings("deprecation")
-                    var tmp = u = new URL(doc.getBase(), href);
+                    var _unused = u = new URL(doc.getBase(), href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }

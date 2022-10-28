@@ -103,7 +103,7 @@ public class MLetContent {
             }
             try {
                 @SuppressWarnings("deprecation")
-                var tmp = baseURL = new URL(documentURL, att);
+                var _unused = baseURL = new URL(documentURL, att);
             } catch (MalformedURLException e) {
                 // OK : Move to next block as baseURL could not be initialized.
             }
@@ -114,7 +114,7 @@ public class MLetContent {
             if (i >= 0 && i < file.length() - 1) {
                 try {
                     @SuppressWarnings("deprecation")
-                    var tmp = baseURL = new URL(documentURL, file.substring(0, i + 1));
+                    var _unused = baseURL = new URL(documentURL, file.substring(0, i + 1));
                 } catch (MalformedURLException e) {
                     // OK : Move to next block as baseURL could not be initialized.
                 }

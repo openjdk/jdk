@@ -156,13 +156,13 @@ final class CatalogResolverImpl implements CatalogResolver {
             try {
                 if (base == null) {
                     @SuppressWarnings("deprecation")
-                    var url = new URL(uri);
+                    URL url = new URL(uri);
                     result = url.toString();
                 } else {
                     @SuppressWarnings("deprecation")
                     URL baseURL = new URL(base);
                     @SuppressWarnings("deprecation")
-                    var url = (href.length() == 0 ? baseURL : new URL(baseURL, uri));
+                    URL url = (href.length() == 0 ? baseURL : new URL(baseURL, uri));
                     result = url.toString();
                 }
             } catch (java.net.MalformedURLException mue) {
@@ -221,7 +221,7 @@ final class CatalogResolverImpl implements CatalogResolver {
 
             try {
                 @SuppressWarnings("deprecation")
-                var result = new URL(is.getSystemId()).openStream();
+                InputStream result = new URL(is.getSystemId()).openStream();
                 return result;
             } catch (IOException ex) {
                 //considered as no mapping.

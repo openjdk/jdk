@@ -4124,11 +4124,11 @@ public class HTMLDocument extends DefaultStyledDocument {
             URL url;
             try {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(base, href);
+                var _unused = url = new URL(base, href);
             } catch (MalformedURLException mfe) {
                 try {
                     @SuppressWarnings("deprecation")
-                    var tmp = url = new URL(href);
+                    var _unused = url = new URL(href);
                 } catch (MalformedURLException mfe2) {
                     url = null;
                 }

@@ -161,9 +161,7 @@ public class URLImageSource extends InputStreamImageSource {
     }
 
     @SuppressWarnings("deprecation")
-    private static URL newURL(URL context, String spec)
-            throws MalformedURLException
-    {
+    private static URL newURL(URL context, String spec) throws MalformedURLException {
         return new URL(context, spec);
     }
 }

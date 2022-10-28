@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8294241
+ * @library /test/lib
  * @modules java.base/java.net:+open
  * @summary Test URL::fromURI(URI, URLStreamHandler)
  * @run junit/othervm URLFromURITest
@@ -38,8 +39,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import jdk.test.lib.RandomFactory;
 
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,6 +51,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLFromURITest {
+
+    static final Random RAND = RandomFactory.getRandom();
 
     record TestInput(String uri, URLStreamHandler handler) {
         static TestInput withNoHandler(String uri) {
@@ -59,11 +64,22 @@ public class URLFromURITest {
         TestInput withUrlPrefix() {return inputWithUrlPrefix(this);}
     }
 
+    static URI uriWithUrlPrefix(URI uri) {
+        return URI.create(stringWithUrlPrefix(uri.toString()));
+    }
+
+    static String stringWithUrlPrefix(String uriStr) {
+        if (uriStr.regionMatches(true, 0, "url:", 0, 4)) return uriStr;
+        return RAND.nextBoolean() ? "url:" + uriStr : "Url:" + uriStr;
+    }
+
     static TestInput inputWithUrlPrefix(TestInput input) {
         String uriStr = input.uri();
         var handler = input.handler();
-        if (uriStr.startsWith("url:")) return null;
-        var urlUriStr = "url:" + uriStr;
+
+        var urlUriStr = stringWithUrlPrefix(uriStr);
+        if (uriStr.equals(urlUriStr)) return null;
+
         var urlURI = URI.create(urlUriStr);
         try {
             new URL(null, urlURI.toString(), handler);
@@ -130,26 +146,26 @@ public class URLFromURITest {
         var opaque = URI.create("opaque:opaque-path");
         var jrt = URI.create("jrt:/java.base/java.lang.Integer.class");
         var file = URI.create("file:/");
-        var unoscheme = URI.create("url:http");
-        var uunknown = URI.create("url:unknown:///foo/bar");
-        var uopaque = URI.create("url:opaque:opaque-path");
-        var ujrt = URI.create("url:jrt:/java.base/java.lang.Integer.class");
-        var ufile = URI.create("url:file:/");
+        var unoscheme = uriWithUrlPrefix(noscheme);
+        var uunknown = uriWithUrlPrefix(unknown);
+        var uopaque = uriWithUrlPrefix(opaque);
+        var ujrt = uriWithUrlPrefix(jrt);
+        var ufile = uriWithUrlPrefix(file);
         var handler = new CustomStreamHandler();
-        assertThrows(NullPointerException.class, () -> URL.fromURI(null, null));
-        assertThrows(NullPointerException.class, () -> URL.fromURI(null, handler));
-        assertThrows(IllegalArgumentException.class, () -> URL.fromURI(noscheme, null));
-        assertThrows(IllegalArgumentException.class, () -> URL.fromURI(noscheme, handler));
-        assertThrows(IllegalArgumentException.class, () -> URL.fromURI(jrt, handler));
-        assertThrows(IllegalArgumentException.class, () -> URL.fromURI(file, handler));
-        assertThrows(IllegalArgumentException.class, () -> URL.fromURI(ujrt, handler));
-        assertThrows(IllegalArgumentException.class, () -> URL.fromURI(ufile, handler));
-        assertThrows(MalformedURLException.class, () -> URL.fromURI(unknown, null));
-        assertThrows(MalformedURLException.class, () -> URL.fromURI(opaque, null));
-        assertThrows(MalformedURLException.class, () -> URL.fromURI(uunknown, null));
-        assertThrows(MalformedURLException.class, () -> URL.fromURI(uopaque, null));
-        assertThrows(MalformedURLException.class, () -> URL.fromURI(unoscheme, null));
-        assertThrows(MalformedURLException.class, () -> URL.fromURI(unoscheme, handler));
+        assertThrows(NullPointerException.class, () -> URL.of(null, null));
+        assertThrows(NullPointerException.class, () -> URL.of(null, handler));
+        assertThrows(IllegalArgumentException.class, () -> URL.of(noscheme, null));
+        assertThrows(IllegalArgumentException.class, () -> URL.of(noscheme, handler));
+        assertThrows(IllegalArgumentException.class, () -> URL.of(jrt, handler));
+        assertThrows(IllegalArgumentException.class, () -> URL.of(file, handler));
+        assertThrows(IllegalArgumentException.class, () -> URL.of(ujrt, handler));
+        assertThrows(IllegalArgumentException.class, () -> URL.of(ufile, handler));
+        assertThrows(MalformedURLException.class, () -> URL.of(unknown, null));
+        assertThrows(MalformedURLException.class, () -> URL.of(opaque, null));
+        assertThrows(MalformedURLException.class, () -> URL.of(uunknown, null));
+        assertThrows(MalformedURLException.class, () -> URL.of(uopaque, null));
+        assertThrows(MalformedURLException.class, () -> URL.of(unoscheme, null));
+        assertThrows(MalformedURLException.class, () -> URL.of(unoscheme, handler));
     }
 
     @ParameterizedTest
@@ -160,13 +176,13 @@ public class URLFromURITest {
         System.err.println("testWithNoHandler: " + uriStr);
         assertNull(handler, input + ": input handler");
         URI uri = new URI(uriStr);
-        URL url = URL.fromURI(uri, handler);
+        URL url = URL.of(uri, handler);
         checkNoHandler(input, uri, url);
         var urlInput = input.withUrlPrefix();
         if (urlInput != null) {
             try {
                 var urlURI = URI.create(input.uri());
-                checkNoHandler(urlInput, uri, URL.fromURI(urlURI, null));
+                checkNoHandler(urlInput, uri, URL.of(urlURI, null));
             } catch (Throwable x) {
                 throw new AssertionError("Failed: " + urlInput.uri() + " with: " + x, x);
             }
@@ -190,7 +206,7 @@ public class URLFromURITest {
         System.err.println("testWithCustomHandler: " + input);
         assertNotNull(handler, input + ": input handler");
         URI uri = new URI(uriStr);
-        URL url = URL.fromURI(uri, handler);
+        URL url = URL.of(uri, handler);
         checkCustomHandler(input, uri, url, handler);
         var urlInput = input.withUrlPrefix();
         if (urlInput != null) {
@@ -198,7 +214,7 @@ public class URLFromURITest {
             handler = urlInput.handler();
             try {
                 var urlURI = URI.create(urlInput.uri());
-                checkCustomHandler(urlInput, uri, URL.fromURI(urlURI, handler), handler);
+                checkCustomHandler(urlInput, uri, URL.of(urlURI, handler), handler);
             } catch (Throwable x) {
                 throw new AssertionError("Failed with handler: " + urlInput.uri() + " with: " + x, x);
             }
@@ -232,7 +248,7 @@ public class URLFromURITest {
         assertNotNull(handler, input + ": input handler");
         URI uri = new URI(uriStr);
         try {
-            URL url = URL.fromURI(uri, handler);
+            URL url = URL.of(uri, handler);
             throw new AssertionError("Should not be able to specify handler for: " + uriStr);
         } catch (IllegalArgumentException x) {
             System.err.println("Got expected exception: " + x);
@@ -265,7 +281,7 @@ public class URLFromURITest {
             // - URI authority is null if there is no authority, always
             // - URL authority is null or empty depending on the protocol
             //   and on whether the URL is hierarchical or not.
-            if (isFileBased  && authority == null) {
+            if (isFileBased && authority == null) {
                 // jrt: takes a fastpath - so that jrt:/ is equivalent to jrt:///
                 if (scheme.equals("jrt")) {
                     authority = "";

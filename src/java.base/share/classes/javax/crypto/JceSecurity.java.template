@@ -244,7 +244,7 @@ final class JceSecurity {
     static {
         try {
             @SuppressWarnings("deprecation")
-            var tmp = NULL_URL = new URL("http://null.oracle.com/");
+            var _unused = NULL_URL = new URL("http://null.oracle.com/");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

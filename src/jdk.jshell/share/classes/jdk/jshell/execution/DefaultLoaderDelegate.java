@@ -185,9 +185,8 @@ class DefaultLoaderDelegate implements LoaderDelegate {
         private URL doFindResource(String name) {
             if (classFiles.containsKey(name)) {
                 try {
-                    return URL.fromURI(
-                                   new URI("jshell", null, "/" + name, null),
-                                   new ResourceURLStreamHandler(name));
+                    return URL.of(new URI("jshell", null, "/" + name, null),
+                                  new ResourceURLStreamHandler(name));
                 } catch (MalformedURLException | URISyntaxException ex) {
                     throw new InternalError(ex);
                 }

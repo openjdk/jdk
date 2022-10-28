@@ -796,10 +796,10 @@ public class JEditorPane extends JTextComponent {
                 String loc = conn.getHeaderField("Location");
                 if (loc.startsWith("http", 0)) {
                     @SuppressWarnings("deprecation")
-                    var tmp = page = new URL(loc);
+                    var _unused = page = new URL(loc);
                 } else {
                     @SuppressWarnings("deprecation")
-                    var tmp = page = new URL(page, loc);
+                    var _unused = page = new URL(page, loc);
                 }
                 return getStream(page);
             }
@@ -1952,7 +1952,7 @@ public class JEditorPane extends JTextComponent {
                         URL u;
                         try {
                             @SuppressWarnings("deprecation")
-                            var tmp = u = new URL(JEditorPane.this.getPage(), href);
+                            var _unused = u = new URL(JEditorPane.this.getPage(), href);
                         } catch (MalformedURLException m) {
                             u = null;
                         }

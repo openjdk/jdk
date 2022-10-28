@@ -2254,7 +2254,7 @@ public class Main {
                     URL url = null;
                     try {
                         @SuppressWarnings("deprecation")
-                        var tmp = url = new URL(keyStoreName);
+                        var _unused = url = new URL(keyStoreName);
                     } catch (java.net.MalformedURLException e) {
                         // try as file
                         url = new File(keyStoreName).toURI().toURL();

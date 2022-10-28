@@ -459,7 +459,7 @@ public class HtmlOptions extends BaseOptions {
                         docrootParent = args.get(0);
                         try {
                             @SuppressWarnings("deprecation")
-                            var tmp = new URL(docrootParent);
+                            var _unused = new URL(docrootParent);
                         } catch (MalformedURLException e) {
                             messages.error("doclet.MalformedURL", docrootParent);
                             return false;

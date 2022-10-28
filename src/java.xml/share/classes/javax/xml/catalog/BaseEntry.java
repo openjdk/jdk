@@ -224,10 +224,10 @@ abstract class BaseEntry {
         try {
             if (base != null) {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(base, uri);
+                URL _unused = url = new URL(base, uri);
             } else {
                 @SuppressWarnings("deprecation")
-                var tmp = url = new URL(uri);
+                URL _unused = url = new URL(uri);
             }
         } catch (MalformedURLException e) {
             CatalogMessages.reportIAE(ERR_INVALID_ARGUMENT,

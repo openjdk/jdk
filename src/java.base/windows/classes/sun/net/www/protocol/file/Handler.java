@@ -95,7 +95,7 @@ public class Handler extends URLStreamHandler {
 
         try {
             @SuppressWarnings("deprecation")
-            var tmp = newurl = new URL("ftp", host, file +
+            var _unused = newurl = new URL("ftp", host, file +
                             (url.getRef() == null ? "":
                             "#" + url.getRef()));
             if (p != null) {

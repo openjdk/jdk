@@ -560,7 +560,7 @@ class Metacity implements SynthConstants {
                         String str = url.toString();
                         try {
                             @SuppressWarnings("deprecation")
-                            var tmp = themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
+                            var _unused = themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
                         } catch (MalformedURLException ex) {
                             themeDir = null;
                         }
