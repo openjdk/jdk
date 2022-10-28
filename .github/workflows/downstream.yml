@@ -85,7 +85,7 @@ jobs:
               --head rivos/merge-${{ steps.configure.outputs.tag }} \
               --title "Merge ${{ steps.configure.outputs.tag }} into rivos/main" \
               --body "" \
-              --reviewer "luhenry" || true
+              --assignee "luhenry" || true
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
