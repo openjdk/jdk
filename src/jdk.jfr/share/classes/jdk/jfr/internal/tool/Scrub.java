@@ -34,6 +34,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.Predicate;
 
+import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
@@ -135,31 +136,43 @@ final class Scrub extends Command {
         }
         ensureUsableOutput(input, output);
 
+        try (RecordingFile rf = new RecordingFile(input)) {
+            List<EventType> types = rf.readEventTypes();
+            Predicate<RecordedEvent> filter = createFilter(options, types);
+            rf.write(output, filter);
+        } catch (IOException ioe) {
+            couldNotReadError(input, ioe);
+        }
+        println("Scrubbed recording file written to:");
+        println(output.toAbsolutePath().toString());
+    }
+
+    private Predicate<RecordedEvent> createFilter(Deque<String> options, List<EventType> types) throws UserSyntaxException, UserDataException {
         List<Predicate<RecordedEvent>> filters = new ArrayList<>();
         int optionCount = options.size();
         while (optionCount > 0) {
             if (acceptFilterOption(options, "--include-events")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--include-events", filter);
-                var f = Filters.createEventTypeFilter(filter);
+                var f = Filters.createEventTypeFilter(filter, types);
                 filters.add(Filters.fromEventType(f));
             }
             if (acceptFilterOption(options, "--exclude-events")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--exclude-events", filter);
-                var f = Filters.createEventTypeFilter(filter);
+                var f = Filters.createEventTypeFilter(filter, types);
                 filters.add(Filters.fromEventType(f.negate()));
             }
             if (acceptFilterOption(options, "--include-categories")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--include-categories", filter);
-                var f = Filters.createCategoryFilter(filter);
+                var f = Filters.createCategoryFilter(filter, types);
                 filters.add(Filters.fromEventType(f));
             }
             if (acceptFilterOption(options, "--exclude-categories")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--exclude-categories", filter);
-                var f = Filters.createCategoryFilter(filter);
+                var f = Filters.createCategoryFilter(filter, types);
                 filters.add(Filters.fromEventType(f.negate()));
             }
             if (acceptFilterOption(options, "--include-threads")) {
@@ -183,14 +196,7 @@ final class Scrub extends Command {
             }
             optionCount = options.size();
         }
-
-        try (RecordingFile rf = new RecordingFile(input)) {
-            rf.write(output, Filters.matchAny(filters));
-        } catch (IOException ioe) {
-            couldNotReadError(input, ioe);
-        }
-        println("Scrubbed recording file written to:");
-        println(output.toAbsolutePath().toString());
+        return Filters.matchAny(filters);
     }
 
     private void ensureUsableOutput(Path input, Path output) throws UserSyntaxException, UserDataException {

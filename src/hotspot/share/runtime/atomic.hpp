@@ -239,10 +239,11 @@ private:
   // bytes and (if different) pointer size bytes are required.  The
   // class must be default constructable, with these requirements:
   //
-  // - dest is of type D*, an integral or pointer type.
+  // - dest is of type D*, where D is an integral or pointer type.
   // - add_value is of type I, an integral type.
   // - sizeof(I) == sizeof(D).
   // - if D is an integral type, I == D.
+  // - if D is a pointer type P*, sizeof(P) == 1.
   // - order is of type atomic_memory_order.
   // - platform_add is an object of type PlatformAdd<sizeof(D)>.
   //
@@ -257,9 +258,17 @@ private:
   // fetch_and_add atomically adds add_value to the value of dest,
   // returning the old value.
   //
-  // When D is a pointer type P*, both add_and_fetch and fetch_and_add
-  // treat it as if it were an uintptr_t; they do not perform any
-  // scaling of add_value, as that has already been done by the caller.
+  // When the destination type D of the Atomic operation is a pointer type P*,
+  // the addition must scale the add_value by sizeof(P) to add that many bytes
+  // to the destination value.  Rather than requiring each platform deal with
+  // this, the shared part of the implementation performs some adjustments
+  // before and after calling the platform operation.  It ensures the pointee
+  // type of the destination value passed to the platform operation has size
+  // 1, casting if needed.  It also scales add_value by sizeof(P).  The result
+  // of the platform operation is cast back to P*.  This means the platform
+  // operation does not need to account for the scaling.  It also makes it
+  // easy for the platform to implement one of add_and_fetch or fetch_and_add
+  // in terms of the other (which is a common approach).
   //
   // No definition is provided; all platforms must explicitly define
   // this class and any needed specializations.
@@ -689,21 +698,43 @@ struct Atomic::AddImpl<
 {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
-  typedef typename Conditional<IsSigned<I>::value,
-                               intptr_t,
-                               uintptr_t>::type CI;
 
-  static CI scale_addend(CI add_value) {
-    return add_value * sizeof(P);
+  // Type of the scaled addend.  An integral type of the same size as a
+  // pointer, and the same signedness as I.
+  using SI = typename Conditional<IsSigned<I>::value, intptr_t, uintptr_t>::type;
+
+  // Type of the unscaled destination.  A pointer type with pointee size == 1.
+  using UP = const char*;
+
+  // Scale add_value by the size of the pointee.
+  static SI scale_addend(SI add_value) {
+    return add_value * SI(sizeof(P));
   }
 
-  static P* add_and_fetch(P* volatile* dest, I add_value, atomic_memory_order order) {
-    CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>().add_and_fetch(dest, scale_addend(addend), order);
+  // Casting between P* and UP* here intentionally uses C-style casts,
+  // because reinterpret_cast can't cast away cv qualifiers.  Using copy_cv
+  // would be an alternative if it existed.
+
+  // Unscale dest to a char* pointee for consistency with scaled addend.
+  static UP volatile* unscale_dest(P* volatile* dest) {
+    return (UP volatile*) dest;
   }
-  static P* fetch_and_add(P* volatile* dest, I add_value, atomic_memory_order order) {
-    CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>().fetch_and_add(dest, scale_addend(addend), order);
+
+  // Convert the unscaled char* result to a P*.
+  static P* scale_result(UP result) {
+    return (P*) result;
+  }
+
+  static P* add_and_fetch(P* volatile* dest, I addend, atomic_memory_order order) {
+    return scale_result(PlatformAdd<sizeof(P*)>().add_and_fetch(unscale_dest(dest),
+                                                                scale_addend(addend),
+                                                                order));
+  }
+
+  static P* fetch_and_add(P* volatile* dest, I addend, atomic_memory_order order) {
+    return scale_result(PlatformAdd<sizeof(P*)>().fetch_and_add(unscale_dest(dest),
+                                                                scale_addend(addend),
+                                                                order));
   }
 };
 
