@@ -30,6 +30,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+import jdk.test.lib.jfr.VoidFunction;
 import jdk.test.lib.security.TestCertificate;
 
 /*
@@ -63,7 +64,7 @@ public class TestX509CertificateEvent {
         }, 4);
     }
 
-    private static void testCall(jdk.test.lib.jfr.VoidFunction f, int expected) throws Throwable {
+    private static void testCall(VoidFunction f, int expected) throws Throwable {
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.X509Certificate);
             recording.start();
