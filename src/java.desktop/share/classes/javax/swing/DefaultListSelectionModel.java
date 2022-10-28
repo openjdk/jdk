@@ -450,7 +450,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
                 clear(i);
             }
             // Integer overlfow
-            if (i + 1 < i) {
+            if (i == Integer.MAX_VALUE) {
                 break;
             }
         }
@@ -644,26 +644,32 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * Otherwise leave them unselected. This method is typically
      * called to sync the selection model with a corresponding change
      * in the data model.
+     *
+     * @throws IndexOutOfBoundsException if either {@code index}
+     *          or {@code length} is negative
      */
     public void insertIndexInterval(int index, int length, boolean before)
     {
         if (length < 0 || index < 0) {
             throw new IndexOutOfBoundsException("index or length is negative");
         }
-        if (index + length < 0) {
-            length = Integer.MAX_VALUE - index;
+        if (index == Integer.MAX_VALUE || length == 0) {
+            // Nothing to update
+            return;
         }
         /* The first new index will appear at insMinIndex and the last
          * one will appear at insMaxIndex
          */
         int insMinIndex = (before) ? index : index + 1;
-        int insMaxIndex = (insMinIndex + length) - 1;
+        int insMaxIndex = (insMinIndex + length >= 0)
+                          ? (insMinIndex + length) - 1
+                          : Integer.MAX_VALUE;
 
         /* Right shift the entire bitset by length, beginning with
          * index-1 if before is true, index+1 if it's false (i.e. with
          * insMinIndex).
          */
-        for(int i = maxIndex; (i+length) >= 0 && i >= insMinIndex; i--) {
+        for(int i = Math.min(maxIndex, Integer.MAX_VALUE - length); i >= insMinIndex; i--) {
             setState(i + length, value.get(i));
         }
 
@@ -671,7 +677,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          */
         boolean setInsertedValues = ((getSelectionMode() == SINGLE_SELECTION) ?
                                         false : value.get(index));
-        for(int i = insMinIndex; i >=0 && i <= insMaxIndex; i++) {
+        for(int i = insMaxIndex; i >= insMinIndex; i--) {
             setState(i, setInsertedValues);
         }
 
@@ -708,7 +714,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
 
-
         if (rmMinIndex == 0 && rmMaxIndex == Integer.MAX_VALUE) {
             for (int i = Integer.MAX_VALUE; i >= 0; i--) {
                 setState(i, false);
@@ -730,7 +735,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
                         && (i + gapLength >= minIndex)
                         && value.get(i + gapLength));
         }
-
 
         int leadIndex = this.leadIndex;
         if (leadIndex == 0 && rmMinIndex == 0) {
@@ -755,7 +759,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         }
 
         fireValueChanged();
-
     }
 
 
