@@ -449,7 +449,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             if (shouldClear) {
                 clear(i);
             }
-            // Integer overlfow
+            // Integer overflow
             if (i == Integer.MAX_VALUE) {
                 break;
             }
