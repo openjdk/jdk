@@ -90,9 +90,8 @@ public class DocFinder {
         this.implementedMethodsLookup = implementedMethodsLookup;
     }
 
+    @SuppressWarnings("serial")
     public static final class NoOverriddenMethodsFound extends Exception {
-        @java.io.Serial
-        private static final long serialVersionUID = 1L;
 
         // only DocFinder should instantiate this exception
         private NoOverriddenMethodsFound() { }

@@ -447,12 +447,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return e;
     }
 
+    @SuppressWarnings("serial")
     private static sealed class Failure extends Exception {
 
-        @java.io.Serial private static final long serialVersionUID = 1L;
-
-        private final transient DocTree tag;
-        private final transient ExecutableElement holder;
+        private final DocTree tag;
+        private final ExecutableElement holder;
 
         Failure(DocTree tag, ExecutableElement holder) {
             super();
@@ -466,8 +465,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
         static final class ExceptionTypeNotFound extends Failure {
 
-            @java.io.Serial private static final long serialVersionUID = 1L;
-
             ExceptionTypeNotFound(ThrowsTree tag, ExecutableElement holder) {
                 super(tag, holder);
             }
@@ -477,9 +474,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
         static final class NotExceptionType extends Failure {
 
-            @java.io.Serial private static final long serialVersionUID = 1L;
-
-            private final transient Element type;
+            private final Element type;
 
             public NotExceptionType(ThrowsTree tag, ExecutableElement holder, Element type) {
                 super(tag, holder);
@@ -493,8 +488,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
         static final class Invalid extends Failure {
 
-            @java.io.Serial private static final long serialVersionUID = 1L;
-
             public Invalid(DocTree tag, ExecutableElement holder) {
                 super(tag, holder);
             }
@@ -502,9 +495,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
         static final class Undocumented extends Failure {
 
-            @java.io.Serial private static final long serialVersionUID = 1L;
-
-            private final transient Element exceptionElement;
+            private final Element exceptionElement;
 
             public Undocumented(DocTree tag, ExecutableElement holder, Element exceptionElement) {
                 super(tag, holder);
@@ -513,9 +504,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
 
         static final class UnsupportedTypeParameter extends Failure {
-            @java.io.Serial private static final long serialVersionUID = 1L;
 
-            private final transient Element element;
+            private final Element element;
 
             // careful: tag might be null
             public UnsupportedTypeParameter(Element element, ThrowsTree tag, ExecutableElement holder) {
