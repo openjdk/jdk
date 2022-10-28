@@ -62,16 +62,14 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
 
   process_vm_roots(closures, phase_times, worker_id);
 
-  {
-    // Now the CM ref_processor roots.
+  // Now the CM ref_processor roots.
+  if (_process_strong_tasks.try_claim_task(G1RP_PS_refProcessor_oops_do)) {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CMRefRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_refProcessor_oops_do)) {
-      // We need to treat the discovered reference lists of the
-      // concurrent mark ref processor as roots and keep entries
-      // (which are added by the marking threads) on them live
-      // until they can be processed at the end of marking.
-      _g1h->ref_processor_cm()->weak_oops_do(closures->strong_oops());
-    }
+    // We need to treat the discovered reference lists of the
+    // concurrent mark ref processor as roots and keep entries
+    // (which are added by the marking threads) on them live
+    // until they can be processed at the end of marking.
+    _g1h->ref_processor_cm()->weak_oops_do(closures->strong_oops());
   }
 
   // CodeCache is already processed in java roots
@@ -186,11 +184,9 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
                                        closures->strong_codeblobs());
   }
 
-  {
+  if (_process_strong_tasks.try_claim_task(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CLDGRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
-      ClassLoaderDataGraph::roots_cld_do(closures->strong_clds(), closures->weak_clds());
-    }
+    ClassLoaderDataGraph::roots_cld_do(closures->strong_clds(), closures->weak_clds());
   }
 }
 
@@ -209,6 +205,9 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
 void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,
                                                G1GCPhaseTimes* phase_times,
                                                uint worker_id) {
+  // We do not track timing of this phase. It is only required with class unloading
+  // disabled, which is an extremely uncommon use case and would otherwise only ever
+  // show up as "skipped" in the logs.
   if (_process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do)) {
     CodeCache::blobs_do(code_closure);
   }
