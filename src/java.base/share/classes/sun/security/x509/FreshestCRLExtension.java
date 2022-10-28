@@ -28,7 +28,6 @@ package sun.security.x509;
 import sun.security.util.DerOutputStream;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -91,6 +90,7 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         super.encode(out, PKIXExtensions.FreshestCRL_Id, false);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import sun.security.util.DerValue;
@@ -179,6 +178,7 @@ public class CertificateIssuerExtension extends Extension
      * @param out the OutputStream to write the extension to
      * @exception IOException on encoding errors
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.CertificateIssuer_Id;

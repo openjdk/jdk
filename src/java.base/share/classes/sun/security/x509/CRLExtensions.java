@@ -30,7 +30,6 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
