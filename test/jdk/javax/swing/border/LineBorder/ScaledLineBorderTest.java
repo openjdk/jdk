@@ -256,7 +256,7 @@ public class ScaledLineBorderTest {
     }
 
     private static void showFrame(JComponent content) {
-        JFrame frame = new JFrame("Scaled Etched Border Test");
+        JFrame frame = new JFrame("Scaled Line Border Test");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.getContentPane().add(content, BorderLayout.CENTER);
         frame.pack();
