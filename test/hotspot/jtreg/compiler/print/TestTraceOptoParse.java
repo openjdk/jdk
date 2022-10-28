@@ -25,7 +25,7 @@
  * @test
  * @bug 8293785
  * @summary test for -XX:+TraceOptoParse
- * @requires vm.debug
+ * @requires vm.debug & vm.compiler2.enabled
  * @run main/othervm -XX:+TraceOptoParse compiler.print.TestTraceOptoParse
  *
  */
