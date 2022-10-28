@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,19 +284,19 @@ public class BasicFloatObject extends Basic {
 
 
     private static Float create(double v) {
-        return new Float(v);
+        return (float) v;
     }
 
     private static Float negate(Float v) {
-        return new Float(-v.floatValue());
+        return -v.floatValue();
     }
 
     private static Float mult(Float v, double mul) {
-        return new Float(v.floatValue() * (float) mul);
+        return v.floatValue() * (float) mul;
     }
 
     private static Float recip(Float v) {
-        return new Float(1.0f / v.floatValue());
+        return 1.0f / v.floatValue();
     }
 
 
@@ -435,7 +435,7 @@ public class BasicFloatObject extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +493,7 @@ public class BasicFloatObject extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -883,12 +883,22 @@ public class BasicFloatObject extends Basic {
 
 
 
+
+
+
+
+
+
+
+
+
+
         //---------------------------------------------------------------------
         // %s - Float
         //---------------------------------------------------------------------
-        Float one = new Float(1.0f);
-        Float ten = new Float(10.0f);
-        Float pi  = new Float(Math.PI);
+        Float one = 1.0f;
+        Float ten = 10.0f;
+        Float pi  = (float) Math.PI;
 
         test("%s", "3.1415927", pi);
 
