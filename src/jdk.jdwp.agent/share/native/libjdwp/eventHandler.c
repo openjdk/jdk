@@ -1675,13 +1675,13 @@ eventHandler_waitForActiveCallbacks()
      * callback. The only callbacks enabled at this point are the permanent ones,
      * and they never involve vthreads.
      */
-    waiting_for_active_callbacks = JNI_TRUE;
     debugMonitorEnter(callbackLock);
+    waiting_for_active_callbacks = JNI_TRUE;
     while (active_callbacks > 0) {
         debugMonitorWait(callbackLock);
     }
-    debugMonitorExit(callbackLock);
     waiting_for_active_callbacks = JNI_FALSE;
+    debugMonitorExit(callbackLock);
 }
 
 void
