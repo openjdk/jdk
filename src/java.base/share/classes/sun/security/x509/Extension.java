@@ -140,22 +140,17 @@ public class Extension implements java.security.cert.Extension {
         return ext;
     }
 
-    public void encode(OutputStream out) throws IOException {
+    public final void encode(OutputStream out) throws IOException {
         if (out == null) {
             throw new NullPointerException();
         }
-
-        DerOutputStream dos1 = new DerOutputStream();
-        DerOutputStream dos2 = new DerOutputStream();
-
-        dos1.putOID(extensionId);
-        if (critical) {
-            dos1.putBoolean(true);
+        if (out instanceof DerOutputStream dos) {
+            encode(dos);
+        } else {
+            DerOutputStream dos = new DerOutputStream();
+            encode(dos);
+            out.write(dos.toByteArray());
         }
-        dos1.putOctetString(extensionValue);
-
-        dos2.write(DerValue.tag_Sequence, dos1);
-        out.write(dos2.toByteArray());
     }
 
     /**

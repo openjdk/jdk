@@ -190,16 +190,13 @@ implements CertAttrSet<String> {
       *
       * @param out the DerOutputStream to encode the extension to.
       */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
+     public void encode(DerOutputStream out) throws IOException {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
              critical = ca;
              encodeThis();
          }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
+         super.encode(out);
      }
 
     /**

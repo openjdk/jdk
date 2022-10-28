@@ -179,15 +179,13 @@ public class CertificateIssuerExtension extends Extension
      * @param out the OutputStream to write the extension to
      * @exception IOException on encoding errors
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream  tmp = new DerOutputStream();
+    public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.CertificateIssuer_Id;
             critical = true;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**

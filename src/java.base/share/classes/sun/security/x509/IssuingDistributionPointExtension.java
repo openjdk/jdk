@@ -234,15 +234,13 @@ public class IssuingDistributionPointExtension extends Extension
      * @param out the output stream.
      * @exception IOException on encoding error.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.IssuingDistributionPoint_Id;
             this.critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**

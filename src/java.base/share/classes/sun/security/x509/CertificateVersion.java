@@ -158,7 +158,7 @@ public class CertificateVersion implements CertAttrSet<String> {
      * @param out the OutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    public void encode(DerOutputStream out) throws IOException {
         // Nothing for default
         if (version == V1) {
             return;
@@ -166,11 +166,8 @@ public class CertificateVersion implements CertAttrSet<String> {
         DerOutputStream tmp = new DerOutputStream();
         tmp.putInteger(version);
 
-        DerOutputStream seq = new DerOutputStream();
-        seq.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0),
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0),
                   tmp);
-
-        out.write(seq.toByteArray());
     }
 
     /**
