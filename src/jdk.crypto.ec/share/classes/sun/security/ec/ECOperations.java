@@ -585,7 +585,7 @@ public class ECOperations {
                 // Pre-computed tables to speed up the point multiplication.
                 //
                 // This is a 4 dimensions table, and each dimension contains
-                // 16 elements. For the 1st demension, each element in it is  
+                // 16 elements. For the 1st demension, each element in it is
                 // a pre-computed generator point multiplication value.
                 //
                 // index   |    point
