@@ -337,7 +337,7 @@ public final class CertAndKeyGen {
             }
             if (ext != null) info.set(X509CertInfo.EXTENSIONS, ext);
 
-            cert = X509CertImpl.newX509CertImpl(info);
+            cert = new X509CertImpl(info);
             if (signerFlag) {
                 // use signer's private key to sign
                 cert.sign(signerPrivateKey, sigAlg);

@@ -212,7 +212,7 @@ public class PKCS7 {
             ByteArrayInputStream bais = null;
             try {
                 if (certfac == null)
-                    certificates[i] = X509CertImpl.newX509CertImpl(contents[i]);
+                    certificates[i] = new X509CertImpl(contents[i]);
                 else {
                     byte[] encoded = contents[i].toByteArray();
                     bais = new ByteArrayInputStream(encoded);
@@ -294,7 +294,7 @@ public class PKCS7 {
                     // CertificateChoices ignored.
                     if (tag == DerValue.tag_Sequence) {
                         if (certfac == null) {
-                            certificates[count] = X509CertImpl.newX509CertImpl(certVals[i]);
+                            certificates[count] = new X509CertImpl(certVals[i]);
                         } else {
                             byte[] encoded = certVals[i].toByteArray();
                             bais = new ByteArrayInputStream(encoded);
@@ -404,7 +404,7 @@ public class PKCS7 {
             ByteArrayInputStream bais = null;
             try {
                 if (certfac == null)
-                    certificates[i] = X509CertImpl.newX509CertImpl(certVals[i]);
+                    certificates[i] = new X509CertImpl(certVals[i]);
                 else {
                     byte[] encoded = certVals[i].toByteArray();
                     bais = new ByteArrayInputStream(encoded);

@@ -225,6 +225,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         try {
             parse(der);
+            JCAUtil.tryCommitCertEvent(this);
         } catch (IOException ioe) {
             signedCert = null;
             throw new CertificateException("Unable to parse DER value of " +
@@ -286,6 +287,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     public X509CertImpl(X509CertInfo certInfo) {
         this.info = certInfo;
+        JCAUtil.tryCommitCertEvent(this);
     }
 
     /**
@@ -299,28 +301,17 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public X509CertImpl(DerValue derVal) throws CertificateException {
         try {
             parse(derVal);
+            JCAUtil.tryCommitCertEvent(this);
         } catch (IOException e) {
             signedCert = null;
             throw new CertificateException("Unable to initialize, " + e, e);
         }
     }
 
-    // helper methods to record certificate, if necessary, after construction
+    // helper method to record certificate, if necessary, after construction
     // certificates from JCA generateCertificate calls are already recorded (where necessary)
     public static X509CertImpl newX509CertImpl(byte[] certData) throws CertificateException {
         var cert = new X509CertImpl(certData);
-        JCAUtil.tryCommitCertEvent(cert);
-        return cert;
-    }
-
-    public static X509CertImpl newX509CertImpl(DerValue derVal) throws CertificateException {
-        var cert = new X509CertImpl(derVal);
-        JCAUtil.tryCommitCertEvent(cert);
-        return cert;
-    }
-
-    public static X509CertImpl newX509CertImpl(X509CertInfo certInfo) throws CertificateException {
-        var cert = new X509CertImpl(certInfo);
         JCAUtil.tryCommitCertEvent(cert);
         return cert;
     }
