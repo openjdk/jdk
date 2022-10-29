@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178067 8192007 8182765 8184205
+ * @bug 8178067 8192007 8182765 8184205 8277028
  * @summary tests the module's services, such as provides and uses
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -93,6 +93,26 @@ public class TestModuleServices extends JavadocTester {
                         public void testMethod2() {}
                     }""");
         mb.write(src);
+        mb = new ModuleBuilder(tb, "moduleServiceProviderNoDescription")
+                .comment("""
+                    This is another module that provides an implementation of a service.
+                    @provides pkgService.Service""")
+                .requires("moduleService")
+                .provides("pkgService.Service", "pkgServiceProviderNoDesc.ServiceProviderNoDescription")
+                .classes("/**A Package that has a service provider.*/ package pkgServiceProviderNoDesc;")
+                .classes("""
+                    package pkgServiceProviderNoDesc;
+                    public class ServiceProviderNoDescription implements pkgService.Service {
+                        /**
+                         * {@inheritDoc}
+                         */
+                        public void testMethod1() {}
+                        /**
+                         * This is an internal implementation so the documentation will not be seen.
+                         */
+                        public void testMethod2() {}
+                    }""");
+        mb.write(src);
         mb = new ModuleBuilder(tb, "moduleServiceUser")
                 .comment("""
                     This module uses a service defined in another module.
@@ -128,7 +148,8 @@ public class TestModuleServices extends JavadocTester {
                 "-quiet",
                 "-noindex",
                 "--module-source-path", src.toString(),
-                "--module", "moduleService,moduleServiceProvider,moduleServiceUser,moduleServiceUserNoDescription",
+                "--module", "moduleService,moduleServiceProvider,moduleServiceProviderNoDescription",
+                "--module", "moduleServiceUser,moduleServiceUserNoDescription",
                 "pkgService", "moduleServiceProvider/pkgServiceProvider", "moduleServiceUser/pkgServiceUser",
                 "moduleServiceUserNoDescription/pkgServiceUserNoDescription");
         checkExit(Exit.OK);
@@ -139,6 +160,12 @@ public class TestModuleServices extends JavadocTester {
                     ml" title="interface in pkgService">Service</a></div>
                     <div class="col-last even-row-color">
                     <div class="block">Provides a service whose name is ServiceProvider.</div>""");
+        checkOutput("moduleServiceProviderNoDescription/module-summary.html", true,
+                """
+                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
+                    ml" title="interface in pkgService">Service</a></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">A service Interface for service providers.</div>""");
         checkOutput("moduleServiceUser/module-summary.html", true,
                 """
                     <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\

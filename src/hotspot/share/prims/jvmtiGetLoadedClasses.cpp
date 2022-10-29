@@ -31,8 +31,8 @@
 #include "oops/klass.inline.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/stack.inline.hpp"
 
 // The closure for GetLoadedClasses

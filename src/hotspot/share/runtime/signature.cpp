@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -37,7 +38,9 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 // Implementation of SignatureIterator
 
@@ -113,6 +116,30 @@ ReferenceArgumentCount::ReferenceArgumentCount(Symbol* signature)
   do_parameters_on(this);  // non-virtual template execution
 }
 
+#if !defined(_LP64) || defined(ZERO) || defined(ASSERT)
+static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_static) {
+  ResourceMark rm;
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
+  VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, sizeargs);
+
+  int sig_index = 0;
+  if (!is_static) {
+    sig_bt[sig_index++] = T_OBJECT; // 'this'
+  }
+  for (SignatureStream ss(signature); !ss.at_return_type(); ss.next()) {
+    BasicType t = ss.type();
+    assert(type2size[t] == 1 || type2size[t] == 2, "size is 1 or 2");
+    sig_bt[sig_index++] = t;
+    if (type2size[t] == 2) {
+      sig_bt[sig_index++] = T_VOID;
+    }
+  }
+  assert(sig_index == sizeargs, "sig_index: %d sizeargs: %d", sig_index, sizeargs);
+
+  return SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+}
+#endif
+
 void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   // See if we fingerprinted this method already
   if (_method != NULL) {
@@ -138,6 +165,7 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
 
   // Note:  This will always take the slow path, since _fp==zero_fp.
   initialize_accumulator();
+  initialize_calling_convention(static_flag);
   do_parameters_on(this);
   assert(fp_is_valid_type(_return_type, true), "bad result type");
 
@@ -148,6 +176,17 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   } else {
     _param_size += 1;  // this is the convention for Method::compute_size_of_parameters
   }
+
+#if defined(_LP64) && !defined(ZERO)
+  _stack_arg_slots = align_up(_stack_arg_slots, 2);
+#ifdef ASSERT
+  int dbg_stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
+  assert(_stack_arg_slots == dbg_stack_arg_slots, "fingerprinter: %d full: %d", _stack_arg_slots, dbg_stack_arg_slots);
+#endif
+#else
+  // Fallback: computed _stack_arg_slots is unreliable, compute directly.
+  _stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
+#endif
 
   // Detect overflow.  (We counted _param_size correctly.)
   if (_method == NULL && _param_size > fp_max_size_of_parameters) {
@@ -170,6 +209,75 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   if (_method != NULL) {
     _method->constMethod()->set_fingerprint(_fingerprint);
   }
+}
+
+void Fingerprinter::initialize_calling_convention(bool static_flag) {
+  _int_args = 0;
+  _fp_args = 0;
+
+  if (!static_flag) { // `this` takes up an int register
+    _int_args++;
+  }
+}
+
+void Fingerprinter::do_type_calling_convention(BasicType type) {
+  // We compute the number of slots for stack-passed arguments in compiled calls.
+  // TODO: SharedRuntime::java_calling_convention is the shared code that knows all details
+  // about the platform-specific calling conventions. This method tries to compute the stack
+  // args number... poorly, at least for 32-bit ports and for zero. Current code has the fallback
+  // that recomputes the stack args number from SharedRuntime::java_calling_convention.
+#if defined(_LP64) && !defined(ZERO)
+  switch (type) {
+  case T_VOID:
+    break;
+  case T_BOOLEAN:
+  case T_CHAR:
+  case T_BYTE:
+  case T_SHORT:
+  case T_INT:
+#if defined(PPC64) || defined(S390)
+    if (_int_args < Argument::n_int_register_parameters_j) {
+      _int_args++;
+    } else {
+      _stack_arg_slots += 1;
+    }
+    break;
+#endif // defined(PPC64) || defined(S390)
+  case T_LONG:
+  case T_OBJECT:
+  case T_ARRAY:
+  case T_ADDRESS:
+    if (_int_args < Argument::n_int_register_parameters_j) {
+      _int_args++;
+    } else {
+      PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      _stack_arg_slots += 2;
+    }
+    break;
+  case T_FLOAT:
+#if defined(PPC64) || defined(S390)
+    if (_fp_args < Argument::n_float_register_parameters_j) {
+      _fp_args++;
+    } else {
+      _stack_arg_slots += 1;
+    }
+    break;
+#endif // defined(PPC64) || defined(S390)
+  case T_DOUBLE:
+    if (_fp_args < Argument::n_float_register_parameters_j) {
+      _fp_args++;
+    } else {
+      PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      _stack_arg_slots += 2;
+    }
+    break;
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+#endif
 }
 
 // Implementation of SignatureStream
@@ -230,6 +338,11 @@ inline int SignatureStream::scan_type(BasicType type) {
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
+    // If we discovered only the string of '[', this means something is wrong.
+    if (end >= limit) {
+      assert(false, "Invalid type detected");
+      return limit;
+    }
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
@@ -399,7 +512,7 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.

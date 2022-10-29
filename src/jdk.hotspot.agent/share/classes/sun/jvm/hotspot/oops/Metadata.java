@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public abstract class Metadata extends VMObject {
     metadataConstructor.addMapping("InstanceMirrorKlass", InstanceMirrorKlass.class);
     metadataConstructor.addMapping("InstanceRefKlass", InstanceRefKlass.class);
     metadataConstructor.addMapping("InstanceClassLoaderKlass", InstanceClassLoaderKlass.class);
+    metadataConstructor.addMapping("InstanceStackChunkKlass", InstanceStackChunkKlass.class);
     metadataConstructor.addMapping("TypeArrayKlass", TypeArrayKlass.class);
     metadataConstructor.addMapping("ObjArrayKlass", ObjArrayKlass.class);
     metadataConstructor.addMapping("Method", Method.class);

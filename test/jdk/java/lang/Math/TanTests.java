@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 5033578
  * @summary Tests for {Math, StrictMath}.tan
- * @author Joseph D. Darcy
  */
 
 public class TanTests {
@@ -33,10 +32,8 @@ public class TanTests {
 
     static int testTanCase(double input, double expected, double ulps) {
         int failures = 0;
-        failures += Tests.testUlpDiff("StrictMath.tan(double, double)", input,
-                               StrictMath.tan(input), expected, ulps);
-        failures += Tests.testUlpDiff("Math.tan(double, double)", input,
-                               Math.tan(input), expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.tan", input, StrictMath::tan, expected, ulps);
+        failures += Tests.testUlpDiff("Math.tan",       input, Math::tan,       expected, ulps);
         return failures;
     }
 
@@ -173,7 +170,7 @@ public class TanTests {
         return failures;
     }
 
-    public static void main(String [] argv) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testTan();

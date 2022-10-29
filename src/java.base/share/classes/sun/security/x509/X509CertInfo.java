@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public class X509CertInfo implements CertAttrSet<String> {
     private byte[]      rawCertInfo = null;
 
     // The certificate attribute name to integer mapping stored here
-    private static final Map<String,Integer> map = new HashMap<String,Integer>();
+    private static final Map<String,Integer> map = new HashMap<>();
     static {
         map.put(VERSION, Integer.valueOf(ATTR_VERSION));
         map.put(SERIAL_NUMBER, Integer.valueOf(ATTR_SERIAL));
@@ -229,9 +229,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 rawCertInfo = tmp.toByteArray();
             }
             return rawCertInfo.clone();
-        } catch (IOException e) {
-            throw new CertificateEncodingException(e.toString());
-        } catch (CertificateException e) {
+        } catch (IOException | CertificateException e) {
             throw new CertificateEncodingException(e.toString());
         }
     }
@@ -344,7 +342,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 }
             }
             Map<String,Extension> invalid = extensions.getUnparseableExtensions();
-            if (invalid.isEmpty() == false) {
+            if (!invalid.isEmpty()) {
                 sb.append("\nUnparseable certificate extensions: ")
                     .append(invalid.size());
                 int i = 1;
@@ -719,7 +717,7 @@ public class X509CertInfo implements CertAttrSet<String> {
      */
     private void verifyCert(X500Name subject,
         CertificateExtensions extensions)
-        throws CertificateParsingException, IOException {
+        throws CertificateParsingException {
 
         // if SubjectName is empty, check for SubjectAlternativeNameExtension
         if (subject.isEmpty()) {
@@ -728,9 +726,8 @@ public class X509CertInfo implements CertAttrSet<String> {
                         "incomplete: subject field is empty, and certificate " +
                         "has no extensions");
             }
-            SubjectAlternativeNameExtension subjectAltNameExt = null;
-            SubjectAlternativeNameExtension extValue = null;
-            GeneralNames names = null;
+            SubjectAlternativeNameExtension subjectAltNameExt;
+            GeneralNames names;
             try {
                 subjectAltNameExt = (SubjectAlternativeNameExtension)
                         extensions.get(SubjectAlternativeNameExtension.NAME);
@@ -747,7 +744,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: subject field is empty, and " +
                         "SubjectAlternativeName extension is empty");
-            } else if (subjectAltNameExt.isCritical() == false) {
+            } else if (!subjectAltNameExt.isCritical()) {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: SubjectAlternativeName extension MUST " +
                         "be marked critical when subject field is empty");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,7 @@ public class JdkXmlFeatures {
      */
     public void setFeature(int index, State state, Object value) {
         boolean temp;
-        if (Boolean.class.isAssignableFrom(value.getClass())) {
+        if (value instanceof Boolean) {
             temp = (Boolean)value;
         } else {
             temp = Boolean.parseBoolean((String) value);

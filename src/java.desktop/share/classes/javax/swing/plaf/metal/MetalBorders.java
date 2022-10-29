@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import sun.swing.SwingUtilities2;
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
  * @author Steve Wilson
  */
-
 public class MetalBorders {
 
     /**
@@ -926,7 +925,7 @@ public class MetalBorders {
     }
 
     /**
-     * The class represents the border of a {@code JTestField}.
+     * Border for a {@code JTextField}.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TextFieldBorder extends Flush3DBorder {
@@ -1027,6 +1026,8 @@ public class MetalBorders {
     }
 
     /**
+     * Border for a {@code JToggleButton}.
+     *
      * @since 1.3
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions

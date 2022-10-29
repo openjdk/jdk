@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.util.HashMap;
@@ -291,3 +292,4 @@ public class Method {
         return name.hashCode() ^ descriptor.hashCode();
     }
 }
+

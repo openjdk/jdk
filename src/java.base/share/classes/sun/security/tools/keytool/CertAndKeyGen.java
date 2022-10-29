@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public final class CertAndKeyGen {
             }
 
         } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage(), e);
         }
         generateInternal();
     }
@@ -176,7 +176,7 @@ public final class CertAndKeyGen {
                 keyGen.initialize(keyBits, prng);
 
             } catch (Exception e) {
-                throw new IllegalArgumentException(e.getMessage());
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
         }
         generateInternal();
@@ -230,7 +230,7 @@ public final class CertAndKeyGen {
      *
      * XXX Note: This behaviour is needed for backwards compatibility.
      * What this method really should return is the public key of the
-     * generated key pair, regardless of whether or not it is an instance of
+     * generated key pair, regardless of whether it is an instance of
      * <code>X509Key</code>. Accordingly, the return type of this method
      * should be <code>PublicKey</code>.
      */
@@ -349,7 +349,7 @@ public final class CertAndKeyGen {
 
         } catch (IOException e) {
              throw new CertificateEncodingException("getSelfCert: " +
-                                                    e.getMessage());
+                                                    e.getMessage(), e);
         }
     }
 
@@ -362,7 +362,7 @@ public final class CertAndKeyGen {
     }
 
     private SecureRandom        prng;
-    private String              keyType;
+    private final String        keyType;
     private String              sigAlg;
     private KeyPairGenerator    keyGen;
     private PublicKey           publicKey;

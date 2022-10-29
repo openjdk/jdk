@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,44 +341,30 @@ final class LCMSImageLayout {
     }
 
     private void verify() throws ImageLayoutException {
-
-        if (offset < 0 || offset >= dataArrayLength) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
-
+        checkIndex(offset, dataArrayLength);
         if (nextPixelOffset != getBytesPerPixel(pixelType)) {
             throw new ImageLayoutException("Invalid image layout");
         }
 
         int lastScanOffset = safeMult(nextRowOffset, (height - 1));
-
         int lastPixelOffset = safeMult(nextPixelOffset, (width -1 ));
+        long off = (long) offset + lastPixelOffset + lastScanOffset;
 
-        lastPixelOffset = safeAdd(lastPixelOffset, lastScanOffset);
-
-        int off = safeAdd(offset, lastPixelOffset);
-
-        if (off < 0 || off >= dataArrayLength) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
+        checkIndex(off, dataArrayLength);
     }
 
-    static int safeAdd(int a, int b) throws ImageLayoutException {
-        long res = a;
-        res += b;
-        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
+    private static int checkIndex(long index, int length)
+            throws ImageLayoutException
+    {
+        if (index < 0 || index >= length) {
             throw new ImageLayoutException("Invalid image layout");
         }
-        return (int)res;
+        return (int) index;
     }
 
-    static int safeMult(int a, int b) throws ImageLayoutException {
-        long res = a;
-        res *= b;
-        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
-        return (int)res;
+    private static int safeMult(int a, int b) throws ImageLayoutException {
+        long res = (long) a * b;
+        return checkIndex(res, Integer.MAX_VALUE);
     }
 
     @SuppressWarnings("serial") // JDK-implementation class

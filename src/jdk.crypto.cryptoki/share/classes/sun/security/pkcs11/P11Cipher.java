@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ final class P11Cipher extends CipherSpi {
     // flag indicating whether an operation is initialized
     private boolean initialized;
 
-    // falg indicating encrypt or decrypt mode
+    // flag indicating encrypt or decrypt mode
     private boolean encrypt;
 
     // mode, one of MODE_* above (MODE_ECB for stream ciphers)
@@ -445,8 +445,14 @@ final class P11Cipher extends CipherSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
-        // hardware vendors may require re-login
+
+        if (P11Util.trySessionCancel(token, session,
+                (encrypt ? CKF_ENCRYPT : CKF_DECRYPT))) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as
+        // some hardware vendors may require re-login
         try {
             int bufLen = doFinalLength(0);
             byte[] buffer = new byte[bufLen];
@@ -458,7 +464,7 @@ final class P11Cipher extends CipherSpi {
         } catch (PKCS11Exception e) {
             if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
-                // call. If the operation inside the token was already cancelled,
+                // call. If the operation inside the token is already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
                 // PKCS#11 libraries that do not strictly follow the standard.
                 return;
@@ -488,7 +494,7 @@ final class P11Cipher extends CipherSpi {
             if (session == null) {
                 session = token.getOpSession();
             }
-            CK_MECHANISM mechParams = (blockMode == MODE_CTR?
+            CK_MECHANISM mechParams = (blockMode == MODE_CTR ?
                     new CK_MECHANISM(mechanism, new CK_AES_CTR_PARAMS(iv)) :
                     new CK_MECHANISM(mechanism, iv));
             if (encrypt) {
@@ -808,13 +814,21 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        startOff = padBufferLen;
+                        // call C_EncryptUpdate first if the padBuffer is full
+                        // to make room for padding bytes
+                        if (padBufferLen == padBuffer.length) {
+                            k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                0, out, outOfs, outLen);
+                        } else {
+                            startOff = padBufferLen;
+                        }
                     }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
                             startOff, requiredOutLen - bytesBuffered);
-                    k = token.p11.C_EncryptUpdate(session.id(),
+                    k += token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, startOff + actualPadLen,
-                            0, out, outOfs, outLen);
+                            0, out, outOfs + k, outLen - k);
                 }
                 // Some implementations such as the NSS Software Token do not
                 // cancel the operation upon a C_EncryptUpdate failure (as
@@ -896,13 +910,21 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        startOff = padBufferLen;
+                        // call C_EncryptUpdate first if the padBuffer is full
+                        // to make room for padding bytes
+                        if (padBufferLen == padBuffer.length) {
+                            k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                outAddr, outArray, outOfs, outLen);
+                        } else {
+                            startOff = padBufferLen;
+                        }
                     }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
                             startOff, requiredOutLen - bytesBuffered);
-                    k = token.p11.C_EncryptUpdate(session.id(),
+                    k += token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, startOff + actualPadLen,
-                            outAddr, outArray, outOfs, outLen);
+                            outAddr, outArray, outOfs + k, outLen - k);
                 }
                 // Some implementations such as the NSS Software Token do not
                 // cancel the operation upon a C_EncryptUpdate failure (as

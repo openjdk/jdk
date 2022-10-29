@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ public class strace014 {
     static final int THRD_COUNT = 100;
     static final String[] EXPECTED_METHODS = {
             "java.lang.Object.wait",
+            "java.lang.Object.wait0",
             "nsk.stress.strace.strace014Thread.run",
             "nsk.stress.strace.strace014Thread.recursiveMethod"
     };
@@ -174,7 +175,7 @@ public class strace014 {
         for (int i = 1; i < THRD_COUNT; i++) {
             all = (StackTraceElement[]) traces.get(threads[i]);
             int k = all.length;
-            if (count - k > 2) {
+            if (count - k > 4) {
                 complain("wrong lengths of stack traces:\n\t"
                         + threads[0].getName() + ": " + count
                         + "\t"
@@ -222,7 +223,7 @@ public class strace014 {
     boolean checkElement(StackTraceElement element) {
         String name = element.getClassName() + "." + element.getMethodName();
         for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
+            if (name.startsWith(EXPECTED_METHODS[i]))
                 return true;
         }
         return false;

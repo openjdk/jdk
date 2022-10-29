@@ -31,9 +31,7 @@ import java.util.Set;
  */
 public interface LayoutManager {
 
-    public void doLayout(LayoutGraph graph);
+    void doLayout(LayoutGraph graph);
 
-    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);
-
-    public void doRouting(LayoutGraph graph);
+    void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @requires vm.gc.G1
  *
  * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
- *          interfere with the the test.
+ *          interfere with the test.
  * @requires vm.gc == null
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
@@ -89,6 +89,23 @@ public class TestSerialGCWithCDS {
                               "-Xlog:cds",
                               "Hello");
         out.shouldContain(HELLO);
+        out.shouldHaveExitValue(0);
+
+        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode");
+        out = TestCommon.exec(helloJar,
+                              execGC,
+                              small1,
+                              small2,
+                              "-Xlog:cds,cds+heap",
+                              "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
+                              "Hello");
+        out.shouldContain(HELLO);
+        if (out.getOutput().contains("Trying to map heap") || out.getOutput().contains("Loaded heap")) {
+            // The native data in the RO/RW regions have been relocated. If the CDS heap is
+            // mapped/loaded, we must patch all the native pointers. (CDS heap is
+            // not supported on all platforms)
+            out.shouldContain("Patching native pointers in heap region");
+        }
         out.shouldHaveExitValue(0);
 
         int n = 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -55,12 +56,14 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -107,6 +110,12 @@ void ZMark::start() {
   // Increment global sequence number to invalidate
   // marking information for all pages.
   ZGlobalSeqNum++;
+
+  // Note that we start a marking cycle.
+  // Unlike other GCs, the color switch implicitly changes the nmethods
+  // to be armed, and the thread-local disarm values are lazily updated
+  // when JavaThreads wake up from safepoints.
+  CodeCache::on_gc_marking_cycle_start();
 
   // Reset flush/continue counters
   _nproactiveflush = 0;
@@ -255,6 +264,11 @@ public:
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
   }
+
+  virtual void do_nmethod(nmethod* nm) {
+    assert(!finalizable, "Can't handle finalizable marking of nmethods");
+    nm->run_nmethod_entry_barrier();
+  }
 };
 
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
@@ -273,6 +287,14 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
 }
 
 void ZMark::follow_object(oop obj, bool finalizable) {
+  if (ContinuationGCSupport::relativize_stack_chunk(obj)) {
+    // Loom doesn't support mixing of finalizable marking and strong marking of
+    // stack chunks. See: RelativizeDerivedOopClosure.
+    ZMarkBarrierOopClosure<false /* finalizable */> cl;
+    obj->oop_iterate(&cl);
+    return;
+  }
+
   if (finalizable) {
     ZMarkBarrierOopClosure<true /* finalizable */> cl;
     obj->oop_iterate(&cl);
@@ -673,12 +695,12 @@ public:
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-    if (!nm->is_alive()) {
-      return;
-    }
-
     if (ZNMethod::is_armed(nm)) {
       ZNMethod::nmethod_oops_do_inner(nm, _cl);
+
+      // CodeCache unloading support
+      nm->mark_as_maybe_on_stack();
+
       ZNMethod::disarm(nm);
     }
   }
@@ -799,6 +821,11 @@ bool ZMark::end() {
 
   // Update statistics
   ZStatMark::set_at_mark_end(_nproactiveflush, _nterminateflush, _ntrycomplete, _ncontinue);
+
+  // Note that we finished a marking cycle.
+  // Unlike other GCs, we do not arm the nmethods
+  // when marking terminates.
+  CodeCache::on_gc_marking_cycle_finish();
 
   // Mark completed
   return true;

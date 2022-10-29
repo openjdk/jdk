@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,12 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             if (!val.getOID().equals(OID_MGF1)) {
                 throw new IOException("Only MGF1 mgf is supported");
             }
+            byte[] encodedParams = val.getEncodedParams();
+            if (encodedParams == null) {
+                throw new IOException("Missing MGF1 parameters");
+            }
             AlgorithmId params = AlgorithmId.parse(
-                    new DerValue(val.getEncodedParams()));
+                    new DerValue(encodedParams));
             mgfSpec = switch (params.getName()) {
                 case "SHA-1" -> MGF1ParameterSpec.SHA1;
                 case "SHA-224" -> MGF1ParameterSpec.SHA224;
@@ -129,7 +133,12 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             if (!val.getOID().equals(OID_PSpecified)) {
                 throw new IOException("Wrong OID for pSpecified");
             }
-            p = DerValue.wrap(val.getEncodedParams()).getOctetString();
+            byte[] encodedParams = val.getEncodedParams();
+            if (encodedParams == null) {
+                throw new IOException("Missing pSpecified label");
+            }
+
+            p = DerValue.wrap(encodedParams).getOctetString();
         } else {
             p = new byte[0];
         }
@@ -148,7 +157,7 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
     protected <T extends AlgorithmParameterSpec>
         T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException {
-        if (OAEPParameterSpec.class.isAssignableFrom(paramSpec)) {
+        if (paramSpec.isAssignableFrom(OAEPParameterSpec.class)) {
             return paramSpec.cast(
                 new OAEPParameterSpec(mdName, "MGF1", mgfSpec,
                                       new PSource.PSpecified(p)));

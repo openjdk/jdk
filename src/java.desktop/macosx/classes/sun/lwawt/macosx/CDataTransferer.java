@@ -33,8 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -153,7 +151,7 @@ public class CDataTransferer extends DataTransferer {
         if(isUriListFlavor(flavor) && format == CF_FILE) {
             // dragQueryFile works fine with files and url,
             // it parses and extracts values from property list.
-            // maxosx always returns property list for
+            // macosx always returns property list for
             // CF_URL and CF_FILE
             String[] strings = dragQueryFile(bytes);
             if(strings == null) {
@@ -162,12 +160,9 @@ public class CDataTransferer extends DataTransferer {
             bytes = String.join(System.getProperty("line.separator"),
                     strings).getBytes();
             // now we extracted uri from xml, now we should treat it as
-            // regular string that allows to translate data to target represantation
+            // regular string that allows to translate data to target representation
             // class by base method
             format = CF_STRING;
-        } else if (format == CF_STRING) {
-            String src = new String(bytes, UTF_8);
-            bytes = Normalizer.normalize(src, Form.NFC).getBytes(UTF_8);
         }
 
         return super.translateBytes(bytes, flavor, format, transferable);

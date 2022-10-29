@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/guardedMemory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -51,13 +50,14 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -73,6 +73,10 @@
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifndef _WINDOWS
+# include <poll.h>
+#endif
+
 # include <signal.h>
 # include <errno.h>
 
@@ -82,13 +86,6 @@ volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 os::PageSizes     os::_page_sizes;
-
-#ifndef PRODUCT
-julong os::num_mallocs = 0;         // # of calls to malloc/realloc
-julong os::alloc_bytes = 0;         // # of bytes allocated
-julong os::num_frees = 0;           // # of calls to free
-julong os::free_bytes = 0;          // # of bytes freed
-#endif
 
 static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
@@ -477,9 +474,6 @@ void os::initialize_jdk_signal_support(TRAPS) {
     JavaThread::vm_exit_on_osthread_failure(thread);
 
     JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
-
-    // Handle ^BREAK
-    os::signal(SIGBREAK, os::user_handler());
   }
 }
 
@@ -603,30 +597,11 @@ char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
   return p;
 }
 
-
-#define paranoid                 0  /* only set to 1 if you suspect checking code has bug */
-
-#ifdef ASSERT
-
-static void verify_memory(void* ptr) {
-  GuardedMemory guarded(ptr);
-  if (!guarded.verify_guards()) {
-    LogTarget(Warning, malloc, free) lt;
-    ResourceMark rm;
-    LogStream ls(lt);
-    ls.print_cr("## nof_mallocs = " UINT64_FORMAT ", nof_frees = " UINT64_FORMAT, os::num_mallocs, os::num_frees);
-    ls.print_cr("## memory stomp:");
-    guarded.print_on(&ls);
-    fatal("memory stomping error");
-  }
-}
-
-#endif
-
 //
 // This function supports testing of the malloc out of memory
 // condition without really running the system out of memory.
 //
+
 static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
   if (MallocMaxTestWords > 0) {
     size_t words = (alloc_size / BytesPerWord);
@@ -639,74 +614,67 @@ static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
   return false;
 }
 
+#ifdef ASSERT
+static void check_crash_protection() {
+  assert(!ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
+         "not allowed when crash protection is set");
+}
+static void break_if_ptr_caught(void* ptr) {
+  if (p2i(ptr) == (intptr_t)MallocCatchPtr) {
+    log_warning(malloc, free)("ptr caught: " PTR_FORMAT, p2i(ptr));
+    breakpoint();
+  }
+}
+#endif // ASSERT
+
 void* os::malloc(size_t size, MEMFLAGS flags) {
   return os::malloc(size, flags, CALLER_PC);
 }
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-  NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
-  NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
-#if INCLUDE_NMT
-  {
-    void* rc = NULL;
-    if (NMTPreInit::handle_malloc(&rc, size)) {
-      return rc;
-    }
-  }
-#endif
-
-  // Since os::malloc can be called when the libjvm.{dll,so} is
-  // first loaded and we don't have a thread yet we must accept NULL also here.
-  assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
-         "malloc() not allowed when crash protection is set");
-
-  if (size == 0) {
-    // return a valid pointer if size is zero
-    // if NULL is returned the calling functions assume out of memory.
-    size = 1;
+  // Special handling for NMT preinit phase before arguments are parsed
+  void* rc = NULL;
+  if (NMTPreInit::handle_malloc(&rc, size)) {
+    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // early allocations.
+    return rc;
   }
 
-  // NMT support
-  NMT_TrackingLevel level = MemTracker::tracking_level();
-  size_t            nmt_header_size = MemTracker::malloc_header_size(level);
+  DEBUG_ONLY(check_crash_protection());
 
-#ifndef ASSERT
-  const size_t alloc_size = size + nmt_header_size;
-#else
-  const size_t alloc_size = GuardedMemory::get_total_size(size + nmt_header_size);
-  if (size + nmt_header_size > alloc_size) { // Check for rollover.
-    return NULL;
-  }
-#endif
+  // On malloc(0), implementations of malloc(3) have the choice to return either
+  // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
+  // we chose the latter.
+  size = MAX2((size_t)1, size);
 
   // For the test flag -XX:MallocMaxTestWords
   if (has_reached_max_malloc_test_peak(size)) {
     return NULL;
   }
 
-  u_char* ptr;
-  ptr = (u_char*)::malloc(alloc_size);
+  const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
-#ifdef ASSERT
-  if (ptr == NULL) {
+  // Check for overflow.
+  if (outer_size < size) {
     return NULL;
   }
-  // Wrap memory with guard
-  GuardedMemory guarded(ptr, size + nmt_header_size);
-  ptr = guarded.get_user_ptr();
 
-  if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-    log_warning(malloc, free)("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
-    breakpoint();
+  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
+  if (outer_ptr == NULL) {
+    return NULL;
   }
-  if (paranoid) {
-    verify_memory(ptr);
-  }
-#endif
 
-  // we do not track guard memory
-  return MemTracker::record_malloc((address)ptr, size, memflags, stack, level);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
+
+  if (DumpSharedSpaces) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset(inner_ptr, 0, size);
+  } else {
+    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  }
+  DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
+  return inner_ptr;
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
@@ -715,91 +683,62 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
-#if INCLUDE_NMT
-  {
-    void* rc = NULL;
-    if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
-      return rc;
-    }
+  // Special handling for NMT preinit phase before arguments are parsed
+  void* rc = NULL;
+  if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
+    return rc;
   }
-#endif
+
+  if (memblock == NULL) {
+    return os::malloc(size, memflags, stack);
+  }
+
+  DEBUG_ONLY(check_crash_protection());
+
+  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
+  // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
+  // we chose the latter.
+  size = MAX2((size_t)1, size);
 
   // For the test flag -XX:MallocMaxTestWords
   if (has_reached_max_malloc_test_peak(size)) {
     return NULL;
   }
 
-  if (size == 0) {
-    // return a valid pointer if size is zero
-    // if NULL is returned the calling functions assume out of memory.
-    size = 1;
+  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
+
+  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+  ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
+  if (new_outer_ptr == NULL) {
+    return NULL;
   }
 
-#ifndef ASSERT
-  NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
-  NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
-   // NMT support
-  NMT_TrackingLevel level = MemTracker::tracking_level();
-  void* membase = MemTracker::record_free(memblock, level);
-  size_t  nmt_header_size = MemTracker::malloc_header_size(level);
-  void* ptr = ::realloc(membase, size + nmt_header_size);
-  return MemTracker::record_malloc(ptr, size, memflags, stack, level);
-#else
-  if (memblock == NULL) {
-    return os::malloc(size, memflags, stack);
-  }
-  if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    log_warning(malloc, free)("os::realloc caught " PTR_FORMAT, p2i(memblock));
-    breakpoint();
-  }
-  // NMT support
-  void* membase = MemTracker::malloc_base(memblock);
-  verify_memory(membase);
-  // always move the block
-  void* ptr = os::malloc(size, memflags, stack);
-  // Copy to new memory if malloc didn't fail
-  if (ptr != NULL ) {
-    GuardedMemory guarded(MemTracker::malloc_base(memblock));
-    // Guard's user data contains NMT header
-    size_t memblock_size = guarded.get_user_size() - MemTracker::malloc_header_size(memblock);
-    memcpy(ptr, memblock, MIN2(size, memblock_size));
-    if (paranoid) {
-      verify_memory(MemTracker::malloc_base(ptr));
-    }
-    os::free(memblock);
-  }
-  return ptr;
-#endif
+  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+
+  DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
+
+  return new_inner_ptr;
 }
 
-// handles NULL pointers
 void  os::free(void *memblock) {
 
-#if INCLUDE_NMT
+  // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
     return;
   }
-#endif
 
-  NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
-#ifdef ASSERT
-  if (memblock == NULL) return;
-  if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    log_warning(malloc, free)("os::free caught " PTR_FORMAT, p2i(memblock));
-    breakpoint();
+  if (memblock == NULL) {
+    return;
   }
-  void* membase = MemTracker::record_free(memblock, MemTracker::tracking_level());
-  verify_memory(membase);
 
-  GuardedMemory guarded(membase);
-  size_t size = guarded.get_user_size();
-  inc_stat_counter(&free_bytes, size);
-  membase = guarded.release_for_freeing();
-  ::free(membase);
-#else
-  void* membase = MemTracker::record_free(memblock, MemTracker::tracking_level());
-  ::free(membase);
-#endif
+  DEBUG_ONLY(break_if_ptr_caught(memblock);)
+
+  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 
 void os::init_random(unsigned int initval) {
@@ -1001,6 +940,11 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
 }
 
+void os::print_tos(outputStream* st, address sp) {
+  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
+}
+
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
   print_hex_dump(st, pc - 256, pc + 256, unitsize);
@@ -1113,11 +1057,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // Check if pointer can be read from (4-byte read access).
 // Helps to prove validity of a not-NULL pointer.
 // Returns true in very early stages of VM life when stub is not yet generated.
-#define SAFEFETCH_DEFAULT true
 bool os::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return SAFEFETCH_DEFAULT;
-  }
   int* const aligned = (int*) align_down((intptr_t)p, 4);
   int cafebabe = 0xcafebabe;  // tester value 1
   int deadbeef = 0xdeadbeef;  // tester value 2
@@ -1146,7 +1086,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if addr points into a code blob.
-  CodeBlob* b = CodeCache::find_blob_unsafe(addr);
+  CodeBlob* b = CodeCache::find_blob(addr);
   if (b != NULL) {
     b->dump_for_addr(addr, st, verbose);
     return;
@@ -1169,13 +1109,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       st->print_cr(INTPTR_FORMAT " is a weak global jni handle", p2i(addr));
       return;
     }
-#ifndef PRODUCT
-    // we don't keep the block list in product mode
-    if (JNIHandles::is_local_handle((jobject) addr)) {
-      st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
-      return;
-    }
-#endif
   }
 
   // Check if addr belongs to a Java thread.
@@ -1248,34 +1181,34 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
+bool is_pointer_bad(intptr_t* ptr) {
+  return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
+}
+
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
+// Returns true if this is not the case, i.e. the frame is possibly
+// the first C frame on the stack.
 bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
 #endif
-
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
-  uintptr_t fp_align_mask = (uintptr_t)(sizeof(address)-1);
-  // sp on amd can be 32 bit aligned.
-  uintptr_t sp_align_mask = (uintptr_t)(sizeof(int)-1);
 
-  uintptr_t usp    = (uintptr_t)fr->sp();
-  if ((usp & sp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->sp())) return true;
 
   uintptr_t ufp    = (uintptr_t)fr->fp();
-  if ((ufp & fp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->fp())) return true;
 
   uintptr_t old_sp = (uintptr_t)fr->sender_sp();
-  if ((old_sp & sp_align_mask) != 0) return true;
-  if (old_sp == 0 || old_sp == (uintptr_t)-1) return true;
+  if ((uintptr_t)fr->sender_sp() == (uintptr_t)-1 || is_pointer_bad(fr->sender_sp())) return true;
 
-  uintptr_t old_fp = (uintptr_t)fr->link();
-  if ((old_fp & fp_align_mask) != 0) return true;
-  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp) return true;
+  uintptr_t old_fp = (uintptr_t)fr->link_or_null();
+  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp ||
+    is_pointer_bad(fr->link_or_null())) return true;
 
   // stack grows downwards; if old_fp is below current fp or if the stack
   // frame is too large, either the stack is corrupted or fp is not saved
@@ -1286,7 +1219,6 @@ bool os::is_first_C_frame(frame* fr) {
 
   return false;
 }
-
 
 // Set up the boot classpath.
 
@@ -1361,10 +1293,6 @@ FILE* os::fopen(const char* path, const char* mode) {
   return file;
 }
 
-ssize_t os::read(int fd, void *buf, unsigned int nBytes) {
-  return ::read(fd, buf, nBytes);
-}
-
 bool os::set_boot_path(char fileSep, char pathSep) {
   const char* home = Arguments::get_java_home();
   int home_len = (int)strlen(home);
@@ -1376,7 +1304,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   if (jimage == NULL) return false;
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
-    Arguments::set_sysclasspath(jimage, true);
+    Arguments::set_boot_class_path(jimage, true);
     FREE_C_HEAP_ARRAY(char, jimage);
     return true;
   }
@@ -1386,7 +1314,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
   if (base_classes == NULL) return false;
   if (os::stat(base_classes, &st) == 0) {
-    Arguments::set_sysclasspath(base_classes, false);
+    Arguments::set_boot_class_path(base_classes, false);
     FREE_C_HEAP_ARRAY(char, base_classes);
     return true;
   }
@@ -1462,7 +1390,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
 // pages, false otherwise.
 bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp) {
   if (!thread->is_Java_thread()) return false;
-  // Check if we have StackShadowPages above the yellow zone.  This parameter
+  // Check if we have StackShadowPages above the guard zone. This parameter
   // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow
   // handler or a println uses at least 8k stack of VM and native code
@@ -1470,9 +1398,7 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
-  address limit = JavaThread::cast(thread)->stack_end() +
-                  (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
-
+  address limit = JavaThread::cast(thread)->stack_overflow_state()->shadow_zone_safe_limit();
   return sp > (limit + framesize_in_bytes);
 }
 
@@ -1500,6 +1426,35 @@ size_t os::page_size_for_region_aligned(size_t region_size, size_t min_pages) {
 
 size_t os::page_size_for_region_unaligned(size_t region_size, size_t min_pages) {
   return page_size_for_region(region_size, min_pages, false);
+}
+
+#ifndef MAX_PATH
+#define MAX_PATH    (2 * K)
+#endif
+
+void os::pause() {
+  char filename[MAX_PATH];
+  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
+    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
+  } else {
+    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
+  }
+
+  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  if (fd != -1) {
+    struct stat buf;
+    ::close(fd);
+    while (::stat(filename, &buf) == 0) {
+#if defined(_WINDOWS)
+      Sleep(100);
+#else
+      (void)::poll(NULL, 0, 100);
+#endif
+    }
+  } else {
+    jio_fprintf(stderr,
+                "Could not open pause file '%s', continuing immediately.\n", filename);
+  }
 }
 
 static const char* errno_to_string (int e, bool short_text) {
@@ -1725,11 +1680,6 @@ void os::initialize_initial_active_processor_count() {
   log_debug(os)("Initial active processor count set to %d" , _initial_active_processor_count);
 }
 
-void os::SuspendedThreadTask::run() {
-  internal_do_task();
-  _done = true;
-}
-
 bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
@@ -1737,12 +1687,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
-    if (flags != mtOther) {
-      MemTracker::record_virtual_memory_type(result, flags);
-    }
+    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
   }
-
   return result;
 }
 
@@ -1757,7 +1703,13 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   return result;
 }
 
+static void assert_nonempty_range(const char* addr, size_t bytes) {
+  assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(addr), p2i(addr) + bytes);
+}
+
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
@@ -1767,6 +1719,7 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable) {
+  assert_nonempty_range(addr, size);
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
@@ -1776,19 +1729,22 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
                                const char* mesg) {
+  assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
                                bool executable, const char* mesg) {
+  assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     Tracker tkr(Tracker::uncommit);
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
@@ -1801,8 +1757,9 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 }
 
 bool os::release_memory(char* addr, size_t bytes) {
+  assert_nonempty_range(addr, bytes);
   bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = pd_release_memory(addr, bytes);
@@ -1823,13 +1780,31 @@ void os::print_memory_mappings(outputStream* st) {
   os::print_memory_mappings(nullptr, (size_t)-1, st);
 }
 
+// Pretouching must use a store, not just a load.  On many OSes loads from
+// fresh memory would be satisfied from a single mapped page containing all
+// zeros.  We need to store something to each page to get them backed by
+// their own memory, which is the effect we want here.  An atomic add of
+// zero is used instead of a simple store, allowing the memory to be used
+// while pretouch is in progress, rather than requiring users of the memory
+// to wait until the entire range has been touched.  This is technically
+// a UB data race, but doesn't cause any problems for us.
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
-  for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
-    // Note: this must be a store, not a load. On many OSes loads from fresh
-    // memory would be satisfied from a single mapped page containing all zeros.
-    // We need to store something to each page to get them backed by their own
-    // memory, which is the effect we want here.
-    *p = 0;
+  assert(start <= end, "invalid range: " PTR_FORMAT " -> " PTR_FORMAT, p2i(start), p2i(end));
+  assert(is_power_of_2(page_size), "page size misaligned: %zu", page_size);
+  assert(page_size >= sizeof(int), "page size too small: %zu", page_size);
+  if (start < end) {
+    // We're doing concurrent-safe touch and memory state has page
+    // granularity, so we can touch anywhere in a page.  Touch at the
+    // beginning of each page to simplify iteration.
+    char* cur = static_cast<char*>(align_down(start, page_size));
+    void* last = align_down(static_cast<char*>(end) - 1, page_size);
+    assert(cur <= last, "invariant");
+    // Iterate from first page through last (inclusive), being careful to
+    // avoid overflow if the last page abuts the end of the address range.
+    for ( ; true; cur += page_size) {
+      Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+      if (cur >= last) break;
+    }
   }
 }
 
@@ -1871,7 +1846,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     Tracker tkr(Tracker::release);
     result = pd_unmap_memory(addr, bytes);
     if (result) {
@@ -1907,7 +1882,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = pd_release_memory_special(addr, bytes);
@@ -1919,22 +1894,6 @@ bool os::release_memory_special(char* addr, size_t bytes) {
   }
   return res;
 }
-
-#ifndef _WINDOWS
-/* try to switch state from state "from" to state "to"
- * returns the state set after the method is complete
- */
-os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
-                                                         os::SuspendResume::State to)
-{
-  os::SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
-  if (result == from) {
-    // success
-    return to;
-  }
-  return result;
-}
-#endif
 
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
 // times. Only for use by non-JavaThreads.
@@ -1952,17 +1911,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -1971,7 +1930,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
@@ -2016,4 +1975,70 @@ void os::PageSizes::print_on(outputStream* st) const {
   if (first) {
     st->print("empty");
   }
+}
+
+// Check minimum allowable stack sizes for thread creation and to initialize
+// the java system classes, including StackOverflowError - depends on page
+// size.
+// The space needed for frames during startup is platform dependent. It
+// depends on word size, platform calling conventions, C frame layout and
+// interpreter/C1/C2 design decisions. Therefore this is given in a
+// platform (os/cpu) dependent constant.
+// To this, space for guard mechanisms is added, which depends on the
+// page size which again depends on the concrete system the VM is running
+// on. Space for libc guard pages is not included in this size.
+jint os::set_minimum_stack_sizes() {
+
+  _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
+                                   StackOverflow::stack_guard_zone_size() +
+                                   StackOverflow::stack_shadow_zone_size();
+
+  _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
+  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, _os_min_stack_allowed);
+
+  size_t stack_size_in_bytes = ThreadStackSize * K;
+  if (stack_size_in_bytes != 0 &&
+      stack_size_in_bytes < _java_thread_min_stack_allowed) {
+    // The '-Xss' and '-XX:ThreadStackSize=N' options both set
+    // ThreadStackSize so we go with "Java thread stack size" instead
+    // of "ThreadStackSize" to be more friendly.
+    tty->print_cr("\nThe Java thread stack size specified is too small. "
+                  "Specify at least " SIZE_FORMAT "k",
+                  _java_thread_min_stack_allowed / K);
+    return JNI_ERR;
+  }
+
+  // Make the stack size a multiple of the page size so that
+  // the yellow/red zones can be guarded.
+  JavaThread::set_stack_size_at_create(align_up(stack_size_in_bytes, vm_page_size()));
+
+  // Reminder: a compiler thread is a Java thread.
+  _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
+                                       StackOverflow::stack_guard_zone_size() +
+                                       StackOverflow::stack_shadow_zone_size();
+
+  _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
+  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, _os_min_stack_allowed);
+
+  stack_size_in_bytes = CompilerThreadStackSize * K;
+  if (stack_size_in_bytes != 0 &&
+      stack_size_in_bytes < _compiler_thread_min_stack_allowed) {
+    tty->print_cr("\nThe CompilerThreadStackSize specified is too small. "
+                  "Specify at least " SIZE_FORMAT "k",
+                  _compiler_thread_min_stack_allowed / K);
+    return JNI_ERR;
+  }
+
+  _vm_internal_thread_min_stack_allowed = align_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
+  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, _os_min_stack_allowed);
+
+  stack_size_in_bytes = VMThreadStackSize * K;
+  if (stack_size_in_bytes != 0 &&
+      stack_size_in_bytes < _vm_internal_thread_min_stack_allowed) {
+    tty->print_cr("\nThe VMThreadStackSize specified is too small. "
+                  "Specify at least " SIZE_FORMAT "k",
+                  _vm_internal_thread_min_stack_allowed / K);
+    return JNI_ERR;
+  }
+  return JNI_OK;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  */
 
 #include "jvm.h"
+#include "runtime/os.hpp"
 #include "utilities/decoder_elf.hpp"
 #include "utilities/elfFile.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <cxxabi.h>
 
@@ -45,7 +47,7 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
   if ((result = abi::__cxa_demangle(symbol, NULL, NULL, &status)) != NULL) {
     jio_snprintf(buf, buflen, "%s", result);
       // call c library's free
-      ::free(result);
+      ALLOW_C_FUNCTION(::free, ::free(result);)
       return true;
   }
   return false;
@@ -58,7 +60,7 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
 bool ElfFile::specifies_noexecstack(const char* filepath) {
   if (filepath == NULL) return true;
 
-  FILE* file = fopen(filepath, "r");
+  FILE* file = os::fopen(filepath, "r");
   if (file == NULL)  return true;
 
   // AARCH64 defaults to noexecstack. All others default to execstack.

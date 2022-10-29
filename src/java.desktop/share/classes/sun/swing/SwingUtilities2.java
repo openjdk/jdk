@@ -117,7 +117,7 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  * A collection of utility methods for Swing.
  * <p>
  * <b>WARNING:</b> While this class is public, it should not be treated as
- * public API and its API may change in incompatable ways between dot dot
+ * public API and its API may change in incompatible ways between dot dot
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
@@ -520,7 +520,7 @@ public class SwingUtilities2 {
                  * it to fit in the screen width. This distributes the spacing
                  * more evenly than directly laying out to the screen advances.
                  */
-                String trimmedText = trimTrailingSpaces(text);
+                String trimmedText = text.stripTrailing();
                 if (!trimmedText.isEmpty()) {
                     float screenWidth = (float) g2d.getFont().getStringBounds
                             (trimmedText, getFontRenderContext(c)).getWidth();
@@ -866,7 +866,7 @@ public class SwingUtilities2 {
                     String text = new String(data, offset, length);
                     TextLayout layout = new TextLayout(text, g2d.getFont(),
                                     deviceFontRenderContext);
-                    String trimmedText = trimTrailingSpaces(text);
+                    String trimmedText = text.stripTrailing();
                     if (!trimmedText.isEmpty()) {
                         float screenWidth = (float)g2d.getFont().
                             getStringBounds(trimmedText, frc).getWidth();
@@ -1321,14 +1321,6 @@ public class SwingUtilities2 {
         return (g instanceof PrinterGraphics || g instanceof PrintGraphics);
     }
 
-    private static String trimTrailingSpaces(String s) {
-        int i = s.length() - 1;
-        while(i >= 0 && Character.isWhitespace(s.charAt(i))) {
-            i--;
-        }
-        return s.substring(0, i + 1);
-    }
-
     private static AttributedCharacterIterator getTrimmedTrailingSpacesIterator
             (AttributedCharacterIterator iterator) {
         int curIdx = iterator.getIndex();
@@ -1524,7 +1516,7 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Returns true if the given event is corrent gesture for
+     * Returns true if the given event is current gesture for
      * accessing clipboard
      *
      * @param ie InputEvent to check
@@ -1572,7 +1564,7 @@ public class SwingUtilities2 {
         if (EventQueue.isDispatchThread()) {
             /*
              * Checking event permissions makes sense only for event
-             * dispathing thread
+             * dispatching thread
              */
             if (e instanceof InputEvent
                 && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
@@ -1787,7 +1779,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table. If {@code key} does
-     * not map to a valid {@code Integer}, or can not be convered from
+     * not map to a valid {@code Integer}, or cannot be converted from
      * a {@code String} to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int.
@@ -1800,7 +1792,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be convered from a {@code String}
+     * {@code Integer}, or cannot be converted from a {@code String}
      * to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value
@@ -1814,7 +1806,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table. If {@code key} does
-     * not map to a valid {@code Integer}, or can not be convered from
+     * not map to a valid {@code Integer}, or can not be converted from
      * a {@code String} to an integer, {@code default} is
      * returned.
      *
@@ -1831,7 +1823,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be convered from a {@code String}
+     * {@code Integer}, or can not be converted from a {@code String}
      * to an integer, {@code default} is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value
@@ -2214,7 +2206,7 @@ public class SwingUtilities2 {
      * Returns the {@link TreePath} that identifies the changed nodes.
      *
      * @param event  changes in a tree model
-     * @param model  corresponing tree model
+     * @param model  corresponding tree model
      * @return  the path to the changed nodes
      */
     public static TreePath getTreePath(TreeModelEvent event, TreeModel model) {

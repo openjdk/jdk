@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ JAVADOC_MODULES := $(DOCS_MODULES)
 # Get the complete module source path:
 JAVADOC_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
-CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
+CT_DATA_DESCRIPTION += $(TOPDIR)/src/jdk.compiler/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal=java.compiler.interim,jdk.compiler.interim \
@@ -68,7 +68,7 @@ ELEMENT_LISTS_DIR := $(JDK_JAVADOC_DIR)/$(ELEMENT_LISTS_PKG)
 
 $(JDK_JAVADOC_DIR)/_element_lists.marker: \
     $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(TOPDIR)/make/data/symbols/*) \
+    $(wildcard $(TOPDIR)/src/jdk.compiler/share/data/symbols/*) \
     $(MODULE_INFOS)
 	$(call MakeTargetDir)
 	$(call LogInfo, Creating javadoc element lists)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -445,10 +445,8 @@ public class JavacElements implements Elements {
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageElement getPackageOf(Element e) {
-        if (e.getKind() == ElementKind.MODULE)
-            return null;
-        else
-            return cast(Symbol.class, e).packge();
+        Symbol sym = cast(Symbol.class, e);
+        return (sym.kind == MDL || sym.owner.kind == MDL) ? null : sym.packge();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -456,7 +454,9 @@ public class JavacElements implements Elements {
         Symbol sym = cast(Symbol.class, e);
         if (modules.getDefaultModule() == syms.noModule)
             return null;
-        return (sym.kind == MDL) ? ((ModuleElement) e) : sym.packge().modle;
+        return (sym.kind == MDL) ? ((ModuleElement) e)
+                : (sym.owner.kind == MDL) ? (ModuleElement) sym.owner
+                : sym.packge().modle;
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -727,12 +727,52 @@ public class JavacElements implements Elements {
         return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
     }
 
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isCompactConstructor(ExecutableElement e) {
+        return (((MethodSymbol)e).flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isCanonicalConstructor(ExecutableElement e) {
+        return (((MethodSymbol)e).flags() & Flags.RECORD) != 0;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public JavaFileObject getFileObjectOf(Element e) {
+        Symbol sym = (Symbol) e;
+        return switch(sym.kind) {
+            case PCK -> {
+                PackageSymbol psym = (PackageSymbol) sym;
+                if (psym.package_info == null) {
+                    yield null;
+                }
+                yield psym.package_info.classfile;
+            }
+
+            case MDL -> {
+                ModuleSymbol msym = (ModuleSymbol) sym;
+                if (msym.module_info == null) {
+                    yield null;
+                }
+                yield msym.module_info.classfile;
+            }
+            case TYP -> ((ClassSymbol) sym).classfile;
+            default -> sym.enclClass().classfile;
+        };
+    }
+
     /**
      * Returns the tree node and compilation unit corresponding to this
      * element, or null if they can't be found.
      */
     private Pair<JCTree, JCCompilationUnit> getTreeAndTopLevel(Element e) {
         Symbol sym = cast(Symbol.class, e);
+        if (sym.kind == PCK) {
+            TypeSymbol pkgInfo = ((PackageSymbol) sym).package_info;
+            if (pkgInfo != null) {
+                pkgInfo.complete();
+            }
+        }
         Env<AttrContext> enterEnv = getEnterEnv(sym);
         if (enterEnv == null)
             return null;

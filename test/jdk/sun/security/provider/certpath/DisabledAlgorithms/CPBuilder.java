@@ -348,7 +348,7 @@ public class CPBuilder {
         for (String key : certmap.keySet()) {
             String certStr = certmap.get(key);
             ByteArrayInputStream is =
-                        new ByteArrayInputStream(certStr.getBytes());;
+                        new ByteArrayInputStream(certStr.getBytes());
             Certificate cert = cf.generateCertificate(is);
             entries.add(cert);
         }

@@ -27,6 +27,7 @@ package jdk.internal.reflect;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
     private static final int IS_READ_ONLY_BIT = 0x0001;
@@ -64,21 +65,32 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
         }
     }
 
+    private String getMessage(boolean getter, Class<?> type) {
+        String err = "Can not " + (getter ? "get" : "set");
+        if (Modifier.isStatic(field.getModifiers()))
+            err += " static";
+        if (Modifier.isFinal(field.getModifiers()))
+            err += " final";
+        err += " " + field.getType().getName() + " field " + getQualifiedFieldName();
+        if (type != null) {
+            err += " on " + type.getName();
+        }
+        return err;
+    }
+
     /**
      * IllegalArgumentException because Field::get on the specified object, which
      * is not an instance of the class or interface declaring the underlying method
      */
-    protected IllegalArgumentException newGetIllegalArgumentException(Class<?> type) {
-        return new IllegalArgumentException(getMessage(true, type.getName()));
+    protected IllegalArgumentException newGetIllegalArgumentException(Object o) {
+        return new IllegalArgumentException(getMessage(true, o != null ? o.getClass() : null));
     }
 
     /**
      * IllegalArgumentException because Field::set on the specified object, which
      * is not an instance of the class or interface declaring the underlying method
      */
-    protected IllegalArgumentException newSetIllegalArgumentException(Class<?> type) {
-        return new IllegalArgumentException(getMessage(false, type.getName()));
+    protected IllegalArgumentException newSetIllegalArgumentException(Object o) {
+        return new IllegalArgumentException(getMessage(false, o != null ? o.getClass() : null));
     }
-
-
 }

@@ -300,10 +300,10 @@ public final class RecordingInfo {
 
     /**
      * Returns the desired duration, measured in seconds, of the recording
-     * associated with this {@link RecordingInfo}, or {code 0} if no duration
+     * associated with this {@link RecordingInfo}, or {@code 0} if no duration
      * has been set.
      *
-     * @return the desired duration, or {code 0} if no duration has been set
+     * @return the desired duration, or {@code 0} if no duration has been set
      *
      * @see Recording#getDuration()
      */

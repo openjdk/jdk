@@ -27,11 +27,12 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
@@ -234,7 +235,6 @@ int WatcherThread::sleep() const {
 void WatcherThread::run() {
   assert(this == watcher_thread(), "just checking");
 
-  this->set_active_handles(JNIHandleBlock::allocate_block());
   while (true) {
     assert(watcher_thread() == Thread::current(), "thread consistency check");
     assert(watcher_thread() == this, "thread consistency check");

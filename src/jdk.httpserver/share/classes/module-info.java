@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,41 +24,74 @@
  */
 
 /**
- * Defines the JDK-specific HTTP server API.
+ * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
+ * for running a minimal HTTP server.
+ *
+ * <p>The {@link com.sun.net.httpserver} package defines a high-level API for
+ * building servers that support HTTP and HTTPS. The SimpleFileServer class
+ * implements a simple HTTP-only file server intended for testing, development
+ * and debugging purposes. A default implementation is provided via the
+ * {@code jwebserver} tool and the main entry point of the module, which can
+ * also be invoked with {@code java -m jdk.httpserver}.
+ *
+ * <p>The {@link com.sun.net.httpserver.spi} package specifies a Service Provider
+ * Interface (SPI) for locating HTTP server implementations based on the
+ * {@code com.sun.net.httpserver} API.
  * <p>
- * A basic high-level API for building embedded servers. Both HTTP and
- * HTTPS are supported.
+ * <b id="httpserverprops">System properties used by the HTTP server API</b>
  * <p>
- * The main components are:
+ * The following is a list of JDK specific system properties used by the default HTTP
+ * server implementation in the JDK. Any properties below that take a numeric value
+ * assume the default value if given a string that does not parse as a number.
  * <ul>
- * <li>the {@link com.sun.net.httpserver.HttpExchange} class that describes a
- * request and response pair,</li>
- * <li>the {@link com.sun.net.httpserver.HttpHandler} interface to handle
- * incoming requests, plus the {@link com.sun.net.httpserver.HttpHandlers} class
- * that provides useful handler implementations,</li>
- * <li>the {@link com.sun.net.httpserver.HttpContext} class that maps a URI path
- * to a {@code HttpHandler},</li>
- * <li>the {@link com.sun.net.httpserver.HttpServer} class to listen for
- * connections and dispatch requests to handlers,</li>
- * <li>the {@link com.sun.net.httpserver.Filter} class that allows pre- and post-
- * processing of requests.</li></ul>
- * <p>
- * The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
- * HTTP file server (intended for testing, development and debugging purposes
- * only). A default implementation is provided via the <a id="entry-point"></a>
- * main entry point of the {@code jdk.httpserver} module, which can be used on
- * the command line as such:
- * <pre>{@code
- *    Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
- *                                  [-o none|info|verbose] [-h to show options]
- *    Options:
- *    -b, --bind-address    - Address to bind to. Default: 127.0.0.1 or ::1 (loopback).
- *                            For all interfaces use "-b 0.0.0.0" or "-b ::".
- *    -d, --directory       - Directory to serve. Default: current directory.
- *    -o, --output          - Output format. none|info|verbose. Default: info.
- *    -p, --port            - Port to listen on. Default: 8000.
- *    -h, -?, --help        - Print this help message.
- * }</pre>
+ * <li><p><b>{@systemProperty sun.net.httpserver.idleInterval}</b> (default: 30 sec)<br>
+ * Maximum duration in seconds which an idle connection is kept open. This timer
+ * has an implementation specific granularity that may mean that idle connections are
+ * closed later than the specified interval. Values less than or equal to zero are mapped
+ * to the default setting.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpserver.maxConnections}</b> (default: -1)<br>
+ * The maximum number of open connections at a time. This includes active and idle connections.
+ * If zero or negative, then no limit is enforced.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxIdleConnections}</b> (default: 200)<br>
+ * The maximum number of idle connections at a time. If set to zero or a negative value
+ * then connections are closed after use.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.drainAmount}</b> (default: 65536)<br>
+ * The maximum number of bytes that will be automatically read and discarded from a
+ * request body that has not been completely consumed by its
+ * {@link com.sun.net.httpserver.HttpHandler HttpHandler}. If the number of remaining
+ * unread bytes are less than this limit then the connection will be put in the idle connection
+ * cache. If not, then it will be closed.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaders}</b> (default: 200)<br>
+ * The maxiumum number of header fields accepted in a request. If this limit is exceeded
+ * while the headers are being read, then the connection is terminated and the request ignored.
+ * If the value is less than or equal to zero, then the default value is used.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
+ * The maximum time in milliseconds allowed to receive a request headers and body.
+ * In practice, the actual time is a function of request size, network speed, and handler
+ * processing delays. A value less than or equal to zero means the time is not limited.
+ * If the limit is exceeded then the connection is terminated and the handler will receive a
+ * {@link java.io.IOException}. This timer has an implementation specific granularity
+ * that may mean requests are aborted later than the specified interval.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
+ * The maximum time in milliseconds allowed to receive a response headers and body.
+ * In practice, the actual time is a function of response size, network speed, and handler
+ * processing delays. A value less than or equal to zero means the time is not limited.
+ * If the limit is exceeded then the connection is terminated and the handler will receive a
+ * {@link java.io.IOException}. This timer has an implementation specific granularity
+ * that may mean responses are aborted later than the specified interval.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
+ * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
+ * socket option on all incoming connections.
+ * </li></ul>
+ *
+ * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *

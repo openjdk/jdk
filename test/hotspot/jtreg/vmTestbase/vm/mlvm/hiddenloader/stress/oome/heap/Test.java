@@ -63,7 +63,7 @@ public class Test extends MlvmOOMTest {
     @Override
     protected void checkOOME(OutOfMemoryError oome) {
         String message = oome.getMessage();
-        if (!"Java heap space".equals(message)) {
+        if (!message.startsWith("Java heap space")) {
             throw new RuntimeException("TEST FAIL : wrong OOME", oome);
         }
     }

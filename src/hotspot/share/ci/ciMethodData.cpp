@@ -49,10 +49,7 @@ ciMethodData::ciMethodData(MethodData* md)
   _saw_free_extra_data(false),
   // Initialize the escape information (to "don't know.");
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
-  _creation_mileage(0),
-  _current_mileage(0),
   _invocation_counter(0),
-  _backedge_counter(0),
   _orig(),
   _parameters(NULL) {}
 
@@ -250,24 +247,26 @@ bool ciMethodData::load_data() {
   load_remaining_extra_data();
 
   // Note:  Extra data are all BitData, and do not need translation.
-  _creation_mileage = mdo->creation_mileage();
-  _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
-  _backedge_counter = mdo->backedge_count();
-  _state = mdo->is_mature()? mature_state: immature_state;
+  if (_invocation_counter == 0 && mdo->backedge_count() > 0) {
+    // Avoid skewing counter data during OSR compilation.
+    // Sometimes, MDO is allocated during the very first invocation and OSR compilation is triggered
+    // solely by backedge counter while invocation counter stays zero. In such case, it's important
+    // to observe non-zero invocation count to properly scale profile counts (see ciMethod::scale_count()).
+    _invocation_counter = 1;
+  }
 
+  _state = mdo->is_mature() ? mature_state : immature_state;
   _eflags = mdo->eflags();
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
   _arg_returned  = mdo->arg_returned();
-#ifndef PRODUCT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
     if (is_empty()) {
       return false;
     }
   }
-#endif
   return true;
 }
 
@@ -706,7 +705,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
   Method* method = mdo->method();
   out->print("ciMethodData ");
   ciMethod::dump_name_as_ascii(out, method);
-  out->print(" %d %d", _state, current_mileage());
+  out->print(" %d %d", _state, _invocation_counter);
 
   // dump the contents of the MDO header as raw data
   unsigned char* orig = (unsigned char*)&_orig;
@@ -723,7 +722,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
     // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
     // harder. data()'s element type is intptr_t.
-    out->print(" " INTPTRNZ_FORMAT, data()[i]);
+    out->print(" " INTX_FORMAT_X, data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those

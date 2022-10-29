@@ -199,13 +199,13 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      * {@code getImageMetadataFormat}.  An array of length
      * 0 is normalized to {@code null}.
      *
-     * @exception IllegalArgumentException if {@code vendorName}
+     * @throws IllegalArgumentException if {@code vendorName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code version}
+     * @throws IllegalArgumentException if {@code version}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code names}
+     * @throws IllegalArgumentException if {@code names}
      * is {@code null} or has length 0.
-     * @exception IllegalArgumentException if {@code pluginClassName}
+     * @throws IllegalArgumentException if {@code pluginClassName}
      * is {@code null}.
      */
     public ImageReaderWriterSpi(String vendorName,
@@ -518,7 +518,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      *
      * @return an {@code IIOMetadataFormat} object.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not a supported name.
      */
     public IIOMetadataFormat getStreamMetadataFormat(String formatName) {
@@ -542,7 +542,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      *
      * @return an {@code IIOMetadataFormat} object.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not a supported name.
      */
     public IIOMetadataFormat getImageMetadataFormat(String formatName) {

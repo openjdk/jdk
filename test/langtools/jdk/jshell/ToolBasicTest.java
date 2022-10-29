@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,11 +155,6 @@ public class ToolBasicTest extends ReplToolTesting {
             out = new PrintWriter(writer);
             setCommandInput(cmd + "\n");
             t = new Thread(() -> {
-                try {
-                    // no chance to know whether cmd is being evaluated
-                    Thread.sleep(5000);
-                } catch (InterruptedException ignored) {
-                }
                 int i = 1;
                 int n = 30;
                 synchronized (lock) {
@@ -553,7 +548,7 @@ public class ToolBasicTest extends ReplToolTesting {
     }
 
     public void testOpenResource() {
-        test(
+        test(new String[]{"-R", "-Duser.language=en", "-R", "-Duser.country=US"},
                 (a) -> assertCommand(a, "/open PRINTING", ""),
                 (a) -> assertCommandOutputContains(a, "/list",
                         "void println", "System.out.printf"),

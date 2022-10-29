@@ -96,7 +96,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
     static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
-    // Loger to report issues happened during execution but that do not affect functionality
+    // Logger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
     private static final PlatformLogger focusLogger = PlatformLogger.getLogger("sun.lwawt.macosx.focus.CPlatformWindow");
 
@@ -244,12 +244,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             c.execute(ptr -> nativeRevalidateNSWindowShadow(ptr));
         }},
         new Property<CPlatformWindow>(WINDOW_DOCUMENT_FILE) { public void applyProperty(final CPlatformWindow c, final Object value) {
-            if (value == null || !(value instanceof java.io.File)) {
+            if (!(value instanceof java.io.File file)) {
                 c.execute(ptr->nativeSetNSWindowRepresentedFilename(ptr, null));
                 return;
             }
 
-            final String filename = ((java.io.File)value).getAbsolutePath();
+            final String filename = file.getAbsolutePath();
             c.execute(ptr->nativeSetNSWindowRepresentedFilename(ptr, filename));
         }},
         new Property<CPlatformWindow>(WINDOW_FULL_CONTENT) {
@@ -1106,7 +1106,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
      * Callbacks from the AWTWindow and AWTView objc classes.
      *************************************************************/
     private void deliverWindowFocusEvent(boolean gained, CPlatformWindow opposite){
-        // Fix for 7150349: ingore "gained" notifications when the app is inactive.
+        // Fix for 7150349: ignore "gained" notifications when the app is inactive.
         if (gained && !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive()) {
             focusLogger.fine("the app is inactive, so the notification is ignored");
             return;

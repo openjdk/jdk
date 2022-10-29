@@ -63,7 +63,7 @@ final class JSONWriter extends EventPrintWriter {
 
     @Override
     protected void printEnd() {
-        printArrayEnd();;
+        printArrayEnd();
         printObjectEnd();
         printObjectEnd();
     }
@@ -185,7 +185,7 @@ final class JSONWriter extends EventPrintWriter {
     private void printDataStructureName(String text) {
         printIndent();
         print("\"");
-        print(text);
+        printEscaped(text);
         print("\": ");
     }
 

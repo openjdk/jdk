@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      * Default uses HashMap.
      */
     protected <K, V> Map<K, V> createMap(int size) {
-        return new HashMap<>(size);
+        return HashMap.newHashMap(size);
     }
 
     protected <E> Set<E> createSet() {

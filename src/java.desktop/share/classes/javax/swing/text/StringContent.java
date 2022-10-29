@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package javax.swing.text;
 import java.util.Vector;
 import java.io.Serializable;
 import javax.swing.undo.*;
-import javax.swing.SwingUtilities;
 
 /**
  * An implementation of the AbstractDocument.Content interface that is
@@ -91,7 +90,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0 &amp;&amp; &lt; length()
      * @param str the non-null string to insert
      * @return an UndoableEdit object for undoing
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#insertString
      */
     public UndoableEdit insertString(int where, String str) throws BadLocationException {
@@ -112,7 +111,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0
      * @param nitems the number of characters to remove &gt;= 0
      * @return an UndoableEdit object for undoing
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#remove
      */
     public UndoableEdit remove(int where, int nitems) throws BadLocationException {
@@ -135,7 +134,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0
      * @param len the length to retrieve &gt;= 0
      * @return a string representing the content; may be empty
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getString
      */
     public String getString(int where, int len) throws BadLocationException {
@@ -151,7 +150,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0
      * @param len the number of characters to retrieve &gt;= 0
      * @param chars the Segment object to return the characters in
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getChars
      */
     public void getChars(int where, int len, Segment chars) throws BadLocationException {
@@ -169,7 +168,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      *
      * @param offset the offset to create a position for &gt;= 0
      * @return the position
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      */
     public Position createPosition(int offset) throws BadLocationException {
         // some small documents won't have any sticky positions
@@ -324,7 +323,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * it.... the update table holds only a reference
      * to this grungy thing.
      */
-    final class PosRec {
+    static final class PosRec {
 
         PosRec(int offset) {
             this.offset = offset;
@@ -337,7 +336,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     /**
      * This really wants to be a weak reference but
      * in 1.1 we don't have a 100% pure solution for
-     * this... so this class trys to hack a solution
+     * this... so this class tries to hack a solution
      * to causing the marks to be collected.
      */
     final class StickyPosition implements Position {
@@ -351,7 +350,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
             return rec.offset;
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         protected void finalize() throws Throwable {
             // schedule the record to be removed later
             // on another thread.
@@ -369,7 +368,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * Used to hold a reference to a Position that is being reset as the
      * result of removing from the content.
      */
-    final class UndoPosRef {
+    static final class UndoPosRef {
         UndoPosRef(PosRec rec) {
             this.rec = rec;
             this.undoLocation = rec.offset;

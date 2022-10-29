@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,14 @@ public static void main(String[] argv){
 }
 
 private boolean TestAD(){
-        Locale zhTWloc = new Locale("zh", "TW");
+        Locale zhTWloc = Locale.of("zh", "TW");
         SimpleDateFormat sdf = new SimpleDateFormat("G", zhTWloc);
 
         return Test(sdf.format(new Date()), "\u897f\u5143", "AD");
 }
 
 private boolean TestBC(){
-        Locale zhTWloc = new Locale("zh", "TW");
+        Locale zhTWloc = Locale.of("zh", "TW");
         SimpleDateFormat sdf = new SimpleDateFormat("G", zhTWloc);
 
         Calendar cdar = sdf.getCalendar();

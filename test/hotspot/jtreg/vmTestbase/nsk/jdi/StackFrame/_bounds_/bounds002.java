@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,10 +94,17 @@ public class bounds002 {
         debugee.VM().suspend();
         ThreadReference thread = debugee.threadByName("main");
         StackFrame stackFrame = null;
+        boolean isTopmostFrame = false;
         try {
-            for (int i = 0; i < thread.frameCount(); i++) {
+            int frameCount = thread.frameCount();
+            for (int i = 0; i < frameCount; i++) {
                 stackFrame = thread.frame(i);
                 if (stackFrame.location().method().name().equals("main") ) {
+                    if (i == 0) {
+                        // Usually this won't be the topmost frame, but in rare cases the suspend
+                        // is done before main() has a chance to make a blocking I/O call.
+                        isTopmostFrame = true;
+                    }
                     break;
                 }
             }
@@ -184,12 +191,26 @@ public class bounds002 {
             complain("Unexpected " + e);
             exitStatus = Consts.TEST_FAILED;
         }
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        display("vthreadMode: " + vthreadMode + ", isTopmostFrame: " + isTopmostFrame);
         try {
             stackFrame.setValue(var, null);
-            display("OK");
+            if (vthreadMode && !isTopmostFrame) {
+                // Should have failed because with vthreads Stackframe.setValue() is only
+                // supported on the topmost frame.
+                complain("Expected OpaqueFrameException");
+                exitStatus = Consts.TEST_FAILED;
+            } else {
+                display("OK");
+            }
         } catch(Exception e) {
-            complain("Unexpected " + e);
-            exitStatus = Consts.TEST_FAILED;
+            if (vthreadMode && !isTopmostFrame && e instanceof OpaqueFrameException) {
+                // pass
+                display("OK");
+            } else {
+                complain("Unexpected " + e);
+                exitStatus = Consts.TEST_FAILED;
+            }
         }
         display("");
 

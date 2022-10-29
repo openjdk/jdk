@@ -113,7 +113,7 @@ public class JPEGImageReadParam extends ImageReadParam {
      * @param DCHuffmanTables an array of Huffman table objects.
      * @param ACHuffmanTables an array of Huffman table objects.
      *
-     * @exception IllegalArgumentException if any of the arguments
+     * @throws IllegalArgumentException if any of the arguments
      * is {@code null}, has more than 4 elements, or if the
      * numbers of DC and AC tables differ.
      *

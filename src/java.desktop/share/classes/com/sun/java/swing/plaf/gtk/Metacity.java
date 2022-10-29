@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,11 +118,7 @@ class Metacity implements SynthConstants {
             try {
                 INSTANCE = new Metacity(themeName);
             } catch (FileNotFoundException ex) {
-            } catch (IOException ex) {
-                logError(themeName, ex);
-            } catch (ParserConfigurationException ex) {
-                logError(themeName, ex);
-            } catch (SAXException ex) {
+            } catch (IOException | ParserConfigurationException | SAXException ex) {
                 logError(themeName, ex);
             }
             }
@@ -583,15 +579,16 @@ class Metacity implements SynthConstants {
                     URL url = new URL(new File(userHome).toURI().toURL(),
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
-                    Reader reader = new InputStreamReader(url.openStream(),
-                                                          ISO_8859_1);
-                    char[] buf = new char[1024];
                     StringBuilder sb = new StringBuilder();
-                    int n;
-                    while ((n = reader.read(buf)) >= 0) {
-                        sb.append(buf, 0, n);
+                    try (InputStream in = url.openStream();
+                         Reader reader = new InputStreamReader(in, ISO_8859_1))
+                    {
+                        char[] buf = new char[1024];
+                        int n;
+                        while ((n = reader.read(buf)) >= 0) {
+                            sb.append(buf, 0, n);
+                        }
                     }
-                    reader.close();
                     String str = sb.toString();
                     if (str != null) {
                         String strLowerCase = str.toLowerCase();
@@ -605,8 +602,6 @@ class Metacity implements SynthConstants {
                             }
                         }
                     }
-                } catch (MalformedURLException ex) {
-                    // OK to just ignore. We'll use a fallback theme.
                 } catch (IOException ex) {
                     // OK to just ignore. We'll use a fallback theme.
                 }

@@ -32,9 +32,9 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 
 static JfrRepository* _instance = NULL;
 

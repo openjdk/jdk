@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.base/jdk.internal.vm.annotation
  *
  * @build java.base/java.lang.invoke.MethodHandleHelper
- *        sun.hotspot.WhiteBox
+ *        jdk.test.whitebox.WhiteBox
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                 -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
@@ -39,7 +39,7 @@
 package compiler.jsr292.NonInlinedCall;
 
 import jdk.internal.vm.annotation.DontInline;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleHelper;

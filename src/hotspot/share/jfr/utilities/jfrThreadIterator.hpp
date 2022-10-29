@@ -26,8 +26,8 @@
 #define SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 
 template <typename Adapter, typename AP = StackObj>

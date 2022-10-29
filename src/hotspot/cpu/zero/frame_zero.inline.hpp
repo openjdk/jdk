@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,13 +36,21 @@ inline frame::frame() {
   _pc = NULL;
   _cb = NULL;
   _deopt_state = unknown;
+  _on_heap = false;
+  DEBUG_ONLY(_frame_index = -1;)
 }
 
 inline address  frame::sender_pc()           const { ShouldNotCallThis(); return NULL; }
 
+inline frame::frame(intptr_t* sp) {
+  Unimplemented();
+}
+
 inline frame::frame(ZeroFrame* zf, intptr_t* sp) {
   _zeroframe = zf;
   _sp = sp;
+  _on_heap = false;
+  DEBUG_ONLY(_frame_index = -1;)
   switch (zeroframe()->type()) {
   case ZeroFrame::ENTRY_FRAME:
     _pc = StubRoutines::call_stub_return_pc();
@@ -78,6 +86,11 @@ inline intptr_t* frame::real_fp() const {
 }
 
 inline intptr_t* frame::link() const {
+  ShouldNotCallThis();
+  return NULL;
+}
+
+inline intptr_t* frame::link_or_null() const {
   ShouldNotCallThis();
   return NULL;
 }
@@ -161,6 +174,74 @@ inline intptr_t* frame::entry_frame_argument_at(int offset) const {
 
 inline intptr_t* frame::unextended_sp() const {
   return (intptr_t *) -1;
+}
+
+inline const ImmutableOopMap* frame::get_oop_map() const {
+  Unimplemented();
+  return NULL;
+}
+
+inline int frame::compiled_frame_stack_argsize() const {
+  Unimplemented();
+  return 0;
+}
+
+inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
+  Unimplemented();
+}
+
+inline int frame::sender_sp_ret_address_offset() {
+  Unimplemented();
+  return 0;
+}
+
+inline void frame::set_unextended_sp(intptr_t* value) {
+  Unimplemented();
+}
+
+inline int frame::offset_unextended_sp() const {
+  Unimplemented();
+  return 0;
+}
+
+inline void frame::set_offset_unextended_sp(int value) {
+  Unimplemented();
+}
+
+inline int frame::frame_size() const {
+#ifdef PRODUCT
+  ShouldNotCallThis();
+#endif // PRODUCT
+  return 0; // make javaVFrame::print_value work
+}
+
+inline address* frame::sender_pc_addr() const {
+  ShouldNotCallThis();
+  return NULL;
+}
+
+//------------------------------------------------------------------------------
+// frame::sender
+
+inline frame frame::sender(RegisterMap* map) const {
+  // Default is not to follow arguments; the various
+  // sender_for_xxx methods update this accordingly.
+  map->set_include_argument_oops(false);
+
+  frame result = zeroframe()->is_entry_frame() ?
+                 sender_for_entry_frame(map) :
+                 sender_for_nonentry_frame(map);
+
+  if (map->process_frames()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
+}
+
+template <typename RegisterMapT>
+void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
+  Unimplemented();
 }
 
 #endif // CPU_ZERO_FRAME_ZERO_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u7528\u6CD5: jarsigner [\u9009\u9879] jar-file \u522B\u540D"},
         {".jarsigner.verify.options.jar.file.alias.",
                 "       jarsigner -verify [\u9009\u9879] jar-file [\u522B\u540D...]"},
+        {".jarsigner.version",
+                "       jarsigner -version"},
         {".keystore.url.keystore.location",
                 "[-keystore <url>]           \u5BC6\u94A5\u5E93\u4F4D\u7F6E"},
         {".storepass.password.password.for.keystore.integrity",
@@ -77,6 +79,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "[-sigalg <\u7B97\u6CD5>]           \u7B7E\u540D\u7B97\u6CD5\u7684\u540D\u79F0"},
         {".verify.verify.a.signed.JAR.file",
                 "[-verify]                   \u9A8C\u8BC1\u5DF2\u7B7E\u540D\u7684 JAR \u6587\u4EF6"},
+        {".version.print.the.program.version",
+                "[-version]                  \u8F93\u51FA\u7A0B\u5E8F\u7248\u672C"},
         {".verbose.suboptions.verbose.output.when.signing.verifying.",
                 "[-verbose[:suboptions]]     \u7B7E\u540D/\u9A8C\u8BC1\u65F6\u8F93\u51FA\u8BE6\u7EC6\u4FE1\u606F\u3002"},
         {".suboptions.can.be.all.grouped.or.summary",
@@ -113,6 +117,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "[-providerClass <\u7C7B>     \u6309\u5168\u9650\u5B9A\u7C7B\u540D\u6DFB\u52A0\u5B89\u5168\u63D0\u4F9B\u65B9"},
         {".providerArg.option.2",
                 "  [-providerArg <\u53C2\u6570>]] ... \u914D\u7F6E -providerClass \u7684\u53C2\u6570"},
+        {".providerPath.option",
+                "[-providerPath <list>]      \u63D0\u4F9B\u65B9\u7C7B\u8DEF\u5F84"},
         {".strict.treat.warnings.as.errors",
                 "[-strict]                   \u5C06\u8B66\u544A\u89C6\u4E3A\u9519\u8BEF"},
         {".conf.url.specify.a.pre.configured.options.file",
@@ -131,6 +137,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"s", "s"},
         {"m", "m"},
         {"k", "k"},
+        {"X", "X"},
+        {"q", "?"},
         {".and.d.more.", "(%d \u53CA\u4EE5\u4E0A)"},
         {".s.signature.was.verified.",
                 "  s = \u5DF2\u9A8C\u8BC1\u7B7E\u540D "},
@@ -140,9 +148,12 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "  k = \u5728\u5BC6\u94A5\u5E93\u4E2D\u81F3\u5C11\u627E\u5230\u4E86\u4E00\u4E2A\u8BC1\u4E66"},
         {".X.not.signed.by.specified.alias.es.",
                 "  X = \u672A\u7531\u6307\u5B9A\u522B\u540D\u7B7E\u540D"},
+        {".q.unsigned.entry",
+                "  ? = \u672A\u7B7E\u540D\u6761\u76EE"},
         {"no.manifest.", "\u6CA1\u6709\u6E05\u5355\u3002"},
         {".Signature.related.entries.","(\u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6761\u76EE)"},
         {".Unsigned.entries.", "(\u672A\u7B7E\u540D\u6761\u76EE)"},
+        {".Directory.entries.", "\uFF08\u76EE\u5F55\u6761\u76EE\uFF09"},
         {"jar.is.unsigned",
                 "jar \u672A\u7B7E\u540D\u3002"},
         {"jar.treated.unsigned",
@@ -163,10 +174,14 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"history.nobk", "- \u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 META-INF/%s.SF \u7F3A\u5C11\u5757\u6587\u4EF6"},
 
         {"with.weak", "%s (\u5F31)"},
+        {"with.algparams.weak", "%1$s \u4F7F\u7528 %2$s\uFF08\u5F31\uFF09"},
         {"with.disabled", "%s\uFF08\u7981\u7528\uFF09"},
+        {"with.algparams.disabled", "%1$s \u4F7F\u7528 %2$s\uFF08\u7981\u7528\uFF09"},
         {"key.bit", "%d \u4F4D\u5BC6\u94A5"},
         {"key.bit.weak", "%d \u4F4D\u5BC6\u94A5 (\u5F31)"},
+        {"key.bit.eccurve.weak", "%1$d \u4F4D %2$s \u5BC6\u94A5 (\u5F31)"},
         {"key.bit.disabled", "%d \u4F4D\u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
+        {"key.bit.eccurve.disabled", "%1$d \u4F4D %2$s \u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
         {"unknown.size", "\u672A\u77E5\u5927\u5C0F"},
         {"extra.attributes.detected", "\u68C0\u6D4B\u5230 POSIX \u6587\u4EF6\u6743\u9650\u548C/\u6216 symlink \u5C5E\u6027\u3002\u8FD9\u4E9B\u5C5E\u6027\u5728\u8FDB\u884C\u7B7E\u540D\u65F6\u4F1A\u88AB\u5FFD\u7565\uFF0C\u4E0D\u53D7\u8BE5\u7B7E\u540D\u7684\u4FDD\u62A4\u3002"},
 

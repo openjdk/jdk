@@ -244,7 +244,7 @@ final class FingerPrint {
         private final Set<Method> methods = new HashSet<>();
 
         public ClassAttributes() {
-            super(Opcodes.ASM7);
+            super(Opcodes.ASM9);
         }
 
         private boolean isPublic(int access) {

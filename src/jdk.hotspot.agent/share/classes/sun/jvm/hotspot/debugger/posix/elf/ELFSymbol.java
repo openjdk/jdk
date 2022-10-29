@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ public interface ELFSymbol {
     /** Binding secifying that the symbol resembles a global symbol, but has
      * a lower precedence. */
     public static final int BINDING_WEAK = 2;
-    /** Lower bound binding values reserverd for processor specific
+    /** Lower bound binding values reserved for processor specific
      * semantics. */
     public static final int BINDING_LOPROC = 13;
-    /** Upper bound binding values reserverd for processor specific
+    /** Upper bound binding values reserved for processor specific
      * semantics. */
     public static final int BINDING_HIPROC = 15;
 

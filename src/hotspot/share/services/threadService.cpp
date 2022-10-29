@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -42,8 +43,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
@@ -162,7 +164,8 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
 
   assert(!thread->is_terminated(), "must not be terminated");
   if (!thread->is_exiting()) {
-    // JavaThread::exit() skipped calling current_thread_exiting()
+    // We did not get here via JavaThread::exit() so current_thread_exiting()
+    // was not called, e.g., JavaThread::cleanup_failed_attach_current_thread().
     decrement_thread_counts(thread, daemon);
   }
 
@@ -367,8 +370,24 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
   }
 }
 
+bool ThreadService::is_virtual_or_carrier_thread(JavaThread* jt) {
+  oop threadObj = jt->threadObj();
+  if (threadObj != NULL && threadObj->is_a(vmClasses::BasicVirtualThread_klass())) {
+    // a virtual thread backed by JavaThread
+    return true;
+  }
+  if (jt->is_vthread_mounted()) {
+    // carrier thread
+    return true;
+  }
+  return false;
+}
+
 // Find deadlocks involving raw monitors, object monitors and concurrent locks
 // if concurrent_locks is true.
+// We skip virtual thread carriers under the assumption that the current scheduler, ForkJoinPool,
+// doesn't hold any locks while mounting a virtual thread, so any owned monitor (or j.u.c., lock for that matter)
+// on that JavaThread must be owned by the virtual thread, and we don't support deadlock detection for virtual threads.
 DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, bool concurrent_locks) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
@@ -384,13 +403,19 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
   // Initialize the depth-first-number for each JavaThread.
   JavaThreadIterator jti(t_list);
   for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
-    jt->set_depth_first_number(-1);
+    if (!is_virtual_or_carrier_thread(jt)) {
+      jt->set_depth_first_number(-1);
+    }
   }
 
   DeadlockCycle* deadlocks = NULL;
   DeadlockCycle* last = NULL;
   DeadlockCycle* cycle = new DeadlockCycle();
   for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
+    if (is_virtual_or_carrier_thread(jt)) {
+      // skip virtual and carrier threads
+      continue;
+    }
     if (jt->depth_first_number() >= 0) {
       // this thread was already visited
       continue;
@@ -430,10 +455,8 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
           currentThread = JavaThread::cast(owner);
         }
       } else if (waitingToLockMonitor != NULL) {
-        address currentOwner = (address)waitingToLockMonitor->owner();
-        if (currentOwner != NULL) {
-          currentThread = Threads::owning_thread_from_monitor_owner(t_list,
-                                                                    currentOwner);
+        if (waitingToLockMonitor->has_owner()) {
+          currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
           if (currentThread == NULL) {
             // This function is called at a safepoint so the JavaThread
             // that owns waitingToLockMonitor should be findable, but
@@ -465,7 +488,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         }
       }
 
-      if (currentThread == NULL) {
+      if (currentThread == NULL || is_virtual_or_carrier_thread(currentThread)) {
         // No dependency on another thread
         break;
       }
@@ -611,7 +634,6 @@ void StackFrameInfo::print_on(outputStream* st) const {
     oop o = _locked_monitors->at(i).resolve();
     st->print_cr("\t- locked <" INTPTR_FORMAT "> (a %s)", p2i(o), o->klass()->external_name());
   }
-
 }
 
 // Iterate through monitor cache to find JNI locked monitors
@@ -659,16 +681,26 @@ ThreadStackTrace::~ThreadStackTrace() {
   }
 }
 
-void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth) {
+void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHashtable* table, bool full) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
   if (_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(_thread);
-    vframe* start_vf = _thread->last_java_vframe(&reg_map);
+    RegisterMap reg_map(_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
+
+    // If full, we want to print both vthread and carrier frames
+    vframe* start_vf = !full && _thread->is_vthread_mounted()
+      ? _thread->carrier_last_java_vframe(&reg_map)
+      : _thread->last_java_vframe(&reg_map);
     int count = 0;
     for (vframe* f = start_vf; f; f = f->sender() ) {
       if (maxDepth >= 0 && count == maxDepth) {
         // Skip frames if more than maxDepth
+        break;
+      }
+      if (!full && f->is_vthread_entry()) {
         break;
       }
       if (f->is_java_frame()) {
@@ -683,9 +715,19 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth) {
 
   if (_with_locked_monitors) {
     // Iterate inflated monitors and find monitors locked by this thread
-    // not found in the stack
+    // that are not found in the stack, e.g. JNI locked monitors:
     InflatedMonitorsClosure imc(this);
-    ObjectSynchronizer::monitors_iterate(&imc, _thread);
+    if (table != nullptr) {
+      // Get the ObjectMonitors locked by the target thread, if any,
+      // and does not include any where owner is set to a stack lock
+      // address in the target thread:
+      ObjectMonitorsHashtable::PtrList* list = table->get_entry(_thread);
+      if (list != nullptr) {
+        ObjectSynchronizer::monitors_iterate(&imc, list, _thread);
+      }
+    } else {
+      ObjectSynchronizer::monitors_iterate(&imc, _thread);
+    }
   }
 }
 
@@ -882,7 +924,13 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   oop blocker_object = NULL;
   oop blocker_object_owner = NULL;
 
-  if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
+  if (thread->is_vthread_mounted() && thread->vthread() != threadObj) { // ThreadSnapshot only captures platform threads
+    _thread_status = JavaThreadStatus::IN_OBJECT_WAIT;
+    oop vthread = thread->vthread();
+    assert(vthread != NULL, "");
+    blocker_object = vthread;
+    blocker_object_owner = vthread;
+  } else if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
       _thread_status == JavaThreadStatus::IN_OBJECT_WAIT ||
       _thread_status == JavaThreadStatus::IN_OBJECT_WAIT_TIMED) {
 
@@ -906,10 +954,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
         blocker_object_owner = owner->threadObj();
       }
     }
-  }
-
-  // Support for JSR-166 locks
-  if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
+  } else if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
     blocker_object = thread->current_park_blocker();
     if (blocker_object != NULL && blocker_object->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
       blocker_object_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(blocker_object);
@@ -936,9 +981,10 @@ ThreadSnapshot::~ThreadSnapshot() {
   delete _concurrent_locks;
 }
 
-void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_monitors) {
+void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
+                                             ObjectMonitorsHashtable* table, bool full) {
   _stack_trace = new ThreadStackTrace(_thread, with_locked_monitors);
-  _stack_trace->dump_stack_at_safepoint(max_depth);
+  _stack_trace->dump_stack_at_safepoint(max_depth, table, full);
 }
 
 
@@ -1004,8 +1050,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       if (!currentThread->current_pending_monitor_is_from_java()) {
         owner_desc = "\n  in JNI, which is held by";
       }
-      currentThread = Threads::owning_thread_from_monitor_owner(t_list,
-                                                                (address)waitingToLockMonitor->owner());
+      currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
       if (currentThread == NULL) {
         // The deadlock was detected at a safepoint so the JavaThread
         // that owns waitingToLockMonitor should be findable, but

@@ -369,7 +369,7 @@ static BOOL shouldUsePressAndHold() {
     NSPoint absP = [NSEvent mouseLocation];
 
     // Convert global numbers between Cocoa's coordinate system and Java.
-    // TODO: need consitent way for doing that both with global as well as with local coordinates.
+    // TODO: need consistent way for doing that both with global as well as with local coordinates.
     // The reason to do it here is one more native method for getting screen dimension otherwise.
 
     NSRect screenRect = [[[NSScreen screens] objectAtIndex:0] frame];
@@ -546,12 +546,13 @@ static BOOL shouldUsePressAndHold() {
 -(BOOL) isCodePointInUnicodeBlockNeedingIMEvent: (unichar) codePoint {
     if ((codePoint == 0x0024) || (codePoint == 0x00A3) ||
         (codePoint == 0x00A5) ||
+        ((codePoint >= 0x900) && (codePoint <= 0x97F)) ||
         ((codePoint >= 0x20A3) && (codePoint <= 0x20BF)) ||
         ((codePoint >= 0x3000) && (codePoint <= 0x303F)) ||
         ((codePoint >= 0xFF00) && (codePoint <= 0xFFEF))) {
         // Code point is in 'CJK Symbols and Punctuation' or
         // 'Halfwidth and Fullwidth Forms' Unicode block or
-        // currency symbols unicode
+        // currency symbols unicode or Devanagari script
         return YES;
     }
     return NO;
@@ -957,11 +958,17 @@ static jclass jc_CInputMethod = NULL;
 
 #ifdef IM_DEBUG
     NSLog(@"insertText kbdlayout %@ ",(NSString *)kbdLayout);
+
+    NSLog(@"utf8Length %lu utf16Length %lu", (unsigned long)utf8Length, (unsigned long)utf16Length);
+    NSLog(@"codePoint %x", codePoint);
 #endif // IM_DEBUG
 
     if ((utf16Length > 2) ||
         ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
         ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
+#ifdef IM_DEBUG
+        NSLog(@"string complex ");
+#endif
         aStringIsComplex = YES;
     }
 
@@ -1043,7 +1050,7 @@ static jclass jc_CInputMethod = NULL;
 
     // NSInputContext already did the analysis of the TSM event and created attributes indicating
     // the underlining and color that should be done to the string.  We need to look at the underline
-    // style and color to determine what kind of Java hilighting needs to be done.
+    // style and color to determine what kind of Java highlighting needs to be done.
     jstring inProcessText = NSStringToJavaString(env, incomingString);
     (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_startIMUpdate, inProcessText);
     CHECK_EXCEPTION();
@@ -1254,7 +1261,7 @@ static jclass jc_CInputMethod = NULL;
     return range;
 }
 
-/* This method returns the first frame of rects for theRange in screen coordindate system.
+/* This method returns the first frame of rects for theRange in screen coordinate system.
  */
 - (NSRect) firstRectForCharacterRange:(NSRange)theRange actualRange:(NSRangePointer)actualRange
 {

@@ -60,7 +60,7 @@ import com.sun.media.sound.MidiUtils;
  * @see Sequencer#setTrackMute
  * @see Sequencer#setTrackSolo
  */
-public class Track {
+public final class Track {
 
     // TODO: use arrays for faster access
 

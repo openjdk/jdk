@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package javax.swing.text;
 
-import java.io.*;
-import java.text.*;
-import java.util.*;
-import javax.swing.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.text.ParseException;
+import java.util.ArrayList;
+import javax.swing.JFormattedTextField;
+import javax.swing.text.DefaultFormatter;
 
 /**
  * <code>MaskFormatter</code> is used to format and edit strings. The behavior
@@ -100,7 +103,7 @@ import javax.swing.*;
  * <pre>
  *   MaskFormatter formatter = new MaskFormatter("###-####");
  *   formatter.setPlaceholderCharacter('_');
- *   formatter.getDisplayValue(tf, "123");
+ *   System.out.println(formatter.valueToString("123"));
  * </pre>
  * <p>
  * Would result in the string '123-____'. If
@@ -692,7 +695,7 @@ public class MaskFormatter extends DefaultFormatter {
      * result in a legal edit.  This may set the <code>value</code>
      * field of <code>rh</code>.
      * <p>
-     * This is overriden to return true for a partial match.
+     * This is overridden to return true for a partial match.
      */
     boolean isValidEdit(ReplaceHolder rh) {
         if (!getAllowsInvalid()) {
@@ -718,7 +721,7 @@ public class MaskFormatter extends DefaultFormatter {
      *     matches the literal character at the position), allow it
      * <li>Else if the position identifies a literal character, add it. This
      *     allows for the user to paste in text that may/may not contain
-     *     the literals.  For example, in pasing in 5551212 into ###-####
+     *     the literals.  For example, in passing in 5551212 into ###-####
      *     when the 1 is evaluated it is illegal (by the first test), but there
      *     is a literal at this position (-), so it is used.  NOTE: This has
      *     a problem that you can't tell (without looking ahead) if you should
@@ -828,7 +831,7 @@ public class MaskFormatter extends DefaultFormatter {
 
 
     //
-    // Interal classes used to represent the mask.
+    // Internal classes used to represent the mask.
     //
     private class MaskCharacter {
         /**
@@ -841,7 +844,7 @@ public class MaskFormatter extends DefaultFormatter {
         }
 
         /**
-         * Returns true if <code>aChar</code> is a valid reprensentation of
+         * Returns true if <code>aChar</code> is a valid representation of
          * the receiver. The default implementation returns true if the
          * receiver represents a literal character and <code>getChar</code>
          * == aChar. Otherwise, this will return true is <code>aChar</code>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class methodHandle;
 
 // The ThreadShadow class is a helper class to access the _pending_exception
 // field of the Thread class w/o having access to the Thread's interface (for
-// include hierachy reasons).
+// include hierarchy reasons).
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
@@ -173,8 +173,6 @@ class Exceptions {
 
   static void throw_stack_overflow_exception(JavaThread* thread, const char* file, int line, const methodHandle& method);
 
-  static void throw_unsafe_access_internal_error(JavaThread* thread, const char* file, int line, const char* message);
-
   static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
   // Exception counting for error files of interesting exceptions that may have
@@ -239,7 +237,7 @@ class Exceptions {
 #define CHECK_AND_CLEAR_NULL                    CHECK_AND_CLEAR_(NULL)
 #define CHECK_AND_CLEAR_false                   CHECK_AND_CLEAR_(false)
 
-// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError and j.l.ThreadDeath.
+// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError.
 // So use it with caution.
 #define CLEAR_PENDING_NONASYNC_EXCEPTION        (((ThreadShadow*)THREAD)->clear_pending_nonasync_exception())
 #define CHECK_AND_CLEAR_NONASYNC                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_NONASYNC_EXCEPTION; return; } (void)(0

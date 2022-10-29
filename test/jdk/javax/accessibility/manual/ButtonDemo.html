@@ -1,0 +1,80 @@
+<!--
+Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+or visit www.oracle.com if you need additional information or have any
+questions.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+  table, th, td {
+  border: 1px solid black;
+}
+
+    </style>
+</head>
+<body>
+
+
+<table>
+    <tr>
+        <th style="background-color:rgb(204,255,255); font-weight:bold; width:5%;">S.No</th>
+        <th style="background-color:rgb(204,255,255); font-weight:bold; width:25%;">Test</th>
+        <th style="background-color:rgb(204,255,255); font-weight:bold; width:75%;">Scenario</th>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>Button Demo</td>
+        <td>
+            <ol>
+                <li> Tab until the Button Demo icon <img src="./resource/rbtn.png"> has focus. Press 'space' to
+                    choose.<br>
+                <li> Tab until the "Button Demo" tab has focus. Press 'space'. Press 'tab'.<br>
+                <li> Use the arrow keys to navigate between "Buttons", "Radio Buttons", and "Check Boxes".<br>
+                <li> Tab to enter the demo pane. Tab & Shift-Tab to move between each button.<br>
+                <li> Press 'space' to trigger (i.e. "press") a button.<br>
+                <li> Repeat steps 1 through 5 for the <b>Radio Button</b> & <b>Check Boxes</b> tabs.<br>
+            </ol>
+        </td>
+        </td>
+    </tr>
+    <tr>
+        <td style="Width:100%;" colspan="3"><b>Expected Result</b></td>
+    </tr>
+    <tr>
+        <td style="Width:100%;" colspan="3">
+            <ol>
+                <li>Verify that as you navigate, the focus is shown, e.g.</li>
+                <img src="./resource/btn.png">
+                <li>As you press 'space' to trigger each button, verify that you see each button visually depress.
+                    e.g.:
+                </li>
+                <img src="./resource/dep.png">
+            </ol>
+        </td>
+    </tr>
+    <tr>
+        <td style="Width:100%;" colspan="3"><b>Note: actual component appearence may vary depending on look and
+            feel.</b></td>
+    </tr>
+</table>
+</body>
+</html>
+

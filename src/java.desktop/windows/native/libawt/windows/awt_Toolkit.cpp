@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,8 @@ AwtToolkit::AwtToolkit() {
 
     m_waitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
     m_inputMethodWaitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
-    isInDoDragDropLoop = FALSE;
+    isDnDSourceActive = FALSE;
+    isDnDTargetActive = FALSE;
     eventNumber = 0;
 }
 
@@ -529,7 +530,7 @@ void ToolkitThreadProc(void *param)
     JNIEnv *env;
     JavaVMAttachArgs attachArgs;
     attachArgs.version  = JNI_VERSION_1_2;
-    attachArgs.name     = "AWT-Windows";
+    attachArgs.name     = (char*)"AWT-Windows";
     attachArgs.group    = data->threadGroup;
 
     jint res = jvm->AttachCurrentThreadAsDaemon((void **)&env, &attachArgs);
@@ -1039,7 +1040,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
            if (AwtWindow::IsResizing()) {
                return 0;
            }
-          // Create an artifical MouseExit message if the mouse left to
+          // Create an artificial MouseExit message if the mouse left to
           // a non-java window (bad mouse!)
           POINT pt;
           AwtToolkit& tk = AwtToolkit::GetInstance();
@@ -1081,9 +1082,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
       // Special awt message to call Imm APIs.
       // ImmXXXX() API must be used in the main thread.
-      // In other thread these APIs does not work correctly even if
-      // it returs with no error. (This restriction is not documented)
-      // So we must use thse messages to call these APIs in main thread.
+      // In other threads these APIs do not work correctly even if
+      // it returns with no error. (This restriction is not documented)
+      // So we must use these messages to call these APIs in main thread.
       case WM_AWT_CREATECONTEXT: {
           AwtToolkit& tk = AwtToolkit::GetInstance();
           tk.m_inputMethodData = reinterpret_cast<LRESULT>(
@@ -1176,7 +1177,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       }
       case WM_AWT_ENDCOMPOSITION: {
           /*right now we just cancel the composition string
-          may need to commit it in the furture
+          may need to commit it in the future
           Changed to commit it according to the flag 10/29/98*/
           ImmNotifyIME((HIMC)wParam, NI_COMPOSITIONSTR,
                        (lParam ? CPS_COMPLETE : CPS_CANCEL), 0);
@@ -1602,7 +1603,7 @@ void AwtToolkit::QuitMessageLoop(int status) {
 
     /*
      * Fix for 4623377.
-     * Modal loop may not exit immediatelly after WM_CANCELMODE, so it still can
+     * Modal loop may not exit immediately after WM_CANCELMODE, so it still can
      * eat WM_QUIT message and the nested message loop will never exit.
      * The fix is to use AwtToolkit instance variables instead of WM_QUIT to
      * guarantee that we exit from the nested message loop when any possible
@@ -3012,7 +3013,7 @@ Java_sun_awt_windows_WToolkit_syncNativeQueue(JNIEnv *env, jobject self, jlong t
     tk.PostMessage(WM_SYNC_WAIT, 0, 0);
     for(long t = 2; t < timeout &&
                WAIT_TIMEOUT == ::WaitForSingleObject(tk.m_waitEvent, 2); t+=2) {
-        if (tk.isInDoDragDropLoop) {
+        if (tk.isDnDSourceActive || tk.isDnDTargetActive) {
             break;
         }
     }
@@ -3199,8 +3200,8 @@ BOOL AwtToolkit::TICloseTouchInputHandle(HTOUCHINPUT hTouchInput) {
 }
 
 /*
- * The fuction intended for access to an IME API. It posts IME message to the queue and
- * waits untill the message processing is completed.
+ * The function intended for access to an IME API. It posts IME message to the queue and
+ * waits until the message processing is completed.
  *
  * On Windows 10 the IME may process the messages send via SenMessage() from other threads
  * when the IME is called by TranslateMessage(). This may cause an reentrancy issue when
@@ -3216,7 +3217,7 @@ LRESULT AwtToolkit::InvokeInputMethodFunction(UINT msg, WPARAM wParam, LPARAM lP
      * the IME completion.
      */
     CriticalSection::Lock lock(m_inputMethodLock);
-    if (isInDoDragDropLoop) {
+    if (isDnDSourceActive || isDnDTargetActive) {
         SendMessage(msg, wParam, lParam);
         ::ResetEvent(m_inputMethodWaitEvent);
         return m_inputMethodData;

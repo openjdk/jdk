@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,11 @@ import javax.crypto.ShortBufferException;
 
 /**
  * This class implements padding as specified in the W3 XML ENC standard.
+ * Though the standard does not specify or require the padding bytes to be
+ * random, this implementation pads with random bytes (until the last byte,
+ * which provides the length of padding, as specified).
  *
  * @author Valerie Peng
- *
- *
  * @see Padding
  */
 final class ISO10126Padding implements Padding {

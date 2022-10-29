@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -87,7 +88,6 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
 
 ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                                        uint      mt_processing_degree,
-                                       bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
@@ -99,7 +99,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   assert(is_subject_to_discovery != NULL, "must be set");
 
   _discovery_is_concurrent = concurrent_discovery;
-  _discovery_is_mt         = mt_discovery;
+  _discovery_is_mt         = (mt_discovery_degree > 1);
   _num_queues              = MAX2(1U, mt_processing_degree);
   _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
   _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,
@@ -192,12 +192,14 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   // Stop treating discovered references specially.
   disable_discovery();
 
-  ReferenceProcessorStats stats(total_count(_discoveredSoftRefs),
-                                total_count(_discoveredWeakRefs),
-                                total_count(_discoveredFinalRefs),
-                                total_count(_discoveredPhantomRefs));
+  phase_times.set_ref_discovered(REF_SOFT, total_count(_discoveredSoftRefs));
+  phase_times.set_ref_discovered(REF_WEAK, total_count(_discoveredWeakRefs));
+  phase_times.set_ref_discovered(REF_FINAL, total_count(_discoveredFinalRefs));
+  phase_times.set_ref_discovered(REF_PHANTOM, total_count(_discoveredPhantomRefs));
 
   update_soft_ref_master_clock();
+
+  phase_times.set_processing_is_mt(processing_is_mt());
 
   {
     RefProcTotalPhaseTimesTracker tt(SoftWeakFinalRefsPhase, &phase_times);
@@ -219,6 +221,10 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   // Elements on discovered lists were pushed to the pending list.
   verify_no_references_recorded();
 
+  ReferenceProcessorStats stats(phase_times.ref_discovered(REF_SOFT),
+                                phase_times.ref_discovered(REF_WEAK),
+                                phase_times.ref_discovered(REF_FINAL),
+                                phase_times.ref_discovered(REF_PHANTOM));
   return stats;
 }
 
@@ -318,7 +324,7 @@ inline void log_dropped_ref(const DiscoveredListIterator& iter, const char* reas
 inline void log_enqueued_ref(const DiscoveredListIterator& iter, const char* reason) {
   if (log_develop_is_enabled(Trace, gc, ref)) {
     ResourceMark rm;
-    log_develop_trace(gc, ref)("Enqueue %s reference (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Enqueue %s reference (" PTR_FORMAT ": %s)",
                                reason, p2i(iter.obj()), iter.obj()->klass()->internal_name());
   }
   assert(oopDesc::is_oop(iter.obj()), "Adding a bad reference");
@@ -365,7 +371,7 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
   }
 
   log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
-                             " Refs in discovered list " INTPTR_FORMAT,
+                             " Refs in discovered list " PTR_FORMAT,
                              iter.removed(), iter.processed(), p2i(&refs_list));
   return iter.removed();
 }
@@ -432,7 +438,6 @@ size_t ReferenceProcessor::total_reference_count(ReferenceType type) const {
     case REF_PHANTOM:
       list = _discoveredPhantomRefs;
       break;
-    case REF_OTHER:
     case REF_NONE:
     default:
       ShouldNotReachHere();
@@ -478,7 +483,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
                                                                        keep_alive,
                                                                        enqueue,
                                                                        do_enqueue_and_clear);
-    _phase_times->add_ref_cleared(ref_type, removed);
+    _phase_times->add_ref_dropped(ref_type, removed);
   }
 }
 
@@ -724,14 +729,10 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
                                                       ReferenceProcessorPhaseTimes& phase_times) {
 
-  size_t const num_soft_refs = total_count(_discoveredSoftRefs);
-  size_t const num_weak_refs = total_count(_discoveredWeakRefs);
-  size_t const num_final_refs = total_count(_discoveredFinalRefs);
+  size_t const num_soft_refs = phase_times.ref_discovered(REF_SOFT);
+  size_t const num_weak_refs = phase_times.ref_discovered(REF_WEAK);
+  size_t const num_final_refs = phase_times.ref_discovered(REF_FINAL);
   size_t const num_total_refs = num_soft_refs + num_weak_refs + num_final_refs;
-  phase_times.set_ref_discovered(REF_WEAK, num_weak_refs);
-  phase_times.set_ref_discovered(REF_FINAL, num_final_refs);
-
-  phase_times.set_processing_is_mt(processing_is_mt());
 
   if (num_total_refs == 0) {
     log_debug(gc, ref)("Skipped SoftWeakFinalRefsPhase of Reference Processing: no references");
@@ -746,8 +747,6 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
     maybe_balance_queues(_discoveredWeakRefs);
     maybe_balance_queues(_discoveredFinalRefs);
   }
-
-  RefProcPhaseTimeTracker tt(SoftWeakFinalRefsPhase, &phase_times);
 
   log_reflist("SoftWeakFinalRefsPhase Soft before", _discoveredSoftRefs, _max_num_queues);
   log_reflist("SoftWeakFinalRefsPhase Weak before", _discoveredWeakRefs, _max_num_queues);
@@ -764,8 +763,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
 void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
-  size_t const num_final_refs = total_count(_discoveredFinalRefs);
-  phase_times.set_processing_is_mt(processing_is_mt());
+  size_t const num_final_refs = phase_times.ref_discovered(REF_FINAL);
 
   if (num_final_refs == 0) {
     log_debug(gc, ref)("Skipped KeepAliveFinalRefsPhase of Reference Processing: no references");
@@ -780,7 +778,6 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
   }
 
   // Traverse referents of final references and keep them and followers alive.
-  RefProcPhaseTimeTracker tt(KeepAliveFinalRefsPhase, &phase_times);
   RefProcKeepAliveFinalPhaseTask phase_task(*this, &phase_times);
   run_task(phase_task, proxy_task, true);
 
@@ -790,9 +787,7 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
 void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
                                               ReferenceProcessorPhaseTimes& phase_times) {
 
-  size_t const num_phantom_refs = total_count(_discoveredPhantomRefs);
-  phase_times.set_ref_discovered(REF_PHANTOM, num_phantom_refs);
-  phase_times.set_processing_is_mt(processing_is_mt());
+  size_t const num_phantom_refs = phase_times.ref_discovered(REF_PHANTOM);
 
   if (num_phantom_refs == 0) {
     log_debug(gc, ref)("Skipped PhantomRefsPhase of Reference Processing: no references");
@@ -805,9 +800,6 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
     RefProcBalanceQueuesTimeTracker tt(PhantomRefsPhase, &phase_times);
     maybe_balance_queues(_discoveredPhantomRefs);
   }
-
-  // Walk phantom references appropriately.
-  RefProcPhaseTimeTracker tt(PhantomRefsPhase, &phase_times);
 
   log_reflist("PhantomRefsPhase Phantom before", _discoveredPhantomRefs, _max_num_queues);
 
@@ -823,7 +815,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    id = WorkerThread::current()->id();
+    id = WorkerThread::worker_id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.
@@ -836,9 +828,6 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   // Get the discovered queue to which we will add
   DiscoveredList* list = NULL;
   switch (rt) {
-    case REF_OTHER:
-      // Unknown reference type, no special treatment
-      break;
     case REF_SOFT:
       list = &_discoveredSoftRefs[id];
       break;
@@ -856,7 +845,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
     default:
       ShouldNotReachHere();
   }
-  log_develop_trace(gc, ref)("Thread %d gets list " INTPTR_FORMAT, id, p2i(list));
+  log_develop_trace(gc, ref)("Thread %d gets list " PTR_FORMAT, id, p2i(list));
   return list;
 }
 
@@ -878,10 +867,10 @@ inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list
     // We can always add the object without synchronization: every thread has its
     // own list head.
     refs_list.add_as_head(obj);
-    log_develop_trace(gc, ref)("Discovered reference (%s) (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Discovered reference (%s) (" PTR_FORMAT ": %s)",
                                discovery_is_mt() ? "mt" : "st", p2i(obj), obj->klass()->internal_name());
   } else {
-    log_develop_trace(gc, ref)("Already discovered reference (mt) (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Already discovered reference (mt) (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
   }
 }
@@ -924,8 +913,8 @@ void ReferenceProcessor::verify_referent(oop obj) {
   bool concurrent = discovery_is_concurrent();
   oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
   assert(concurrent ? oopDesc::is_oop_or_null(referent) : oopDesc::is_oop(referent),
-         "Bad referent " INTPTR_FORMAT " found in Reference "
-         INTPTR_FORMAT " during %sconcurrent discovery ",
+         "Bad referent " PTR_FORMAT " found in Reference "
+         PTR_FORMAT " during %sconcurrent discovery ",
          p2i(referent), p2i(obj), concurrent ? "" : "non-");
 }
 #endif
@@ -1008,7 +997,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   assert(oopDesc::is_oop_or_null(discovered), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   if (discovered != NULL) {
     // The reference has already been discovered...
-    log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Already discovered reference (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
     if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
       // assumes that an object is not processed twice;
@@ -1044,24 +1033,11 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   // Get the right type of discovered queue head.
   DiscoveredList* list = get_discovered_list(rt);
-  if (list == NULL) {
-    return false;   // nothing special needs to be done
-  }
-
   add_to_discovered_list(*list, obj, discovered_addr);
 
   assert(oopDesc::is_oop(obj), "Discovered a bad reference");
   verify_referent(obj);
   return true;
-}
-
-bool ReferenceProcessor::has_discovered_references() {
-  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
-    if (!_discovered_refs[i].is_empty()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,
@@ -1163,7 +1139,7 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
   }
 
   if (iter.processed() > 0) {
-    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " INTPTR_FORMAT,
+    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " PTR_FORMAT,
                                iter.removed(), iter.processed(), p2i(&refs_list));
   }
   return false;

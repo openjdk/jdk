@@ -706,9 +706,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
             return false;
         }
 
-        if (c != null && c instanceof JComponent &&
-            ((JComponent)c).processKeyBinding(ks, e, condition, pressed)) {
-
+        if (c instanceof JComponent jc && jc.processKeyBinding(ks, e, condition, pressed)) {
             return true;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8217375 8260286
+ * @bug 8217375 8260286 8267319
  * @summary This test is used to verify the compatibility of jarsigner across
  *     different JDK releases. It also can be used to check jar signing (w/
  *     and w/o TSA) and to verify some specific signing and digest algorithms.
@@ -67,6 +67,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
@@ -1034,13 +1035,19 @@ public class Compatibility {
             throws Throwable {
         long start = System.currentTimeMillis();
         try {
+            String[] cmd;
+            if (Platform.isWindows()) {
+                cmd = new String[args.length + 3];
+                System.arraycopy(args, 0, cmd, 3, args.length);
+            } else {
+                cmd = new String[args.length + 4];
+                cmd[3] = "-J-Djava.security.egd=file:/dev/./urandom";
+                System.arraycopy(args, 0, cmd, 4, args.length);
+            }
 
-            String[] cmd = new String[args.length + 4];
             cmd[0] = toolPath;
             cmd[1] = "-J-Duser.language=en";
             cmd[2] = "-J-Duser.country=US";
-            cmd[3] = "-J-Djava.security.egd=file:/dev/./urandom";
-            System.arraycopy(args, 0, cmd, 4, args.length);
             return ProcessTools.executeCommand(cmd);
 
         } finally {
@@ -1192,9 +1199,9 @@ public class Compatibility {
 
             // defaults
             if (RSA.equals(keyAlgorithm) || DSA.equals(keyAlgorithm)) {
-                return 2048;
+                return 3072;
             } else if (EC.equals(keyAlgorithm)) {
-                return 256;
+                return 384;
             } else {
                 throw new RuntimeException("problem determining key size");
             }

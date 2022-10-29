@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.jgss.wrapper;
 
 import org.ietf.jgss.*;
+import java.lang.ref.Cleaner;
 import java.security.Provider;
 import sun.security.jgss.GSSHeader;
 import sun.security.jgss.GSSUtil;
@@ -46,6 +47,7 @@ import java.io.*;
  * @since 1.6
  */
 class NativeGSSContext implements GSSContextSpi {
+    private Cleaner.Cleanable cleanable;
 
     private static final int GSS_C_DELEG_FLAG = 1;
     private static final int GSS_C_MUTUAL_FLAG = 2;
@@ -63,7 +65,7 @@ class NativeGSSContext implements GSSContextSpi {
     private long pContext = 0; // Pointer to the gss_ctx_id_t structure
     private GSSNameElement srcName;
     private GSSNameElement targetName;
-    private boolean isInitiator;
+    private final boolean isInitiator;
     private boolean isEstablished;
     private GSSCredElement delegatedCred;
     private int flags;
@@ -87,7 +89,7 @@ class NativeGSSContext implements GSSContextSpi {
         throws GSSException {
         Oid mech = null;
         if (isInitiator) {
-            GSSHeader header = null;
+            GSSHeader header;
             try {
                 header = new GSSHeader(new ByteArrayInputStream(token));
             } catch (IOException ioe) {
@@ -144,10 +146,8 @@ class NativeGSSContext implements GSSContextSpi {
         if (sm != null) {
             String targetStr = targetName.getKrbName();
             String tgsStr = Krb5Util.getTGSName(targetName);
-            StringBuilder sb = new StringBuilder("\"");
-            sb.append(targetStr).append("\" \"");
-            sb.append(tgsStr).append('\"');
-            String krbPrincPair = sb.toString();
+            String krbPrincPair = "\"" + targetStr + "\" \"" +
+                    tgsStr + '\"';
             SunNativeProvider.debug("Checking DelegationPermission (" +
                                     krbPrincPair + ")");
             DelegationPermission perm =
@@ -160,7 +160,7 @@ class NativeGSSContext implements GSSContextSpi {
     private byte[] retrieveToken(InputStream is, int mechTokenLen)
         throws GSSException {
         try {
-            byte[] result = null;
+            byte[] result;
             if (mechTokenLen != -1) {
                 // Need to add back the GSS header for a complete GSS token
                 SunNativeProvider.debug("Precomputed mechToken length: " +
@@ -237,9 +237,9 @@ class NativeGSSContext implements GSSContextSpi {
     // Constructor for imported context
     // Warning: called by NativeUtil.c
     NativeGSSContext(long pCtxt, GSSLibStub stub) throws GSSException {
-        assert(pContext != 0);
-        pContext = pCtxt;
+        assert(pCtxt != 0);
         cStub = stub;
+        setContext(pCtxt);
 
         // Set everything except cred, cb, delegatedCred
         long[] info = cStub.inquireContext(pContext);
@@ -359,7 +359,7 @@ class NativeGSSContext implements GSSContextSpi {
         return isEstablished;
     }
 
-    public void dispose() throws GSSException {
+    public void dispose() {
         if (disposeCred != null) {
             disposeCred.dispose();
         }
@@ -370,10 +370,34 @@ class NativeGSSContext implements GSSContextSpi {
         srcName = null;
         targetName = null;
         delegatedCred = null;
-        if (pContext != 0) {
-            pContext = cStub.deleteContext(pContext);
+
+        if (pContext != 0 && cleanable != null) {
             pContext = 0;
+            cleanable.clean();
         }
+    }
+
+    // Note: this method is also used in native code.
+    private void setContext(long pContext) {
+        // Dispose the existing context.
+        if (this.pContext != 0L && cleanable != null) {
+            cleanable.clean();
+        }
+
+        // Reset the context
+        this.pContext = pContext;
+
+        // Register the cleaner.
+        if (pContext != 0L) {
+            cleanable = Krb5Util.cleaner.register(this,
+                    disposerFor(cStub, pContext));
+        }
+    }
+
+    private static Runnable disposerFor(GSSLibStub stub, long pContext) {
+        return () -> {
+            stub.deleteContext(pContext);
+        };
     }
 
     public int getWrapSizeLimit(int qop, boolean confReq,
@@ -435,7 +459,7 @@ class NativeGSSContext implements GSSContextSpi {
     public int unwrap(byte[] inBuf, int inOffset, int len,
                       byte[] outBuf, int outOffset,
                       MessageProp msgProp) throws GSSException {
-        byte[] result = null;
+        byte[] result;
         if ((inOffset != 0) || (len != inBuf.length)) {
             byte[] temp = new byte[len];
             System.arraycopy(inBuf, inOffset, temp, 0, len);
@@ -462,8 +486,8 @@ class NativeGSSContext implements GSSContextSpi {
     public int unwrap(InputStream inStream,
                       byte[] outBuf, int outOffset,
                       MessageProp msgProp) throws GSSException {
-        byte[] wrapped = null;
-        int wLength = 0;
+        byte[] wrapped;
+        int wLength;
         try {
             wrapped = new byte[inStream.available()];
             wLength = inStream.read(wrapped);
@@ -490,7 +514,7 @@ class NativeGSSContext implements GSSContextSpi {
     public void getMIC(InputStream inStream, OutputStream outStream,
                        MessageProp msgProp) throws GSSException {
         try {
-            int length = 0;
+            int length;
             byte[] msg = new byte[inStream.available()];
             length = inStream.read(msg);
 
@@ -637,11 +661,6 @@ class NativeGSSContext implements GSSContextSpi {
     }
     public boolean isInitiator() {
         return isInitiator;
-    }
-
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws Throwable {
-        dispose();
     }
 
     public Object inquireSecContext(String type)

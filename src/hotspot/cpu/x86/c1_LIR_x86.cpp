@@ -28,21 +28,21 @@
 #include "c1/c1_LIR.hpp"
 
 
-FloatRegister LIR_OprDesc::as_float_reg() const {
+FloatRegister LIR_Opr::as_float_reg() const {
   ShouldNotReachHere();
   return fnoreg;
 }
 
-FloatRegister LIR_OprDesc::as_double_reg() const {
+FloatRegister LIR_Opr::as_double_reg() const {
   ShouldNotReachHere();
   return fnoreg;
 }
 
-XMMRegister LIR_OprDesc::as_xmm_float_reg() const {
+XMMRegister LIR_Opr::as_xmm_float_reg() const {
   return FrameMap::nr2xmmreg(xmm_regnr());
 }
 
-XMMRegister LIR_OprDesc::as_xmm_double_reg() const {
+XMMRegister LIR_Opr::as_xmm_double_reg() const {
   assert(xmm_regnrLo() == xmm_regnrHi(), "assumed in calculation");
   return FrameMap::nr2xmmreg(xmm_regnrLo());
 }
@@ -50,11 +50,11 @@ XMMRegister LIR_OprDesc::as_xmm_double_reg() const {
 // Reg2 unused.
 LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
   assert(as_FloatRegister(reg2) == fnoreg, "Not used on this platform");
-  return (LIR_Opr)(intptr_t)((reg1 << LIR_OprDesc::reg1_shift) |
-                             (reg1 << LIR_OprDesc::reg2_shift) |
-                             LIR_OprDesc::double_type          |
-                             LIR_OprDesc::fpu_register         |
-                             LIR_OprDesc::double_size);
+  return (LIR_Opr)(intptr_t)((reg1 << LIR_Opr::reg1_shift) |
+                             (reg1 << LIR_Opr::reg2_shift) |
+                             LIR_Opr::double_type          |
+                             LIR_Opr::fpu_register         |
+                             LIR_Opr::double_size);
 }
 
 #ifndef PRODUCT

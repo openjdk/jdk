@@ -31,6 +31,24 @@
    Any HTTP functionality not provided by this API can be implemented by application code
    using the API.
    <p>
+ * The main components are:
+ * <ul>
+ * <li>the {@link com.sun.net.httpserver.HttpExchange} class that describes a
+ * request and response pair,</li>
+ * <li>the {@link com.sun.net.httpserver.HttpHandler} interface to handle
+ * incoming requests, plus the {@link com.sun.net.httpserver.HttpHandlers} class
+ * that provides useful handler implementations,</li>
+ * <li>the {@link com.sun.net.httpserver.HttpContext} class that maps a URI path
+ * to a {@code HttpHandler},</li>
+ * <li>the {@link com.sun.net.httpserver.HttpServer} class to listen for
+ * connections and dispatch requests to handlers,</li>
+ * <li>the {@link com.sun.net.httpserver.Filter} class that allows pre- and post-
+ * processing of requests.</li></ul>
+ * <p>
+ * The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
+ * HTTP-only file server (intended for testing, development and debugging purposes
+ * only). A default implementation is provided via the {@code jwebserver} tool.
+   <p>
    Programmers must implement the {@link com.sun.net.httpserver.HttpHandler} interface. This interface
    provides a callback which is invoked to handle incoming requests from clients.
    A HTTP request and its response is known as an exchange. HTTP exchanges are
@@ -120,13 +138,6 @@
         }
     });
    </pre></blockquote>
-   <p>
-   The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
-   HTTP file server (intended for testing, development and debugging purposes
-   only). A default implementation is provided via the
-   <a href="{@docRoot}/jdk.httpserver/module-summary.html#entry-point">main entry point</a>
-   of the {@code jdk.httpserver} module.
-
    @since 1.6
  */
 package com.sun.net.httpserver;

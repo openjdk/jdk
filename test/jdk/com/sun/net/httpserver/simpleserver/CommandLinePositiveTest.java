@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Positive tests for simpleserver command-line tool
+ * @summary Positive tests for java -m jdk.httpserver command
  * @library /test/lib
  * @modules jdk.httpserver
  * @run testng/othervm CommandLinePositiveTest
@@ -46,6 +46,7 @@ import static java.lang.System.out;
 
 public class CommandLinePositiveTest {
 
+    static final String JAVA_VERSION = System.getProperty("java.version");
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
     static final String JAVA = getJava(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
@@ -106,7 +107,8 @@ public class CommandLinePositiveTest {
 
     static final String USAGE_TEXT = """
             Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
-                                          [-o none|info|verbose] [-h to show options]""";
+                                          [-o none|info|verbose] [-h to show options]
+                                          [-version to show version information]""";
 
     static final String OPTIONS_TEXT = """
             Options:
@@ -115,7 +117,8 @@ public class CommandLinePositiveTest {
             -d, --directory       - Directory to serve. Default: current directory.
             -o, --output          - Output format. none|info|verbose. Default: info.
             -p, --port            - Port to listen on. Default: 8000.
-            -h, -?, --help        - Print this help message.
+            -h, -?, --help        - Prints this help message and exits.
+            -version, --version   - Prints version information and exits.
             To stop the server, press Ctrl + C.""".formatted(LOOPBACK_ADDR);
 
     @Test(dataProvider = "helpOptions")
@@ -130,12 +133,24 @@ public class CommandLinePositiveTest {
     }
 
     @DataProvider
+    public Object[][] versionOptions() { return new Object[][] {{"-version"}, {"--version"}}; }
+
+    @Test(dataProvider = "versionOptions")
+    public void testVersion(String opt) throws Throwable {
+        out.println("\n--- testVersion, opt=\"%s\" ".formatted(opt));
+        simpleserver(WaitForLine.VERSION_STARTUP_LINE,
+                false,  // do not explicitly destroy the process
+                JAVA, "-m", "jdk.httpserver", opt)
+                .shouldHaveExitValue(0);
+    }
+
+    @DataProvider
     public Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
 
     @Test(dataProvider = "bindOptions")
     public void testBindAllInterfaces(String opt) throws Throwable {
-        out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0.0.0.0")
+        out.println("\n--- testBindAllInterfaces, opt=\"%s\" ".formatted(opt));
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "0.0.0.0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                 .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
@@ -207,11 +222,13 @@ public class CommandLinePositiveTest {
 
     static final String REGULAR_STARTUP_LINE1_STRING = "Serving";
     static final String REGULAR_STARTUP_LINE2_STRING = "URL http://";
+    static final String VERSION_STARTUP_LINE_STRING = "java " + JAVA_VERSION;
 
     // The stdout/stderr output line to wait for when starting the simpleserver
     enum WaitForLine {
         REGULAR_STARTUP_LINE (REGULAR_STARTUP_LINE2_STRING) ,
-        HELP_STARTUP_LINE (OPTIONS_TEXT.lines().reduce((first, second) -> second).orElseThrow());
+        HELP_STARTUP_LINE (OPTIONS_TEXT.lines().reduce((first, second) -> second).orElseThrow()),
+        VERSION_STARTUP_LINE (VERSION_STARTUP_LINE_STRING);
 
         final String value;
         WaitForLine(String value) { this.value = value; }

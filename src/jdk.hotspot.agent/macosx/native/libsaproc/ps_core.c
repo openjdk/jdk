@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -545,7 +545,7 @@ static bool get_real_path(struct ps_prochandle* ph, char *rpath) {
 
   // Look for bin directory in path. This is useful when attaching to a core file
   // that was launched with a JDK tool other than "java".
-  posbin = rstrstr(execname, "/bin/");  // look for the last occurence of "/bin/"
+  posbin = rstrstr(execname, "/bin/");  // look for the last occurrence of "/bin/"
   if (posbin != NULL) {
     strncpy(jdk_dir, execname, posbin - execname);
     jdk_dir[posbin - execname] = '\0';
@@ -624,7 +624,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         continue;
       }
       lseek(fd, -sizeof(uint32_t), SEEK_CUR);
-      // This is the begining of the mach-o file in the segment.
+      // This is the beginning of the mach-o file in the segment.
       if (read(fd, (void *)&header, sizeof(mach_header_64)) != sizeof(mach_header_64)) {
         goto err;
       }
@@ -641,7 +641,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         fpos += lcmd.cmdsize;  // next command position
         // make sure still within seg size.
         if (fpos  - lcmd.cmdsize - iter->offset > iter->memsz) {
-          print_debug("Warning: out of segement limit: %ld \n", fpos  - lcmd.cmdsize - iter->offset);
+          print_debug("Warning: out of segment limit: %ld \n", fpos  - lcmd.cmdsize - iter->offset);
           break;  // no need to iterate all commands
         }
         if (lcmd.cmd == LC_ID_DYLIB) {
@@ -705,7 +705,7 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {
-    print_debug("cant allocate ps_prochandle\n");
+    print_debug("can't allocate ps_prochandle\n");
     return NULL;
   }
 
@@ -1035,7 +1035,7 @@ static bool read_interp_segments(struct ps_prochandle* ph) {
    return true;
 }
 
-// process segments of a a.out
+// process segments of an a.out
 static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
    int i = 0;
    ELF_PHDR* phbuf = NULL;

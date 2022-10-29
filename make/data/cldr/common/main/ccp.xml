@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -525,6 +525,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zen">𑄎𑄬𑄚𑄉</language>
 			<language type="zgh">𑄉𑄧𑄟𑄴𑄘𑄮𑄣𑄴 𑄟𑄧𑄢𑄧𑄇𑄧𑄧𑄱𑄚𑄴𑄖𑄟𑄎𑄨𑄉𑄖𑄴</language>
 			<language type="zh">𑄌𑄩𑄚</language>
+			<language type="zh" alt="menu" draft="unconfirmed">𑄌𑄨𑄚, 𑄟𑄚𑄴𑄓𑄢𑄨𑄚𑄴</language>
 			<language type="zh_Hans">𑄅𑄪𑄎𑄪𑄅𑄪𑄏𑄫 𑄌𑄩𑄚</language>
 			<language type="zh_Hant">𑄢𑄨𑄘𑄨𑄥𑄪𑄘𑄮𑄟𑄴 𑄌𑄩𑄚</language>
 			<language type="zu">𑄎𑄪𑄣𑄪</language>
@@ -681,6 +682,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="014">𑄛𑄪𑄇𑄴𑄘𑄩 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
 			<territory type="015">𑄅𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
 			<territory type="017">𑄟𑄧𑄖𑄴𑄙𑄳𑄠𑄧 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
+			<territory type="018" draft="unconfirmed">𑄘𑄧𑄉𑄨𑄚𑄮𑄘𑄨 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
 			<territory type="019">𑄃𑄟𑄬𑄢𑄨𑄇𑄥𑄴</territory>
 			<territory type="021">𑄅𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄎𑄉𑄢𑄴 𑄃𑄟𑄬𑄢𑄨𑄇</territory>
 			<territory type="029">𑄇𑄳𑄠𑄢𑄝𑄨𑄠𑄚𑄴</territory>
@@ -699,6 +701,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="151">𑄛𑄪𑄉𑄬𑄘𑄨 𑄄𑄃𑄪𑄢𑄮𑄛𑄴</territory>
 			<territory type="154">𑄅𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄄𑄃𑄪𑄢𑄮𑄛𑄴</territory>
 			<territory type="155">𑄛𑄧𑄎𑄨𑄟𑄴 𑄄𑄃𑄪𑄢𑄮𑄛𑄴</territory>
+			<territory type="202" draft="unconfirmed">𑄥𑄝𑄴-𑄥𑄦𑄢𑄚𑄴 𑄃𑄜𑄳𑄢𑄨𑄇</territory>
 			<territory type="419">𑄣𑄳𑄠𑄑𑄨𑄚𑄴 𑄃𑄟𑄬𑄢𑄨𑄇</territory>
 			<territory type="AC">𑄃𑄳𑄠𑄥𑄴𑄥𑄬𑄚𑄴𑄥𑄧𑄚𑄴 𑄃𑄭𑄣𑄳𑄠𑄚𑄴𑄓𑄴</territory>
 			<territory type="AD">𑄃𑄚𑄴𑄓𑄮𑄢</territory>
@@ -778,6 +781,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ES">𑄥𑄳𑄛𑄬𑄚𑄴</territory>
 			<territory type="ET">𑄃𑄨𑄜𑄨𑄃𑄮𑄛𑄨𑄠</territory>
 			<territory type="EU">𑄄𑄃𑄪𑄢𑄮𑄛𑄩𑄠𑄧 𑄄𑄃𑄪𑄚𑄨𑄠𑄧𑄚𑄴</territory>
+			<territory type="EZ" draft="unconfirmed">𑄃𑄨𑄃𑄪𑄢𑄮𑄎𑄮𑄚𑄴</territory>
 			<territory type="FI">𑄜𑄨𑄚𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴</territory>
 			<territory type="FJ">𑄜𑄨𑄎𑄨</territory>
 			<territory type="FK">𑄜𑄧𑄇𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄳𑄠</territory>
@@ -965,6 +969,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">𑄞𑄚𑄪𑄠𑄑𑄪</territory>
 			<territory type="WF">𑄤𑄣𑄨𑄌𑄴 𑄃𑄮 𑄜𑄪𑄑𑄪𑄚</territory>
 			<territory type="WS">𑄥𑄟𑄮𑄠</territory>
+			<territory type="XA" draft="unconfirmed">𑄥𑄨𑄃𑄪𑄘𑄮-𑄃𑄬𑄥𑄚𑄴𑄑𑄴𑄥𑄴</territory>
+			<territory type="XB" draft="unconfirmed">𑄥𑄨𑄃𑄪𑄘𑄮-𑄝𑄨𑄘𑄨</territory>
 			<territory type="XK">𑄇𑄧𑄥𑄮𑄞𑄮</territory>
 			<territory type="YE">𑄃𑄨𑄠𑄬𑄟𑄬𑄚𑄴</territory>
 			<territory type="YT">𑄟𑄠𑄮𑄖𑄴𑄖𑄬</territory>
@@ -1141,21 +1147,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1589,21 +1599,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1611,21 +1625,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -4806,6 +4824,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4813,9 +4833,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##,##0.00¤;(#,##,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##,##0.00 ¤;(#,##,##0.00 ¤)</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##,##0.00;(#,##,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -5262,7 +5286,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄣𑄢𑄨</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>𑄊𑄚 𑄥𑄬𑄓𑄨 (𑄷𑄿𑄽𑄿-𑄸𑄶𑄶𑄽)</displayName>
@@ -6607,7 +6630,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄣𑄇𑄳𑄥𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄣𑄇𑄳𑄥𑄴</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>𑄟𑄬𑄑𑄳𑄢𑄨𑄇𑄴 𑄑𑄧𑄚𑄴</displayName>
 				<unitPattern count="one">{0} 𑄟𑄬𑄑𑄳𑄢𑄨𑄇𑄴 𑄑𑄧𑄚𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄬𑄑𑄳𑄢𑄨𑄇𑄴 𑄑𑄧𑄚𑄴</unitPattern>
@@ -7294,7 +7317,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>

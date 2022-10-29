@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,7 +507,7 @@ enum SSLExtension implements SSLStringizer {
      * networkProducer: produces outbound handshake data.
      *
      * onLoadConsumer:  parses inbound data.  It may not be appropriate
-     *                  to act until all of the message inputs have
+     *                  to act until all the message inputs have
      *                  been parsed.  (e.g. parsing keyShares and choosing
      *                  a local value without having seen the SupportedGroups
      *                  extension.)
@@ -529,7 +529,7 @@ enum SSLExtension implements SSLStringizer {
     final SSLStringizer stringizer;
 
     // known but unsupported extension
-    private SSLExtension(int id, String name) {
+    SSLExtension(int id, String name) {
         this.id = id;
         this.handshakeType = SSLHandshake.NOT_APPLICABLE;
         this.name = name;
@@ -543,7 +543,7 @@ enum SSLExtension implements SSLStringizer {
     }
 
     // supported extension
-    private SSLExtension(int id, String name, SSLHandshake handshakeType,
+    SSLExtension(int id, String name, SSLHandshake handshakeType,
             ProtocolVersion[] supportedProtocols,
             HandshakeProducer producer,
             ExtensionConsumer onLoadConsumer, HandshakeAbsence onLoadAbsence,
@@ -662,9 +662,10 @@ enum SSLExtension implements SSLStringizer {
     public String toString(
             HandshakeContext handshakeContext, ByteBuffer byteBuffer) {
         MessageFormat messageFormat = new MessageFormat(
-            "\"{0} ({1})\": '{'\n" +
-            "{2}\n" +
-            "'}'",
+                """
+                        "{0} ({1})": '{'
+                        {2}
+                        '}'""",
             Locale.ENGLISH);
 
         String extData;
@@ -687,7 +688,7 @@ enum SSLExtension implements SSLStringizer {
     //////////////////////////////////////////////////////
     // Nested extension, consumer and producer interfaces.
 
-    static interface ExtensionConsumer {
+    interface ExtensionConsumer {
         void consume(ConnectionContext context,
                 HandshakeMessage message, ByteBuffer buffer) throws IOException;
     }
@@ -700,7 +701,7 @@ enum SSLExtension implements SSLStringizer {
      * interface if the data is expected to handle in the following handshake
      * processes.
      */
-    static interface SSLExtensionSpec {
+    interface SSLExtensionSpec {
         // blank
     }
 
@@ -768,7 +769,7 @@ enum SSLExtension implements SSLStringizer {
             // of the certificate_authorities extension is 2^16 bytes.  The
             // maximum TLS record size is 2^14 bytes.  If the handshake
             // message is bigger than maximum TLS record size, it should be
-            // splitted into several records.  In fact, some server
+            // split into several records.  In fact, some server
             // implementations do not allow ClientHello messages bigger than
             // the maximum TLS record size and will immediately abort the
             // connection with a fatal alert.  Therefore, if the client trusts

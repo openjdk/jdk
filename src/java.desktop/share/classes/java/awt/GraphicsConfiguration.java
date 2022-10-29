@@ -261,7 +261,7 @@ public abstract class GraphicsConfiguration {
      * @param width the width of the returned {@code VolatileImage}
      * @param height the height of the returned {@code VolatileImage}
      * @param caps the image capabilities
-     * @exception AWTException if the supplied image capabilities could not
+     * @throws AWTException if the supplied image capabilities could not
      * be met by this graphics configuration
      * @since 1.4
      */
@@ -294,7 +294,7 @@ public abstract class GraphicsConfiguration {
      * @see Transparency#BITMASK
      * @see Transparency#TRANSLUCENT
      * @throws IllegalArgumentException if the transparency is not a valid value
-     * @exception AWTException if the supplied image capabilities could not
+     * @throws AWTException if the supplied image capabilities could not
      * be met by this graphics configuration
      * @see Component#createVolatileImage(int, int)
      * @since 1.5

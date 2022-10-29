@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 the U.S. and other countries. CLDR data files are interpreted according to
 the LDML specification (http://unicode.org/reports/tr35/) Proper interpretation
 of these files requires synthesis of missing items, as per ​http://unicode.org/repos/cldr/trunk/specs/ldml/tr35-general.html#Annotations
-Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 for derived annotations.
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -360,21 +360,25 @@ for derived annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>r(U) MMMM d, EEEE</pattern>
+							<datetimeSkeleton>rMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>r(U) MMMM d</pattern>
+							<datetimeSkeleton>rMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>r MMM d</pattern>
+							<datetimeSkeleton>rMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>r-MM-dd</pattern>
+							<datetimeSkeleton>rMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -386,20 +390,32 @@ for derived annotations.
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -412,9 +428,12 @@ for derived annotations.
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Gy">r U</dateFormatItem>
-						<dateFormatItem id="GyMMM">r(U) MMM</dateFormatItem>
+						<dateFormatItem id="GyMMM">r MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">r MMM d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">r(U) MMM d, E</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">r MMM d, E</dateFormatItem>
+						<dateFormatItem id="GyMMMM">r(U) MMMM</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">r(U) MMMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">r(U) MMMM d, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -439,10 +458,12 @@ for derived annotations.
 						<dateFormatItem id="yyyyM">r-MM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">r-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">r-MM-dd, E</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">r(U) MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">r MMM</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">r MMM d</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">r(U) MMM d, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">r MMM d, E</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">r(U) MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd">r(U) MMMM d</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd">r(U) MMMM d, E</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">r(U) QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">r(U) QQQQ</dateFormatItem>
 					</availableFormats>
@@ -460,7 +481,7 @@ for derived annotations.
 						<appendItem request="Year">{1} {0}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
@@ -860,21 +881,25 @@ for derived annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y MMMM d</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y MMM d</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -886,20 +911,32 @@ for derived annotations.
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -916,6 +953,7 @@ for derived annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y-MM-dd</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -959,7 +997,7 @@ for derived annotations.
 						<appendItem request="Year">{1} {0}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
@@ -1262,21 +1300,25 @@ for derived annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y MMMM d</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y MMM d</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1284,21 +1326,25 @@ for derived annotations.
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1307,20 +1353,32 @@ for derived annotations.
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<alias source="locale" path="../dateTimeFormat[@type='standard']"/>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1337,6 +1395,7 @@ for derived annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y-MM-dd</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -1385,7 +1444,7 @@ for derived annotations.
 						<appendItem request="Year">{1} {0}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
@@ -2890,6 +2949,9 @@ for derived annotations.
 			<zone type="America/Lower_Princes">
 				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
 			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>Kyiv</exemplarCity>
+			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, North Dakota</exemplarCity>
 			</zone>
@@ -3010,6 +3072,9 @@ for derived annotations.
 			<alias source="locale" path="../symbols[@numberSystem='latn']"/>
 		</symbols>
 		<symbols numberSystem="hanidec">
+			<alias source="locale" path="../symbols[@numberSystem='latn']"/>
+		</symbols>
+		<symbols numberSystem="hmnp">
 			<alias source="locale" path="../symbols[@numberSystem='latn']"/>
 		</symbols>
 		<symbols numberSystem="java">
@@ -3588,6 +3653,7 @@ for derived annotations.
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<alias source="locale" path="../currencyFormat[@type='standard']"/>
@@ -3670,6 +3736,7 @@ for derived annotations.
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<alias source="locale" path="../currencyFormat[@type='standard']"/>
@@ -3691,6 +3758,7 @@ for derived annotations.
 					<pattern type="100000000000000" count="other">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencyFormats numberSystem="lepc">
@@ -3809,9 +3877,6 @@ for derived annotations.
 			</currency>
 			<currency type="BWP">
 				<symbol alt="narrow">P</symbol>
-			</currency>
-			<currency type="BYN">
-				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BZD">
 				<symbol alt="narrow">$</symbol>
@@ -4013,9 +4078,6 @@ for derived annotations.
 			</currency>
 			<currency type="RUB">
 				<symbol alt="narrow">₽</symbol>
-			</currency>
-			<currency type="RUR">
-				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="RWF">
 				<symbol alt="narrow">RF</symbol>
@@ -4435,6 +4497,10 @@ for derived annotations.
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>item</displayName>
+				<unitPattern count="other">{0} item</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -4530,6 +4596,11 @@ for derived annotations.
 			</unit>
 			<unit type="duration-year-person">
 				<alias source="locale" path="../unit[@type='duration-year']"/>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>qtr</displayName>
+				<unitPattern count="other">{0} q</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mon</displayName>
@@ -4640,6 +4711,10 @@ for derived annotations.
 			<unit type="force-newton">
 				<displayName>N</displayName>
 				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -4795,7 +4870,7 @@ for derived annotations.
 				<displayName>L☉</displayName>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -5336,4 +5411,159 @@ for derived annotations.
 		<featureName type="tnum">tabular numbers</featureName>
 		<featureName type="zero">slashed zero</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<initialPattern type="initial">{0}.</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname} {surname2} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<alias source="locale" path="../personName[@order='givenFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {prefix} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<alias source="locale" path="../personName[@order='surnameFirst'][@length='long'][@usage='monogram'][@formality='formal']"/>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {prefix} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='sorting'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<alias source="locale" path="../personName[@order='sorting'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='sorting'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<alias source="locale" path="../personName[@order='sorting'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<alias source="locale" path="../personName[@order='sorting'][@length='long'][@usage='referring'][@formality='formal']"/>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">∅∅∅</nameField>
+			<nameField type="surname">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">∅∅∅</nameField>
+			<nameField type="given2">∅∅∅</nameField>
+			<nameField type="surname">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">∅∅∅</nameField>
+			<nameField type="given">∅∅∅</nameField>
+			<nameField type="given-informal">∅∅∅</nameField>
+			<nameField type="given2">∅∅∅</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">∅∅∅</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="suffix">∅∅∅</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

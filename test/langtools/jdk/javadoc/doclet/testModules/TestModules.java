@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1110,14 +1110,14 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("deprecated-list.html", found,
                 """
-                    <ul>
-                    <li><a href="#for-removal">Terminally Deprecated</a></li>
-                    <li><a href="#module">Modules</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                    <li id="contents-module"><a href="#module">Modules</a></li>
                     </ul>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>
                     <div class="col-last even-row-color">
-                    <div class="deprecation-comment">This module is deprecated.</div>""");
+                    <div class="block">This module is deprecated.</div>""");
         checkOutput("moduleB/module-summary.html", !found,
                 """
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
@@ -1184,12 +1184,7 @@ public class TestModules extends JavadocTester {
                     her Modules</button>\
                     </div>
                     <div id="all-modules-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""",
-                """
-                    var evenRowColor = "even-row-color";
-                    var oddRowColor = "odd-row-color";
-                    var tableTab = "table-tab";
-                    var activeTableTab = "active-table-tab";""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""");
         checkOutput("index.html", false,
                 """
                     <div class="overview-summary">
@@ -1270,12 +1265,7 @@ public class TestModules extends JavadocTester {
                     ackage Group 1</button>\
                     </div>
                     <div id="all-packages-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""",
-                """
-                    var evenRowColor = "even-row-color";
-                    var oddRowColor = "odd-row-color";
-                    var tableTab = "table-tab";
-                    var activeTableTab = "active-table-tab";""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""");
     }
 
     void checkGroupOptionPackageOrdering() {

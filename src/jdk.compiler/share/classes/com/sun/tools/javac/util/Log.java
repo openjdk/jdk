@@ -28,7 +28,6 @@ package com.sun.tools.javac.util;
 import java.io.*;
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
@@ -670,6 +669,11 @@ public class Log extends AbstractLog {
         public void report(JCDiagnostic diagnostic) {
             if (expectDiagKeys != null)
                 expectDiagKeys.remove(diagnostic.getCode());
+
+            if (diagnostic.hasRewriter()) {
+                JCDiagnostic rewrittenDiag = diagnostic.rewrite();
+                diagnostic = rewrittenDiag != null ? rewrittenDiag : diagnostic;
+            }
 
             switch (diagnostic.getType()) {
             case FRAGMENT:

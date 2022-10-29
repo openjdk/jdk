@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,13 +199,8 @@ class LambdaForm {
                 default -> throw newInternalError("Unknown type char: '" + type + "'");
             };
         }
-        static BasicType basicType(Wrapper type) {
-            char c = type.basicTypeChar();
-            return basicType(c);
-        }
         static BasicType basicType(Class<?> type) {
-            if (!type.isPrimitive())  return L_TYPE;
-            return basicType(Wrapper.forPrimitiveType(type));
+            return basicType(Wrapper.basicTypeChar(type));
         }
         static int[] basicTypeOrds(BasicType[] types) {
             if (types == null) {
@@ -222,10 +217,10 @@ class LambdaForm {
             return basicType(type).btChar;
         }
 
-        static byte[] basicTypesOrd(Class<?>[] types) {
-            byte[] ords = new byte[types.length];
+        static int[] basicTypesOrd(Class<?>[] types) {
+            int[] ords = new int[types.length];
             for (int i = 0; i < ords.length; i++) {
-                ords[i] = (byte)basicType(types[i]).ordinal();
+                ords[i] = basicType(types[i]).ordinal();
             }
             return ords;
         }
@@ -622,7 +617,7 @@ class LambdaForm {
         for (int i = 0; i < arity; ++i) {
             ptypes[i] = parameterType(i).btClass;
         }
-        return MethodType.makeImpl(returnType().btClass, ptypes, true);
+        return MethodType.methodType(returnType().btClass, ptypes, true);
     }
 
     /** Return ABC_Z, where the ABC are parameter type characters, and Z is the return type character. */
@@ -1034,12 +1029,18 @@ class LambdaForm {
     }
 
     public String toString() {
+        return debugString(-1);
+    }
+
+    String debugString(int indentLevel) {
+        String prefix = MethodHandle.debugPrefix(indentLevel);
         String lambdaName = lambdaName();
-        StringBuilder buf = new StringBuilder(lambdaName + "=Lambda(");
+        StringBuilder buf = new StringBuilder(lambdaName);
+        buf.append("=Lambda(");
         for (int i = 0; i < names.length; i++) {
             if (i == arity)  buf.append(")=>{");
             Name n = names[i];
-            if (i >= arity)  buf.append("\n    ");
+            if (i >= arity)  buf.append("\n    ").append(prefix);
             buf.append(n.paramString());
             if (i < arity) {
                 if (i+1 < arity)  buf.append(",");

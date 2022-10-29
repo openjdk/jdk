@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,7 @@ static bool check_compare_clipping( bool less_than, IfNode *iff, ConNode *limit,
 }
 
 //------------------------------is_unreachable_region--------------------------
-// Find if the Region node is reachable from the root.
+// Check if the RegionNode is part of an unsafe loop and unreachable from root.
 bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
   Node* top = phase->C->top();
   assert(req() == 2 || (req() == 3 && in(1) != NULL && in(2) == top), "sanity check arguments");
@@ -373,7 +373,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   VectorSet visited;
 
   // Mark all control nodes reachable from root outputs
-  Node *n = (Node*)phase->C->root();
+  Node* n = (Node*)phase->C->root();
   nstack.push(n);
   visited.set(n->_idx);
   while (nstack.size() != 0) {
@@ -475,7 +475,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Remove TOP or NULL input paths. If only 1 input path remains, this Region
   // degrades to a copy.
-  bool add_to_worklist = false;
+  bool add_to_worklist = true;
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
@@ -501,7 +501,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
       }
       if( phase->type(n) == Type::TOP ) {
-        set_req(i, NULL);       // Ignore TOP inputs
+        set_req_X(i, NULL, phase); // Ignore TOP inputs
         modified = true;
         i--;
         continue;
@@ -532,7 +532,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
         }
       }
-      add_to_worklist = true;
+      add_to_worklist = false;
+      phase->is_IterGVN()->add_users_to_worklist(this);
       i--;
     }
   }
@@ -547,44 +548,50 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ((this->is_Loop() && (del_it == LoopNode::EntryControl ||
                              (del_it == 0 && is_unreachable_region(phase)))) ||
         (!this->is_Loop() && has_phis && is_unreachable_region(phase))) {
-      // Yes,  the region will be removed during the next step below.
-      // Cut the backedge input and remove phis since no data paths left.
-      // We don't cut outputs to other nodes here since we need to put them
-      // on the worklist.
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (in(1)->outcnt() == 1) {
-        igvn->_worklist.push(in(1));
-      }
-      del_req(1);
-      cnt = 0;
-      assert( req() == 1, "no more inputs expected" );
-      uint max = outcnt();
-      bool progress = true;
-      Node *top = phase->C->top();
-      DUIterator j;
-      while(progress) {
-        progress = false;
-        for (j = outs(); has_out(j); j++) {
-          Node *n = out(j);
-          if( n->is_Phi() ) {
-            assert(n->in(0) == this, "");
-            assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
-            // Break dead loop data path.
-            // Eagerly replace phis with top to avoid regionless phis.
-            igvn->replace_node(n, top);
-            if( max != outcnt() ) {
-              progress = true;
-              j = refresh_out_pos(j);
-              max = outcnt();
+      // This region and therefore all nodes on the input control path(s) are unreachable
+      // from root. To avoid incomplete removal of unreachable subgraphs, walk up the CFG
+      // and aggressively replace all nodes by top.
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      Node* top = phase->C->top();
+      ResourceMark rm;
+      Node_List nstack;
+      VectorSet visited;
+      nstack.push(this);
+      visited.set(_idx);
+      while (nstack.size() != 0) {
+        Node* n = nstack.pop();
+        for (uint i = 0; i < n->req(); ++i) {
+          Node* m = n->in(i);
+          assert(m != (Node*)phase->C->root(), "Should be unreachable from root");
+          if (m != NULL && m->is_CFG() && !visited.test_set(m->_idx)) {
+            nstack.push(m);
+          }
+        }
+        if (n->is_Region()) {
+          // Eagerly replace phis with top to avoid regionless phis.
+          n->set_req(0, NULL);
+          bool progress = true;
+          uint max = n->outcnt();
+          DUIterator j;
+          while (progress) {
+            progress = false;
+            for (j = n->outs(); n->has_out(j); j++) {
+              Node* u = n->out(j);
+              if (u->is_Phi()) {
+                igvn->replace_node(u, top);
+                if (max != n->outcnt()) {
+                  progress = true;
+                  j = n->refresh_out_pos(j);
+                  max = n->outcnt();
+                }
+              }
             }
           }
         }
+        igvn->replace_node(n, top);
       }
-      add_to_worklist = true;
+      return NULL;
     }
-  }
-  if (add_to_worklist) {
-    phase->is_IterGVN()->add_users_to_worklist(this); // Revisit collapsed Phis
   }
 
   if( cnt <= 1 ) {              // Only 1 path in?
@@ -629,8 +636,9 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert(parent_ctrl != NULL, "Region is a copy of some non-null control");
         assert(parent_ctrl != this, "Close dead loop");
       }
-      if (!add_to_worklist)
+      if (add_to_worklist) {
         igvn->add_users_to_worklist(this); // Check for further allowed opts
+      }
       for (DUIterator_Last imin, i = last_outs(imin); i >= imin; --i) {
         Node* n = last_out(i);
         igvn->hash_delete(n); // Remove from worklist before modifying edges
@@ -865,10 +873,10 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   }
   proj1 = proj1->other_if_proj();
   proj2 = proj2->other_if_proj();
-  if (!((proj1->unique_ctrl_out() == iff2 &&
-         proj2->unique_ctrl_out() == this) ||
-        (proj2->unique_ctrl_out() == iff1 &&
-         proj1->unique_ctrl_out() == this))) {
+  if (!((proj1->unique_ctrl_out_or_null() == iff2 &&
+         proj2->unique_ctrl_out_or_null() == this) ||
+        (proj2->unique_ctrl_out_or_null() == iff1 &&
+         proj1->unique_ctrl_out_or_null() == this))) {
     return false; // Ifs are not connected through other projs
   }
   // Found 'iff -> proj -> iff -> proj -> this' shape where all other projs are merged
@@ -1108,18 +1116,55 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->hi_as_long() >= stride_t->lo_as_long(), "bad stride type");
+          assert(stride_t->is_con(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
           // init < limit if (stride > 0) so we can't deduce bounds
           // for the iv from the exit condition.
           if (bt != BoolTest::ne) {
-            if (stride_t->hi_as_long() < 0) {          // Down-counter loop
+            jlong stride_con = stride_t->get_con_as_long(l->bt());
+            if (stride_con < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInteger::make(MIN2(lo->lo_as_long(), hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
-            } else if (stride_t->lo_as_long() >= 0) {
-              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), hi->hi_as_long()), 3, l->bt())->filter_speculative(_type);
+              jlong iv_range_lower_limit = lo->lo_as_long();
+              // Prevent overflow when adding one below
+              if (iv_range_lower_limit < max_signed_integer(l->bt())) {
+                // The loop exit condition is: iv + stride > limit (iv is this Phi). So the loop iterates until
+                // iv + stride <= limit
+                // We know that: limit >= lo->lo_as_long() and stride <= -1
+                // So when the loop exits, iv has to be at most lo->lo_as_long() + 1
+                iv_range_lower_limit += 1; // lo is after decrement
+                // Exact bounds for the phi can be computed when ABS(stride) greater than 1 if bounds are constant.
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_con != -1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = ((uhi - ulo - 1) / (-stride_con)) * (-stride_con);
+                  julong ufirst = hi->lo_as_long() - diff;
+                  iv_range_lower_limit = reinterpret_cast<jlong &>(ufirst);
+                  assert(iv_range_lower_limit >= lo->lo_as_long() + 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(MIN2(iv_range_lower_limit, hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
+            } else if (stride_con >= 0) {
+              jlong iv_range_upper_limit = hi->hi_as_long();
+              // Prevent overflow when subtracting one below
+              if (iv_range_upper_limit > min_signed_integer(l->bt())) {
+                // The loop exit condition is: iv + stride < limit (iv is this Phi). So the loop iterates until
+                // iv + stride >= limit
+                // We know that: limit <= hi->hi_as_long() and stride >= 1
+                // So when the loop exits, iv has to be at most hi->hi_as_long() - 1
+                iv_range_upper_limit -= 1;
+                // Exact bounds for the phi can be computed when ABS(stride) greater than 1 if bounds are constant.
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_con != 1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = ((uhi - ulo - 1) / stride_con) * stride_con;
+                  julong ulast = lo->hi_as_long() + diff;
+                  iv_range_upper_limit = reinterpret_cast<jlong &>(ulast);
+                  assert(iv_range_upper_limit <= hi->hi_as_long() - 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), iv_range_upper_limit), 3, l->bt())->filter_speculative(_type);
             }
           }
         }
@@ -1140,16 +1185,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   // convert the one to the other.
   const TypePtr* ttp = _type->make_ptr();
   const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
-  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
+  const TypeInstKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
   bool is_intf = false;
   if (ttip != NULL) {
-    ciKlass* k = ttip->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttip->is_interface())
       is_intf = true;
   }
   if (ttkp != NULL) {
-    ciKlass* k = ttkp->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttkp->is_interface())
       is_intf = true;
   }
 
@@ -1168,8 +1211,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       const TypeInstPtr* tiip = (tip != NULL) ? tip->isa_instptr() : NULL;
       if (tiip) {
         bool ti_is_intf = false;
-        ciKlass* k = tiip->klass();
-        if (k->is_loaded() && k->is_interface())
+        if (tiip->is_interface())
           ti_is_intf = true;
         if (is_intf != ti_is_intf)
           { t = _type; break; }
@@ -1207,14 +1249,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // be 'I' or 'j/l/O'.  Thus we'll pick 'j/l/O'.  If this then flows
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
-    if (!t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface()) {
+    if (!t->empty() && ttip && ttip->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
-    } else if (!t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface()) {
+    } else if (!t->empty() && ttkp && ttkp->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
     } else {
       // We also have to handle 'evil cases' of interface- vs. class-arrays
       Type::get_arrays_base_elements(jt, _type, NULL, &ttip);
-      if (!t->empty() && ttip != NULL && ttip->is_loaded() && ttip->klass()->is_interface()) {
+      if (!t->empty() && ttip != NULL && ttip->is_interface()) {
           assert(ft == _type, "");   // Uplift to array of interface
       } else {
         // Otherwise it's something stupid like non-overlapping int ranges
@@ -1233,19 +1275,19 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // because the type system doesn't interact well with interfaces.
     const TypePtr *jtp = jt->make_ptr();
     const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
-    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
-    if( jtip && ttip ) {
-      if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
-          ttip->is_loaded() && !ttip->klass()->is_interface() ) {
+    const TypeInstKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
+    if (jtip && ttip) {
+      if (jtip->is_interface() &&
+          !ttip->is_interface()) {
         assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
                ft->isa_narrowoop() && ft->make_ptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
         jt = ft;
       }
     }
-    if( jtkp && ttkp ) {
-      if( jtkp->is_loaded() &&  jtkp->klass()->is_interface() &&
+    if (jtkp && ttkp) {
+      if (jtkp->is_interface() &&
           !jtkp->klass_is_exact() && // Keep exact interface klass (6894807)
-          ttkp->is_loaded() && !ttkp->klass()->is_interface() ) {
+          ttkp->is_loaded() && !ttkp->is_interface()) {
         assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
                ft->isa_narrowklass() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
         jt = ft;
@@ -1783,7 +1825,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 //  GVN transformations. For now it is Con, Proj, Phi, CastPP, CheckCastPP.
 //  I mark Phi nodes as safe node not only because they can reference itself
 //  but also to prevent mistaking the fallthrough case inside an outer loop
-//  as dead loop when the phi references itselfs through an other phi.
+//  as dead loop when the phi references itself through an other phi.
 PhiNode::LoopSafety PhiNode::simple_data_loop_check(Node *in) const {
   // It is unsafe loop if the phi node references itself directly.
   if (in == (Node*)this)
@@ -2131,7 +2173,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           doit = false;
           break;
         }
-        if (in(i)->in(AddPNode::Offset) != base) {
+        if (in(i)->in(AddPNode::Base) != base) {
           base = NULL;
         }
         if (in(i)->in(AddPNode::Offset) != offset) {
@@ -2272,13 +2314,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN* igvn = phase->is_IterGVN();
+        assert(igvn != NULL, "sanity check");
         Node* hook = new Node(1);
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
-        if (igvn) {
-          igvn->register_new_node_with_optimizer(new_base);
-          hook->add_req(new_base);
-        }
+        igvn->register_new_node_with_optimizer(new_base);
+        hook->add_req(new_base);
+
         MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
           Node *ii = in(i);
@@ -2290,10 +2332,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               if (mms.is_empty()) {
                 Node* new_phi = new_base->slice_memory(mms.adr_type(phase->C));
                 made_new_phi = true;
-                if (igvn) {
-                  igvn->register_new_node_with_optimizer(new_phi);
-                  hook->add_req(new_phi);
-                }
+                igvn->register_new_node_with_optimizer(new_phi);
+                hook->add_req(new_phi);
                 mms.set_memory(new_phi);
               }
               Node* phi = mms.memory();
@@ -2311,6 +2351,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
+        // Already replace this phi node to cut it off from the graph to not interfere in dead loop checks during the
+        // transformations of the new phi nodes below. Otherwise, we could wrongly conclude that there is no dead loop
+        // because we are finding this phi node again. Also set the type of the new MergeMem node in case we are also
+        // visiting it in the transformations below.
+        igvn->replace_node(this, result);
+        igvn->set_type(result, result->bottom_type());
+
         // now transform the new nodes, and return the mergemem
         for (MergeMemStream mms(result); mms.next_non_empty(); ) {
           Node* phi = mms.memory();
@@ -2398,47 +2445,103 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
 
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
-  if (EnableVectorReboxing && can_reshape && progress == NULL) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-
-    bool all_inputs_are_equiv_vboxes = true;
-    for (uint i = 1; i < req(); ++i) {
-      Node* n = in(i);
-      if (in(i)->Opcode() != Op_VectorBox) {
-        all_inputs_are_equiv_vboxes = false;
-        break;
-      }
-      // Check that vector type of vboxes is equivalent
-      if (i != 1) {
-        if (Type::cmp(in(i-0)->in(VectorBoxNode::Value)->bottom_type(),
-                      in(i-1)->in(VectorBoxNode::Value)->bottom_type()) != 0) {
-          all_inputs_are_equiv_vboxes = false;
-          break;
-        }
-        if (Type::cmp(in(i-0)->in(VectorBoxNode::Box)->bottom_type(),
-                      in(i-1)->in(VectorBoxNode::Box)->bottom_type()) != 0) {
-          all_inputs_are_equiv_vboxes = false;
-          break;
-        }
-      }
-    }
-
-    if (all_inputs_are_equiv_vboxes) {
-      VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in(1));
-      PhiNode* new_vbox_phi = new PhiNode(r, vbox->box_type());
-      PhiNode* new_vect_phi = new PhiNode(r, vbox->vec_type());
-      for (uint i = 1; i < req(); ++i) {
-        VectorBoxNode* old_vbox = static_cast<VectorBoxNode*>(in(i));
-        new_vbox_phi->set_req(i, old_vbox->in(VectorBoxNode::Box));
-        new_vect_phi->set_req(i, old_vbox->in(VectorBoxNode::Value));
-      }
-      igvn->register_new_node_with_optimizer(new_vbox_phi, this);
-      igvn->register_new_node_with_optimizer(new_vect_phi, this);
-      progress = new VectorBoxNode(igvn->C, new_vbox_phi, new_vect_phi, vbox->box_type(), vbox->vec_type());
-    }
+  if (EnableVectorReboxing && can_reshape && progress == NULL && type()->isa_oopptr()) {
+    progress = merge_through_phi(this, phase->is_IterGVN());
   }
 
   return progress;              // Return any progress
+}
+
+Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
+  Node_Stack stack(1);
+  VectorSet  visited;
+  Node_List  node_map;
+
+  stack.push(root_phi, 1); // ignore control
+  visited.set(root_phi->_idx);
+
+  Node* new_phi = new PhiNode(root_phi->in(0), t);
+  node_map.map(root_phi->_idx, new_phi);
+
+  while (stack.is_nonempty()) {
+    Node* n   = stack.node();
+    uint  idx = stack.index();
+    assert(n->is_Phi(), "not a phi");
+    if (idx < n->req()) {
+      stack.set_index(idx + 1);
+      Node* def = n->in(idx);
+      if (def == NULL) {
+        continue; // ignore dead path
+      } else if (def->is_Phi()) { // inner node
+        Node* new_phi = node_map[n->_idx];
+        if (!visited.test_set(def->_idx)) { // not visited yet
+          node_map.map(def->_idx, new PhiNode(def->in(0), t));
+          stack.push(def, 1); // ignore control
+        }
+        Node* new_in = node_map[def->_idx];
+        new_phi->set_req(idx, new_in);
+      } else if (def->Opcode() == Op_VectorBox) { // leaf
+        assert(n->is_Phi(), "not a phi");
+        Node* new_phi = node_map[n->_idx];
+        new_phi->set_req(idx, def->in(c));
+      } else {
+        assert(false, "not optimizeable");
+        return NULL;
+      }
+    } else {
+      Node* new_phi = node_map[n->_idx];
+      igvn->register_new_node_with_optimizer(new_phi, n);
+      stack.pop();
+    }
+  }
+  return new_phi;
+}
+
+Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
+  Node_Stack stack(1);
+  VectorSet  visited;
+
+  stack.push(root_phi, 1); // ignore control
+  visited.set(root_phi->_idx);
+
+  VectorBoxNode* cached_vbox = NULL;
+  while (stack.is_nonempty()) {
+    Node* n   = stack.node();
+    uint  idx = stack.index();
+    if (idx < n->req()) {
+      stack.set_index(idx + 1);
+      Node* in = n->in(idx);
+      if (in == NULL) {
+        continue; // ignore dead path
+      } else if (in->isa_Phi()) {
+        if (!visited.test_set(in->_idx)) {
+          stack.push(in, 1); // ignore control
+        }
+      } else if (in->Opcode() == Op_VectorBox) {
+        VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in);
+        if (cached_vbox == NULL) {
+          cached_vbox = vbox;
+        } else if (vbox->vec_type() != cached_vbox->vec_type()) {
+          // TODO: vector type mismatch can be handled with additional reinterpret casts
+          assert(Type::cmp(vbox->vec_type(), cached_vbox->vec_type()) != 0, "inconsistent");
+          return NULL; // not optimizable: vector type mismatch
+        } else if (vbox->box_type() != cached_vbox->box_type()) {
+          assert(Type::cmp(vbox->box_type(), cached_vbox->box_type()) != 0, "inconsistent");
+          return NULL; // not optimizable: box type mismatch
+        }
+      } else {
+        return NULL; // not optimizable: neither Phi nor VectorBox
+      }
+    } else {
+      stack.pop();
+    }
+  }
+  assert(cached_vbox != NULL, "sanity");
+  const TypeInstPtr* btype = cached_vbox->box_type();
+  const TypeVect*    vtype = cached_vbox->vec_type();
+  Node* new_vbox_phi = clone_through_phi(root_phi, btype, VectorBoxNode::Box,   igvn);
+  Node* new_vect_phi = clone_through_phi(root_phi, vtype, VectorBoxNode::Value, igvn);
+  return new VectorBoxNode(igvn->C, new_vbox_phi, new_vect_phi, btype, vtype);
 }
 
 bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
@@ -2460,7 +2563,7 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 //------------------------------is_tripcount-----------------------------------
 bool PhiNode::is_tripcount(BasicType bt) const {
   return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
-          in(0)->as_BaseCountedLoop()->operates_on(bt, true) &&
+          in(0)->as_BaseCountedLoop()->bt() == bt &&
           in(0)->as_BaseCountedLoop()->phi() == this);
 }
 
@@ -2478,14 +2581,6 @@ const RegMask &PhiNode::out_RegMask() const {
 }
 
 #ifndef PRODUCT
-void PhiNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  // For a PhiNode, the set of related nodes includes all inputs till level 2,
-  // and all outputs till level 1. In compact mode, inputs till level 1 are
-  // collected.
-  this->collect_nodes(in_rel, compact ? 1 : 2, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
-
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
   if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
@@ -2510,32 +2605,10 @@ const RegMask &GotoNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// The related nodes of a GotoNode are all inputs at level 1, as well as the
-// outputs at level 1. This is regardless of compact mode.
-void GotoNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
-#endif
-
-
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// The related nodes of a JumpNode are all inputs at level 1, as well as the
-// outputs at level 2 (to include actual jump targets beyond projection nodes).
-// This is regardless of compact mode.
-void JumpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -2, false, false);
-}
-#endif
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
@@ -2597,12 +2670,6 @@ void JumpProjNode::dump_compact_spec(outputStream *st) const {
   ProjNode::dump_compact_spec(st);
   st->print("(%d)%d@%d", _switch_val, _proj_no, _dest_bci);
 }
-
-void JumpProjNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  // The related nodes of a JumpProjNode are its inputs and outputs at level 1.
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
 #endif
 
 //=============================================================================
@@ -2626,6 +2693,17 @@ const Type* CatchNode::Value(PhaseGVN* phase) const {
       // Rethrows always throw exceptions, never return
       if (call->entry_point() == OptoRuntime::rethrow_stub()) {
         f[CatchProjNode::fall_through_index] = Type::TOP;
+      } else if (call->is_AllocateArray()) {
+        Node* klass_node = call->in(AllocateNode::KlassNode);
+        Node* length = call->in(AllocateNode::ALength);
+        const Type* length_type = phase->type(length);
+        const Type* klass_type = phase->type(klass_node);
+        Node* valid_length_test = call->in(AllocateNode::ValidLengthTest);
+        const Type* valid_length_test_t = phase->type(valid_length_test);
+        if (length_type == Type::TOP || klass_type == Type::TOP || valid_length_test_t == Type::TOP ||
+            valid_length_test_t->is_int()->is_con(0)) {
+          f[CatchProjNode::fall_through_index] = Type::TOP;
+        }
       } else if( call->req() > TypeFunc::Parms ) {
         const Type *arg0 = phase->type( call->in(TypeFunc::Parms) );
         // Check for null receiver to virtual or interface calls

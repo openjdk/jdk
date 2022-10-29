@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,16 +146,12 @@ class SymbolPredicate {
   }
 };
 
-template <bool leakp>
 class MethodUsedPredicate {
   bool _current_epoch;
 public:
   MethodUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Klass* klass) {
-    if (_current_epoch) {
-      return leakp ? IS_LEAKP(klass) : METHOD_USED_THIS_EPOCH(klass);
-    }
-    return  leakp ? IS_LEAKP(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
+    return _current_epoch ? METHOD_USED_THIS_EPOCH(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
   }
 };
 
@@ -202,7 +198,7 @@ class LeakPredicate<const Method*> {
  * during the write process itself.
  *
  * It can also provide opportunities for caching, as the ideal should
- * be to reduce the amount of iterations neccessary for locating artifacts
+ * be to reduce the amount of iterations necessary for locating artifacts
  * in the respective VM subsystems.
  */
 class JfrArtifactSet : public JfrCHeapObj {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,14 +436,14 @@ static void print_indent(outputStream* st, int indent) {
   }
 }
 
-// Print the class name and its unique ClassLoader identifer.
+// Print the class name and its unique ClassLoader identifier.
 static void print_classname(outputStream* st, Klass* klass) {
   oop loader_oop = klass->class_loader_data()->class_loader();
   st->print("%s/", klass->external_name());
   if (loader_oop == NULL) {
     st->print("null");
   } else {
-    st->print(INTPTR_FORMAT, p2i(klass->class_loader_data()));
+    st->print(PTR_FORMAT, p2i(klass->class_loader_data()));
   }
 }
 
@@ -468,7 +468,7 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
   print_indent(st, indent);
   if (indent != 0) st->print("--");
 
-  // Print the class name, its unique ClassLoader identifer, and if it is an interface.
+  // Print the class name, its unique ClassLoader identifier, and if it is an interface.
   print_classname(st, klass);
   if (klass->is_interface()) {
     st->print(" (intf)");
@@ -578,18 +578,12 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
       const uint capped_parallel_thread_num = MIN2(parallel_thread_num, workers->max_workers());
       WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
 
-      ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(workers->active_workers());
-      if (poi != NULL) {
-        // The GC supports parallel object iteration.
-
-        ParHeapInspectTask task(poi, cit, filter);
-        // Run task with the active workers.
-        workers->run_task(&task);
-
-        delete poi;
-        if (task.success()) {
-          return task.missed_count();
-        }
+      ParallelObjectIterator poi(workers->active_workers());
+      ParHeapInspectTask task(&poi, cit, filter);
+      // Run task with the active workers.
+      workers->run_task(&task);
+      if (task.success()) {
+        return task.missed_count();
       }
     }
   }

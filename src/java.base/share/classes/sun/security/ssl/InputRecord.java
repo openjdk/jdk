@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ abstract class InputRecord implements Record, Closeable {
 
     // The ClientHello version to accept. If set to ProtocolVersion.SSL20Hello
     // and the first message we read is a ClientHello in V2 format, we convert
-    // it to V3. Otherwise we throw an exception when encountering a V2 hello.
+    // it to V3. Otherwise, we throw an exception when encountering a V2 hello.
     ProtocolVersion     helloVersion;
 
     // fragment size
@@ -122,7 +122,7 @@ abstract class InputRecord implements Record, Closeable {
          * Since MAC's doFinal() is called for every SSL/TLS packet, it's
          * not necessary to do the same with MAC's.
          */
-        readCipher.dispose();
+        this.readCipher.dispose();
 
         this.readCipher = readCipher;
     }
@@ -134,7 +134,7 @@ abstract class InputRecord implements Record, Closeable {
 
     /*
      * Check if there is enough inbound data in the ByteBuffer to make
-     * a inbound packet.
+     * an inbound packet.
      *
      * @return -1 if there are not enough bytes to tell (small header),
      */
@@ -157,7 +157,7 @@ abstract class InputRecord implements Record, Closeable {
 
     // apply to DTLS SSLEngine only
     Plaintext acquirePlaintext()
-            throws IOException, BadPaddingException {
+            throws IOException {
         throw new UnsupportedOperationException();
     }
 
@@ -217,7 +217,7 @@ abstract class InputRecord implements Record, Closeable {
          * Build the first part of the V3 record header from the V2 one
          * that's now buffered up.  (Lengths are fixed up later).
          */
-        // Note: need not to set the header actually.
+        // Note: need not set the header.
         converted[0] = ContentType.HANDSHAKE.id;
         converted[1] = majorVersion;
         converted[2] = minorVersion;
@@ -318,7 +318,7 @@ abstract class InputRecord implements Record, Closeable {
          * Fill in lengths of the messages we synthesized (nested:
          * V3 handshake message within V3 record).
          */
-        // Note: need not to set the header actually.
+        // Note: need not set the header.
         int fragLen = pointer - 5;                      // TLSPlaintext.length
         converted[3] = (byte)((fragLen >>> 8) & 0xFF);
         converted[4] = (byte)(fragLen & 0xFF);

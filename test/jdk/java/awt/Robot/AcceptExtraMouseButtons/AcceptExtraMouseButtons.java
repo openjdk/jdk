@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class AcceptExtraMouseButtons extends Frame {
 
         //MouseInfo.getNumberOfButtons() reports two more buttons on XToolkit
         //as they reserved for wheel (both directions).
-        if (tk.equals("sun.awt.X11.XToolkit") || tk.equals("sun.awt.motif.MToolkit")) {
+        if (tk.equals("sun.awt.X11.XToolkit")) {
             buttonsNum = buttonsNum - 2;
         }
         System.out.println("Number Of Buttons = "+ buttonsNum);

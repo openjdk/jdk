@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,6 @@ package sun.launcher;
  *
  */
 
-/**
- * A utility package for the java(1), javaw(1) launchers.
- * The following are helper methods that the native launcher uses
- * to perform checks etc. using JNI, see src/share/bin/java.c
- */
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -88,7 +83,11 @@ import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
 
-
+/**
+ * A utility package for the java(1), javaw(1) launchers.
+ * The following are helper methods that the native launcher uses
+ * to perform checks etc. using JNI, see src/share/bin/java.c
+ */
 public final class LauncherHelper {
 
     // No instantiation
@@ -154,8 +153,8 @@ public final class LauncherHelper {
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
         initOutput(printToStderr);
-        String opts[] = optionFlag.split(":");
-        String optStr = (opts.length > 1 && opts[1] != null)
+        String[] opts = optionFlag.split(":");
+        String optStr = opts.length > 1
                 ? opts[1].trim()
                 : "all";
         switch (optStr) {
@@ -243,7 +242,7 @@ public final class LauncherHelper {
                         ostream.print("\\n ");
                         break;
                     default:
-                        // print any bizzare line separators in hex, but really
+                        // print any bizarre line separators in hex, but really
                         // shouldn't happen.
                         ostream.printf("0x%02X", b & 0xff);
                         break;
@@ -506,7 +505,7 @@ public final class LauncherHelper {
     }
 
     /**
-     * Appends the vm synoym message to the header, already created.
+     * Appends the vm synonym message to the header, already created.
      * initHelpSystem must be called before using this method.
      */
     static void appendVmSynonymMessage(String vm1, String vm2) {
@@ -727,7 +726,7 @@ public final class LauncherHelper {
         // main module is in the boot layer
         ModuleLayer layer = ModuleLayer.boot();
         Optional<Module> om = layer.findModule(mainModule);
-        if (!om.isPresent()) {
+        if (om.isEmpty()) {
             // should not happen
             throw new InternalError("Module " + mainModule + " not in boot Layer");
         }
@@ -736,7 +735,7 @@ public final class LauncherHelper {
         // get main class
         if (mainClass == null) {
             Optional<String> omc = m.getDescriptor().mainClass();
-            if (!omc.isPresent()) {
+            if (omc.isEmpty()) {
                 abort(null, "java.launcher.module.error1", mainModule);
             }
             mainClass = omc.get();
@@ -1024,7 +1023,7 @@ public final class LauncherHelper {
 
             // find the module with the FX launcher
             Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
-            if (!om.isPresent()) {
+            if (om.isEmpty()) {
                 abort(null, "java.launcher.cls.error5");
             }
 

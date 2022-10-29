@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public abstract class MlvmOOMTest extends MlvmTest {
 
     /**
      * Checks the OOME type is expected.
-     * Method just exits if OOME is expected and throws an exeption if not.
+     * Method just exits if OOME is expected and throws an exception if not.
      * @param oome thrown by {@link #eatMemory(List)}
      */
     protected abstract void checkOOME(OutOfMemoryError oome);

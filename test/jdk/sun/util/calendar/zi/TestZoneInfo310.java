@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class TestZoneInfo310 {
 
         String TESTDIR = System.getProperty("test.dir", ".");
         Path tzdir = Paths.get(System.getProperty("test.root"),
-            "..", "..", "make", "data", "tzdata");
+            "../../src/java.base/share/data/tzdata");
         String tzfiles = "africa antarctica asia australasia europe northamerica southamerica backward etcetera gmt";
         Path jdk_tzdir = Paths.get(System.getProperty("test.src"), "tzdata_jdk");
         String jdk_tzfiles = "jdk11_backward";
@@ -176,11 +176,12 @@ public class TestZoneInfo310 {
              * save time in IANA tzdata. This bug is tracked via JDK-8223388.
              *
              * These are the zones/rules that employ negative DST in vanguard
-             * format (as of 2019a):
+             * format (as of 2019a), Palestine added in 2022d:
              *
              *  - Rule "Eire"
              *  - Rule "Morocco"
              *  - Rule "Namibia"
+             *  - Rule "Palestine"
              *  - Zone "Europe/Prague"
              *
              * Tehran/Iran rule has rules beyond 2037, in which javazic assumes
@@ -196,6 +197,8 @@ public class TestZoneInfo310 {
                 zid.equals("Europe/Dublin") || // uses "Eire" rule
                 zid.equals("Europe/Prague") ||
                 zid.equals("Asia/Tehran") || // last rule mismatch
+                zid.equals("Asia/Gaza") || // uses "Palestine" rule
+                zid.equals("Asia/Hebron") || // uses "Palestine" rule
                 zid.equals("Iran")) { // last rule mismatch
                     continue;
             }

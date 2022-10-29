@@ -92,7 +92,7 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
         if (key instanceof javax.crypto.interfaces.PBEKey) {
             // Check if requested key spec is amongst the valid ones
             if ((keySpecCl != null)
-                && PBEKeySpec.class.isAssignableFrom(keySpecCl)) {
+                    && keySpecCl.isAssignableFrom(PBEKeySpec.class)) {
                 javax.crypto.interfaces.PBEKey pKey =
                     (javax.crypto.interfaces.PBEKey) key;
                 char[] passwd = pKey.getPassword();

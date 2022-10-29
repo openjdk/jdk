@@ -304,13 +304,17 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * when the BeanContextSupport is serialized.
      */
 
+    /**
+     * A protected nested class containing per-child information
+     * in the {@code children} hashtable.
+     */
     protected class BCSChild implements Serializable {
 
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5815286101609939109L;
+        /**
+         * Use serialVersionUID from JDK 1.7 for interoperability.
+         */
+        @Serial
+        private static final long serialVersionUID = -5815286101609939109L;
 
         BCSChild(Object bcc, Object peer) {
             super();
@@ -1323,7 +1327,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * property changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 
@@ -1337,7 +1341,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * vetoable changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
@@ -300,7 +300,6 @@ void OopStorage::Block::set_active_index(size_t index) {
 
 size_t OopStorage::Block::active_index_safe(const Block* block) {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(block->_active_index));
-  assert(CanUseSafeFetchN(), "precondition");
   return SafeFetchN((intptr_t*)&block->_active_index, 0);
 }
 
@@ -366,7 +365,6 @@ void OopStorage::Block::delete_block(const Block& block) {
 // require additional validation of the result.
 OopStorage::Block*
 OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
-  assert(CanUseSafeFetchN(), "precondition");
   STATIC_ASSERT(_data_pos == 0);
   // Const-ness of ptr is not related to const-ness of containing block.
   // Blocks are allocated section-aligned, so get the containing section.
@@ -807,6 +805,10 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   }
 }
 
+OopStorage* OopStorage::create(const char* name, MEMFLAGS memflags) {
+  return new (memflags) OopStorage(name, memflags);
+}
+
 const size_t initial_active_array_size = 8;
 
 static Mutex* make_oopstorage_mutex(const char* storage_name,
@@ -815,15 +817,6 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
   char name[256];
   os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
   return new PaddedMutex(rank, name);
-}
-
-void* OopStorage::operator new(size_t size, MEMFLAGS memflags) {
-  assert(size >= sizeof(OopStorage), "precondition");
-  return NEW_C_HEAP_ARRAY(char, size, memflags);
-}
-
-void OopStorage::operator delete(void* obj, MEMFLAGS /* memflags */) {
-  FREE_C_HEAP_ARRAY(char, obj);
 }
 
 OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :

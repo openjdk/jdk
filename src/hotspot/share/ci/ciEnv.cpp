@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -64,16 +64,17 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/reflection.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
@@ -309,7 +310,7 @@ ciEnv::~ciEnv() {
 // Cache Jvmti state
 bool ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
-  // Get Jvmti capabilities under lock to get consistant values.
+  // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
   _jvmti_redefinition_count             = JvmtiExport::redefinition_count();
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
@@ -375,7 +376,7 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   VM_ENTRY_MARK;
   if (handle == NULL) {
     // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(name, Handle(), Handle());
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, name, Handle(), Handle());
     jobject objh = NULL;
     if (ik != NULL) {
       oop obj = ik->allocate_instance(THREAD);
@@ -390,6 +391,23 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   }
   oop obj = JNIHandles::resolve(handle);
   return obj == NULL? NULL: get_object(obj)->as_instance();
+}
+
+ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
+  switch (type) {
+    case T_BOOLEAN: return Boolean_klass();
+    case T_BYTE   : return Byte_klass();
+    case T_CHAR   : return Character_klass();
+    case T_SHORT  : return Short_klass();
+    case T_INT    : return Integer_klass();
+    case T_LONG   : return Long_klass();
+    case T_FLOAT  : return Float_klass();
+    case T_DOUBLE : return Double_klass();
+
+    default:
+      assert(false, "not a primitive: %s", type2name(type));
+      return NULL;
+  }
 }
 
 ciInstance* ciEnv::ArrayIndexOutOfBoundsException_instance() {
@@ -503,13 +521,6 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     domain = Handle(current, accessing_klass->protection_domain());
   }
 
-  // setup up the proper type to return on OOM
-  ciKlass* fail_type;
-  if (sym->char_at(0) == JVM_SIGNATURE_ARRAY) {
-    fail_type = _unloaded_ciobjarrayklass;
-  } else {
-    fail_type = _unloaded_ciinstance_klass;
-  }
   Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
@@ -518,7 +529,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     if (!require_local) {
       kls = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
     } else {
-      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
+      kls = SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain);
     }
     found_klass = kls;
   }
@@ -591,7 +602,6 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
                                         int index,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
-  EXCEPTION_CONTEXT;
   Klass* klass = NULL;
   Symbol* klass_name = NULL;
 
@@ -599,7 +609,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
     klass_name = cpool->symbol_at(index);
   } else {
     // Check if it's resolved if it's not a symbol constant pool entry.
-    klass =  ConstantPool::klass_at_if_loaded(cpool, index);
+    klass = ConstantPool::klass_at_if_loaded(cpool, index);
     // Try to look it up by name.
     if (klass == NULL) {
       klass_name = cpool->klass_name_at(index);
@@ -638,12 +648,10 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
   // It is known to be accessible, since it was found in the constant pool.
   ciKlass* ciKlass = get_klass(klass);
   is_accessible = true;
-#ifndef PRODUCT
   if (ReplayCompiles && ciKlass == _unloaded_ciinstance_klass) {
     // Klass was unresolved at replay dump time and therefore not accessible.
     is_accessible = false;
   }
-#endif
   return ciKlass;
 }
 
@@ -659,52 +667,73 @@ ciKlass* ciEnv::get_klass_by_index(const constantPoolHandle& cpool,
 }
 
 // ------------------------------------------------------------------
-// ciEnv::get_constant_by_index_impl
+// ciEnv::unbox_primitive_value
 //
-// Implementation of get_constant_by_index().
-ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
-                                             int pool_index, int cache_index,
-                                             ciInstanceKlass* accessor) {
-  bool ignore_will_link;
-  EXCEPTION_CONTEXT;
-  int index = pool_index;
-  if (cache_index >= 0) {
-    assert(index < 0, "only one kind of index at a time");
-    index = cpool->object_to_cp_index(cache_index);
-    oop obj = cpool->resolved_references()->obj_at(cache_index);
-    if (obj != NULL) {
-      if (obj == Universe::the_null_sentinel()) {
-        return ciConstant(T_OBJECT, get_object(NULL));
-      }
-      BasicType bt = T_OBJECT;
-      if (cpool->tag_at(index).is_dynamic_constant())
-        bt = Signature::basic_type(cpool->uncached_signature_ref_at(index));
-      if (is_reference_type(bt)) {
-      } else {
-        // we have to unbox the primitive value
-        if (!is_java_primitive(bt))  return ciConstant();
-        jvalue value;
-        BasicType bt2 = java_lang_boxing_object::get_value(obj, &value);
-        assert(bt2 == bt, "");
-        switch (bt2) {
-        case T_DOUBLE:  return ciConstant(value.d);
-        case T_FLOAT:   return ciConstant(value.f);
-        case T_LONG:    return ciConstant(value.j);
-        case T_INT:     return ciConstant(bt2, value.i);
-        case T_SHORT:   return ciConstant(bt2, value.s);
-        case T_BYTE:    return ciConstant(bt2, value.b);
-        case T_CHAR:    return ciConstant(bt2, value.c);
-        case T_BOOLEAN: return ciConstant(bt2, value.z);
-        default:  return ciConstant();
-        }
-      }
-      ciObject* ciobj = get_object(obj);
-      if (ciobj->is_array()) {
-        return ciConstant(T_ARRAY, ciobj);
+// Unbox a primitive and return it as a ciConstant.
+ciConstant ciEnv::unbox_primitive_value(ciObject* cibox, BasicType expected_bt) {
+  jvalue value;
+  BasicType bt = java_lang_boxing_object::get_value(cibox->get_oop(), &value);
+  if (bt != expected_bt && expected_bt != T_ILLEGAL) {
+    assert(false, "type mismatch: %s vs %s", type2name(expected_bt), cibox->klass()->name()->as_klass_external_name());
+    return ciConstant();
+  }
+  switch (bt) {
+    case T_BOOLEAN: return ciConstant(bt, value.z);
+    case T_BYTE:    return ciConstant(bt, value.b);
+    case T_SHORT:   return ciConstant(bt, value.s);
+    case T_CHAR:    return ciConstant(bt, value.c);
+    case T_INT:     return ciConstant(bt, value.i);
+    case T_LONG:    return ciConstant(value.j);
+    case T_FLOAT:   return ciConstant(value.f);
+    case T_DOUBLE:  return ciConstant(value.d);
+
+    default:
+      assert(false, "not a primitive type: %s", type2name(bt));
+      return ciConstant();
+  }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::get_resolved_constant
+//
+ciConstant ciEnv::get_resolved_constant(const constantPoolHandle& cpool, int obj_index) {
+  assert(obj_index >= 0, "");
+  oop obj = cpool->resolved_references()->obj_at(obj_index);
+  if (obj == NULL) {
+    // Unresolved constant. It is resolved when the corresponding slot contains a non-null reference.
+    // Null constant is represented as a sentinel (non-null) value.
+    return ciConstant();
+  } else if (obj == Universe::the_null_sentinel()) {
+    return ciConstant(T_OBJECT, get_object(NULL));
+  } else {
+    ciObject* ciobj = get_object(obj);
+    if (ciobj->is_array()) {
+      return ciConstant(T_ARRAY, ciobj);
+    } else {
+      int cp_index = cpool->object_to_cp_index(obj_index);
+      BasicType bt = cpool->basic_type_for_constant_at(cp_index);
+      if (is_java_primitive(bt)) {
+        assert(cpool->tag_at(cp_index).is_dynamic_constant(), "sanity");
+        return unbox_primitive_value(ciobj, bt);
       } else {
         assert(ciobj->is_instance(), "should be an instance");
         return ciConstant(T_OBJECT, ciobj);
       }
+    }
+  }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::get_constant_by_index_impl
+//
+// Implementation of get_constant_by_index().
+ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
+                                             int index, int obj_index,
+                                             ciInstanceKlass* accessor) {
+  if (obj_index >= 0) {
+    ciConstant con = get_resolved_constant(cpool, obj_index);
+    if (con.is_valid()) {
+      return con;
     }
   }
   constantTag tag = cpool->tag_at(index);
@@ -717,41 +746,33 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_double()) {
     return ciConstant((jdouble)cpool->double_at(index));
   } else if (tag.is_string()) {
-    oop string = NULL;
-    assert(cache_index >= 0, "should have a cache index");
-    string = cpool->string_at(index, cache_index, THREAD);
+    EXCEPTION_CONTEXT;
+    assert(obj_index >= 0, "should have an object index");
+    oop string = cpool->string_at(index, obj_index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       record_out_of_memory_failure();
       return ciConstant();
     }
-    ciObject* constant = get_object(string);
-    if (constant->is_array()) {
-      return ciConstant(T_ARRAY, constant);
-    } else {
-      assert (constant->is_instance(), "must be an instance, or not? ");
-      return ciConstant(T_OBJECT, constant);
-    }
+    ciInstance* constant = get_object(string)->as_instance();
+    return ciConstant(T_OBJECT, constant);
   } else if (tag.is_unresolved_klass_in_error()) {
-    return ciConstant();
+    return ciConstant(T_OBJECT, get_unloaded_klass_mirror(NULL));
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
-    // 4881222: allow ldc to take a class type
-    ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      record_out_of_memory_failure();
-      return ciConstant();
-    }
-    assert (klass->is_instance_klass() || klass->is_array_klass(),
-            "must be an instance or array klass ");
-    return ciConstant(T_OBJECT, klass->java_mirror());
-  } else if (tag.is_method_type()) {
+    bool will_link;
+    ciKlass* klass = get_klass_by_index_impl(cpool, index, will_link, accessor);
+    ciInstance* mirror = (will_link ? klass->java_mirror() : get_unloaded_klass_mirror(klass));
+    return ciConstant(T_OBJECT, mirror);
+  } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    assert(obj_index >= 0, "should have an object index");
     ciSymbol* signature = get_symbol(cpool->method_type_signature_at(index));
     ciObject* ciobj = get_unloaded_method_type_constant(signature);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_method_handle()) {
+  } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    assert(obj_index >= 0, "should have an object index");
+    bool ignore_will_link;
     int ref_kind        = cpool->method_handle_ref_kind_at(index);
     int callee_index    = cpool->method_handle_klass_index_at(index);
     ciKlass* callee     = get_klass_by_index_impl(cpool, callee_index, ignore_will_link, accessor);
@@ -759,10 +780,11 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciSymbol* signature = get_symbol(cpool->method_handle_signature_ref_at(index));
     ciObject* ciobj     = get_unloaded_method_handle_constant(callee, name, signature, ref_kind);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_dynamic_constant()) {
-    return ciConstant();
+  } else if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
+    assert(obj_index >= 0, "should have an object index");
+    return ciConstant(T_OBJECT, unloaded_ciinstance()); // unresolved dynamic constant
   } else {
-    ShouldNotReachHere();
+    assert(false, "unknown tag: %d (%s)", tag.value(), tag.internal_name());
     return ciConstant();
   }
 }
@@ -920,11 +942,9 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
            : !m->method_holder()->is_loaded())) {
         m = NULL;
       }
-#ifdef ASSERT
       if (m != NULL && ReplayCompiles && !ciReplay::is_loaded(m)) {
         m = NULL;
       }
-#endif
       if (m != NULL) {
         // We found the method.
         return get_method(m);
@@ -1030,8 +1050,9 @@ void ciEnv::register_method(ciMethod* target,
                             AbstractCompiler* compiler,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
-                            RTMState  rtm_state,
-                            const GrowableArrayView<RuntimeStub*>& native_invokers) {
+                            bool has_monitors,
+                            int immediate_oops_patched,
+                            RTMState  rtm_state) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1046,6 +1067,9 @@ void ciEnv::register_method(ciMethod* target,
       code_buffer->free_blob();
       return;
     }
+
+    // Check if memory should be freed before allocation
+    CodeCache::gc_on_allocation();
 
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
@@ -1095,6 +1119,10 @@ void ciEnv::register_method(ciMethod* target,
     }
 #endif
 
+    if (!failing()) {
+      code_buffer->finalize_stubs();
+    }
+
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdo = method()->method_data();
@@ -1120,8 +1148,7 @@ void ciEnv::register_method(ciMethod* target,
                                debug_info(), dependencies(), code_buffer,
                                frame_words, oop_map_set,
                                handler_table, inc_table,
-                               compiler, task()->comp_level(),
-                               native_invokers);
+                               compiler, CompLevel(task()->comp_level()));
 
     // Free codeBlobs
     code_buffer->free_blob();
@@ -1129,15 +1156,11 @@ void ciEnv::register_method(ciMethod* target,
     if (nm != NULL) {
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
+      nm->set_has_monitors(has_monitors);
+      assert(!method->is_synchronized() || nm->has_monitors(), "");
 #if INCLUDE_RTM_OPT
       nm->set_rtm_state(rtm_state);
 #endif
-
-      // Record successful registration.
-      // (Put nm into the task handle *before* publishing to the Java heap.)
-      if (task() != NULL) {
-        task()->set_code(nm);
-      }
 
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
@@ -1179,15 +1202,26 @@ void ciEnv::register_method(ciMethod* target,
         }
       }
     }
-  }  // safepoints are allowed again
+  }
 
+  NoSafepointVerifier nsv;
   if (nm != NULL) {
-    // JVMTI -- compiled method notification (must be done outside lock)
-    nm->post_compiled_method_load_event();
+    // Compilation succeeded, post what we know about it
+    nm->post_compiled_method(task());
+    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   } else {
     // The CodeCache is full.
     record_failure("code cache is full");
   }
+
+  // safepoints are allowed again
+}
+
+// ------------------------------------------------------------------
+// ciEnv::find_system_klass
+ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
+  VM_ENTRY_MARK;
+  return get_klass_by_name_impl(NULL, constantPoolHandle(), klass_name, false);
 }
 
 // ------------------------------------------------------------------
@@ -1593,7 +1627,7 @@ void ciEnv::find_dynamic_call_sites() {
         }
       }
 
-      // Look for MethodHandle contant pool entries
+      // Look for MethodHandle constant pool entries
       RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
       int len = pool->length();
       for (int i = 0; i < len; ++i) {
@@ -1613,6 +1647,12 @@ void ciEnv::find_dynamic_call_sites() {
 void ciEnv::dump_compile_data(outputStream* out) {
   CompileTask* task = this->task();
   if (task) {
+#ifdef COMPILER2
+    if (ReplayReduce && compiler_data() != NULL) {
+      // Dump C2 "reduced" inlining data.
+      ((Compile*)compiler_data())->dump_inline_data_reduced(out);
+    }
+#endif
     Method* method = task->method();
     int entry_bci = task->osr_bci();
     int comp_level = task->comp_level();
@@ -1643,6 +1683,7 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
+  out->print_cr("version %d", REPLAY_VERSION);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
@@ -1653,9 +1694,11 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
 
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
+
   // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
   // protection domain to load subsequent classes during replay compilation.
-  out->print_cr("instanceKlass %s", CURRENT_ENV->replay_name(task()->method()->method_holder()));
+  ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
+
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
@@ -1680,12 +1723,12 @@ void ciEnv::dump_replay_data(outputStream* out) {
 }
 
 void ciEnv::dump_replay_data(int compile_id) {
-  static char buffer[O_BUFLEN];
-  int ret = jio_snprintf(buffer, O_BUFLEN, "replay_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  char buffer[64];
+  int ret = jio_snprintf(buffer, sizeof(buffer), "replay_pid%d_compid%d.log", os::current_process_id(), compile_id);
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
-      FILE* replay_data_file = os::open(fd, "w");
+      FILE* replay_data_file = os::fdopen(fd, "w");
       if (replay_data_file != NULL) {
         fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
         dump_replay_data(&replay_data_stream);
@@ -1698,12 +1741,12 @@ void ciEnv::dump_replay_data(int compile_id) {
 }
 
 void ciEnv::dump_inline_data(int compile_id) {
-  static char buffer[O_BUFLEN];
-  int ret = jio_snprintf(buffer, O_BUFLEN, "inline_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  char buffer[64];
+  int ret = jio_snprintf(buffer, sizeof(buffer), "inline_pid%d_compid%d.log", os::current_process_id(), compile_id);
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
-      FILE* inline_data_file = os::open(fd, "w");
+      FILE* inline_data_file = os::fdopen(fd, "w");
       if (inline_data_file != NULL) {
         fileStream replay_data_stream(inline_data_file, /*need_close=*/true);
         GUARDED_VM_ENTRY(

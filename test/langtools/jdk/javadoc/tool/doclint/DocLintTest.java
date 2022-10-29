@@ -256,7 +256,7 @@ public class DocLintTest {
         Set<Message> found = EnumSet.noneOf(Message.class);
         int e = 0, w = 0;
         for (String line: out.split("[\r\n]+")) {
-            if (ignore.matcher(line).matches())
+            if (ignore.matcher(line).matches() || line.contains("javadoc.warn.message"))
                 continue;
 
             Matcher s = stats.matcher(line);

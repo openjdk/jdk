@@ -345,7 +345,7 @@ import java.util.Hashtable;
  * </pre></blockquote><hr>
  *
  * @author Doug Stein
- * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
+ * @author Bill Spitzak (original NeWS &amp; OLIT implementation)
  * @see       java.awt.GridBagConstraints
  * @see       java.awt.GridBagLayoutInfo
  * @see       java.awt.ComponentOrientation
@@ -688,7 +688,7 @@ java.io.Serializable {
      * @param      comp         the component to be added
      * @param      constraints  an object that determines how
      *                          the component is added to the layout
-     * @exception IllegalArgumentException if {@code constraints}
+     * @throws IllegalArgumentException if {@code constraints}
      *            is not a {@code GridBagConstraint}
      */
     public void addLayoutComponent(Component comp, Object constraints) {

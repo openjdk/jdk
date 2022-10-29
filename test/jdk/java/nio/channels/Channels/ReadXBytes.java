@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
  * @test
  * @bug 8268435 8274780
  * @summary Verify ChannelInputStream methods readAllBytes and readNBytes
- * @requires vm.bits == 64
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 16g)
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @modules java.base/jdk.internal.util
- * @run testng/othervm/timeout=900 -Xmx8G ReadXBytes
+ * @run testng/othervm/timeout=900 -Xmx12G ReadXBytes
  * @key randomness
  */
 import java.io.File;
@@ -38,7 +38,7 @@ import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -46,10 +46,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import static java.nio.file.StandardOpenOption.READ;
 import java.util.List;
 import java.util.Random;
 import jdk.internal.util.ArraysSupport;
+
+import static java.nio.file.StandardOpenOption.*;
 
 import jdk.test.lib.RandomFactory;
 
@@ -72,30 +73,56 @@ public class ReadXBytes {
     // A length greater than a 32-bit integer can accommodate
     private static final long HUGE_LENGTH = Integer.MAX_VALUE + 27L;
 
+    // Current directory
+    private static final Path DIR = Path.of(System.getProperty("test.dir", "."));
+
     // --- Framework ---
+
+    // Create a temporary file path
+    static Path createFilePath() {
+        String name = String.format("ReadXBytes%d.tmp", System.nanoTime());
+        return DIR.resolve(name);
+    }
 
     // Creates a temporary file of a specified length with undefined content
     static Path createFile(long length) throws IOException {
-        File file = File.createTempFile("foo", ".bar");
-        file.deleteOnExit();
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            raf.setLength(length);
+        Path path = createFilePath();
+        path.toFile().deleteOnExit();
+        try (FileChannel fc = FileChannel.open(path, CREATE_NEW, SPARSE, WRITE)) {
+            if (length > 0) {
+                fc.position(length - 1);
+                fc.write(ByteBuffer.wrap(new byte[] {27}));
+            }
         }
-        return file.toPath();
+        return path;
     }
 
     // Creates a temporary file of a specified length with random content
     static Path createFileWithRandomContent(long length) throws IOException {
         Path file = createFile(length);
-        try (RandomAccessFile raf = new RandomAccessFile(file.toFile(), "rw")) {
-            long written = 0L;
-            int bufLength = Math.min(32768, (int)Math.min(length, BIG_LENGTH));
-            byte[] buf = new byte[bufLength];
-            while (written < length) {
+        try (FileChannel fc = FileChannel.open(file, WRITE)) {
+            if (length < 65536) {
+                // if the length is less than 64k, write the entire file
+                byte[] buf = new byte[(int)length];
                 RAND.nextBytes(buf);
-                int len = (int)Math.min(bufLength, length - written);
-                raf.write(buf, 0, len);
-                written += len;
+                ByteBuffer bb = ByteBuffer.wrap(buf);
+                while (bb.hasRemaining()) {
+                    fc.write(bb);
+                }
+            } else {
+                // write the first and the last 32k only
+                byte[] buf = new byte[32768];
+                RAND.nextBytes(buf);
+                ByteBuffer bb = ByteBuffer.wrap(buf);
+                while (bb.hasRemaining()) {
+                    fc.write(bb);
+                }
+                bb.clear();
+                fc.position(length - buf.length);
+                RAND.nextBytes(buf);
+                while (bb.hasRemaining()) {
+                    fc.write(bb);
+                }
             }
         }
         return file;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -70,7 +70,7 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @version $Id:
  *
  * @xsl.usage internal
- * @LastModified: May 2021
+ * @LastModified: Jan 2022
  */
 final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
@@ -364,13 +364,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
         // xml-declaration
         fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "no");
 
-        // JDK specific property isStandalone
-        boolean isStandalone = SecuritySupport.getJAXPSystemProperty(
-                Boolean.class, JdkConstants.SP_IS_STANDALONE, "false");
-
-        fIsStandalone = new JdkProperty<>(ImplPropMap.ISSTANDALONE, isStandalone, State.DEFAULT);
+        // JDK specific property isStandalone, the default value is false
+        fIsStandalone = new JdkProperty<>(ImplPropMap.ISSTANDALONE, Boolean.class, false, State.DEFAULT);
         // the system property is true only if it is "true" and false otherwise
-        if (isStandalone) {
+        if (fIsStandalone.getValue()) {
             fFeatures |= IS_STANDALONE;
             fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
                     DOMConstants.DOM3_EXPLICIT_TRUE);

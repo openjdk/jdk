@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package javax.swing.text;
 
 import java.util.*;
 import java.awt.*;
-import javax.swing.event.*;
-import javax.swing.SwingConstants;
 
 /**
  * <code>CompositeView</code> is an abstract <code>View</code>
@@ -66,7 +64,7 @@ import javax.swing.SwingConstants;
  * <li>{@link #childAllocation} - Returns the bounds of
  *     a particular child <code>View</code>.
  *     <code>getChildAllocation</code> will invoke
- *     <code>childAllocation</code> after offseting
+ *     <code>childAllocation</code> after offsetting
  *     the bounds by the <code>Inset</code>s of the
  *     <code>CompositeView</code>.
  * </ul>
@@ -244,7 +242,7 @@ public abstract class CompositeView extends View {
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does
+     * @throws BadLocationException  if the given position does
      *   not represent a valid location in the associated document
      * @see View#modelToView
      */
@@ -294,9 +292,9 @@ public abstract class CompositeView extends View {
      *  position is a boundary of two views
      * @param a the allocated region to render into
      * @return the bounding box of the given position is returned
-     * @exception BadLocationException  if the given position does
+     * @throws BadLocationException  if the given position does
      *   not represent a valid location in the associated document
-     * @exception IllegalArgumentException for an invalid bias argument
+     * @throws IllegalArgumentException for an invalid bias argument
      * @see View#viewToModel
      */
     public Shape modelToView(int p0, Position.Bias b0, int p1, Position.Bias b1, Shape a) throws BadLocationException {
@@ -398,8 +396,7 @@ public abstract class CompositeView extends View {
             try {
                 retValue = getNextVisualPositionFrom(-1, Position.Bias.Forward,
                                                      a, EAST, bias);
-            } catch (BadLocationException ble) { }
-            catch (IllegalArgumentException iae) { }
+            } catch (BadLocationException | IllegalArgumentException e) { }
             if(retValue == -1) {
                 retValue = getStartOffset();
                 bias[0] = Position.Bias.Forward;
@@ -411,8 +408,7 @@ public abstract class CompositeView extends View {
             try {
                 retValue = getNextVisualPositionFrom(-1, Position.Bias.Forward,
                                                      a, WEST, bias);
-            } catch (BadLocationException ble) { }
-            catch (IllegalArgumentException iae) { }
+            } catch (BadLocationException | IllegalArgumentException e) { }
 
             if(retValue == -1) {
                 // NOTE: this could actually use end offset with backward.
@@ -458,9 +454,9 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException the given position is not a valid
+     * @throws BadLocationException the given position is not a valid
      *                                 position within the document
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      */
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction, Position.Bias[] biasRet)
@@ -715,8 +711,8 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  north or south location
-     * @exception BadLocationException for a bad location within a document model
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws BadLocationException for a bad location within a document model
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
      */
     protected int getNextNorthSouthVisualPositionFrom(int pos, Position.Bias b,
@@ -748,8 +744,8 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  west or east location
-     * @exception BadLocationException for a bad location within a document model
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws BadLocationException for a bad location within a document model
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
      */
     protected int getNextEastWestVisualPositionFrom(int pos, Position.Bias b,
@@ -767,7 +763,7 @@ public abstract class CompositeView extends View {
     /**
      * Determines in which direction the next view lays.
      * Consider the <code>View</code> at index n. Typically the
-     * <code>View</code>s are layed out from left to right,
+     * <code>View</code>s are laid out from left to right,
      * so that the <code>View</code> to the EAST will be
      * at index n + 1, and the <code>View</code> to the WEST
      * will be at index n - 1. In certain situations,
@@ -776,7 +772,7 @@ public abstract class CompositeView extends View {
      * but rather at index n - 1, or that the <code>View</code>
      * to the WEST is not at index n - 1, but index n + 1.
      * In this case this method would return true, indicating the
-     * <code>View</code>s are layed out in descending order.
+     * <code>View</code>s are laid out in descending order.
      * <p>
      * This unconditionally returns false, subclasses should override this
      * method if there is the possibility for laying <code>View</code>s in

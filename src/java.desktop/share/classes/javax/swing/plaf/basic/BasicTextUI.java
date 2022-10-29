@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         String nm = getClass().getName();
         int index = nm.lastIndexOf('.');
         if (index >= 0) {
-            nm = nm.substring(index+1, nm.length());
+            nm = nm.substring(index+1);
         }
         return nm;
     }
@@ -182,8 +182,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             String prefix = getPropertyPrefix();
             Object o = DefaultLookup.get(editor, this,
                 prefix + ".keyBindings");
-            if ((o != null) && (o instanceof JTextComponent.KeyBinding[])) {
-                JTextComponent.KeyBinding[] bindings = (JTextComponent.KeyBinding[]) o;
+            if (o instanceof JTextComponent.KeyBinding[] bindings) {
                 JTextComponent.loadKeymap(map, bindings, getComponent().getActions());
             }
         }
@@ -250,7 +249,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
             /* In an ideal situation, the following check would not be necessary
              * and we would replace the color any time the previous color was a
-             * UIResouce. However, it turns out that there is existing code that
+             * UIResource. However, it turns out that there is existing code that
              * uses the following inadvisable pattern to turn a text area into
              * what appears to be a multi-line label:
              *
@@ -536,8 +535,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * should allow Tab to keyboard - accessibility
          */
         EditorKit editorKit = getEditorKit(editor);
-        if ( editorKit != null
-             && editorKit instanceof DefaultEditorKit) {
+        if (editorKit instanceof DefaultEditorKit) {
             Set<AWTKeyStroke> storedForwardTraversalKeys = editor.
                 getFocusTraversalKeys(KeyboardFocusManager.
                                       FORWARD_TRAVERSAL_KEYS);
@@ -617,9 +615,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         if (getEditorKit(editor) instanceof DefaultEditorKit) {
             if (map != null) {
                 Object obj = map.get(DefaultEditorKit.insertBreakAction);
-                if (obj != null
-                    && obj instanceof DefaultEditorKit.InsertBreakAction) {
-                    Action action =  new TextActionWrapper((TextAction)obj);
+                if (obj instanceof DefaultEditorKit.InsertBreakAction breakAction) {
+                    Action action = new TextActionWrapper(breakAction);
                     componentMap.put(action.getValue(Action.NAME),action);
                 }
             }
@@ -946,7 +943,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 rootView.setSize(d.width - i.left - i.right -
                         caretMargin, d.height - i.top - i.bottom);
             } else if (d.width == 0 && d.height == 0) {
-                // Probably haven't been layed out yet, force some sort of
+                // Probably haven't been laid out yet, force some sort of
                 // initial sizing.
                 rootView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
             }
@@ -1048,7 +1045,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @param tc the text component for which this UI is installed
      * @param pos the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle, null if the model is not painted
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView
      *
@@ -1070,7 +1067,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @param tc the text component for which this UI is installed
      * @param pos the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle, null if the model is not painted
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView
      *
@@ -1629,9 +1626,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *  position is a boundary of two views.
          * @param a the allocated region to render into
          * @return the bounding box of the given position is returned
-         * @exception BadLocationException  if the given position does
+         * @throws BadLocationException  if the given position does
          *   not represent a valid location in the associated document
-         * @exception IllegalArgumentException for an invalid bias argument
+         * @throws IllegalArgumentException for an invalid bias argument
          * @see View#viewToModel
          */
         public Shape modelToView(int p0, Position.Bias b0, int p1, Position.Bias b1, Shape a) throws BadLocationException {
@@ -1677,9 +1674,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *  SwingConstants.NORTH, or SwingConstants.SOUTH.
          * @return the location within the model that best represents the next
          *  location visual position.
-         * @exception BadLocationException the given position is not a valid
+         * @throws BadLocationException the given position is not a valid
          *                                 position within the document
-         * @exception IllegalArgumentException for an invalid direction
+         * @throws IllegalArgumentException for an invalid direction
          */
         public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                              int direction,
@@ -2483,7 +2480,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * not mutable, so a transfer operation of COPY only should
          * be advertised in that case.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
          * @return  This is implemented to return NONE if the component is a JPasswordField
@@ -2503,10 +2500,10 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param comp  The component holding the data to be transfered.  This
+         * @param comp  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent comp) {
@@ -2519,7 +2516,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
         /**
          * This method is called after data has been exported.  This method should remove
-         * the data that was transfered if the action was MOVE.
+         * the data that was transferred if the action was MOVE.
          *
          * @param source The component that was the source of the data.
          * @param data   The data that was transferred or possibly null
@@ -2629,9 +2626,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     }
 
                     imported = true;
-                } catch (UnsupportedFlavorException ufe) {
-                } catch (BadLocationException ble) {
-                } catch (IOException ioe) {
+                } catch (UnsupportedFlavorException | IOException | BadLocationException ex) {
                 }
             }
             return imported;
@@ -2697,8 +2692,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                             richText = sw.toString();
                         }
                     }
-                } catch (BadLocationException ble) {
-                } catch (IOException ioe) {
+                } catch (BadLocationException | IOException ex) {
                 }
             }
 

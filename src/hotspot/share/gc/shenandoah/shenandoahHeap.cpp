@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -72,6 +73,7 @@
 #endif
 
 #include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -416,7 +418,7 @@ void ShenandoahHeap::initialize_mode() {
       vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option");
     }
   } else {
-    ShouldNotReachHere();
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option (null)");
   }
   _gc_mode->initialize_flags();
   if (_gc_mode->is_diagnostic() && !UnlockDiagnosticVMOptions) {
@@ -1178,6 +1180,7 @@ void ShenandoahHeap::prepare_for_verify() {
 }
 
 void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
+  tcl->do_thread(_control_thread);
   workers()->threads_do(tcl);
   if (_safepoint_workers != NULL) {
     _safepoint_workers->threads_do(tcl);
@@ -1235,7 +1238,7 @@ private:
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
 
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked(obj)) {
@@ -1345,7 +1348,7 @@ private:
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
 
       assert(oopDesc::is_oop(obj), "Must be a valid oop");
       if (_bitmap->par_mark(obj)) {
@@ -1366,7 +1369,7 @@ public:
 // parallel marking queues.
 // Every worker processes it's own marking queue. work-stealing is used
 // to balance workload.
-class ShenandoahParallelObjectIterator : public ParallelObjectIterator {
+class ShenandoahParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   uint                         _num_workers;
   bool                         _init_ready;
@@ -1465,7 +1468,7 @@ private:
   }
 };
 
-ParallelObjectIterator* ShenandoahHeap::parallel_object_iterator(uint workers) {
+ParallelObjectIteratorImpl* ShenandoahHeap::parallel_object_iterator(uint workers) {
   return new ShenandoahParallelObjectIterator(workers, &_aux_bit_map);
 }
 
@@ -1789,13 +1792,14 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
     ShenandoahPhaseTimings::Phase phase = full_gc ?
                                           ShenandoahPhaseTimings::full_gc_purge_class_unload :
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
+    ShenandoahIsAliveSelector is_alive;
+    CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
     ShenandoahGCPhase gc_phase(phase);
     ShenandoahGCWorkerPhase worker_phase(phase);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
-    ShenandoahIsAliveSelector is_alive;
     uint num_workers = _workers->active_workers();
-    ShenandoahClassUnloadingTask unlink_task(phase, is_alive.is_alive_closure(), num_workers, purged_class);
+    ShenandoahClassUnloadingTask unlink_task(phase, num_workers, purged_class);
     _workers->run_task(&unlink_task);
   }
 
@@ -1910,10 +1914,6 @@ void ShenandoahHeap::register_nmethod(nmethod* nm) {
 
 void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
   ShenandoahCodeRoots::unregister_nmethod(nm);
-}
-
-void ShenandoahHeap::flush_nmethod(nmethod* nm) {
-  ShenandoahCodeRoots::flush_nmethod(nm);
 }
 
 oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
@@ -2304,4 +2304,22 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
       ld[i] = 0;
     }
   }
+}
+
+bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
+  if (is_idle()) return false;
+
+  // Objects allocated after marking start are implicitly alive, don't need any barriers during
+  // marking phase.
+  if (is_concurrent_mark_in_progress() &&
+     !marking_context()->allocated_after_mark_start(obj)) {
+    return true;
+  }
+
+  // Can not guarantee obj is deeply good.
+  if (has_forwarded_objects()) {
+    return true;
+  }
+
+  return false;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
@@ -43,7 +42,7 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.TypeLibrary;
+import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -164,6 +163,7 @@ final class Metadata extends Command {
         boolean showIds = false;
         boolean foundEventFilter = false;
         boolean foundCategoryFilter = false;
+        List<Predicate<EventType>> filters = new ArrayList<>();
         Predicate<EventType> filter = null;
         int optionCount = options.size();
         while (optionCount > 0) {
@@ -178,7 +178,7 @@ final class Metadata extends Command {
                 foundEventFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--events", filterStr);
-                filter = addEventFilter(filterStr, filter);
+                filters.add(Filters.createEventTypeFilter(filterStr, List.of()));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -187,7 +187,7 @@ final class Metadata extends Command {
                 foundCategoryFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--categories", filterStr);
-                filter = addCategoryFilter(filterStr, filter);
+                filters.add(Filters.createCategoryFilter(filterStr, List.of()));
             }
             if (optionCount == options.size()) {
                 // No progress made
@@ -201,12 +201,12 @@ final class Metadata extends Command {
         try (PrintWriter pw = new PrintWriter(System.out, false, UTF_8)) {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
-            if (filter != null) {
-                filter = addCache(filter, type -> type.getId());
+            if (!filters.isEmpty()) {
+                filter =  Filters.matchAny(filters);
             }
 
             List<Type> types = findTypes(file);
-            Collections.sort(types, new TypeComparator());
+            types.sort(new TypeComparator());
             for (Type type : types) {
                 if (filter != null) {
                     // If --events or --categories, only operate on events
@@ -231,7 +231,7 @@ final class Metadata extends Command {
         if (file == null) {
             // Force initialization
             FlightRecorder.getFlightRecorder().getEventTypes();
-            return TypeLibrary.getInstance().getTypes();
+            return MetadataRepository.getInstance().getVisibleTypes();
         }
         try (RecordingFile rf = new RecordingFile(file)) {
             return PRIVATE_ACCESS.readTypes(rf);

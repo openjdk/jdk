@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -32,7 +34,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -54,6 +55,7 @@ import javax.net.ssl.SSLContext;
 import jdk.test.lib.net.SimpleSSLContext;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
+
 import static java.lang.System.out;
 import static java.lang.String.format;
 
@@ -392,6 +394,8 @@ public class DigestEchoClient {
                 server.getServerAddress(), "/foo/");
 
         HttpClient client = newHttpClient(server);
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
         String auth = null;
@@ -503,6 +507,14 @@ public class DigestEchoClient {
                 }
             }
         } finally {
+            client = null;
+            System.gc();
+            while (!ref.refersTo(null)) {
+                System.gc();
+                if (queue.remove(100) == ref) break;
+            }
+            var error = TRACKER.checkShutdown(500);
+            if (error != null) throw error;
         }
         System.out.println("OK");
     }

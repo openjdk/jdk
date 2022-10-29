@@ -190,7 +190,7 @@ class TaskFactory {
                        worker);
     }
 
-    private <S, T extends BaseTask<S>, Z> Z runTask(Stream<S> inputs,
+    private synchronized <S, T extends BaseTask<S>, Z> Z runTask(Stream<S> inputs,
                                                  SourceHandler<S> sh,
                                                  List<String> options,
                                                  BiFunction<JavacTaskImpl, DiagnosticCollector<JavaFileObject>, T> creator,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class Bug6442006 {
     public static void main(String[] args) {
 
         TimeZone tz = TimeZone.getTimeZone("Asia/Taipei");
-        Locale tzLocale = new Locale("ja");
+        Locale tzLocale = Locale.JAPANESE;
         String jaStdName = "\u4e2d\u56fd\u6a19\u6e96\u6642";
         String jaDstName = "\u4e2d\u56fd\u590f\u6642\u9593";
 

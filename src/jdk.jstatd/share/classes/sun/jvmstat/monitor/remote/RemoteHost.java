@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,7 @@ public interface RemoteHost extends Remote {
      * @throws RemoteException
      *
      */
-    RemoteVm attachVm(int vmid, String mode) throws RemoteException,
-                                                    MonitorException;
+    RemoteVm attachVm(int vmid) throws RemoteException, MonitorException;
 
     /**
      * Remote method to detach from a remote HotSpot Java Virtual Machine

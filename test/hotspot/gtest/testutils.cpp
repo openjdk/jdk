@@ -57,7 +57,8 @@ bool GtestUtils::check_range(const void* p, size_t s, uint8_t expected) {
   }
 
   if (first_wrong != NULL) {
-    tty->print_cr("wrong pattern around " PTR_FORMAT, p2i(first_wrong));
+    tty->print_cr("check_range [" PTR_FORMAT ".." PTR_FORMAT "), 0x%X, : wrong pattern around " PTR_FORMAT,
+                  p2i(p), p2i(p) + s, expected, p2i(first_wrong));
     // Note: We deliberately print the surroundings too without bounds check. Might be interesting,
     // and os::print_hex_dump uses SafeFetch, so this is fine without bounds checks.
     os::print_hex_dump(tty, (address)(align_down(p2, 0x10) - 0x10),

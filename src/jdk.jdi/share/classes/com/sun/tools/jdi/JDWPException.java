@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.jdi.InternalException;
 import com.sun.jdi.InvalidModuleException;
 import com.sun.jdi.InvalidStackFrameException;
 import com.sun.jdi.ObjectCollectedException;
+import com.sun.jdi.OpaqueFrameException;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VMOutOfMemoryException;
 
@@ -73,6 +74,8 @@ class JDWPException extends Exception {
                 return new InconsistentDebugInfoException();
             case JDWP.Error.INVALID_THREAD:
                 return new IllegalThreadStateException();
+            case JDWP.Error.OPAQUE_FRAME:
+                return new OpaqueFrameException();
             default:
                 return new InternalException("Unexpected JDWP Error: " + errorCode, errorCode);
         }

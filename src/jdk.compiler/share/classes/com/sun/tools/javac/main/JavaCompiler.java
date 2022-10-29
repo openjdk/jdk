@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ import com.sun.tools.javac.tree.JCTree.JCMemberReference;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Context.Key;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Factory;
 import com.sun.tools.javac.util.Log.DiagnosticHandler;
@@ -990,7 +991,7 @@ public class JavaCompiler {
      * Parses a list of files.
      */
    public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects) {
-       return parseFiles(fileObjects, false);
+       return InitialFileParser.instance(context).parse(fileObjects);
    }
 
    public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects, boolean force) {
@@ -1305,7 +1306,7 @@ public class JavaCompiler {
             log.printVerbose("checking.attribution", env.enclClass.sym);
 
         if (!taskListener.isEmpty()) {
-            TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
+            TaskEvent e = newAnalyzeTaskEvent(env);
             taskListener.started(e);
         }
 
@@ -1390,10 +1391,28 @@ public class JavaCompiler {
         }
         finally {
             if (!taskListener.isEmpty()) {
-                TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
+                TaskEvent e = newAnalyzeTaskEvent(env);
                 taskListener.finished(e);
             }
         }
+    }
+
+    private TaskEvent newAnalyzeTaskEvent(Env<AttrContext> env) {
+        JCCompilationUnit toplevel = env.toplevel;
+        ClassSymbol sym;
+        if (env.enclClass.sym == syms.predefClass) {
+            if (TreeInfo.isModuleInfo(toplevel)) {
+                sym = toplevel.modle.module_info;
+            } else if (TreeInfo.isPackageInfo(toplevel)) {
+                sym = toplevel.packge.package_info;
+            } else {
+                throw new IllegalStateException("unknown env.toplevel");
+            }
+        } else {
+            sym = env.enclClass.sym;
+        }
+
+        return new TaskEvent(TaskEvent.Kind.ANALYZE, toplevel, sym);
     }
 
     /**
@@ -1535,7 +1554,7 @@ public class JavaCompiler {
             env.tree = TransPatterns.instance(context).translateTopLevelClass(env, env.tree, localMake);
             compileStates.put(env, CompileState.TRANSPATTERNS);
 
-            if (Feature.LAMBDA.allowedInSource(source) && scanner.hasLambdas) {
+            if (scanner.hasLambdas) {
                 if (shouldStop(CompileState.UNLAMBDA))
                     return;
 
@@ -1847,5 +1866,33 @@ public class JavaCompiler {
     public void newRound() {
         inputFiles.clear();
         todo.clear();
+    }
+
+    public interface InitialFileParserIntf {
+        public List<JCCompilationUnit> parse(Iterable<JavaFileObject> files);
+    }
+
+    public static class InitialFileParser implements InitialFileParserIntf {
+
+        public static final Key<InitialFileParserIntf> initialParserKey = new Key<>();
+
+        public static InitialFileParserIntf instance(Context context) {
+            InitialFileParserIntf instance = context.get(initialParserKey);
+            if (instance == null)
+                instance = new InitialFileParser(context);
+            return instance;
+        }
+
+        private final JavaCompiler compiler;
+
+        private InitialFileParser(Context context) {
+            context.put(initialParserKey, this);
+            this.compiler = JavaCompiler.instance(context);
+        }
+
+        @Override
+        public List<JCCompilationUnit> parse(Iterable<JavaFileObject> fileObjects) {
+           return compiler.parseFiles(fileObjects, false);
+        }
     }
 }

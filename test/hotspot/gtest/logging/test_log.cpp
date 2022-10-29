@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ TEST_VM_F(LogTest, large_message) {
 
   AsyncLogWriter::flush();
   ResourceMark rm;
-  FILE* fp = fopen(TestLogFileName, "r");
+  FILE* fp = os::fopen(TestLogFileName, "r");
   ASSERT_NE((void*)NULL, fp);
   char* output = read_line(fp);
   fclose(fp);

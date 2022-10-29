@@ -32,7 +32,7 @@
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/ostream.hpp"
 
 static Symbol* symbol_size = NULL;

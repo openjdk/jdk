@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public final class String
      *
      * A String instance is written into an ObjectOutputStream according to
      * <a href="{@docRoot}/../specs/serialization/protocol.html#stream-elements">
-     * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
+     * <cite>Java Object Serialization Specification</cite>, Section 6.2, "Stream Elements"</a>
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
@@ -261,6 +261,7 @@ public final class String
         this.value = original.value;
         this.coder = original.coder;
         this.hash = original.hash;
+        this.hashIsZero = original.hashIsZero;
     }
 
     /**
@@ -483,7 +484,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName));
+        this(lookupCharset(charsetName), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -516,60 +517,74 @@ public final class String
      *
      * @since  1.6
      */
-    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        Objects.requireNonNull(charset);
-        checkBoundsOffCount(offset, length, bytes.length);
+        this(Objects.requireNonNull(charset), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
+    }
+
+    /**
+     * This method does not do any precondition checks on its arguments.
+     * <p>
+     * Important: parameter order of this method is deliberately changed in order to
+     * disambiguate it against other similar methods of this class.
+     */
+    @SuppressWarnings("removal")
+    private String(Charset charset, byte[] bytes, int offset, int length) {
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
         } else if (charset == UTF_8.INSTANCE) {
-            if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                this.coder = LATIN1;
-            } else {
+            if (COMPACT_STRINGS) {
+                int dp = StringCoding.countPositives(bytes, offset, length);
+                if (dp == length) {
+                    this.value = Arrays.copyOfRange(bytes, offset, offset + length);
+                    this.coder = LATIN1;
+                    return;
+                }
                 int sl = offset + length;
-                int dp = 0;
-                byte[] dst = null;
-                if (COMPACT_STRINGS) {
-                    dst = new byte[length];
-                    while (offset < sl) {
-                        int b1 = bytes[offset];
-                        if (b1 >= 0) {
-                            dst[dp++] = (byte)b1;
+                byte[] dst = new byte[length];
+                if (dp > 0) {
+                    System.arraycopy(bytes, offset, dst, 0, dp);
+                    offset += dp;
+                }
+                while (offset < sl) {
+                    int b1 = bytes[offset++];
+                    if (b1 >= 0) {
+                        dst[dp++] = (byte)b1;
+                        continue;
+                    }
+                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                        int b2 = bytes[offset];
+                        if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                            dst[dp++] = (byte)decode2(b1, b2);
                             offset++;
                             continue;
                         }
-                        if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
-                                offset + 1 < sl) {
-                            int b2 = bytes[offset + 1];
-                            if (!isNotContinuation(b2)) {
-                                dst[dp++] = (byte)decode2(b1, b2);
-                                offset += 2;
-                                continue;
-                            }
-                        }
-                        // anything not a latin1, including the repl
-                        // we have to go with the utf16
-                        break;
                     }
-                    if (offset == sl) {
-                        if (dp != dst.length) {
-                            dst = Arrays.copyOf(dst, dp);
-                        }
-                        this.value = dst;
-                        this.coder = LATIN1;
-                        return;
+                    // anything not a latin1, including the REPL
+                    // we have to go with the utf16
+                    offset--;
+                    break;
+                }
+                if (offset == sl) {
+                    if (dp != dst.length) {
+                        dst = Arrays.copyOf(dst, dp);
                     }
+                    this.value = dst;
+                    this.coder = LATIN1;
+                    return;
                 }
-                if (dp == 0 || dst == null) {
-                    dst = new byte[length << 1];
-                } else {
-                    byte[] buf = new byte[length << 1];
-                    StringLatin1.inflate(dst, 0, buf, 0, dp);
-                    dst = buf;
-                }
+                byte[] buf = new byte[length << 1];
+                StringLatin1.inflate(dst, 0, buf, 0, dp);
+                dst = buf;
                 dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
+                if (dp != length) {
+                    dst = Arrays.copyOf(dst, dp << 1);
+                }
+                this.value = dst;
+                this.coder = UTF16;
+            } else { // !COMPACT_STRINGS
+                byte[] dst = new byte[length << 1];
+                int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
                 if (dp != length) {
                     dst = Arrays.copyOf(dst, dp << 1);
                 }
@@ -660,7 +675,13 @@ public final class String
                 offset = 0;
             }
 
-            int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            int caLen;
+            try {
+                caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            } catch (CharacterCodingException x) {
+                // Substitution is enabled, so this shouldn't happen
+                throw new Error(x);
+            }
             if (COMPACT_STRINGS) {
                 byte[] bs = StringUTF16.compress(ca, 0, caLen);
                 if (bs != null) {
@@ -682,42 +703,43 @@ public final class String
         if (length == 0) {
             return "";
         }
-        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
-        } else {
+        int dp;
+        byte[] dst;
+        if (COMPACT_STRINGS) {
+            dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
-            int dp = 0;
-            byte[] dst = null;
-            if (COMPACT_STRINGS) {
-                dst = new byte[length];
-                while (offset < sl) {
-                    int b1 = bytes[offset];
-                    if (b1 >= 0) {
-                        dst[dp++] = (byte) b1;
+            if (dp == length) {
+                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            }
+            dst = new byte[length];
+            System.arraycopy(bytes, offset, dst, 0, dp);
+            offset += dp;
+            while (offset < sl) {
+                int b1 = bytes[offset++];
+                if (b1 >= 0) {
+                    dst[dp++] = (byte)b1;
+                    continue;
+                }
+                if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                    int b2 = bytes[offset];
+                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                        dst[dp++] = (byte)decode2(b1, b2);
                         offset++;
                         continue;
                     }
-                    if ((b1 == (byte) 0xc2 || b1 == (byte) 0xc3) &&
-                            offset + 1 < sl) {
-                        int b2 = bytes[offset + 1];
-                        if (!isNotContinuation(b2)) {
-                            dst[dp++] = (byte) decode2(b1, b2);
-                            offset += 2;
-                            continue;
-                        }
-                    }
-                    // anything not a latin1, including the REPL
-                    // we have to go with the utf16
-                    break;
                 }
-                if (offset == sl) {
-                    if (dp != dst.length) {
-                        dst = Arrays.copyOf(dst, dp);
-                    }
-                    return new String(dst, LATIN1);
-                }
+                // anything not a latin1, including the REPL
+                // we have to go with the utf16
+                offset--;
+                break;
             }
-            if (dp == 0 || dst == null) {
+            if (offset == sl) {
+                if (dp != dst.length) {
+                    dst = Arrays.copyOf(dst, dp);
+                }
+                return new String(dst, LATIN1);
+            }
+            if (dp == 0) {
                 dst = new byte[length << 1];
             } else {
                 byte[] buf = new byte[length << 1];
@@ -725,11 +747,14 @@ public final class String
                 dst = buf;
             }
             dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
-            if (dp != length) {
-                dst = Arrays.copyOf(dst, dp << 1);
-            }
-            return new String(dst, UTF16);
+        } else { // !COMPACT_STRINGS
+            dst = new byte[length << 1];
+            dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, false);
         }
+        if (dp != length) {
+            dst = Arrays.copyOf(dst, dp << 1);
+        }
+        return new String(dst, UTF16);
     }
 
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
@@ -782,7 +807,13 @@ public final class String
                 System.getSecurityManager() != null) {
             src = Arrays.copyOf(src, len);
         }
-        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        int caLen;
+        try {
+            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        } catch (CharacterCodingException x) {
+            // throw via IAE
+            throw new IllegalArgumentException(x);
+        }
         if (COMPACT_STRINGS) {
             byte[] bs = StringUTF16.compress(ca, 0, caLen);
             if (bs != null) {
@@ -836,7 +867,8 @@ public final class String
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        if (ce instanceof ArrayEncoder ae) {
+        // fastpath with ArrayEncoder implies `doReplace`.
+        if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
@@ -846,10 +878,6 @@ public final class String
             byte[] ba = new byte[en];
             if (len == 0) {
                 return ba;
-            }
-            if (doReplace) {
-                ce.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
             }
 
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
@@ -1020,17 +1048,15 @@ public final class String
      */
     /* package-private */
     static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
-        if (!StringCoding.hasNegatives(sa, sp, len)) {
-            StringLatin1.inflate(sa, sp, da, dp, len);
-            return len;
-        } else {
-            int start = sp;
-            int end = sp + len;
-            while (sp < end && sa[sp] >= 0) {
-                da[dp++] = (char) sa[sp++];
+        int count = StringCoding.countPositives(sa, sp, len);
+        while (count < len) {
+            if (sa[sp + count] < 0) {
+                break;
             }
-            return sp - start;
+            count++;
         }
+        StringLatin1.inflate(sa, sp, da, dp, count);
+        return count;
     }
 
     private static boolean isNotContinuation(int b) {
@@ -1195,21 +1221,16 @@ public final class String
         return dp;
     }
 
-    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length)
+                                            throws CharacterCodingException {
         ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
         CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-        try {
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            // Substitution is always enabled,
-            // so this shouldn't happen
-            throw new Error(x);
-        }
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+            cr.throwException();
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+            cr.throwException();
         return cb.position();
     }
 
@@ -1283,14 +1304,17 @@ public final class String
         int sp = 0;
         int sl = val.length >> 1;
         byte[] dst = new byte[sl * 3];
-        char c;
-        while (sp < sl && (c = StringUTF16.getChar(val, sp)) < '\u0080') {
+        while (sp < sl) {
             // ascii fast loop;
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= '\u0080') {
+                break;
+            }
             dst[dp++] = (byte)c;
             sp++;
         }
         while (sp < sl) {
-            c = StringUTF16.getChar(val, sp++);
+            char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;
             } else if (c < 0x800) {
@@ -1354,7 +1378,7 @@ public final class String
      */
     public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        this(lookupCharset(charsetName), bytes, 0, bytes.length);
     }
 
     /**
@@ -1378,7 +1402,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, Charset charset) {
-        this(bytes, 0, bytes.length, charset);
+        this(Objects.requireNonNull(charset), bytes, 0, bytes.length);
     }
 
     /**
@@ -1408,7 +1432,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, offset, length, Charset.defaultCharset());
+        this(Charset.defaultCharset(), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -1428,7 +1452,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(Charset.defaultCharset(), bytes, 0, bytes.length);
     }
 
     /**
@@ -3244,7 +3268,7 @@ public final class String
             icoder |= delimiter.coder();
         }
         // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
-        // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
+        // following loop will add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
         // so len can overflow at most once
         for (int i = 0; i < size; i++) {
             var el = elements[i];
@@ -4509,7 +4533,8 @@ public final class String
             this.coder = LATIN1;
             this.value = Arrays.copyOfRange(val, 0, length);
         } else {
-            if (COMPACT_STRINGS) {
+            // only try to compress val if some characters were deleted.
+            if (COMPACT_STRINGS && asb.maybeLatin1) {
                 byte[] buf = StringUTF16.compress(val, 0, length);
                 if (buf != null) {
                     this.coder = LATIN1;
@@ -4565,12 +4590,13 @@ public final class String
      * Check {@code offset}, {@code count} against {@code 0} and {@code length}
      * bounds.
      *
+     * @return  {@code offset} if the sub-range within bounds of the range
      * @throws  StringIndexOutOfBoundsException
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    static void checkBoundsOffCount(int offset, int count, int length) {
-        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+    static int checkBoundsOffCount(int offset, int count, int length) {
+        return Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*

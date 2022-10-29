@@ -595,8 +595,9 @@ MTLBlitLoops_Blit(JNIEnv *env,
             }
 
 #ifdef TRACE_BLIT
-            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_FALSE,
-                    "MTLBlitLoops_Blit [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, %d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)",
+            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_TRUE,
+                    "MTLBlitLoops_Blit srctype=%d [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, "
+                    "%d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)", srctype,
                     texture, xform, [mtlc getCompositeDescription].cString,
                     getSurfaceDescription(dstOps).cString, srcOps,
                     sx2 - sx1, sy2 - sy1,
@@ -764,7 +765,7 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             } else {
                 // mtlbuf.contents have smaller dimensions than pDst
                 // copy each row from mtlbuf.contents at appropriate position in pDst
-                // Note : pDst is already addjusted for offsets using PtrAddBytes above
+                // Note : pDst is already adjusted for offsets using PtrAddBytes above
 
                 NSUInteger rowSize = w * dstInfo.pixelStride;
                 for (int y = 0; y < height; y++) {
@@ -832,7 +833,7 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
 
             /*
              * We need to consider common states like clipping while
-             * performing copyArea, thats why we use drawTex2Tex and
+             * performing copyArea, that's why we use drawTex2Tex and
              * get encoder with appropriate state from EncoderManager
              * and not directly use MTLBlitCommandEncoder for texture copy.
              */

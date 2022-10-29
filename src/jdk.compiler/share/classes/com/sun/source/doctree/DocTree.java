@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link DocTypeTree}
          * representing an HTML DocType declaration.
+         *
+         * @since 10
          */
         DOC_TYPE,
 
@@ -122,6 +124,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link IndexTree}
          * representing an {@code @index} tag.
+         *
+         * @since 9
          */
         INDEX("index"),
 
@@ -158,6 +162,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link ProvidesTree}
          * representing an {@code @provides} tag.
+         *
+         * @since 9
          */
         PROVIDES("provides"),
 
@@ -207,8 +213,18 @@ public interface DocTree {
         /**
          * Used for instances of {@link SnippetTree}
          * representing an {@code @snippet} tag.
+         *
+         * @since 18
          */
         SNIPPET("snippet"),
+
+        /**
+         * Used for instances of {@link SpecTree}
+         * representing an {@code @spec} tag.
+         *
+         * @since 20
+         */
+        SPEC("spec"),
 
         /**
          * Used for instances of {@link EndElementTree}
@@ -219,12 +235,16 @@ public interface DocTree {
         /**
          * Used for instances of {@link SystemPropertyTree}
          * representing an {@code @systemProperty} tag.
+         *
+         * @since 12
          */
         SYSTEM_PROPERTY("systemProperty"),
 
         /**
          * Used for instances of {@link SummaryTree}
          * representing an {@code @summary} tag.
+         *
+         * @since 10
          */
         SUMMARY("summary"),
 
@@ -255,6 +275,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link UsesTree}
          * representing an {@code @uses} tag.
+         *
+         * @since 9
          */
         USES("uses"),
 

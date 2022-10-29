@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ public class AquaImageFactory {
 
     /*
      * A "paintable" which holds nine images, which represent a sliced up initial
-     * image that can be streched from its middles.
+     * image that can be stretched from its middles.
      */
     public static class SlicedImageControl {
         final BufferedImage NW, N, NE;
@@ -504,6 +504,10 @@ public class AquaImageFactory {
 
     public static Color getFocusRingColorUIResource() {
         return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
+    }
+
+    public static Color getCellHighlightColorUIResource() {
+        return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.CELL_HIGHLIGHT_COLOR));
     }
 
     public static Color getSelectionInactiveBackgroundColorUIResource() {

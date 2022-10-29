@@ -47,6 +47,6 @@ public class JcmdBaselineDetail {
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline=true"});
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Baseline succeeded");
+        output.shouldContain("Baseline taken");
     }
 }

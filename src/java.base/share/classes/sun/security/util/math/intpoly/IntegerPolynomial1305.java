@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.nio.*;
  * The representation uses 5 signed long values.
  */
 
-public class IntegerPolynomial1305 extends IntegerPolynomial {
+public final class IntegerPolynomial1305 extends IntegerPolynomial {
 
     protected static final int SUBTRAHEND = 5;
     protected static final int NUM_LIMBS = 5;
@@ -44,7 +44,9 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
     private static final BigInteger MODULUS
         = TWO.pow(POWER).subtract(BigInteger.valueOf(SUBTRAHEND));
 
-    public IntegerPolynomial1305() {
+    public static final IntegerPolynomial1305 ONE = new IntegerPolynomial1305();
+
+    private IntegerPolynomial1305() {
         super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 

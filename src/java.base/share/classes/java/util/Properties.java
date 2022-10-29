@@ -236,7 +236,7 @@ public class Properties extends Hashtable<Object,Object> {
      * character stream in a simple line-oriented format.
      * <p>
      * Properties are processed in terms of lines. There are two
-     * kinds of line, <i>natural lines</i> and <i>logical lines</i>.
+     * kinds of lines, <i>natural lines</i> and <i>logical lines</i>.
      * A natural line is defined as a line of
      * characters that is terminated either by a set of line terminator
      * characters ({@code \n} or {@code \r} or {@code \r\n})
@@ -253,8 +253,8 @@ public class Properties extends Hashtable<Object,Object> {
      * <p>
      * A natural line that contains only white space characters is
      * considered blank and is ignored.  A comment line has an ASCII
-     * {@code '#'} or {@code '!'} as its first non-white
-     * space character; comment lines are also ignored and do not
+     * {@code '#'} or {@code '!'} as its first non-whitespace
+     * character; comment lines are also ignored and do not
      * encode key-element information.  In addition to line
      * terminators, this format considers the characters space
      * ({@code ' '}, {@code '\u005Cu0020'}), tab

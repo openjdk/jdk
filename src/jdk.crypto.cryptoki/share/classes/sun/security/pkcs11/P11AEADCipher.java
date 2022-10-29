@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ final class P11AEADCipher extends CipherSpi {
     // flag indicating whether an operation is initialized
     private boolean initialized = false;
 
-    // falg indicating encrypt or decrypt mode
+    // flag indicating encrypt or decrypt mode
     private boolean encrypt = true;
 
     // parameters
@@ -140,7 +140,7 @@ final class P11AEADCipher extends CipherSpi {
             try {
                 engineSetPadding(algoParts[2]);
             } catch (NoSuchPaddingException e) {
-                throw new NoSuchAlgorithmException();
+                throw new NoSuchAlgorithmException(e);
             }
         } else if (algoParts[0].equals("ChaCha20-Poly1305")) {
             fixedKeySize = 32;
@@ -401,7 +401,13 @@ final class P11AEADCipher extends CipherSpi {
     }
 
     private void cancelOperation() {
-        // cancel operation by finishing it; avoid killSession as some
+        token.ensureValid();
+        if (P11Util.trySessionCancel(token, session,
+                (encrypt ? CKF_ENCRYPT : CKF_DECRYPT))) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as some
         // hardware vendors may require re-login
         int bufLen = doFinalLength(0);
         byte[] buffer = new byte[bufLen];
@@ -453,7 +459,7 @@ final class P11AEADCipher extends CipherSpi {
 
         token.ensureValid();
 
-        byte[] aad = (aadBuffer.size() > 0? aadBuffer.toByteArray() : null);
+        byte[] aad = (aadBuffer.size() > 0 ? aadBuffer.toByteArray() : null);
 
         long p11KeyID = p11Key.getKeyID();
         try {
@@ -507,7 +513,7 @@ final class P11AEADCipher extends CipherSpi {
                 result -= tagLen;
             }
         }
-        return (result > 0? result : 0);
+        return (result > 0 ? result : 0);
     }
 
     // reset the states to the pre-initialized values

@@ -54,9 +54,15 @@ static jint socketOptionSupported(jint level, jint optname) {
     jint one = 1;
     jint rv, s;
     socklen_t sz = sizeof (one);
-    s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    /* First try IPv6; fall back to IPv4. */
+    s = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (s < 0) {
-        return 0;
+        if (errno == EPFNOSUPPORT || errno == EAFNOSUPPORT) {
+            s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        }
+        if (s < 0) {
+            return 0;
+        }
     }
     rv = getsockopt(s, level, optname, (void *) &one, &sz);
     if (rv != 0 && errno == ENOPROTOOPT) {
@@ -242,4 +248,45 @@ JNIEXPORT jint JNICALL Java_jdk_net_LinuxSocketOptions_getIncomingNapiId0
     rv = getsockopt(fd, SOL_SOCKET, SO_INCOMING_NAPI_ID, &optval, &sz);
     handleError(env, rv, "get option SO_INCOMING_NAPI_ID failed");
     return optval;
+}
+
+/*
+ * Class:     jdk_net_LinuxSocketOptions
+ * Method:    setIpDontFragment0
+ * Signature: (IZZ)V
+ */
+JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
+(JNIEnv *env, jobject unused, jint fd, jboolean optval, jboolean isIPv6) {
+    jint rv, optsetting;
+
+    optsetting = optval ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
+
+    if (!isIPv6) {
+        rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
+    } else {
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &optsetting, sizeof (optsetting));
+    }
+    handleError(env, rv, "set option IP_DONTFRAGMENT failed");
+}
+
+/*
+ * Class:     jdk_net_LinuxSocketOptions
+ * Method:    getIpDontFragment0
+ * Signature: (IZ)Z;
+ */
+JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_getIpDontFragment0
+(JNIEnv *env, jobject unused, jint fd, jboolean isIPv6) {
+    jint optlevel, optname, optval, rv;
+
+    if (!isIPv6) {
+        optlevel = IPPROTO_IP;
+        optname = IP_MTU_DISCOVER;
+    } else {
+        optlevel = IPPROTO_IPV6;
+        optname = IPV6_MTU_DISCOVER;
+    }
+    socklen_t sz = sizeof(optval);
+    rv = getsockopt(fd, optlevel, optname, &optval, &sz);
+    handleError(env, rv, "get option IP_DONTFRAGMENT failed");
+    return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
 }

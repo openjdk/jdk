@@ -188,7 +188,7 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason 
   int path_limit = 10;
   Node* out = this;
   for (int ct = 0; ct < path_limit; ct++) {
-    out = out->unique_ctrl_out();
+    out = out->unique_ctrl_out_or_null();
     if (out == NULL)
       return NULL;
     if (out->is_CallStaticJava()) {

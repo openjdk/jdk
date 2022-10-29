@@ -26,6 +26,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4936397
  * @summary Verify that there'll be either SimpleInputDevice OR DirectAudioDevice
  */

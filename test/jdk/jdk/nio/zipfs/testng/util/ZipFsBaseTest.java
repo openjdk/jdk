@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ public class ZipFsBaseTest {
      * @throws IOException If an error occurs
      */
     protected static void rmdir(Path dir) throws IOException {
-        // Nothing to do if the the file does not exist
+        // Nothing to do if the file does not exist
         if (!Files.exists(dir)) {
             return;
         }

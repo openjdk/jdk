@@ -69,14 +69,14 @@ void StubCodeDesc::print() const { print_on(tty); }
 // Implementation of StubCodeGenerator
 
 StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
-  _masm = new MacroAssembler(code );
+  _masm = new MacroAssembler(code);
   _print_code = PrintStubCode || print_code;
 }
 
 StubCodeGenerator::~StubCodeGenerator() {
 #ifndef PRODUCT
   CodeBuffer* cbuf = _masm->code();
-  CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
+  CodeBlob*   blob = CodeCache::find_blob(cbuf->insts()->start());
   if (blob != NULL) {
     blob->use_remarks(cbuf->asm_remarks());
     blob->use_strings(cbuf->dbg_strings());

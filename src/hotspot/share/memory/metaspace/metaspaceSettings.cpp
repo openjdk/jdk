@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,7 +50,7 @@ void Settings::ergo_initialize() {
     _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 64 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
     // In "none" reclamation mode, we do not uncommit, and we commit new chunks fully;
-    // that very closely mimicks the behaviour of old Metaspace.
+    // that very closely mimics the behaviour of old Metaspace.
     _new_chunks_are_fully_committed = true;
     _uncommit_free_chunks = false;
   } else if (strcmp(MetaspaceReclaimPolicy, "aggressive") == 0) {

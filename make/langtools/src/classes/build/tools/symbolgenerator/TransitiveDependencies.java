@@ -97,7 +97,7 @@ public class TransitiveDependencies {
                 throw new IllegalStateException("Missing: " + current);
             }
 
-             //use the internal structure to avoid unnecesarily completing the symbol using the UsesProvidesVisitor:
+             //use the internal structure to avoid unnecessarily completing the symbol using the UsesProvidesVisitor:
             for (RequiresDirective rd : mod.requires) {
                 if (rd.isTransitive()) {
                     todo.offerLast(rd.getDependency().getQualifiedName().toString());

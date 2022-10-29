@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 package test.java.time.format;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 import java.text.DateFormatSymbols;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -49,7 +51,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8081022 8151876 8166875 8189784 8206980
+ * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434
  * @key randomness
  */
 
@@ -58,6 +60,11 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
+
+    private static final Locale[] SAMPLE_LOCALES = {
+        Locale.US, Locale.UK, Locale.FRANCE, Locale.GERMANY, Locale.ITALY, Locale.forLanguageTag("es"),
+        Locale.forLanguageTag("pt-BR"), Locale.forLanguageTag("ru"),
+        Locale.CHINA, Locale.TAIWAN, Locale.JAPAN, Locale.KOREA, Locale.ROOT};
 
     protected static DateTimeFormatter getFormatter(Locale locale, TextStyle style) {
         return new DateTimeFormatterBuilder().appendZoneText(style)
@@ -68,7 +75,6 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     public void test_printText() {
         Random r = RandomFactory.getRandom();
         int N = 8;
-        Locale[] locales = Locale.getAvailableLocales();
         Set<String> zids = ZoneRulesProvider.getAvailableZoneIds();
         ZonedDateTime zdt = ZonedDateTime.now();
 
@@ -83,7 +89,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 zdt = zdt.withZoneSameLocal(ZoneId.of(zid));
                 TimeZone tz = TimeZone.getTimeZone(zid);
                 boolean isDST = tz.inDaylightTime(new Date(zdt.toInstant().toEpochMilli()));
-                for (Locale locale : locales) {
+                for (Locale locale : SAMPLE_LOCALES) {
                     String longDisplayName = tz.getDisplayName(isDST, TimeZone.LONG, locale);
                     String shortDisplayName = tz.getDisplayName(isDST, TimeZone.SHORT, locale);
                     if ((longDisplayName.startsWith("GMT+") && shortDisplayName.startsWith("GMT+"))
@@ -116,9 +122,8 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     }
 
     public void test_ParseText() {
-        Locale[] locales = new Locale[] { Locale.ENGLISH, Locale.JAPANESE, Locale.FRENCH };
         Set<String> zids = ZoneRulesProvider.getAvailableZoneIds();
-        for (Locale locale : locales) {
+        for (Locale locale : SAMPLE_LOCALES) {
             parseText(zids, locale, TextStyle.FULL, false);
             parseText(zids, locale, TextStyle.FULL, true);
             parseText(zids, locale, TextStyle.SHORT, false);
@@ -236,4 +241,37 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                  .withDecimalStyle(DecimalStyle.of(locale));
     }
 
+    @DataProvider(name="roundTripAtOverlap")
+    Object[][] data_roundTripAtOverlap() {
+        return new Object[][] {
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-10-31 02:30:00.000 CET"},
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-10-31 02:30:00.000 CEST"},
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-11-07 01:30:00.000 EST"},
+            {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-11-07 01:30:00.000 EDT"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-10-31 02:30:00.000 Central European Standard Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-10-31 02:30:00.000 Central European Summer Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-11-07 01:30:00.000 Eastern Standard Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS zzzz",    "2021-11-07 01:30:00.000 Eastern Daylight Time"},
+
+            {"yyyy-MM-dd HH:mm:ss.SSS v",       "2021-10-31 02:30:00.000 CET"},
+            {"yyyy-MM-dd HH:mm:ss.SSS v",       "2021-11-07 01:30:00.000 ET"},
+            {"yyyy-MM-dd HH:mm:ss.SSS vvvv",    "2021-10-31 02:30:00.000 Central European Time"},
+            {"yyyy-MM-dd HH:mm:ss.SSS vvvv",    "2021-11-07 01:30:00.000 Eastern Time"},
+        };
+    }
+
+    @Test(dataProvider="roundTripAtOverlap")
+    public void test_roundTripAtOverlap(String pattern, String input) {
+        var dtf = DateTimeFormatter.ofPattern(pattern, Locale.US);
+        assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
+        var lc = input.toLowerCase(Locale.ROOT);
+        try {
+            ZonedDateTime.parse(lc, dtf);
+            fail("Should throw DateTimeParseException");
+        } catch (DateTimeParseException ignore) {}
+
+        dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter(Locale.US);
+        assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
+        assertEquals(dtf.format(ZonedDateTime.parse(lc, dtf)), input);
+    }
 }

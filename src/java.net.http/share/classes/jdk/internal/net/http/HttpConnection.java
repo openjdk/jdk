@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -69,16 +69,29 @@ abstract class HttpConnection implements Closeable {
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
             () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
+    public static final Comparator<HttpConnection> COMPARE_BY_ID
+            = Comparator.comparing(HttpConnection::id);
 
     /** The address this connection is connected to. Could be a server or a proxy. */
     final InetSocketAddress address;
     private final HttpClientImpl client;
     private final TrailingOperations trailingOperations;
+    private final long id;
 
     HttpConnection(InetSocketAddress address, HttpClientImpl client) {
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
+        this.id = newConnectionId(client);
+    }
+
+    // This is overridden in tests
+    long newConnectionId(HttpClientImpl client) {
+        return client.newConnectionId();
+    }
+
+    private long id() {
+        return id;
     }
 
     private static final class TrailingOperations {

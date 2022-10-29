@@ -83,7 +83,6 @@ class PSPromotionManager {
 
   PSScannerTasksQueue                 _claimed_stack_depth;
 
-  bool                                _totally_drain;
   uint                                _target_stack_size;
 
   uint                                _array_chunk_size;

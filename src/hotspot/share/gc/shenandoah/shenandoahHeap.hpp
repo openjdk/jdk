@@ -470,6 +470,8 @@ public:
 
   bool is_in(const void* p) const;
 
+  bool requires_barriers(stackChunkOop obj) const;
+
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
@@ -484,7 +486,7 @@ public:
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
   // Parallel heap iteration support
-  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
@@ -500,7 +502,6 @@ public:
 public:
   void register_nmethod(nmethod* nm);
   void unregister_nmethod(nmethod* nm);
-  void flush_nmethod(nmethod* nm);
   void verify_nmethod(nmethod* nm) {}
 
 // ---------- Pinning hooks

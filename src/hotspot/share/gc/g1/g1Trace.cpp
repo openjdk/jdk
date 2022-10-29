@@ -163,9 +163,9 @@ void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_in
     // Create JFR structured failure data
     JfrStructCopyFailed evac_failed;
     evac_failed.set_objectCount(ef_info.failed_count());
-    evac_failed.set_firstSize(ef_info.first_size());
-    evac_failed.set_smallestSize(ef_info.smallest_size());
-    evac_failed.set_totalSize(ef_info.total_size());
+    evac_failed.set_firstSize(ef_info.first_size() * HeapWordSize);
+    evac_failed.set_smallestSize(ef_info.smallest_size() * HeapWordSize);
+    evac_failed.set_totalSize(ef_info.total_size() * HeapWordSize);
     // Add to the event
     e.set_gcId(GCId::current());
     e.set_evacuationFailed(evac_failed);

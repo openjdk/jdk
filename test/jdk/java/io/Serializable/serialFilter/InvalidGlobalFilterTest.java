@@ -21,67 +21,100 @@
  * questions.
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.ObjectInputFilter;
+import java.io.ObjectInputStream;
+import java.util.Map;
 
 /*
  * @test
- * @bug 8269336
+ * @bug 8278087
  * @summary Test that an invalid pattern value for the jdk.serialFilter system property causes an
- * exception to be thrown in the class initialization of java.io.ObjectInputFilter.Config class
- * @library /test/lib
- * @run driver InvalidGlobalFilterTest
+ * exception to be thrown when an attempt is made to use the filter or deserialize.
+ * A subset of invalid filter patterns is tested.
+ * @run testng/othervm -Djdk.serialFilter=.* InvalidGlobalFilterTest
+ * @run testng/othervm -Djdk.serialFilter=! InvalidGlobalFilterTest
+ * @run testng/othervm -Djdk.serialFilter=/ InvalidGlobalFilterTest
+ *
  */
+@Test
 public class InvalidGlobalFilterTest {
     private static final String serialPropName = "jdk.serialFilter";
+    private static final String serialFilter = System.getProperty(serialPropName);
+
+    static {
+        // Enable logging
+        System.setProperty("java.util.logging.config.file",
+                System.getProperty("test.src", ".") + "/logging.properties");
+    }
 
     /**
-     * Launches multiple instances of a Java program by passing each instance an invalid value
-     * for the {@code jdk.serialFilter} system property. The launched program then triggers the
-     * class initialization of {@code ObjectInputFilter.Config} class to have it parse the (invalid)
-     * value of the system property. The launched program is expected to propagate the exception
-     * raised by the {@code ObjectInputFilter.Config} initialization and the test asserts that the
-     * launched program did indeed fail with this expected exception.
+     * Map of invalid patterns to the expected exception message.
      */
-    public static void main(final String[] args) throws Exception {
-        final String[] invalidPatterns = {".*", ".**", "!", "/java.util.Hashtable", "java.base/", "/"};
-        for (final String invalidPattern : invalidPatterns) {
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + serialPropName + "=" + invalidPattern,
-                    "-Djava.util.logging.config.file=" + System.getProperty("test.src")
-                            + File.separator + "logging.properties",
-                    ObjectInputFilterConfigLoader.class.getName());
-            // launch a process by passing it an invalid value for -Djdk.serialFilter
-            final OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(processBuilder);
-            try {
-                // we expect the JVM launch to fail
-                outputAnalyzer.shouldNotHaveExitValue(0);
-                // do an additional check to be sure it failed for the right reason
-                outputAnalyzer.stderrShouldContain("java.lang.ExceptionInInitializerError");
-            } finally {
-                // fail or pass, we print out the generated output from the launched program
-                // for any debugging
-                System.err.println("Diagnostics from process " + outputAnalyzer.pid() + ":");
-                // print out any stdout/err that was generated in the launched program
-                outputAnalyzer.reportDiagnosticSummary();
-            }
+    private static final Map<String, String> invalidMessages =
+            Map.of(".*", "Invalid jdk.serialFilter: package missing in: \".*\"",
+                    ".**", "Invalid jdk.serialFilter: package missing in: \".**\"",
+                    "!", "Invalid jdk.serialFilter: class or package missing in: \"!\"",
+                    "/java.util.Hashtable", "Invalid jdk.serialFilter: module name is missing in: \"/java.util.Hashtable\"",
+                    "java.base/", "Invalid jdk.serialFilter: class or package missing in: \"java.base/\"",
+                    "/", "Invalid jdk.serialFilter: module name is missing in: \"/\"");
+
+    @DataProvider(name = "MethodsToCall")
+    private Object[][] cases() {
+        return new Object[][] {
+                {serialFilter, "getSerialFilter", (Assert.ThrowingRunnable) () -> ObjectInputFilter.Config.getSerialFilter()},
+                {serialFilter, "setSerialFilter", (Assert.ThrowingRunnable) () -> ObjectInputFilter.Config.setSerialFilter(new NoopFilter())},
+                {serialFilter, "new ObjectInputStream(is)", (Assert.ThrowingRunnable) () -> new ObjectInputStream(new ByteArrayInputStream(new byte[0]))},
+                {serialFilter, "new OISSubclass()", (Assert.ThrowingRunnable) () -> new OISSubclass()},
+        };
+    }
+
+    /**
+     * Test each method that should throw IllegalStateException based on
+     * the invalid arguments it was launched with.
+     */
+    @Test(dataProvider = "MethodsToCall")
+    public void initFaultTest(String pattern, String method, Assert.ThrowingRunnable runnable) {
+
+        IllegalStateException ex = Assert.expectThrows(IllegalStateException.class,
+                runnable);
+
+        String expected = invalidMessages.get(serialFilter);
+        if (expected == null) {
+            Assert.fail("No expected message for filter: " + serialFilter);
+        }
+        System.out.println(ex.getMessage());
+        Assert.assertEquals(ex.getMessage(), expected, "wrong message");
+    }
+
+    private static class NoopFilter implements ObjectInputFilter {
+        /**
+         * Returns UNDECIDED.
+         *
+         * @param filter the FilterInfo
+         * @return Status.UNDECIDED
+         */
+        public ObjectInputFilter.Status checkInput(FilterInfo filter) {
+             return ObjectInputFilter.Status.UNDECIDED;
+        }
+
+        public String toString() {
+            return "NoopFilter";
         }
     }
 
-    // A main() class which just triggers the class initialization of ObjectInputFilter.Config
-    private static final class ObjectInputFilterConfigLoader {
+    /**
+     * Subclass of ObjectInputStream to test subclassing constructor.
+     */
+    private static class OISSubclass extends ObjectInputStream {
 
-        public static void main(final String[] args) throws Exception {
-            System.out.println("JVM was launched with " + serialPropName
-                    + " system property set to " + System.getProperty(serialPropName));
-            // this call is expected to fail and we aren't interested in the result.
-            // we just let the exception propagate out of this call and fail the
-            // launched program. The test which launched this main, then asserts
-            // that the exception was indeed thrown.
-            ObjectInputFilter.Config.getSerialFilter();
+        protected OISSubclass() throws IOException {
         }
     }
+
 }

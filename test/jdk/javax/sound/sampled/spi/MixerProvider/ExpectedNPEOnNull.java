@@ -29,6 +29,7 @@ import static java.util.ServiceLoader.load;
 
 /**
  * @test
+ * @key sound
  * @bug 8135100
  * @author Sergey Bylokhov
  */

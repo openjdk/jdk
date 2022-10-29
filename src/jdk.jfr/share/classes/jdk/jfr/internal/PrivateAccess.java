@@ -103,4 +103,6 @@ public abstract class PrivateAccess {
     public abstract AccessControlContext getContext(SettingControl sc);
 
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
+
+    public abstract boolean isVisible(EventType t);
 }

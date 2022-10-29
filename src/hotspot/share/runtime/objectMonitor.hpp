@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
 #include "oops/weakHandle.hpp"
-#include "runtime/os.hpp"
-#include "runtime/park.hpp"
 #include "runtime/perfDataTypes.hpp"
 
 class ObjectMonitor;
+class ParkEvent;
 
 // ObjectWaiter serves as a "proxy" or surrogate thread.
 // TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
@@ -127,7 +126,7 @@ class ObjectWaiter : public StackObj {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 #endif
 
-class ObjectMonitor : public CHeapObj<mtInternal> {
+class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -203,11 +202,6 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   static int Knob_SpinLimit;
 
-  void* operator new (size_t size) throw();
-  void* operator new[] (size_t size) throw();
-  void operator delete(void* p);
-  void operator delete[] (void* p);
-
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.
   static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header); }
@@ -252,6 +246,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   intptr_t  is_entered(JavaThread* current) const;
 
+  // Returns true if this OM has an owner, false otherwise.
+  bool      has_owner() const;
   void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.

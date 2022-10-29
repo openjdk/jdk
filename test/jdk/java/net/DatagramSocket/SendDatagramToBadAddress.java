@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *
  * @summary DatagramSocket.send should throw exception when connected
  *  to an invalid destination (on platforms that support it).
- * @run main/othervm SendDatagramToBadAddress
+ * @run main/othervm SendDatagramToBadAddress -d
  */
 
 import java.net.*;
@@ -70,6 +70,8 @@ public class SendDatagramToBadAddress {
             for (int i=0; i<loop; i++) {
                 try {
                     server.receive (pack);
+                    print("received data from address " + pack.getAddress()
+                            + " port " + pack.getPort());
                 } catch (Exception e) {
                     if (expectError) {
                         print ("Got expected error: " + e);
@@ -116,12 +118,15 @@ public class SendDatagramToBadAddress {
         DatagramPacket p;
         byte[] buf;
         int port = serversock.getLocalPort ();
+        print("tests will be run against destination address " + addr + " port " + port);
         final int loop = 5;
         Server s = new Server (serversock);
         int i;
 
         print ("Checking send to connected address ...");
         sock.connect(addr, port);
+        print("socket is locally bound to address " + sock.getLocalAddress()
+                + " port " + sock.getLocalPort());
 
         for (i = 0; i < loop; i++) {
             try {
@@ -170,6 +175,8 @@ public class SendDatagramToBadAddress {
                 sock.send(p);
                 p = new DatagramPacket(buf, buf.length, addr, port);
                 sock.receive (p);
+                print("(unexpectedly) received data from address " + p.getAddress()
+                        + " port " + p.getPort() + " on attempt " + i);
             } catch (InterruptedIOException ex) {
                 print ("socket timeout");
             } catch (Exception ex) {

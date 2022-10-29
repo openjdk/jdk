@@ -34,7 +34,9 @@ public class MissingResourceCauseTest {
         callGetBundle("PrivateConstructorRB", IllegalAccessException.class);
         callGetBundle("AbstractRB", InstantiationException.class);
         callGetBundle("BadStaticInitRB", ExceptionInInitializerError.class);
-        callGetBundle("UnreadableRB", IOException.class);
+        if (!System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            callGetBundle("UnreadableRB", IOException.class);
+        }
         callGetBundle("NoNoArgConstructorRB", InstantiationException.class);
     }
 

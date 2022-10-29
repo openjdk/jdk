@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,6 @@ to	.req	r1
         .type SpinPause, %function
 SpinPause:
         bx      LR
-
-        # Support for void Copy::conjoint_bytes(void* from,
-        #                                       void* to,
-        #                                       size_t count)
-_Copy_conjoint_bytes:
-        swi     0x9f0001
 
         # Support for void Copy::arrayof_conjoint_bytes(void* from,
         #                                               void* to,

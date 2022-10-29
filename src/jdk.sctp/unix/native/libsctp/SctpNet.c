@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,7 +496,6 @@ int mapSocketOption
 JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setIntOption0
   (JNIEnv *env, jclass klass, jint fd, jint opt, int arg) {
     int klevel, kopt;
-    int result;
     struct linger linger;
     void *parg;
     int arglen;

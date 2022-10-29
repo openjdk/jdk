@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ final class WPathGraphics extends PathGraphics {
             penSize = new Point2D.Float(lineWidth, lineWidth);
 
             /* Compute the line width in device coordinates.
-             * Work on a point in case there is asymetric scaling
+             * Work on a point in case there is asymmetric scaling
              * between user and device space.
              * Take the absolute value in case there is negative
              * scaling in effect.
@@ -1122,7 +1122,7 @@ final class WPathGraphics extends PathGraphics {
                     bgcolor = null;
                 }
                 // if src region extends beyond the image, the "opaque" path
-                // may blit b/g colour (including white) where it shoudn't.
+                // may blit b/g colour (including white) where it shouldn't.
                 if ((srcX+srcWidth > img.getWidth(null) ||
                      srcY+srcHeight > img.getHeight(null))
                     && canDoRedraws()) {
@@ -1697,7 +1697,7 @@ final class WPathGraphics extends PathGraphics {
             /* selectStylePen is not supported, must be Win 9X */
             else {
 
-                /* let's see if we can use a a default pen
+                /* let's see if we can use the default pen
                  *  if it's round end (Windows' default style)
                  *  or it's vertical/horizontal
                  *  or stroke is too thin.

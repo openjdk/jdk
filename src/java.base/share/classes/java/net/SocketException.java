@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,5 +51,28 @@ public class SocketException extends IOException {
      * Constructs a new {@code SocketException} with no detail message.
      */
     public SocketException() {
+    }
+
+    /**
+     * Constructs a new {@code SocketException} with the
+     * specified detail message and cause.
+     *
+     * @param msg the detail message.
+     * @param cause the cause
+     * @since 19
+     */
+    public SocketException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
+
+    /**
+     * Constructs a new {@code SocketException} with the
+     * specified cause.
+     *
+     * @param cause the cause
+     * @since 19
+     */
+    public SocketException(Throwable cause) {
+        super(cause);
     }
 }

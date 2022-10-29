@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@
 
 #ifdef COMPILER1
 class LIR_Assembler;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
+class LIR_Opr;
 class StubAssembler;
 class ZLoadBarrierStubC1;
 #endif // COMPILER1
@@ -64,6 +63,8 @@ public:
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
+
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
 
 #ifdef COMPILER1
   void generate_c1_load_barrier_test(LIR_Assembler* ce,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
-#include "jfr/support/jfrThreadId.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "memory/iterator.hpp"
@@ -38,44 +38,20 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/threads.hpp"
 
 static int start_pos_offset = invalid_offset;
 static int start_pos_address_offset = invalid_offset;
 static int current_pos_offset = invalid_offset;
 static int max_pos_offset = invalid_offset;
 static int notified_offset = invalid_offset;
+static int excluded_offset = invalid_offset;
 static int thread_id_offset = invalid_offset;
 static int valid_offset = invalid_offset;
 
-static bool find_field(InstanceKlass* ik,
-                       Symbol* name_symbol,
-                       Symbol* signature_symbol,
-                       fieldDescriptor* fd,
-                       bool is_static = false,
-                       bool allow_super = false) {
-  if (allow_super || is_static) {
-    return ik->find_field(name_symbol, signature_symbol, is_static, fd) != NULL;
-  } else {
-    return ik->find_local_field(name_symbol, signature_symbol, fd);
-  }
-}
-
-static void compute_offset(int &dest_offset,
-                           Klass* klass,
-                           Symbol* name_symbol,
-                           Symbol* signature_symbol,
-                           bool is_static = false, bool allow_super = false) {
-  fieldDescriptor fd;
-  InstanceKlass* ik = InstanceKlass::cast(klass);
-  if (!find_field(ik, name_symbol, signature_symbol, &fd, is_static, allow_super)) {
-    assert(false, "invariant");
-  }
-  dest_offset = fd.offset();
-}
-
 static bool setup_event_writer_offsets(TRAPS) {
-  const char class_name[] = "jdk/jfr/internal/EventWriter";
+  const char class_name[] = "jdk/jfr/internal/event/EventWriter";
   Symbol* const k_sym = SymbolTable::new_symbol(class_name);
   assert(k_sym != NULL, "invariant");
   Klass* klass = SystemDictionary::resolve_or_fail(k_sym, true, CHECK_false);
@@ -85,42 +61,56 @@ static bool setup_event_writer_offsets(TRAPS) {
   Symbol* const start_pos_sym = SymbolTable::new_symbol(start_pos_name);
   assert(start_pos_sym != NULL, "invariant");
   assert(invalid_offset == start_pos_offset, "invariant");
-  compute_offset(start_pos_offset, klass, start_pos_sym, vmSymbols::long_signature());
+  JfrJavaSupport::compute_field_offset(start_pos_offset, klass, start_pos_sym, vmSymbols::long_signature());
   assert(start_pos_offset != invalid_offset, "invariant");
 
   const char start_pos_address_name[] = "startPositionAddress";
   Symbol* const start_pos_address_sym = SymbolTable::new_symbol(start_pos_address_name);
   assert(start_pos_address_sym != NULL, "invariant");
   assert(invalid_offset == start_pos_address_offset, "invariant");
-  compute_offset(start_pos_address_offset, klass, start_pos_address_sym, vmSymbols::long_signature());
+  JfrJavaSupport::compute_field_offset(start_pos_address_offset, klass, start_pos_address_sym, vmSymbols::long_signature());
   assert(start_pos_address_offset != invalid_offset, "invariant");
 
   const char event_pos_name[] = "currentPosition";
   Symbol* const event_pos_sym = SymbolTable::new_symbol(event_pos_name);
   assert(event_pos_sym != NULL, "invariant");
   assert(invalid_offset == current_pos_offset, "invariant");
-  compute_offset(current_pos_offset, klass, event_pos_sym,vmSymbols::long_signature());
+  JfrJavaSupport::compute_field_offset(current_pos_offset, klass, event_pos_sym,vmSymbols::long_signature());
   assert(current_pos_offset != invalid_offset, "invariant");
 
   const char max_pos_name[] = "maxPosition";
   Symbol* const max_pos_sym = SymbolTable::new_symbol(max_pos_name);
   assert(max_pos_sym != NULL, "invariant");
   assert(invalid_offset == max_pos_offset, "invariant");
-  compute_offset(max_pos_offset, klass, max_pos_sym, vmSymbols::long_signature());
+  JfrJavaSupport::compute_field_offset(max_pos_offset, klass, max_pos_sym, vmSymbols::long_signature());
   assert(max_pos_offset != invalid_offset, "invariant");
 
   const char notified_name[] = "notified";
   Symbol* const notified_sym = SymbolTable::new_symbol(notified_name);
   assert (notified_sym != NULL, "invariant");
   assert(invalid_offset == notified_offset, "invariant");
-  compute_offset(notified_offset, klass, notified_sym, vmSymbols::bool_signature());
+  JfrJavaSupport::compute_field_offset(notified_offset, klass, notified_sym, vmSymbols::bool_signature());
   assert(notified_offset != invalid_offset, "invariant");
+
+  const char excluded_name[] = "excluded";
+  Symbol* const excluded_sym = SymbolTable::new_symbol(excluded_name);
+  assert(excluded_sym != NULL, "invariant");
+  assert(invalid_offset == excluded_offset, "invariant");
+  JfrJavaSupport::compute_field_offset(excluded_offset, klass, excluded_sym, vmSymbols::bool_signature());
+  assert(excluded_offset != invalid_offset, "invariant");
+
+  const char threadID_name[] = "threadID";
+  Symbol * const threadID_sym = SymbolTable::new_symbol(threadID_name);
+  assert(threadID_sym != NULL, "invariant");
+  assert(invalid_offset == thread_id_offset, "invariant");
+  JfrJavaSupport::compute_field_offset(thread_id_offset, klass, threadID_sym, vmSymbols::long_signature());
+  assert(thread_id_offset != invalid_offset, "invariant");
 
   const char valid_name[] = "valid";
   Symbol* const valid_sym = SymbolTable::new_symbol(valid_name);
   assert (valid_sym != NULL, "invariant");
   assert(invalid_offset == valid_offset, "invariant");
-  compute_offset(valid_offset, klass, valid_sym, vmSymbols::bool_signature());
+  JfrJavaSupport::compute_field_offset(valid_offset, klass, valid_sym, vmSymbols::bool_signature());
   assert(valid_offset != invalid_offset, "invariant");
   return true;
 }
@@ -182,6 +172,28 @@ void JfrJavaEventWriter::notify() {
   Threads::threads_do(&closure);
 }
 
+static void set_excluded_field(traceid tid, const JavaThread* jt, bool state) {
+  assert(jt != nullptr, "invariant");
+  jobject event_writer_handle = jt->jfr_thread_local()->java_event_writer();
+  if (event_writer_handle == nullptr) {
+    return;
+  }
+  oop event_writer = JNIHandles::resolve_non_null(event_writer_handle);
+  assert(event_writer != nullptr, "invariant");
+  const jlong event_writer_tid = event_writer->long_field(thread_id_offset);
+  if (event_writer_tid == static_cast<jlong>(tid)) {
+    event_writer->bool_field_put(excluded_offset, state);
+  }
+}
+
+void JfrJavaEventWriter::exclude(traceid tid, const JavaThread* jt) {
+  set_excluded_field(tid, jt, true);
+}
+
+void JfrJavaEventWriter::include(traceid tid, const JavaThread* jt) {
+  set_excluded_field(tid, jt, false);
+}
+
 void JfrJavaEventWriter::notify(JavaThread* jt) {
   assert(jt != NULL, "invariant");
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
@@ -192,30 +204,44 @@ void JfrJavaEventWriter::notify(JavaThread* jt) {
   }
 }
 
-static jobject create_new_event_writer(JfrBuffer* buffer, TRAPS) {
+static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TRAPS) {
   assert(buffer != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   HandleMark hm(THREAD);
-  static const char klass[] = "jdk/jfr/internal/EventWriter";
+  static const char klass[] = "jdk/jfr/internal/event/EventWriter";
   static const char method[] = "<init>";
-  static const char signature[] = "(JJJJZ)V";
+  static const char signature[] = "(JJJJZZ)V";
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, klass, method, signature, CHECK_NULL);
+
   // parameters
   args.push_long((jlong)buffer->pos());
   args.push_long((jlong)buffer->end());
   args.push_long((jlong)buffer->pos_address());
-  args.push_long((jlong)JFR_THREAD_ID(THREAD));
-  args.push_int((int)JNI_TRUE);
+  args.push_long((jlong)JfrThreadLocal::thread_id(THREAD));
+  args.push_int((jint)JNI_TRUE); // valid
+  args.push_int(tl->is_excluded() ? (jint)JNI_TRUE : (jint)JNI_FALSE); // excluded
   JfrJavaSupport::new_object_global_ref(&args, CHECK_NULL);
   return result.get_jobject();
 }
 
-jobject JfrJavaEventWriter::event_writer(JavaThread* t) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
-  JfrThreadLocal* const tl = t->jfr_thread_local();
+jobject JfrJavaEventWriter::event_writer(JavaThread* jt) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
   assert(tl->shelved_buffer() == NULL, "invariant");
-  return tl->java_event_writer();
+  jobject h_writer = tl->java_event_writer();
+  if (h_writer != NULL) {
+    oop writer = JNIHandles::resolve_non_null(h_writer);
+    assert(writer != NULL, "invariant");
+    const jlong event_writer_tid = writer->long_field(thread_id_offset);
+    const jlong current_tid = static_cast<jlong>(JfrThreadLocal::thread_id(jt));
+    if (event_writer_tid != current_tid) {
+      const bool excluded = tl->is_excluded();
+      writer->bool_field_put(excluded_offset, excluded);
+      writer->long_field_put(thread_id_offset, current_tid);
+    }
+  }
+  return h_writer;
 }
 
 jobject JfrJavaEventWriter::new_event_writer(TRAPS) {
@@ -228,8 +254,8 @@ jobject JfrJavaEventWriter::new_event_writer(TRAPS) {
     JfrJavaSupport::throw_out_of_memory_error("OOME for thread local buffer", THREAD);
     return NULL;
   }
-  jobject java_event_writer = create_new_event_writer(buffer, CHECK_NULL);
-  tl->set_java_event_writer(java_event_writer);
+  jobject h_writer = create_new_event_writer(buffer, tl, CHECK_NULL);
+  tl->set_java_event_writer(h_writer);
   assert(tl->has_java_event_writer(), "invariant");
-  return java_event_writer;
+  return h_writer;
 }

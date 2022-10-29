@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,10 @@ import sun.java2d.cmm.PCMM;
  * color space (e.g. {@code TYPE_RGB}, {@code TYPE_CMYK}, etc.), but the
  * specific color values of the output data will be undefined.
  * <p>
- * The details of this class are not important for simple applets, which draw in
- * a default color space or manipulate and display imported images with a known
- * color space. At most, such applets would need to get one of the default color
- * spaces via {@link ColorSpace#getInstance}.
+ * The details of this class are not important for simple applications, which
+ * draw in a default color space or manipulate and display imported images with
+ * a known color space. At most, such applications would need to get one of the
+ * default color spaces via {@link ColorSpace#getInstance}.
  *
  * @see ColorSpace
  * @see ICC_Profile
@@ -527,16 +527,16 @@ public class ICC_ColorSpace extends ColorSpace {
                     ColorTransform[] transforms = new ColorTransform[2];
                     var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
-                    transforms[0] = mdl.createTransform(xyz.getProfile(),
-                                    ColorTransform.Any, ColorTransform.In);
                     try {
-                        transforms[1] = mdl.createTransform(thisProfile,
+                        transforms[0] = mdl.createTransform(xyz.getProfile(),
                                         ICC_Profile.icRelativeColorimetric,
-                                        ColorTransform.Out);
+                                        ColorTransform.In);
                     } catch (CMMException e) {
-                        transforms[1] = mdl.createTransform(thisProfile,
-                                        ColorTransform.Any, ColorTransform.Out);
+                        transforms[0] = mdl.createTransform(xyz.getProfile(),
+                                        ColorTransform.Any, ColorTransform.In);
                     }
+                    transforms[1] = mdl.createTransform(thisProfile,
+                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }

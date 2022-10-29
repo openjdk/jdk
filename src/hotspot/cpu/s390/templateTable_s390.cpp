@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,6 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef PRODUCT
@@ -4151,7 +4152,7 @@ void TemplateTable::monitorenter() {
 
   // Increment bcp to point to the next bytecode, so exception
   // handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the
+  // The object has already been popped from the stack, so the
   // expression stack looks correct.
   __ add2reg(Z_bcp, 1, Z_bcp);
 

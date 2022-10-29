@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
@@ -156,6 +157,14 @@ public class WinMsiBundler  extends AbstractBundler {
             Path.class,
             null,
             (s, p) -> null);
+
+    static final StandardBundlerParam<InstallableFile> SERVICE_INSTALLER
+            = new StandardBundlerParam<>(
+                    "win.msi.serviceInstaller",
+                    InstallableFile.class,
+                    null,
+                    null
+            );
 
     public static final StandardBundlerParam<Boolean> MSI_SYSTEM_WIDE  =
             new StandardBundlerParam<>(
@@ -323,6 +332,15 @@ public class WinMsiBundler  extends AbstractBundler {
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
 
+            var serviceInstallerResource = initServiceInstallerResource(params);
+            if (serviceInstallerResource != null) {
+                if (!Files.exists(serviceInstallerResource.getExternalPath())) {
+                    throw new ConfigException(I18N.getString(
+                            "error.missing-service-installer"), I18N.getString(
+                                    "error.missing-service-installer.advice"));
+                }
+            }
+
             return true;
         } catch (RuntimeException re) {
             if (re.getCause() instanceof ConfigException) {
@@ -364,10 +382,12 @@ public class WinMsiBundler  extends AbstractBundler {
                     .runtimeDirectory()
                     .resolve(Path.of("bin", "java.exe"));
         } else {
-            installerIcon = ApplicationLayout.windowsAppImage()
-                    .resolveAt(appDir)
-                    .launchersDirectory()
+            var appLayout = ApplicationLayout.windowsAppImage().resolveAt(appDir);
+
+            installerIcon = appLayout.launchersDirectory()
                     .resolve(appName + ".exe");
+
+            new PackageFile(appName).save(appLayout);
         }
         installerIcon = installerIcon.toAbsolutePath();
 
@@ -384,6 +404,13 @@ public class WinMsiBundler  extends AbstractBundler {
             IOUtils.copyFile(lfile, destFile);
             destFile.toFile().setWritable(true);
             ensureByMutationFileIsRTF(destFile);
+        }
+
+        var serviceInstallerResource = initServiceInstallerResource(params);
+        if (serviceInstallerResource != null) {
+            var serviceInstallerPath = serviceInstallerResource.getExternalPath();
+            params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
+                    serviceInstallerPath, serviceInstallerPath.getFileName()));
         }
     }
 
@@ -486,11 +513,11 @@ public class WinMsiBundler  extends AbstractBundler {
         }
 
         // Copy standard l10n files.
-        for (String loc : Arrays.asList("en", "ja", "zh_CN")) {
+        for (String loc : Arrays.asList("de", "en", "ja", "zh_CN")) {
             String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            try (InputStream is = OverridableResource.readDefault(fname)) {
-                Files.copy(is, CONFIG_ROOT.fetchFrom(params).resolve(fname));
-            }
+            createResource(fname, params)
+                    .setCategory(I18N.getString("resource.wxl-file"))
+                    .saveToFile(configDir.resolve(fname));
         }
 
         createResource("main.wxs", params)
@@ -536,16 +563,36 @@ public class WinMsiBundler  extends AbstractBundler {
             wixPipeline.addLightOptions("-sice:ICE91");
         }
 
-        final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
-                I18N.getString("resource.wxl-file-name")).toAbsolutePath();
+        // Filter out custom l10n files that were already used to
+        // override primary l10n files. Ignore case filename comparison,
+        // both lists are expected to be short.
+        List<Path> primaryWxlFiles = getWxlFilesFromDir(params, CONFIG_ROOT);
+        List<Path> customWxlFiles = getWxlFilesFromDir(params, RESOURCE_DIR).stream()
+                .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
+                        primary.getFileName().toString().equalsIgnoreCase(
+                                custom.getFileName().toString())))
+                .peek(custom -> Log.verbose(MessageFormat.format(
+                        I18N.getString("message.using-custom-resource"),
+                                String.format("[%s]", I18N.getString("resource.wxl-file")),
+                                custom.getFileName().toString())))
+                .toList();
 
-        wixPipeline.addLightOptions("-loc", primaryWxlFile.toString());
+        // All l10n files are supplied to WiX with "-loc", but only
+        // Cultures from custom files and a single primary Culture are
+        // included into "-cultures" list
+        for (var wxl : primaryWxlFiles) {
+            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+        }
 
         List<String> cultures = new ArrayList<>();
-        for (var wxl : getCustomWxlFiles(params)) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().toString());
+        for (var wxl : customWxlFiles) {
+            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
+
+        // Append a primary culture bases on runtime locale.
+        final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
+                I18N.getString("resource.wxl-file-name"));
         cultures.add(getCultureFromWxlFile(primaryWxlFile));
 
         // Build ordered list of unique cultures.
@@ -559,10 +606,10 @@ public class WinMsiBundler  extends AbstractBundler {
         return msiOut;
     }
 
-    private static List<Path> getCustomWxlFiles(Map<String, ? super Object> params)
-            throws IOException {
-        Path resourceDir = RESOURCE_DIR.fetchFrom(params);
-        if (resourceDir == null) {
+    private static List<Path> getWxlFilesFromDir(Map<String, ? super Object> params,
+            StandardBundlerParam<Path> pathParam) throws IOException {
+        Path dir = pathParam.fetchFrom(params);
+        if (dir == null) {
             return Collections.emptyList();
         }
 
@@ -570,7 +617,7 @@ public class WinMsiBundler  extends AbstractBundler {
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(
                 glob);
 
-        try (var walk = Files.walk(resourceDir, 1)) {
+        try (var walk = Files.walk(dir, 1)) {
             return walk
                     .filter(Files::isReadable)
                     .filter(pathMatcher::matches)
@@ -676,9 +723,35 @@ public class WinMsiBundler  extends AbstractBundler {
 
     }
 
+    private static OverridableResource initServiceInstallerResource(
+            Map<String, ? super Object> params) {
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            // Runtime installer doesn't install launchers,
+            // service installer not needed
+            return null;
+        }
+
+        if (!AppImageFile.getLaunchers(
+                StandardBundlerParam.getPredefinedAppImage(params), params).stream().anyMatch(
+                LauncherInfo::isService)) {
+            // Not a single launcher is requested to be installed as a service,
+            // service installer not needed
+            return null;
+        }
+
+        var result = createResource(null, params)
+                .setPublicName("service-installer.exe")
+                .setSourceOrder(OverridableResource.Source.External);
+        if (result.getResourceDir() == null) {
+            return null;
+        }
+
+        return result.setExternal(result.getResourceDir().resolve(
+                result.getPublicName()));
+    }
+
     private Path installerIcon;
     private Map<WixTool, WixTool.ToolInfo> wixToolset;
     private AppImageBundler appImageBundler;
-    private List<WixFragmentBuilder> wixFragments;
-
+    private final List<WixFragmentBuilder> wixFragments;
 }

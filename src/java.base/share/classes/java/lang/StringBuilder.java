@@ -28,6 +28,10 @@ package java.lang;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.StreamCorruptedException;
 
 /**
  * A mutable sequence of characters.  This class provides an API compatible
@@ -90,7 +94,7 @@ public final class StringBuilder
 {
 
     /** use serialVersionUID for interoperability */
-    @java.io.Serial
+    @Serial
     static final long serialVersionUID = 4383685877147921099L;
 
     /**
@@ -446,8 +450,7 @@ public final class StringBuilder
     @IntrinsicCandidate
     public String toString() {
         // Create a copy, don't share the array
-        return isLatin1() ? StringLatin1.newString(value, 0, count)
-                          : StringUTF16.newString(value, 0, count);
+        return new String(this);
     }
 
     /**
@@ -464,9 +467,8 @@ public final class StringBuilder
      * @param  s the {@code ObjectOutputStream} to which data is written
      * @throws IOException if an I/O error occurs
      */
-    @java.io.Serial
-    private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
+    @Serial
+    private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         s.writeInt(count);
         char[] val = new char[capacity()];
@@ -486,13 +488,16 @@ public final class StringBuilder
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-    @java.io.Serial
-    private void readObject(java.io.ObjectInputStream s)
-        throws IOException, ClassNotFoundException {
+    @Serial
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-        count = s.readInt();
+        int c = s.readInt();
         char[] val = (char[]) s.readObject();
+        if (c < 0 || c > val.length) {
+            throw new StreamCorruptedException("count value invalid");
+        }
         initBytes(val, 0, val.length);
+        count = c;
     }
-
 }

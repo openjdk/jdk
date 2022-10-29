@@ -452,9 +452,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported range
      */
     private static ZonedDateTime create(long epochSecond, int nanoOfSecond, ZoneId zone) {
-        ZoneRules rules = zone.getRules();
-        Instant instant = Instant.ofEpochSecond(epochSecond, nanoOfSecond);  // TODO: rules should be queryable by epochSeconds
-        ZoneOffset offset = rules.getOffset(instant);
+        // nanoOfSecond is in a range that'll not affect epochSecond, validated
+        // by LocalDateTime.ofEpochSecond
+        ZoneOffset offset = zone.getOffset(epochSecond);
         LocalDateTime ldt = LocalDateTime.ofEpochSecond(epochSecond, nanoOfSecond, offset);
         return new ZonedDateTime(ldt, offset, zone);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,6 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
 
   _counts[RO][StringBucketType] = _string_stats.bucket_count;
   _bytes [RO][StringBucketType] = _string_stats.bucket_bytes;
-
-  // prevent divide-by-zero
-  if (ro_all < 1) {
-    ro_all = 1;
-  }
-  if (rw_all < 1) {
-    rw_all = 1;
-  }
 
   int all_ro_count = 0;
   int all_ro_bytes = 0;
@@ -102,8 +94,16 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
                        all_rw_count, all_rw_bytes, all_rw_perc,
                        all_count, all_bytes, all_perc);
 
-  assert(all_ro_bytes == ro_all, "everything should have been counted");
-  assert(all_rw_bytes == rw_all, "everything should have been counted");
+  msg.flush();
+
+  assert(all_ro_bytes == ro_all && all_rw_bytes == rw_all,
+         "everything should have been counted (used/counted: ro %d/%d, rw %d/%d",
+         ro_all, all_ro_bytes, rw_all, all_rw_bytes);
 
 #undef fmt_stats
+
+  msg.debug("Class CP entries = %d, archived = %d (%3.1f%%)",
+            _num_klass_cp_entries, _num_klass_cp_entries_archived,
+            percent_of(_num_klass_cp_entries_archived, _num_klass_cp_entries));
+
 }

@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +41,7 @@ public class TrueTypeFontLocaleNameTest {
         }
         System.setProperty("user.language", "de");
         System.setProperty("user.country", "AT");
-        Locale de_atLocale = new Locale("de", "AT");
+        Locale de_atLocale = Locale.of("de", "AT");
         Locale.setDefault(de_atLocale);
 
         String family = "Verdana";
@@ -53,7 +52,7 @@ public class TrueTypeFontLocaleNameTest {
         }
 
         String atFontName = font.getFontName();
-        Locale deGELocale = new Locale("de", "GE");
+        Locale deGELocale = Locale.of("de", "GE");
         String deFontName = font.getFontName(deGELocale);
         System.out.println("Austrian font name: " + atFontName);
         System.out.println("German font name: " + deFontName);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
                 dirFile.option(DirectiveWriter.Option.PRINT_ASSEMBLY, true);
                 break;
             case INTRINSIC:
-                dirFile.option(DirectiveWriter.Option.INTRINSIC, "\"" + cmd.argument + "\"");
+                dirFile.option(DirectiveWriter.Option.INTRINSIC, "\"" + (cmd.argument != null ? cmd.argument : "+_fabs") + "\"");
                 break;
             case NONEXISTENT:
                 dirFile.write(JSONFile.Element.PAIR, command.name);

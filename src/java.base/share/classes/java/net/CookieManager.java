@@ -447,13 +447,7 @@ public class CookieManager extends CookieHandler
             // Check creation time. Sort older first
             long creation1 = c1.getCreationTime();
             long creation2 = c2.getCreationTime();
-            if (creation1 < creation2) {
-                return -1;
-            }
-            if (creation1 > creation2) {
-                return 1;
-            }
-            return 0;
+            return Long.compare(creation1, creation2);
         }
     }
 }

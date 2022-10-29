@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,32 @@
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if INCLUDE_NMT
-
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
-static void* raw_malloc(size_t s)               { return ::malloc(s); }
-static void* raw_realloc(void* old, size_t s)   { return ::realloc(old, s); }
-static void  raw_free(void* p)                  { ::free(p); }
+static void* raw_malloc(size_t s)               { ALLOW_C_FUNCTION(::malloc, return ::malloc(s);) }
+static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
+static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::free(p);) }
 
 // We must ensure that the start of the payload area of the nmt lookup table nodes is malloc-aligned
 static const size_t malloc_alignment = 2 * sizeof(void*); // could we use max_align_t?
 STATIC_ASSERT(is_aligned(sizeof(NMTPreInitAllocation), malloc_alignment));
 
+// To keep matters simple we just raise a fatal error on OOM. Since preinit allocation
+// is just used for pre-VM-initialization mallocs, none of which are optional, we don't
+// need a finer grained error handling.
+static void fail_oom(size_t size) {
+  vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "VM early initialization phase");
+}
+
 // --------- NMTPreInitAllocation --------------
 
 NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
   const size_t outer_size = sizeof(NMTPreInitAllocation) + payload_size;
+  guarantee(outer_size > payload_size, "Overflow");
   void* p = raw_malloc(outer_size);
+  if (p == nullptr) {
+    fail_oom(outer_size);
+  }
   NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(payload_size);
   return a;
 }
@@ -56,7 +65,11 @@ NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* 
   assert(old->next == NULL, "unhang from map first");
   // We just reallocate the old block, header and all.
   const size_t new_outer_size = sizeof(NMTPreInitAllocation) + new_payload_size;
+  guarantee(new_outer_size > new_payload_size, "Overflow");
   void* p = raw_realloc(old, new_outer_size);
+  if (p == nullptr) {
+    fail_oom(new_outer_size);
+  }
   // re-stamp header with new size
   NMTPreInitAllocation* a = new(p) NMTPreInitAllocation(new_payload_size);
   return a;
@@ -190,5 +203,3 @@ void NMTPreInit::print_state(outputStream* st) {
   st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
                _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
 }
-
-#endif // INCLUDE_NMT

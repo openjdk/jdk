@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,6 @@
 //   us. So inside that scope VM initialization ran and with it the NMT initialization.
 // To be sure, we assert those assumptions.
 
-#if INCLUDE_NMT
-
 // Some shorts to save writing out the flags every time
 static void* os_malloc(size_t s)              { return os::malloc(s, mtTest); }
 static void* os_realloc(void* old, size_t s)  { return os::realloc(old, s, mtTest); }
@@ -92,6 +90,25 @@ public:
     os::free(NULL);                      // free(null)
     DEBUG_ONLY(NMTPreInit::verify();)
 
+    // This should result in a fatal native oom error from NMT preinit with a clear error message.
+    // It should not result in a SEGV or anything similar. Unfortunately difficult to test
+    // automatically.
+    // Uncomment to test manually.
+
+    // case 1: overflow
+    // os_malloc(SIZE_MAX);
+
+    // case 2: failing malloc
+    // os_malloc(SIZE_MAX - M);
+
+    // case 3: overflow in realloc
+    // void* p = os_malloc(10);
+    // p = os_realloc(p, SIZE_MAX);
+
+    // case 4: failing realloc
+    // void* p = os_malloc(10);
+    // p = os_realloc(p, SIZE_MAX - M);
+
     log_state();
   }
   void test_post() {
@@ -127,5 +144,3 @@ TEST_VM(NMTPreInit, pre_to_post_allocs) {
   g_test_allocations.test_post();
   g_test_allocations.free_all();
 }
-
-#endif // INCLUDE_NMT

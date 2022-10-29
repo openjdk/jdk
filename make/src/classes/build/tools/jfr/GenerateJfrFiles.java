@@ -174,6 +174,7 @@ public class GenerateJfrFiles {
         boolean cutoff;
         boolean throttle;
         boolean experimental;
+        boolean internal;
         long id;
         boolean isEvent;
         boolean isRelation;
@@ -197,6 +198,7 @@ public class GenerateJfrFiles {
             pos.writeBoolean(cutoff);
             pos.writeBoolean(throttle);
             pos.writeBoolean(experimental);
+            pos.writeBoolean(internal);
             pos.writeLong(id);
             pos.writeBoolean(isEvent);
             pos.writeBoolean(isRelation);
@@ -487,6 +489,7 @@ public class GenerateJfrFiles {
                 currentType.description = getString(attributes, "description");
                 currentType.category = getString(attributes, "category");
                 currentType.experimental = getBoolean(attributes, "experimental", false);
+                currentType.internal = getBoolean(attributes, "internal", false);
                 currentType.thread = getBoolean(attributes, "thread", false);
                 currentType.stackTrace = getBoolean(attributes, "stackTrace", false);
                 currentType.startTime = getBoolean(attributes, "startTime", true);
@@ -736,7 +739,6 @@ public class GenerateJfrFiles {
             out.write("#include \"utilities/ticks.hpp\"");
             out.write("#if INCLUDE_JFR");
             out.write("#include \"jfr/recorder/service/jfrEvent.hpp\"");
-            out.write("#include \"jfr/support/jfrEpochSynchronization.hpp\"");
             out.write("/*");
             out.write(" * Each event class has an assert member function verify() which is invoked");
             out.write(" * just before the engine writes the event and its fields to the data stream.");
@@ -863,9 +865,8 @@ public class GenerateJfrFiles {
     private static void printWriteData(Printer out, TypeElement type) {
         out.write("  template <typename Writer>");
         out.write("  void writeData(Writer& w) {");
-        if (("_thread_in_native").equals(type.commitState)) {
-            out.write("    // explicit epoch synchronization check");
-            out.write("    JfrEpochSynchronization sync;");
+        if (type.isEvent && type.internal) {
+            out.write("    JfrEventSetting::unhide_internal_types();");
         }
         for (FieldElement field : type.fields) {
             if (field.struct) {

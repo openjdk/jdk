@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
@@ -2015,7 +2016,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 JVM_END
 
 JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
-          jstring command, dcmdArgInfo* infoArray))
+          jstring command, dcmdArgInfo* infoArray, jint count))
   ResourceMark rm(THREAD);
   oop cmd = JNIHandles::resolve_external_guard(command);
   if (cmd == NULL) {
@@ -2039,10 +2040,12 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
   }
   DCmdMark mark(dcmd);
   GrowableArray<DCmdArgumentInfo*>* array = dcmd->argument_info_array();
-  if (array->length() == 0) {
-    return;
+  const int num_args = array->length();
+  if (num_args != count) {
+    assert(false, "jmm_GetDiagnosticCommandArgumentsInfo count mismatch (%d vs %d)", count, num_args);
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "jmm_GetDiagnosticCommandArgumentsInfo count mismatch");
   }
-  for (int i = 0; i < array->length(); i++) {
+  for (int i = 0; i < num_args; i++) {
     infoArray[i].name = array->at(i)->name();
     infoArray[i].description = array->at(i)->description();
     infoArray[i].type = array->at(i)->type();
@@ -2167,7 +2170,10 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     ThreadsListHandle tlh;
     java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
     if (java_thread != NULL) {
-      return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
+      oop thread_obj = java_thread->threadObj();
+      if (thread_obj != NULL && !thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+        return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
+      }
     }
   }
   return -1;

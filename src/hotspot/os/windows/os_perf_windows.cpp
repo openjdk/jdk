@@ -32,9 +32,9 @@
 #include "runtime/os_perf.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include CPU_HEADER(vm_version_ext)
 #include <math.h>
 #include <psapi.h>
 #include <TlHelp32.h>
@@ -1434,11 +1434,12 @@ CPUInformationInterface::CPUInformationInterface() : _cpu_info(NULL) {}
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
-  _cpu_info->set_number_of_hardware_threads(VM_Version_Ext::number_of_threads());
-  _cpu_info->set_number_of_cores(VM_Version_Ext::number_of_cores());
-  _cpu_info->set_number_of_sockets(VM_Version_Ext::number_of_sockets());
-  _cpu_info->set_cpu_name(VM_Version_Ext::cpu_name());
-  _cpu_info->set_cpu_description(VM_Version_Ext::cpu_description());
+  VM_Version::initialize_cpu_information();
+  _cpu_info->set_number_of_hardware_threads(VM_Version::number_of_threads());
+  _cpu_info->set_number_of_cores(VM_Version::number_of_cores());
+  _cpu_info->set_number_of_sockets(VM_Version::number_of_sockets());
+  _cpu_info->set_cpu_name(VM_Version::cpu_name());
+  _cpu_info->set_cpu_description(VM_Version::cpu_description());
   return true;
 }
 

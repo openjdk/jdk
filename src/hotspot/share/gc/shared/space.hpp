@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_SERIALGC
+#include "gc/serial/serialBlockOffsetTable.hpp"
+#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -43,13 +46,17 @@
 
 // Forward decls.
 class Space;
+class ContiguousSpace;
+#if INCLUDE_SERIALGC
 class BlockOffsetArray;
 class BlockOffsetArrayContigSpace;
+class BlockOffsetTable;
+#endif
 class Generation;
 class CompactibleSpace;
-class BlockOffsetTable;
 class CardTableRS;
 class DirtyCardToOopClosure;
+class FilteringClosure;
 
 // A Space describes a heap area. Class Space is an abstract
 // base class.
@@ -446,7 +453,7 @@ class ContiguousSpace: public CompactibleSpace {
   // In debug mode mangle (write it with a particular bit
   // pattern) the unused part of a space.
 
-  // Used to save the an address in a space for later use during mangling.
+  // Used to save the address in a space for later use during mangling.
   void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
@@ -532,10 +539,6 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Debugging
   virtual void verify() const;
-
-  // Used to increase collection frequency.  "factor" of 0 means entire
-  // space.
-  void allocate_temporary_filler(int factor);
 };
 
 
@@ -603,6 +606,7 @@ public:
 // other spaces.)  This is the abstract base class for old generation
 // (tenured) spaces.
 
+#if INCLUDE_SERIALGC
 class OffsetTableContigSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
@@ -649,4 +653,6 @@ class TenuredSpace: public OffsetTableContigSpace {
                MemRegion mr) :
     OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
+#endif //INCLUDE_SERIALGC
+
 #endif // SHARE_GC_SHARED_SPACE_HPP

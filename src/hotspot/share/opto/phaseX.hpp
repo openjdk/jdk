@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "opto/phase.hpp"
 #include "opto/type.hpp"
 
+class BarrierSetC2;
 class Compile;
 class ConINode;
 class ConLNode;
@@ -241,7 +242,7 @@ public:
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.
-    // Usually the initialization shoudl be to n->Value(this) instead,
+    // Usually the initialization should be to n->Value(this) instead,
     // or a hand-optimized value like Type::MEMORY or Type::CONTROL.
     assert(_types[n->_idx] == NULL, "must set the initial type just once");
     _types.map(n->_idx, n->bottom_type());
@@ -530,10 +531,22 @@ public:
     n->set_req_X(i, in, this);
   }
 
+  // Add "in" as input (req) of "n"
+  void add_input_to(Node* n, Node* in) {
+    rehash_node_delayed(n);
+    n->add_req(in);
+  }
+
   // Delete ith edge of "n"
   void delete_input_of(Node* n, int i) {
     rehash_node_delayed(n);
     n->del_req(i);
+  }
+
+  // Delete precedence edge i of "n"
+  void delete_precedence_of(Node* n, int i) {
+    rehash_node_delayed(n);
+    n->rm_prec(i);
   }
 
   bool delay_transform() const { return _delay_transform; }
@@ -565,10 +578,25 @@ protected:
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
+  Unique_Node_List _root_and_safepoints;
   // Non-recursive.  Use analysis to transform single Node.
-  virtual Node *transform_once( Node *n );
+  virtual Node* transform_once(Node* n);
 
-public:
+  Node* fetch_next_node(Unique_Node_List& worklist);
+  static void dump_type_and_node(const Node* n, const Type* t) PRODUCT_RETURN;
+
+  void push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const;
+  void push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const;
+  void push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const;
+  void push_phis(Unique_Node_List& worklist, const Node* use) const;
+  static void push_catch(Unique_Node_List& worklist, const Node* use);
+  void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
+  static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
+  void push_loadp(Unique_Node_List& worklist, const Node* use) const;
+  static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
+  void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+
+ public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
   NOT_PRODUCT( ~PhaseCCP(); )
 

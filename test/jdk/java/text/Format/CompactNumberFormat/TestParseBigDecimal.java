@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,28 +41,28 @@ import java.util.Locale;
 public class TestParseBigDecimal {
 
     private static final CompactNumberFormat FORMAT_DZ_LONG = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("dz"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("dz"), NumberFormat.Style.LONG);
 
     private static final CompactNumberFormat FORMAT_EN_US_SHORT = (CompactNumberFormat) NumberFormat
             .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
 
     private static final CompactNumberFormat FORMAT_EN_LONG = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     private static final CompactNumberFormat FORMAT_HI_IN_LONG = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.LONG);
 
     private static final CompactNumberFormat FORMAT_JA_JP_SHORT = (CompactNumberFormat) NumberFormat
             .getCompactNumberInstance(Locale.JAPAN, NumberFormat.Style.SHORT);
 
     private static final CompactNumberFormat FORMAT_IT_SHORT = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("it"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.SHORT);
 
     private static final CompactNumberFormat FORMAT_SW_LONG = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("sw"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("sw"), NumberFormat.Style.LONG);
 
     private static final CompactNumberFormat FORMAT_SE_SHORT = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("se"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.of("se"), NumberFormat.Style.SHORT);
 
     @BeforeTest
     public void mutateInstances() {

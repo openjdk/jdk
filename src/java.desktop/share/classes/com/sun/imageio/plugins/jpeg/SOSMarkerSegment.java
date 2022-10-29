@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.imageio.plugins.jpeg;
 
-//import javax.imageio.IIOException;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
@@ -181,7 +180,7 @@ class SOSMarkerSegment extends MarkerSegment {
     /**
      * A scan component spec within an SOS marker segment.
      */
-    class ScanComponentSpec implements Cloneable {
+    static class ScanComponentSpec implements Cloneable {
         int componentSelector;
         int dcHuffTable;
         int acHuffTable;

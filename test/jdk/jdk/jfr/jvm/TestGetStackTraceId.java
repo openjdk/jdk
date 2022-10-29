@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ public class TestGetStackTraceId {
     }
 
     private static void assertMaxSkip(JVM jvm) {
-        assertValid(jvm.getStackTraceId(Integer.MAX_VALUE));
+        Asserts.assertEquals(jvm.getStackTraceId(Integer.MAX_VALUE), 0L, "Insane skip level "
+                + Integer.MAX_VALUE + " should not return a valid stack trace id");
     }
 
     private static void assertValid(long value) {

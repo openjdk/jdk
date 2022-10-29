@@ -42,7 +42,7 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @bug 8215510
+ * @bug 8215510 8283075
  * @compile ClassDescTest.java
  * @run testng ClassDescTest
  * @summary unit tests for java.lang.constant.ClassDesc
@@ -133,6 +133,7 @@ public class ClassDescTest extends SymbolicDescTest {
     public void testSimpleClassDesc() throws ReflectiveOperationException {
 
         List<ClassDesc> stringClassDescs = Arrays.asList(ClassDesc.ofDescriptor("Ljava/lang/String;"),
+                                                        ClassDesc.ofInternalName("java/lang/String"),
                                                         ClassDesc.of("java.lang", "String"),
                                                         ClassDesc.of("java.lang.String"),
                                                         ClassDesc.of("java.lang.String").arrayType().componentType(),
@@ -148,6 +149,9 @@ public class ClassDescTest extends SymbolicDescTest {
 
         testClassDesc(ClassDesc.of("java.lang.String").arrayType(), String[].class);
         testClassDesc(ClassDesc.of("java.util.Map").nested("Entry"), Map.Entry.class);
+
+        assertEquals(ClassDesc.of("java.lang.String"), ClassDesc.ofDescriptor("Ljava/lang/String;"));
+        assertEquals(ClassDesc.of("java.lang.String"), ClassDesc.ofInternalName("java/lang/String"));
 
         ClassDesc thisClassDesc = ClassDesc.ofDescriptor("LClassDescTest;");
         assertEquals(thisClassDesc, ClassDesc.of("", "ClassDescTest"));
@@ -184,6 +188,19 @@ public class ClassDescTest extends SymbolicDescTest {
         }
     }
 
+    private void testArrayRankOverflow() {
+        ClassDesc TwoDArrayDesc =
+            String.class.describeConstable().get().arrayType().arrayType();
+
+        try {
+            TwoDArrayDesc.arrayType(Integer.MAX_VALUE);
+            fail("");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
+    }
+
+
     public void testArrayClassDesc() throws ReflectiveOperationException {
         for (String d : basicDescs) {
             ClassDesc a0 = ClassDesc.ofDescriptor(d);
@@ -218,6 +235,7 @@ public class ClassDescTest extends SymbolicDescTest {
             testBadArrayRank(ConstantDescs.CD_int);
             testBadArrayRank(ConstantDescs.CD_String);
             testBadArrayRank(ClassDesc.of("Bar"));
+            testArrayRankOverflow();
         }
     }
 
@@ -241,6 +259,17 @@ public class ClassDescTest extends SymbolicDescTest {
         for (String d : badBinaryNames) {
             try {
                 ClassDesc constant = ClassDesc.of(d);
+                fail(d);
+            } catch (IllegalArgumentException e) {
+                // good
+            }
+        }
+
+        List<String> badInternalNames = List.of("I;", "[]", "[Ljava/lang/String;",
+                "Ljava.lang.String;", "java.lang.String");
+        for (String d : badInternalNames) {
+            try {
+                ClassDesc constant = ClassDesc.ofInternalName(d);
                 fail(d);
             } catch (IllegalArgumentException e) {
                 // good

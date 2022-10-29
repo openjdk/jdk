@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ private:
     _current_soft_ref_policy->setup();   // snapshot the policy threshold
   }
 public:
-  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
+  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_NONE); }
 
   uint num_queues() const                  { return _num_queues; }
   uint max_num_queues() const              { return _max_num_queues; }
@@ -374,7 +374,7 @@ public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
-                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
+                     uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 
@@ -421,15 +421,12 @@ public:
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
 
-  // Has discovered references that need handling
-  bool has_discovered_references();
-
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
   process_discovered_references(RefProcProxyTask& proxy_task,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
-  // If a discovery is in process that is being superceded, abandon it: all
+  // If a discovery is in process that is being superseded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
   // have NULL discovered fields.  Must be called only at a safepoint.
   void abandon_partial_discovery();

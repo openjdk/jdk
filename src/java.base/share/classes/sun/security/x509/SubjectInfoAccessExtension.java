@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import sun.security.util.DerValue;
  * included in end entity or CA certificates.  Conforming CAs MUST mark
  * this extension as non-critical.
  * <p>
- * This extension is defined in <a href="http://tools.ietf.org/html/rfc5280">
+ * This extension is defined in <a href="https://tools.ietf.org/html/rfc5280">
  * Internet X.509 PKI Certificate and Certificate Revocation List
  * (CRL) Profile</a>. The profile permits
  * the extension to be included in end-entity or CA certificates,
@@ -126,7 +126,7 @@ public class SubjectInfoAccessExtension extends Extension
             throw new IOException("Invalid encoding for " +
                                   "SubjectInfoAccessExtension.");
         }
-        accessDescriptions = new ArrayList<AccessDescription>();
+        accessDescriptions = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             AccessDescription accessDescription = new AccessDescription(seq);
@@ -202,7 +202,7 @@ public class SubjectInfoAccessExtension extends Extension
     public void delete(String name) throws IOException {
         if (name.equalsIgnoreCase(DESCRIPTIONS)) {
             accessDescriptions =
-                Collections.<AccessDescription>emptyList();
+                Collections.emptyList();
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +

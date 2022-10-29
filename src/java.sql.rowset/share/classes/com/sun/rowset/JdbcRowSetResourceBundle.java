@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class JdbcRowSetResourceBundle implements Serializable {
      * The variable where the default resource bundle will
      * be placed.
      **/
-    private static final String PATH = "com/sun/rowset/RowSetResourceBundle";
+    private static final String PATH = "com.sun.rowset.RowSetResourceBundle";
 
     /**
      * The constructor which initializes the resource bundle.
@@ -132,7 +132,7 @@ public class JdbcRowSetResourceBundle implements Serializable {
      * This method returns an enumerated handle of the keys
      * which correspond to values translated to various locales.
      *
-     * @return an enumeration of keys which have messages tranlated to
+     * @return an enumeration of keys which have messages translated to
      * corresponding locales.
      */
     @SuppressWarnings("rawtypes")

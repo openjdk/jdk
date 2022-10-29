@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ class BytecodeStream: public BaseBytecodeStream {
       //
       // note that we cannot advance before having the
       // tty bytecode otherwise the stepping is wrong!
-      // (carefull: length_for(...) must be used first!)
+      // (careful: length_for(...) must be used first!)
       int len = Bytecodes::length_for(code);
       if (len == 0) len = Bytecodes::length_at(_method(), bcp);
       if (len <= 0 || (_bci > _end_bci - len) || (_bci - len >= _next_bci)) {

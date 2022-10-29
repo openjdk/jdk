@@ -146,7 +146,7 @@ public class tc02x003 {
                             hitEvent(clsEvent);
 
                             mthdReq = evm.createMethodEntryRequest();
-                            ReferenceType testedClass = clsEvent.referenceType();;
+                            ReferenceType testedClass = clsEvent.referenceType();
                             mthdReq.addClassFilter(testedClass);
                             mthdReq.enable();
 

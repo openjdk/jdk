@@ -764,8 +764,8 @@ public final class AttributeValues implements Cloneable {
                 return ((AttributeMap)map).getValues().justification;
             }
             Object obj = map.get(TextAttribute.JUSTIFICATION);
-            if (obj != null && obj instanceof Number) {
-                return max(0, min(1, ((Number)obj).floatValue()));
+            if (obj instanceof Number number) {
+                return max(0, min(1, number.floatValue()));
             }
         }
         return DEFAULT.justification;
@@ -778,8 +778,8 @@ public final class AttributeValues implements Cloneable {
                 return ((AttributeMap)map).getValues().numericShaping;
             }
             Object obj = map.get(TextAttribute.NUMERIC_SHAPING);
-            if (obj != null && obj instanceof NumericShaper) {
-                return (NumericShaper)obj;
+            if (obj instanceof NumericShaper shaper) {
+                return shaper;
             }
         }
         return DEFAULT.numericShaping;

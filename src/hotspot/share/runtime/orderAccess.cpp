@@ -27,7 +27,8 @@
 #include "runtime/stubRoutines.hpp"
 
 #ifndef PRODUCT
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/threads.hpp"
 #endif
 
 void OrderAccess::StubRoutines_fence() {

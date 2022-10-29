@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.ch;
 import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
-
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -83,13 +82,17 @@ public interface SelChImpl extends Channel {
      * @param nanos the timeout to wait; {@code <= 0} to wait indefinitely
      */
     default void park(int event, long nanos) throws IOException {
-        long millis;
-        if (nanos <= 0) {
-            millis = -1;
+        if (Thread.currentThread().isVirtual()) {
+            Poller.poll(getFDVal(), event, nanos, this::isOpen);
         } else {
-            millis = NANOSECONDS.toMillis(nanos);
+            long millis;
+            if (nanos <= 0) {
+                millis = -1;
+            } else {
+                millis = NANOSECONDS.toMillis(nanos);
+            }
+            Net.poll(getFD(), event, millis);
         }
-        Net.poll(getFD(), event, millis);
     }
 
     /**
@@ -105,5 +108,4 @@ public interface SelChImpl extends Channel {
     default void park(int event) throws IOException {
         park(event, 0L);
     }
-
 }

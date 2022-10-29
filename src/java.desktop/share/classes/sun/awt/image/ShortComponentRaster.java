@@ -134,7 +134,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * SampleModel must be of type ComponentSampleModel or
      * SinglePixelPackedSampleModel.  When translated into the base Raster's
      * coordinate system, aRegion must be contained by the base Raster.
-     * Origin is the coodinate in the new Raster's coordinate system of
+     * Origin is the coordinate in the new Raster's coordinate system of
      * the origin of the base Raster.  (The base Raster is the Raster's
      * ancestor which has no parent.)
      *
@@ -693,7 +693,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * @param x0              Translated X origin of the subraster.
      * @param y0              Translated Y origin of the subraster.
      * @param bandList        Array of band indices.
-     * @exception RasterFormatException
+     * @throws RasterFormatException
      *            if the specified bounding box is outside of the parent raster.
      */
     public Raster createChild (int x, int y,
@@ -722,7 +722,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * @param x0              Translated X origin of the subraster.
      * @param y0              Translated Y origin of the subraster.
      * @param bandList        Array of band indices.
-     * @exception RasterFormatException
+     * @throws RasterFormatException
      *            if the specified bounding box is outside of the parent Raster.
      */
     public WritableRaster createWritableChild(int x, int y,

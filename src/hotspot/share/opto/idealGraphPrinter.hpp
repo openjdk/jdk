@@ -99,6 +99,10 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_method(ciMethod *method, int bci, InlineTree *tree);
   void print_inline_tree(InlineTree *tree);
   void visit_node(Node *n, bool edges, VectorSet* temp_set);
+  void print_field(const Node* node);
+  ciField* get_field(const Node* node);
+  ciField* find_source_field_of_array_access(const Node* node, uint& depth);
+  static Node* get_load_node(const Node* node);
   void walk_nodes(Node *start, bool edges, VectorSet* temp_set);
   void begin_elem(const char *s);
   void end_elem();

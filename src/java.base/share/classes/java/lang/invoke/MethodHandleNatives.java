@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ class MethodHandleNatives {
                 throw new InternalError(err);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
                 String err = (name+": JVM has "+vmval+" which Java does not define");
-                // ignore exotic ops the JVM cares about; we just wont issue them
+                // ignore exotic ops the JVM cares about; we just won't issue them
                 //System.err.println("warning: "+err);
                 continue;
             }
@@ -281,6 +281,12 @@ class MethodHandleNatives {
                                               type,
                                               staticArguments,
                                               caller);
+        if (TRACE_METHOD_LINKAGE) {
+            MethodHandle target = callSite.getTarget();
+            System.out.println("linkCallSite target class => " + target.getClass().getName());
+            System.out.println("linkCallSite target => " + target.debugString(0));
+        }
+
         if (callSite instanceof ConstantCallSite) {
             appendixResult[0] = callSite.dynamicInvoker();
             return Invokers.linkToTargetMethod(type);
@@ -298,19 +304,33 @@ class MethodHandleNatives {
         Object bsmReference = bootstrapMethod.internalMemberName();
         if (bsmReference == null)  bsmReference = bootstrapMethod;
         String staticArglist = staticArglistForTrace(staticArguments);
-        System.out.println("linkCallSite "+caller.getName()+" "+
+        System.out.println("linkCallSite "+getCallerInfo(caller)+" "+
                            bsmReference+" "+
                            name+type+"/"+staticArglist);
         try {
             MemberName res = linkCallSiteImpl(caller, bootstrapMethod, name, type,
                                               staticArguments, appendixResult);
-            System.out.println("linkCallSite => "+res+" + "+appendixResult[0]);
+            System.out.println("linkCallSite linkage => "+res+" + "+appendixResult[0]);
             return res;
         } catch (Throwable ex) {
             ex.printStackTrace(); // print now in case exception is swallowed
             System.out.println("linkCallSite => throw "+ex);
             throw ex;
         }
+    }
+
+    /**
+     * Return a human-readable description of the caller. Something like
+     * "java.base/java.security.Security.<clinit>(Security.java:82)"
+     */
+    private static String getCallerInfo(Class<?> caller) {
+        for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+            if (e.getClassName().equals(caller.getName())) {
+                return e.toString();
+            }
+        }
+        // fallback if the caller is somehow missing from the stack.
+        return caller.getName();
     }
 
     // this implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
@@ -393,7 +413,7 @@ class MethodHandleNatives {
      * The JVM wants a pointer to a MethodType.  Oblige it by finding or creating one.
      */
     static MethodType findMethodHandleType(Class<?> rtype, Class<?>[] ptypes) {
-        return MethodType.makeImpl(rtype, ptypes, true);
+        return MethodType.methodType(rtype, ptypes, true);
     }
 
     /**
@@ -561,7 +581,7 @@ class MethodHandleNatives {
             }
             // Access descriptor at end
             guardParams[guardParams.length - 1] = VarHandle.AccessDescriptor.class;
-            MethodType guardType = MethodType.makeImpl(guardReturnType, guardParams, true);
+            MethodType guardType = MethodType.methodType(guardReturnType, guardParams, true);
 
             MemberName linker = new MemberName(
                     VarHandleGuards.class, getVarHandleGuardMethodName(guardType),

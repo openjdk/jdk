@@ -74,7 +74,7 @@ public final class ChunkFilename {
 
        // If more than one file per second
        while (counter < MAX_CHUNK_NAMES) {
-           String extendedName = String.format("%s_%02d%s", filename, counter, FILE_EXTENSION);
+           String extendedName = makeExtendedName(filename, counter);
            p = directory.resolve(extendedName);
            counter++;
            if (!fileAcess.exists(p)) {
@@ -82,5 +82,17 @@ public final class ChunkFilename {
            }
        }
        throw new IOException("Unable to find unused filename after " + counter + " attempts");
+   }
+
+   private String makeExtendedName(String filename, int counter) {
+       StringBuilder sb = new StringBuilder();
+       sb.append(filename);
+       sb.append('_');
+       if (counter < 10) { // chronological sorted
+           sb.append('0');
+       }
+       sb.append(counter);
+       sb.append(FILE_EXTENSION);
+       return sb.toString();
    }
 }

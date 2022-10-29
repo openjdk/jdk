@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,10 @@ class ResumeOneThreadTarg extends Thread {
         System.out.println("    Debuggee: Howdy!");
         ResumeOneThreadTarg t1 = new ResumeOneThreadTarg(name1);
         ResumeOneThreadTarg t2 = new ResumeOneThreadTarg(name2);
-
+        // Force these threads to be non-daemon threads, even when the debuggee
+        // is being run as a vthread. See JDK-8283796.
+        t1.setDaemon(false);
+        t2.setDaemon(false);
         t1.start();
         t2.start();
     }

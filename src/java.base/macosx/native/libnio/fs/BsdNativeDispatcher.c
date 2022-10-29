@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,12 @@
 #else
 #define ISREADONLY MNT_RDONLY
 #endif
+#include <sys/attr.h>
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/attr.h>
+#include <sys/clonefile.h>
 
 static jfieldID entry_name;
 static jfieldID entry_dir;
@@ -108,7 +111,7 @@ Java_sun_nio_fs_BsdNativeDispatcher_getfsstat(JNIEnv* env, jclass this)
     }
 
     // It's possible that a new filesystem gets mounted between
-    // the first getfsstat and the second so loop until consistant
+    // the first getfsstat and the second so loop until consistent
 
     while (nentries != iter->nentries) {
         if (iter->buf != NULL)
@@ -147,7 +150,6 @@ Java_sun_nio_fs_BsdNativeDispatcher_fsstatEntry(JNIEnv* env, jclass this,
     char* dir;
     char* fstype;
     char* options;
-    dev_t dev;
 
     if (iter == NULL || iter->pos >= iter->nentries)
        return -1;
@@ -223,4 +225,61 @@ Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
     }
 
     return mntonname;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
+    jlong srcAddress, jlong dstAddress, jint flags)
+{
+    const char* src = (const char*)jlong_to_ptr(srcAddress);
+    const char* dst = (const char*)jlong_to_ptr(dstAddress);
+
+    int ret = clonefile(src, dst, flags);
+    if (ret != 0) {
+        throwUnixException(env, errno);
+        return ret;
+    }
+
+    return 0;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
+    jlong pathAddress, int commonattr, jlong modTime, jlong accTime,
+    jlong createTime, jlong options)
+{
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+    // attributes must align on 4-byte boundaries per the getattrlist(2) spec
+    const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
+    char buf[3*attrsize];
+
+    int count = 0;
+    // attributes are ordered per the getattrlist(2) spec
+    if ((commonattr & ATTR_CMN_CRTIME) != 0) {
+        struct timespec* t = (struct timespec*)buf;
+        t->tv_sec   = createTime / 1000000000;
+        t->tv_nsec  = createTime % 1000000000;
+        count++;
+    }
+    if ((commonattr & ATTR_CMN_MODTIME) != 0) {
+        struct timespec* t = (struct timespec*)(buf + count*attrsize);
+        t->tv_sec   = modTime / 1000000000;
+        t->tv_nsec  = modTime % 1000000000;
+        count++;
+    }
+    if ((commonattr & ATTR_CMN_ACCTIME) != 0) {
+        struct timespec* t = (struct timespec*)(buf + count*attrsize);
+        t->tv_sec   = accTime / 1000000000;
+        t->tv_nsec  = accTime % 1000000000;
+        count++;
+    }
+
+    struct attrlist attrList;
+    memset(&attrList, 0, sizeof(struct attrlist));
+    attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
+    attrList.commonattr = commonattr;
+
+    if (setattrlist(path, &attrList, (void*)buf, count*attrsize, options) != 0) {
+        throwUnixException(env, errno);
+    }
 }

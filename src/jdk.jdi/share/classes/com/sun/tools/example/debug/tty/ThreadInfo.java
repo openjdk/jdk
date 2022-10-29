@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ class ThreadInfo {
     // This is a list of all known ThreadInfo objects. It survives
     // ThreadInfo.invalidateAll, unlike the other static fields below.
     private static List<ThreadInfo> threads = Collections.synchronizedList(new ArrayList<ThreadInfo>());
+    private static List<ThreadInfo> vthreads = Collections.synchronizedList(new ArrayList<ThreadInfo>());
     private static boolean gotInitialThreads = false;
 
     private static ThreadInfo current = null;
@@ -64,13 +65,19 @@ class ThreadInfo {
     private static void initThreads() {
         if (!gotInitialThreads) {
             for (ThreadReference thread : Env.vm().allThreads()) {
-                threads.add(new ThreadInfo(thread));
+                ThreadInfo ti = new ThreadInfo(thread);
+                if (thread.isVirtual()) {
+                    vthreads.add(ti);
+                } else {
+                    threads.add(ti);
+                }
             }
             gotInitialThreads = true;
         }
     }
 
-    static void addThread(ThreadReference thread) {
+    // Returns true if thread is newly added. Returns false if previously added.
+    static boolean addThread(ThreadReference thread) {
         synchronized (threads) {
             initThreads();
             ThreadInfo ti = new ThreadInfo(thread);
@@ -78,8 +85,14 @@ class ThreadInfo {
             // initialization when a particular thread might be added both
             // by a thread start event and by the initial call to threads()
             if (getThreadInfo(thread) == null) {
-                threads.add(ti);
+                if (thread.isVirtual()) {
+                    vthreads.add(ti);
+                } else {
+                    threads.add(ti);
+                }
+                return true;
             }
+            return false;
         }
     }
 
@@ -103,14 +116,28 @@ class ThreadInfo {
             MessageOutput.println("Current thread died. Execution continuing...",
                                   currentThreadName);
         }
-        threads.remove(getThreadInfo(thread));
+        if (thread.isVirtual()) {
+            vthreads.remove(getThreadInfo(thread));
+        } else {
+            threads.remove(getThreadInfo(thread));
+        }
     }
 
     static List<ThreadInfo> threads() {
         synchronized(threads) {
             initThreads();
             // Make a copy to allow iteration without synchronization
-            return new ArrayList<ThreadInfo>(threads);
+            List<ThreadInfo> list = new ArrayList<ThreadInfo>(threads);
+            list.addAll(vthreads); // also include the vthreads list
+            return list;
+        }
+    }
+
+    static List<ThreadInfo> vthreads() {
+        synchronized(threads) {
+            initThreads();
+            // Make a copy to allow iteration without synchronization
+            return new ArrayList<ThreadInfo>(vthreads);
         }
     }
 

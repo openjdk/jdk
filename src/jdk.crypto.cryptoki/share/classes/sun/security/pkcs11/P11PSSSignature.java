@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ final class P11PSSSignature extends SignatureSpi {
         this.mechanism = new CK_MECHANISM(mechId);
         int idx = algorithm.indexOf("with");
         // convert to stdName
-        this.mdAlg = (idx == -1?
+        this.mdAlg = (idx == -1 ?
                 null : toStdName(algorithm.substring(0, idx)));
 
         switch ((int)mechId) {
@@ -193,7 +193,7 @@ final class P11PSSSignature extends SignatureSpi {
                 throw new NoSuchAlgorithmException("Unsupported algorithm: " +
                         algorithm);
             }
-            this.md = (this.mdAlg == null? null :
+            this.md = (this.mdAlg == null ? null :
                     MessageDigest.getInstance(this.mdAlg));
             type = T_DIGEST;
             break;
@@ -269,9 +269,16 @@ final class P11PSSSignature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
+
         if (DEBUG) System.out.print("Cancelling operation");
 
-        // cancel operation by finishing it; avoid killSession as some
+        if (P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
+            if (DEBUG) System.out.println(" by C_SessionCancel");
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession call as some
         // hardware vendors may require re-login
         try {
             if (mode == M_SIGN) {
@@ -280,7 +287,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_SignFinal(session.id(), 0);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Sign");
                     token.p11.C_Sign(session.id(), digest);
                 }
@@ -292,7 +299,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_VerifyFinal(session.id(), signature);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Verify");
                     token.p11.C_Verify(session.id(), digest, signature);
                 }
@@ -569,10 +576,10 @@ final class P11PSSSignature extends SignatureSpi {
         case T_UPDATE:
             try {
                 if (mode == M_SIGN) {
-                    System.out.println(this + ": Calling C_SignUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate(session.id(), 0, b, ofs, len);
                 } else {
-                    System.out.println(this + ": Calling C_VerfifyUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_VerfifyUpdate");
                     token.p11.C_VerifyUpdate(session.id(), 0, b, ofs, len);
                 }
                 bytesProcessed += len;
@@ -618,11 +625,11 @@ final class P11PSSSignature extends SignatureSpi {
             int ofs = byteBuffer.position();
             try {
                 if (mode == M_SIGN) {
-                    System.out.println(this + ": Calling C_SignUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate
                         (session.id(), addr + ofs, null, 0, len);
                 } else {
-                    System.out.println(this + ": Calling C_VerifyUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_VerifyUpdate");
                     token.p11.C_VerifyUpdate
                         (session.id(), addr + ofs, null, 0, len);
                 }

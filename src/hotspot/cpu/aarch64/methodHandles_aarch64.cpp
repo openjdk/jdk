@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -136,11 +136,11 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
-  __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
+  __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2, rscratch2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())), temp2);
+  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())), temp2, rscratch2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset())), temp2);
+  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset())), temp2, rscratch2);
   __ verify_oop(method_temp);
   __ access_load_at(T_ADDRESS, IN_HEAP, method_temp, Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset())), noreg, noreg);
 
@@ -185,7 +185,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  // r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
+  // r19_sender_sp: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // rmethod: Method*
   // r3: argument locator (parameter slot count, added to rsp)
   // r1: used as temp to hold mh or receiver
@@ -258,6 +258,21 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   return entry_point;
 }
 
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, temp_target,
+                    Address(nep_reg, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())),
+                    noreg, noreg);
+
+  __ br(temp_target);
+  BLOCK_COMMENT("} jump_to_native_invoker");
+}
+
 
 void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     vmIntrinsics::ID iid,
@@ -268,9 +283,9 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
   Register temp1 = r10;
   Register temp2 = r11;
-  Register temp3 = r14;  // r13 is live by this point: it contains the sender SP
+  Register temp3 = r14;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
     assert_different_registers(temp2,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
     assert_different_registers(temp3,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
@@ -279,13 +294,13 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
-    if (iid == vmIntrinsics::_linkToNative) {
-      assert(for_compiler_entry, "only compiler entry is supported");
-    }
+  if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rmethod, temp1, for_compiler_entry);
 
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
@@ -322,7 +337,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
-        __ load_heap_oop(temp2_defc, member_clazz, temp3);
+        __ load_heap_oop(temp2_defc, member_clazz, temp3, rscratch2);
         load_klass_from_Class(_masm, temp2_defc);
         __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, L_ok);
@@ -341,7 +356,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // Live registers at this point:
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
-    //  r13 - interpreter linkage (if interpreted)  ??? FIXME
+    //  r19 - interpreter linkage (if interpreted)
     //  r1 ... r0 - compiler arguments (if compiled)
 
     Label L_incompatible_class_change_error;
@@ -350,7 +365,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
-      __ load_heap_oop(rmethod, member_vmtarget);
+      __ load_heap_oop(rmethod, member_vmtarget, temp3, rscratch2);
       __ access_load_at(T_ADDRESS, IN_HEAP, rmethod, vmtarget_method, noreg, noreg);
       break;
 
@@ -358,7 +373,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
-      __ load_heap_oop(rmethod, member_vmtarget);
+      __ load_heap_oop(rmethod, member_vmtarget, temp3, rscratch2);
       __ access_load_at(T_ADDRESS, IN_HEAP, rmethod, vmtarget_method, noreg, noreg);
       break;
 
@@ -400,7 +415,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       Register temp3_intf = temp3;
-      __ load_heap_oop(temp3_intf, member_clazz);
+      __ load_heap_oop(temp3_intf, member_clazz, temp2, rscratch2);
       load_klass_from_Class(_masm, temp3_intf);
       __ verify_klass_ptr(temp3_intf);
 
@@ -428,7 +443,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       break;
     }
 
-    // live at this point:  rmethod, r13 (if interpreted)
+    // live at this point:  rmethod, r19_sender_sp (if interpreted)
 
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.

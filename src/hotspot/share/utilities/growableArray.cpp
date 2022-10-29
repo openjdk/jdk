@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"
 
 void* GrowableArrayResourceAllocator::allocate(int max, int elementSize) {

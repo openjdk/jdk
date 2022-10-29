@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 import jdk.jpackage.internal.Arguments.CLIOptions;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -54,12 +55,14 @@ import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
  * The add-launcher properties file may have any of:
  *
  * appVersion
+ * description
  * module
  * main-jar
  * main-class
  * icon
  * arguments
  * java-options
+ * launcher-as-service
  * win-console
  * win-shortcut
  * win-menu
@@ -111,12 +114,19 @@ class AddLauncherArguments {
         Arguments.putUnlessNull(bundleParams, CLIOptions.VERSION.getId(),
                 getOptionValue(CLIOptions.VERSION));
 
+        Arguments.putUnlessNull(bundleParams, CLIOptions.DESCRIPTION.getId(),
+                getOptionValue(CLIOptions.DESCRIPTION));
+
         Arguments.putUnlessNull(bundleParams, CLIOptions.RELEASE.getId(),
                 getOptionValue(CLIOptions.RELEASE));
 
-        String value = getOptionValue(CLIOptions.ICON);
         Arguments.putUnlessNull(bundleParams, CLIOptions.ICON.getId(),
-                (value == null) ? null : Path.of(value));
+                Optional.ofNullable(getOptionValue(CLIOptions.ICON)).map(
+                        Path::of).orElse(null));
+
+        Arguments.putUnlessNull(bundleParams,
+                CLIOptions.LAUNCHER_AS_SERVICE.getId(), getOptionValue(
+                CLIOptions.LAUNCHER_AS_SERVICE));
 
         if (Platform.isWindows())  {
             Arguments.putUnlessNull(bundleParams,

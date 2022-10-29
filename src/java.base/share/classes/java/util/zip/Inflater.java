@@ -101,6 +101,7 @@ public class Inflater {
     private byte[] inputArray;
     private int inputPos, inputLim;
     private boolean finished;
+    private boolean pendingOutput;
     private boolean needDict;
     private long bytesRead;
     private long bytesWritten;
@@ -415,6 +416,11 @@ public class Inflater {
             if ((result >>> 62 & 1) != 0) {
                 finished = true;
             }
+            if (written == len && !finished) {
+                pendingOutput = true;
+            } else {
+                pendingOutput = false;
+            }
             if ((result >>> 63 & 1) != 0) {
                 needDict = true;
             }
@@ -709,6 +715,10 @@ public class Inflater {
         assert Thread.holdsLock(zsRef);
         if (zsRef.address() == 0)
             throw new NullPointerException("Inflater has been closed");
+    }
+
+    boolean hasPendingOutput() {
+        return pendingOutput;
     }
 
     private static native void initIDs();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #ifndef SHARE_SERVICES_THREADSTACKTRACKER_HPP
 #define SHARE_SERVICES_THREADSTACKTRACKER_HPP
-
-#if INCLUDE_NMT
 
 #include "services/allocationSite.hpp"
 #include "services/mallocSiteTable.hpp"
@@ -72,7 +70,6 @@ private:
   static SortedLinkedList<SimpleThreadStackSite, compare_thread_stack_base>* _simple_thread_stacks;
 public:
   static bool initialize(NMT_TrackingLevel level);
-  static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
 
   static void new_thread_stack(void* base, size_t size, const NativeCallStack& stack);
   static void delete_thread_stack(void* base, size_t size);
@@ -85,5 +82,5 @@ public:
   static bool walk_simple_thread_stack_site(MallocSiteWalker* walker);
 };
 
-#endif // INCLUDE_NMT
 #endif // SHARE_SERVICES_THREADSTACKTRACKER_HPP
+

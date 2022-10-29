@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
   }
   else if (!strcmp(ideal_type, "ConL")) {
     fprintf(fp,"    st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", i);
-    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, (uint64_t)_c%d);\n", i);
+    fprintf(fp,"    st->print(\"/\" UINT64_FORMAT_X_0, (uint64_t)_c%d);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "ConF")) {
@@ -429,7 +429,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
   else if (!strcmp(ideal_type, "ConD")) {
     fprintf(fp,"    st->print(\"#%%f\", _c%d);\n", i);
     fprintf(fp,"    jlong _c%dl = JavaValue(_c%d).get_jlong();\n", i, i);
-    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, (uint64_t)_c%dl);\n", i);
+    fprintf(fp,"    st->print(\"/\" UINT64_FORMAT_X_0, (uint64_t)_c%dl);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "Bool")) {
@@ -1444,7 +1444,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
       else if (oper->_interface->is_RegInterface() != NULL) {
         // make sure that a fixed format string isn't used for an
-        // operand which might be assiged to multiple registers.
+        // operand which might be assigned to multiple registers.
         // Otherwise the opto assembly output could be misleading.
         if (oper->_format->_strings.count() != 0 && !oper->is_bound_register()) {
           syntax_err(oper->_linenum,
@@ -1648,7 +1648,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     if (instr->needs_constant_base() &&
-        !instr->is_mach_constant()) {  // These inherit the funcion from MachConstantNode.
+        !instr->is_mach_constant()) {  // These inherit the function from MachConstantNode.
       fprintf(fp,"  virtual uint           mach_constant_base_node_input() const { ");
       if (instr->is_ideal_call() != Form::invalid_type &&
           instr->is_ideal_call() != Form::JAVA_LEAF) {
@@ -1703,7 +1703,7 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // If there is an explicit peephole rule, build it
     if ( instr->peepholes() != NULL ) {
-      fprintf(fp,"  virtual MachNode      *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);\n");
+      fprintf(fp,"  virtual int            peephole(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_);\n");
     }
 
     // Output the declaration for number of relocation entries
@@ -2071,7 +2071,7 @@ void ArchDesc::defineStateClass(FILE *fp) {
 //---------------------------buildMachOperEnum---------------------------------
 // Build enumeration for densely packed operands.
 // This enumeration is used to index into the arrays in the State objects
-// that indicate cost and a successfull rule match.
+// that indicate cost and a successful rule match.
 
 // Information needed to generate the ReduceOp mapping for the DFA
 class OutputMachOperands : public OutputMap {

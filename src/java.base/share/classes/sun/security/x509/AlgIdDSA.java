@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import sun.security.util.*;
  * or are derived from some Certificate Authority's DSS certificate, is
  * not supported directly.  The application is responsible for creating a key
  * containing the required parameters prior to using the key in cryptographic
- * operations.  The follwoing is an example of how this may be done assuming
+ * operations.  The following is an example of how this may be done assuming
  * that we have a certificate called <code>currentCert</code> which doesn't
  * contain DSS/DSA parameters and we need to derive DSS/DSA parameters
  * from a CA's certificate called <code>caCert</code>.

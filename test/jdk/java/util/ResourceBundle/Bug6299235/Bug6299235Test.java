@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.Locale;
  */
 
 public class Bug6299235Test {
-    private static final Locale ru_RU = new Locale("ru", "RU");
+    private static final Locale ru_RU = Locale.of("ru", "RU");
 
     public static void main(String args[]) {
         Locale locale = Locale.getDefault();

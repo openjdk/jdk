@@ -55,8 +55,8 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ add_ptr_scaled_int32(count, addr, count, LogBytesPerHeapOop);
   __ sub(count, count, BytesPerHeapOop);                            // last addr
 
-  __ logical_shift_right(addr, addr, CardTable::card_shift);
-  __ logical_shift_right(count, count, CardTable::card_shift);
+  __ logical_shift_right(addr, addr, CardTable::card_shift());
+  __ logical_shift_right(count, count, CardTable::card_shift());
   __ sub(count, count, addr); // nb of cards
 
   // warning: Rthread has not been preserved
@@ -129,7 +129,7 @@ void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Regis
          "Wrong barrier set kind");
 
   assert(CardTable::dirty_card_val() == 0, "Dirty card value must be 0 due to optimizations.");
-  Address card_table_addr(card_table_base, obj, lsr, CardTable::card_shift);
+  Address card_table_addr(card_table_base, obj, lsr, CardTable::card_shift());
 
   if (UseCondCardMark) {
     Label already_dirty;

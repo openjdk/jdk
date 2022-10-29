@@ -24,7 +24,10 @@
 
 package sun.jvm.hotspot.code;
 
+import java.io.PrintStream;
+
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.utilities.*;
 
 public class CompressedReadStream extends CompressedStream {
   /** Equivalent to CompressedReadStream(buffer, 0) */
@@ -56,16 +59,6 @@ public class CompressedReadStream extends CompressedStream {
     return decodeSign(readInt());
   }
 
-  public int readInt() {
-    int b0 = read();
-    if (b0 < L) {
-      return b0;
-    } else {
-      return readIntMb(b0);
-    }
-  }
-
-
   public float readFloat() {
     return Float.intBitsToFloat(reverseInt(readInt()));
   }
@@ -85,41 +78,13 @@ public class CompressedReadStream extends CompressedStream {
   }
 
   //--------------------------------------------------------------------------------
-  // Internals only below this point
-  //
-
-
-  // This encoding, called UNSIGNED5, is taken from J2SE Pack200.
-  // It assumes that most values have lots of leading zeroes.
-  // Very small values, in the range [0..191], code in one byte.
-  // Any 32-bit value (including negatives) can be coded, in
-  // up to five bytes.  The grammar is:
-  //    low_byte  = [0..191]
-  //    high_byte = [192..255]
-  //    any_byte  = low_byte | high_byte
-  //    coding = low_byte
-  //           | high_byte low_byte
-  //           | high_byte high_byte low_byte
-  //           | high_byte high_byte high_byte low_byte
-  //           | high_byte high_byte high_byte high_byte any_byte
-  // Each high_byte contributes six bits of payload.
-  // The encoding is one-to-one (except for integer overflow)
-  // and easy to parse and unparse.
-
-  private int readIntMb(int b0) {
-    int pos = position - 1;
-    int sum = b0;
-    // must collect more bytes: b[1]...b[4]
-    int lg_H_i = lg_H;
-    for (int i = 0; ;) {
-      int b_i = read(pos + (++i));
-      sum += b_i << lg_H_i; // sum += b[i]*(64**i)
-      if (b_i < L || i == MAX_i) {
-        setPosition(pos+i+1);
-        return sum;
-      }
-      lg_H_i += lg_H;
-    }
+  public int readInt() {
+    // UNSIGNED5::read_uint(_buffer, &_position, limit=0)
+    return (int) Unsigned5.readUint(this, position,
+                                    // bytes are fetched here:
+                                    CompressedReadStream::read,
+                                    // updated position comes through here:
+                                    CompressedReadStream::setPosition);
   }
 
   private short read(int index) {
@@ -131,5 +96,23 @@ public class CompressedReadStream extends CompressedStream {
     short retval = (short) buffer.getCIntegerAt(position, 1, true);
     ++position;
     return retval;
+  }
+
+
+  /**
+   * Dumps the stream, making an assumption that all items are encoded
+   * as UNSIGNED5.  The sizeLimit argument tells the dumper when to
+   * stop trying to read bytes; if it is zero, the dumper goes as long
+   * as it can until it encounters a null byte.
+   *
+   * This class mixes UNSIGNED5 with other formats.  Stray bytes are
+   * decoded either as "null" (0x00), one less than the byte value
+   * (0x01..0xBF) or as part of a spurious multi-byte encoding.
+   * Proceed with caution.
+   */
+  public void dump() { dumpOn(System.out, 0); }
+  public void dump(int sizeLimit) { dumpOn(System.out, sizeLimit); }
+  public void dumpOn(PrintStream tty, int sizeLimit) {
+      new Unsigned5(buffer, sizeLimit).dumpOn(tty, -1);
   }
 }

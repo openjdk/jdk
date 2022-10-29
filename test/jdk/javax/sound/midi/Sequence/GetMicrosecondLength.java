@@ -30,6 +30,7 @@ import javax.sound.midi.Track;
 
 /**
  * @test
+ * @key sound
  * @bug 4929955
  * @summary Sequence.getMicrosecondLength() returns wrong value
  */

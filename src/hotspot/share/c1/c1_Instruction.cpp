@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,7 @@ ciType* Invoke::declared_type() const {
   return t;
 }
 
-// Implementation of Contant
+// Implementation of Constant
 intx Constant::hash() const {
   if (state_before() == NULL) {
     switch (type()->tag()) {
@@ -524,39 +524,22 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
 
 // Implementation of BlockBegin
 
-void BlockBegin::set_end(BlockEnd* end) {
-  assert(end != NULL, "should not reset block end to NULL");
-  if (end == _end) {
-    return;
-  }
-  clear_end();
+void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of new_end still has it as its successor
+  assert(new_end != NULL, "Should not reset block new_end to NULL");
+  if (new_end == _end) return;
 
-  // Set the new end
-  _end = end;
-
-  _successors.clear();
-  // Now reset successors list based on BlockEnd
-  for (int i = 0; i < end->number_of_sux(); i++) {
-    BlockBegin* sux = end->sux_at(i);
-    _successors.append(sux);
-    sux->_predecessors.append(this);
-  }
-  _end->set_begin(this);
-}
-
-
-void BlockBegin::clear_end() {
-  // Must make the predecessors/successors match up with the
-  // BlockEnd's notion.
+  // Remove this block as predecessor of its current successors
   if (_end != NULL) {
-    // disconnect from the old end
-    _end->set_begin(NULL);
-
-    // disconnect this block from it's current successors
-    for (int i = 0; i < _successors.length(); i++) {
-      _successors.at(i)->remove_predecessor(this);
+    for (int i = 0; i < number_of_sux(); i++) {
+      sux_at(i)->remove_predecessor(this);
     }
-    _end = NULL;
+  }
+
+  _end = new_end;
+
+  // Add this block as predecessor of its new successors
+  for (int i = 0; i < number_of_sux(); i++) {
+    sux_at(i)->add_predecessor(this);
   }
 }
 
@@ -575,23 +558,13 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
       if (index >= 0) {
         sux->_predecessors.remove_at(index);
       }
-      from->_successors.remove_at(s);
+      from->end()->remove_sux_at(s);
     } else {
       s++;
     }
   }
 }
 
-
-void BlockBegin::disconnect_from_graph() {
-  // disconnect this block from all other blocks
-  for (int p = 0; p < number_of_preds(); p++) {
-    pred_at(p)->remove_successor(this);
-  }
-  for (int s = 0; s < number_of_sux(); s++) {
-    sux_at(s)->remove_predecessor(this);
-  }
-}
 
 void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   // modify predecessors before substituting successors
@@ -666,14 +639,6 @@ BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
   }
   assert(assigned == true, "should have assigned at least once");
   return new_sux;
-}
-
-
-void BlockBegin::remove_successor(BlockBegin* pred) {
-  int idx;
-  while ((idx = _successors.find(pred)) >= 0) {
-    _successors.remove_at(idx);
-  }
 }
 
 
@@ -754,7 +719,7 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
 #endif
 
 
-bool BlockBegin::try_merge(ValueStack* new_state) {
+bool BlockBegin::try_merge(ValueStack* new_state, bool has_irreducible_loops) {
   TRACE_PHI(tty->print_cr("********** try_merge for block B%d", block_id()));
 
   // local variables used for state iteration
@@ -795,10 +760,9 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
       }
 
       BitMap& requires_phi_function = new_state->scope()->requires_phi_function();
-
       for_each_local_value(new_state, index, new_value) {
         bool requires_phi = requires_phi_function.at(index) || (new_value->type()->is_double_word() && requires_phi_function.at(index + 1));
-        if (requires_phi || !SelectivePhiFunctions) {
+        if (requires_phi || !SelectivePhiFunctions || has_irreducible_loops) {
           new_state->setup_phi_for_local(this, index);
           TRACE_PHI(tty->print_cr("creating phi-function %c%d for local %d", new_state->local_at(index)->type()->tchar(), new_state->local_at(index)->id(), index));
         }
@@ -809,7 +773,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
     set_state(new_state);
 
   } else if (existing_state->is_same(new_state)) {
-    TRACE_PHI(tty->print_cr("exisiting state found"));
+    TRACE_PHI(tty->print_cr("existing state found"));
 
     assert(existing_state->scope() == new_state->scope(), "not matching");
     assert(existing_state->locals_size() == new_state->locals_size(), "not matching");
@@ -836,6 +800,11 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           existing_phi->make_illegal();
           existing_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
+        }
+
+        if (existing_value != new_state->local_at(index) && existing_value->as_Phi() == NULL) {
+          TRACE_PHI(tty->print_cr("required phi for local %d is missing, irreducible loop?", index));
+          return false; // BAILOUT in caller
         }
       }
 
@@ -926,11 +895,6 @@ void BlockList::iterate_backward(BlockClosure* closure) {
 }
 
 
-void BlockList::blocks_do(void f(BlockBegin*)) {
-  for (int i = length() - 1; i >= 0; i--) f(at(i));
-}
-
-
 void BlockList::values_do(ValueVisitor* f) {
   for (int i = length() - 1; i >= 0; i--) at(i)->block_values_do(f);
 }
@@ -953,25 +917,9 @@ void BlockList::print(bool cfg_only, bool live_only) {
 
 // Implementation of BlockEnd
 
-void BlockEnd::set_begin(BlockBegin* begin) {
-  BlockList* sux = NULL;
-  if (begin != NULL) {
-    sux = begin->successors();
-  } else if (this->begin() != NULL) {
-    // copy our sux list
-    BlockList* sux = new BlockList(this->begin()->number_of_sux());
-    for (int i = 0; i < this->begin()->number_of_sux(); i++) {
-      sux->append(this->begin()->sux_at(i));
-    }
-  }
-  _sux = sux;
-}
-
-
 void BlockEnd::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   substitute(*_sux, old_sux, new_sux);
 }
-
 
 // Implementation of Phi
 
@@ -1027,7 +975,7 @@ Assert::Assert(Value x, Condition cond, bool unordered_is_true, Value y) : Instr
   ip2.print_instr(y);
 
   stringStream ss;
-  ss.print("Assertion %s %s %s in method %s", strStream1.as_string(), ip2.cond_name(cond), strStream2.as_string(), strStream.as_string());
+  ss.print("Assertion %s %s %s in method %s", strStream1.freeze(), ip2.cond_name(cond), strStream2.freeze(), strStream.freeze());
 
   _message = ss.as_string();
 }

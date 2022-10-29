@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.util.Optional;
 
+import jdk.internal.math.FloatConsts;
 import jdk.internal.math.FloatingDecimal;
+import jdk.internal.math.FloatToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -57,7 +59,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The class {@code java.lang.Double} has a <a
  * href="Double.html#equivalenceRelation">discussion of equality,
  * equivalence, and comparison of floating-point values</a> that is
- * equality applicable to {@code float} values.
+ * equally applicable to {@code float} values.
+ *
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -116,13 +121,29 @@ public final class Float extends Number
     public static final float MIN_VALUE = 0x0.000002P-126f; // 1.4e-45f
 
     /**
+     * The number of bits used to represent a {@code float} value.
+     *
+     * @since 1.5
+     */
+    public static final int SIZE = 32;
+
+    /**
+     * The number of bits in the significand of a {@code float} value.
+     * This is the parameter N in section {@jls 4.2.3} of
+     * <cite>The Java Language Specification</cite>.
+     *
+     * @since 19
+     */
+    public static final int PRECISION = 24;
+
+    /**
      * Maximum exponent a finite {@code float} variable may have.  It
      * is equal to the value returned by {@code
      * Math.getExponent(Float.MAX_VALUE)}.
      *
      * @since 1.6
      */
-    public static final int MAX_EXPONENT = 127;
+    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 127
 
     /**
      * Minimum exponent a normalized {@code float} variable may have.
@@ -131,14 +152,7 @@ public final class Float extends Number
      *
      * @since 1.6
      */
-    public static final int MIN_EXPONENT = -126;
-
-    /**
-     * The number of bits used to represent a {@code float} value.
-     *
-     * @since 1.5
-     */
-    public static final int SIZE = 32;
+    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -126
 
     /**
      * The number of bytes used to represent a {@code float} value.
@@ -177,53 +191,119 @@ public final class Float extends Number
      *     {@code "0.0"}; thus, negative zero produces the result
      *     {@code "-0.0"} and positive zero produces the result
      *     {@code "0.0"}.
-     * <li> If <i>m</i> is greater than or equal to 10<sup>-3</sup> but
-     *      less than 10<sup>7</sup>, then it is represented as the
-     *      integer part of <i>m</i>, in decimal form with no leading
-     *      zeroes, followed by '{@code .}'
-     *      ({@code '\u005Cu002E'}), followed by one or more
-     *      decimal digits representing the fractional part of
-     *      <i>m</i>.
-     * <li> If <i>m</i> is less than 10<sup>-3</sup> or greater than or
-     *      equal to 10<sup>7</sup>, then it is represented in
-     *      so-called "computerized scientific notation." Let <i>n</i>
-     *      be the unique integer such that 10<sup><i>n</i> </sup>&le;
-     *      <i>m</i> {@literal <} 10<sup><i>n</i>+1</sup>; then let <i>a</i>
-     *      be the mathematically exact quotient of <i>m</i> and
-     *      10<sup><i>n</i></sup> so that 1 &le; <i>a</i> {@literal <} 10.
-     *      The magnitude is then represented as the integer part of
-     *      <i>a</i>, as a single decimal digit, followed by
-     *      '{@code .}' ({@code '\u005Cu002E'}), followed by
-     *      decimal digits representing the fractional part of
-     *      <i>a</i>, followed by the letter '{@code E}'
-     *      ({@code '\u005Cu0045'}), followed by a representation
-     *      of <i>n</i> as a decimal integer, as produced by the
-     *      method {@link java.lang.Integer#toString(int)}.
      *
+     * <li> Otherwise <i>m</i> is positive and finite.
+     * It is converted to a string in two stages:
+     * <ul>
+     * <li> <em>Selection of a decimal</em>:
+     * A well-defined decimal <i>d</i><sub><i>m</i></sub>
+     * is selected to represent <i>m</i>.
+     * This decimal is (almost always) the <em>shortest</em> one that
+     * rounds to <i>m</i> according to the round to nearest
+     * rounding policy of IEEE 754 floating-point arithmetic.
+     * <li> <em>Formatting as a string</em>:
+     * The decimal <i>d</i><sub><i>m</i></sub> is formatted as a string,
+     * either in plain or in computerized scientific notation,
+     * depending on its value.
      * </ul>
      * </ul>
-     * How many digits must be printed for the fractional part of
-     * <i>m</i> or <i>a</i>? There must be at least one digit
-     * to represent the fractional part, and beyond that as many, but
-     * only as many, more digits as are needed to uniquely distinguish
-     * the argument value from adjacent values of type
-     * {@code float}. That is, suppose that <i>x</i> is the
-     * exact mathematical value represented by the decimal
-     * representation produced by this method for a finite nonzero
-     * argument <i>f</i>. Then <i>f</i> must be the {@code float}
-     * value nearest to <i>x</i>; or, if two {@code float} values are
-     * equally close to <i>x</i>, then <i>f</i> must be one of
-     * them and the least significant bit of the significand of
-     * <i>f</i> must be {@code 0}.
+     * </ul>
+     *
+     * <p>A <em>decimal</em> is a number of the form
+     * <i>s</i>&times;10<sup><i>i</i></sup>
+     * for some (unique) integers <i>s</i> &gt; 0 and <i>i</i> such that
+     * <i>s</i> is not a multiple of 10.
+     * These integers are the <em>significand</em> and
+     * the <em>exponent</em>, respectively, of the decimal.
+     * The <em>length</em> of the decimal is the (unique)
+     * positive integer <i>n</i> meeting
+     * 10<sup><i>n</i>-1</sup> &le; <i>s</i> &lt; 10<sup><i>n</i></sup>.
+     *
+     * <p>The decimal <i>d</i><sub><i>m</i></sub> for a finite positive <i>m</i>
+     * is defined as follows:
+     * <ul>
+     * <li>Let <i>R</i> be the set of all decimals that round to <i>m</i>
+     * according to the usual <em>round to nearest</em> rounding policy of
+     * IEEE 754 floating-point arithmetic.
+     * <li>Let <i>p</i> be the minimal length over all decimals in <i>R</i>.
+     * <li>When <i>p</i> &ge; 2, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length <i>p</i>.
+     * Otherwise, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length 1 or 2.
+     * <li>Define <i>d</i><sub><i>m</i></sub> as the decimal in <i>T</i>
+     * that is closest to <i>m</i>.
+     * Or if there are two such decimals in <i>T</i>,
+     * select the one with the even significand.
+     * </ul>
+     *
+     * <p>The (uniquely) selected decimal <i>d</i><sub><i>m</i></sub>
+     * is then formatted.
+     * Let <i>s</i>, <i>i</i> and <i>n</i> be the significand, exponent and
+     * length of <i>d</i><sub><i>m</i></sub>, respectively.
+     * Further, let <i>e</i> = <i>n</i> + <i>i</i> - 1 and let
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>
+     * be the usual decimal expansion of <i>s</i>.
+     * Note that <i>s</i><sub>1</sub> &ne; 0
+     * and <i>s</i><sub><i>n</i></sub> &ne; 0.
+     * Below, the decimal point {@code '.'} is {@code '\u005Cu002E'}
+     * and the exponent indicator {@code 'E'} is {@code '\u005Cu0045'}.
+     * <ul>
+     * <li>Case -3 &le; <i>e</i> &lt; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <code>0.0</code>&hellip;<code>0</code><!--
+     * --><i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -(<i>n</i> + <i>i</i>) zeroes between
+     * the decimal point and <i>s</i><sub>1</sub>.
+     * For example, 123 &times; 10<sup>-4</sup> is formatted as
+     * {@code 0.0123}.
+     * <li>Case 0 &le; <i>e</i> &lt; 7:
+     * <ul>
+     * <li>Subcase <i>i</i> &ge; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub><!--
+     * --><code>0</code>&hellip;<code>0.0</code>,
+     * where there are exactly <i>i</i> zeroes
+     * between <i>s</i><sub><i>n</i></sub> and the decimal point.
+     * For example, 123 &times; 10<sup>2</sup> is formatted as
+     * {@code 12300.0}.
+     * <li>Subcase <i>i</i> &lt; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i></sub><code>.</code><!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i>+1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -<i>i</i> digits to the right of
+     * the decimal point.
+     * For example, 123 &times; 10<sup>-1</sup> is formatted as
+     * {@code 12.3}.
+     * </ul>
+     * <li>Case <i>e</i> &lt; -3 or <i>e</i> &ge; 7:
+     * computerized scientific notation is used to format
+     * <i>d</i><sub><i>m</i></sub>.
+     * Here <i>e</i> is formatted as by {@link Integer#toString(int)}.
+     * <ul>
+     * <li>Subcase <i>n</i> = 1:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.0E</code><i>e</i>.
+     * For example, 1 &times; 10<sup>23</sup> is formatted as
+     * {@code 1.0E23}.
+     * <li>Subcase <i>n</i> &gt; 1:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.</code><i>s</i><sub>2</sub><!--
+     * -->&hellip;<i>s</i><sub><i>n</i></sub><code>E</code><i>e</i>.
+     * For example, 123 &times; 10<sup>-21</sup> is formatted as
+     * {@code 1.23E-19}.
+     * </ul>
+     * </ul>
      *
      * <p>To create localized string representations of a floating-point
      * value, use subclasses of {@link java.text.NumberFormat}.
      *
-     * @param   f   the float to be converted.
+     * @param   f   the {@code float} to be converted.
      * @return a string representation of the argument.
      */
     public static String toString(float f) {
-        return FloatingDecimal.toJavaFormatString(f);
+        return FloatToDecimal.toString(f);
     }
 
     /**
@@ -480,6 +560,10 @@ public final class Float extends Number
      * Returns {@code true} if the specified number is a
      * Not-a-Number (NaN) value, {@code false} otherwise.
      *
+     * @apiNote
+     * This method corresponds to the isNaN operation defined in IEEE
+     * 754.
+     *
      * @param   v   the value to be tested.
      * @return  {@code true} if the argument is NaN;
      *          {@code false} otherwise.
@@ -492,12 +576,17 @@ public final class Float extends Number
      * Returns {@code true} if the specified number is infinitely
      * large in magnitude, {@code false} otherwise.
      *
+     * @apiNote
+     * This method corresponds to the isInfinite operation defined in
+     * IEEE 754.
+     *
      * @param   v   the value to be tested.
      * @return  {@code true} if the argument is positive infinity or
      *          negative infinity; {@code false} otherwise.
      */
+    @IntrinsicCandidate
     public static boolean isInfinite(float v) {
-        return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+        return Math.abs(v) > MAX_VALUE;
     }
 
 
@@ -506,11 +595,16 @@ public final class Float extends Number
      * value; returns {@code false} otherwise (for NaN and infinity
      * arguments).
      *
+     * @apiNote
+     * This method corresponds to the isFinite operation defined in
+     * IEEE 754.
+     *
      * @param f the {@code float} value to be tested
      * @return {@code true} if the argument is a finite
      * floating-point value, {@code false} otherwise.
      * @since 1.8
      */
+     @IntrinsicCandidate
      public static boolean isFinite(float f) {
         return Math.abs(f) <= Float.MAX_VALUE;
     }
@@ -673,6 +767,10 @@ public final class Float extends Number
     /**
      * Returns the value of this {@code Float} as a {@code double}
      * after a widening primitive conversion.
+     *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754.
      *
      * @return the {@code float} value represented by this
      *         object converted to type {@code double}
@@ -842,13 +940,13 @@ public final class Float extends Number
      * <p>In all other cases, let <i>s</i>, <i>e</i>, and <i>m</i> be three
      * values that can be computed from the argument:
      *
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      * int s = ((bits >> 31) == 0) ? 1 : -1;
      * int e = ((bits >> 23) & 0xff);
      * int m = (e == 0) ?
      *                 (bits & 0x7fffff) << 1 :
      *                 (bits & 0x7fffff) | 0x800000;
-     * }</pre></blockquote>
+     * }
      *
      * Then the floating-point result equals the value of the mathematical
      * expression <i>s</i>&middot;<i>m</i>&middot;2<sup><i>e</i>-150</sup>.
@@ -878,6 +976,198 @@ public final class Float extends Number
      */
     @IntrinsicCandidate
     public static native float intBitsToFloat(int bits);
+
+    /**
+     * {@return the {@code float} value closest to the numerical value
+     * of the argument, a floating-point binary16 value encoded in a
+     * {@code short}} The conversion is exact; all binary16 values can
+     * be exactly represented in {@code float}.
+     *
+     * Special cases:
+     * <ul>
+     * <li> If the argument is zero, the result is a zero with the
+     * same sign as the argument.
+     * <li> If the argument is infinite, the result is an infinity
+     * with the same sign as the argument.
+     * <li> If the argument is a NaN, the result is a NaN.
+     * </ul>
+     *
+     * <h4><a id=binary16Format>IEEE 754 binary16 format</a></h4>
+     * The IEEE 754 standard defines binary16 as a 16-bit format, along
+     * with the 32-bit binary32 format (corresponding to the {@code
+     * float} type) and the 64-bit binary64 format (corresponding to
+     * the {@code double} type). The binary16 format is similar to the
+     * other IEEE 754 formats, except smaller, having all the usual
+     * IEEE 754 values such as NaN, signed infinities, signed zeros,
+     * and subnormals. The parameters (JLS {@jls 4.2.3}) for the
+     * binary16 format are N = 11 precision bits, K = 5 exponent bits,
+     * <i>E</i><sub><i>max</i></sub> = 15, and
+     * <i>E</i><sub><i>min</i></sub> = -14.
+     *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754 from the binary16 format to the binary32 format.
+     * The operation of this method is analogous to a primitive
+     * widening conversion (JLS {@jls 5.1.2}).
+     *
+     * @param floatBinary16 the binary16 value to convert to {@code float}
+     * @since 20
+     */
+    @IntrinsicCandidate
+    public static float float16ToFloat(short floatBinary16) {
+        /*
+         * The binary16 format has 1 sign bit, 5 exponent bits, and 10
+         * significand bits. The exponent bias is 15.
+         */
+        int bin16arg = (int)floatBinary16;
+        int bin16SignBit     = 0x8000 & bin16arg;
+        int bin16ExpBits     = 0x7c00 & bin16arg;
+        int bin16SignifBits  = 0x03FF & bin16arg;
+
+        // Shift left difference in the number of significand bits in
+        // the float and binary16 formats
+        final int SIGNIF_SHIFT = (FloatConsts.SIGNIFICAND_WIDTH - 11);
+
+        float sign = (bin16SignBit != 0) ? -1.0f : 1.0f;
+
+        // Extract binary16 exponent, remove its bias, add in the bias
+        // of a float exponent and shift to correct bit location
+        // (significand width includes the implicit bit so shift one
+        // less).
+        int bin16Exp = (bin16ExpBits >> 10) - 15;
+        if (bin16Exp == -15) {
+            // For subnormal binary16 values and 0, the numerical
+            // value is 2^24 * the significand as an integer (no
+            // implicit bit).
+            return sign * (0x1p-24f * bin16SignifBits);
+        } else if (bin16Exp == 16) {
+            return (bin16SignifBits == 0) ?
+                sign * Float.POSITIVE_INFINITY :
+                Float.intBitsToFloat((bin16SignBit << 16) |
+                                     0x7f80_0000 |
+                                     // Preserve NaN signif bits
+                                     ( bin16SignifBits << SIGNIF_SHIFT ));
+        }
+
+        assert -15 < bin16Exp  && bin16Exp < 16;
+
+        int floatExpBits = (bin16Exp + FloatConsts.EXP_BIAS)
+            << (FloatConsts.SIGNIFICAND_WIDTH - 1);
+
+        // Compute and combine result sign, exponent, and significand bits.
+        return Float.intBitsToFloat((bin16SignBit << 16) |
+                                    floatExpBits |
+                                    (bin16SignifBits << SIGNIF_SHIFT));
+    }
+
+    /**
+     * {@return the floating-point binary16 value, encoded in a {@code
+     * short}, closest in value to the argument}
+     * The conversion is computed under the {@linkplain
+     * java.math.RoundingMode#HALF_EVEN round to nearest even rounding
+     * mode}.
+     *
+     * Special cases:
+     * <ul>
+     * <li> If the argument is zero, the result is a zero with the
+     * same sign as the argument.
+     * <li> If the argument is infinite, the result is an infinity
+     * with the same sign as the argument.
+     * <li> If the argument is a NaN, the result is a NaN.
+     * </ul>
+     *
+     * The <a href="#binary16Format">binary16 format</a> is discussed in
+     * more detail in the {@link #float16ToFloat} method.
+     *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754 from the binary32 format to the binary16 format.
+     * The operation of this method is analogous to a primitive
+     * narrowing conversion (JLS {@jls 5.1.3}).
+     *
+     * @param f the {@code float} value to convert to binary16
+     * @since 20
+     */
+    @IntrinsicCandidate
+    public static short floatToFloat16(float f) {
+        int doppel = Float.floatToRawIntBits(f);
+        short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
+
+        if (Float.isNaN(f)) {
+            // Preserve sign and attempt to preserve significand bits
+            return (short)(sign_bit
+                    | 0x7c00 // max exponent + 1
+                    // Preserve high order bit of float NaN in the
+                    // binary16 result NaN (tenth bit); OR in remaining
+                    // bits into lower 9 bits of binary 16 significand.
+                    | (doppel & 0x007f_e000) >> 13 // 10 bits
+                    | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+                    | (doppel & 0x0000_000f));     //  4 bits
+        }
+
+        float abs_f = Math.abs(f);
+
+        // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
+        if (abs_f >= (0x1.ffcp15f + 0x0.002p15f) ) {
+            return (short)(sign_bit | 0x7c00); // Positive or negative infinity
+        }
+
+        // Smallest magnitude nonzero representable binary16 value
+        // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
+        if (abs_f <= 0x1.0p-24f * 0.5f) { // Covers float zeros and subnormals.
+            return sign_bit; // Positive or negative zero
+        }
+
+        // Dealing with finite values in exponent range of binary16
+        // (when rounding is done, could still round up)
+        int exp = Math.getExponent(f);
+        assert -25 <= exp && exp <= 15;
+
+        // For binary16 subnormals, beside forcing exp to -15, retain
+        // the difference expdelta = E_min - exp.  This is the excess
+        // shift value, in addition to 13, to be used in the
+        // computations below.  Further the (hidden) msb with value 1
+        // in f must be involved as well.
+        int expdelta = 0;
+        int msb = 0x0000_0000;
+        if (exp < -14) {
+            expdelta = -14 - exp;
+            exp = -15;
+            msb = 0x0080_0000;
+        }
+        int f_signif_bits = doppel & 0x007f_ffff | msb;
+
+        // Significand bits as if using rounding to zero (truncation).
+        short signif_bits = (short)(f_signif_bits >> (13 + expdelta));
+
+        // For round to nearest even, determining whether or not to
+        // round up (in magnitude) is a function of the least
+        // significant bit (LSB), the next bit position (the round
+        // position), and the sticky bit (whether there are any
+        // nonzero bits in the exact result to the right of the round
+        // digit). An increment occurs in three cases:
+        //
+        // LSB  Round Sticky
+        // 0    1     1
+        // 1    1     0
+        // 1    1     1
+        // See "Computer Arithmetic Algorithms," Koren, Table 4.9
+
+        int lsb    = f_signif_bits & (1 << 13 + expdelta);
+        int round  = f_signif_bits & (1 << 12 + expdelta);
+        int sticky = f_signif_bits & ((1 << 12 + expdelta) - 1);
+
+        if (round != 0 && ((lsb | sticky) != 0 )) {
+            signif_bits++;
+        }
+
+        // No bits set in significand beyond the *first* exponent bit,
+        // not just the sigificand; quantity is added to the exponent
+        // to implement a carry out from rounding the significand.
+        assert (0xf800 & signif_bits) == 0x0;
+
+        return (short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
+    }
 
     /**
      * Compares two {@code Float} objects numerically.
@@ -959,6 +1249,9 @@ public final class Float extends Number
     /**
      * Adds two {@code float} values together as per the + operator.
      *
+     * @apiNote This method corresponds to the addition operation
+     * defined in IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the sum of {@code a} and {@code b}
@@ -974,6 +1267,10 @@ public final class Float extends Number
      * Returns the greater of two {@code float} values
      * as if by calling {@link Math#max(float, float) Math.max}.
      *
+     * @apiNote
+     * This method corresponds to the maximum operation defined in
+     * IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the greater of {@code a} and {@code b}
@@ -987,6 +1284,10 @@ public final class Float extends Number
     /**
      * Returns the smaller of two {@code float} values
      * as if by calling {@link Math#min(float, float) Math.min}.
+     *
+     * @apiNote
+     * This method corresponds to the minimum operation defined in
+     * IEEE 754.
      *
      * @param a the first operand
      * @param b the second operand

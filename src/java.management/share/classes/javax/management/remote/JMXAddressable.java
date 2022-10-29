@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ package javax.management.remote;
  * Depending on the connector implementation, a {@link JMXConnector}
  * object may implement this interface too.  {@code JMXConnector}
  * objects for the RMI Connector are instances of
- * {@link javax.management.remote.rmi.RMIConnector RMIConnector} which
+ * {@link java.management.rmi/javax.management.remote.rmi.RMIConnector RMIConnector} which
  * implements this interface.</p>
  *
  * <p>An object implementing this interface might not have an address
@@ -41,6 +41,7 @@ package javax.management.remote;
  *
  * @since 1.6
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public interface JMXAddressable {
     /**
      * <p>The address of this object.</p>

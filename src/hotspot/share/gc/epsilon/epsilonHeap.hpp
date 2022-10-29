@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_EPSILON_EPSILONHEAP_HPP
 #define SHARE_GC_EPSILON_EPSILONHEAP_HPP
 
+#include "gc/epsilon/epsilonBarrierSet.hpp"
+#include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/epsilon/epsilonMonitoringSupport.hpp"
-#include "gc/epsilon/epsilonBarrierSet.hpp"
+#include "memory/virtualspace.hpp"
 #include "services/memoryManager.hpp"
 
 class EpsilonHeap : public CollectedHeap {
@@ -68,7 +69,6 @@ public:
   }
 
   virtual jint initialize();
-  virtual void post_initialize();
   virtual void initialize_serviceability();
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();
@@ -81,6 +81,8 @@ public:
   virtual bool is_in(const void* p) const {
     return _space->is_in(p);
   }
+
+  virtual bool requires_barriers(stackChunkOop obj) const { return false; }
 
   virtual bool is_maximal_no_gc() const {
     // No GC is going to happen. Return "we are at max", when we are about to fail.
@@ -121,7 +123,6 @@ public:
   // No nmethod handling
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
-  virtual void flush_nmethod(nmethod* nm) {}
   virtual void verify_nmethod(nmethod* nm) {}
 
   // No heap verification
@@ -132,7 +133,7 @@ public:
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Support for loading objects from CDS archive into the heap
-  virtual bool can_load_archived_objects() const { return true; }
+  virtual bool can_load_archived_objects() const { return UseCompressedOops; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size);
 
   virtual void print_on(outputStream* st) const;

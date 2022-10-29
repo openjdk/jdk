@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package org.openjdk.bench.java.util;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -39,9 +40,12 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public class ArraysFill {
 
-    @Param({"10", "16", "31", "59", "89", "126", "250", "266", "511", "1021", "2047", "2048", "4095", "8195"})
+    @Param({"16", "31", "250", "266", "511", "2047", "2048", "8195"})
     public int size;
 
     public byte[] testByteArray;
@@ -65,50 +69,36 @@ public class ArraysFill {
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testCharFill() {
         Arrays.fill(testCharArray, (char) -1);
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testByteFill() {
         Arrays.fill(testByteArray, (byte) -1);
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testShortFill() {
         Arrays.fill(testShortArray, (short) -1);
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testIntFill() {
         Arrays.fill(testIntArray, -1);
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testLongFill() {
         Arrays.fill(testLongArray, -1);
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testFloatFill() {
         Arrays.fill(testFloatArray, (float) -1.0);
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public void testDoubleFill() {
         Arrays.fill(testDoubleArray, -1.0);
     }

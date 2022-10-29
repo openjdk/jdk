@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.PathMatcher;
 import java.nio.file.ProviderMismatchException;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -42,7 +42,7 @@ import java.util.Map;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 /**
  * @test
- * @bug 8038500 8040059 8150366 8150496 8147539
+ * @bug 8038500 8040059 8150366 8150496 8147539 8290047
  * @summary Basic test for zip provider
  *
  * @modules jdk.zipfs
@@ -89,7 +89,7 @@ public class Basic {
         // Test: copy file from zip file to current (scratch) directory
         Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");
         if (Files.exists(source)) {
-            Path target = Paths.get(source.getFileName().toString());
+            Path target = Path.of(source.getFileName().toString());
             Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
             try {
                 long s1 = Files.readAttributes(source, BasicFileAttributes.class).size();
@@ -112,6 +112,19 @@ public class Basic {
               .register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE);
             throw new RuntimeException("watch service is not supported");
         } catch (ProviderMismatchException x) { }
+
+        // Test: IllegalArgumentException
+        try {
+            PathMatcher pm = fs.getPathMatcher(":glob");
+            throw new RuntimeException("IllegalArgumentException not thrown");
+        } catch (IllegalArgumentException iae) {
+        }
+        try {
+            PathMatcher pm = fs.getPathMatcher("glob:");
+        } catch (IllegalArgumentException iae) {
+            iae.printStackTrace();
+            throw new RuntimeException("Unexpected IllegalArgumentException");
+        }
 
         // Test: ClosedFileSystemException
         fs.close();

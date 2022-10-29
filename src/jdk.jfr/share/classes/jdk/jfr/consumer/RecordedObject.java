@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -57,8 +58,9 @@ import jdk.jfr.internal.tool.PrettyWriter;
  *
  * @since 9
  */
-public class RecordedObject {
-
+public sealed class RecordedObject
+   permits RecordedEvent, RecordedClassLoader, RecordedClass, RecordedMethod,
+           RecordedStackTrace, RecordedFrame, RecordedThread, RecordedThreadGroup {
     static{
         JdkJfrConsumer access = new JdkJfrConsumer() {
             @Override
@@ -150,16 +152,7 @@ public class RecordedObject {
         JdkJfrConsumer.setAccess(access);
     }
 
-    private static final class UnsignedValue {
-        private final Object o;
-
-        UnsignedValue(Object o) {
-            this.o = o;
-        }
-
-        Object value() {
-            return o;
-        }
+    private static final record UnsignedValue(Object value) {
     }
 
     final Object[] objects;
@@ -234,23 +227,7 @@ public class RecordedObject {
      * for callers of this method is to validate the field before attempting access.
      * <p>
      * Example
-     *
-     * <pre>{@literal
-     * if (event.hasField("intValue")) {
-     *   int intValue = event.getValue("intValue");
-     *   System.out.println("Int value: " + intValue);
-     * }
-     *
-     * if (event.hasField("objectClass")) {
-     *   RecordedClass clazz = event.getValue("objectClass");
-     *   System.out.println("Class name: " + clazz.getName());
-     * }
-     *
-     * if (event.hasField("sampledThread")) {
-     *   RecordedThread sampledThread = event.getValue("sampledThread");
-     *   System.out.println("Sampled thread: " + sampledThread.getJavaName());
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordedObjectGetValue"}
      *
      * @param <T> the return type
      * @param  name of the field to get, not {@code null}
@@ -272,7 +249,7 @@ public class RecordedObject {
     }
 
     private Object getValue(String name, boolean allowUnsigned) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         int index = 0;
         for (ValueDescriptor v : objectContext.fields) {
             if (name.equals(v.getName())) {
@@ -354,14 +331,14 @@ public class RecordedObject {
                 return v;
             }
         }
-        throw new IllegalArgumentException("\"Attempt to get unknown field \"" + name + "\"");
+        throw new IllegalArgumentException("Attempt to get unknown field \"" + name + "\"");
     }
 
     // Gets a value, but checks that type and name is correct first
     // This is to prevent a call to getString on a thread field, that is
     // null to succeed.
     private <T> T getTypedValue(String name, String typeName) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         // Validate name and type first
         getValueDescriptor(objectContext.fields, name, typeName);
         return getValue(name);
@@ -779,6 +756,10 @@ public class RecordedObject {
      * the following types: {@code long}, {@code int}, {@code short}, {@code char},
      * and {@code byte}.
      * <p>
+     * If the committed event value was {@code Long.MAX_VALUE},
+     * regardless of the unit set by {@code @Timespan}, this method returns
+     * {@link ChronoUnit#FOREVER}.
+     * <p>
      * It's possible to index into a nested object using {@code "."} (for example,
      * {@code "aaa.bbb"}).
      * <p>
@@ -827,10 +808,16 @@ public class RecordedObject {
         throw newIllegalArgumentException(name, "java.time.Duration");
     }
 
-    private Duration getDuration(long timespan, String name) throws InternalError {
+    private Duration getDuration(long timespan, String name) {
         ValueDescriptor v = getValueDescriptor(objectContext.fields, name, null);
+        if (timespan == 0) {
+            return Duration.ZERO;
+        }
         if (timespan == Long.MIN_VALUE) {
             return Duration.ofSeconds(Long.MIN_VALUE, 0);
+        }
+        if (timespan == Long.MAX_VALUE) {
+            return ChronoUnit.FOREVER.getDuration();
         }
         Timespan ts = v.getAnnotation(Timespan.class);
         if (ts != null) {
@@ -997,7 +984,7 @@ public class RecordedObject {
         if (instant.equals(Instant.MIN)) {
             return OffsetDateTime.MIN;
         }
-        return OffsetDateTime.ofInstant(getInstant(name), objectContext.getZoneOffset());
+        return OffsetDateTime.ofInstant(instant, objectContext.getZoneOffset());
     }
 
     private static IllegalArgumentException newIllegalArgumentException(String name, String typeName) {

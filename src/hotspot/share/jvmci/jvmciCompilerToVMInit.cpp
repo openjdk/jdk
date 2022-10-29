@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,8 @@ address CompilerToVM::Data::dpow;
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
 
+int CompilerToVM::Data::data_section_item_alignment;
+
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
@@ -119,9 +121,9 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();
 
-  _supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
-  _heap_end_addr = _supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
-  _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord* volatile*) -1;
+  _supports_inline_contig_alloc = false;
+  _heap_end_addr = (HeapWord**) -1;
+  _heap_top_addr = (HeapWord* volatile*) -1;
 
   _max_oop_map_stack_offset = (OopMapValue::register_mask - VMRegImpl::stack2reg(0)->value()) * VMRegImpl::stack_slot_size;
   int max_oop_map_stack_index = _max_oop_map_stack_offset / VMRegImpl::stack_slot_size;
@@ -133,12 +135,14 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   _fields_annotations_base_offset = Array<AnnotationArray*>::base_offset_in_bytes();
 
+  data_section_item_alignment = relocInfo::addr_unit();
+
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     CardTable::CardValue* base = ci_card_table_address();
     assert(base != NULL, "unexpected byte_map_base");
     cardtable_start_address = base;
-    cardtable_shift = CardTable::card_shift;
+    cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
     cardtable_start_address = 0;
@@ -194,7 +198,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   return vmIntrinsics;
 }
 
-#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_intx_flag, do_uintx_flag) \
+#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
   do_intx_flag(AllocateInstancePrefetchLines)                              \
   do_intx_flag(AllocatePrefetchDistance)                                   \
   do_intx_flag(AllocatePrefetchInstr)                                      \
@@ -218,7 +222,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_intx_flag(JVMCICounterSize)                                           \
   do_bool_flag(JVMCIPrintProperties)                                       \
   do_bool_flag(JVMCIUseFastLocking)                                        \
-  do_intx_flag(ObjectAlignmentInBytes)                                     \
+  do_int_flag(ObjectAlignmentInBytes)                                      \
   do_bool_flag(PrintInlining)                                              \
   do_bool_flag(ReduceInitialCardMarks)                                     \
   do_bool_flag(RestrictContended)                                          \
@@ -393,14 +397,15 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JVMCIENV->put_object_at(vmFlags, i++, vmFlagObj);                                    \
 }
 #define ADD_BOOL_FLAG(name)  ADD_FLAG(bool, name, BOXED_BOOLEAN)
+#define ADD_INT_FLAG(name)   ADD_FLAG(int, name, BOXED_LONG)
 #define ADD_INTX_FLAG(name)  ADD_FLAG(intx, name, BOXED_LONG)
 #define ADD_UINTX_FLAG(name) ADD_FLAG(uintx, name, BOXED_LONG)
 
-  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
+  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
   JVMCIObjectArray vmFlags = JVMCIENV->new_VMFlag_array(len, JVMCI_CHECK_NULL);
   int i = 0;
   JVMCIObject value;
-  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
+  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
 
   JVMCIObjectArray vmIntrinsics = CompilerToVM::initialize_intrinsics(JVMCI_CHECK_NULL);
 

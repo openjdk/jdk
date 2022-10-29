@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,7 +432,7 @@ void FpuStackAllocator::do_push(LIR_Opr opr) {
 }
 
 void FpuStackAllocator::pop_if_last_use(LIR_Op* op, LIR_Opr opr) {
-  assert(op->fpu_pop_count() == 0, "fpu_pop_count alredy set");
+  assert(op->fpu_pop_count() == 0, "fpu_pop_count already set");
   assert(tos_offset(opr) == 0, "can only pop stack top");
 
   if (opr->is_last_use()) {
@@ -442,7 +442,7 @@ void FpuStackAllocator::pop_if_last_use(LIR_Op* op, LIR_Opr opr) {
 }
 
 void FpuStackAllocator::pop_always(LIR_Op* op, LIR_Opr opr) {
-  assert(op->fpu_pop_count() == 0, "fpu_pop_count alredy set");
+  assert(op->fpu_pop_count() == 0, "fpu_pop_count already set");
   assert(tos_offset(opr) == 0, "can only pop stack top");
 
   op->set_fpu_pop_count(1);
@@ -597,7 +597,7 @@ void FpuStackAllocator::handle_op1(LIR_Op1* op1) {
             insert_exchange(in);
             new_in = to_fpu_stack_top(in);
 
-            // TODO: update registes of stub
+            // TODO: update registers of stub
           }
           break;
 
@@ -699,7 +699,7 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
         insert_exchange(left);
         new_left = to_fpu_stack_top(left);
       } else {
-        // no exchange necessary if right is alredy on top of stack
+        // no exchange necessary if right is already on top of stack
         if (tos_offset(right) == 0) {
           new_left = to_fpu_stack(left);
           new_right = to_fpu_stack_top(right);
@@ -790,7 +790,7 @@ void FpuStackAllocator::handle_opCall(LIR_OpCall* opCall) {
   LIR_Opr res = opCall->result_opr();
 
   // clear fpu-stack before call
-  // it may contain dead values that could not have been remved by previous operations
+  // it may contain dead values that could not have been removed by previous operations
   clear_fpu_stack(LIR_OprFact::illegalOpr);
   assert(sim()->is_empty(), "fpu stack must be empty now");
 
@@ -930,7 +930,7 @@ void FpuStackAllocator::merge_fpu_stack(LIR_List* instrs, FpuStackSim* cur_sim, 
   assert(size_diff == cur_sim->stack_size() - sux_sim->stack_size(), "must be");
 
   // stack merge algorithm:
-  // 1) as long as the current stack top is not in the right location (that meens
+  // 1) as long as the current stack top is not in the right location (that means
   //    it should not be on the stack top), exchange it into the right location
   // 2) if the stack top is right, but the remaining stack is not ordered correctly,
   //    the stack top is exchanged away to get another value on top ->

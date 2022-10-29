@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,24 +34,20 @@ import java.io.File;
  * @summary Test that StringConcat is working for JDK >= 9
  * @modules jdk.jdeps/com.sun.tools.classfile
  *
- * @clean TestIndyStringConcat*
- * @compile -source 7 -target 7 TestIndyStringConcat.java
- * @run main TestIndyStringConcat false
- *
- * @clean TestIndyStringConcat*
+ * @clean *
  * @compile -source 8 -target 8 TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *
- * @clean TestIndyStringConcat*
- * @compile -XDstringConcat=inline -source 9 -target 9 TestIndyStringConcat.java
+ * @clean *
+ * @compile -XDstringConcat=inline TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *
- * @clean TestIndyStringConcat*
- * @compile -XDstringConcat=indy -source 9 -target 9 TestIndyStringConcat.java
+ * @clean *
+ * @compile -XDstringConcat=indy TestIndyStringConcat.java
  * @run main TestIndyStringConcat true
  *
- * @clean TestIndyStringConcat*
- * @compile -XDstringConcat=indyWithConstants -source 9 -target 9 TestIndyStringConcat.java
+ * @clean *
+ * @compile -XDstringConcat=indyWithConstants TestIndyStringConcat.java
  * @run main TestIndyStringConcat true
  */
 public class TestIndyStringConcat {

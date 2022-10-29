@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
@@ -32,11 +34,10 @@
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/safepoint.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
-#include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {
  public:
@@ -101,26 +102,34 @@ void JfrTypeManager::write_threads(JfrCheckpointWriter& writer) {
   serialize_thread_groups(writer);
 }
 
-void JfrTypeManager::create_thread_blob(Thread* t) {
-  assert(t != NULL, "invariant");
-  ResourceMark rm(t);
-  HandleMark hm(t);
-  JfrThreadConstant type_thread(t);
-  JfrCheckpointWriter writer(t, true, THREADS, false);
+JfrBlobHandle JfrTypeManager::create_thread_blob(JavaThread* jt, traceid tid /* 0 */, oop vthread /* nullptr */) {
+  assert(jt != NULL, "invariant");
+  ResourceMark rm(jt);
+  JfrCheckpointWriter writer(jt, true, THREADS, JFR_THREADLOCAL); // Thread local lease for blob creation.
+  // TYPE_THREAD and count is written unconditionally for blobs, also for vthreads.
   writer.write_type(TYPE_THREAD);
+  writer.write_count(1);
+  JfrThreadConstant type_thread(jt, tid, vthread);
   type_thread.serialize(writer);
-  // create and install a checkpoint blob
-  t->jfr_thread_local()->set_thread_blob(writer.move());
-  assert(t->jfr_thread_local()->has_thread_blob(), "invariant");
+  return writer.move();
 }
 
-void JfrTypeManager::write_thread_checkpoint(Thread* t) {
+void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthread /* nullptr */) {
   assert(t != NULL, "invariant");
-  if (!t->jfr_thread_local()->has_thread_blob()) {
-    create_thread_blob(t);
+  Thread* const current = Thread::current(); // not necessarily the same as t
+  assert(current != NULL, "invariant");
+  const bool is_vthread = vthread != nullptr;
+  ResourceMark rm(current);
+  JfrCheckpointWriter writer(current, true, THREADS, is_vthread ? JFR_VIRTUAL_THREADLOCAL : JFR_THREADLOCAL);
+  if (is_vthread) {
+    // TYPE_THREAD and count is written later as part of vthread bulk serialization.
+    writer.set_count(1); // Only a logical marker for the checkpoint header.
+  } else {
+    writer.write_type(TYPE_THREAD);
+    writer.write_count(1);
   }
-  JfrCheckpointWriter writer(t, false, THREADS, false);
-  t->jfr_thread_local()->thread_blob()->write(writer);
+  JfrThreadConstant type_thread(t, tid, vthread);
+  type_thread.serialize(writer);
 }
 
 class SerializerRegistrationGuard : public StackObj {
@@ -194,10 +203,20 @@ static bool register_static_type(JfrTypeId id, bool permit_cache, JfrSerializer*
   assert(!types.in_list(registration), "invariant");
   DEBUG_ONLY(assert_not_registered_twice(id, types);)
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointWriter writer(STATICS);
+    JfrCheckpointWriter writer(Thread::current(), true, STATICS);
     registration->invoke(writer);
   }
   types.add(registration);
+  return true;
+}
+
+// This klass is explicitly loaded to ensure the thread group for virtual threads is available.
+static bool load_thread_constants(TRAPS) {
+  Symbol* const thread_constants_sym = vmSymbols::java_lang_Thread_Constants();
+  assert(thread_constants_sym != nullptr, "invariant");
+  Klass* const k_thread_constants = SystemDictionary::resolve_or_fail(thread_constants_sym, false, CHECK_false);
+  assert(k_thread_constants != nullptr, "invariant");
+  k_thread_constants->initialize(THREAD);
   return true;
 }
 
@@ -218,7 +237,7 @@ bool JfrTypeManager::initialize() {
   register_static_type(TYPE_THREADSTATE, true, new ThreadStateConstant());
   register_static_type(TYPE_BYTECODE, true, new BytecodeConstant());
   register_static_type(TYPE_COMPILERTYPE, true, new CompilerTypeConstant());
-  return true;
+  return load_thread_constants(JavaThread::current());
 }
 
 // implementation for the static registration function exposed in the JfrSerializer api

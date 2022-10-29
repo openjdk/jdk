@@ -1,6 +1,7 @@
 [general]
 project=jdk
 jbs=JDK
+version=20
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists
@@ -14,7 +15,7 @@ version=0
 domain=openjdk.org
 
 [checks "whitespace"]
-files=.*\.cpp|.*\.hpp|.*\.c|.*\.h|.*\.java|.*\.cc|.*\.hh|.*\.m|.*\.mm|.*\.gmk|.*\.m4|.*\.ac|Makefile
+files=.*\.cpp|.*\.hpp|.*\.c|.*\.h|.*\.java|.*\.cc|.*\.hh|.*\.m|.*\.mm|.*\.md|.*\.gmk|.*\.m4|.*\.ac|Makefile
 ignore-tabs=.*\.gmk|Makefile
 
 [checks "merge"]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850 8182765 8223607 8261976
+ * @bug 8157000 8192850 8182765 8223607 8261976 8281376
  * @summary  test the behavior of --override-methods option
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -568,5 +568,94 @@ public class TestOverrideMethods  extends JavadocTester {
                     <dt>Returns:</dt>
                     <dd>something</dd>
                     </dl>""");
+    }
+
+    @Test
+    public void testPolymorphicDetail() {
+        javadoc("-d", "out-polymorphic-detail",
+                "-sourcepath", testSrc,
+                "--override-methods=detail",
+                "pkg8");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m2()">m2</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m3()">m3</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+    }
+
+    @Test // results should be the same as that of "detail"
+    public void testPolymorphicDefault() {
+        javadoc("-d", "out-polymorphic-default",
+                "-sourcepath", testSrc,
+                "pkg8");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m2()">m2</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m3()">m3</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+    }
+
+    @Test
+    public void testPolymorphicSummary() {
+        javadoc("-d", "out-polymorphic-summary",
+                "-sourcepath", testSrc,
+                "--override-methods=summary",
+                "pkg8");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="GP.html" title="class in pkg8">GP</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m2()">m2</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="GP.html" title="class in pkg8">GP</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m3()">m3</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="GP.html" title="class in pkg8">GP</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", false,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
     }
 }

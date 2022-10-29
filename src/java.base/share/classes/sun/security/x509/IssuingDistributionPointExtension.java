@@ -46,7 +46,7 @@ import sun.security.util.DerValue;
  *
  * <p>
  * The extension is defined in Section 5.2.5 of
- * <a href="http://tools.ietf.org/html/rfc5280">Internet X.509 PKI
+ * <a href="https://tools.ietf.org/html/rfc5280">Internet X.509 PKI
  * Certificate and Certificate Revocation List (CRL) Profile</a>.
  *
  * <p>
@@ -187,7 +187,7 @@ public class IssuingDistributionPointExtension extends Extension
         }
 
         DerInputStream in = val.data;
-        while (in != null && in.available() != 0) {
+        while (in.available() != 0) {
             DerValue opt = in.getDerValue();
 
             if (opt.isContextSpecific(TAG_DISTRIBUTION_POINT) &&

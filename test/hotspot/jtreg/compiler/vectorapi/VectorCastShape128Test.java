@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,9 @@ public class VectorCastShape128Test {
         0,
         Long.MAX_VALUE,
         Long.MIN_VALUE,
+        // A special value to make sure correct rounding of
+        // conversion from long to float. See: JDK-8282764.
+        0x561a524000000001L,
     };
 
 

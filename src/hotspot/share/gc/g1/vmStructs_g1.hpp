@@ -41,7 +41,6 @@
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
-  nonstatic_field(HeapRegion, _compaction_top, HeapWord*)                     \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,17 +167,18 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
             String sval1 = ((StringValueExp)val1).getValue();
             String sval2 = ((StringValueExp)val2).getValue();
 
+            int cmp = sval1.compareTo(sval2);
             switch (relOp) {
             case Query.GT:
-                return sval1.compareTo(sval2) > 0;
+                return cmp > 0;
             case Query.LT:
-                return sval1.compareTo(sval2) < 0;
+                return cmp < 0;
             case Query.GE:
-                return sval1.compareTo(sval2) >= 0;
+                return cmp >= 0;
             case Query.LE:
-                return sval1.compareTo(sval2) <= 0;
+                return cmp <= 0;
             case Query.EQ:
-                return sval1.compareTo(sval2) == 0;
+                return cmp == 0;
             }
         }
 

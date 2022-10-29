@@ -38,7 +38,7 @@ public class BogusColorSpace extends ColorSpace {
      *
      * @param numComponents The number of components in the
      * {@code ColorSpace}.
-     * @exception IllegalArgumentException if {@code numComponents}
+     * @throws IllegalArgumentException if {@code numComponents}
      * is less than 1.
      */
     private static int getType(int numComponents) {
@@ -66,7 +66,7 @@ public class BogusColorSpace extends ColorSpace {
      *
      * @param numComponents The number of components in the
      * {@code ColorSpace}.
-     * @exception IllegalArgumentException if {@code numComponents}
+     * @throws IllegalArgumentException if {@code numComponents}
      * is less than 1.
      */
     public BogusColorSpace(int numComponents) {

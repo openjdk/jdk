@@ -411,7 +411,7 @@ public class StyledEditorKit extends DefaultEditorKit {
          *
          * @param e the editor
          * @return the document
-         * @exception IllegalArgumentException for the wrong document type
+         * @throws IllegalArgumentException for the wrong document type
          */
         protected final StyledDocument getStyledDocument(JEditorPane e) {
             Document d = e.getDocument();
@@ -426,7 +426,7 @@ public class StyledEditorKit extends DefaultEditorKit {
          *
          * @param e the editor pane
          * @return the kit
-         * @exception IllegalArgumentException for the wrong document type
+         * @throws IllegalArgumentException for the wrong document type
          */
         protected final StyledEditorKit getStyledEditorKit(JEditorPane e) {
             EditorKit k = e.getEditorKit();

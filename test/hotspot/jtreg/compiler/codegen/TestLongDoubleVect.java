@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public class TestLongDoubleVect {
       test_vi_unaln(a1, b1, (long)123, 103.);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_l2d(a1, b1);
+      test_conv_d2l(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,6 +340,72 @@ public class TestLongDoubleVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (long)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (double)v);
       }
+      // Reset to test conversion from int to float.
+      for (int i=0; i<ARRLEN; i++) {
+        a1[i] = (long)i;
+      }
+      test_conv_l2d(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_l2d: a1", i, b1[i], (double)i);
+      }
+      // Reset to test conversion from float to int.
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = (double)(i+1);
+      }
+      test_conv_d2l(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_d2l: a1", i, a1[i], (long)(i+1));
+      }
+      // Reset to test special conversion from int to float.
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = Double.NaN;
+      }
+      test_conv_d2l(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_d2l: a1", i, a1[i], (long)Double.NaN);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        a1[i] = Long.MIN_VALUE;
+      }
+      test_conv_l2d(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_l2d: a1", i, b1[i], (double)Long.MIN_VALUE);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        a1[i] = Long.MAX_VALUE;
+      }
+      test_conv_l2d(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_l2d: a1", i, b1[i], (double)Long.MAX_VALUE);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = Double.POSITIVE_INFINITY;
+      }
+      test_conv_d2l(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_d2l: a1", i, a1[i], (long)Double.POSITIVE_INFINITY);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = Double.NEGATIVE_INFINITY;
+      }
+      test_conv_d2l(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_d2l: a1", i, a1[i], (long)Double.NEGATIVE_INFINITY);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = 0.0;
+      }
+      test_conv_d2l(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_d2l: a1", i, a1[i], (long)0.0);
+      }
+      for (int i=0; i<ARRLEN; i++) {
+        b1[i] = -0.0;
+      }
+      test_conv_d2l(a1, b1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_conv_d2l: a1", i, a1[i], (long)(-0.0));
+      }
 
     }
 
@@ -448,6 +516,18 @@ public class TestLongDoubleVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_conv_l2d(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_l2d: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_conv_d2l(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_d2l: " + (end - start));
     return errn;
   }
 
@@ -556,6 +636,16 @@ public class TestLongDoubleVect {
       c[i] = d[i+UNALIGN_OFF];
     }
   }
+  static void test_conv_l2d(long[] a, double[] b){
+    for (int i = 0; i < a.length; i+=1) {
+      b[i] = (double)a[i];
+    }
+  }
+  static void test_conv_d2l(long[] a, double[] b){
+    for (int i = 0; i < a.length; i+=1) {
+      a[i] = (long)b[i];
+    }
+  }
 
   static int verify(String text, int i, long elem, long val) {
     if (elem != val) {
@@ -565,7 +655,7 @@ public class TestLongDoubleVect {
     return 0;
   }
   static int verify(String text, int i, double elem, double val) {
-    if (elem != val) {
+    if (elem != val && !(Double.isNaN(elem) && Double.isNaN(val))) {
       System.err.println(text + "[" + i + "] = " + elem + " != " + val);
       return 1;
     }

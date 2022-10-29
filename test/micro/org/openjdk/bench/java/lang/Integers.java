@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,18 +52,25 @@ public class Integers {
     @Param("500")
     private int size;
 
+    private int bound;
     private String[] strings;
+    private int[] intsTiny;
     private int[] intsSmall;
     private int[] intsBig;
+    private int[] res;
 
     @Setup
     public void setup() {
-        Random r = new Random(0);
-        strings = new String[size];
+        Random r  = new Random(0);
+        bound = 50;
+        strings   = new String[size];
+        intsTiny  = new int[size];
         intsSmall = new int[size];
-        intsBig = new int[size];
+        intsBig   = new int[size];
+        res       = new int[size];
         for (int i = 0; i < size; i++) {
             strings[i] = "" + (r.nextInt(10000) - (5000));
+            intsTiny[i] = r.nextInt(99);
             intsSmall[i] = 100 * i + i + 103;
             intsBig[i] = ((100 * i + i) << 24) + 4543 + i * 4;
         }
@@ -91,11 +98,86 @@ public class Integers {
         }
     }
 
+    /** Performs toString on very small values, just one or two digits. */
+    @Benchmark
+    public void toStringTiny(Blackhole bh) {
+        for (int i : intsTiny) {
+            bh.consume(Integer.toString(i));
+        }
+    }
+
     /** Performs toString on large values, roughly 10 digits. */
     @Benchmark
     public void toStringBig(Blackhole bh) {
         for (int i : intsBig) {
             bh.consume(Integer.toString(i));
+        }
+    }
+
+    /** Performs expand on small values */
+    @Benchmark
+    public void expand(Blackhole bh) {
+        for (int i : intsSmall) {
+            bh.consume(Integer.expand(i, 0xFF00F0F0));
+        }
+    }
+
+    /** Performs compress on large values */
+    @Benchmark
+    public void compress(Blackhole bh) {
+        for (int i : intsBig) {
+            bh.consume(Integer.compress(i, 0x000F0F1F));
+        }
+    }
+
+    @Benchmark
+    public void shiftRight(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            bh.consume(intsBig[i] >> intsSmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void shiftURight(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            bh.consume(intsBig[i] >>> intsSmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void shiftLeft(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            bh.consume(intsBig[i] << intsSmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void compareUnsignedIndirect(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            int r = (Integer.compareUnsigned(intsSmall[i], bound - 16) < 0) ? 1 : 0;
+            bh.consume(r);
+        }
+    }
+
+    @Benchmark
+    public void compareUnsignedDirect(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            int r = Integer.compareUnsigned(intsSmall[i], bound - 16);
+            bh.consume(r);
+        }
+    }
+
+    @Benchmark
+    public void reverseBytes() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Integer.reverseBytes(intsSmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void reverse() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Integer.reverse(intsSmall[i]);
         }
     }
 }

@@ -7,7 +7,7 @@ EmptyDescriptionTest.java:17: warning: no comment
 EmptyDescriptionTest.java:21: warning: empty comment
     public int f2;
                ^
-EmptyDescriptionTest.java:25: warning: no initial description
+EmptyDescriptionTest.java:25: warning: no main description
      * @since 1.0
        ^
 EmptyDescriptionTest.java:36: warning: no comment
@@ -16,7 +16,7 @@ EmptyDescriptionTest.java:36: warning: no comment
 EmptyDescriptionTest.java:40: warning: empty comment
     public int m2() { return 0; }
                ^
-EmptyDescriptionTest.java:44: warning: no initial description
+EmptyDescriptionTest.java:44: warning: no main description
      * @return 0
        ^
 7 warnings

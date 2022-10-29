@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import static jdk.jpackage.test.Functional.ThrowingFunction.toFunction;
 
-public final class AdditionalLauncher {
+public class AdditionalLauncher {
 
     public AdditionalLauncher(String name) {
         this.name = name;
@@ -43,12 +48,12 @@ public final class AdditionalLauncher {
         setPersistenceHandler(null);
     }
 
-    public AdditionalLauncher setDefaultArguments(String... v) {
+    final public AdditionalLauncher setDefaultArguments(String... v) {
         defaultArguments = new ArrayList<>(List.of(v));
         return this;
     }
 
-    public AdditionalLauncher addDefaultArguments(String... v) {
+    final public AdditionalLauncher addDefaultArguments(String... v) {
         if (defaultArguments == null) {
             return setDefaultArguments(v);
         }
@@ -57,12 +62,12 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher setJavaOptions(String... v) {
+    final public AdditionalLauncher setJavaOptions(String... v) {
         javaOptions = new ArrayList<>(List.of(v));
         return this;
     }
 
-    public AdditionalLauncher addJavaOptions(String... v) {
+    final public AdditionalLauncher addJavaOptions(String... v) {
         if (javaOptions == null) {
             return setJavaOptions(v);
         }
@@ -71,23 +76,40 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher addRawProperties(Map.Entry<String, String>... v) {
+    final public AdditionalLauncher setLauncherAsService() {
+        return addRawProperties(LAUNCHER_AS_SERVICE);
+    }
+
+    final public AdditionalLauncher addRawProperties(
+            Map.Entry<String, String>... v) {
         return addRawProperties(List.of(v));
     }
 
-    public AdditionalLauncher addRawProperties(
+    final public AdditionalLauncher addRawProperties(
             Collection<Map.Entry<String, String>> v) {
         rawProperties.addAll(v);
         return this;
     }
 
-    public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
+    final public String getRawPropertyValue(
+            String key, Supplier<String> getDefault) {
+        return rawProperties.stream()
+                .filter(item -> item.getKey().equals(key))
+                .map(e -> e.getValue()).findAny().orElseGet(getDefault);
+    }
+
+    private String getDesciption(JPackageCommand cmd) {
+        return getRawPropertyValue("description", () -> cmd.getArgumentValue(
+                "--description", unused -> cmd.name()));
+    }
+
+    final public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
         withMenuShortcut = menu;
         withShortcut = shortcut;
         return this;
     }
 
-    public AdditionalLauncher setIcon(Path iconPath) {
+    final public AdditionalLauncher setIcon(Path iconPath) {
         if (iconPath == NO_ICON) {
             throw new IllegalArgumentException();
         }
@@ -96,12 +118,12 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public AdditionalLauncher setNoIcon() {
+    final public AdditionalLauncher setNoIcon() {
         icon = NO_ICON;
         return this;
     }
 
-    public AdditionalLauncher setPersistenceHandler(
+    final public AdditionalLauncher setPersistenceHandler(
             ThrowingBiConsumer<Path, List<Map.Entry<String, String>>> handler) {
         if (handler != null) {
             createFileHandler = ThrowingBiConsumer.toBiConsumer(handler);
@@ -111,19 +133,53 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public void applyTo(JPackageCommand cmd) {
+    final public void applyTo(JPackageCommand cmd) {
         cmd.addPrerequisiteAction(this::initialize);
         cmd.addVerifyAction(this::verify);
     }
 
-    public void applyTo(PackageTest test) {
-        test.addLauncherName(name);
+    final public void applyTo(PackageTest test) {
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
     }
 
+    static void forEachAdditionalLauncher(JPackageCommand cmd,
+            BiConsumer<String, Path> consumer) {
+        var argIt = cmd.getAllArguments().iterator();
+        while (argIt.hasNext()) {
+            if ("--add-launcher".equals(argIt.next())) {
+                // <launcherName>=<propFile>
+                var arg = argIt.next();
+                var items = arg.split("=", 2);
+                consumer.accept(items[0], Path.of(items[1]));
+            }
+        }
+    }
+
+    static PropertyFile getAdditionalLauncherProperties(
+            JPackageCommand cmd, String launcherName) {
+        PropertyFile shell[] = new PropertyFile[1];
+        forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
+            if (name.equals(launcherName)) {
+                shell[0] = toFunction(PropertyFile::new).apply(
+                        propertiesFilePath);
+            }
+        });
+        return Optional.of(shell[0]).get();
+    }
+
     private void initialize(JPackageCommand cmd) {
-        final Path propsFile = TKit.workDir().resolve(name + ".properties");
+        Path propsFile = TKit.workDir().resolve(name + ".properties");
+        if (Files.exists(propsFile)) {
+            // File with the given name exists, pick another name that
+            // will not reference existing file.
+            try {
+                propsFile = TKit.createTempFile(propsFile);
+                TKit.deleteIfExists(propsFile);
+            } catch (IOException ex) {
+                Functional.rethrowUnchecked(ex);
+            }
+        }
 
         cmd.addArguments("--add-launcher", String.format("%s=%s", name,
                     propsFile));
@@ -242,9 +298,30 @@ public final class AdditionalLauncher {
         }
     }
 
-    private void verify(JPackageCommand cmd) throws IOException {
+    private void verifyDescription(JPackageCommand cmd) throws IOException {
+        if (TKit.isWindows()) {
+            String expectedDescription = getDesciption(cmd);
+            Path launcherPath = cmd.appLauncherPath(name);
+            String actualDescription =
+                    WindowsHelper.getExecutableDesciption(launcherPath);
+            TKit.assertEquals(expectedDescription, actualDescription,
+                    String.format("Check file description of [%s]", launcherPath));
+        } else if (TKit.isLinux() && !cmd.isImagePackageType()) {
+            String expectedDescription = getDesciption(cmd);
+            Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
+            if (Files.exists(desktopFile)) {
+                TKit.assertTextStream("Comment=" + expectedDescription)
+                        .label(String.format("[%s] file", desktopFile))
+                        .predicate(String::equals)
+                        .apply(Files.readAllLines(desktopFile).stream());
+            }
+        }
+    }
+
+    protected void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
         verifyShortcuts(cmd);
+        verifyDescription(cmd);
 
         Path launcherPath = cmd.appLauncherPath(name);
 
@@ -255,14 +332,66 @@ public final class AdditionalLauncher {
             return;
         }
 
-        HelloApp.assertApp(launcherPath)
-        .addDefaultArguments(Optional
-                .ofNullable(defaultArguments)
-                .orElseGet(() -> List.of(cmd.getAllArgumentValues("--arguments"))))
-        .addJavaOptions(Optional
-                .ofNullable(javaOptions)
-                .orElseGet(() -> List.of(cmd.getAllArgumentValues("--java-options"))))
-        .executeAndVerifyOutput();
+        var appVerifier = HelloApp.assertApp(launcherPath)
+                .addDefaultArguments(Optional
+                        .ofNullable(defaultArguments)
+                        .orElseGet(() -> List.of(cmd.getAllArgumentValues("--arguments"))))
+                .addJavaOptions(Optional
+                        .ofNullable(javaOptions)
+                        .orElseGet(() -> List.of(cmd.getAllArgumentValues(
+                        "--java-options"))).stream().map(
+                        str -> resolveVariables(cmd, str)).toList());
+
+        if (!rawProperties.contains(LAUNCHER_AS_SERVICE)) {
+            appVerifier.executeAndVerifyOutput();
+        } else if (!cmd.isPackageUnpacked(String.format(
+                "Not verifying contents of test output file for [%s] launcher",
+                launcherPath))) {
+            appVerifier.verifyOutput();
+        }
+    }
+
+    public static final class PropertyFile {
+
+        PropertyFile(Path path) throws IOException {
+            data = Files.readAllLines(path).stream().map(str -> {
+                return str.split("=", 2);
+            }).collect(
+                    Collectors.toMap(tokens -> tokens[0], tokens -> tokens[1],
+                            (oldValue, newValue) -> {
+                                return newValue;
+                            }));
+        }
+
+        public boolean isPropertySet(String name) {
+            Objects.requireNonNull(name);
+            return data.containsKey(name);
+        }
+
+        public Optional<String> getPropertyValue(String name) {
+            Objects.requireNonNull(name);
+            return Optional.of(data.get(name));
+        }
+
+        public Optional<Boolean> getPropertyBooleanValue(String name) {
+            Objects.requireNonNull(name);
+            return Optional.ofNullable(data.get(name)).map(Boolean::parseBoolean);
+        }
+
+        private final Map<String, String> data;
+    }
+
+    private static String resolveVariables(JPackageCommand cmd, String str) {
+        var map = Map.of(
+                "$APPDIR", cmd.appLayout().appDirectory(),
+                "$ROOTDIR",
+                cmd.isImagePackageType() ? cmd.outputBundle() : cmd.appInstallationDirectory(),
+                "$BINDIR", cmd.appLayout().launchersDirectory());
+        for (var e : map.entrySet()) {
+            str = str.replaceAll(Pattern.quote(e.getKey()),
+                    Matcher.quoteReplacement(e.getValue().toString()));
+        }
+        return str;
     }
 
     private List<String> javaOptions;
@@ -275,4 +404,6 @@ public final class AdditionalLauncher {
     private Boolean withShortcut;
 
     private final static Path NO_ICON = Path.of("");
+    private final static Map.Entry<String, String> LAUNCHER_AS_SERVICE = Map.entry(
+            "launcher-as-service", "true");
 }

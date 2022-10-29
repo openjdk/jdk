@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,11 @@
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
 
 class ShenandoahThreadLocalData {
-public:
-  static const uint INVALID_WORKER_ID = uint(-1);
-
 private:
   char _gc_state;
   // Evacuation OOM state
@@ -47,8 +44,6 @@ private:
   SATBMarkQueue           _satb_mark_queue;
   PLAB* _gclab;
   size_t _gclab_size;
-  uint  _worker_id;
-  int  _disarmed_value;
   double _paced_time;
 
   ShenandoahThreadLocalData() :
@@ -58,13 +53,7 @@ private:
     _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
     _gclab(NULL),
     _gclab_size(0),
-    _worker_id(INVALID_WORKER_ID),
-    _disarmed_value(0),
     _paced_time(0) {
-
-    // At least on x86_64, nmethod entry barrier encodes _disarmed_value offset
-    // in instruction as disp8 immed
-    assert(in_bytes(disarmed_value_offset()) < 128, "Offset range check");
   }
 
   ~ShenandoahThreadLocalData() {
@@ -103,16 +92,6 @@ public:
     return data(thread)->_gc_state;
   }
 
-  static void set_worker_id(Thread* thread, uint id) {
-    assert(thread->is_Worker_thread(), "Must be a worker thread");
-    data(thread)->_worker_id = id;
-  }
-
-  static uint worker_id(Thread* thread) {
-    assert(thread->is_Worker_thread(), "Must be a worker thread");
-    return data(thread)->_worker_id;
-  }
-
   static void initialize_gclab(Thread* thread) {
     assert (thread->is_Java_thread() || thread->is_Worker_thread(), "Only Java and GC worker threads are allowed to get GCLABs");
     assert(data(thread)->_gclab == NULL, "Only initialize once");
@@ -142,10 +121,6 @@ public:
 
   static void reset_paced_time(Thread* thread) {
     data(thread)->_paced_time = 0;
-  }
-
-  static void set_disarmed_value(Thread* thread, int value) {
-    data(thread)->_disarmed_value = value;
   }
 
   // Evacuation OOM handling
@@ -196,10 +171,6 @@ public:
 
   static ByteSize gc_state_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
-  }
-
-  static ByteSize disarmed_value_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _disarmed_value);
   }
 };
 

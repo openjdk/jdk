@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,8 @@ class JfrBuffer {
 
  public:
   JfrBuffer();
-  bool initialize(size_t header_size, size_t size);
-  void reinitialize(bool exclusion = false);
+  void initialize(size_t header_size, size_t size);
+  void reinitialize();
 
   const u1* start() const {
     return ((const u1*)this) + _header_size;
@@ -169,10 +169,6 @@ class JfrBuffer {
   bool retired() const;
   void set_retired();
   void clear_retired();
-
-  bool excluded() const;
-  void set_excluded();
-  void clear_excluded();
 
   u1 context() const;
   void set_context(u1 context);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,6 +600,18 @@ public class DocCommentTester {
             }
 
             @Override
+            public Void visitSpec(SpecTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("url", node.getURL());
+                print("title", node.getTitle());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
+            @Override
             public Void visitSnippet(SnippetTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -699,6 +711,7 @@ public class DocCommentTester {
             public Void visitValue(ValueTree node, Void p) {
                 header(node);
                 indent(+1);
+                print("format", node.getFormat());
                 print("reference", node.getReference());
                 indent(-1);
                 indent();
@@ -727,7 +740,9 @@ public class DocCommentTester {
              */
             void header(DocTree node) {
                 indent();
-                out.println(simpleClassName(node) + "[" + node.getKind() + ", pos:" + ((DCTree) node).pos);
+                var n = (DCTree) node;
+                out.println(simpleClassName(node) + "[" + node.getKind() + ", pos:" + n.pos +
+                        (n.getPreferredPosition() != n.pos ? ", prefPos:" + n.getPreferredPosition() : ""));
             }
 
             /*

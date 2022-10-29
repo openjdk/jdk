@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // type of TaskQueue.
   RegionTaskQueue              _region_stack;
 
+  GrowableArray<HeapWord*>*    _deferred_obj_array;
+
   static ParMarkBitMap* _mark_bitmap;
 
   // Contains currently free shadow regions. We use it in
@@ -97,6 +99,12 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static void initialize(ParMarkBitMap* mbm);
 
+  void publish_and_drain_oop_tasks();
+  // Try to publish all contents from the objArray task queue overflow stack to
+  // the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise returns false and the task is invalid.
+  bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
@@ -121,6 +129,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
     _next_shadow_region += workers;
     return next_shadow_region();
   }
+
+  void push_deferred_object(HeapWord* addr);
 
   void reset_bitmap_query_cache() {
     _last_query_beg = NULL;
@@ -147,7 +157,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   RegionTaskQueue* region_stack()                { return &_region_stack; }
 
-  static ParCompactionManager* get_vmthread_cm() { return _manager_array[ParallelGCThreads]; }
+  // Get the compaction manager when doing evacuation work from the VM thread.
+  // Simply use the first compaction manager here.
+  static ParCompactionManager* get_vmthread_cm() { return _manager_array[0]; }
 
   ParCompactionManager();
 
@@ -187,6 +199,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
+  void drain_deferred_objects();
 
   void follow_contents(oop obj);
   void follow_array(objArrayOop array, int index);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
 #include "oops/compiledICHolder.hpp"
 #include "runtime/atomic.hpp"
 
+#ifdef ASSERT
 volatile int CompiledICHolder::_live_count;
 volatile int CompiledICHolder::_live_not_claimed_count;
-
+#endif
 
 CompiledICHolder::CompiledICHolder(Metadata* metadata, Klass* klass, bool is_method)
   : _holder_metadata(metadata), _holder_klass(klass), _is_metadata_method(is_method) {

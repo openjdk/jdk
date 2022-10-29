@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #endif
 
 class nmethod;
-class nmethodLocker;
 
 // CompilerCounters
 //
@@ -108,7 +107,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   CompileTask* first()                           { return _first; }
   CompileTask* last()                            { return _last;  }
 
-  CompileTask* get();
+  CompileTask* get(CompilerThread* thread);
 
   bool         is_empty() const                  { return _first == NULL; }
   int          size()     const                  { return _size;          }
@@ -222,7 +221,7 @@ class CompileBroker: AllStatic {
   static int _sum_standard_bytes_compiled;
   static int _sum_nmethod_size;
   static int _sum_nmethod_code_size;
-  static long _peak_compilation_time;
+  static jlong _peak_compilation_time;
 
   static CompilerStatistics _stats_per_level[];
 
@@ -230,13 +229,12 @@ class CompileBroker: AllStatic {
 
   enum ThreadType {
     compiler_t,
-    sweeper_t,
     deoptimizer_t
   };
 
   static Handle create_thread_oop(const char* name, TRAPS);
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
-  static void init_compiler_sweeper_threads();
+  static void init_compiler_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
@@ -255,12 +253,10 @@ class CompileBroker: AllStatic {
 #endif
 
   static void invoke_compiler_on_method(CompileTask* task);
-  static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
-                           int compilable, const char* failure_reason);
+  static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
+                                   int compilable, const char* failure_reason);
   static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
 
-  static void push_jni_handle_block();
-  static void pop_jni_handle_block();
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
 
   static void compile_method_base(const methodHandle& method,
@@ -335,8 +331,8 @@ public:
     shutdown_compilation = 2
   };
 
-  static jint get_compilation_activity_mode() { return _should_compile_new_jobs; }
-  static bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
+  static inline jint get_compilation_activity_mode() { return _should_compile_new_jobs; }
+  static inline bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
   static bool set_should_compile_new_jobs(jint new_state) {
     // Return success if the current caller set it
     jint old = Atomic::cmpxchg(&_should_compile_new_jobs, 1-new_state, new_state);
@@ -360,7 +356,7 @@ public:
   static bool is_compilation_disabled_forever() {
     return _should_compile_new_jobs == shutdown_compilation;
   }
-  static void handle_full_code_cache(int code_blob_type);
+  static void handle_full_code_cache(CodeBlobType code_blob_type);
   // Ensures that warning is only printed once.
   static bool should_print_compiler_warning() {
     jint old = Atomic::cmpxchg(&_print_compilation_warning, 0, 1);
@@ -372,7 +368,7 @@ public:
   // Redefine Classes support
   static void mark_on_stack();
 
-  // Print curent compilation time stats for a given compiler
+  // Print current compilation time stats for a given compiler
   static void print_times(const char* name, CompilerStatistics* stats);
 
   // Print a detailed accounting of compilation time
@@ -413,8 +409,8 @@ public:
   static int get_sum_standard_bytes_compiled() {    return _sum_standard_bytes_compiled; }
   static int get_sum_nmethod_size() {               return _sum_nmethod_size;}
   static int get_sum_nmethod_code_size() {          return _sum_nmethod_code_size; }
-  static long get_peak_compilation_time() {         return _peak_compilation_time; }
-  static long get_total_compilation_time() {        return _t_total_compilation.milliseconds(); }
+  static jlong get_peak_compilation_time() {        return _peak_compilation_time; }
+  static jlong get_total_compilation_time() {       return _t_total_compilation.milliseconds(); }
 
   // Log that compilation profiling is skipped because metaspace is full.
   static void log_metaspace_failure();

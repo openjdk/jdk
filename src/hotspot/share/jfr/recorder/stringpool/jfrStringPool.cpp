@@ -36,8 +36,8 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 
 typedef JfrStringPool::BufferPtr BufferPtr;
 

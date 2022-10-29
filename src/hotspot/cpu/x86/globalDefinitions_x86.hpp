@@ -33,6 +33,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 #define CPU_MULTI_COPY_ATOMIC
 
 // The expected size in bytes of a cache line, used to pad data structures.
@@ -74,5 +76,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #else
 #define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 #endif
+
+#define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #endif // CPU_X86_GLOBALDEFINITIONS_X86_HPP

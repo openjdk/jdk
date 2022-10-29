@@ -1,0 +1,2 @@
+InstanceofTotalPattern.java:18:37: compiler.err.feature.not.supported.in.source: (compiler.misc.feature.pattern.matching.instanceof), 15, 16
+1 error

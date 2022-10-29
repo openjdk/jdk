@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +43,6 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -75,11 +74,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
  * Also do the error checking on the options used. For example it is illegal to
  * use "-helpfile" option when already "-nohelp" option is used.
  * </p>
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlConfiguration extends BaseConfiguration {
 
@@ -155,7 +149,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
     public enum ConditionalPage {
-        CONSTANT_VALUES, DEPRECATED, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
+        CONSTANT_VALUES, DEPRECATED, EXTERNAL_SPECS, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
     }
 
     /**
@@ -165,6 +159,11 @@ public class HtmlConfiguration extends BaseConfiguration {
      * to these files in the navigation par, on each page, the help file, and so on.
      */
     public final Set<ConditionalPage> conditionalPages;
+
+    /**
+     * The build date, to be recorded in generated files.
+     */
+    private ZonedDateTime buildDate;
 
     /**
      * Constructs the full configuration needed by the doclet, including
@@ -215,6 +214,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
     }
+
     protected void initConfiguration(DocletEnvironment docEnv,
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
@@ -223,7 +223,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     private final Runtime.Version docletVersion;
-    public final Date startTime = new Date();
 
     @Override
     public Runtime.Version getDocletVersion() {
@@ -259,6 +258,10 @@ public class HtmlConfiguration extends BaseConfiguration {
         if (!options.validateOptions()) {
             return false;
         }
+
+        ZonedDateTime zdt = options.date();
+        buildDate = zdt != null ? zdt : ZonedDateTime.now();
+
         if (!getSpecifiedTypeElements().isEmpty()) {
             Map<String, PackageElement> map = new HashMap<>();
             PackageElement pkg;
@@ -277,6 +280,13 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
+    }
+
+    /**
+     * {@return the date to be recorded in generated files}
+     */
+    public ZonedDateTime getBuildDate() {
+        return buildDate;
     }
 
     /**
@@ -389,16 +399,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     @Override
     public JavaFileManager getFileManager() {
         return docEnv.getJavaFileManager();
-    }
-
-    @Override
-    public boolean showMessage(DocTreePath path, String key) {
-        return (path == null || !haveDocLint());
-    }
-
-    @Override
-    public boolean showMessage(Element e, String key) {
-        return (e == null || !haveDocLint());
     }
 
     @Override

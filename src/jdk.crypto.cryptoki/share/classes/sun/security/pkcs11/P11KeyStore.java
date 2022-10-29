@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.security.spec.*;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.*;
 
+import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.callback.Callback;
@@ -231,6 +232,7 @@ final class P11KeyStore extends KeyStoreSpi {
         private PasswordCallbackHandler(char[] password) {
             if (password != null) {
                 this.password = password.clone();
+                P11Util.cleaner.register(this, releaserFor(this.password));
             }
         }
 
@@ -243,12 +245,10 @@ final class P11KeyStore extends KeyStoreSpi {
             pc.setPassword(password);  // this clones the password if not null
         }
 
-        @SuppressWarnings("deprecation")
-        protected void finalize() throws Throwable {
-            if (password != null) {
+        private static Runnable releaserFor(char[] password) {
+            return () -> {
                 Arrays.fill(password, ' ');
-            }
-            super.finalize();
+            };
         }
     }
 
@@ -455,7 +455,18 @@ final class P11KeyStore extends KeyStoreSpi {
         } catch (NullPointerException | IllegalArgumentException e) {
             throw new KeyStoreException(e);
         }
-        engineSetEntry(alias, entry, new KeyStore.PasswordProtection(password));
+
+        KeyStore.PasswordProtection passwordProtection =
+                new KeyStore.PasswordProtection(password);
+        try {
+            engineSetEntry(alias, entry, passwordProtection);
+        } finally {
+            try {
+                passwordProtection.destroy();
+            } catch (DestroyFailedException dfe) {
+                // ignore
+            }
+        }
     }
 
     /**
@@ -904,9 +915,8 @@ final class P11KeyStore extends KeyStoreSpi {
 
         token.ensureValid();
 
-        if (protParam != null &&
-            protParam instanceof KeyStore.PasswordProtection &&
-            ((KeyStore.PasswordProtection)protParam).getPassword() != null &&
+        if (protParam instanceof PasswordProtection pp &&
+            pp.getPassword() != null &&
             !token.config.getKeyStoreCompatibilityMode()) {
             throw new KeyStoreException("ProtectionParameter must be null");
         }
@@ -1007,9 +1017,8 @@ final class P11KeyStore extends KeyStoreSpi {
         token.ensureValid();
         checkWrite();
 
-        if (protParam != null &&
-            protParam instanceof KeyStore.PasswordProtection &&
-            ((KeyStore.PasswordProtection)protParam).getPassword() != null &&
+        if (protParam instanceof PasswordProtection pp &&
+            pp.getPassword() != null &&
             !token.config.getKeyStoreCompatibilityMode()) {
             throw new KeyStoreException(new UnsupportedOperationException
                                 ("ProtectionParameter must be null"));
@@ -1323,7 +1332,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 RSAKeyFactory.checkKeyLengths(keyLength, null,
                     -1, Integer.MAX_VALUE);
             } catch (InvalidKeyException e) {
-                throw new KeyStoreException(e.getMessage());
+                throw new KeyStoreException(e.getMessage(), e);
             }
 
             return P11Key.privateKey(session,
@@ -1435,7 +1444,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 throw new KeyStoreException
                         ("expected but could not find private key " +
                         "with CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             }
 
             // next find existing end entity cert
@@ -1445,7 +1454,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 throw new KeyStoreException
                         ("expected but could not find certificate " +
                         "with CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             } else {
                 if (replaceCert) {
                     // replacing existing cert and chain
@@ -1955,8 +1964,8 @@ final class P11KeyStore extends KeyStoreSpi {
             token.p11.C_DestroyObject(session.id(), h.handle);
             if (debug != null) {
                 debug.println("destroyCert destroyed cert with CKA_ID [" +
-                                                getID(cka_id) +
-                                                "]");
+                        getIDNullSafe(cka_id) +
+                        "]");
             }
             return true;
         } finally {
@@ -1990,7 +1999,7 @@ final class P11KeyStore extends KeyStoreSpi {
             if (debug != null) {
                 debug.println("destroyChain destroyed end entity cert " +
                         "with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
             }
 
@@ -2115,7 +2124,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 if (debug != null) {
                     debug.println
                         ("destroyPkey did not find private key with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
                 }
                 return false;
@@ -2161,6 +2170,13 @@ final class P11KeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Null safe version of getID.
+     */
+    private static String getIDNullSafe(byte[] bytes) {
+        return (bytes != null) ? getID(bytes) : "null";
+    }
+
+    /**
      * find an object on the token
      *
      * @param type either ATTR_CLASS_CERT, ATTR_CLASS_PKEY, or ATTR_CLASS_SKEY
@@ -2196,12 +2212,12 @@ final class P11KeyStore extends KeyStoreSpi {
                 } else if (type == ATTR_CLASS_CERT) {
                     debug.println
                         ("getTokenObject did not find cert with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
                 } else {
                     debug.println("getTokenObject did not find private key " +
                         "with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
                 }
             }
@@ -2244,13 +2260,13 @@ final class P11KeyStore extends KeyStoreSpi {
                         "found " +
                         h.length +
                         " certificates sharing CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             } else {
                 throw new KeyStoreException("invalid KeyStore state: " +
                         "found " +
                         h.length +
                         " private keys sharing CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             }
         }
         return new THandle(NO_HANDLE, null);
@@ -2506,7 +2522,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 if (debug != null) {
                     debug.println
                         ("did not find match for private key with CKA_ID [" +
-                        getID(pkeyID) +
+                        getIDNullSafe(pkeyID) +
                         "] (ignoring entry)");
                 }
             }

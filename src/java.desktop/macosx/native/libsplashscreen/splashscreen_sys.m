@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ SplashRedrawWindow(Splash * splash) {
         //         the 'wait cursor'. So that is undoable.
 
         //TODO: only the first image in an animated gif preserves transparency.
-        //      Loos like the splash->screenData contains inappropriate data
+        //      Looks like the splash->screenData contains inappropriate data
         //      for all but the first frame.
 
         [image release];
@@ -434,7 +434,7 @@ SplashScreenThread(void *param) {
 
         splash->window = (void*) [[NSWindow alloc]
             initWithContentRect: NSMakeRect(splash->x, splash->y, splash->width, splash->height)
-                      styleMask: NSBorderlessWindowMask
+                      styleMask: NSWindowStyleMaskBorderless
                         backing: NSBackingStoreBuffered
                           defer: NO
                          screen: SplashNSScreen()];

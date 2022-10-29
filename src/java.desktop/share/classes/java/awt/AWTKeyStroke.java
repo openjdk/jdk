@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class AWTKeyStroke implements Serializable {
 
     //A key for the collection of AWTKeyStrokes within AppContext.
     private static Object APP_CONTEXT_CACHE_KEY = new Object();
-    //A key withing the cache
+    //A key within the cache
     private static AWTKeyStroke APP_CONTEXT_KEYSTROKE_KEY = new AWTKeyStroke();
 
     /**
@@ -545,9 +545,7 @@ public class AWTKeyStroke implements Serializable {
 
             try {
                 keyCode = KeyEvent.class.getField(key).getInt(KeyEvent.class);
-            } catch (NoSuchFieldException nsfe) {
-                throw new IllegalArgumentException(errmsg);
-            } catch (IllegalAccessException iae) {
+            } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new IllegalArgumentException(errmsg);
             }
             value = Integer.valueOf(keyCode);

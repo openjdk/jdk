@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,6 @@ public:
   virtual const Type *add_id() const = 0;
 
   static SubNode* make(Node* in1, Node* in2, BasicType bt);
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 };
 
 
@@ -81,10 +77,6 @@ public:
   const Type *add_id() const { return TypeInt::ZERO; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
 };
 
 //------------------------------SubLNode---------------------------------------
@@ -98,10 +90,6 @@ public:
   const Type *add_id() const { return TypeLong::ZERO; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 };
 
 // NOTE: SubFPNode should be taken away and replaced by add and negate
@@ -155,17 +143,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
-
-#ifndef PRODUCT
-  // CmpNode and subclasses include all data inputs (until hitting a control
-  // boundary) in their related node set, as well as all outputs until and
-  // including eventual control nodes and their projections.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -176,10 +153,6 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT && signed_int;
-  }
 };
 
 //------------------------------CmpUNode---------------------------------------
@@ -191,10 +164,18 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
   const Type* Value(PhaseGVN* phase) const;
   bool is_index_range_check() const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT && !signed_int;
+};
+
+//------------------------------CmpU3Node--------------------------------------
+// Compare 2 unsigned values, returning integer value (-1, 0 or 1).
+class CmpU3Node : public CmpUNode {
+public:
+  CmpU3Node( Node *in1, Node *in2 ) : CmpUNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
   }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
 };
 
 //------------------------------CmpPNode---------------------------------------
@@ -225,10 +206,6 @@ public:
   virtual int    Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG && signed_int;
-  }
 };
 
 //------------------------------CmpULNode---------------------------------------
@@ -238,10 +215,6 @@ public:
   CmpULNode(Node* in1, Node* in2) : CmpNode(in1, in2) { }
   virtual int Opcode() const;
   virtual const Type* sub(const Type*, const Type*) const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG && !signed_int;
-  }
 };
 
 //------------------------------CmpL3Node--------------------------------------
@@ -252,7 +225,19 @@ public:
     // Since it is not consumed by Bools, it is not really a Cmp.
     init_class_id(Class_Sub);
   }
-  virtual int    Opcode() const;
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------CmpUL3Node-------------------------------------
+// Compare 2 unsigned long values, returning integer value (-1, 0 or 1).
+class CmpUL3Node : public CmpULNode {
+public:
+  CmpUL3Node( Node *in1, Node *in2 ) : CmpULNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -369,7 +354,6 @@ public:
   bool is_counted_loop_exit_test();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -379,6 +363,9 @@ public:
 class AbsNode : public Node {
 public:
   AbsNode( Node *value ) : Node(0,value) {}
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------AbsINode---------------------------------------
@@ -405,7 +392,7 @@ public:
 
 //------------------------------AbsFNode---------------------------------------
 // Absolute value a float, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsFNode : public AbsNode {
 public:
@@ -417,7 +404,7 @@ public:
 
 //------------------------------AbsDNode---------------------------------------
 // Absolute value a double, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsDNode : public AbsNode {
 public:
@@ -575,6 +562,30 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseINode--------------------------------
+// reverse bits of an int
+class ReverseINode : public Node {
+public:
+  ReverseINode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//-------------------------------ReverseLNode--------------------------------
+// reverse bits of a long
+class ReverseLNode : public Node {
+public:
+  ReverseLNode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP

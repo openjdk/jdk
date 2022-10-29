@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,8 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -164,7 +155,7 @@ abstract class HandshakeContext implements ConnectionContext {
         this.conContext = conContext;
         this.sslConfig = (SSLConfiguration)conContext.sslConfig.clone();
 
-        this.algorithmConstraints = new SSLAlgorithmConstraints(
+        this.algorithmConstraints = SSLAlgorithmConstraints.wrap(
                 sslConfig.userSpecifiedAlgorithmConstraints);
         this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
                 sslConfig.enabledCipherSuites, algorithmConstraints);
@@ -436,7 +427,7 @@ abstract class HandshakeContext implements ConnectionContext {
                 // action and SSLEngine.getHandshakeStatus() to indicate the
                 // FINISHED handshake status.
                 //
-                // To workaround this special user case, the follow-on call to
+                // To work around this special user case, the follow-on call to
                 // SSLEngine.wrap() method will return HandshakeStatus.FINISHED
                 // status if needed.
                 //
@@ -585,10 +576,8 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     List<SNIServerName> getRequestedServerNames() {
-        if (requestedServerNames == null) {
-            return Collections.emptyList();
-        }
-        return requestedServerNames;
+        return Objects.requireNonNullElse(requestedServerNames,
+                Collections.emptyList());
     }
 }
 

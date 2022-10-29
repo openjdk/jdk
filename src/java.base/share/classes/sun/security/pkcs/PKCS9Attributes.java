@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.pkcs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Hashtable;
+
 import sun.security.util.DerEncoder;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
@@ -44,7 +45,7 @@ public class PKCS9Attributes {
      * Attributes in this set indexed by OID.
      */
     private final Hashtable<ObjectIdentifier, PKCS9Attribute> attributes =
-        new Hashtable<ObjectIdentifier, PKCS9Attribute>(3);
+            new Hashtable<>(3);
 
     /**
      * The keys of this hashtable are the OIDs of permitted attributes.
@@ -58,7 +59,7 @@ public class PKCS9Attributes {
     private final byte[] derEncoding;
 
     /*
-     * Contols how attributes, which are not recognized by the PKCS9Attribute
+     * Controls how attributes, which are not recognized by the PKCS9Attribute
      * class, are handled during parsing.
      */
     private boolean ignoreUnsupportedAttributes = false;
@@ -123,7 +124,7 @@ public class PKCS9Attributes {
      *
      * @param in the contents of the DER encoding of the attribute set.
      * @param ignoreUnsupportedAttributes If true then any attributes
-     * not supported by the PKCS9Attribute class are ignored. Otherwise
+     * not supported by the PKCS9Attribute class are ignored. Otherwise,
      * unsupported attributes cause an exception to be thrown.
      * @exception IOException
      * on i/o error, encoding syntax error, or unsupported or
@@ -275,11 +276,13 @@ public class PKCS9Attributes {
      */
     public PKCS9Attribute[] getAttributes() {
         PKCS9Attribute[] attribs = new PKCS9Attribute[attributes.size()];
-        ObjectIdentifier oid;
 
         int j = 0;
         for (int i=1; i < PKCS9Attribute.PKCS9_OIDS.length &&
                       j < attribs.length; i++) {
+            if (PKCS9Attribute.PKCS9_OIDS[i] == null) {
+                continue;
+            }
             attribs[j] = getAttribute(PKCS9Attribute.PKCS9_OIDS[i]);
 
             if (attribs[j] != null)
@@ -294,8 +297,7 @@ public class PKCS9Attributes {
     public Object getAttributeValue(ObjectIdentifier oid)
     throws IOException {
         try {
-            Object value = getAttribute(oid).getValue();
-            return value;
+            return getAttribute(oid).getValue();
         } catch (NullPointerException ex) {
             throw new IOException("No value found for attribute " + oid);
         }
@@ -323,11 +325,13 @@ public class PKCS9Attributes {
         StringBuilder sb = new StringBuilder(200);
         sb.append("PKCS9 Attributes: [\n\t");
 
-        ObjectIdentifier oid;
         PKCS9Attribute value;
 
         boolean first = true;
         for (int i = 1; i < PKCS9Attribute.PKCS9_OIDS.length; i++) {
+            if (PKCS9Attribute.PKCS9_OIDS[i] == null) {
+                continue;
+            }
             value = getAttribute(PKCS9Attribute.PKCS9_OIDS[i]);
 
             if (value == null) continue;
@@ -338,7 +342,7 @@ public class PKCS9Attributes {
             else
                 sb.append(";\n\t");
 
-            sb.append(value.toString());
+            sb.append(value);
         }
 
         sb.append("\n\t] (end PKCS9 Attributes)");

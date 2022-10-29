@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,9 @@
 #include "runtime/perfMemory.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/exceptions.hpp"
+#if defined(LINUX)
+#include "os_linux.hpp"
+#endif
 
 // put OS-includes here
 # include <sys/types.h>
@@ -47,6 +50,10 @@
 # include <sys/stat.h>
 # include <signal.h>
 # include <pwd.h>
+
+#if defined(LINUX)
+# include <sys/file.h>
+#endif
 
 static char* backing_store_file_name = NULL;  // name of the backing store
                                               // file, if successfully created.
@@ -76,18 +83,6 @@ static char* create_standard_memory(size_t size) {
   return mapAddress;
 }
 
-// delete the PerfData memory region
-//
-static void delete_standard_memory(char* addr, size_t size) {
-
-  // there are no persistent external resources to cleanup for standard
-  // memory. since DestroyJavaVM does not support unloading of the JVM,
-  // cleanup of the memory resource is not performed. The memory will be
-  // reclaimed by the OS upon termination of the process.
-  //
-  return;
-}
-
 // save the specified memory region to the given file
 //
 // Note: this function might be called from signal handler (by os::abort()),
@@ -98,21 +93,20 @@ static void save_memory_to_file(char* addr, size_t size) {
   const char* destfile = PerfMemory::get_perfdata_file_path();
   assert(destfile[0] != '\0', "invalid PerfData file path");
 
-  int result;
+  int fd;
 
-  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR),
-              result);
-  if (result == OS_ERR) {
+  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR), fd);
+  if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not create Perfdata save file: %s: %s\n",
               destfile, os::strerror(errno));
     }
   } else {
-    int fd = result;
+    ssize_t result;
 
     for (size_t remaining = size; remaining > 0;) {
 
-      RESTARTABLE(::write(fd, addr, remaining), result);
+      result = os::write(fd, addr, remaining);
       if (result == OS_ERR) {
         if (PrintMiscellaneous && Verbose) {
           warning("Could not write Perfdata save file: %s: %s\n",
@@ -331,7 +325,7 @@ static DIR *open_directory_secure(const char* dirname) {
   // Determine if the open directory is secure.
   if (!is_dirfd_secure(fd)) {
     // The directory is not a secure directory.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
@@ -339,21 +333,21 @@ static DIR *open_directory_secure(const char* dirname) {
   dirp = ::opendir(dirname);
   if (dirp == NULL) {
     // The directory doesn't exist, close fd and return.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
   if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fd) NOT_AIX(dirfd(dirp)))) {
     // The directory is not secure.
-    os::close(fd);
+    ::close(fd);
     os::closedir(dirp);
     dirp = NULL;
     return dirp;
   }
 
   // Close initial open now that we know directory is secure
-  os::close(fd);
+  ::close(fd);
 
   return dirp;
 }
@@ -653,13 +647,13 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
 static char* get_user_name(int vmid, int *nspid, TRAPS) {
-  char *result = get_user_name_slow(vmid, *nspid, THREAD);
+  char *result = get_user_name_slow(vmid, *nspid, CHECK_NULL);
 
 #if defined(LINUX)
   // If we are examining a container process without PID namespaces enabled
   // we need to use /proc/{pid}/root/tmp to find hsperfdata files.
   if (result == NULL) {
-    result = get_user_name_slow(vmid, vmid, THREAD);
+    result = get_user_name_slow(vmid, vmid, CHECK_NULL);
     // Enable nspid logic going forward
     if (result != NULL) *nspid = vmid;
   }
@@ -696,7 +690,7 @@ static void remove_file(const char* path) {
 
   // if the file is a directory, the following unlink will fail. since
   // we don't expect to find directories in the user temp directory, we
-  // won't try to handle this situation. even if accidentially or
+  // won't try to handle this situation. even if accidentally or
   // maliciously planted, the directory's presence won't hurt anything.
   //
   RESTARTABLE(::unlink(path), result);
@@ -708,17 +702,17 @@ static void remove_file(const char* path) {
   }
 }
 
-
-// cleanup stale shared memory resources
+// cleanup stale shared memory files
 //
 // This method attempts to remove all stale shared memory files in
 // the named user temporary directory. It scans the named directory
-// for files matching the pattern ^$[0-9]*$. For each file found, the
-// process id is extracted from the file name and a test is run to
-// determine if the process is alive. If the process is not alive,
-// any stale file resources are removed.
+// for files matching the pattern ^$[0-9]*$.
 //
-static void cleanup_sharedmem_resources(const char* dirname) {
+// This directory should be used only by JVM processes owned by the
+// current user to store PerfMemory files. Any other files found
+// in this directory may be removed.
+//
+static void cleanup_sharedmem_files(const char* dirname) {
 
   int saved_cwd_fd;
   // open the directory and set the current working directory to it
@@ -728,48 +722,95 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     return;
   }
 
-  // for each entry in the directory that matches the expected file
-  // name pattern, determine if the file resources are stale and if
-  // so, remove the file resources. Note, instrumented HotSpot processes
-  // for this user may start and/or terminate during this search and
-  // remove or create new files in this directory. The behavior of this
-  // loop under these conditions is dependent upon the implementation of
-  // opendir/readdir.
+  // For each entry in the directory that matches the expected file
+  // name pattern, remove the file if it's determine to be stale
+  // Note, instrumented HotSpot processes for this user may start and/or
+  // terminate during this search and remove or create new files in this
+  // directory. The behavior of this loop under these conditions is dependent
+  // upon the implementation of opendir/readdir.
   //
   struct dirent* entry;
   errno = 0;
   while ((entry = os::readdir(dirp)) != NULL) {
-
-    pid_t pid = filename_to_pid(entry->d_name);
+    const char* filename = entry->d_name;
+    pid_t pid = filename_to_pid(filename);
 
     if (pid == 0) {
-
-      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+      if (strcmp(filename, ".") != 0 && strcmp(filename, "..") != 0) {
         // attempt to remove all unexpected files, except "." and ".."
-        unlink(entry->d_name);
+        unlink(filename);
       }
 
       errno = 0;
       continue;
     }
 
-    // we now have a file name that converts to a valid integer
-    // that could represent a process id . if this process id
-    // matches the current process id or the process is not running,
-    // then remove the stale file resources.
+#if defined(LINUX)
+    // Special case on Linux, if multiple containers share the
+    // same /tmp directory:
     //
-    // process liveness is detected by sending signal number 0 to
-    // the process id (see kill(2)). if kill determines that the
-    // process does not exist, then the file resources are removed.
-    // if kill determines that that we don't have permission to
-    // signal the process, then the file resources are assumed to
-    // be stale and are removed because the resources for such a
-    // process should be in a different user specific directory.
-    //
-    if ((pid == os::current_process_id()) ||
-        (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
-        unlink(entry->d_name);
+    // - All the JVMs must have the JDK-8286030 fix, or the behavior
+    //   is undefined.
+    // - We cannot rely on the values of the pid, because it could
+    //   be a process in a different namespace. We must use the flock
+    //   protocol to determine if a live process is using this file.
+    //   See create_sharedmem_file().
+    int fd;
+    RESTARTABLE(os::open(filename, O_RDONLY, 0), fd);
+    if (fd == OS_ERR) {
+      // Something wrong happened. Ignore the error and don't try to remove the
+      // file.
+      log_debug(perf, memops)("os::open() for stale file check failed for %s/%s", dirname, filename);
+      errno = 0;
+      continue;
     }
+
+    int n;
+    RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
+    if (n != 0) {
+      // Either another process holds the exclusive lock on this file, or
+      // something wrong happened. Ignore the error and don't try to remove the
+      // file.
+      log_debug(perf, memops)("flock for stale file check failed for %s/%s", dirname, filename);
+      ::close(fd);
+      errno = 0;
+      continue;
+    }
+    // We are able to lock the file, but this file might have been created
+    // by an older JVM that doesn't use the flock prototol, so we must do
+    // the folowing checks (which are also done by older JVMs).
+#endif
+
+    // The following code assumes that pid must be in the same
+    // namespace as the current process.
+    bool stale = false;
+
+    if (pid == os::current_process_id()) {
+      // The file was created by a terminated process that happened
+      // to have the same pid as the current process.
+      stale = true;
+    } else if (kill(pid, 0) == OS_ERR) {
+      if (errno == ESRCH) {
+        // The target process does not exist.
+        stale = true;
+      } else if (errno == EPERM) {
+        // The file was created by a terminated process that happened
+        // to have the same pid as a process not owned by the current user.
+        stale = true;
+      }
+    }
+
+    if (stale) {
+      log_info(perf, memops)("Remove stale file %s/%s", dirname, filename);
+      unlink(filename);
+    }
+
+#if defined(LINUX)
+    // Hold the lock until here to prevent other JVMs from using this file
+    // while we were in the middle of deleting it.
+    ::close(fd);
+#endif
+
     errno = 0;
   }
 
@@ -815,13 +856,13 @@ static bool make_user_tmp_dir(const char* dirname) {
   return true;
 }
 
-// create the shared memory file resources
+// create the shared memory file
 //
 // This method creates the shared memory file with the given size
 // This method also creates the user specific temporary directory, if
 // it does not yet exist.
 //
-static int create_sharedmem_resources(const char* dirname, const char* filename, size_t size) {
+static int create_sharedmem_file(const char* dirname, const char* filename, size_t size) {
 
   // make the user temporary directory
   if (!make_user_tmp_dir(dirname)) {
@@ -842,9 +883,9 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // Open the filename in the current directory.
   // Cannot use O_TRUNC here; truncation of an existing file has to happen
   // after the is_file_secure() check below.
-  int result;
-  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), result);
-  if (result == OS_ERR) {
+  int fd;
+  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+  if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       if (errno == ELOOP) {
         warning("file %s is a symlink and is not secure\n", filename);
@@ -860,14 +901,39 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // close the directory and reset the current working directory
   close_directory_secure_cwd(dirp, saved_cwd_fd);
 
-  // save the file descriptor
-  int fd = result;
-
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
     ::close(fd);
     return -1;
   }
+
+#if defined(LINUX)
+  // On Linux, different containerized processes that share the same /tmp
+  // directory (e.g., with "docker --volume ...") may have the same pid and
+  // try to use the same file. To avoid conflicts among such
+  // processes, we allow only one of them (the winner of the flock() call)
+  // to write to the file. All the other processes will give up and will
+  // have perfdata disabled.
+  //
+  // Note that the flock will be automatically given up when the winner
+  // process exits.
+  //
+  // The locking protocol works only with other JVMs that have the JDK-8286030
+  // fix. If you are sharing the /tmp difrectory among different containers,
+  // do not use older JVMs that don't have this fix, or the behavior is undefined.
+  int n;
+  RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
+  if (n != 0) {
+    log_warning(perf, memops)("Cannot use file %s/%s because %s (errno = %d)", dirname, filename,
+                              (errno == EWOULDBLOCK) ?
+                              "it is locked by another process" :
+                              "flock() failed", errno);
+    ::close(fd);
+    return -1;
+  }
+#endif
+
+  ssize_t result;
 
   // truncate the file to get rid of any existing data
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
@@ -895,7 +961,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     int zero_int = 0;
     result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
     if (result == -1 ) break;
-    RESTARTABLE(::write(fd, &zero_int, 1), result);
+    result = os::write(fd, &zero_int, 1);
     if (result != 1) {
       if (errno == ENOSPC) {
         warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
@@ -940,7 +1006,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
     ::close(fd);
-    return -1;
+    return OS_ERR;
   }
 
   return fd;
@@ -983,12 +1049,13 @@ static char* mmap_create_shared(size_t size) {
   }
 
   // cleanup any stale shared memory files
-  cleanup_sharedmem_resources(dirname);
+  cleanup_sharedmem_files(dirname);
 
   assert(((size > 0) && (size % os::vm_page_size() == 0)),
          "unexpected PerfMemory region size");
 
-  fd = create_sharedmem_resources(dirname, short_filename, size);
+  log_info(perf, memops)("Trying to open %s/%s", dirname, short_filename);
+  fd = create_sharedmem_file(dirname, short_filename, size);
 
   FREE_C_HEAP_ARRAY(char, user_name);
   FREE_C_HEAP_ARRAY(char, dirname);
@@ -1021,6 +1088,8 @@ static char* mmap_create_shared(size_t size) {
   // it does not go through os api, the operation has to record from here
   MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
 
+  log_info(perf, memops)("Successfully opened");
+
   return mapAddress;
 }
 
@@ -1028,7 +1097,7 @@ static char* mmap_create_shared(size_t size) {
 //
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = ::munmap(addr, bytes);
@@ -1055,10 +1124,10 @@ static char* create_shared_memory(size_t size) {
 //
 static void delete_shared_memory(char* addr, size_t size) {
 
-  // cleanup the persistent shared memory resources. since DestroyJavaVM does
-  // not support unloading of the JVM, unmapping of the memory resource is
+  // Remove the shared memory file. Since DestroyJavaVM does
+  // not support unloading of the JVM, unmapping of the memory region is
   // not performed. The memory will be reclaimed by the OS upon termination of
-  // the process. The backing store file is deleted from the file system.
+  // the process.
 
   assert(!PerfDisableSharedMem, "shouldn't be here");
 
@@ -1099,48 +1168,14 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 
 // attach to a named shared memory region.
 //
-static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemoryMode mode, char** addr, size_t* sizep, TRAPS) {
+static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
-  char* mapAddress;
-  int result;
-  int fd;
-  size_t size = 0;
-  const char* luser = NULL;
-
-  int mmap_prot;
-  int file_flags;
-
-  ResourceMark rm;
-
-  // map the high level access mode to the appropriate permission
-  // constructs for the file and the shared memory mapping.
-  if (mode == PerfMemory::PERF_MODE_RO) {
-    mmap_prot = PROT_READ;
-    file_flags = O_RDONLY | O_NOFOLLOW;
-  }
-  else if (mode == PerfMemory::PERF_MODE_RW) {
-#ifdef LATER
-    mmap_prot = PROT_READ | PROT_WRITE;
-    file_flags = O_RDWR | O_NOFOLLOW;
-#else
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Unsupported access mode");
-#endif
-  }
-  else {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Illegal access mode");
-  }
+  int mmap_prot = PROT_READ;
+  int file_flags = O_RDONLY | O_NOFOLLOW;
 
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-
-  if (user == NULL || strlen(user) == 0) {
-    luser = get_user_name(vmid, &nspid, CHECK);
-  }
-  else {
-    luser = user;
-  }
+  const char* luser = get_user_name(vmid, &nspid, CHECK);
 
   if (luser == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1154,39 +1189,27 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   //
   if (!is_directory_secure(dirname)) {
     FREE_C_HEAP_ARRAY(char, dirname);
-    if (luser != user) {
-      FREE_C_HEAP_ARRAY(char, luser);
-    }
+    FREE_C_HEAP_ARRAY(char, luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
 
+  // open the shared memory file for the give vmid
   char* filename = get_sharedmem_filename(dirname, vmid, nspid);
 
-  // copy heap memory to resource memory. the open_sharedmem_file
-  // method below need to use the filename, but could throw an
-  // exception. using a resource array prevents the leak that
-  // would otherwise occur.
-  char* rfilename = NEW_RESOURCE_ARRAY(char, strlen(filename) + 1);
-  strcpy(rfilename, filename);
+  // We don't use CHECK as we need to free the strings even if an exception occurred.
+  int fd = open_sharedmem_file(filename, file_flags, THREAD);
 
   // free the c heap resources that are no longer needed
-  if (luser != user) FREE_C_HEAP_ARRAY(char, luser);
+  FREE_C_HEAP_ARRAY(char, luser);
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
-  // open the shared memory file for the give vmid
-  fd = open_sharedmem_file(rfilename, file_flags, THREAD);
-
-  if (fd == OS_ERR) {
+  if (fd == OS_ERR || HAS_PENDING_EXCEPTION) {
     return;
   }
 
-  if (HAS_PENDING_EXCEPTION) {
-    ::close(fd);
-    return;
-  }
-
+  size_t size;
   if (*sizep == 0) {
     size = sharedmem_filesize(fd, CHECK);
   } else {
@@ -1195,9 +1218,9 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   assert(size > 0, "unexpected size <= 0");
 
-  mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
+  char* mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
 
-  result = ::close(fd);
+  int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -1267,10 +1290,7 @@ void PerfMemory::delete_memory_region() {
     save_memory_to_file(start(), capacity());
   }
 
-  if (PerfDisableSharedMem) {
-    delete_standard_memory(start(), capacity());
-  }
-  else {
+  if (!PerfDisableSharedMem) {
     delete_shared_memory(start(), capacity());
   }
 }
@@ -1290,7 +1310,7 @@ void PerfMemory::delete_memory_region() {
 // the indicated process's PerfData memory region into this JVMs
 // address space.
 //
-void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode, char** addrp, size_t* sizep, TRAPS) {
+void PerfMemory::attach(int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   if (vmid == 0 || vmid == os::current_process_id()) {
      *addrp = start();
@@ -1298,7 +1318,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode, char** 
      return;
   }
 
-  mmap_attach_shared(user, vmid, mode, addrp, sizep, CHECK);
+  mmap_attach_shared(vmid, addrp, sizep, CHECK);
 }
 
 // detach from the PerfData memory region of another JVM

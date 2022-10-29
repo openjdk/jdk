@@ -70,7 +70,9 @@ import sun.awt.geom.Curve;
  * @author Jim Graham
  * @since 1.6
  */
-public abstract class Path2D implements Shape, Cloneable {
+public abstract sealed class Path2D implements Shape, Cloneable
+    permits Path2D.Double,
+            Path2D.Float   {
     /**
      * An even-odd winding rule for determining the interior of
      * a path.
@@ -191,7 +193,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @since 1.6
      */
-    public static class Float extends Path2D implements Serializable {
+    public static non-sealed class Float extends Path2D implements Serializable {
         transient float[] floatCoords;
 
         /**
@@ -800,23 +802,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @since 1.6
          */
         public final synchronized Rectangle2D getBounds2D() {
-            float x1, y1, x2, y2;
-            int i = numCoords;
-            if (i > 0) {
-                y1 = y2 = floatCoords[--i];
-                x1 = x2 = floatCoords[--i];
-                while (i > 0) {
-                    float y = floatCoords[--i];
-                    float x = floatCoords[--i];
-                    if (x < x1) x1 = x;
-                    if (y < y1) y1 = y;
-                    if (x > x2) x2 = x;
-                    if (y > y2) y2 = y;
-                }
-            } else {
-                x1 = y1 = x2 = y2 = 0.0f;
-            }
-            return new Rectangle2D.Float(x1, y1, x2 - x1, y2 - y1);
+            return getBounds2D(getPathIterator(null));
         }
 
         /**
@@ -842,7 +828,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * Creates a new object of the same class as this object.
          *
          * @return     a clone of this instance.
-         * @exception  OutOfMemoryError    if there is not enough memory.
+         * @throws  OutOfMemoryError    if there is not enough memory.
          * @see        java.lang.Cloneable
          * @since      1.6
          */
@@ -1093,7 +1079,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @since 1.6
      */
-    public static class Double extends Path2D implements Serializable {
+    public static non-sealed class Double extends Path2D implements Serializable {
         transient double[] doubleCoords;
 
         /**
@@ -1592,23 +1578,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @since 1.6
          */
         public final synchronized Rectangle2D getBounds2D() {
-            double x1, y1, x2, y2;
-            int i = numCoords;
-            if (i > 0) {
-                y1 = y2 = doubleCoords[--i];
-                x1 = x2 = doubleCoords[--i];
-                while (i > 0) {
-                    double y = doubleCoords[--i];
-                    double x = doubleCoords[--i];
-                    if (x < x1) x1 = x;
-                    if (y < y1) y1 = y;
-                    if (x > x2) x2 = x;
-                    if (y > y2) y2 = y;
-                }
-            } else {
-                x1 = y1 = x2 = y2 = 0.0;
-            }
-            return new Rectangle2D.Double(x1, y1, x2 - x1, y2 - y1);
+            return getBounds2D(getPathIterator(null));
         }
 
         /**
@@ -1638,7 +1608,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * Creates a new object of the same class as this object.
          *
          * @return     a clone of this instance.
-         * @exception  OutOfMemoryError    if there is not enough memory.
+         * @throws  OutOfMemoryError    if there is not enough memory.
          * @see        java.lang.Cloneable
          * @since      1.6
          */
@@ -2018,7 +1988,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @param rule an integer representing the specified
      *             winding rule
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      *          {@code rule} is not either
      *          {@link #WIND_EVEN_ODD} or
      *          {@link #WIND_NON_ZERO}
@@ -2127,6 +2097,93 @@ public abstract class Path2D implements Shape, Cloneable {
      */
     public final Rectangle getBounds() {
         return getBounds2D().getBounds();
+    }
+
+    /**
+     * Returns a high precision bounding box of the specified PathIterator.
+     * <p>
+     * This method provides a basic facility for implementors of the {@link Shape} interface to
+     * implement support for the {@link Shape#getBounds2D()} method.
+     * </p>
+     *
+     * @param pi the specified {@code PathIterator}
+     * @return an instance of {@code Rectangle2D} that is a high-precision bounding box of the
+     *         {@code PathIterator}.
+     * @see Shape#getBounds2D()
+     */
+    static Rectangle2D getBounds2D(final PathIterator pi) {
+        final double[] coeff = new double[4];
+        final double[] deriv_coeff = new double[3];
+
+        final double[] coords = new double[6];
+
+        // bounds are stored as {leftX, rightX, topY, bottomY}
+        double[] bounds = null;
+        double lastX = 0.0;
+        double lastY = 0.0;
+        double endX = 0.0;
+        double endY = 0.0;
+        double startX = 0.0;
+        double startY = 0.0;
+
+        for (; !pi.isDone(); pi.next()) {
+            final int type = pi.currentSegment(coords);
+            switch (type) {
+                case PathIterator.SEG_MOVETO:
+                    if (bounds == null) {
+                        bounds = new double[] { coords[0], coords[0], coords[1], coords[1] };
+                    }
+                    startX = endX = coords[0];
+                    startY = endY = coords[1];
+                    break;
+                case PathIterator.SEG_LINETO:
+                    endX = coords[0];
+                    endY = coords[1];
+                    break;
+                case PathIterator.SEG_QUADTO:
+                    endX = coords[2];
+                    endY = coords[3];
+                    break;
+                case PathIterator.SEG_CUBICTO:
+                    endX = coords[4];
+                    endY = coords[5];
+                    break;
+                case PathIterator.SEG_CLOSE:
+                    endX = startX;
+                    endY = startY;
+                    break;
+                default:
+                    continue;
+            }
+
+            if (endX < bounds[0]) bounds[0] = endX;
+            if (endX > bounds[1]) bounds[1] = endX;
+            if (endY < bounds[2]) bounds[2] = endY;
+            if (endY > bounds[3]) bounds[3] = endY;
+
+            switch (type) {
+                case PathIterator.SEG_QUADTO:
+                    Curve.accumulateExtremaBoundsForQuad(bounds, 0, lastX, coords[0], coords[2], coeff, deriv_coeff);
+                    Curve.accumulateExtremaBoundsForQuad(bounds, 2, lastY, coords[1], coords[3], coeff, deriv_coeff);
+                    break;
+                case PathIterator.SEG_CUBICTO:
+                    Curve.accumulateExtremaBoundsForCubic(bounds, 0, lastX, coords[0], coords[2], coords[4], coeff, deriv_coeff);
+                    Curve.accumulateExtremaBoundsForCubic(bounds, 2, lastY, coords[1], coords[3], coords[5], coeff, deriv_coeff);
+                    break;
+                default:
+                    break;
+            }
+
+            lastX = endX;
+            lastY = endY;
+        }
+        if (bounds != null) {
+            return new Rectangle2D.Double(bounds[0], bounds[2], bounds[1] - bounds[0], bounds[3] - bounds[2]);
+        }
+
+        // there's room to debate what should happen here, but historically we return a zeroed
+        // out rectangle here. So for backwards compatibility let's keep doing that:
+        return new Rectangle2D.Double();
     }
 
     /**
@@ -2249,7 +2306,7 @@ public abstract class Path2D implements Shape, Cloneable {
         if (java.lang.Double.isNaN(x+w) || java.lang.Double.isNaN(y+h)) {
             /* [xy]+[wh] is NaN if any of those values are NaN,
              * or if adding the two together would produce NaN
-             * by virtue of adding opposing Infinte values.
+             * by virtue of adding opposing Infinite values.
              * Since we need to add them below, their sum must
              * not be NaN.
              * We return false because NaN always produces a
@@ -2321,7 +2378,7 @@ public abstract class Path2D implements Shape, Cloneable {
         if (java.lang.Double.isNaN(x+w) || java.lang.Double.isNaN(y+h)) {
             /* [xy]+[wh] is NaN if any of those values are NaN,
              * or if adding the two together would produce NaN
-             * by virtue of adding opposing Infinte values.
+             * by virtue of adding opposing Infinite values.
              * Since we need to add them below, their sum must
              * not be NaN.
              * We return false because NaN always produces a
@@ -2399,7 +2456,7 @@ public abstract class Path2D implements Shape, Cloneable {
         if (java.lang.Double.isNaN(x+w) || java.lang.Double.isNaN(y+h)) {
             /* [xy]+[wh] is NaN if any of those values are NaN,
              * or if adding the two together would produce NaN
-             * by virtue of adding opposing Infinte values.
+             * by virtue of adding opposing Infinite values.
              * Since we need to add them below, their sum must
              * not be NaN.
              * We return false because NaN always produces a
@@ -2470,7 +2527,7 @@ public abstract class Path2D implements Shape, Cloneable {
         if (java.lang.Double.isNaN(x+w) || java.lang.Double.isNaN(y+h)) {
             /* [xy]+[wh] is NaN if any of those values are NaN,
              * or if adding the two together would produce NaN
-             * by virtue of adding opposing Infinte values.
+             * by virtue of adding opposing Infinite values.
              * Since we need to add them below, their sum must
              * not be NaN.
              * We return false because NaN always produces a
@@ -2530,7 +2587,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * Creates a new object of the same class as this object.
      *
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.6
      */

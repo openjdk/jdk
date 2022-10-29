@@ -75,7 +75,7 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
 }
 
-TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, ID) {
+TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, Kind) {
   set_layout_helper(array_layout_helper(type));
   assert(is_array_klass(), "sanity");
   assert(is_typeArray_klass(), "sanity");

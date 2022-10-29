@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <io.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <windows.h>
 
 #include "AppLauncher.h"
@@ -34,14 +35,14 @@
 #include "WinApp.h"
 #include "Toolbox.h"
 #include "FileUtils.h"
+#include "PackageFile.h"
 #include "UniqueHandle.h"
 #include "ErrorHandling.h"
 #include "WinSysInfo.h"
 #include "WinErrorHandling.h"
 
 
-// AllowSetForegroundWindow
-#pragma comment(lib, "user32")
+// AllowSetForegroundWindow - Requires linking with user32
 
 
 namespace {
@@ -132,6 +133,22 @@ tstring getJvmLibPath(const Jvm& jvm) {
 }
 
 
+void addCfgFileLookupDirForEnvVariable(
+        const PackageFile& pkgFile, AppLauncher& appLauncher,
+        const tstring& envVarName) {
+
+    tstring path;
+    JP_TRY;
+    path = SysInfo::getEnvVariable(envVarName);
+    JP_CATCH_ALL;
+
+    if (!path.empty()) {
+        appLauncher.addCfgFileLookupDir(FileUtils::mkpath() << path
+                << pkgFile.getPackageName());
+    }
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -140,18 +157,27 @@ void launchApp() {
     const tstring appImageRoot = FileUtils::dirname(launcherPath);
     const tstring appDirPath = FileUtils::mkpath() << appImageRoot << _T("app");
 
-    const AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
+    const PackageFile pkgFile = PackageFile::loadFromAppDir(appDirPath);
+
+    AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
         .addJvmLibName(_T("bin\\jli.dll"))
         .setAppDir(appDirPath)
         .setLibEnvVariableName(_T("PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
             << _T("runtime"));
 
+    if (!pkgFile.getPackageName().empty()) {
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("LOCALAPPDATA"));
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
+    }
+
     const bool restart = !appLauncher.libEnvVariableContainsAppDir();
 
     std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
 
     if (restart) {
+        jvm->setEnvVariables();
+
         jvm = std::unique_ptr<Jvm>();
 
         STARTUPINFOW si;
@@ -178,11 +204,7 @@ void launchApp() {
                                                         GetExitCodeProcess));
         }
 
-        if (exitCode != 0) {
-            JP_THROW(tstrings::any() << "Child process exited with code "
-                                                                << exitCode);
-        }
-
+        exit(exitCode);
         return;
     }
 

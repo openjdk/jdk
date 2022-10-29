@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -85,7 +85,7 @@ public class DTDGrammarUtil {
     /** True if inside of element content. */
     private boolean fInElementContent = false;
 
-    /** Temporary atribute declaration. */
+    /** Temporary attribute declaration. */
     private XMLAttributeDecl fTempAttDecl = new XMLAttributeDecl();
 
     /** Temporary qualified name. */

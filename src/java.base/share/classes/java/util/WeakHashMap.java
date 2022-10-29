@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,10 @@ public class WeakHashMap<K,V>
      * Constructs a new, empty {@code WeakHashMap} with the given initial
      * capacity and the given load factor.
      *
+     * @apiNote
+     * To create a {@code WeakHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newWeakHashMap(int) newWeakHashMap}.
+     *
      * @param  initialCapacity The initial capacity of the {@code WeakHashMap}
      * @param  loadFactor      The load factor of the {@code WeakHashMap}
      * @throws IllegalArgumentException if the initial capacity is negative,
@@ -213,9 +217,7 @@ public class WeakHashMap<K,V>
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal Load factor: "+
                                                loadFactor);
-        int capacity = 1;
-        while (capacity < initialCapacity)
-            capacity <<= 1;
+        int capacity = HashMap.tableSizeFor(initialCapacity);
         table = newTable(capacity);
         this.loadFactor = loadFactor;
         threshold = (int)(capacity * loadFactor);
@@ -224,6 +226,10 @@ public class WeakHashMap<K,V>
     /**
      * Constructs a new, empty {@code WeakHashMap} with the given initial
      * capacity and the default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code WeakHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newWeakHashMap(int) newWeakHashMap}.
      *
      * @param  initialCapacity The initial capacity of the {@code WeakHashMap}
      * @throws IllegalArgumentException if the initial capacity is negative
@@ -251,7 +257,7 @@ public class WeakHashMap<K,V>
      * @since   1.3
      */
     public WeakHashMap(Map<? extends K, ? extends V> m) {
-        this(Math.max((int) ((float)m.size() / DEFAULT_LOAD_FACTOR + 1.0F),
+        this(Math.max((int) Math.ceil(m.size() / (double)DEFAULT_LOAD_FACTOR),
                 DEFAULT_INITIAL_CAPACITY),
              DEFAULT_LOAD_FACTOR);
         putAll(m);
@@ -468,7 +474,7 @@ public class WeakHashMap<K,V>
         modCount++;
         Entry<K,V> e = tab[i];
         tab[i] = new Entry<>(k, value, queue, h, e);
-        if (++size >= threshold)
+        if (++size > threshold)
             resize(tab.length * 2);
         return null;
     }
@@ -557,7 +563,7 @@ public class WeakHashMap<K,V>
          * to at most one extra resize.
          */
         if (numKeysToBeAdded > threshold) {
-            int targetCapacity = (int)(numKeysToBeAdded / loadFactor + 1);
+            int targetCapacity = (int)Math.ceil(numKeysToBeAdded / (double)loadFactor);
             if (targetCapacity > MAXIMUM_CAPACITY)
                 targetCapacity = MAXIMUM_CAPACITY;
             int newCapacity = table.length;
@@ -1040,7 +1046,7 @@ public class WeakHashMap<K,V>
         Objects.requireNonNull(function);
         int expectedModCount = modCount;
 
-        Entry<K, V>[] tab = getTable();;
+        Entry<K, V>[] tab = getTable();
         for (Entry<K, V> entry : tab) {
             while (entry != null) {
                 Object key = entry.get();
@@ -1335,6 +1341,26 @@ public class WeakHashMap<K,V>
         public int characteristics() {
             return Spliterator.DISTINCT;
         }
+    }
+
+    /**
+     * Creates a new, empty WeakHashMap suitable for the expected number of mappings.
+     * The returned map uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of mappings can be added
+     * without resizing the map.
+     *
+     * @param numMappings the expected number of mappings
+     * @param <K>         the type of keys maintained by the new map
+     * @param <V>         the type of mapped values
+     * @return the newly created map
+     * @throws IllegalArgumentException if numMappings is negative
+     * @since 19
+     */
+    public static <K, V> WeakHashMap<K, V> newWeakHashMap(int numMappings) {
+        if (numMappings < 0) {
+            throw new IllegalArgumentException("Negative number of mappings: " + numMappings);
+        }
+        return new WeakHashMap<>(HashMap.calculateHashMapCapacity(numMappings));
     }
 
 }

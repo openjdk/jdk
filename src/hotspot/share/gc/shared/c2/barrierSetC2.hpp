@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public:
   const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
 };
 
-// This class wraps a bunch of context parameters thare are passed around in the
+// This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for loads and stores, to reduce boiler plate.
 class C2Access: public StackObj {
 protected:
@@ -163,27 +163,24 @@ public:
   virtual bool is_parse_access() const { return true; }
 };
 
-// This class wraps a bunch of context parameters thare are passed around in the
+// This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for atomic accesses, to reduce boiler plate.
 class C2AtomicParseAccess: public C2ParseAccess {
   Node* _memory;
   uint  _alias_idx;
-  bool  _needs_pinning;
 
 public:
   C2AtomicParseAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
                  Node* base, C2AccessValuePtr& addr, uint alias_idx) :
     C2ParseAccess(kit, decorators, type, base, addr),
     _memory(NULL),
-    _alias_idx(alias_idx),
-    _needs_pinning(true) {}
+    _alias_idx(alias_idx) {}
 
   // Set the memory node based on the current memory slice.
   virtual void set_memory();
 
   Node* memory() const       { return _memory; }
   uint alias_idx() const     { return _alias_idx; }
-  bool needs_pinning() const { return _needs_pinning; }
 };
 
 // C2Access for optimization time calls to the BarrierSetC2 backend.
@@ -259,6 +256,7 @@ public:
 
   // Support for GC barriers emitted during parsing
   virtual bool has_load_barrier_nodes() const { return false; }
+  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
 
@@ -289,7 +287,7 @@ public:
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 #endif
 
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const { return false; }
+  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const { return false; }
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }

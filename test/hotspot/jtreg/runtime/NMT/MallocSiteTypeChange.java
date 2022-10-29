@@ -27,15 +27,15 @@
  * @bug 8200109
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocSiteTypeChange
  */
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class MallocSiteTypeChange {
     public static void main(String args[]) throws Exception {
@@ -56,7 +56,7 @@ public class MallocSiteTypeChange {
 
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline"});
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Baseline succeeded");
+        output.shouldContain("Baseline taken");
 
         wb.NMTFree(addr);
         addr = wb.NMTMallocWithPseudoStackAndType(2 * 1024, pc, 9 /* mtInternal */ );

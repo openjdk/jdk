@@ -58,7 +58,7 @@ class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
-            throw newGetIllegalArgumentException(obj.getClass());
+            throw newGetIllegalArgumentException(obj);
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -98,8 +98,8 @@ class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
 
     @Override
     public void set(Object obj, Object value) throws IllegalAccessException {
+        ensureObj(obj);
         if (isReadOnly()) {
-            ensureObj(obj);     // throw NPE if obj is null on instance field
             throwFinalFieldIllegalAccessException(value);
         }
         try {
@@ -111,7 +111,8 @@ class MethodHandleObjectFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
-            throw newSetIllegalArgumentException(obj.getClass());
+            // already ensure the receiver type.  So this CCE is due to the value.
+            throwSetIllegalArgumentException(value);
         } catch (Throwable e) {
             throw new InternalError(e);
         }

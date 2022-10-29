@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,20 +32,27 @@
 class nmethod;
 
 class BarrierSetNMethod: public CHeapObj<mtGC> {
+private:
+  int _current_phase;
   void deoptimize(nmethod* nm, address* return_addr_ptr);
-  int disarmed_value() const;
 
 public:
+  BarrierSetNMethod() : _current_phase(1) {}
   bool supports_entry_barrier(nmethod* nm);
 
-  virtual bool nmethod_entry_barrier(nmethod* nm) = 0;
-  virtual ByteSize thread_disarmed_offset() const = 0;
-  virtual int* disarmed_value_address() const = 0;
+  virtual bool nmethod_entry_barrier(nmethod* nm);
+  virtual ByteSize thread_disarmed_offset() const;
+  virtual int* disarmed_value_address() const;
+
+  int disarmed_value() const;
 
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);
   bool is_armed(nmethod* nm);
   void disarm(nmethod* nm);
+  void arm(nmethod* nm, int arm_value);
+
+  void arm_all_nmethods();
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,13 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.CopyOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,7 +48,7 @@ public class CDSTestUtils {
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
-        "DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded";
+        "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -326,9 +333,7 @@ public class CDSTestUtils {
         // Special case -- sometimes Xshare:on fails because it failed to map
         // at given address. This behavior is platform-specific, machine config-specific
         // and can be random (see ASLR).
-        if (isUnableToMap(output)) {
-            throw new SkippedException(UnableToMapMsg);
-        }
+        checkMappingFailure(output);
 
         if (e != null) {
             throw e;
@@ -351,19 +356,28 @@ public class CDSTestUtils {
     //    instead of utilizing multiple messages.
     // These are suggestions to improve testibility of the VM. However, implementing them
     // could also improve usability in the field.
-    public static boolean isUnableToMap(OutputAnalyzer output) {
+    private static String hasUnableToMapMessage(OutputAnalyzer output) {
         String outStr = output.getOutput();
-        if ((output.getExitValue() == 1) &&
-            (outStr.contains(MSG_RANGE_NOT_WITHIN_HEAP) || outStr.contains(MSG_DYNAMIC_NOT_SUPPORTED))) {
-            return true;
+        if ((output.getExitValue() == 1)) {
+            if (outStr.contains(MSG_RANGE_NOT_WITHIN_HEAP)) {
+                return MSG_RANGE_NOT_WITHIN_HEAP;
+            }
+            if (outStr.contains(MSG_DYNAMIC_NOT_SUPPORTED)) {
+                return MSG_DYNAMIC_NOT_SUPPORTED;
+            }
         }
 
-        return false;
+        return null;
+    }
+
+    public static boolean isUnableToMap(OutputAnalyzer output) {
+        return hasUnableToMapMessage(output) != null;
     }
 
     public static void checkMappingFailure(OutputAnalyzer out) throws SkippedException {
-        if (isUnableToMap(out)) {
-            throw new SkippedException(UnableToMapMsg);
+        String match = hasUnableToMapMessage(out);
+        if (match != null) {
+            throw new SkippedException(UnableToMapMsg + ": " + match);
         }
     }
 
@@ -472,10 +486,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkExecExpectError(OutputAnalyzer output,
                                              int expectedExitValue,
                                              String... extraMatches) throws Exception {
-        if (isUnableToMap(output)) {
-            throw new SkippedException(UnableToMapMsg);
-        }
-
+        checkMappingFailure(output);
         output.shouldHaveExitValue(expectedExitValue);
         checkMatches(output, extraMatches);
         return output;
@@ -679,5 +690,95 @@ public class CDSTestUtils {
 
     private static boolean isAsciiPrintable(char ch) {
         return ch >= 32 && ch < 127;
+    }
+
+    // JDK utility
+
+    // Do a cheap clone of the JDK. Most files can be sym-linked. However, $JAVA_HOME/bin/java and $JAVA_HOME/lib/.../libjvm.so"
+    // must be copied, because the java.home property is derived from the canonicalized paths of these 2 files.
+    // Set a list of {jvm, "java"} which will be physically copied. If a file needs copied physically, add it to the list.
+    private static String[] phCopied = {System.mapLibraryName("jvm"), "java"};
+    public static void clone(File src, File dst) throws Exception {
+        if (dst.exists()) {
+            if (!dst.isDirectory()) {
+                throw new RuntimeException("Not a directory :" + dst);
+            }
+        } else {
+            if (!dst.mkdir()) {
+                throw new RuntimeException("Cannot create directory: " + dst);
+            }
+        }
+        // final String jvmLib = System.mapLibraryName("jvm");
+        for (String child : src.list()) {
+            if (child.equals(".") || child.equals("..")) {
+                continue;
+            }
+
+            File child_src = new File(src, child);
+            File child_dst = new File(dst, child);
+            if (child_dst.exists()) {
+                throw new RuntimeException("Already exists: " + child_dst);
+            }
+            if (child_src.isFile()) {
+                boolean needPhCopy = false;
+                for (String target : phCopied) {
+                    if (child.equals(target)) {
+                        needPhCopy = true;
+                        break;
+                    }
+                }
+                if (needPhCopy) {
+                    Files.copy(child_src.toPath(), /* copy data to -> */ child_dst.toPath(),
+                               new CopyOption[] { StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES});
+                } else {
+                    Files.createSymbolicLink(child_dst.toPath(),  /* link to -> */ child_src.toPath());
+                }
+            } else {
+                clone(child_src, child_dst);
+            }
+        }
+    }
+
+    // modulesDir, like $JDK/lib
+    // oldName, module name under modulesDir
+    // newName, new name for oldName
+    public static void rename(File fromFile, File toFile) throws Exception {
+        if (!fromFile.exists()) {
+            throw new RuntimeException(fromFile.getName() + " does not exist");
+        }
+
+        if (toFile.exists()) {
+            throw new RuntimeException(toFile.getName() + " already exists");
+        }
+
+        boolean success = fromFile.renameTo(toFile);
+        if (!success) {
+            throw new RuntimeException("rename file " + fromFile.getName()+ " to " + toFile.getName() + " failed");
+        }
+    }
+
+    public static ProcessBuilder makeBuilder(String... args) throws Exception {
+        System.out.print("[");
+        for (String s : args) {
+            System.out.print(" " + s);
+        }
+        System.out.println(" ]");
+        return new ProcessBuilder(args);
+    }
+
+    public static Path copyFile(String srcFile, String destDir) throws Exception {
+        int idx = srcFile.lastIndexOf(File.separator);
+        String jarName = srcFile.substring(idx + 1);
+        Path srcPath = Paths.get(jarName);
+        Path newPath = Paths.get(destDir);
+        Path newDir;
+        if (!Files.exists(newPath)) {
+            newDir = Files.createDirectories(newPath);
+        } else {
+            newDir = newPath;
+        }
+        Path destPath = newDir.resolve(jarName);
+        Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
+        return destPath;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigInteger;
-import java.util.Enumeration;
 import java.util.List;
-
-import sun.security.util.*;
 
 /**
  * Represents the Freshest CRL Extension.
@@ -42,7 +38,7 @@ import sun.security.util.*;
  *
  * <p>
  * The extension is defined in Section 5.2.6 of
- * <a href="http://tools.ietf.org/html/rfc5280">Internet X.509 PKI
+ * <a href="https://tools.ietf.org/html/rfc5280">Internet X.509 PKI
  * Certificate and Certificate Revocation List (CRL) Profile</a>.
  *
  * <p>
@@ -63,7 +59,7 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
     public static final String NAME = "FreshestCRL";
 
     /**
-     * Creates a freshest CRL extension.
+     * Creates a fresh CRL extension.
      * The criticality is set to false.
      *
      * @param distributionPoints the list of delta CRL distribution points.

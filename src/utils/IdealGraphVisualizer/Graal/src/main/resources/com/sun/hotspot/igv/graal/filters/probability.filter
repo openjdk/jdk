@@ -1,3 +1,0 @@
-colorizeGradientWithMode("probability", 0, 500, "logarithmic");
-
-// more parameters: colorizeGradientCustom("probability", 0, 500, "logarithmic", [blue, yellow, red], [0, 0.5, 1], 16);

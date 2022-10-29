@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,17 +309,16 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
     // "val_reg" and "reg". For example, when "val" resides in register
     // but "reg" is located in stack.
     if (lrgs(val_idx).is_scalable()) {
-      assert(val->ideal_reg() == Op_VecA, "scalable vector register");
+      assert(val->ideal_reg() == Op_VecA || val->ideal_reg() == Op_RegVectMask, "scalable register");
       if (OptoReg::is_stack(reg)) {
         n_regs = lrgs(val_idx).scalable_reg_slots();
       } else {
-        n_regs = RegMask::SlotsPerVecA;
+        n_regs = lrgs(val_idx)._is_predicate ? RegMask::SlotsPerRegVectMask : RegMask::SlotsPerVecA;
       }
     }
     if (n_regs > 1) { // Doubles and vectors check for aligned-adjacent set
       uint last;
-      if (lrgs(val_idx).is_scalable()) {
-        assert(val->ideal_reg() == Op_VecA, "scalable vector register");
+      if (lrgs(val_idx).is_scalable() && val->ideal_reg() == Op_VecA) {
         // For scalable vector register, regmask is always SlotsPerVecA bits aligned
         last = RegMask::SlotsPerVecA - 1;
       } else {

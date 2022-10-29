@@ -33,6 +33,14 @@ inline void G1EvacStats::add_direct_allocated(size_t value) {
   Atomic::add(&_direct_allocated, value);
 }
 
+inline void G1EvacStats::add_num_plab_filled(size_t value) {
+  Atomic::add(&_num_plab_filled, value);
+}
+
+inline void G1EvacStats::add_num_direct_allocated(size_t value) {
+  Atomic::add(&_num_direct_allocated, value);
+}
+
 inline void G1EvacStats::add_region_end_waste(size_t value) {
   Atomic::add(&_region_end_waste, value);
   Atomic::inc(&_regions_filled);

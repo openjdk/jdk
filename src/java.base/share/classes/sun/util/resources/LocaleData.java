@@ -246,7 +246,7 @@ public class LocaleData {
         private static final LocaleDataStrategy INSTANCE = new LocaleDataStrategy();
         // TODO: avoid hard-coded Locales
         private static final Set<Locale> JAVA_BASE_LOCALES
-            = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, new Locale("en", "US", "POSIX"));
+            = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, Locale.of("en", "US", "POSIX"));
 
         private LocaleDataStrategy() {
         }

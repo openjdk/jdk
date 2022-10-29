@@ -185,8 +185,8 @@ LIR_Opr FrameMap::R3_long_opr;
 LIR_Opr FrameMap::F1_opr;
 LIR_Opr FrameMap::F1_double_opr;
 
-LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0, };
-LIR_Opr FrameMap::_caller_save_fpu_regs[] = { 0, };
+LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
+LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 FloatRegister FrameMap::nr2floatreg (int rnr) {
   assert(_init_done, "tables not initialized");

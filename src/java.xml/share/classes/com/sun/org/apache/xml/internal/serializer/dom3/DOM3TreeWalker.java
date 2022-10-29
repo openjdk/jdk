@@ -63,7 +63,7 @@ import org.xml.sax.helpers.LocatorImpl;
  * parameters and filters if any during serialization.
  *
  * @xsl.usage internal
- * @LastModified: Apr 2021
+ * @LastModified: July 2021
  */
 final class DOM3TreeWalker {
 
@@ -506,23 +506,7 @@ final class DOM3TreeWalker {
 
                     dtd.append("<!DOCTYPE ");
                     dtd.append(docTypeName);
-                    if (null != publicId) {
-                        dtd.append(" PUBLIC \"");
-                        dtd.append(publicId);
-                        dtd.append('\"');
-                    }
-
-                    if (null != systemId) {
-                        char quote = JdkXmlUtils.getQuoteChar(systemId);
-                        if (null == publicId) {
-                            dtd.append(" SYSTEM ").append(quote);
-                        } else {
-                            dtd.append(" ").append(quote);
-                        }
-                        dtd.append(systemId);
-                        dtd.append(quote);
-                    }
-
+                    dtd.append(JdkXmlUtils.getDTDExternalDecl(publicId, systemId));
                     dtd.append(" [ ");
 
                     dtd.append(fNewLine);

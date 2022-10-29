@@ -120,7 +120,7 @@ abstract class FieldAccessorImpl extends MagicAccessorImpl
         }
     }
 
-    private String getQualifiedFieldName() {
+    protected String getQualifiedFieldName() {
         return field.getDeclaringClass().getName() + "." +field.getName();
     }
 
@@ -220,16 +220,6 @@ abstract class FieldAccessorImpl extends MagicAccessorImpl
             else
                 err += "null value";
         }
-        return err;
-    }
-
-    protected String getMessage(boolean getter, String attemptedType) {
-        String err = "Can not " + (getter ? "get" : "set");
-        if (Modifier.isStatic(field.getModifiers()))
-            err += " static";
-        if (Modifier.isFinal(field.getModifiers()))
-            err += " final";
-        err += " " + field.getType().getName() + " field " + getQualifiedFieldName() + " on " + attemptedType;
         return err;
     }
 

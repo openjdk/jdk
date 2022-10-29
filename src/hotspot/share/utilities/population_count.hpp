@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ inline unsigned population_count(T x) {
   r -= ((r >> 1) & fives);
   r = (r & threes) + ((r >> 2) & threes);
   r = ((r + (r >> 4)) & z_effs) * z_ones;
-  // The preceeding multiply by z_ones is the only place where the intermediate
+  // The preceding multiply by z_ones is the only place where the intermediate
   // calculations can exceed the range of T. We need to discard any such excess
   // before the right-shift, hence the conversion back to T.
   return static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte));

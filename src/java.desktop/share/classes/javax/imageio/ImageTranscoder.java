@@ -109,7 +109,7 @@ public interface ImageTranscoder {
      * {@code null} if the plug-in does not provide metadata
      * encoding capabilities.
      *
-     * @exception IllegalArgumentException if {@code inData} is
+     * @throws IllegalArgumentException if {@code inData} is
      * {@code null}.
      */
     IIOMetadata convertStreamMetadata(IIOMetadata inData,
@@ -142,7 +142,7 @@ public interface ImageTranscoder {
      * or {@code null} if the plug-in does not provide
      * metadata encoding capabilities.
      *
-     * @exception IllegalArgumentException if either of
+     * @throws IllegalArgumentException if either of
      * {@code inData} or {@code imageType} is
      * {@code null}.
      */

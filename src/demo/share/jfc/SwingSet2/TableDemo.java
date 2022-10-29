@@ -768,4 +768,13 @@ public class TableDemo extends DemoModule {
         footerTextField.setDragEnabled(dragEnabled);
     }
 
+    @Override
+    public ImageIcon createImageIcon(String filename, String description) {
+        ImageIcon imageIcon = super.createImageIcon(filename, description);
+        AccessibleContext context = imageIcon.getAccessibleContext();
+        if (context!= null) {
+            context.setAccessibleName(description);
+        }
+        return imageIcon;
+    }
 }

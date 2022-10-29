@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2020, 2022, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,6 @@
 
 
 typedef unsigned char UBYTE;
-
-#if _MSC_VER < 1700
-
-/* Not needed for VS2012 compiler, comes from winnt.h. */
-#define UNW_FLAG_EHANDLER  0x01
-#define UNW_FLAG_UHANDLER  0x02
-#define UNW_FLAG_CHAININFO 0x04
-
-#endif
 
 // See https://docs.microsoft.com/en-us/cpp/build/arm64-exception-handling#xdata-records
 typedef struct _UNWIND_INFO_EH_ONLY {
@@ -69,34 +60,5 @@ typedef struct _RUNTIME_FUNCTION {
     } DUMMYUNIONNAME;
 } RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 */
-
-#if _MSC_VER < 1700
-
-/* Not needed for VS2012 compiler, comes from winnt.h. */
-typedef struct _DISPATCHER_CONTEXT {
-    ULONG64 ControlPc;
-    ULONG64 ImageBase;
-    PRUNTIME_FUNCTION FunctionEntry;
-    ULONG64 EstablisherFrame;
-    ULONG64 TargetIp;
-    PCONTEXT ContextRecord;
-//    PEXCEPTION_ROUTINE LanguageHandler;
-    char * LanguageHandler; // double dependency problem
-    PVOID HandlerData;
-} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
-
-#endif
-
-#if _MSC_VER < 1500
-
-/* Not needed for VS2008 compiler, comes from winnt.h. */
-typedef EXCEPTION_DISPOSITION (*PEXCEPTION_ROUTINE) (
-    IN PEXCEPTION_RECORD ExceptionRecord,
-    IN ULONG64 EstablisherFrame,
-    IN OUT PCONTEXT ContextRecord,
-    IN OUT PDISPATCHER_CONTEXT DispatcherContext
-);
-
-#endif
 
 #endif // OS_CPU_WINDOWS_AARCH64_UNWIND_WINDOWS_AARCH64_HPP

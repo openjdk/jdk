@@ -51,9 +51,11 @@ public:
 #define ASSERT_RANGE_IS_MARKED(p, size)             ASSERT_TRUE(GtestUtils::check_range(p, size))
 
 // Convenience asserts
-#define ASSERT_NOT_NULL(p)  ASSERT_NE(p, (char*)NULL)
-#define ASSERT_NULL(p)      ASSERT_EQ(p, (char*)NULL)
+#define ASSERT_NOT_NULL(p)  ASSERT_NE(p2i(p), 0)
+#define ASSERT_NULL(p)      ASSERT_EQ(p2i(p), 0)
 
 #define ASSERT_ALIGN(p, n) ASSERT_TRUE(is_aligned(p, n))
+
+#define LOG_HERE(s, ...) { printf(s, __VA_ARGS__); printf("\n"); fflush(stdout); }
 
 #endif // TESTUTILS_HPP

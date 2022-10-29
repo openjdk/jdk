@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.signature;
 
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -91,25 +92,24 @@ public abstract class SignatureVisitor {
     public static final char INSTANCEOF = '=';
 
     /**
-      * The ASM API version implemented by this visitor. The value of this field must be one of {@link
-      * Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * The ASM API version implemented by this visitor. The value of this field must be one of the
+      * {@code ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected final int api;
 
     /**
       * Constructs a new {@link SignatureVisitor}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
-    @SuppressWarnings("deprecation")
-    public SignatureVisitor(final int api) {
-        if (api != Opcodes.ASM8
+    protected SignatureVisitor(final int api) {
+        if (api != Opcodes.ASM9
+                && api != Opcodes.ASM8
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4
-                && api != Opcodes.ASM9_EXPERIMENTAL) {
+                && api != Opcodes.ASM4) {
             throw new IllegalArgumentException("Unsupported api " + api);
         }
         this.api = api;
@@ -238,3 +238,4 @@ public abstract class SignatureVisitor {
     /** Ends the visit of a signature corresponding to a class or interface type. */
     public void visitEnd() {}
 }
+

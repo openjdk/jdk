@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ _masm->
@@ -307,6 +308,12 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   return entry_point;
 }
 
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  __ stop("Should not reach here");
+  BLOCK_COMMENT("} jump_to_native_invoker");
+}
+
 void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     vmIntrinsics::ID iid,
                                                     Register receiver_reg,
@@ -324,12 +331,12 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
     : MacroAssembler::PRESERVATION_FRAME_LR;
 
-  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
-    if (iid == vmIntrinsics::_linkToNative) {
-      assert(for_compiler_entry, "only compiler entry is supported");
-    }
+  if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, R19_method, temp1, temp2, for_compiler_entry);
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
@@ -533,7 +540,7 @@ void trace_method_handle_stub(const char* adaptername,
       // Current C frame
       frame cur_frame = os::current_frame();
 
-      // Robust search of trace_calling_frame (independant of inlining).
+      // Robust search of trace_calling_frame (independent of inlining).
       assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
       frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
       while (trace_calling_frame.fp() < saved_regs) {

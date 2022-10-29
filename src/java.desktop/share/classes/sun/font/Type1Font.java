@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,8 @@ public class Type1Font extends FileFont {
 
     private String psName = null;
 
-    private static HashMap<String, String> styleAbbreviationsMapping;
-    private static HashSet<String> styleNameTokes;
+    private static final HashMap<String, String> styleAbbreviationsMapping;
+    private static final HashSet<String> styleNameTokes;
 
     static {
         styleAbbreviationsMapping = new HashMap<>();
@@ -112,7 +112,7 @@ public class Type1Font extends FileFont {
         /* These abbreviation rules are taken from Appendix 1 of Adobe Technical Note #5088 */
         /* NB: this list is not complete - we did not include abbreviations which contain
                several capital letters because current expansion algorithm do not support this.
-               (namely we have omited MM aka "Multiple Master", OsF aka "Oldstyle figures",
+               (namely we have omitted MM aka "Multiple Master", OsF aka "Oldstyle figures",
                            OS aka "Oldstyle", SC aka "Small caps" and  DS aka "Display" */
         String[] nm = {"Black", "Bold", "Book", "Demi", "Heavy", "Light",
                        "Meduium", "Nord", "Poster", "Regular", "Super", "Thin",
@@ -143,7 +143,7 @@ public class Type1Font extends FileFont {
         for(int i=0; i<styleTokens.length; i++) {
             styleNameTokes.add(styleTokens[i]);
         }
-        }
+    }
 
 
     /**
@@ -208,15 +208,13 @@ public class Type1Font extends FileFont {
                 bbuf.position(0);
                 bufferRef = new WeakReference<>(bbuf);
                 fc.close();
-            } catch (NullPointerException e) {
-                throw new FontFormatException(e.toString());
             } catch (ClosedChannelException e) {
                 /* NIO I/O is interruptible, recurse to retry operation.
                  * Clear interrupts before recursing in case NIO didn't.
                  */
                 Thread.interrupted();
                 return getBuffer();
-            } catch (IOException e) {
+            } catch (NullPointerException | IOException e) {
                 throw new FontFormatException(e.toString());
             }
         }
@@ -245,7 +243,6 @@ public class Type1Font extends FileFont {
             });
             fc = raf.getChannel();
             while (buffer.remaining() > 0 && fc.read(buffer) != -1) {}
-        } catch (NullPointerException npe) {
         } catch (ClosedChannelException e) {
             try {
                 if (raf != null) {
@@ -259,7 +256,7 @@ public class Type1Font extends FileFont {
              */
             Thread.interrupted();
             readFile(buffer);
-        } catch (IOException e) {
+        } catch (NullPointerException | IOException e) {
         } finally  {
             if (raf != null) {
                 try {
@@ -345,8 +342,6 @@ public class Type1Font extends FileFont {
                 } else {
                     throw new FontFormatException("bad pfb file");
                 }
-            } catch (BufferUnderflowException bue) {
-                throw new FontFormatException(bue.toString());
             } catch (Exception e) {
                 throw new FontFormatException(e.toString());
             }
@@ -406,7 +401,7 @@ public class Type1Font extends FileFont {
                 }
             }
         } catch (Exception e) {
-                throw new FontFormatException(e.toString());
+            throw new FontFormatException(e.toString());
         }
 
         /* Ignore all fonts besides Type1 (e.g. Type3 fonts) */
@@ -414,24 +409,24 @@ public class Type1Font extends FileFont {
             throw new FontFormatException("Unsupported font type");
         }
 
-    if (psName == null) { //no explicit FontName
-                // Try to extract font name from the first text line.
-                // According to Type1 spec first line consist of
-                //  "%!FontType1-SpecVersion: FontName FontVersion"
-                // or
-                //  "%!PS-AdobeFont-1.0: FontName version"
-                bb.position(0);
-                if (bb.getShort() != 0x2521) { //if pfb (do not start with "%!")
-                    //skip segment header and "%!"
-                    bb.position(8);
-                    //NB: assume that first segment is ASCII one
-                    //  (is it possible to have valid Type1 font with first binary segment?)
-                }
-                String formatType = getSimpleToken(bb);
-                if (!formatType.startsWith("FontType1-") && !formatType.startsWith("PS-AdobeFont-")) {
-                        throw new FontFormatException("Unsupported font format [" + formatType + "]");
-                }
-                psName = getSimpleToken(bb);
+        if (psName == null) { //no explicit FontName
+            // Try to extract font name from the first text line.
+            // According to Type1 spec first line consist of
+            //  "%!FontType1-SpecVersion: FontName FontVersion"
+            // or
+            //  "%!PS-AdobeFont-1.0: FontName version"
+            bb.position(0);
+            if (bb.getShort() != 0x2521) { //if pfb (do not start with "%!")
+                //skip segment header and "%!"
+                bb.position(8);
+                //NB: assume that first segment is ASCII one
+                //  (is it possible to have valid Type1 font with first binary segment?)
+            }
+            String formatType = getSimpleToken(bb);
+            if (!formatType.startsWith("FontType1-") && !formatType.startsWith("PS-AdobeFont-")) {
+                throw new FontFormatException("Unsupported font format [" + formatType + "]");
+            }
+            psName = getSimpleToken(bb);
         }
 
     //if we got to the end of file then we did not find at least one of FullName or FamilyName
@@ -451,8 +446,7 @@ public class Type1Font extends FileFont {
     }
 
     private String fullName2FamilyName(String name) {
-        String res, token;
-        int len, start, end; //length of family name part
+        int start, end; //length of family name part
 
         //FamilyName is truncated version of FullName
         //Truncated tail must contain only style modifiers
@@ -465,19 +459,17 @@ public class Type1Font extends FileFont {
               start--;
             //as soon as we meet first non style token truncate
             // current tail and return
-                        if (!isStyleToken(name.substring(start+1, end))) {
-                                return name.substring(0, end);
+            if (!isStyleToken(name.substring(start+1, end))) {
+                return name.substring(0, end);
             }
-                        end = start;
+            end = start;
         }
 
-                return name; //should not happen
-        }
+        return name; //should not happen
+    }
 
     private String expandAbbreviation(String abbr) {
-        if (styleAbbreviationsMapping.containsKey(abbr))
-                        return styleAbbreviationsMapping.get(abbr);
-        return abbr;
+        return styleAbbreviationsMapping.getOrDefault(abbr, abbr);
     }
 
     private boolean isStyleToken(String token) {
@@ -550,7 +542,7 @@ public class Type1Font extends FileFont {
                 res.append(s.substring(start, end));
             }
             start = end;
-                }
+        }
 
         return res.toString();
     }

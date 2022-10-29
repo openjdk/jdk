@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ class ConstraintsChecker extends PKIXCertPathChecker {
     @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = new HashSet<String>(2);
+            supportedExts = HashSet.newHashSet(2);
             supportedExts.add(BasicConstraints_Id.toString());
             supportedExts.add(NameConstraints_Id.toString());
             supportedExts = Collections.unmodifiableSet(supportedExts);
@@ -185,20 +185,20 @@ class ConstraintsChecker extends PKIXCertPathChecker {
 
         if (debug != null) {
             debug.println("prevNC = " + prevNC +
-                        ", newNC = " + String.valueOf(newConstraints));
+                        ", newNC = " + newConstraints);
         }
 
         // if there are no previous name constraints, we just return the
         // new name constraints.
         if (prevNC == null) {
             if (debug != null) {
-                debug.println("mergedNC = " + String.valueOf(newConstraints));
+                debug.println("mergedNC = " + newConstraints);
             }
             if (newConstraints == null) {
-                return newConstraints;
+                return null;
             } else {
                 // Make sure we do a clone here, because we're probably
-                // going to modify this object later and we don't want to
+                // going to modify this object later, and we don't want to
                 // be sharing it with a Certificate object!
                 return (NameConstraintsExtension)newConstraints.clone();
             }

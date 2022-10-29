@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.security.util.DerValue;
  * certificate that identifies the specific OCSP Responder to use when
  * performing on-line validation of that certificate.
  * <p>
- * This extension is defined in <a href="http://tools.ietf.org/html/rfc5280">
+ * This extension is defined in <a href="https://tools.ietf.org/html/rfc5280">
  * Internet X.509 PKI Certificate and Certificate Revocation List
  * (CRL) Profile</a>. The profile permits
  * the extension to be included in end-entity or CA certificates,
@@ -121,7 +121,7 @@ public class AuthorityInfoAccessExtension extends Extension
             throw new IOException("Invalid encoding for " +
                                   "AuthorityInfoAccessExtension.");
         }
-        accessDescriptions = new ArrayList<AccessDescription>();
+        accessDescriptions = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             AccessDescription accessDescription = new AccessDescription(seq);
@@ -196,7 +196,7 @@ public class AuthorityInfoAccessExtension extends Extension
      */
     public void delete(String name) throws IOException {
         if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions = new ArrayList<AccessDescription>();
+            accessDescriptions = new ArrayList<>();
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +

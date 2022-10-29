@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Test verifies that jhsdb jmap could generate heap dump from core when heap is full
  * @requires vm.hasSA
  * @library /test/lib
- * @run driver/timeout=240 TestJmapCore run heap
+ * @run driver/timeout=480 TestJmapCore run heap
  */
 
 import java.io.File;
@@ -73,6 +73,7 @@ public class TestJmapCore {
     static void test(String type) throws Throwable {
         ProcessBuilder pb = ProcessTools.createTestJvm("-XX:+CreateCoredumpOnCrash",
                 "-Xmx512m", "-XX:MaxMetaspaceSize=64m", "-XX:+CrashOnOutOfMemoryError",
+                CoreUtils.getAlwaysPretouchArg(true),
                 TestJmapCore.class.getName(), type);
 
         // If we are going to force a core dump, apply "ulimit -c unlimited" if we can.

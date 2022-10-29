@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.jfr.internal.dcmd;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -32,7 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,13 +40,18 @@ import java.util.Set;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
+import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.XmlInput;
 
 /**
@@ -136,6 +139,14 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (disk != null) {
+            if (!disk) {
+                if (maxAge != null) {
+                    logWarning("Option maxage has no effect with disk=false.");
+                }
+                if (maxSize != null) {
+                    logWarning("Option maxsize has no effect with disk=false.");
+                }
+            }
             recording.setToDisk(disk.booleanValue());
         }
 
@@ -221,26 +232,27 @@ final class DCmdStart extends AbstractDCmd {
     }
 
     private LinkedHashMap<String, String> configureStandard(String[] settings) throws DCmdException {
-        LinkedHashMap<String, String> s = new LinkedHashMap<>();
+        LinkedHashMap<String, String> s = LinkedHashMap.newLinkedHashMap(settings.length);
         for (String configName : settings) {
             try {
                 s.putAll(JFC.createKnown(configName).getSettings());
-            } catch(FileNotFoundException e) {
-                throw new DCmdException("Could not find settings file'" + configName + "'", e);
-            } catch (IOException | ParseException e) {
-                throw new DCmdException("Could not parse settings file '" + settings[0] + "'", e);
+            } catch (InvalidPathException | IOException | ParseException e) {
+                throw new DCmdException(JFC.formatException("Could not", e, configName), e);
             }
         }
         return s;
     }
 
     private LinkedHashMap<String, String> configureExtended(String[] settings, ArgumentParser parser) throws DCmdException {
-        List<SafePath> paths = new ArrayList<>();
+        JFCModel model = new JFCModel(l -> logWarning(l));
         for (String setting : settings) {
-            paths.add(JFC.createSafePath(setting));
+            try {
+                model.parse(JFC.createSafePath(setting));
+            } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
+                throw new DCmdException(JFC.formatException("Could not", e, setting), e);
+            }
         }
         try {
-            JFCModel model = new JFCModel(paths);
             Set<String> jfcOptions = new HashSet<>();
             for (XmlInput input : model.getInputs()) {
                 jfcOptions.add(input.getName());
@@ -262,13 +274,9 @@ final class DCmdStart extends AbstractDCmd {
                 }
             }
             return model.getSettings();
-         } catch (IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
              throw new DCmdException(iae.getMessage()); // spelling error, invalid value
-         } catch (FileNotFoundException ioe) {
-             throw new DCmdException("Could not find settings file'" + settings[0] + "'", ioe);
-         } catch (IOException | ParseException e) {
-             throw new DCmdException("Could not parse settings file '" + settings[0] + "'", e);
-         }
+        }
     }
 
     // Instruments JDK-events on class load to reduce startup time
@@ -364,7 +372,7 @@ final class DCmdStart extends AbstractDCmd {
                                  Turn on this flag only when you have an application that you
                                  suspect has a memory leak. If the settings parameter is set to
                                  'profile', then the information collected includes the stack
-                                 trace from where the potential leaking object wasallocated.
+                                 trace from where the potential leaking object was allocated.
                                  (BOOLEAN, false)
 
                  settings        (Optional) Name of the settings file that identifies which events
@@ -394,7 +402,7 @@ final class DCmdStart extends AbstractDCmd {
                take  precedence. The whitespace character can be omitted for timespan values,
                i.e. 20s. For more information about the settings syntax, see Javadoc of the
                jdk.jfr package.
-
+               %s
                Options must be specified using the <key> or <key>=<value> syntax.
 
                Example usage:
@@ -414,7 +422,28 @@ final class DCmdStart extends AbstractDCmd {
 
                Note, if the default event settings are modified, overhead may exceed 1%%.
 
-               """.formatted(exampleDirectory()).lines().toArray(String[]::new);
+               """.formatted(jfcOptions(), exampleDirectory()).lines().toArray(String[]::new);
+    }
+
+    private static String jfcOptions() {
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (SafePath s : SecuritySupport.getPredefinedJFCFiles()) {
+                String name = JFC.nameFromPath(s.toPath());
+                JFCModel model = JFCModel.create(s, l -> {});
+                sb.append('\n');
+                sb.append("Options for ").append(name).append(":\n");
+                sb.append('\n');
+                for (XmlInput input : model.getInputs()) {
+                    sb.append("  ").append(input.getOptionSyntax()).append('\n');
+                    sb.append('\n');
+                }
+            }
+            return sb.toString();
+        } catch (IOException | JFCModelException | ParseException  e) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Could not list .jfc options for JFR.start. " + e.getMessage());
+            return "";
+        }
     }
 
     @Override

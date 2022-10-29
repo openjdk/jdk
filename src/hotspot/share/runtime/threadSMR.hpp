@@ -26,8 +26,8 @@
 #define SHARE_RUNTIME_THREADSMR_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/debug.hpp"
 

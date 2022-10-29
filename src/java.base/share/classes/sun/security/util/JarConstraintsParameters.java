@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import sun.security.util.AnchorCertificates;
-import sun.security.util.ConstraintsParameters;
 import sun.security.validator.Validator;
 
 /**
@@ -49,7 +47,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
     private boolean anchorIsJdkCA;
     private boolean anchorIsJdkCASet;
     // The timestamp of the signed JAR file, if timestamped
-    private Date timestamp;
+    private final Date timestamp;
     // The keys of the signers and TSA
     private final Set<Key> keys;
     // The certs in the signers and TSA chain that are issued by the trust anchor
@@ -98,16 +96,11 @@ public class JarConstraintsParameters implements ConstraintsParameters {
         this.timestamp = latestTimestamp;
     }
 
-    public JarConstraintsParameters(List<X509Certificate> chain, Timestamp timestamp) {
+    public JarConstraintsParameters(List<X509Certificate> chain, Date timestamp) {
         this.keys = new HashSet<>();
         this.certsIssuedByAnchor = new HashSet<>();
         addToCertsAndKeys(chain);
-        if (timestamp != null) {
-            addToCertsAndKeys(timestamp.getSignerCertPath());
-            this.timestamp = timestamp.getTimestamp();
-        } else {
-            this.timestamp = null;
-        }
+        this.timestamp = timestamp;
     }
 
     // extract last certificate and signer's public key from chain
@@ -178,7 +171,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
 
     @Override
     public String extendedExceptionMsg() {
-        return message;
+        return message == null ? "." : message;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -993,7 +993,7 @@ public class Check {
         }
 
         //upward project the initializer type
-        return types.upward(t, types.captures(t));
+        return types.upward(t, types.captures(t)).baseType();
     }
 
     Type checkMethod(final Type mtype,
@@ -1790,7 +1790,7 @@ public class Check {
             return;
         }
 
-        // Error if static method overrides instance method (JLS 8.4.6.2).
+        // Error if static method overrides instance method (JLS 8.4.8.2).
         if ((m.flags() & STATIC) != 0 &&
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
@@ -1800,7 +1800,7 @@ public class Check {
         }
 
         // Error if instance method overrides static or final
-        // method (JLS 8.4.6.1).
+        // method (JLS 8.4.8.1).
         if ((other.flags() & FINAL) != 0 ||
                  (m.flags() & STATIC) == 0 &&
                  (other.flags() & STATIC) != 0) {
@@ -1816,7 +1816,7 @@ public class Check {
             return;
         }
 
-        // Error if overriding method has weaker access (JLS 8.4.6.3).
+        // Error if overriding method has weaker access (JLS 8.4.8.3).
         if (protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       (other.flags() & AccessFlags) == 0 ?
@@ -1826,6 +1826,10 @@ public class Check {
                                                           asFlagSet(other.flags() & AccessFlags)));
             m.flags_field |= BAD_OVERRIDE;
             return;
+        }
+
+        if (shouldCheckPreview(m, other, origin)) {
+            checkPreview(tree.pos(), m, other);
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -1902,6 +1906,23 @@ public class Check {
         }
     }
     // where
+        private boolean shouldCheckPreview(MethodSymbol m, MethodSymbol other, ClassSymbol origin) {
+            if (m.owner != origin ||
+                //performance - only do the expensive checks when the overridden method is a Preview API:
+                (other.flags() & PREVIEW_API) == 0) {
+                return false;
+            }
+
+            for (Symbol s : types.membersClosure(origin.type, false).getSymbolsByName(m.name)) {
+                if (m != s && m.overrides(s, origin, types, false)) {
+                    //only produce preview warnings or errors if "m" immediatelly overrides "other"
+                    //without intermediate overriding methods:
+                    return s == other;
+                }
+            }
+
+            return false;
+        }
         private boolean isDeprecatedOverrideIgnorable(MethodSymbol m, ClassSymbol origin) {
             // If the method, m, is defined in an interface, then ignore the issue if the method
             // is only inherited via a supertype and also implemented in the supertype,
@@ -2067,8 +2088,13 @@ public class Check {
                          types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
-                        log.error(pos, Errors.TypesIncompatible(t1, t2,
-                                Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
+                        if (types.isSameType(t1, t2)) {
+                            log.error(pos, Errors.IncompatibleDiffRetSameType(t1,
+                                    s2.name, types.memberType(t2, s2).getParameterTypes()));
+                        } else {
+                            log.error(pos, Errors.TypesIncompatible(t1, t2,
+                                    Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
+                        }
                         return s2;
                     }
                 } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
@@ -2554,7 +2580,7 @@ public class Check {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, m2), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source)) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2)) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
                     if (m1 == sym) {
@@ -2599,7 +2625,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getSymbolsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source))) {
+            if (!types.isSubSignature(sym.type, types.memberType(site, s))) {
                 if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                     log.error(pos,
                               Errors.NameClashSameErasureNoHide(sym, sym.location(), s, s.location()));
@@ -2703,7 +2729,6 @@ public class Check {
     void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
             MethodSymbol msym1, MethodSymbol msym2) {
         if (msym1 != msym2 &&
-                Feature.DEFAULT_METHODS.allowedInSource(source) &&
                 lint.isEnabled(LintCategory.OVERLOADS) &&
                 (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
                 (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
@@ -2939,6 +2964,9 @@ public class Check {
     /** Check an annotation of a symbol.
      */
     private void validateAnnotation(JCAnnotation a, JCTree declarationTree, Symbol s) {
+        /** NOTE: if annotation processors are present, annotation processing rounds can happen after this method,
+         *  this can impact in particular records for which annotations are forcibly propagated.
+         */
         validateAnnotationTree(a);
         boolean isRecordMember = ((s.flags_field & RECORD) != 0 || s.enclClass() != null && s.enclClass().isRecord());
 
@@ -2977,9 +3005,15 @@ public class Check {
                     rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
                             Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
                     ).collect(List.collector()));
-                    rc.setTypeAttributes(s.getRawTypeAttributes());
-                    // to get all the type annotations applied to the type
-                    rc.type = s.type;
+
+                    /* At this point, we used to carry over any type annotations from the VARDEF to the record component, but
+                     * that is problematic, since we get here only when *some* annotation is applied to the SE5 (declaration)
+                     * annotation location, inadvertently failing to carry over the type annotations when the VarDef has no
+                     * annotations in the SE5 annotation location.
+                     *
+                     * Now type annotations are assigned to record components in a method that would execute irrespective of
+                     * whether there are SE5 annotations on a VarDef viz com.sun.tools.javac.code.TypeAnnotations.TypeAnnotationPositions.visitVarDef
+                     */
                 }
             }
         }
@@ -3337,7 +3371,7 @@ public class Check {
 
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
         Optional<Set<Name>> targets = getApplicableTargets(a, s);
-        /* the optional could be emtpy if the annotation is unknown in that case
+        /* the optional could be empty if the annotation is unknown in that case
          * we return that it is applicable and if it is erroneous that should imply
          * an error at the declaration site
          */
@@ -3579,7 +3613,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && s.packge().modle != other.packge().modle) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s)) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
@@ -3666,7 +3700,8 @@ public class Check {
      *  constructors.
      */
     void checkCyclicConstructors(JCClassDecl tree) {
-        Map<Symbol,Symbol> callMap = new HashMap<>();
+        // use LinkedHashMap so we generate errors deterministically
+        Map<Symbol,Symbol> callMap = new LinkedHashMap<>();
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
@@ -3695,7 +3730,7 @@ public class Check {
                                         Map<Symbol,Symbol> callMap) {
         if (ctor != null && (ctor.flags_field & ACYCLIC) == 0) {
             if ((ctor.flags_field & LOCKED) != 0) {
-                log.error(TreeInfo.diagnosticPositionFor(ctor, tree),
+                log.error(TreeInfo.diagnosticPositionFor(ctor, tree, false, t -> t.hasTag(IDENT)),
                           Errors.RecursiveCtorInvocation);
             } else {
                 ctor.flags_field |= LOCKED;
@@ -3725,6 +3760,22 @@ public class Check {
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
                 deferredLintHandler.report(() -> warnDivZero(pos));
             }
+        }
+    }
+
+    /**
+     *  Check for possible loss of precission
+     *  @param pos           Position for error reporting.
+     *  @param found    The computed type of the tree
+     *  @param req  The computed type of the tree
+     */
+    void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
+        if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
+            deferredLintHandler.report(() -> {
+                if (lint.isEnabled(LintCategory.LOSSY_CONVERSIONS))
+                    log.warning(LintCategory.LOSSY_CONVERSIONS,
+                            pos, Warnings.PossibleLossOfPrecision(found, req));
+            });
         }
     }
 
@@ -4306,30 +4357,34 @@ public class Check {
         boolean wasNonEmptyFallThrough = false;
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
-            for (JCCaseLabel pat : c.labels) {
-                if (pat.isExpression()) {
-                    JCExpression expr = (JCExpression) pat;
+            for (JCCaseLabel label : c.labels) {
+                if (label.hasTag(CONSTANTCASELABEL)) {
+                    JCExpression expr = ((JCConstantCaseLabel) label).expr;
                     if (TreeInfo.isNull(expr)) {
                         if (wasPattern && !wasTypePattern && !wasNonEmptyFallThrough) {
-                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                            log.error(label.pos(), Errors.FlowsThroughFromPattern);
                         }
                         wasNullPattern = true;
                     } else {
                         if (wasPattern && !wasNonEmptyFallThrough) {
-                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                            log.error(label.pos(), Errors.FlowsThroughFromPattern);
                         }
                         wasConstant = true;
                     }
-                } else if (pat.hasTag(DEFAULTCASELABEL)) {
+                } else if (label.hasTag(DEFAULTCASELABEL)) {
                     if (wasPattern && !wasNonEmptyFallThrough) {
-                        log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                        log.error(label.pos(), Errors.FlowsThroughFromPattern);
                     }
                     wasDefault = true;
                 } else {
+                    JCPattern pat = ((JCPatternCaseLabel) label).pat;
+                    while (pat instanceof JCParenthesizedPattern parenthesized) {
+                        pat = parenthesized.pattern;
+                    }
                     boolean isTypePattern = pat.hasTag(BINDINGPATTERN);
                     if (wasPattern || wasConstant || wasDefault ||
                         (wasNullPattern && (!isTypePattern || wasNonEmptyFallThrough))) {
-                        log.error(pat.pos(), Errors.FlowsThroughToPattern);
+                        log.error(label.pos(), Errors.FlowsThroughToPattern);
                     }
                     wasPattern = true;
                     wasTypePattern = isTypePattern;
@@ -4350,6 +4405,93 @@ public class Check {
             wasNonEmptyFallThrough = c.stats.nonEmpty() && completesNormally;
         }
     }
+
+    void checkSwitchCaseLabelDominated(List<JCCase> cases) {
+        List<JCCaseLabel> caseLabels = List.nil();
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            JCCase c = l.head;
+            for (JCCaseLabel label : c.labels) {
+                if (label.hasTag(DEFAULTCASELABEL) || TreeInfo.isNullCaseLabel(label)) {
+                    continue;
+                }
+                Type currentType = labelType(label);
+                for (JCCaseLabel testCaseLabel : caseLabels) {
+                    Type testType = labelType(testCaseLabel);
+                    if (types.isSubtype(currentType, testType) &&
+                        !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
+                        //the current label is potentially dominated by the existing (test) label, check:
+                        boolean dominated = false;
+                        if (label instanceof JCConstantCaseLabel) {
+                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
+                        } else if (label instanceof JCPatternCaseLabel patternCL &&
+                                   testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
+                                   TreeInfo.unguardedCaseLabel(testCaseLabel)) {
+                            dominated = patternDominated(testPatternCaseLabel.pat,
+                                                         patternCL.pat);
+                        }
+                        if (dominated) {
+                            log.error(label.pos(), Errors.PatternDominated);
+                        }
+                    }
+                }
+                caseLabels = caseLabels.prepend(label);
+            }
+        }
+    }
+        //where:
+        private Type labelType(JCCaseLabel label) {
+            return types.erasure(switch (label.getTag()) {
+                case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
+                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
+            });
+        }
+        private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
+            Type existingPatternType = types.erasure(existingPattern.type);
+            Type currentPatternType = types.erasure(currentPattern.type);
+            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+                return false;
+            }
+            if (existingPatternType.isPrimitive()) {
+                return types.isSameType(existingPatternType, currentPatternType);
+            } else {
+                if (!types.isSubtype(currentPatternType, existingPatternType)) {
+                    return false;
+                }
+            }
+            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
+                existingPattern = parenthesized.pattern;
+            }
+            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
+                currentPattern = parenthesized.pattern;
+            }
+            if (currentPattern instanceof JCBindingPattern) {
+                return existingPattern instanceof JCBindingPattern;
+            } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {
+                if (existingPattern instanceof JCBindingPattern) {
+                    return true;
+                } else if (existingPattern instanceof JCRecordPattern existingRecordPattern) {
+                    List<JCPattern> existingNested = existingRecordPattern.nested;
+                    List<JCPattern> currentNested = currentRecordPattern.nested;
+                    if (existingNested.size() != currentNested.size()) {
+                        return false;
+                    }
+                    while (existingNested.nonEmpty()) {
+                        if (!patternDominated(existingNested.head, currentNested.head)) {
+                            return false;
+                        }
+                        existingNested = existingNested.tail;
+                        currentNested = currentNested.tail;
+                    }
+                    return true;
+                } else {
+                    Assert.error("Unknown pattern: " + existingPattern.getTag());
+                }
+            } else {
+                Assert.error("Unknown pattern: " + currentPattern.getTag());
+            }
+            return false;
+        }
 
     /** check if a type is a subtype of Externalizable, if that is available. */
     boolean isExternalizable(Type t) {
@@ -4585,7 +4727,7 @@ public class Check {
                         return ; // Don't try to recover
                     }
                 }
-                // Non-Serializable super class
+                // Non-Serializable superclass
                 try {
                     ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
                     for(var sym : supertype.getEnclosedElements()) {

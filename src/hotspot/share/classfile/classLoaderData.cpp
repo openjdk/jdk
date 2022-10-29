@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
@@ -162,7 +163,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 
     // A ClassLoaderData created solely for a non-strong hidden class should never
     // have a ModuleEntryTable or PackageEntryTable created for it.
-    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
+    _packages = new PackageEntryTable();
     if (h_class_loader.is_null()) {
       // Create unnamed module for boot loader
       _unnamed_module = ModuleEntry::create_boot_unnamed_module(this);
@@ -282,6 +283,12 @@ void ClassLoaderData::clear_claim(int claim) {
   }
 }
 
+#ifdef ASSERT
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found claim: %d bits in _claim: %d", claim, _claim);
+}
+#endif
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);
@@ -358,15 +365,28 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
-    // Do not filter ArrayKlass oops here...
-    if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
-#ifdef ASSERT
-      oop m = k->java_mirror();
-      assert(m != NULL, "NULL mirror");
-      assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
-#endif
-      klass_closure->do_klass(k);
+    // Filter out InstanceKlasses (or their ObjArrayKlasses) that have not entered the
+    // loaded state.
+    if (k->is_instance_klass()) {
+      if (!InstanceKlass::cast(k)->is_loaded()) {
+        continue;
+      }
+    } else if (k->is_shared() && k->is_objArray_klass()) {
+      Klass* bottom = ObjArrayKlass::cast(k)->bottom_klass();
+      if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
+        // This could happen if <bottom> is a shared class that has been restored
+        // but is not yet marked as loaded. All archived array classes of the
+        // bottom class are already restored and placed in the _klasses list.
+        continue;
+      }
     }
+
+#ifdef ASSERT
+    oop m = k->java_mirror();
+    assert(m != NULL, "NULL mirror");
+    assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
+#endif
+    klass_closure->do_klass(k);
   }
 }
 
@@ -386,26 +406,14 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
     f(_unnamed_module);
   }
   if (_modules != NULL) {
-    for (int i = 0; i < _modules->table_size(); i++) {
-      for (ModuleEntry* entry = _modules->bucket(i);
-           entry != NULL;
-           entry = entry->next()) {
-        f(entry);
-      }
-    }
+    _modules->modules_do(f);
   }
 }
 
 void ClassLoaderData::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   if (_packages != NULL) {
-    for (int i = 0; i < _packages->table_size(); i++) {
-      for (PackageEntry* entry = _packages->bucket(i);
-           entry != NULL;
-           entry = entry->next()) {
-        f(entry);
-      }
-    }
+    _packages->packages_do(f);
   }
 }
 
@@ -578,7 +586,7 @@ ModuleEntryTable* ClassLoaderData::modules() {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
     if ((modules = _modules) == NULL) {
-      modules = new ModuleEntryTable(ModuleEntryTable::_moduletable_entry_size);
+      modules = new ModuleEntryTable();
 
       {
         MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
@@ -596,27 +604,21 @@ const int _default_loader_dictionary_size = 107;
 Dictionary* ClassLoaderData::create_dictionary() {
   assert(!has_class_mirror_holder(), "class mirror holder cld does not have a dictionary");
   int size;
-  bool resizable = false;
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else {
     size = _default_loader_dictionary_size;
-    resizable = true;
   }
-  if (!DynamicallyResizeSystemDictionaries || DumpSharedSpaces) {
-    resizable = false;
-  }
-  return new Dictionary(this, size, resizable);
+  return new Dictionary(this, size);
 }
 
-// Tell the GC to keep this klass alive while iterating ClassLoaderDataGraph
-oop ClassLoaderData::holder_phantom() const {
+// Tell the GC to keep this klass alive. Needed while iterating ClassLoaderDataGraph,
+// and any runtime code that uses klasses.
+oop ClassLoaderData::holder() const {
   // A klass that was previously considered dead can be looked up in the
   // CLD/SD, and its _java_mirror or _class_loader can be stored in a root
   // or a reachable object making it alive again. The SATB part of G1 needs
@@ -700,7 +702,7 @@ ClassLoaderData::~ClassLoaderData() {
   }
 
   if (_unnamed_module != NULL) {
-    _unnamed_module->delete_unnamed_module();
+    delete _unnamed_module;
     _unnamed_module = NULL;
   }
 
@@ -977,14 +979,23 @@ void ClassLoaderData::print_on(outputStream* out) const {
   }
   out->print_cr(" - handles             %d", _handles.count());
   out->print_cr(" - dependency count    %d", _dependency_count);
-  out->print   (" - klasses             {");
-  PrintKlassClosure closure(out);
-  ((ClassLoaderData*)this)->classes_do(&closure);
+  out->print   (" - klasses             { ");
+  if (Verbose) {
+    PrintKlassClosure closure(out);
+    ((ClassLoaderData*)this)->classes_do(&closure);
+  } else {
+     out->print("...");
+  }
   out->print_cr(" }");
   out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
   out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
   out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
-  out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  if (_dictionary != nullptr) {
+    out->print   (" - dictionary          " INTPTR_FORMAT " ", p2i(_dictionary));
+    _dictionary->print_size(out);
+  } else {
+    out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  }
   if (_jmethod_ids != NULL) {
     out->print   (" - jmethod count       ");
     Method::print_jmethod_ids_count(this, out);
@@ -1015,6 +1026,10 @@ void ClassLoaderData::verify() {
     guarantee(k->class_loader_data() == this, "Must be the same");
     k->verify();
     assert(k != k->next_link(), "no loops!");
+  }
+
+  if (_modules != NULL) {
+    _modules->verify();
   }
 }
 

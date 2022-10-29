@@ -31,8 +31,8 @@
 #include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/finalizerService.hpp"
 
 static void send_event(const FinalizerEntry* fe, const InstanceKlass* ik, const JfrTicks& timestamp, Thread* thread) {
@@ -57,6 +57,9 @@ static void send_event(const FinalizerEntry* fe, const InstanceKlass* ik, const 
 }
 
 void JfrFinalizerStatisticsEvent::send_unload_event(const InstanceKlass* ik) {
+  if (!EventFinalizerStatistics::is_enabled()) {
+    return;
+  }
   Thread* const thread = Thread::current();
   ResourceMark rm(thread);
   send_event(FinalizerService::lookup(ik, thread), ik, JfrTicks::now(), thread);

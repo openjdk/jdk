@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
 import sun.security.util.SecurityConstants;
@@ -169,6 +170,18 @@ import sun.security.action.GetPropertyAction;
  * the recommendations advised in <a
  * href="https://tools.ietf.org/html/rfc3986#section-7">RFC3986,
  * Section 7, Security Considerations</a>.
+ * <p>
+ * All {@code URL} constructors may throw {@link MalformedURLException}.
+ * In particular, if the underlying {@link URLStreamHandler}
+ * implementation rejects, or is known to reject, any of the parameters,
+ * {@link MalformedURLException} may be thrown.
+ * Typically, a constructor that calls the stream handler's {@linkplain
+ * URLStreamHandler#parseURL(URL, String, int, int) parseURL method} may
+ * throw {@code MalformedURLException} if the underlying stream handler
+ * implementation of that method throws {@code IllegalArgumentException}.
+ * However, which checks are performed, or not, by the stream handlers
+ * is implementation dependent, and callers should not rely on such
+ * checks for full URL validation.
  *
  * @author  James Gosling
  * @since 1.0
@@ -351,7 +364,9 @@ public final class URL implements java.io.Serializable {
      * @param      port       the port number on the host.
      * @param      file       the file on the host
      * @throws     MalformedURLException  if an unknown protocol or the port
-     *                  is a negative number other than -1
+     *                  is a negative number other than -1, or if the
+     *                  underlying stream handler implementation rejects,
+     *                  or is known to reject, the {@code URL}
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)
@@ -379,7 +394,9 @@ public final class URL implements java.io.Serializable {
      * @param      protocol   the name of the protocol to use.
      * @param      host       the name of the host.
      * @param      file       the file on the host.
-     * @throws     MalformedURLException  if an unknown protocol is specified.
+     * @throws     MalformedURLException  if an unknown protocol is specified,
+     *                        or if the underlying stream handler implementation
+     *                        rejects, or is known to reject, the {@code URL}
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      */
@@ -414,7 +431,9 @@ public final class URL implements java.io.Serializable {
      * @param      file       the file on the host
      * @param      handler    the stream handler for the URL.
      * @throws     MalformedURLException  if an unknown protocol or the port
-     *                    is a negative number other than -1
+     *                    is a negative number other than -1,
+     *                    or if the underlying stream handler implementation
+     *                    rejects, or is known to reject, the {@code URL}
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
@@ -439,7 +458,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = toLowerCase(protocol);
+        protocol = lowerCaseProtocol(protocol);
         this.protocol = protocol;
         if (host != null) {
 
@@ -509,7 +528,10 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.
+     *               of the associated protocol, or the
+     *               underlying stream handler's {@linkplain
+     *               URLStreamHandler#parseURL parseURL method} throws
+     *               {@code IllegalArgumentException}
      * @see        java.net.URL#URL(java.net.URL, java.lang.String)
      */
     public URL(String spec) throws MalformedURLException {
@@ -521,7 +543,7 @@ public final class URL implements java.io.Serializable {
      *
      * The new URL is created from the given context URL and the spec
      * argument as described in
-     * RFC2396 &quot;Uniform Resource Identifiers : Generic * Syntax&quot; :
+     * RFC2396 &quot;Uniform Resource Identifiers : Generic Syntax&quot; :
      * <blockquote><pre>
      *          &lt;scheme&gt;://&lt;authority&gt;&lt;path&gt;?&lt;query&gt;#&lt;fragment&gt;
      * </pre></blockquote>
@@ -553,12 +575,19 @@ public final class URL implements java.io.Serializable {
      * <p>
      * For a more detailed description of URL parsing, refer to RFC2396.
      *
+     * @implSpec Parsing the URL includes calling the {@link
+     * URLStreamHandler#parseURL(URL, String, int, int) parseURL} method on the
+     * selected handler.
+     *
      * @param      context   the context in which to parse the specification.
      * @param      spec      the {@code String} to parse as a URL.
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.
+     *               of the associated protocol, or the
+     *               underlying stream handler's {@linkplain
+     *               URLStreamHandler#parseURL parseURL method} throws
+     *               {@code IllegalArgumentException}
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      * @see        java.net.URLStreamHandler
@@ -574,13 +603,20 @@ public final class URL implements java.io.Serializable {
      * within a specified context. If the handler is null, the parsing
      * occurs as with the two argument constructor.
      *
+     * @implSpec Parsing the URL includes calling the {@link
+     * URLStreamHandler#parseURL(URL, String, int, int) parseURL} method on the
+     * selected handler.
+     *
      * @param      context   the context in which to parse the specification.
      * @param      spec      the {@code String} to parse as a URL.
      * @param      handler   the stream handler for the URL.
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.
+     *               of the associated protocol, or the
+     *               underlying stream handler's {@linkplain
+     *               URLStreamHandler#parseURL(URL, String, int, int)
+     *               parseURL method} throws {@code IllegalArgumentException}
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
@@ -632,7 +668,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-                    String s = toLowerCase(spec.substring(start, i));
+                    String s = lowerCaseProtocol(spec.substring(start, i));
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
@@ -723,7 +759,7 @@ public final class URL implements java.io.Serializable {
         String protocol = uri.getScheme();
 
         // In general we need to go via Handler.parseURL, but for the jrt
-        // protocol we enforce that the Handler is not overrideable and can
+        // protocol we enforce that the Handler is not overridable and can
         // optimize URI to URL conversion.
         //
         // Case-sensitive comparison for performance; malformed protocols will
@@ -1242,7 +1278,7 @@ public final class URL implements java.io.Serializable {
     private static final URLStreamHandlerFactory defaultFactory = new DefaultFactory();
 
     private static class DefaultFactory implements URLStreamHandlerFactory {
-        private static String PREFIX = "sun.net.www.protocol.";
+        private static final String PREFIX = "sun.net.www.protocol.";
 
         public URLStreamHandler createURLStreamHandler(String protocol) {
             // Avoid using reflection during bootstrap
@@ -1342,15 +1378,24 @@ public final class URL implements java.io.Serializable {
         };
     }
 
-    // Thread-local gate to prevent recursive provider lookups
-    private static ThreadLocal<Object> gate = new ThreadLocal<>();
+    private static class ThreadTrackHolder {
+        static final ThreadTracker TRACKER = new ThreadTracker();
+    }
+
+    private static Object tryBeginLookup() {
+        return ThreadTrackHolder.TRACKER.tryBegin();
+    }
+
+    private static void endLookup(Object key) {
+        ThreadTrackHolder.TRACKER.end(key);
+    }
 
     @SuppressWarnings("removal")
     private static URLStreamHandler lookupViaProviders(final String protocol) {
-        if (gate.get() != null)
+        Object key = tryBeginLookup();
+        if (key == null) {
             throw new Error("Circular loading of URL stream handler providers detected");
-
-        gate.set(gate);
+        }
         try {
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
@@ -1366,7 +1411,7 @@ public final class URL implements java.io.Serializable {
                     }
                 });
         } finally {
-            gate.set(null);
+            endLookup(key);
         }
     }
 
@@ -1374,9 +1419,13 @@ public final class URL implements java.io.Serializable {
      * Returns the protocol in lower case. Special cases known protocols
      * to avoid loading locale classes during startup.
      */
-    static String toLowerCase(String protocol) {
-        if (protocol.equals("jrt") || protocol.equals("file") || protocol.equals("jar")) {
-            return protocol;
+    static String lowerCaseProtocol(String protocol) {
+        if (protocol.equals("jrt")) {
+            return "jrt";
+        } else if (protocol.equals("file")) {
+            return "file";
+        } else if (protocol.equals("jar")) {
+            return "jar";
         } else {
             return protocol.toLowerCase(Locale.ROOT);
         }

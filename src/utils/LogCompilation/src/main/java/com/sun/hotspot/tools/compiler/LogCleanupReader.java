@@ -54,9 +54,9 @@ class LogCleanupReader extends Reader {
         reader = r;
     }
 
-    static final private Matcher duplicateCompileID = Pattern.compile(".+ compile_id='[0-9]+'.*( compile_id='[0-9]+)").matcher("");
-    static final private Matcher compilerName = Pattern.compile("' (C[12]) compile_id=").matcher("");
-    static final private Matcher destroyVM = Pattern.compile("'(destroy_vm)/").matcher("");
+    private static final Matcher duplicateCompileID = Pattern.compile(".+ compile_id='[0-9]+'.*( compile_id='[0-9]+)").matcher("");
+    private static final Matcher compilerName = Pattern.compile("' (C[12]) compile_id=").matcher("");
+    private static final Matcher destroyVM = Pattern.compile("'(destroy_vm)/").matcher("");
 
     /**
      * The log cleanup takes place in this method. If any of the three patterns

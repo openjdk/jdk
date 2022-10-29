@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@ package sun.security.ssl;
  */
 interface SSLRecord extends Record {
 
-    static final int    headerSize = 5;             // SSLv3 record header
-    static final int    handshakeHeaderSize = 4;    // SSLv3 handshake header
+    int    headerSize = 5;             // SSLv3 record header
+    int    handshakeHeaderSize = 4;    // SSLv3 handshake header
 
     /*
      * The size of the header plus the max IV length
      */
-    static final int    headerPlusMaxIVSize =
+    int    headerPlusMaxIVSize =
                                       headerSize        // header
                                     + maxIVLength;      // iv
 
@@ -46,7 +46,7 @@ interface SSLRecord extends Record {
      * The maximum size that may be increased when translating plaintext to
      * ciphertext fragment.
      */
-    static final int    maxPlaintextPlusSize =
+    int    maxPlaintextPlusSize =
                                       headerSize        // header
                                     + maxIVLength       // iv
                                     + maxMacSize        // MAC or AEAD tag
@@ -61,7 +61,7 @@ interface SSLRecord extends Record {
      * Some compression algorithms have rare cases where they expand the data.
      * As we don't support compression at this time, leave that out.
      */
-    static final int    maxRecordSize =
+    int    maxRecordSize =
                                       headerPlusMaxIVSize   // header + iv
                                     + maxDataSize           // data
                                     + maxPadding            // padding
@@ -70,13 +70,13 @@ interface SSLRecord extends Record {
     /*
      * The maximum large record size.
      *
-     * Some SSL/TLS implementations support large fragment upto 2^15 bytes,
+     * Some SSL/TLS implementations support large fragment up to 2^15 bytes,
      * such as Microsoft. We support large incoming fragments.
      *
      * The maximum large record size is defined as maxRecordSize plus 2^14,
      * this is the amount OpenSSL is using.
      */
-    static final int    maxLargeRecordSize =
+    int    maxLargeRecordSize =
                 maxRecordSize   // Max size with a conforming implementation
               + maxDataSize;    // extra 2^14 bytes for large data packets.
 
@@ -85,7 +85,7 @@ interface SSLRecord extends Record {
      * are faced with an SSLv2 "hello" that's not saying "I talk v3".
      * It's the only one documented in the V2 spec as a fatal error.
      */
-    static final byte[] v2NoCipher = {
+    byte[] v2NoCipher = {
         (byte)0x80, (byte)0x03, // unpadded 3 byte record
         (byte)0x00,             // ... error message
         (byte)0x00, (byte)0x01  // ... NO_CIPHER error

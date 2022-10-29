@@ -28,8 +28,8 @@
 #include "compiler/compileBroker.hpp"
 #include "oops/metadata.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/chunkedList.hpp"
 #if INCLUDE_JVMCI

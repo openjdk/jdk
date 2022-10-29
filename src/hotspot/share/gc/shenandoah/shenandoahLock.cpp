@@ -28,8 +28,8 @@
 
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/thread.hpp"
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class XMLEventFactoryImpl extends XMLEventFactory {
     @Override
     public Characters createCData(String content) {
         //stax doesn't have separate CDATA event. This is taken care by
-        //CHRACTERS event setting the cdata flag to true.
+        //CHARACTERS event setting the cdata flag to true.
         CharacterEvent charEvent =  new CharacterEvent(content, true);
         if(location != null)charEvent.setLocation(location);
         return charEvent;

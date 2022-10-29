@@ -669,8 +669,7 @@ interface Destination {
 /** This data-sink class is used to implement ignored destinations
  *  (e.g. {\*\blegga blah blah blah} )
  *  It accepts all keywords and text but does nothing with them. */
-class DiscardingDestination implements Destination
-{
+static class DiscardingDestination implements Destination {
     public void handleBinaryBlob(byte[] data)
     {
         /* Discard binary blobs. */
@@ -1071,7 +1070,7 @@ class StylesheetDestination
 
 /** Handles the info group. Currently no info keywords are recognized
  *  so this is a subclass of DiscardingDestination. */
-class InfoDestination
+static class InfoDestination
     extends DiscardingDestination
     implements Destination
 {

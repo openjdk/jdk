@@ -327,7 +327,7 @@ public class BasicHTML {
         private static StyleSheet defaultStyles;
 
         /**
-         * Overriden to return our own slimmed down style sheet.
+         * Overridden to return our own slimmed down style sheet.
          */
         public StyleSheet getStyleSheet() {
             if (defaultStyles == null) {
@@ -585,9 +585,9 @@ public class BasicHTML {
          *  position is a boundary of two views.
          * @param a the allocated region to render into
          * @return the bounding box of the given position is returned
-         * @exception BadLocationException  if the given position does
+         * @throws BadLocationException  if the given position does
          *   not represent a valid location in the associated document
-         * @exception IllegalArgumentException for an invalid bias argument
+         * @throws IllegalArgumentException for an invalid bias argument
          * @see View#viewToModel
          */
         public Shape modelToView(int p0, Position.Bias b0, int p1,

@@ -138,7 +138,7 @@ class DHTMarkerSegment extends MarkerSegment {
     /**
      * A Huffman table within a DHT marker segment.
      */
-    class Htable implements Cloneable {
+    static class Htable implements Cloneable {
         int tableClass;  // 0 == DC, 1 == AC
         int tableID; // 0 - 4
         private static final int NUM_LENGTHS = 16;

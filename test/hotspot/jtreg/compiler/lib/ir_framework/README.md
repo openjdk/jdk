@@ -64,7 +64,7 @@ An IR verification cannot always be performed. For example, a JTreg test could b
 
 In general, the framework will only perform IR verification if the used VM flags allow a C2 compilation and if non-critical additional JTreg VM and Javaoptions are provided (see whiteflag list in [TestFramework](./TestFramework.java)). The user test code, however, can specify any flags which still allow an IR verification to be performed if a C2 compilation is done (expected flags by user defined `@IR` annotations).
 
-An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation).
+An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation). If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction.
 
 More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java) and [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (an internal framework test).
 
@@ -123,7 +123,7 @@ More information about the internals and the workflow of the framework can be fo
 ## 4. Internal Framework Tests
 There are various tests to verify the correctness of the test framework. These tests can be found in [ir_framework](../../../testlibrary_tests/ir_framework) and can directly be run with JTreg. The tests are part of the normal JTreg tests of HotSpot and should be run upon changing the framework code as a minimal form of testing.
 
-Additional testing was performed by converting all compiler Inline Types tests that used the currently present IR test framework in Valhalla (see [JDK-8263024](https://bugs.openjdk.java.net/browse/JDK-8263024)). It is strongly advised to make sure a change to the framework still lets these converted tests in Valhalla pass as part of an additional testing step.
+Additional testing was performed by converting all compiler Inline Types tests that used the currently present IR test framework in Valhalla (see [JDK-8263024](https://bugs.openjdk.org/browse/JDK-8263024)). It is strongly advised to make sure a change to the framework still lets these converted tests in Valhalla pass as part of an additional testing step.
 
 ## 5. Framework Package Structure
 A user only needs to import classes from the package `compiler.lib.ir_framework` (e.g. `import compiler.lib.ir_framework.*;`) which represents the interface classes to the framework. The remaining framework internal classes are kept in separate subpackages and should not directly be imported:
@@ -134,4 +134,4 @@ A user only needs to import classes from the package `compiler.lib.ir_framework`
 - `compiler.lib.ir_framework.shared`: These classes can be called from either the driver, flag, or test VM.
 
 ## 6. Summary
-The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.java.net/browse/JDK-8254129) for this framework.
+The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.org/browse/JDK-8254129) for this framework.

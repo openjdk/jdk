@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -212,7 +213,7 @@ class decode_env {
   decode_env(address start, address end, outputStream* output
              NOT_PRODUCT(COMMA const AsmRemarks* remarks = NULL COMMA ptrdiff_t disp = 0));
 
-  // Add 'original_start' argument which is the the original address
+  // Add 'original_start' argument which is the original address
   // the instructions were located at (if this is not equal to 'start').
   address decode_instructions(address start, address end, address original_start = NULL);
 
@@ -267,7 +268,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           _cached_src_lines = new (ResourceObj::C_HEAP, mtCode)GrowableArray<const char*>(0, mtCode);
         }
 
-        if ((fp = fopen(file, "r")) == NULL) {
+        if ((fp = os::fopen(file, "r")) == NULL) {
           _cached_src = NULL;
           return;
         }
@@ -695,7 +696,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   return (int)(cnt1 - cnt0);
 }
 
-// The 'original_start' argument holds the the original address where
+// The 'original_start' argument holds the original address where
 // the instructions were located in the originating system. If zero (NULL)
 // is passed in, there is no original address.
 address decode_env::decode_instructions(address start, address end, address original_start /* = 0*/) {
@@ -756,7 +757,7 @@ address decode_env::decode_instructions(address start, address end, address orig
 
 void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
   int sz = buflen - offset;
-  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
+  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, JNI_LIB_SUFFIX);
   if (written < sz) { // written successfully, not truncated.
     if (Verbose) st->print_cr("Trying to load: %s", buf);
     return os::dll_load(buf, ebuf, ebuflen);
@@ -837,6 +838,8 @@ bool Disassembler::load_library(outputStream* st) {
   if (_library != NULL) {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
+  } else {
+    log_warning(os)("Loading hsdis library failed");
   }
   _tried_to_load_library = true;
   _library_usable        = _decode_instructions_virtual != NULL;

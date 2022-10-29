@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,7 @@ import org.w3c.dom.Node;
  *
  * @xerces.internal
  *
- * @LastModified: Oct 2017
+ * @LastModified: June 2022
  */
 public class AttributeMap extends NamedNodeMapImpl {
 
@@ -117,7 +117,7 @@ public class AttributeMap extends NamedNodeMapImpl {
         } else {
             i = -1 - i; // Insert point (may be end of list)
             if (null == nodes) {
-                nodes = new ArrayList<>(5);
+                nodes = new ArrayList<>();
             }
             nodes.add(i, arg);
         }
@@ -193,7 +193,7 @@ public class AttributeMap extends NamedNodeMapImpl {
             } else {
                 i = -1 - i; // Insert point (may be end of list)
                 if (null == nodes) {
-                    nodes = new ArrayList<>(5);
+                    nodes = new ArrayList<>();
                 }
                 nodes.add(i, arg);
             }
@@ -591,7 +591,7 @@ public class AttributeMap extends NamedNodeMapImpl {
             else {
                 i = -1 - i; // Insert point (may be end of list)
                 if (null == nodes) {
-                    nodes = new ArrayList<>(5);
+                    nodes = new ArrayList<>();
                 }
                 nodes.add(i, arg);
             }

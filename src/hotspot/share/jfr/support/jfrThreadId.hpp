@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,19 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADID_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADID_HPP
 
-#include "utilities/macros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#define JFR_THREAD_ID(thread) ((thread)->jfr_thread_local()->thread_id())
+#define JFR_THREAD_ID(thread) (JfrThreadLocal::external_thread_id(thread))
+#define JFR_JVM_THREAD_ID(thread) (JfrThreadLocal::jvm_thread_id(thread))
 #else
 #include "runtime/osThread.hpp"
 typedef u8 traceid;
 #define JFR_THREAD_ID(thread) ((traceid)(thread)->osthread()->thread_id())
+#define JFR_JVM_THREAD_ID(thread) ((traceid)(thread)->osthread()->thread_id())
 #endif
 
 #endif // SHARE_JFR_SUPPORT_JFRTHREADID_HPP

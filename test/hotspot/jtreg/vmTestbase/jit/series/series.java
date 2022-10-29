@@ -192,7 +192,7 @@ fres);
   {
       series patObj = new series();
       if (patObj.runit()!=0)
-         throw new TestFailure("Test failed.");;
+         throw new TestFailure("Test failed.");
                                                series.goldChecker.check();
   }
 }

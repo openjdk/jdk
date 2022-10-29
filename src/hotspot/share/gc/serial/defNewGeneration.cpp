@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -54,8 +55,9 @@
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -184,6 +186,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
   _gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
+
+  _gc_tracer = new (ResourceObj::C_HEAP, mtGC) DefNewTracer();
 }
 
 void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
@@ -288,7 +292,6 @@ void DefNewGeneration::swap_spaces() {
 }
 
 bool DefNewGeneration::expand(size_t bytes) {
-  MutexLocker x(ExpandHeap_lock);
   HeapWord* prev_high = (HeapWord*) _virtual_space.high();
   bool success = _virtual_space.expand_by(bytes);
   if (success && ZapUnusedHeapArea) {
@@ -457,9 +460,6 @@ size_t DefNewGeneration::contiguous_available() const {
 }
 
 
-HeapWord* volatile* DefNewGeneration::top_addr() const { return eden()->top_addr(); }
-HeapWord** DefNewGeneration::end_addr() const { return eden()->end_addr(); }
-
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   eden()->object_iterate(blk);
   from()->object_iterate(blk);
@@ -530,8 +530,7 @@ void DefNewGeneration::collect(bool   full,
   SerialHeap* heap = SerialHeap::heap();
 
   _gc_timer->register_gc_start();
-  DefNewTracer gc_tracer;
-  gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
+  _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
 
   _old_gen = heap->old_gen();
 
@@ -549,7 +548,7 @@ void DefNewGeneration::collect(bool   full,
 
   GCTraceTime(Trace, gc, phases) tm("DefNew", NULL, heap->gc_cause());
 
-  heap->trace_heap_before_gc(&gc_tracer);
+  heap->trace_heap_before_gc(_gc_tracer);
 
   // These can be shared for all code paths
   IsAliveClosure is_alive(this);
@@ -592,8 +591,8 @@ void DefNewGeneration::collect(bool   full,
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
   const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
-  gc_tracer.report_gc_reference_stats(stats);
-  gc_tracer.report_tenuring_threshold(tenuring_threshold());
+  _gc_tracer->report_gc_reference_stats(stats);
+  _gc_tracer->report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 
   assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
@@ -647,7 +646,7 @@ void DefNewGeneration::collect(bool   full,
 
     // Inform the next generation that a promotion failure occurred.
     _old_gen->promotion_failure_occurred();
-    gc_tracer.report_promotion_failed(_promotion_failed_info);
+    _gc_tracer->report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(heap->reset_promotion_should_fail();)
@@ -655,11 +654,11 @@ void DefNewGeneration::collect(bool   full,
   // We should have processed and cleared all the preserved marks.
   _preserved_marks_set.reclaim();
 
-  heap->trace_heap_after_gc(&gc_tracer);
+  heap->trace_heap_after_gc(_gc_tracer);
 
   _gc_timer->register_gc_end();
 
-  gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+  _gc_tracer->report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
 }
 
 void DefNewGeneration::init_assuming_no_promotion_failure() {
@@ -669,9 +668,21 @@ void DefNewGeneration::init_assuming_no_promotion_failure() {
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {
-  RemoveForwardedPointerClosure rspc;
-  eden()->object_iterate(&rspc);
-  from()->object_iterate(&rspc);
+  assert(_promotion_failed, "precondition");
+
+  // Will enter Full GC soon due to failed promotion. Must reset the mark word
+  // of objs in young-gen so that no objs are marked (forwarded) when Full GC
+  // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
+  struct ResetForwardedMarkWord : ObjectClosure {
+    void do_object(oop obj) override {
+      if (obj->is_forwarded()) {
+        obj->init_mark();
+      }
+    }
+  } cl;
+  eden()->object_iterate(&cl);
+  from()->object_iterate(&cl);
+
   restore_preserved_marks();
 }
 
@@ -685,6 +696,9 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
   _preserved_marks_set.get()->push_if_necessary(old, old->mark());
+
+  ContinuationGCSupport::transform_stack_chunk(old);
+
   // forward to self
   old->forward_to(old);
 
@@ -725,6 +739,8 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
     // Copy obj
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
 
     // Increment age if obj still in new generation
     obj->incr_age();
@@ -852,9 +868,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
     } else if (seen_incremental_collection_failed) {
       log_trace(gc)("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
                             GCCause::to_string(gch->gc_cause()));
-      assert(gch->gc_cause() == GCCause::_scavenge_alot ||
-             !gch->incremental_collection_failed(),
-             "Twice in a row");
       seen_incremental_collection_failed = false;
     }
 #endif // ASSERT
@@ -877,11 +890,6 @@ void DefNewGeneration::record_spaces_top() {
   to()->set_top_for_allocations();
   from()->set_top_for_allocations();
 }
-
-void DefNewGeneration::ref_processor_init() {
-  Generation::ref_processor_init();
-}
-
 
 void DefNewGeneration::update_counters() {
   if (UsePerfData) {

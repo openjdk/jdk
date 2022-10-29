@@ -304,7 +304,7 @@ Changes in 1.2.5.1 (10 Sep 2011)
 - Add dummy name before $(SHAREDLIBV) in Makefile [Bar-Lev, Bowler]
 - Delete line in configure that adds -L. libz.a to LDFLAGS [Weigelt]
 - Add debug records in assmebler code [Londer]
-- Update RFC references to use http://tools.ietf.org/html/... [Li]
+- Update RFC references to use https://tools.ietf.org/html/... [Li]
 - Add --archs option, use of libtool to configure for Mac OS X [Borstel]
 
 Changes in 1.2.5 (19 Apr 2010)

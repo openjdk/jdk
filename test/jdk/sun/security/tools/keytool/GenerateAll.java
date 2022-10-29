@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242184 8242068
+ * @bug 8242184 8242068 8267319
  * @summary keytool and jarsigner for all algorithms
  * @library /test/lib
  * @modules java.base/sun.security.util
@@ -117,11 +117,11 @@ public class GenerateAll {
     @DataProvider(name = "all")
     public Object[][] dataProvider() {
         return new Object[][]{
-                {"rsa", "rsa", null, "RSA", SHA_256, SHA256withRSA},
+                {"rsa", "rsa", null, "RSA", SHA_384, SHA384withRSA},
                 {"dsa", "dsa", null, "DSA", SHA_256, SHA256withDSA},
-                {"r", "rsa", "rsassa-pss", "RSA", SHA_256, RSASSA_PSS},
-                {"pss", "rsassa-pss", null, "RSA", SHA_256, RSASSA_PSS},
-                {"ec", "ec", null, "EC", SHA_256, SHA256withECDSA},
+                {"r", "rsa", "rsassa-pss", "RSA", SHA_384, RSASSA_PSS},
+                {"pss", "rsassa-pss", null, "RSA", SHA_384, RSASSA_PSS},
+                {"ec", "ec", null, "EC", SHA_384, SHA384withECDSA},
                 {"ed25519", "ed25519", null, "EC", SHA_512, Ed25519},
                 {"ed448", "ed448", null, "EC", SHAKE256_LEN, Ed448},
         };

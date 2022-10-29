@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,12 +102,21 @@ void LogConfiguration::post_initialize() {
 }
 
 void LogConfiguration::initialize(jlong vm_start_time) {
+  StdoutLog = new LogStdoutOutput();
+  StderrLog = new LogStderrOutput();
   LogFileOutput::set_file_name_parameters(vm_start_time);
   assert(_outputs == NULL, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
-  _outputs[0] = &StdoutLog;
-  _outputs[1] = &StderrLog;
+  _outputs[0] = StdoutLog;
+  _outputs[1] = StderrLog;
   _n_outputs = 2;
+  _outputs[0]->set_config_string("all=warning");
+  _outputs[1]->set_config_string("all=off");
+
+  // Set the default output to warning and error level for all new tagsets.
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    ts->set_output_level(StdoutLog, LogLevel::Default);
+  }
 }
 
 void LogConfiguration::finalize() {
@@ -365,9 +374,9 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
     // Find the next colon or quote
     char* next = strpbrk(str, ":\"");
 #ifdef _WINDOWS
-    // Skip over Windows paths such as "C:\..."
-    // Handle both C:\... and file=C:\..."
-    if (next != NULL && next[0] == ':' && next[1] == '\\') {
+    // Skip over Windows paths such as "C:\..." and "C:/...".
+    // Handles both "C:\..." and "file=C:\...".
+    if (next != NULL && next[0] == ':' && (next[1] == '\\' || next[1] == '/')) {
       if (next == str + 1 || (strncmp(str, "file=", 5) == 0)) {
         next = strpbrk(next + 1, ":\"");
       }
@@ -411,13 +420,13 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   static bool stderr_configured = false;
 
   // Normally options can't be used to change an existing output
-  // (parse_log_arguments() will report an error), and
-  // both StdoutLog and StderrLog are created by static initializers,
-  // so we have to process their options (e.g. foldmultilines) directly first.
+  // (parse_log_arguments() will report an error), but we make an exception for
+  // both StdoutLog and StderrLog as they're initialized automatically
+  // very early in the boot process.
   if (output == NULL || strlen(output) == 0 ||
       strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
     if (!stdout_configured) {
-      success = StdoutLog.parse_options(output_options, &ss);
+      success = StdoutLog->parse_options(output_options, &ss);
       stdout_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
       output_options = NULL;
@@ -426,7 +435,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
     // with a warning
   } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
     if (!stderr_configured) {
-      success = StderrLog.parse_options(output_options, &ss);
+      success = StderrLog->parse_options(output_options, &ss);
       stderr_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
       output_options = NULL;

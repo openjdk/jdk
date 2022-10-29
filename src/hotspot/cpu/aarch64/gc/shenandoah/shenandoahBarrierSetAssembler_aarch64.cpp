@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -85,7 +85,7 @@ void ShenandoahBarrierSetAssembler::shenandoah_write_barrier_pre(MacroAssembler*
                                                                  bool tosca_live,
                                                                  bool expand_call) {
   if (ShenandoahSATBBarrier) {
-    satb_write_barrier_pre(masm, obj, pre_val, thread, tmp, tosca_live, expand_call);
+    satb_write_barrier_pre(masm, obj, pre_val, thread, tmp, rscratch1, tosca_live, expand_call);
   }
 }
 
@@ -93,7 +93,8 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
                                                            Register obj,
                                                            Register pre_val,
                                                            Register thread,
-                                                           Register tmp,
+                                                           Register tmp1,
+                                                           Register tmp2,
                                                            bool tosca_live,
                                                            bool expand_call) {
   // If expand_call is true then we expand the call_VM_leaf macro
@@ -105,8 +106,8 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   Label done;
   Label runtime;
 
-  assert_different_registers(obj, pre_val, tmp, rscratch1);
-  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
+  assert_different_registers(obj, pre_val, tmp1, tmp2);
+  assert(pre_val != noreg && tmp1 != noreg && tmp2 != noreg, "expecting a register");
 
   Address in_progress(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset()));
   Address index(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
@@ -114,12 +115,12 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
 
   // Is marking active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ ldrw(tmp, in_progress);
+    __ ldrw(tmp1, in_progress);
   } else {
     assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ ldrb(tmp, in_progress);
+    __ ldrb(tmp1, in_progress);
   }
-  __ cbzw(tmp, done);
+  __ cbzw(tmp1, done);
 
   // Do we need to load the previous value?
   if (obj != noreg) {
@@ -133,17 +134,17 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   // Is index == 0?
   // (The index field is typed as size_t.)
 
-  __ ldr(tmp, index);                      // tmp := *index_adr
-  __ cbz(tmp, runtime);                    // tmp == 0?
+  __ ldr(tmp1, index);                      // tmp := *index_adr
+  __ cbz(tmp1, runtime);                    // tmp == 0?
                                         // If yes, goto runtime
 
-  __ sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  __ str(tmp, index);                      // *index_adr := tmp
-  __ ldr(rscratch1, buffer);
-  __ add(tmp, tmp, rscratch1);             // tmp := tmp + *buffer_adr
+  __ sub(tmp1, tmp1, wordSize);             // tmp := tmp - wordSize
+  __ str(tmp1, index);                      // *index_adr := tmp
+  __ ldr(tmp2, buffer);
+  __ add(tmp1, tmp1, tmp2);                 // tmp := tmp + *buffer_adr
 
   // Record the previous value
-  __ str(pre_val, Address(tmp, 0));
+  __ str(pre_val, Address(tmp1, 0));
   __ b(done);
 
   __ bind(runtime);
@@ -159,7 +160,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   // that checks that the *(rfp+frame::interpreter_frame_last_sp) == NULL.
   //
   // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
+  // intrinsified Reference.get() routine) then rfp might be pointing to
   // the caller frame and so this check will most likely fail at runtime.
   //
   // Expanding the call directly bypasses the generation of the check.
@@ -186,7 +187,7 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm
   __ bind(is_null);
 }
 
-// IMPORTANT: This must preserve all registers, even rscratch1 and rscratch2, except those explicitely
+// IMPORTANT: This must preserve all registers, even rscratch1 and rscratch2, except those explicitly
 // passed in.
 void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp) {
   assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
@@ -237,7 +238,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   bool is_narrow  = UseCompressedOops && !is_native;
 
   Label heap_stable, not_cset;
-  __ enter();
+  __ enter(/*strip_ret_addr*/true);
   Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ ldrb(rscratch2, gc_state);
 
@@ -307,7 +308,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler* masm, Register dst, Register tmp) {
   if (ShenandoahIUBarrier) {
     __ push_call_clobbered_registers();
-    satb_write_barrier_pre(masm, noreg, dst, rthread, tmp, true, false);
+    satb_write_barrier_pre(masm, noreg, dst, rthread, tmp, rscratch1, true, false);
     __ pop_call_clobbered_registers();
   }
 }
@@ -328,10 +329,10 @@ void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler* masm, Register ds
 //   dst: rscratch1 (might use rscratch1 as temporary output register to avoid clobbering src)
 //
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                            Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                            Register dst, Address src, Register tmp1, Register tmp2) {
   // 1: non-reference load, no additional barrier is needed
   if (!is_reference_type(type)) {
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
     return;
   }
 
@@ -345,7 +346,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     }
     assert_different_registers(dst, src.base(), src.index());
 
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
 
     load_reference_barrier(masm, dst, src, decorators);
 
@@ -354,18 +355,19 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
       dst = result_dst;
     }
   } else {
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
   }
 
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    __ enter();
+    __ enter(/*strip_ret_addr*/true);
     __ push_call_clobbered_registers();
     satb_write_barrier_pre(masm /* masm */,
                            noreg /* obj */,
                            dst /* pre_val */,
                            rthread /* thread */,
-                           tmp1 /* tmp */,
+                           tmp1 /* tmp1 */,
+                           tmp2 /* tmp2 */,
                            true /* tosca_live */,
                            true /* expand_call */);
     __ pop_call_clobbered_registers();
@@ -374,24 +376,24 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 }
 
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                             Address dst, Register val, Register tmp1, Register tmp2) {
+                                             Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool on_oop = is_reference_type(type);
   if (!on_oop) {
-    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
     return;
   }
 
   // flatten object address if needed
   if (dst.index() == noreg && dst.offset() == 0) {
-    if (dst.base() != r3) {
-      __ mov(r3, dst.base());
+    if (dst.base() != tmp3) {
+      __ mov(tmp3, dst.base());
     }
   } else {
-    __ lea(r3, dst);
+    __ lea(tmp3, dst);
   }
 
   shenandoah_write_barrier_pre(masm,
-                               r3 /* obj */,
+                               tmp3 /* obj */,
                                tmp2 /* pre_val */,
                                rthread /* thread */,
                                tmp1  /* tmp */,
@@ -399,7 +401,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                                false /* expand_call */);
 
   if (val == noreg) {
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(r3, 0), noreg, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
   } else {
     iu_barrier(masm, val, tmp1);
     // G1 barrier needs uncompressed oop for region cross check.
@@ -408,7 +410,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
       new_val = rscratch2;
       __ mov(new_val, val);
     }
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(r3, 0), val, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
   }
 
 }

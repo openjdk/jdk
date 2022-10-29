@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,10 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
+}
+
+bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
+  return !is_in_young(p);
 }
 
 // There are two levels of allocation policy here.
@@ -600,7 +604,7 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
   }
 }
 
-class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
+class PSScavengeParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   ParallelScavengeHeap*  _heap;
   HeapBlockClaimer      _claimer;
@@ -615,7 +619,7 @@ public:
   }
 };
 
-ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
+ParallelObjectIteratorImpl* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
   return new PSScavengeParallelObjectIterator();
 }
 
@@ -645,8 +649,10 @@ void ParallelScavengeHeap::prepare_for_verify() {
 PSHeapSummary ParallelScavengeHeap::create_ps_heap_summary() {
   PSOldGen* old = old_gen();
   HeapWord* old_committed_end = (HeapWord*)old->virtual_space()->committed_high_addr();
-  VirtualSpaceSummary old_summary(old->reserved().start(), old_committed_end, old->reserved().end());
-  SpaceSummary old_space(old->reserved().start(), old_committed_end, old->used_in_bytes());
+  HeapWord* old_reserved_start = old->reserved().start();
+  HeapWord* old_reserved_end = old->reserved().end();
+  VirtualSpaceSummary old_summary(old_reserved_start, old_committed_end, old_reserved_end);
+  SpaceSummary old_space(old_reserved_start, old_committed_end, old->used_in_bytes());
 
   PSYoungGen* young = young_gen();
   VirtualSpaceSummary young_summary(young->reserved().start(),
@@ -796,6 +802,16 @@ void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   _old_gen->resize(desired_free_space);
 }
 
+HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
+  return _old_gen->allocate(size);
+}
+
+void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  assert(_old_gen->object_space()->used_region().contains(archive_space),
+         "Archive space not contained in old gen");
+  _old_gen->complete_loaded_archive_space(archive_space);
+}
+
 #ifndef PRODUCT
 void ParallelScavengeHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {
@@ -824,10 +840,6 @@ void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
 
 void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void ParallelScavengeHeap::flush_nmethod(nmethod* nm) {
-  // nothing particular
 }
 
 void ParallelScavengeHeap::prune_scavengable_nmethods() {

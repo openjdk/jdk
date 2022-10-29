@@ -11,11 +11,15 @@
 #
 # A "headful" test requires a graphical environment to meaningfully
 # run. Tests that are not headful are "headless".
+# A test flagged with key sound needs audio devices on the system, this
+# may be accompanied by the headful keyword since audio device access 
+# is often linked to access to desktop resources and headful systems are
+# also more likely to have audio devices (ie meaning both input and output)
 # A test flagged with key "printer" requires a printer to succeed, else
 # throws a PrinterException or the like.
 # A test flagged with cgroups uses cgroups.
 
-keys=2d dnd headful i18n intermittent printer randomness jfr cgroups
+keys=2d dnd headful sound i18n intermittent printer randomness jfr cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
@@ -25,9 +29,7 @@ javax/management sun/awt sun/java2d javax/xml/jaxp/testng/validation java/lang/P
 # Tests that cannot run concurrently
 exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
-sun/tools/jstatd sun/tools/jcmd \
-sun/tools/jinfo sun/tools/jmap sun/tools/jps sun/tools/jstack sun/tools/jstat \
-com/sun/tools/attach sun/security/mscapi java/util/Arrays/largeMemory \
+sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
 com/sun/net/httpserver/simpleserver
 
@@ -58,6 +60,7 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
+    vm.continuations \
     vm.musl \
     vm.debug \
     vm.hasSA \
@@ -68,7 +71,7 @@ requires.properties= \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=6.1+1
+requiredVersion=7+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

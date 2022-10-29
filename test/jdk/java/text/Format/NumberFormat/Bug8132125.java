@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.*;
 
 public class Bug8132125 {
     public static void main(String[] args) {
-        Locale deCH = new Locale("de", "CH");
+        Locale deCH = Locale.of("de", "CH");
         NumberFormat nf = NumberFormat.getInstance(deCH);
 
         String expected = "54\u2019839\u2019483.142"; // i.e. "\u2019" as decimal separator, "\u2019" as grouping separator

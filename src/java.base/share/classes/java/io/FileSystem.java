@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,11 @@ abstract class FileSystem {
      * Tell whether or not the given abstract pathname is absolute.
      */
     public abstract boolean isAbsolute(File f);
+
+    /**
+     * Tell whether the given abstract pathname is invalid.
+     */
+    public abstract boolean isInvalid(File f);
 
     /**
      * Resolve the given abstract pathname into absolute form.  Invoked by the

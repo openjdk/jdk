@@ -71,12 +71,6 @@ void PreservedMarks::assert_empty() {
 }
 #endif // ndef PRODUCT
 
-void RemoveForwardedPointerClosure::do_object(oop obj) {
-  if (obj->is_forwarded()) {
-    PreservedMarks::init_forwarded_mark(obj);
-  }
-}
-
 void PreservedMarksSet::init(uint num) {
   assert(_stacks == nullptr && _num == 0, "do not re-initialize");
   assert(num > 0, "pre-condition");
@@ -125,8 +119,10 @@ public:
 
   ~RestorePreservedMarksTask() {
     assert(_total_size == _total_size_before, "total_size = %zu before = %zu", _total_size, _total_size_before);
-
-    log_trace(gc)("Restored %zu marks", _total_size);
+    size_t mem_size = _total_size * (sizeof(oop) + sizeof(markWord));
+    log_trace(gc)("Restored %zu marks, occupying %zu %s", _total_size,
+                                                          byte_size_in_proper_unit(mem_size),
+                                                          proper_unit_for_byte_size(mem_size));
   }
 };
 

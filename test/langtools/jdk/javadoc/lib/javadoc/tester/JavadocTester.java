@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.tools.StandardJavaFileManager;
 
 
 /**
@@ -212,7 +214,7 @@ public abstract class JavadocTester {
         NONE(null) { @Override void check(Path dir) { } };
 
         /** The filter used to detect that files should <i>not</i> be present. */
-        DirectoryStream.Filter<Path> filter;
+        private final DirectoryStream.Filter<Path> filter;
 
         DirectoryCheck(DirectoryStream.Filter<Path> f) {
             filter = f;
@@ -244,7 +246,9 @@ public abstract class JavadocTester {
     private boolean automaticCheckAccessibility = true;
     private boolean automaticCheckLinks = true;
     private boolean automaticCheckUniqueOUT = true;
+    private boolean automaticCheckNoStacktrace = true;
     private boolean useStandardStreams = false;
+    private StandardJavaFileManager fileManager = null;
 
     /** The current subtest number. Incremented when checking(...) is called. */
     private int numTestsRun = 0;
@@ -264,37 +268,127 @@ public abstract class JavadocTester {
 
     /**
      * Run all methods annotated with @Test, followed by printSummary.
-     * Typically called on a tester object in main()
+     * The methods are invoked in the order found using getDeclaredMethods.
+     * The arguments for the invocation are provided {@link #getTestArgs(Method)}.
      *
+     * Typically called on a tester object in main().
+     *
+     * @throws IllegalArgumentException if any test method does not have a recognized signature
      * @throws Exception if any errors occurred
      */
     public void runTests() throws Exception {
-        runTests(m -> new Object[0]);
+        runTests(this::getTestArgs);
     }
 
     /**
      * Runs all methods annotated with @Test, followed by printSummary.
+     * The methods are invoked in the order found using getDeclaredMethods.
+     * The arguments for the invocation are provided by a given function.
+     *
      * Typically called on a tester object in main()
      *
      * @param f a function which will be used to provide arguments to each
      *          invoked method
-     * @throws Exception if any errors occurred
+     * @throws Exception if any errors occurred while executing a test method
      */
     public void runTests(Function<Method, Object[]> f) throws Exception {
-        for (Method m: getClass().getDeclaredMethods()) {
+        for (Method m : getClass().getDeclaredMethods()) {
             Annotation a = m.getAnnotation(Test.class);
             if (a != null) {
-                try {
-                    out.println("Running test " + m.getName());
-                    m.invoke(this, f.apply(m));
-                } catch (InvocationTargetException e) {
-                    Throwable cause = e.getCause();
-                    throw (cause instanceof Exception) ? ((Exception) cause) : e;
-                }
+                runTest(m, f);
                 out.println();
             }
         }
         printSummary();
+    }
+
+    /**
+     * Run the specified methods annotated with @Test, or all methods annotated
+     * with @Test if none are specified, followed by printSummary.
+     * The methods are invoked in the order given in the methodNames argument,
+     * or the order returned by getDeclaredMethods if no names are provided.
+     * The arguments for the invocation are provided {@link #getTestArgs(Method)}.
+     *
+     * Typically called on a tester object in main(String[] args), perhaps using
+     * args as the list of method names.
+     *
+     * @throws IllegalStateException if any methods annotated with @Test are overloaded
+     * @throws IllegalArgumentException if any of the method names does not name a suitable method
+     * @throws NullPointerException if {@code methodNames} is {@code null}, or if any of the names are {@code null}
+     * @throws Exception if any errors occurred while executing a test method
+     */
+    public void runTests(String... methodNames) throws Exception {
+        runTests(this::getTestArgs, methodNames);
+    }
+
+    /**
+     * Run the specified methods annotated with @Test, or all methods annotated
+     * with @Test if non are specified, followed by printSummary.
+     * The methods are invoked in the order given in the methodNames argument,
+     * or the order returned by getDeclaredMethods if no names are provided.
+     * The arguments for the invocation are provided {@link #getTestArgs(Method)}.
+     *
+     * Typically called on a tester object in main(String[] args), perhaps using
+     * args as the list of method names.
+     *
+     * @throws IllegalStateException if any methods annotated with @Test are overloaded
+     * @throws IllegalArgumentException if any of the method names does not name a suitable method
+     * @throws NullPointerException if {@code methodNames} is {@code null}, or if any of the names are {@code null}
+     * @throws Exception if any errors occurred while executing a test method
+     */
+    public void runTests(Function<Method, Object[]> f, String... methodNames) throws Exception {
+        if (methodNames.length == 0) {
+            runTests(f);
+        } else {
+            Map<String, Method> testMethods = Stream.of(getClass().getDeclaredMethods())
+                    .filter(this::isTestMethod)
+                    .collect(Collectors.toMap(Method::getName, Function.identity(),
+                            (o, n) -> {
+                                throw new IllegalStateException("test method " + o.getName() + " is overloaded");
+                            }));
+
+            List<Method> list = new ArrayList<>();
+            for (String mn : methodNames) {
+                Method m = testMethods.get(mn);
+                if (m == null) {
+                    throw new IllegalArgumentException("test method " + mn + " not found");
+                }
+                list.add(m);
+            }
+
+            for (Method m : list) {
+                runTest(m, f);
+            }
+        }
+    }
+
+    protected boolean isTestMethod(Method m) {
+        return m.getAnnotation(Test.class) != null;
+    }
+
+    protected Object[] getTestArgs(Method m) throws IllegalArgumentException {
+        Class<?>[] paramTypes = m.getParameterTypes();
+        if (paramTypes.length == 0) {
+            return new Object[] {};
+        } else if (paramTypes.length == 1 && paramTypes[0] == Path.class) {
+            return new Object[] { Path.of(m.getName())};
+        } else {
+            throw new IllegalArgumentException("unknown signature for method "
+                    + m + Stream.of(paramTypes)
+                    .map(Class::toString)
+                    .collect(Collectors.joining(", ", "(", ")")))  ;
+        }
+    }
+
+    protected void runTest(Method m, Function<Method, Object[]> f) throws Exception {
+        try {
+            out.println("Running test " + m.getName());
+            m.invoke(this, f.apply(m));
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            throw (cause instanceof Exception) ? ((Exception) cause) : e;
+        }
+
     }
 
     /**
@@ -371,9 +465,17 @@ public abstract class JavadocTester {
         StreamOutput sysErr = new StreamOutput(System.err, System::setErr);
 
         try {
-            exitCode = useStandardStreams
-                    ? jdk.javadoc.internal.tool.Main.execute(args)              // use sysOut, sysErr
-                    : jdk.javadoc.internal.tool.Main.execute(args, outOut.pw);  // default
+            jdk.javadoc.internal.tool.Main main = new jdk.javadoc.internal.tool.Main();
+            if (useStandardStreams) {
+                // use sysOut, sysErr
+            } else {
+                // default: use single explicit stream
+                main.setStreams(outOut.pw, outOut.pw);
+            }
+            if (fileManager != null) {
+                main.setFileManager(fileManager);
+            }
+            exitCode = main.run(args).exitCode;
         } finally {
             outputMap.put(Output.STDOUT, sysOut.close());
             outputMap.put(Output.STDERR, sysErr.close());
@@ -386,6 +488,11 @@ public abstract class JavadocTester {
                 out.println(text);
             }
         });
+
+        if (automaticCheckNoStacktrace) {
+            // Any stacktrace will have javadoc near the bottom of the stack
+            checkOutput(Output.STDERR, false, "at jdk.javadoc/jdk.javadoc.internal.");
+        }
 
         if (exitCode == Exit.OK.code && Files.exists(outputDir)) {
             if (automaticCheckLinks) {
@@ -433,6 +540,13 @@ public abstract class JavadocTester {
     }
 
     /**
+     * Sets whether or not to check for stacktraces.
+     */
+    public void setAutomaticCheckNoStacktrace(boolean b) {
+        automaticCheckNoStacktrace = b;
+    }
+
+    /**
      * Sets whether to use standard output streams (stdout and stderr)
      * instead of a single temporary stream.
      * Tests using standard streams should generally take care to avoid
@@ -440,6 +554,15 @@ public abstract class JavadocTester {
      */
     public void setUseStandardStreams(boolean b) {
         useStandardStreams = b;
+    }
+
+    /**
+     * Sets the file manager to use for subsequent invocations of javadoc.
+     * If {@code null}, a default file manager will be created and used
+     * for each invocation.
+     */
+    public void setFileManager(StandardJavaFileManager fm) {
+        fileManager = fm;
     }
 
     /**
@@ -976,7 +1099,7 @@ public abstract class JavadocTester {
                 name = null;
                 content = null;
             } else {
-                name = file;
+                name = outputDir + "/" + file;
                 content = c;
             }
         }
@@ -1037,7 +1160,7 @@ public abstract class JavadocTester {
         public OutputChecker check(String... strings) {
             if (name == null) {
                 out.println("Skipping checks for:" + NL
-                        + List.of(strings).stream()
+                        + Stream.of(strings)
                         .map(s -> "    " + toShortString(s))
                         .collect(Collectors.joining(NL)));
                 return this;
@@ -1059,7 +1182,7 @@ public abstract class JavadocTester {
         public OutputChecker check(Pattern... patterns) {
             if (name == null) {
                 out.println("Skipping checks for:" + NL
-                        + List.of(patterns).stream()
+                        + Stream.of(patterns)
                         .map(p -> "    " + toShortString(p.pattern()))
                         .collect(Collectors.joining(NL)));
                 return this;

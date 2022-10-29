@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ AsmCondition convNegCond(TemplateTable::Condition cc) {
 }
 
 //----------------------------------------------------------------------------------------------------
-// Miscelaneous helper routines
+// Miscellaneous helper routines
 
 // Store an oop (or NULL) at the address described by obj.
 // Blows all volatile registers R0-R3, Rtemp, LR).
@@ -2041,7 +2041,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Handle all the JSR stuff here, then exit.
   // It's much shorter and cleaner than intermingling with the
-  // non-JSR normal-branch stuff occuring below.
+  // non-JSR normal-branch stuff occurring below.
   if (is_jsr) {
     // compute return address as bci in R1
     const Register Rret_addr = R1_tmp;
@@ -2525,7 +2525,7 @@ void TemplateTable::_return(TosState state) {
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.
-// ALSO reads & writes act as aquire & release, so:
+// ALSO reads & writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that happen after
 // the read float up to before the read.  It's OK for non-volatile memory refs
 // that happen before the volatile read to float down below it.
@@ -3848,13 +3848,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object;  // including clearing the fields
-
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
-
-  // Literals
-  InlinedAddress Lheap_top_addr(allow_shared_alloc ? (address)Universe::heap()->top_addr() : NULL);
 
   __ get_unsigned_2_byte_index_at_bcp(Rindex, 1);
   __ get_cpool_and_tags(Rcpool, Rtags);
@@ -3892,11 +3885,6 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //
@@ -3910,23 +3898,8 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ b(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ b(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    if (allow_shared_alloc) {
-      const Register Rheap_top_addr = R2_tmp;
-      const Register Rheap_top = R5_tmp;
-      const Register Rheap_end = Rtemp;
-      assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
 
-      __ eden_allocate(Robj, Rheap_top, Rheap_top_addr, Rheap_end, Rsize, slow_case);
-    }
-  }
-
-  if (UseTLAB || allow_shared_alloc) {
     const Register Rzero0 = R1_tmp;
     const Register Rzero1 = R2_tmp;
     const Register Rzero_end = R5_tmp;
@@ -3935,7 +3908,6 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ subs(Rsize, Rsize, sizeof(oopDesc));
     __ add(Rzero_cur, Robj, sizeof(oopDesc));
     __ b(initialize_header, eq);
@@ -3995,10 +3967,6 @@ void TemplateTable::_new() {
   } else {
     // jump over literals
     __ b(slow_case);
-  }
-
-  if (allow_shared_alloc) {
-    __ bind_literal(Lheap_top_addr);
   }
 
   // slow case
@@ -4330,7 +4298,7 @@ void TemplateTable::monitorenter() {
   __ bind(allocated);
 
   // Increment bcp to point to the next bytecode, so exception handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the expression stack looks correct.
+  // The object has already been popped from the stack, so the expression stack looks correct.
   __ add(Rbcp, Rbcp, 1);
 
   __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset_in_bytes()));     // store object

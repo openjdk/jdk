@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ class Universe: AllStatic {
   // Known classes in the VM
   static Klass* _typeArrayKlassObjs[T_LONG+1];
   static Klass* _objectArrayKlassObj;
+  // Special int-Array that represents filler objects that are used by GC to overwrite
+  // dead objects. References to them are generally an error.
+  static Klass* _fillerArrayKlassObj;
 
   // Known objects in the VM
   static OopHandle    _main_thread_group;             // Reference to the main thread group object
@@ -131,6 +134,10 @@ class Universe: AllStatic {
 
   // number of preallocated error objects available for use
   static volatile jint _preallocated_out_of_memory_error_avail_count;
+
+  // preallocated message detail strings for error objects
+  static OopHandle _msg_metaspace;
+  static OopHandle _msg_class_metaspace;
 
   static OopHandle    _null_ptr_exception_instance;   // preallocated exception object
   static OopHandle    _arithmetic_exception_instance; // preallocated exception object
@@ -203,6 +210,8 @@ class Universe: AllStatic {
   static Klass* doubleArrayKlassObj()               { return typeArrayKlassObj(T_DOUBLE); }
 
   static Klass* objectArrayKlassObj()               { return _objectArrayKlassObj; }
+
+  static Klass* fillerArrayKlassObj()               { return _fillerArrayKlassObj; }
 
   static Klass* typeArrayKlassObj(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
@@ -294,6 +303,10 @@ class Universe: AllStatic {
   static oop out_of_memory_error_retry();
   static oop delayed_stack_overflow_error_message();
 
+  // If it's a certain type of OOME object
+  static bool is_out_of_memory_error_metaspace(oop ex_obj);
+  static bool is_out_of_memory_error_class_metaspace(oop ex_obj);
+
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
@@ -321,9 +334,8 @@ class Universe: AllStatic {
   // CDS support
   static void serialize(SerializeClosure* f);
 
-  // Apply "f" to all klasses for basic types (classes not present in
+  // Apply the closure to all klasses for basic types (classes not present in
   // SystemDictionary).
-  static void basic_type_classes_do(void f(Klass*));
   static void basic_type_classes_do(KlassClosure* closure);
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
@@ -347,7 +359,7 @@ class Universe: AllStatic {
   static bool should_verify_subset(uint subset);
   static void verify(VerifyOption option, const char* prefix);
   static void verify(const char* prefix) {
-    verify(VerifyOption_Default, prefix);
+    verify(VerifyOption::Default, prefix);
   }
   static void verify() {
     verify("");

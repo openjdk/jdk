@@ -197,7 +197,9 @@ static void set_serialized(const T* ptr) {
   assert(ptr != NULL, "invariant");
   SET_SERIALIZED(ptr);
   assert(IS_SERIALIZED(ptr), "invariant");
-  CLEAR_THIS_EPOCH_CLEARED_BIT(ptr);
+  if (current_epoch()) {
+    CLEAR_THIS_EPOCH_CLEARED_BIT(ptr);
+  }
 }
 
 /*
@@ -232,6 +234,7 @@ int write__klass(JfrCheckpointWriter* writer, const void* k) {
 int write__klass__leakp(JfrCheckpointWriter* writer, const void* k) {
   assert(k != NULL, "invariant");
   KlassPtr klass = (KlassPtr)k;
+  CLEAR_LEAKP(klass);
   return write_klass(writer, klass, true);
 }
 
@@ -774,7 +777,9 @@ void set_serialized<Method>(MethodPtr method) {
   assert(method != NULL, "invariant");
   SET_METHOD_SERIALIZED(method);
   assert(IS_METHOD_SERIALIZED(method), "invariant");
-  CLEAR_THIS_EPOCH_METHOD_CLEARED_BIT(method);
+  if (current_epoch()) {
+    CLEAR_THIS_EPOCH_METHOD_CLEARED_BIT(method);
+  }
 }
 
 static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leakp) {
@@ -835,7 +840,7 @@ class MethodIteratorHost {
  private:
   MethodCallback _method_cb;
   KlassCallback _klass_cb;
-  MethodUsedPredicate<leakp> _method_used_predicate;
+  MethodUsedPredicate _method_used_predicate;
   MethodFlagPredicate<leakp> _method_flag_predicate;
  public:
   MethodIteratorHost(JfrCheckpointWriter* writer,

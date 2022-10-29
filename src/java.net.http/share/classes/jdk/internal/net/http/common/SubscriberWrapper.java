@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,6 +344,7 @@ public abstract class SubscriberWrapper
     }
 
     void upstreamWindowUpdate() {
+        if (pushScheduler.isStopped()) return;
         long downstreamQueueSize = outputQ.size();
         long upstreamWindowSize = upstreamWindow.get();
         long n = upstreamWindowUpdate(upstreamWindowSize, downstreamQueueSize);
@@ -379,6 +380,7 @@ public abstract class SubscriberWrapper
     }
 
     private void upstreamRequest(long n) {
+        if (pushScheduler.isStopped()) return;
         if (debug.on()) debug.log("requesting %d", n);
         upstreamWindow.getAndAdd(n);
         upstreamSubscription.request(n);

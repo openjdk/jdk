@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_COMPRESSEDOOPS_HPP
 #define SHARE_OOPS_COMPRESSEDOOPS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -94,7 +94,7 @@ public:
   static int      shift()                    { return _narrow_oop._shift; }
   static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
 
-  static address* ptrs_base_addr()           { return &_narrow_oop._base; }
+  static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
   static address  ptrs_base()                { return _narrow_oop._base; }
 
   static bool is_in(void* addr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,11 @@ package com.sun.hotspot.igv.coordinator;
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
@@ -42,8 +45,12 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class FolderNode extends AbstractNode {
 
-    private InstanceContent content;
-    private FolderChildren children;
+    private final InstanceContent content;
+    private final FolderChildren children;
+    // NetBeans node corresponding to each opened graph. Used to highlight the
+    // focused graph in the Outline window.
+    private static final Map<InputGraph, GraphNode> graphNode = new HashMap<>();
+    private boolean selected = false;
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
 
@@ -54,14 +61,29 @@ public class FolderNode extends AbstractNode {
             folder.getChangedEvent().addListener(this);
         }
 
+        public Folder getFolder() {
+            return folder;
+        }
+
         @Override
         protected Node[] createNodes(FolderElement e) {
-             if (e instanceof InputGraph) {
-                return new Node[]{new GraphNode((InputGraph) e)};
+            if (e instanceof InputGraph) {
+                InputGraph g = (InputGraph) e;
+                GraphNode n = new GraphNode(g);
+                graphNode.put(g, n);
+                return new Node[]{n};
             } else if (e instanceof Folder) {
-                 return new Node[]{new FolderNode((Folder) e)};
-             } else {
+                return new Node[]{new FolderNode((Folder) e)};
+            } else {
                 return null;
+            }
+        }
+
+        @Override
+        protected void destroyNodes(Node[] nodes) {
+            for (Node n : nodes) {
+                // Each node is only present once in the graphNode map.
+                graphNode.values().remove(n);
             }
         }
 
@@ -88,7 +110,11 @@ public class FolderNode extends AbstractNode {
 
     @Override
     public Image getIcon(int i) {
-        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
+        if (selected) {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder_selected.png");
+        } else {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
+        }
     }
 
     protected FolderNode(Folder folder) {
@@ -102,13 +128,25 @@ public class FolderNode extends AbstractNode {
         if (folder instanceof FolderElement) {
             final FolderElement folderElement = (FolderElement) folder;
             this.setDisplayName(folderElement.getName());
-            content.add(new RemoveCookie() {
-                @Override
-                public void remove() {
-                    folderElement.getParent().removeElement(folderElement);
-                }
+            content.add((RemoveCookie) () -> {
+                children.destroyNodes(children.getNodes());
+                folderElement.getParent().removeElement(folderElement);
             });
         }
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        fireDisplayNameChange(null, null);
+        fireIconChange();
+    }
+
+    public String getHtmlDisplayName() {
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
+        if (selected) {
+            htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
+        }
+        return htmlDisplayName;
     }
 
     public void init(String name, List<Group> groups) {
@@ -120,8 +158,25 @@ public class FolderNode extends AbstractNode {
         }
     }
 
+    public boolean isRootNode() {
+        Folder folder = getFolder();
+        return (folder instanceof GraphDocument);
+    }
+
     @Override
     public Image getOpenedIcon(int i) {
         return getIcon(i);
+    }
+
+    public static void clearGraphNodeMap() {
+        graphNode.clear();
+    }
+
+    public static GraphNode getGraphNode(InputGraph graph) {
+        return graphNode.get(graph);
+    }
+
+    public Folder getFolder() {
+        return children.getFolder();
     }
 }

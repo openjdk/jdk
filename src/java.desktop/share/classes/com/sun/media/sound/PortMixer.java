@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ final class PortMixer extends AbstractMixer {
     public Line getLine(Line.Info info) throws LineUnavailableException {
         Line.Info fullInfo = getLineInfo(info);
 
-        if ((fullInfo != null) && (fullInfo instanceof Port.Info)) {
+        if (fullInfo instanceof Port.Info) {
             for (int i = 0; i < portInfos.length; i++) {
                 if (fullInfo.equals(portInfos[i])) {
                     return getPort(i);

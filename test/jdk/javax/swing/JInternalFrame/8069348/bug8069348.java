@@ -23,9 +23,12 @@
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.awt.event.InputEvent;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
@@ -52,6 +55,10 @@ public class bug8069348 {
     private static final Color DESKTOPPANE_COLOR = Color.YELLOW;
     private static final Color FRAME_COLOR = Color.ORANGE;
 
+     // move away from cursor
+    private final static int OFFSET_X = -20;
+    private final static int OFFSET_Y = -20;
+
     private static JFrame frame;
     private static JInternalFrame internalFrame;
 
@@ -66,7 +73,7 @@ public class bug8069348 {
             SwingUtilities.invokeAndWait(bug8069348::createAndShowGUI);
 
             Robot robot = new Robot();
-            robot.setAutoDelay(50);
+            robot.setAutoDelay(100);
             robot.waitForIdle();
 
             Rectangle screenBounds = getInternalFrameScreenBounds();
@@ -79,27 +86,43 @@ public class bug8069348 {
             robot.mouseMove(x, y);
             robot.waitForIdle();
 
-            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseMove(x + dx, y + dy);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
             int cx = screenBounds.x + screenBounds.width + dx / 2;
             int cy = screenBounds.y + screenBounds.height + dy / 2;
 
             robot.mouseMove(cx, cy);
-            if (!FRAME_COLOR.equals(robot.getPixelColor(cx, cy))) {
+            robot.waitForIdle();
+            Color color = robot.getPixelColor(cx - OFFSET_X, cy - OFFSET_Y);
+
+            if (!FRAME_COLOR.equals(color)) {
+                System.out.println("cx " + cx + " cy " + cy);
+                System.err.println("FRAME_COLOR Red: " + FRAME_COLOR.getRed() + "; Green: " + FRAME_COLOR.getGreen() + "; Blue: " + FRAME_COLOR.getBlue());
+                System.err.println("Pixel color Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
+
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+                BufferedImage img = robot.createScreenCapture(screen);
+                javax.imageio.ImageIO.write(img, "png", new java.io.File("image.png"));
+
                 throw new RuntimeException("Internal frame is not correctly dragged!");
             }
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
+        System.out.println("Test Passed");
     }
 
     private static boolean isSupported() {
         String d3d = System.getProperty("sun.java2d.d3d");
+        System.out.println("d3d " + d3d);
         return !Boolean.getBoolean(d3d) || getOSType() == OSType.WINDOWS;
     }
 
@@ -138,6 +161,7 @@ public class bug8069348 {
         panel.add(desktopPane, BorderLayout.CENTER);
         frame.add(panel);
         frame.setSize(WIN_WIDTH, WIN_HEIGHT);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         frame.requestFocus();
     }

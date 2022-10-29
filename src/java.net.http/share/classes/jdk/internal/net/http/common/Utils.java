@@ -175,7 +175,7 @@ public final class Utils {
     // used by caller.
 
     public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> !client.authenticator().isPresent() ||
+        return (k, v) -> client.authenticator().isEmpty() ||
                 (!k.equalsIgnoreCase("Authorization")
                         && !k.equalsIgnoreCase("Proxy-Authorization"));
     }

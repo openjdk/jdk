@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
 /*
  * @test SuspendBlocked
  * @bug 8270085
- * @library /test/lib
+ * @library /test/lib /testlibrary
  * @build SuspendBlocked
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SuspendBlocked
  */
 
+import jvmti.JVMTIUtils;
+
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class SuspendBlocked {
 
@@ -41,10 +43,16 @@ public class SuspendBlocked {
         suspend_thread.start();
         WhiteBox wb = WhiteBox.getWhiteBox();
         for (int i = 0; i < 100; i++) {
-            suspend_thread.suspend();
-            wb.lockAndBlock(/* suspender= */ true);
-            suspend_thread.resume();
-            Thread.sleep(1);
+            try {
+                JVMTIUtils.suspendThread(suspend_thread);
+                wb.lockAndBlock(/* suspender= */ true);
+                JVMTIUtils.resumeThread(suspend_thread);
+                Thread.sleep(1);
+            } catch (JVMTIUtils.JvmtiException e) {
+                if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                    throw e;
+                }
+            }
         }
         suspend_thread.join();
     }

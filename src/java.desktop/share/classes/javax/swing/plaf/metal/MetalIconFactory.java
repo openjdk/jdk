@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,7 +770,7 @@ public class MetalIconFactory implements Serializable {
             g.fillRect(3,3, iconSize-6,iconSize-6);
 
             // THE BOX
-            // the top/left dark higlight - some of this will get overwritten
+            // the top/left dark highlight - some of this will get overwritten
             g.setColor(darkHighlightColor);
             g.drawRect(1,1, iconSize-3,iconSize-3);
             // draw the inside bottom/right highlight
@@ -963,10 +963,10 @@ public class MetalIconFactory implements Serializable {
             // draw line around edge of title and icon
             g.setColor(edgeColor);
             g.drawRect(1,1, 13,13); // entire inner edge
-            g.drawLine(1,0, 14,0); // top outter edge
-            g.drawLine(15,1, 15,14); // right outter edge
-            g.drawLine(1,15, 14,15); // bottom outter edge
-            g.drawLine(0,1, 0,14); // left outter edge
+            g.drawLine(1,0, 14,0); // top outer edge
+            g.drawLine(15,1, 15,14); // right outer edge
+            g.drawLine(1,15, 14,15); // bottom outer edge
+            g.drawLine(0,1, 0,14); // left outer edge
             g.drawLine(2,5, 13,5); // bottom of title bar area
             // draw dark part of four "bumps" (same color)
             g.drawLine(3,3, 3,3);
@@ -1621,7 +1621,7 @@ public class MetalIconFactory implements Serializable {
         Vector<ImageGcPair> images = new Vector<ImageGcPair>(1, 1);
         ImageGcPair currentImageGcPair;
 
-        class ImageGcPair {
+        static class ImageGcPair {
             Image image;
             GraphicsConfiguration gc;
             ImageGcPair(Image image, GraphicsConfiguration gc) {

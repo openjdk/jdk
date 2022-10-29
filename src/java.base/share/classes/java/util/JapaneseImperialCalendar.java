@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1219,7 +1219,7 @@ class JapaneseImperialCalendar extends Calendar {
                 } else {
                     value = getMinimum(field);
                     CalendarDate d = jcal.getCalendarDate(Long.MIN_VALUE, getZone());
-                    // Use an equvalent year of d.getYear() if
+                    // Use an equivalent year of d.getYear() if
                     // possible. Otherwise, ignore the leap year and
                     // common year difference.
                     int y = d.getYear();
@@ -1607,11 +1607,11 @@ class JapaneseImperialCalendar extends Calendar {
         fixedDate += time / ONE_DAY;
         timeOfDay += (int) (time % ONE_DAY);
         if (timeOfDay >= ONE_DAY) {
-            timeOfDay -= ONE_DAY;
+            timeOfDay -= (int) ONE_DAY;
             ++fixedDate;
         } else {
             while (timeOfDay < 0) {
-                timeOfDay += ONE_DAY;
+                timeOfDay += (int) ONE_DAY;
                 --fixedDate;
             }
         }
@@ -2118,7 +2118,6 @@ class JapaneseImperialCalendar extends Calendar {
      * @param fixedDate the fixed date representation of the date
      */
     private long getFixedDateJan1(LocalGregorianCalendar.Date date, long fixedDate) {
-        Era era = date.getEra();
         if (date.getEra() != null && date.getYear() == 1) {
             for (int eraIndex = getEraIndex(date); eraIndex > 0; eraIndex--) {
                 CalendarDate d = eras[eraIndex].getSinceDate();

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,6 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
 
   DEBUG_ONLY(size_t committed_words_before = c->committed_words();)
 
-  const chunklevel_t orig_level = c->level();
   c->vsnode()->split(target_level, c, &_chunks);
 
   // Splitting should never fail.
@@ -153,7 +152,7 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, min_committed_words);
   }
-  // if we did not get anything yet, there are no free chunks commmitted enough. Repeat search but look for uncommitted chunks too:
+  // if we did not get anything yet, there are no free chunks committed enough. Repeat search but look for uncommitted chunks too:
   // 4) Search best or smaller chunks, can be uncommitted:
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, 0);

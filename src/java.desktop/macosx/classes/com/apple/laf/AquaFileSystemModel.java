@@ -278,7 +278,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     // @param a an integer array
     // @param lo0 left boundary of array partition
     // @param hi0 right boundary of array partition
-    abstract class QuickSort {
+    abstract static class QuickSort {
         final void quickSort(final Vector<Object> v, final int lo0, final int hi0) {
             int lo = lo0;
             int hi = hi0;
@@ -338,7 +338,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         protected abstract boolean lt(SortableFile a, SortableFile b);
     }
 
-    class QuickSortNames extends QuickSort {
+    static class QuickSortNames extends QuickSort {
         protected boolean lt(final SortableFile a, final SortableFile b) {
             final String aLower = a.fName.toLowerCase();
             final String bLower = b.fName.toLowerCase();
@@ -346,14 +346,14 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         }
     }
 
-    class QuickSortDates extends QuickSort {
+    static class QuickSortDates extends QuickSort {
         protected boolean lt(final SortableFile a, final SortableFile b) {
             return a.fDateValue < b.fDateValue;
         }
     }
 
     // for speed in sorting, displaying
-    class SortableFile /* extends FileView */{
+    static class SortableFile /* extends FileView */{
         File fFile;
         String fName;
         long fDateValue;

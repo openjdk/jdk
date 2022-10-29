@@ -1,0 +1,5 @@
+T8286797.java:35:32: compiler.err.guard.has.constant.expression.false
+T8286797.java:43:34: compiler.err.guard.has.constant.expression.false
+- compiler.note.preview.filename: T8286797.java, DEFAULT
+- compiler.note.preview.recompile
+2 errors

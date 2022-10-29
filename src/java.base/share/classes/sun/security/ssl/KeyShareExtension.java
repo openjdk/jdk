@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -113,12 +108,14 @@ final class KeyShareExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\n'{'\n" +
-                "  \"named group\": {0}\n" +
-                "  \"key_exchange\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}',", Locale.ENGLISH);
+                    """
+
+                            '{'
+                              "named group": {0}
+                              "key_exchange": '{'
+                            {1}
+                              '}'
+                            '}',""", Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
@@ -300,7 +297,7 @@ final class KeyShareExtension {
                 for (SSLPossession pos : poses) {
                     // update the context
                     chc.handshakePossessions.add(pos);
-                    // May need more possesion types in the future.
+                    // May need more possession types in the future.
                     if (pos instanceof NamedGroupPossession) {
                         return pos.encode();
                     }
@@ -472,12 +469,13 @@ final class KeyShareExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"server_share\": '{'\n" +
-                "  \"named group\": {0}\n" +
-                "  \"key_exchange\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}',", Locale.ENGLISH);
+                    """
+                            "server_share": '{'
+                              "named group": {0}
+                              "key_exchange": '{'
+                            {1}
+                              '}'
+                            '}',""", Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
@@ -544,7 +542,7 @@ final class KeyShareExtension {
             // use requested key share entries
             if ((shc.handshakeCredentials == null) ||
                     shc.handshakeCredentials.isEmpty()) {
-                // Unlikely, HelloRetryRequest should be used ealier.
+                // Unlikely, HelloRetryRequest should be used earlier.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No available client key share entries");
@@ -555,8 +553,7 @@ final class KeyShareExtension {
             KeyShareEntry keyShare = null;
             for (SSLCredentials cd : shc.handshakeCredentials) {
                 NamedGroup ng = null;
-                if (cd instanceof NamedGroupCredentials) {
-                    NamedGroupCredentials creds = (NamedGroupCredentials)cd;
+                if (cd instanceof NamedGroupCredentials creds) {
                     ng = creds.getNamedGroup();
                 }
 
@@ -576,7 +573,7 @@ final class KeyShareExtension {
                 SSLPossession[] poses = ke.createPossessions(shc);
                 for (SSLPossession pos : poses) {
                     if (!(pos instanceof NamedGroupPossession)) {
-                        // May need more possesion types in the future.
+                        // May need more possession types in the future.
                         continue;
                     }
 
@@ -600,7 +597,7 @@ final class KeyShareExtension {
             }
 
             if (keyShare == null) {
-                // Unlikely, HelloRetryRequest should be used instead ealier.
+                // Unlikely, HelloRetryRequest should be used instead earlier.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No available server key_share extension");
@@ -711,7 +708,7 @@ final class KeyShareExtension {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
-            // Cannot use the previous requested key shares any more.
+            // Cannot use the previous requested key shares anymore.
             if (SSLLogger.isOn && SSLLogger.isOn("handshake")) {
                 SSLLogger.fine(
                         "No key_share extension in ServerHello, " +

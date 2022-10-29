@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2471,7 +2471,7 @@ static jobject gtk2_get_setting(JNIEnv *env, Setting property)
 }
 
 static gboolean gtk2_get_drawable_data(JNIEnv *env, jintArray pixelArray, jint x,
-     jint y, jint width, jint height, jint jwidth, int dx, int dy, jint scale) {
+     jint y, jint width, jint height, jint jwidth, int dx, int dy) {
     GdkPixbuf *pixbuf;
     jint *ary;
 
@@ -2479,19 +2479,6 @@ static gboolean gtk2_get_drawable_data(JNIEnv *env, jintArray pixelArray, jint x
 
     pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(NULL, root, NULL, x, y,
                                                     0, 0, width, height);
-    if (pixbuf && scale != 1) {
-        GdkPixbuf *scaledPixbuf;
-        x /= scale;
-        y /= scale;
-        width /= scale;
-        height /= scale;
-        dx /= scale;
-        dy /= scale;
-        scaledPixbuf = (*fp_gdk_pixbuf_scale_simple)(pixbuf, width, height,
-                                                     GDK_INTERP_BILINEAR);
-        (*fp_g_object_unref)(pixbuf);
-        pixbuf = scaledPixbuf;
-    }
 
     if (pixbuf) {
         int nchan = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);

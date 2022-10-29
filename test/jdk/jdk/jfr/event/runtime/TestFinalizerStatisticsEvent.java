@@ -34,17 +34,20 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
+ * @bug 8266936 8276422
  * @summary The test verifies that classes overriding finalize() are represented as events.
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -Xlog:class+unload,finalizer -Xmx16m jdk.jfr.event.runtime.TestFinalizerStatisticsEvent
+ * @run main/othervm -Xlog:class+unload,finalizer -Xmx16m --finalization=disabled jdk.jfr.event.runtime.TestFinalizerStatisticsEvent disabled
  */
 
 public final class TestFinalizerStatisticsEvent {
     private final static String TEST_CLASS_NAME = "jdk.jfr.event.runtime.TestFinalizerStatisticsEvent$TestClassOverridingFinalize";
     private final static String TEST_CLASS_UNLOAD_NAME = "jdk.jfr.event.runtime.TestFinalizerStatisticsEvent$TestClassUnloadOverridingFinalize";
     private final static String EVENT_PATH = EventNames.FinalizerStatistics;
+    private static boolean disabled = false;
 
     // Declare as public static to prevent the compiler from optimizing away all unread writes
     public static TestClassLoader unloadableClassLoader;
@@ -52,6 +55,10 @@ public final class TestFinalizerStatisticsEvent {
     public static Object overridingInstance;
 
     public static void main(String[] args) throws Throwable {
+        if (args.length > 0 && "disabled".equals(args[0])) {
+            disabled = true;
+            System.out.println("Testing with finalization disabled");
+        }
         Recording recording1 = new Recording();
         recording1.enable(EVENT_PATH);
         Recording recording2 = new Recording();
@@ -69,8 +76,12 @@ public final class TestFinalizerStatisticsEvent {
         recording1.stop(); // rotation writes an event for TEST_CLASS_NAME into recording1 which now has 4 events reflecting this test case (3 chunks + 1 unload)
 
         try {
-            verify(recording2);
-            verify(recording1);
+            if (disabled) {
+                verifyDisabled(recording1);
+            } else {
+                verifyEnabled(recording2);
+                verifyEnabled(recording1);
+            }
         }
         finally {
             recording2.close();
@@ -84,7 +95,8 @@ public final class TestFinalizerStatisticsEvent {
         System.gc();
     }
 
-    private static void verify(Recording recording) throws Throwable {
+    /* Verify correct operation with finalization enabled */
+    private static void verifyEnabled(Recording recording) throws Throwable {
         boolean foundTestClassName = false;
         boolean foundTestClassUnloadName = false;
         List<RecordedEvent> events = Events.fromRecording(recording);
@@ -106,6 +118,19 @@ public final class TestFinalizerStatisticsEvent {
         }
         Asserts.assertTrue(foundTestClassName, "The class: " + TEST_CLASS_NAME + " overriding finalize() is not found");
         Asserts.assertTrue(foundTestClassUnloadName, "The class: " + TEST_CLASS_UNLOAD_NAME + " overriding finalize() is not found");
+    }
+
+    /* Verify no jdk.FinalizerStatistics events with finalization disabled */
+    private static void verifyDisabled(Recording recording) throws Throwable {
+        int f10nEvents = 0;
+        List<RecordedEvent> events = Events.fromRecording(recording);
+        for (RecordedEvent event : events) {
+            System.out.println("Event:" + event);
+            if ("jdk.FinalizerStatistics".equals(event.getEventType().getName())) {
+                f10nEvents++;
+            }
+        }
+        Asserts.assertEquals(f10nEvents, 0, "Finalization disabled, but recorded " + f10nEvents + " jdk.FinalizerStatistics events");
     }
 
     static public class TestClassOverridingFinalize {

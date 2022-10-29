@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,19 +131,15 @@ public class JarBuilder {
     }
 
     // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only jdk/test/whitebox/WhiteBox$WhiteBoxPermission and
-    // sun/hotspot/WhiteBox$WhiteBoxPermission. See JDK-8199290
+    // we support only jdk/test/whitebox/WhiteBox$WhiteBoxPermission.
+    // See JDK-8199290
     private static String[] addInnerClasses(String[] classes, int startIdx) {
         boolean seenNewWb = false;
         boolean seenNewWbInner = false;
-        boolean seenOldWb = false;
-        boolean seenOldWbInner = false;
         // This method is different than ClassFileInstaller.addInnerClasses which
         // uses "." as the package delimiter :-(
         final String newWb = "jdk/test/whitebox/WhiteBox";
         final String newWbInner = newWb + "$WhiteBoxPermission";
-        final String oldWb = "sun/hotspot/WhiteBox";
-        final String oldWbInner = oldWb + "$WhiteBoxPermission";
 
         ArrayList<String> list = new ArrayList<>();
 
@@ -153,17 +149,11 @@ public class JarBuilder {
             switch (cls) {
             case newWb:      seenNewWb      = true; break;
             case newWbInner: seenNewWbInner = true; break;
-            case oldWb:      seenOldWb      = true; break;
-            case oldWbInner: seenOldWbInner = true; break;
             }
         }
         if (seenNewWb && !seenNewWbInner) {
             list.add(newWbInner);
         }
-        if (seenOldWb && !seenOldWbInner) {
-            list.add(oldWbInner);
-        }
-
         String[] array = new String[list.size()];
         list.toArray(array);
         return array;

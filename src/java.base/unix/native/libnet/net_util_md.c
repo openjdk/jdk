@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,6 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 }
 
 void
-NET_ThrowCurrent(JNIEnv *env, char *msg) {
-    NET_ThrowNew(env, errno, msg);
-}
-
-void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
     if (!msg) {
@@ -93,15 +88,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
         break;
     }
-}
-
-
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
 jint  IPv4_supported()
@@ -132,7 +118,7 @@ jint  IPv6_supported()
     fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
         /*
-         *  TODO: We really cant tell since it may be an unrelated error
+         *  TODO: We really can't tell since it may be an unrelated error
          *  for now we will assume that AF_INET6 is not available
          */
         return JNI_FALSE;
@@ -187,12 +173,16 @@ jint  IPv6_supported()
 }
 #endif /* DONT_ENABLE_IPV6 */
 
-jint reuseport_supported()
+jint reuseport_supported(int ipv6_available)
 {
     /* Do a simple dummy call, and try to figure out from that */
     int one = 1;
     int rv, s;
-    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (ipv6_available) {
+        s = socket(PF_INET6, SOCK_STREAM, 0);
+    } else {
+        s = socket(PF_INET, SOCK_STREAM, 0);
+    }
     if (s < 0) {
         return JNI_FALSE;
     }
@@ -233,21 +223,6 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
         free(buf);
     }
 }
-
-#if defined(_AIX)
-
-/* Initialize stubs for blocking I/O workarounds (see src/solaris/native/java/net/linux_close.c) */
-extern void aix_close_init();
-
-void platformInit () {
-    aix_close_init();
-}
-
-#else
-
-void platformInit () {}
-
-#endif
 
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd) {
@@ -322,13 +297,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
         }
     }
     return 0;
-}
-
-void
-NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass) {
-    if (sa->sa.sa_family == AF_INET6) {
-        sa->sa6.sin6_flowinfo = htonl((trafficClass & 0xff) << 20);
-    }
 }
 
 int
@@ -680,7 +648,6 @@ int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 {
     int rv;
-    int arg, alen;
 
 #ifdef __linux__
     /*
@@ -733,7 +700,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
           pfd.events |= POLLOUT;
 
         errno = 0;
-        read_rv = NET_Poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
+        read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
 
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);

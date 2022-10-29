@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,8 +299,10 @@ public class WindowsAsynchronousFileChannelImpl
         if (!shared && !writing)
             throw new NonWritableChannelException();
 
+        long len = (size != 0) ? size : Long.MAX_VALUE - Math.max(0, position);
+
         // add to lock table
-        FileLockImpl fli = addToFileLockTable(position, size, shared);
+        FileLockImpl fli = addToFileLockTable(position, len, shared);
         if (fli == null) {
             Throwable exc = new ClosedChannelException();
             if (handler == null)
@@ -331,6 +333,9 @@ public class WindowsAsynchronousFileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writing)
             throw new NonWritableChannelException();
+
+        if (size == 0)
+            size = Long.MAX_VALUE - Math.max(0, position);
 
         // add to lock table
         final FileLockImpl fli = addToFileLockTable(position, size, shared);

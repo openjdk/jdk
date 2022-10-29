@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.jvm.hotspot.oops.*;
 
 public abstract class NativeSignatureIterator extends SignatureIterator {
   private Method method;
-// [RGV] We need seperate JNI and Java offset values because in 64 bit mode, the argument offsets
+// [RGV] We need separate JNI and Java offset values because in 64 bit mode, the argument offsets
 //       are not in sync with the Java stack.  For example a long takes up 1 "C" stack entry
 //       but 2 Java stack entries.
   private int offset;     // The java stack offset
@@ -94,7 +94,7 @@ public abstract class NativeSignatureIterator extends SignatureIterator {
     prepended = !isStatic() ? JNIEnv_words : JNIEnv_words + mirror_words;
   }
 
-  // iterate() calles the 2 virtual methods according to the following invocation syntax:
+  // iterate() calls the 2 virtual methods according to the following invocation syntax:
   //
   // {pass_int | pass_long | pass_object}
   //

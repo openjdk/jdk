@@ -24,18 +24,18 @@
 
 /*
  * @test
- * @bug 8274944
+ * @bug 8274944 8276184
  * @summary VM should not crash during CDS dump when a lambda proxy class
  *          contains an old version of interface.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build LambdaContainsOldInfApp sun.hotspot.WhiteBox OldProvider LambdaVerification
+ * @build LambdaContainsOldInfApp jdk.test.whitebox.WhiteBox OldProvider LambdaVerification
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar lambda_contains_old_inf.jar LambdaVerification
  *             LambdaContainsOldInfApp OldProvider
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaContainsOldInf
  */
 
@@ -53,29 +53,34 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
 
-        dump(topArchiveName,
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+WhiteBoxAPI",
-            "-Xlog:class+load=debug,cds=debug,cds+dynamic=info",
-            use_whitebox_jar,
-            "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("Skipping OldProvider: Old class has been linked")
-                      .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda[$].*0x.*:.*Old.class.has.been.linked")
-                      .shouldHaveExitValue(0);
+        String[] mainArgs = { "dummy", "addLambda" };
+
+        for (String mainArg : mainArgs) {
+
+            dump(topArchiveName,
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+WhiteBoxAPI",
+                "-Xlog:class+load=debug,cds=debug,cds+dynamic=info",
+                use_whitebox_jar,
+                "-cp", appJar, mainClass, mainArg)
+                .assertNormalExit(output -> {
+                    output.shouldContain("Skipping OldProvider: Old class has been linked")
+                          .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda[$].*0x.*:.*Old.class.has.been.linked")
+                          .shouldHaveExitValue(0);
             });
 
-        run(topArchiveName,
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+WhiteBoxAPI",
-            use_whitebox_jar,
-            "-Xlog:class+load=debug",
-            "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("[class,load] LambdaContainsOldInfApp source: shared objects file (top)")
-                      .shouldMatch(".class.load. OldProvider.source:.*lambda_contains_old_inf.jar")
-                      .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*LambdaContainsOldInf")
-                      .shouldHaveExitValue(0);
+            run(topArchiveName,
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+WhiteBoxAPI",
+                use_whitebox_jar,
+                "-Xlog:class+load=debug",
+                "-cp", appJar, mainClass, mainArg)
+                .assertNormalExit(output -> {
+                    output.shouldContain("[class,load] LambdaContainsOldInfApp source: shared objects file (top)")
+                          .shouldMatch(".class.load. OldProvider.source:.*lambda_contains_old_inf.jar")
+                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*LambdaContainsOldInf")
+                          .shouldHaveExitValue(0);
             });
+        }
     }
 }

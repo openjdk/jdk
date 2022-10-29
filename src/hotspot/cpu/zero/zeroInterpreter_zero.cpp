@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,7 @@ void ZeroInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    ZeroInterpreterGenerator g(_code);
+    ZeroInterpreterGenerator g;
     if (PrintInterpreter) print();
   }
 }
@@ -186,9 +186,17 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
 
     // Call the interpreter
     if (JvmtiExport::can_post_interpreter_events()) {
-      BytecodeInterpreter::run<true>(istate);
+      if (RewriteBytecodes) {
+        BytecodeInterpreter::run<true, true>(istate);
+      } else {
+        BytecodeInterpreter::run<true, false>(istate);
+      }
     } else {
-      BytecodeInterpreter::run<false>(istate);
+      if (RewriteBytecodes) {
+        BytecodeInterpreter::run<false, true>(istate);
+      } else {
+        BytecodeInterpreter::run<false, false>(istate);
+      }
     }
     fixup_after_potential_safepoint();
 
@@ -326,15 +334,20 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     markWord disp = lockee->mark().set_unlocked();
     monitor->lock()->set_displaced_header(disp);
     bool call_vm = UseHeavyMonitors;
+    bool inc_monitor_count = true;
     if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
       // Is it simple recursive case?
       if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
         monitor->lock()->set_displaced_header(markWord::from_pointer(NULL));
       } else {
+        inc_monitor_count = false;
         CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
         if (HAS_PENDING_EXCEPTION)
           goto unwind_and_return;
       }
+    }
+    if (inc_monitor_count) {
+      THREAD->inc_held_monitor_count();
     }
   }
 
@@ -471,12 +484,17 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     oop rcvr = monitor->obj();
     monitor->set_obj(NULL);
 
+    bool dec_monitor_count = true;
     if (header.to_pointer() != NULL) {
       markWord old_header = markWord::encode(lock);
       if (rcvr->cas_set_mark(header, old_header) != old_header) {
         monitor->set_obj(rcvr);
+        dec_monitor_count = false;
         InterpreterRuntime::monitorexit(monitor);
       }
+    }
+    if (dec_monitor_count) {
+      THREAD->dec_held_monitor_count();
     }
   }
 
@@ -611,6 +629,8 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
       stack->alloc(wordSize);
       topOfStack = stack->sp();
       break;
+    default:
+      ;
   }
 
   // Read the field to stack(0)
@@ -779,7 +799,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   stack->overflow_check(
     extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  // Adjust the caller's stack frame to accomodate any additional
+  // Adjust the caller's stack frame to accommodate any additional
   // local variables we have contiguously with our parameters.
   for (int i = 0; i < extra_locals; i++)
     stack->push(0);

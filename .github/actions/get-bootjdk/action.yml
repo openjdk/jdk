@@ -1,0 +1,109 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Get BootJDK'
+description: 'Download the BootJDK from cache or source location'
+inputs:
+  platform:
+    description: 'Platform'
+    required: true
+outputs:
+  path:
+    description: 'Path to the installed BootJDK'
+    value: ${{ steps.path-name.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - name: 'Determine platform prefix'
+      id: platform-prefix
+      run: |
+        # Convert platform name to upper case
+        platform_prefix="$(echo ${{ inputs.platform }} | tr [a-z-] [A-Z_])"
+        echo "value=$platform_prefix" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: 'Get URL configuration'
+      id: url
+      uses: ./.github/actions/config
+      with:
+        var: ${{ steps.platform-prefix.outputs.value}}_BOOT_JDK_URL
+
+    - name: 'Get SHA256 configuration'
+      id: sha256
+      uses: ./.github/actions/config
+      with:
+        var: ${{ steps.platform-prefix.outputs.value}}_BOOT_JDK_SHA256
+
+    - name: 'Get file extension configuration'
+      id: ext
+      uses: ./.github/actions/config
+      with:
+        var: ${{ steps.platform-prefix.outputs.value}}_BOOT_JDK_EXT
+
+    - name: 'Check cache for BootJDK'
+      id: get-cached-bootjdk
+      uses: actions/cache@v3
+      with:
+        path: bootjdk/jdk
+        key: boot-jdk-${{ inputs.platform }}-${{ steps.sha256.outputs.value }}
+
+      # macOS is missing sha256sum
+    - name: 'Install sha256sum'
+      run: |
+        # Run Homebrew installation
+        brew install coreutils
+      shell: bash
+      if: steps.get-cached-bootjdk.outputs.cache-hit != 'true' && runner.os == 'macOS'
+
+    - name: 'Download BootJDK'
+      run: |
+        # Download BootJDK and verify checksum
+        mkdir -p bootjdk/jdk
+        mkdir -p bootjdk/unpacked
+        wget --progress=dot:mega -O bootjdk/jdk.${{ steps.ext.outputs.value }} '${{ steps.url.outputs.value }}'
+        echo '${{ steps.sha256.outputs.value }} bootjdk/jdk.${{ steps.ext.outputs.value }}' | sha256sum -c >/dev/null -
+      shell: bash
+      if: steps.get-cached-bootjdk.outputs.cache-hit != 'true'
+
+    - name: 'Unpack BootJDK'
+      run: |
+        # Unpack the BootJDK and move files to a common location
+        if [[ '${{ steps.ext.outputs.value }}' == 'tar.gz' ]]; then
+          tar -xf bootjdk/jdk.${{ steps.ext.outputs.value }} -C bootjdk/unpacked
+        else
+          unzip -q bootjdk/jdk.${{ steps.ext.outputs.value }} -d bootjdk/unpacked
+        fi
+        jdk_root="$(dirname $(find bootjdk/unpacked -name bin -type d))"
+        mv "$jdk_root"/* bootjdk/jdk/
+      shell: bash
+      if: steps.get-cached-bootjdk.outputs.cache-hit != 'true'
+
+    - name: 'Export path to where BootJDK is installed'
+      id: path-name
+      run: |
+        # Export the path
+        echo 'path=bootjdk/jdk' >> $GITHUB_OUTPUT
+      shell: bash

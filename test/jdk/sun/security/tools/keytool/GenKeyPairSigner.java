@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8260693
+ * @bug 8260693 8267319
  * @summary Test for keytool -genkeypair with -signer and -signerkeypass options
  * @library /test/lib
  * @modules java.base/sun.security.util
@@ -186,7 +186,7 @@ public class GenKeyPairSigner {
         System.out.println("Generating a DH cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg DH -alias e3 -dname CN=E3 -signer ca3")
-                .shouldContain("Generating 2,048 bit DH key pair and a certificate (SHA256withDSA) issued by <ca3> with a validity of 90 days")
+                .shouldContain("Generating 3,072 bit DH key pair and a certificate (SHA256withDSA) issued by <ca3> with a validity of 90 days")
                 .shouldContain("for: CN=E3")
                 .shouldHaveExitValue(0);
 
@@ -200,7 +200,7 @@ public class GenKeyPairSigner {
 
         pKey = cert.getPublicKey();
         keyLen = KeyUtil.getKeySize(pKey);
-        if (keyLen != 2048) {
+        if (keyLen != 3072) {
             throw new Exception("Key size is in error");
         }
 
@@ -212,8 +212,8 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-list -v")
                 .shouldContain("Alias name: e3")
-                .shouldContain("Signature algorithm name: SHA256withRSA")
-                .shouldContain("Subject Public Key Algorithm: 2048-bit DH key")
+                .shouldContain("Signature algorithm name: SHA384withRSA")
+                .shouldContain("Subject Public Key Algorithm: 3072-bit DH key")
                 .shouldHaveExitValue(0);
     }
 
@@ -239,7 +239,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg DSA -keysize 1024 -alias ca1 -dname CN=CA1 " +
                 "-keypass ca1keypass -signer ca -signerkeypass cakeypass")
-                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA256withRSA) issued by <ca> with a validity of 90 days")
+                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
                 .shouldContain("for: CN=CA1")
                 .shouldContain("The generated certificate #1 of 2 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #2 of 2 uses a 1024-bit RSA key which is considered a security risk")

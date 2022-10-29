@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,26 +70,31 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedBaseAddress {
 
-    // shared base address test table
-    private static final String[] testTable = {
-        "1g", "8g", "64g","512g", "4t",
-        "32t", "128t", "0",
+    // shared base address test table for {32, 64}bit VM
+    private static final String[] testTableShared = {
+        "1g", "0",
         "1", "64k", "64M",
+        "0xfff80000",         // archive top wraps around 32-bit address space
+        "0xffffffff",         // archive bottom wraps around 32-bit address space -- due to align_up()
+        "0"                   // always let OS pick the base address at runtime (ASLR for CDS archive)
+    };
+
+    // shared base address test table for 64bit VM only
+    private static final String[] testTable64 = {
+        "8g", "64g","512g", "4t",
+        "32t", "128t",
         "0x800001000",        // Default base address + 1 page - probably valid but unaligned to metaspace alignment, see JDK 8247522
         "0xfffffffffff00000", // archive top wraps around 64-bit address space
-        "0xfff80000",         // archive top wraps around 32-bit address space
         "0xffffffffffffffff", // archive bottom wraps around 64-bit address space -- due to align_up()
-        "0xffffffff",         // archive bottom wraps around 32-bit address space -- due to align_up()
         "0x00007ffffff00000", // end of archive will go past the end of user space on linux/x64
-        "0x500000000",        // (20g) below 32g at a 4g aligned address, but cannot be expressed with a logical
+        "0x500000000"         // (20g) below 32g at a 4g aligned address, but cannot be expressed with a logical
                               //    immediate on aarch64 (0x5_0000_0000) (see JDK-8265705)
-        "0",                  // always let OS pick the base address at runtime (ASLR for CDS archive)
     };
 
     // failed pattern
     private static String failedPattern = "os::release_memory\\(0x[0-9a-fA-F]*,\\s[0-9]*\\)\\sfailed";
 
-    public static void main(String[] args) throws Exception {
+    public static void test(String[] args, String[] testTable) throws Exception {
         int mid = testTable.length / 2;
         int start = args[0].equals("0") ? 0 : mid;
         int end   = args[0].equals("0") ? mid : testTable.length;
@@ -132,6 +137,13 @@ public class SharedBaseAddress {
                    .shouldContain("Try to map archive(s) at an alternative address")
                    .shouldNotMatch(failedPattern);
             }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        test(args, testTableShared);
+        if (Platform.is64bit()) {
+            test(args, testTable64);
         }
     }
 }

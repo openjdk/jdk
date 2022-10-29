@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.util.Iterator;
  * <p><b>Error reporting:</b> There are, mostly, two families of errors that
  * can occur during an FTP session. The first kind are the network related issues
  * like a connection reset, and they are usually fatal to the session, meaning,
- * in all likelyhood the connection to the server has been lost and the session
+ * in all likelihood the connection to the server has been lost and the session
  * should be restarted from scratch. These errors are reported by throwing an
  * {@link IOException}. The second kind are the errors reported by the FTP server,
  * like when trying to download a non-existing file for example. These errors
@@ -350,7 +350,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * Retrieves a file from the ftp server and writes its content to the specified
      * {@code OutputStream}.
      * <p>If the restart offset was set, then a {@code REST} command will be
-     * sent before the {@code RETR} in order to restart the tranfer from the specified
+     * sent before the {@code RETR} in order to restart the transfer from the specified
      * offset.</p>
      * <p>The {@code OutputStream} is not closed by this method at the end
      * of the transfer. </p>
@@ -358,7 +358,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * is thrown.</p>
      *
      * @param name a {@code String} containing the name of the file to
-     *        retreive from the server.
+     *        retrieve from the server.
      * @param local the {@code OutputStream} the file should be written to.
      * @return this FtpClient
      * @throws IOException if the transfer fails.
@@ -373,7 +373,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * {@link #completePending()} <b>has</b> to be called once the application
      * is done reading from the returned stream.
      * <p>If the restart offset was set, then a {@code REST} command will be
-     * sent before the {@code RETR} in order to restart the tranfer from the specified
+     * sent before the {@code RETR} in order to restart the transfer from the specified
      * offset.</p>
      *
      * @param name the name of the remote file
@@ -616,7 +616,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * <p>This method will actually block reading on the command channel for a
      * notification from the server that the command is finished. Such a
      * notification often carries extra information concerning the completion
-     * of the pending action (e.g. number of bytes transfered).</p>
+     * of the pending action (e.g. number of bytes transferred).</p>
      * <p>Note that this will return immediately if no command or action
      * is pending</p>
      * <p>It should be also noted that most methods issuing commands to the ftp
@@ -783,7 +783,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * is finished iterating through the files.
      *
      * @param path the pathname of the directory to list or {@code null}
-     *        for the current working directoty.
+     *        for the current working directory.
      * @return an {@code Iterator} of files or {@code null} if the
      *         command failed.
      * @throws IOException if an error occurred during the transmission
@@ -831,7 +831,7 @@ public abstract class FtpClient implements java.io.Closeable {
 
     /**
      * Returns, when available, the size of the latest started transfer.
-     * This is retreived by parsing the response string received as an initial
+     * This is retrieved by parsing the response string received as an initial
      * response to a {@code RETR} or similar request.
      *
      * @return the size of the latest transfer or -1 if either there was no
@@ -840,12 +840,12 @@ public abstract class FtpClient implements java.io.Closeable {
     public abstract long getLastTransferSize();
 
     /**
-     * Returns, when available, the remote name of the last transfered file.
+     * Returns, when available, the remote name of the last transferred file.
      * This is mainly useful for "put" operation when the unique flag was
      * set since it allows to recover the unique file name created on the
      * server which may be different from the one submitted with the command.
      *
-     * @return the name the latest transfered file remote name, or
+     * @return the name the latest transferred file remote name, or
      *         {@code null} if that information is unavailable.
      */
     public abstract String getLastFileName();

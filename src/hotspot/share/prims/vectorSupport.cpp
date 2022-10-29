@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,17 +172,17 @@ Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, Regi
       return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint
     }
 #ifdef ASSERT
-    // Other payload values are: 'oop' type location and Scalar-replaced boxed vector representation.
+    // Other payload values are: 'oop' type location and scalar-replaced boxed vector representation.
     // They will be processed in Deoptimization::reassign_fields() after all objects are reallocated.
     else {
       Location::Type loc_type = location.type();
       assert(loc_type == Location::oop || loc_type == Location::narrowoop,
              "expected 'oop'(%d) or 'narrowoop'(%d) types location but got: %d", Location::oop, Location::narrowoop, loc_type);
     }
-  } else if (!payload->is_object()) {
+  } else if (!payload->is_object() && !payload->is_constant_oop()) {
     stringStream ss;
     payload->print_on(&ss);
-    assert(payload->is_object(), "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.as_string());
+    assert(false, "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.freeze());
 #endif
   }
   return Handle(THREAD, nullptr);
@@ -292,6 +292,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_NegI;
+        case T_LONG:   return Op_NegL;
         case T_FLOAT:  return Op_NegF;
         case T_DOUBLE: return Op_NegD;
         default: fatal("NEG: %s", type2name(bt));
@@ -430,6 +431,121 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_MASK_TOLONG: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskToLong;
+        default: fatal("MASK_TOLONG: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_EXPAND: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_ExpandV;
+        default: fatal("EXPAND: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_COMPRESS: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_CompressV;
+        default: fatal("COMPRESS: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_COMPRESS: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_CompressM;
+        default: fatal("MASK_COMPRESS: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_BIT_COUNT: {
+      switch (bt) {
+        case T_BYTE:  // Returning Op_PopCountI
+        case T_SHORT: // for byte and short types temporarily
+        case T_INT:   return Op_PopCountI;
+        case T_LONG:  return Op_PopCountL;
+        default: fatal("BIT_COUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_TZ_COUNT: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:   return Op_CountTrailingZerosI;
+        case T_LONG:  return Op_CountTrailingZerosL;
+        default: fatal("TZ_COUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_LZ_COUNT: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:   return Op_CountLeadingZerosI;
+        case T_LONG:  return Op_CountLeadingZerosL;
+        default: fatal("LZ_COUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_REVERSE: {
+      switch (bt) {
+        case T_BYTE:  // Temporarily returning
+        case T_SHORT: // Op_ReverseI for byte and short
+        case T_INT:   return Op_ReverseI;
+        case T_LONG:  return Op_ReverseL;
+        default: fatal("REVERSE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_REVERSE_BYTES: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:   return Op_ReverseBytesI;
+        case T_LONG:  return Op_ReverseBytesL;
+        default: fatal("REVERSE_BYTES: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_COMPRESS_BITS: {
+      switch (bt) {
+        case T_INT:
+        case T_LONG: return Op_CompressBits;
+        default: fatal("COMPRESS_BITS: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_EXPAND_BITS: {
+      switch (bt) {
+        case T_INT:
+        case T_LONG: return Op_ExpandBits;
+        default: fatal("EXPAND_BITS: %s", type2name(bt));
+      }
+      break;
+    }
+
     case VECTOR_OP_TAN:
     case VECTOR_OP_TANH:
     case VECTOR_OP_SIN:

@@ -1,4 +1,4 @@
-## The FreeType Project: Freetype v2.10.4
+## The FreeType Project: Freetype v2.12.1
 
 
 ### FreeType Notice
@@ -20,6 +20,27 @@ which fits your needs best.
 
 ### FreeType License
 ```
+
+Copyright (C) 1996-2022 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2007-2022 by Dereg Clegg and Michael Toftdal.
+Copyright (C) 1996-2022 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2004-2022 by Masatake YAMATO and Redhat K.K.
+Copyright (C) 2007-2022 by Derek Clegg and Michael Toftdal.
+Copyright (C) 2007-2022 by David Turner.
+Copyright (C) 2022 by David Turner, Robert Wilhelm, Werner Lemberg, and Moazin Khatti.
+Copyright (C) 2007-2022 by Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
+Copyright (C) 2008-2022 by David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
+Copyright (C) 2019-2022 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2009-2022 by Oran Agra and Mickey Gabel.
+Copyright (C) 2004-2022 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
+Copyright (C) 2004-2022 by Masatake YAMATO, Red Hat K.K.,
+Copyright (C) 2003-2022 by Masatake YAMATO, Redhat K.K.,
+Copyright (C) 2013-2022 by Google, Inc.
+Copyright (C) 2018-2022 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
+Copyright (C) 2005-2022 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright 2013 by Google, Inc.
+
+
                    The FreeType Project LICENSE
                     ----------------------------
 
@@ -533,46 +554,34 @@ consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Library General
 Public License instead of this License.
 
-#########################################################################
+```
 
---- fthash.c and fthash.h are covered by the following notices ---
+### Additional Freetype Attributions
+```
 
-/*
- * Copyright 2000 Computing Research Labs, New Mexico State University
- * Copyright 2001-2015
- *   Francesco Zappa Nardelli
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
- * OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
- * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-  /**************************************************************************
-   *
-   * This file is based on code from bdf.c,v 1.22 2000/03/16 20:08:50
-   *
-   * taken from Mark Leisher's xmbdfed package
-   *
-   */
-   
-#########################################################################
-
-
---- FreeType 2 PSaux module is covered by the following notices ---
+---------------------------------
+The below license applies to the following files:
+libfreetype/src/psaux/psarrst.c
+libfreetype/src/psaux/psarrst.h
+libfreetype/src/psaux/psblues.c
+libfreetype/src/psaux/psblues.h
+libfreetype/src/psaux/pserror.c
+libfreetype/src/psaux/pserror.h
+libfreetype/src/psaux/psfixed.h
+libfreetype/src/psaux/psfont.c
+libfreetype/src/psaux/psfont.h
+libfreetype/src/psaux/psft.c
+libfreetype/src/psaux/psft.h
+libfreetype/src/psaux/psglue.h
+libfreetype/src/psaux/pshints.c
+libfreetype/src/psaux/pshints.h
+libfreetype/src/psaux/psintrp.c
+libfreetype/src/psaux/psintrp.h
+libfreetype/src/psaux/psread.c
+libfreetype/src/psaux/psread.h
+libfreetype/src/psaux/psstack.c
+libfreetype/src/psaux/psstack.h
+libfreetype/src/psaux/pstypes.h
 
 Copyright 2006-2014 Adobe Systems Incorporated.
 
@@ -603,7 +612,39 @@ have read and understood the terms and conditions of the
 FreeType Project License as well as those provided in this section,
 and you accept them fully.
 
-#########################################################################
 
 ```
 
+### MIT License
+```
+
+---------------------------------
+The below license applies to the following files:
+libfreetype/include/freetype/internal/fthash.h
+libfreetype/src/base/fthash.c
+
+Copyright 2000 Computing Research Labs, New Mexico State University
+Copyright 2001-2015
+
+  Francesco Zappa Nardelli
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+```

@@ -76,7 +76,7 @@ public class ProcessCommunicator {
     }
 
     /**
-     * Executes child {code Process}
+     * Executes child {@code Process}
      *
      * @param classToExecute class to be executed as a child java process
      * @param args args to be passed in to the child process
