@@ -63,14 +63,11 @@ class outputStream : public CHeapObjBase {
                                    size_t& result_len);
 
    // calls do_vsnprintf and writes output to stream; uses an on-stack buffer.
-   ATTRIBUTE_PRINTF(2, 0)
-   void do_vsnprintf_and_write_with_automatic_buffer(const char* format, va_list ap, bool add_cr);
+   ATTRIBUTE_PRINTF(2, 0) void do_vsnprintf_and_write_with_automatic_buffer(const char* format, va_list ap, bool add_cr);
    // calls do_vsnprintf and writes output to stream; uses the user-provided buffer;
-   ATTRIBUTE_PRINTF(2, 0)
-   void do_vsnprintf_and_write_with_scratch_buffer(const char* format, va_list ap, bool add_cr);
+   ATTRIBUTE_PRINTF(2, 0) void do_vsnprintf_and_write_with_scratch_buffer(const char* format, va_list ap, bool add_cr);
    // calls do_vsnprintf, then writes output to stream.
-   ATTRIBUTE_PRINTF(2, 0)
-   void do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr);
+   ATTRIBUTE_PRINTF(2, 0) void do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr);
 
  public:
    // creation
