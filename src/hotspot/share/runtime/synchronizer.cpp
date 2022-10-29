@@ -759,7 +759,8 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
   markWord mark = obj->mark();
-  if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+  if ((mark.is_fast_locked() && current->lock_stack().contains(obj())) ||
+      (mark.has_locker() && current->is_lock_owned((address)mark.locker()))) {
     // Not inflated so there can't be any waiters to notify.
     return;
   }
@@ -774,7 +775,8 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
   markWord mark = obj->mark();
-  if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+  if ((mark.is_fast_locked() && current->lock_stack().contains(obj())) ||
+      (mark.has_locker() && current->is_lock_owned((address)mark.locker()))) {
     // Not inflated so there can't be any waiters to notify.
     return;
   }
@@ -1054,6 +1056,12 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   if (mark.has_locker()) {
     return current->is_lock_owned((address)mark.locker());
   }
+
+  // Fast-locking case.
+  if (mark.is_fast_locked()) {
+    return current->lock_stack().contains(h_obj());
+  }
+
   // Contended case, header points to ObjectMonitor (tagged pointer)
   if (mark.has_monitor()) {
     // The first stage of async deflation does not affect any field
@@ -1068,33 +1076,25 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
 
 JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   oop obj = h_obj();
-  address owner = NULL;
-
   markWord mark = read_stable_mark(obj);
 
   // Uncontended case, header points to stack
   if (mark.has_locker()) {
-    owner = (address) mark.locker();
+    return Threads::owning_thread_from_monitor_owner(t_list, (address) mark.locker());
+  }
+
+  if (mark.is_fast_locked()) {
+    return Threads::owning_thread_from_object(t_list, h_obj());
   }
 
   // Contended case, header points to ObjectMonitor (tagged pointer)
-  else if (mark.has_monitor()) {
+  if (mark.has_monitor()) {
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     ObjectMonitor* monitor = mark.monitor();
     assert(monitor != NULL, "monitor should be non-null");
-    owner = (address) monitor->owner();
+    return Threads::owning_thread_from_monitor(t_list, monitor);
   }
-
-  if (owner != NULL) {
-    // owning_thread_from_monitor_owner() may also return NULL here
-    return Threads::owning_thread_from_monitor_owner(t_list, owner);
-  }
-
-  // Unlocked case, header in place
-  // Cannot have assertion since this object may have been
-  // locked by another thread when reaching here.
-  // assert(mark.is_neutral(), "sanity check");
 
   return NULL;
 }
@@ -1293,6 +1293,10 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       ObjectMonitor* inf = mark.monitor();
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
+      if (UseFastLocking && inf->is_owner_anonymous() && current->lock_stack().contains(object)) {
+	inf->set_owner_from_anonymous(current);
+	current->lock_stack().remove(object);
+      }
       return inf;
     }
 

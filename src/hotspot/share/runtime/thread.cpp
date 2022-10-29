@@ -546,6 +546,7 @@ void Thread::print_owned_locks_on(outputStream* st) const {
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
+  assert(!UseFastLocking, "maybe not call that?");
   if (UseFastLocking) {
     assert(adr != ANONYMOUS_OWNER, "must convert to lock object");
     return !UseHeavyMonitors && lock_stack().contains(cast_to_oop(adr));
