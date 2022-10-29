@@ -577,7 +577,7 @@ public class JavacParser implements Parser {
             nextToken();
             return name;
         } else if (token.kind == ASSERT) {
-            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.AssertAsIdentifier);
+            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.AssertAsIdentifier, "pizza");
             nextToken();
             return names.error;
         } else if (token.kind == ENUM) {

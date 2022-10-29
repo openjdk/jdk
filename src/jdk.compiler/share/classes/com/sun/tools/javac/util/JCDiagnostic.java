@@ -26,6 +26,7 @@
 package com.sun.tools.javac.util;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.Locale;
 import java.util.Set;
@@ -464,10 +465,29 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     private final Set<DiagnosticFlag> flags;
     private final LintCategory lintCategory;
 
+    private String hint;
     /** source line position (set lazily) */
     private SourcePosition sourcePosition;
 
     private final UnaryOperator<JCDiagnostic> rewriter;
+
+    public Optional<String> getHint() {
+        return Optional.ofNullable(this.hint);
+    }
+
+    public JCDiagnostic withHint(String newHint){
+
+        return new JCDiagnostic(
+                this.defaultFormatter,
+                this.diagnosticInfo,
+                this.lintCategory,
+                this.flags,
+                this.source,
+                this.position,
+                this.rewriter,
+                newHint
+        );
+    }
 
     /**
      * This class is used to defer the line/column position fetch logic after diagnostic construction.
@@ -638,6 +658,17 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                            DiagnosticSource source,
                            DiagnosticPosition pos,
                            UnaryOperator<JCDiagnostic> rewriter) {
+        this(formatter, diagnosticInfo, lc,flags, source, pos, rewriter, null);
+    }
+
+    protected JCDiagnostic(DiagnosticFormatter<JCDiagnostic> formatter,
+                           DiagnosticInfo diagnosticInfo,
+                           LintCategory lc,
+                           Set<DiagnosticFlag> flags,
+                           DiagnosticSource source,
+                           DiagnosticPosition pos,
+                           UnaryOperator<JCDiagnostic> rewriter,
+                           String hint) {
         if (source == null && pos != null && pos.getPreferredPosition() != Position.NOPOS)
             throw new IllegalArgumentException();
 
@@ -648,6 +679,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         this.source = source;
         this.position = pos;
         this.rewriter = rewriter;
+        this.hint = hint;
     }
 
     /**

@@ -155,6 +155,10 @@ public abstract class AbstractLog {
         report(diags.error(flag, source, wrap(pos), errorKey));
     }
 
+    public void error(DiagnosticFlag flag, int pos, Error errorKey, String hint) {
+        report(diags.error(flag, source, wrap(pos), errorKey).withHint(hint));
+    }
+
     /** Report a warning, unless suppressed by the  -nowarn option or the
      *  maximum number of warnings has been reached.
      *  @param warningKey    The key for the localized warning message.

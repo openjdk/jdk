@@ -129,6 +129,11 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                     buf.append("\n" + indent(sub, currentIndentation));
             }
         }
+        d.getHint().ifPresent(hint->{
+            buf.append("\n");
+            buf.append("hint: ");
+            buf.append(hint);
+        });
         return buf.toString();
     }
 
