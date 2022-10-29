@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.misc.InternalLock;
 
@@ -430,8 +431,24 @@ public class PushbackInputStream extends FilterInputStream {
         if (getClass() == PushbackInputStream.class) {
             int avail = buf.length - pos;
             if (avail > 0) {
-                out.write(buf, pos, avail);
-                pos = buf.length;
+                byte[] buffer = buf;
+
+                // Prevent buffer poisoning (by out.write throwing IOException)
+                buf = new byte[0];
+                try {
+                    // Prevent leaking of "confidential" buffer content
+                    Arrays.fill(buffer, 0, pos, (byte) 0);
+
+                    out.write(buf, pos, avail);
+                    pos = buffer.length;
+                } finally {
+                    // Allow GC before reallocating possibly large buffer to prevent OOME
+                    int bufferSize = buffer.length;
+                    buffer = null;
+
+                    // Resizing the buffer to respect user's buffer size choice
+                    buf = new byte[bufferSize];
+                }
             }
             return avail + in.transferTo(out);
         } else {
