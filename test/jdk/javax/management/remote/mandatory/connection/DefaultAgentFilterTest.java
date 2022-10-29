@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8159377
+ * @bug 8159377 8283093
  * @library /test/lib
  * @summary Tests ObjectFilter on default agent
  * @author Harsha Wardhana B
@@ -172,11 +172,17 @@ public class DefaultAgentFilterTest {
     private static final int FREE_PORT_ATTEMPTS = 10;
 
     private static void testDefaultAgent(String propertyFile) throws Exception {
+        testDefaultAgent(propertyFile, null);
+    }
+
+    private static void testDefaultAgent(String propertyFile, String additionalArgument) throws Exception {
         for (int i = 1; i <= FREE_PORT_ATTEMPTS; i++) {
             int port = Utils.getFreePort();
-            System.out.println("Attempting testDefaultAgent(" + propertyFile + ") with port: " + port);
+            System.out.println("Attempting testDefaultAgent(" +
+                               (propertyFile != null ? propertyFile : "no properties")
+                               + ") with port: " + port);
             try {
-                testDefaultAgent(propertyFile, port);
+                testDefaultAgent(propertyFile, additionalArgument, port);
                 break;  // return succesfully
             } catch (BindException b) {
                 // Retry with new port.  Throw if last iteration:
@@ -187,20 +193,23 @@ public class DefaultAgentFilterTest {
         }
     }
 
-    private static void testDefaultAgent(String propertyFile, int port) throws Exception {
-        String propFile = System.getProperty("test.src") + File.separator + propertyFile;
+    private static void testDefaultAgent(String propertyFile, String additionalArgument, int port) throws Exception {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
                 System.getProperty("test.class.path"),
                 "-XX:+UsePerfData"
         ));
-        String[] args = new String[]{
-            "-Dcom.sun.management.jmxremote.port=" + port,
-            "-Dcom.sun.management.jmxremote.authenticate=false",
-            "-Dcom.sun.management.jmxremote.ssl=false",
-            "-Dcom.sun.management.config.file=" + propFile
-        };
-        pbArgs.addAll(Arrays.asList(args));
+        // JMX config arguments, using propertyFile if non-null:
+        pbArgs.add("-Dcom.sun.management.jmxremote.port=" + port);
+        pbArgs.add("-Dcom.sun.management.jmxremote.authenticate=false");
+        pbArgs.add("-Dcom.sun.management.jmxremote.ssl=false");
+        if (propertyFile != null) {
+            String propFile = System.getProperty("test.src") + File.separator + propertyFile;
+            pbArgs.add("-Dcom.sun.management.config.file=" + propFile);
+        }
+        if (additionalArgument != null) {
+            pbArgs.add(additionalArgument);
+        }
         pbArgs.add(TEST_APP_NAME);
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -280,6 +289,30 @@ public class DefaultAgentFilterTest {
         } catch (Exception ex) {
             System.out.println(ex);
             System.out.println("----\tTest FAILED !!");
+            throw ex;
+        }
+        try {
+            // Use default filter, should fail with: java.io.InvalidClassException: filter status: REJECTED
+            testDefaultAgent(null /* no properties file */);
+            throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            if (ex instanceof InvalidClassException) {
+                System.out.println("----\tTest PASSED: expected InvalidClassException received.");
+            } else {
+                System.out.println("----\tTest FAILED: unexpected Exception");
+                throw ex;
+            }
+        }
+        try {
+            // Add custom filter on command-line.
+            testDefaultAgent(null, "-Dcom.sun.management.jmxremote.serial.filter.pattern=\"java.lang.*;java.math.BigInteger;"
+                             + "java.math.BigDecimal;java.util.*;javax.management.openmbean.*;javax.management.ObjectName;"
+                             + "java.rmi.MarshalledObject;javax.security.auth.Subject;DefaultAgentFilterTest$MyTestObject;!*\"");
+            System.out.println("----\tTest PASSED: with custom filter on command-line");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            System.out.println("----\tTest FAILED: unexpected Exception");
             throw ex;
         }
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: finished ...");
