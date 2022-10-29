@@ -387,18 +387,16 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
       return true;
     }
 
-    if (!UseFastLocking) {
-      // This Java Monitor is inflated so obj's header will never be
-      // displaced to this thread's BasicLock. Make the displaced header
-      // non-NULL so this BasicLock is not seen as recursive nor as
-      // being locked. We do this unconditionally so that this thread's
-      // BasicLock cannot be mis-interpreted by any stack walkers. For
-      // performance reasons, stack walkers generally first check for
-      // stack-locking in the object's header, the second check is for
-      // recursive stack-locking in the displaced header in the BasicLock,
-      // and last are the inflated Java Monitor (ObjectMonitor) checks.
-      lock->set_displaced_header(markWord::unused_mark());
-    }
+    // This Java Monitor is inflated so obj's header will never be
+    // displaced to this thread's BasicLock. Make the displaced header
+    // non-NULL so this BasicLock is not seen as recursive nor as
+    // being locked. We do this unconditionally so that this thread's
+    // BasicLock cannot be mis-interpreted by any stack walkers. For
+    // performance reasons, stack walkers generally first check for
+    // stack-locking in the object's header, the second check is for
+    // recursive stack-locking in the displaced header in the BasicLock,
+    // and last are the inflated Java Monitor (ObjectMonitor) checks.
+    lock->set_displaced_header(markWord::unused_mark());
 
     if (owner == NULL && m->try_set_owner_from(NULL, current) == NULL) {
       assert(m->_recursions == 0, "invariant");

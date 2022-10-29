@@ -5924,6 +5924,8 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - t1, t2, t3: temporary registers, will be destroyed
 void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(UseFastLocking, "only used with fast-locking");
+  assert_different_registers(obj, hdr, t1, t2);
+
   // Check if we would have space on lock-stack for the object.
   ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
   ldr(t2, Address(rthread, Thread::lock_stack_limit_offset()));
@@ -5950,6 +5952,8 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
 
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(UseFastLocking, "only used with fast-locking");
+  assert_different_registers(obj, hdr, t1, t2);
+
   // Load the expected old header (lock-bits cleared to indicate 'locked') into hdr
   andr(hdr, hdr, ~markWord::lock_mask_in_place);
 

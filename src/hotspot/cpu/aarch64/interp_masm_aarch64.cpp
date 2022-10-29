@@ -872,7 +872,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
       ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       fast_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
-
+      b(count);
       bind(slow_case);
     } else {
       // Convert from BasicObjectLock structure to object and BasicLock
