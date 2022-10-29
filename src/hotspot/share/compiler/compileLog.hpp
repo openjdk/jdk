@@ -55,8 +55,7 @@ class CompileLog : public xmlStream {
 
   static CompileLog* _first;     // head of static chain
 
-  ATTRIBUTE_PRINTF(3, 0)
-  void va_tag(bool push, const char* format, va_list ap);
+  ATTRIBUTE_PRINTF(3, 0) void va_tag(bool push, const char* format, va_list ap);
 
  public:
   CompileLog(const char* file_name, FILE* fp, intx thread_id);
