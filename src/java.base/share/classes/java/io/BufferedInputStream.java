@@ -611,7 +611,7 @@ public class BufferedInputStream extends FilterInputStream {
                 byte[] buffer = getBufIfOpen();
 
                 // Prevent buffer poisoning (by out.write throwing IOException)
-                byte[] emptyBuffer = new byte[0];
+                byte[] emptyBuffer = new byte[0]; // read-past-EOF is rather unlikely
                 if (!U.compareAndSetReference(this, BUF_OFFSET, buffer, emptyBuffer)) {
                     // Can't replace buf if there was an async close.
                     // Note: This would need to be changed if transferTo()
@@ -628,21 +628,6 @@ public class BufferedInputStream extends FilterInputStream {
                 out.write(buffer, pos, avail);
                 count = 0;
                 pos = 0;
-
-                // Allow GC before reallocating possibly large buffer to prevent OOME
-                int bufferSize = buffer.length;
-                buffer = null;
-
-                // Resizing the buffer to respect user's buffer size choice
-                byte[] nbuf = new byte[bufferSize];
-                if (!U.compareAndSetReference(this, BUF_OFFSET, emptyBuffer, nbuf)) {
-                    // Can't replace buf if there was an async close.
-                    // Note: This would need to be changed if transferTo()
-                    // is ever made accessible to multiple threads.
-                    // But for now, the only way CAS can fail is via close.
-                    // assert buf == null;
-                    throw new IOException("Stream closed");
-                }
             }
             return avail + getInIfOpen().transferTo(out);
         } else {
