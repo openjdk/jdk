@@ -59,10 +59,11 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
     # to config.log with 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
 
     if $STRIP "--version" 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
-      # strip accompanying gcc and clang use --version
+      # strip that comes from the GNU family uses --version
+      # This variant of strip is usually found accompanying gcc and clang
       STRIPFLAGS="--strip-debug"
     elif $STRIP "-V" 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
-      # IBM strip that AIX uses only supports -V
+      # IBM strip that works with AIX binaries only supports -V
       STRIPFLAGS="-X32_64"
     else
       # The only strip variant left is MacOS/Xcode strip, which does not have any
