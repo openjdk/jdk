@@ -1093,10 +1093,11 @@ public:
 
   void ctzc_bit(Register Rd, Register Rs, bool isLL = false, Register tmp1 = t0, Register tmp2 = t1);
 
-  void zero_words(Register base, u_int64_t cnt);
+  void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp);
+  void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
 
   // shift left by shamt and add
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);

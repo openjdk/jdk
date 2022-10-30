@@ -1008,7 +1008,6 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   return false;
 }
 
-// FIXME: jvmti should call this
 JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   oop obj = h_obj();
   address owner = NULL;
