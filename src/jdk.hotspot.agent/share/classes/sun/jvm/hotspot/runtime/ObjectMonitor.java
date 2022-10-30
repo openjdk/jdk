@@ -79,6 +79,10 @@ public class ObjectMonitor extends VMObject {
     return false;
   }
 
+  public boolean isOwnedAnonymous() {
+    return addr.getAddressAt(ownerFieldOffset).asLongValue() == 1;
+  }
+
   public Address owner() { return addr.getAddressAt(ownerFieldOffset); }
   // FIXME
   //  void      set_owner(void* owner);

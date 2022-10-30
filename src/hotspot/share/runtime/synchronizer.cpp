@@ -804,7 +804,7 @@ static SharedGlobals GVars;
 
 static markWord read_stable_mark(oop obj) {
   markWord mark = obj->mark_acquire();
-  if (!mark.is_being_inflated()) {
+  if (!mark.is_being_inflated() || UseFastLocking) {
     return mark;       // normal fast-path return
   }
 
