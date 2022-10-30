@@ -41,7 +41,11 @@ void CHeapBitMapAllocator::free(bm_word_t* map, idx_t size_in_words) const {
 }
 
 bm_word_t* ArenaBitMapAllocator::allocate(idx_t size_in_words) const {
-  return (bm_word_t*)_arena->Amalloc(size_in_words * BytesPerWord);
+  if (_arena == nullptr) {
+    return NEW_RESOURCE_ARRAY(bm_word_t, size_in_words);
+  } else {
+    return (bm_word_t*)_arena->Amalloc(size_in_words * BytesPerWord);
+  }
 }
 
 template <class Allocator>
@@ -89,18 +93,13 @@ void GrowableBitMap<Allocator>::free(const Allocator& allocator, bm_word_t* map,
   assert(ret == NULL, "Reallocate shouldn't have allocated");
 }
 
-void BitMap::remove(idx_t bit) {
-  if (bit < _size) {
-    clear_bit(bit);
-  }
+
+ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)
+  : GrowableBitMap<ArenaBitMapAllocator>(ArenaBitMapAllocator(arena), size_in_bits, clear) {
 }
 
 ResourceBitMap::ResourceBitMap(idx_t size_in_bits, bool clear)
-  : GrowableBitMap<ResourceBitMapAllocator>(ResourceBitMapAllocator(), size_in_bits, clear) {
-}
-
-ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits)
-  : GrowableBitMap<ArenaBitMapAllocator>(ArenaBitMapAllocator(arena), size_in_bits, true) {
+  : ArenaBitMap(nullptr, size_in_bits, clear) {
 }
 
 CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
@@ -135,6 +134,12 @@ void BitMap::verify_range(idx_t beg, idx_t end) const {
   verify_limit(end);
 }
 #endif // #ifdef ASSERT
+
+void BitMap::remove(idx_t bit) {
+  if (bit < _size) {
+    clear_bit(bit);
+  }
+}
 
 void BitMap::pretouch() {
   os::pretouch_memory(word_addr(0), word_addr(size()));
@@ -639,5 +644,4 @@ void BitMap::print_on(outputStream* st) const {
 #endif
 
 template class GrowableBitMap<CHeapBitMapAllocator>;
-template class GrowableBitMap<ResourceBitMapAllocator>;
 template class GrowableBitMap<ArenaBitMapAllocator>;

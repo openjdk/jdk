@@ -384,16 +384,6 @@ class BitMapView : public BitMap {
 typedef BitMap::bm_word_t bm_word_t;
 typedef BitMap::idx_t     idx_t;
 
-class ResourceBitMapAllocator : StackObj {
- public:
-  bm_word_t* allocate(idx_t size_in_words) const {
-    return NEW_RESOURCE_ARRAY(bm_word_t, size_in_words);
-  }
-  void free(bm_word_t* map, idx_t size_in_words) const {
-    // Don't free resource allocated arrays.
-  }
-};
-
 class CHeapBitMapAllocator : StackObj {
   MEMFLAGS _flags;
 
@@ -410,14 +400,24 @@ class ArenaBitMapAllocator : StackObj {
  public:
   ArenaBitMapAllocator(Arena* arena) : _arena(arena) {}
   bm_word_t* allocate(idx_t size_in_words) const;
-
   void free(bm_word_t* map, idx_t size_in_words) const {
     // ArenaBitMaps currently don't free memory.
   }
 };
 
-// A BitMap with storage in a ResourceArea.
-class ResourceBitMap : public GrowableBitMap<ResourceBitMapAllocator> {
+// A BitMap with storage in a specific Arena.
+class ArenaBitMap : public GrowableBitMap<ArenaBitMapAllocator> {
+ public:
+  // Clears the bitmap memory.
+  ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clean = true);
+
+ protected:
+  ArenaBitMap(const ArenaBitMap& rhs) = default;
+  ArenaBitMap& operator=(const ArenaBitMap& rhs) = delete;
+};
+
+// A BitMap with storage in a ResourceArea. It is an ArenaBitMap but _arena is nullptr;
+class ResourceBitMap : public ArenaBitMap {
  public:
   ResourceBitMap() : ResourceBitMap(0) {}
 
@@ -428,16 +428,6 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMapAllocator> {
     update(rhs._map, rhs._size);
     return *this;
   }
-};
-
-// A BitMap with storage in a specific Arena.
-class ArenaBitMap : public GrowableBitMap<ArenaBitMapAllocator> {
- public:
-  // Clears the bitmap memory.
-  ArenaBitMap(Arena* arena, idx_t size_in_bits);
-
- private:
-  NONCOPYABLE(ArenaBitMap);
 };
 
 // A BitMap with storage in the CHeap.
