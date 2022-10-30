@@ -381,17 +381,14 @@ class BitMapView : public BitMap {
   BitMapView(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
 };
 
-typedef BitMap::bm_word_t bm_word_t;
-typedef BitMap::idx_t     idx_t;
-
 class CHeapBitMapAllocator : StackObj {
   MEMFLAGS _flags;
 
  public:
   CHeapBitMapAllocator(MEMFLAGS flags) : _flags(flags) {}
-  bm_word_t* allocate(size_t size_in_words) const;
+  BitMap::bm_word_t* allocate(size_t size_in_words) const;
 
-  void free(bm_word_t* map, idx_t size_in_words) const;
+  void free(BitMap::bm_word_t* map, BitMap::idx_t size_in_words) const;
 };
 
 class ArenaBitMapAllocator : StackObj {
@@ -399,8 +396,8 @@ class ArenaBitMapAllocator : StackObj {
 
  public:
   ArenaBitMapAllocator(Arena* arena) : _arena(arena) {}
-  bm_word_t* allocate(idx_t size_in_words) const;
-  void free(bm_word_t* map, idx_t size_in_words) const {
+  BitMap::bm_word_t* allocate(BitMap::idx_t size_in_words) const;
+  void free(BitMap::bm_word_t* map, BitMap::idx_t size_in_words) const {
     // ArenaBitMaps currently don't free memory.
   }
 };

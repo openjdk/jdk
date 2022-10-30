@@ -31,7 +31,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/population_count.hpp"
 
-STATIC_ASSERT(sizeof(BitMap::bm_word_t) == BytesPerWord); // "Implementation assumption."
+using bm_word_t = BitMap::bm_word_t;
+using idx_t = BitMap::idx_t;
+
+STATIC_ASSERT(sizeof(bm_word_t) == BytesPerWord); // "Implementation assumption."
 
 bm_word_t* CHeapBitMapAllocator::allocate(size_t size_in_words) const {
   return ArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
