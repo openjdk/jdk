@@ -164,7 +164,7 @@ public class InferenceUnitTest {
     private void checkAsSub(String base, String test, String expected) {
         Type baseType = parseType(base);
         TypeSymbol testType = parseType(test).tsym;
-        Type actualType = infer.instantiatePatternType(null, baseType, testType);
+        Type actualType = infer.instantiatePatternType(baseType, testType);
         String actualTypeString = actualType != null ? actualType.toString() : null;
         if (!Objects.equals(expected, actualTypeString)) {
             error("Unexpected type, expected: " + expected + ", got: " + actualTypeString);
