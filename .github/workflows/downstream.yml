@@ -64,8 +64,8 @@ jobs:
           TAG=$(git tag | grep --extended-regexp '^jdk\-.*' | sort --version-sort | tail --lines 1 | tr --delete '\n')
           test -n "$TAG"
 
-          echo "::set-output name=tag::$TAG"
-          echo "::set-output name=diff::$(test -n "$(git diff rivos/main...$TAG)" && echo "true" || echo "false")"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "diff=$(test -n "$(git diff rivos/main...$TAG)" && echo "true" || echo "false")" >> $GITHUB_OUTPUT
 
       - name: "Push"
         run: |

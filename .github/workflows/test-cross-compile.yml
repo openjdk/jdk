@@ -220,7 +220,7 @@ jobs:
           fi
 
           artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }} | tr '/ ' '__')"
-          echo "::set-output name=artifact-name::$artifact_name"
+          echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
         if: always()
 
       - name: 'Upload test results'
