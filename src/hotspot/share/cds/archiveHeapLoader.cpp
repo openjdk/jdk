@@ -72,7 +72,7 @@ void ArchiveHeapLoader::fixup_regions() {
   if (is_mapped()) {
     mapinfo->fixup_mapped_heap_regions();
   } else if (_loading_failed) {
-    fill_failed_loaded_region();
+    fill_failed_loaded_heap();
   }
   if (is_fully_available()) {
     if (!MetaspaceShared::use_full_module_graph()) {
@@ -80,7 +80,6 @@ void ArchiveHeapLoader::fixup_regions() {
       ClassLoaderDataShared::clear_archived_oops();
     }
   }
-  SystemDictionaryShared::update_archived_mirror_native_pointers();
 }
 
 // ------------------ Support for Region MAPPING -----------------------------------------
@@ -171,7 +170,7 @@ struct LoadedArchiveHeapRegion {
 };
 
 void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loaded_regions,
-                                             int num_loaded_regions) {
+                                                    int num_loaded_regions) {
   _dumptime_base_0 = loaded_regions[0]._dumptime_base;
   _dumptime_base_1 = loaded_regions[1]._dumptime_base;
   _dumptime_base_2 = loaded_regions[2]._dumptime_base;
@@ -314,7 +313,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
 
     if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
       // There's no easy way to free the buffer, so we will fill it with zero later
-      // in fill_failed_loaded_region(), and it will eventually be GC'ed.
+      // in fill_failed_loaded_heap(), and it will eventually be GC'ed.
       log_warning(cds)("Loading of heap region %d has failed. Archived objects are disabled", i);
       _loading_failed = true;
       return false;
@@ -339,6 +338,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
       bm.iterate(&patcher);
     }
 
+    r->set_mapped_base((char*)load_address);
     load_address += r->used();
   }
 
@@ -392,17 +392,24 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
 
 void ArchiveHeapLoader::finish_initialization() {
   if (is_loaded()) {
-    HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
-    HeapWord* top    = (HeapWord*)_loaded_heap_top;
-
-    MemRegion archive_space = MemRegion(bottom, top);
-    Universe::heap()->complete_loaded_archive_space(archive_space);
+    // These operations are needed only when the heap is loaded (not mapped).
+    finish_loaded_heap();
+    if (VerifyArchivedFields > 0) {
+      verify_loaded_heap();
+    }
   }
+  patch_native_pointers();
+}
 
-  if (VerifyArchivedFields <= 0 || !is_loaded()) {
-    return;
-  }
+void ArchiveHeapLoader::finish_loaded_heap() {
+  HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
+  HeapWord* top    = (HeapWord*)_loaded_heap_top;
 
+  MemRegion archive_space = MemRegion(bottom, top);
+  Universe::heap()->complete_loaded_archive_space(archive_space);
+}
+
+void ArchiveHeapLoader::verify_loaded_heap() {
   log_info(cds, heap)("Verify all oops and pointers in loaded heap");
 
   ResourceMark rm;
@@ -424,7 +431,7 @@ void ArchiveHeapLoader::finish_initialization() {
   }
 }
 
-void ArchiveHeapLoader::fill_failed_loaded_region() {
+void ArchiveHeapLoader::fill_failed_loaded_heap() {
   assert(_loading_failed, "must be");
   if (_loaded_heap_bottom != 0) {
     assert(_loaded_heap_top != 0, "must be");
@@ -434,4 +441,37 @@ void ArchiveHeapLoader::fill_failed_loaded_region() {
   }
 }
 
+class PatchNativePointers: public BitMapClosure {
+  Metadata** _start;
+
+ public:
+  PatchNativePointers(Metadata** start) : _start(start) {}
+
+  bool do_bit(size_t offset) {
+    Metadata** p = _start + offset;
+    *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
+    // Currently we have only Klass pointers in heap objects.
+    // This needs to be relaxed when we support other types of native
+    // pointers such as Method.
+    assert(((Klass*)(*p))->is_klass(), "must be");
+    return true;
+  }
+};
+
+void ArchiveHeapLoader::patch_native_pointers() {
+  if (MetaspaceShared::relocation_delta() == 0) {
+    return;
+  }
+
+  for (int i = MetaspaceShared::first_archive_heap_region;
+       i <= MetaspaceShared::last_archive_heap_region; i++) {
+    FileMapRegion* r = FileMapInfo::current_info()->space_at(i);
+    if (r->mapped_base() != NULL && r->has_ptrmap()) {
+      log_info(cds, heap)("Patching native pointers in heap region %d", i);
+      BitMapView bm = r->ptrmap_view();
+      PatchNativePointers patcher((Metadata**)r->mapped_base());
+      bm.iterate(&patcher);
+    }
+  }
+}
 #endif // INCLUDE_CDS_JAVA_HEAP

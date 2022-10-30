@@ -78,7 +78,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
     public TIFFOldJPEGDecompressor() {}
 
     //
-    // Intialize instance variables according to an analysis of the
+    // Initialize instance variables according to an analysis of the
     // TIFF field content. See bug 4929147 for test image information.
     //
     // Case 1: Image contains a single strip or tile and the offset to

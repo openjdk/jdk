@@ -80,6 +80,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Ahom; ?; ? } => { Ahom; Ahom; India }-->
 		<likelySubtag from="ajg" to="ajg_Latn_ZZ"/>
 		<!--{ Aja (Benin); ?; ? } => { Aja (Benin); Latin; Unknown Region }-->
+		<likelySubtag from="ajt" to="ajt_Arab_TN"/>
+		<!--{ Judeo-Tunisian Arabic; ?; ? } => { Judeo-Tunisian Arabic; Arabic; Tunisia }-->
 		<likelySubtag from="ak" to="ak_Latn_GH"/>
 		<!--{ Akan; ?; ? } => { Akan; Latin; Ghana }-->
 		<likelySubtag from="akk" to="akk_Xsux_IQ"/>
@@ -108,8 +110,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Ngas; ?; ? } => { Ngas; Latin; Unknown Region }-->
 		<likelySubtag from="ank" to="ank_Latn_ZZ"/>
 		<!--{ Goemai; ?; ? } => { Goemai; Latin; Unknown Region }-->
-		<likelySubtag from="ann" to="ann_Latn_ZZ"/>
-		<!--{ Obolo; ?; ? } => { Obolo; Latin; Unknown Region }-->
+		<likelySubtag from="ann" to="ann_Latn_NG"/>
+		<!--{ Obolo; ?; ? } => { Obolo; Latin; Nigeria }-->
 		<likelySubtag from="any" to="any_Latn_ZZ"/>
 		<!--{ Anyin; ?; ? } => { Anyin; Latin; Unknown Region }-->
 		<likelySubtag from="aoj" to="aoj_Latn_ZZ"/>
@@ -341,7 +343,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="bkv" to="bkv_Latn_ZZ"/>
 		<!--{ Bekwarra; ?; ? } => { Bekwarra; Latin; Unknown Region }-->
 		<likelySubtag from="bla" to="bla_Latn_CA"/>
-		<!--{ Siksika; ?; ? } => { Siksika; Latin; Canada }-->
+		<!--{ Siksiká; ?; ? } => { Siksiká; Latin; Canada }-->
 		<likelySubtag from="blg" to="blg_Latn_MY"/>
 		<!--{ Balau; ?; ? } => { Balau; Latin; Malaysia }-->
 		<likelySubtag from="blt" to="blt_Tavt_VN"/>
@@ -711,9 +713,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="fan" to="fan_Latn_GQ"/>
 		<!--{ Fang; ?; ? } => { Fang; Latin; Equatorial Guinea }-->
 		<likelySubtag from="ff" to="ff_Latn_SN"/>
-		<!--{ Fulah; ?; ? } => { Fulah; Latin; Senegal }-->
+		<!--{ Fula; ?; ? } => { Fula; Latin; Senegal }-->
 		<likelySubtag from="ff_Adlm" to="ff_Adlm_GN"/>
-		<!--{ Fulah; Adlam; ? } => { Fulah; Adlam; Guinea }-->
+		<!--{ Fula; Adlam; ? } => { Fula; Adlam; Guinea }-->
 		<likelySubtag from="ffi" to="ffi_Latn_ZZ"/>
 		<!--{ Foia Foia; ?; ? } => { Foia Foia; Latin; Unknown Region }-->
 		<likelySubtag from="ffm" to="ffm_Latn_ML"/>
@@ -1411,7 +1413,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="lag" to="lag_Latn_TZ"/>
 		<!--{ Langi; ?; ? } => { Langi; Latin; Tanzania }-->
 		<likelySubtag from="lah" to="lah_Arab_PK"/>
-		<!--{ Lahnda; ?; ? } => { Lahnda; Arabic; Pakistan }-->
+		<!--{ Western Panjabi; ?; ? } => { Western Panjabi; Arabic; Pakistan }-->
 		<likelySubtag from="laj" to="laj_Latn_UG"/>
 		<!--{ Lango (Uganda); ?; ? } => { Lango (Uganda); Latin; Uganda }-->
 		<likelySubtag from="las" to="las_Latn_ZZ"/>
@@ -1926,6 +1928,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Nzima; ?; ? } => { Nzima; Latin; Ghana }-->
 		<likelySubtag from="oc" to="oc_Latn_FR"/>
 		<!--{ Occitan; ?; ? } => { Occitan; Latin; France }-->
+		<likelySubtag from="oc_ES" to="oc_Latn_ES"/>
+		<!--{ Occitan; ? ; Spain } => { Occitan; Latin; Spain }-->
 		<likelySubtag from="ogc" to="ogc_Latn_ZZ"/>
 		<!--{ Ogbah; ?; ? } => { Ogbah; Latin; Unknown Region }-->
 		<likelySubtag from="oj" to="oj_Cans_CA"/>
@@ -2010,6 +2014,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Yom; ?; ? } => { Yom; Latin; Unknown Region }-->
 		<likelySubtag from="pip" to="pip_Latn_ZZ"/>
 		<!--{ Pero; ?; ? } => { Pero; Latin; Unknown Region }-->
+		<likelySubtag from="pis" to="pis_Latn_SB"/>
+		<!--{ Pijin; ?; ? } => { Pijin; Latin; Solomon Islands }-->
 		<likelySubtag from="pka" to="pka_Brah_IN"/>
 		<!--{ Ardhamāgadhī Prākrit; ?; ? } => { Ardhamāgadhī Prākrit; Brahmi; India }-->
 		<likelySubtag from="pko" to="pko_Latn_KE"/>
@@ -2033,7 +2039,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ppo" to="ppo_Latn_ZZ"/>
 		<!--{ Folopa; ?; ? } => { Folopa; Latin; Unknown Region }-->
 		<likelySubtag from="pqm" to="pqm_Latn_CA"/>
-		<!--{ Malecite; ?; ? } => { Malecite; Latin; Canada }-->
+		<!--{ Maliseet-Passamaquoddy; ?; ? } => { Maliseet-Passamaquoddy; Latin; Canada }-->
 		<likelySubtag from="pra" to="pra_Khar_PK"/>
 		<!--{ Prakrit languages; ?; ? } => { Prakrit languages; Kharoshthi; Pakistan }-->
 		<likelySubtag from="prd" to="prd_Arab_IR"/>
@@ -2133,7 +2139,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="saf" to="saf_Latn_GH"/>
 		<!--{ Safaliba; ?; ? } => { Safaliba; Latin; Ghana }-->
 		<likelySubtag from="sah" to="sah_Cyrl_RU"/>
-		<!--{ Sakha; ?; ? } => { Sakha; Cyrillic; Russia }-->
+		<!--{ Yakut; ?; ? } => { Yakut; Cyrillic; Russia }-->
 		<likelySubtag from="saq" to="saq_Latn_KE"/>
 		<!--{ Samburu; ?; ? } => { Samburu; Latin; Kenya }-->
 		<likelySubtag from="sas" to="sas_Latn_ID"/>
@@ -2236,6 +2242,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Samoan; ?; ? } => { Samoan; Latin; Samoa }-->
 		<likelySubtag from="sma" to="sma_Latn_SE"/>
 		<!--{ Southern Sami; ?; ? } => { Southern Sami; Latin; Sweden }-->
+		<likelySubtag from="smd" to="smd_Latn_AO"/>
+		<!--{ Sama; ?; ? } => { Sama; Latin; Angola }-->
 		<likelySubtag from="smj" to="smj_Latn_SE"/>
 		<!--{ Lule Sami; ?; ? } => { Lule Sami; Latin; Sweden }-->
 		<likelySubtag from="smn" to="smn_Latn_FI"/>
@@ -2248,6 +2256,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Skolt Sami; ?; ? } => { Skolt Sami; Latin; Finland }-->
 		<likelySubtag from="sn" to="sn_Latn_ZW"/>
 		<!--{ Shona; ?; ? } => { Shona; Latin; Zimbabwe }-->
+		<likelySubtag from="snb" to="snb_Latn_MY"/>
+		<!--{ Sebuyau; ?; ? } => { Sebuyau; Latin; Malaysia }-->
 		<likelySubtag from="snc" to="snc_Latn_ZZ"/>
 		<!--{ Sinaugoro; ?; ? } => { Sinaugoro; Latin; Unknown Region }-->
 		<likelySubtag from="snk" to="snk_Latn_ML"/>
@@ -2458,6 +2468,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Gizrra; ?; ? } => { Gizrra; Latin; Unknown Region }-->
 		<likelySubtag from="tog" to="tog_Latn_MW"/>
 		<!--{ Nyasa Tonga; ?; ? } => { Nyasa Tonga; Latin; Malawi }-->
+		<likelySubtag from="tok" to="tok_Latn_001"/>
+		<!--{ Toki Pona; ?; ? } => { Toki Pona; Latin; world }-->
 		<likelySubtag from="toq" to="toq_Latn_ZZ"/>
 		<!--{ Toposa; ?; ? } => { Toposa; Latin; Unknown Region }-->
 		<likelySubtag from="tpi" to="tpi_Latn_PG"/>
@@ -3323,7 +3335,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_ZW" to="sn_Latn_ZW"/>
 		<!--{ ?; ?; Zimbabwe } => { Shona; Latin; Zimbabwe }-->
 		<likelySubtag from="und_Adlm" to="ff_Adlm_GN"/>
-		<!--{ ?; Adlam; ? } => { Fulah; Adlam; Guinea }-->
+		<!--{ ?; Adlam; ? } => { Fula; Adlam; Guinea }-->
 		<likelySubtag from="und_Aghb" to="udi_Aghb_RU"/>
 		<!--{ ?; Caucasian Albanian; ? } => { Udi; Caucasian Albanian; Russia }-->
 		<likelySubtag from="und_Ahom" to="aho_Ahom_IN"/>

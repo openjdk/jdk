@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@
 #include "nsk_tools.h"
 #include "jni_tools.h"
 
-/*************************************************************/
-
-extern "C" {
 
 /*************************************************************/
 
@@ -101,54 +98,6 @@ int nsk_jni_lverify_void(JNIEnv* jni, const char file[], int line,
     return !failure;
 }
 
-char *jlong_to_string(jlong value, char *string) {
-    char buffer[32];
-    char *pbuf, *pstr;
-
-    pstr = string;
-    if (value == 0) {
-        *pstr++ = '0';
-    } else {
-        if (value < 0) {
-            *pstr++ = '-';
-            value = -value;
-        }
-        pbuf = buffer;
-        while (value != 0) {
-            *pbuf++ = '0' + (char)(value % 10);
-            value = value / 10;
-        }
-        while (pbuf != buffer) {
-            *pstr++ = *--pbuf;
-        }
-    }
-    *pstr = '\0';
-
-    return string;
-}
-
-char *julong_to_string(julong value, char *string) {
-    char buffer[32];
-    char *pbuf, *pstr;
-
-    pstr = string;
-    if (value == 0) {
-        *pstr++ = '0';
-    } else {
-        pbuf = buffer;
-        while (value != 0) {
-            *pbuf++ = '0' + (char)(value % 10);
-            value = value / 10;
-        }
-        while (pbuf != buffer) {
-            *pstr++ = *--pbuf;
-        }
-    }
-    *pstr = '\0';
-
-    return string;
-}
-
 void mssleep(long millis) {
 #if (defined(WIN32) || defined(_WIN32))
    Sleep(millis);
@@ -197,4 +146,3 @@ jni_create_vmoptions(int size, char *args[], int argsCnt)
 
 /*************************************************************/
 
-}

@@ -24,7 +24,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am" draft="provisional">амгарская</language>
 			<language type="ang" draft="provisional">стараангельская</language>
 			<language type="anp" draft="provisional">ангіцкая</language>
-			<language type="ar_001" draft="provisional">сучасная стандартная арабская</language>
 			<language type="arc" draft="provisional">арамэйская</language>
 			<language type="arn" draft="provisional">мапудунгунская</language>
 			<language type="arp" draft="provisional">арапаская</language>
@@ -63,7 +62,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="cv" draft="provisional">чуваская</language>
 			<language type="dak" draft="provisional">дакоцкая</language>
 			<language type="dav" draft="provisional">таітыйская</language>
-			<language type="de_AT" draft="provisional">аўстрыйская нямецкая</language>
 			<language type="de_CH" draft="provisional">швайцарская літаратурная нямецкая</language>
 			<language type="dgr" draft="provisional">догрыбская</language>
 			<language type="dje" draft="provisional">зарманская</language>
@@ -191,7 +189,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="naq" draft="provisional">намская</language>
 			<language type="nb" draft="provisional">нарвэская (букмол)</language>
 			<language type="nd" draft="provisional">паўночна-ндэбельская</language>
-			<language type="nds_NL" draft="provisional">ніжнесаксонская</language>
 			<language type="ne" draft="provisional">нэпальская</language>
 			<language type="new" draft="provisional">неўарыйская</language>
 			<language type="ng" draft="provisional">ндонганская</language>
@@ -518,7 +515,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="m" draft="unconfirmed">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h.mm–h.mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="m" draft="unconfirmed">HH.mm–HH.mm v</greatestDifference>
@@ -716,12 +713,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="provisional">EEEE, d MMMM y 'г'.</pattern>
+							<pattern draft="provisional">EEEE, d MMMM y 'г'.</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="provisional">d MMMM y 'г'.</pattern>
+							<pattern draft="provisional">d MMMM y 'г'.</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -760,12 +757,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="provisional">{1} 'у' {0}</pattern>
+							<pattern draft="provisional">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="provisional">{1} 'у' {0}</pattern>
+							<pattern draft="provisional">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -3272,7 +3269,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} сонечных сьвяцільнасьцяў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} сонечнай сьвяцільнасьці</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one" draft="provisional">{0} тона</unitPattern>
 				<unitPattern count="few" draft="provisional">{0} тоны</unitPattern>
 				<unitPattern count="many" draft="provisional">{0} тонаў</unitPattern>

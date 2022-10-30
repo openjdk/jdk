@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
 
 /**
  * Test DateTimeFormatter.ofLocalizedPattern() related methods.
- * @bug 8176706
+ * @bug 8176706 8284840
  */
 @Test
 public class TestLocalizedPattern {

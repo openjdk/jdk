@@ -70,11 +70,6 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 }
 
 void
-NET_ThrowCurrent(JNIEnv *env, char *msg) {
-    NET_ThrowNew(env, errno, msg);
-}
-
-void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
     if (!msg) {
@@ -93,15 +88,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
         break;
     }
-}
-
-
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
 jint  IPv4_supported()
@@ -238,21 +224,6 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     }
 }
 
-#if defined(_AIX)
-
-/* Initialize stubs for blocking I/O workarounds (see src/solaris/native/java/net/linux_close.c) */
-extern void aix_close_init();
-
-void platformInit () {
-    aix_close_init();
-}
-
-#else
-
-void platformInit () {}
-
-#endif
-
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd) {
     return 0;
@@ -326,13 +297,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
         }
     }
     return 0;
-}
-
-void
-NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass) {
-    if (sa->sa.sa_family == AF_INET6) {
-        sa->sa6.sin6_flowinfo = htonl((trafficClass & 0xff) << 20);
-    }
 }
 
 int
@@ -736,7 +700,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
           pfd.events |= POLLOUT;
 
         errno = 0;
-        read_rv = NET_Poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
+        read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
 
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);
