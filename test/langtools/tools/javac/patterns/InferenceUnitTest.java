@@ -110,7 +110,6 @@ public class InferenceUnitTest {
         checkAsSub("C<A<? extends Object>, A<?>>", "E", "E<A<? extends java.lang.Object>>");
 
         if (false) {
-        //TODO: raw types?
         checkAsSub("A", "B", "B");
         checkAsSub("A", "C", "C");
         checkAsSub("A", "D", "D");

@@ -4363,7 +4363,7 @@ public class Check {
                 }
             } else {
                 if (c.labels.tail.nonEmpty()) {
-                    log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern); //XXX: error
+                    log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
             }
         }

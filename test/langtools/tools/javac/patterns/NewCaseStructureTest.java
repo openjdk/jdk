@@ -224,7 +224,7 @@ public class NewCaseStructureTest extends TestRunner {
                    }
                }
                """);
-        doTest(base, //XXX: run
+        doTest(base,
                """
                package test;
                public class Test {
@@ -304,7 +304,7 @@ public class NewCaseStructureTest extends TestRunner {
                """,
                "Test.java:6:18: compiler.err.pattern.dominated",
                "1 error");
-        //TODO: not in spec, dtto for String:
+        //dtto for String:
         doTest(base,
                """
                package test;

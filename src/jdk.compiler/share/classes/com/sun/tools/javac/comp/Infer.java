@@ -653,9 +653,9 @@ public class Infer {
         }
     }
 
-    public Type instantiatePatternType(DiagnosticPosition pos, Type expressionType, TypeSymbol patternTypeSymbol) {
+    public Type instantiatePatternType(Type expressionType, TypeSymbol patternTypeSymbol) {
         if (expressionType.tsym == patternTypeSymbol)
-            return expressionType; //TODO: shortcut desirable?
+            return expressionType;
 
         //step 1:
         Type expressionTypeCaptured = types.capture(expressionType);
@@ -692,7 +692,7 @@ public class Infer {
         List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
 
         try {
-            doIncorporation(c, types.noWarnings); //TODO: warnings?
+            doIncorporation(c, types.noWarnings);
 
             while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
                 doIncorporation(c, types.noWarnings);

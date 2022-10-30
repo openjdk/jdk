@@ -96,6 +96,9 @@ public class Switches {
         assertEquals("OK", totalPatternAndNull(null));
         assertEquals("1", nullAfterTotal(Integer.valueOf(42)));
         assertEquals("OK", nullAfterTotal(null));
+        emptyFallThrough(1);
+        emptyFallThrough("");
+        emptyFallThrough(1.0);
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -646,6 +649,14 @@ public class Switches {
             case Object obj: { yield "1";}
             case null: { yield "OK";}
         };
+    }
+
+    void emptyFallThrough(Object o) {
+        switch (o) {
+            case Integer i:
+            case String s:
+            case Object obj:
+        }
     }
 
     //verify that for cases like:
