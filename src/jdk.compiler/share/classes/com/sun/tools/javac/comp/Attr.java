@@ -4164,7 +4164,7 @@ public class Attr extends JCTree.Visitor {
     public void visitRecordPattern(JCRecordPattern tree) {
         Type type = attribType(tree.deconstructor, env);
         if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
-            Type inferred = infer.instantiatePatternType(tree.pos(), resultInfo.pt, type.tsym);
+            Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
             if (inferred == null) {
                 log.error(tree.pos(), Errors.PatternTypeCannotInfer);
             } else {
