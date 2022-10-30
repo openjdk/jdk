@@ -4139,14 +4139,7 @@ public class Attr extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern tree) {
         Type type;
         if (tree.var.vartype != null) {
-            if (TreeInfo.isDiamond(tree.var.vartype)) {
-                ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
-                type = attribTree(((JCTypeApply) tree.var.vartype).clazz, env, varInfo);
-                tree.var.vartype.type = type = infer.instantiatePatternType(tree.pos(), resultInfo.pt, type.tsym);
-            } else {
-                ResultInfo varInfo = new ResultInfo(KindSelector.TYP, Type.noType, resultInfo.checkContext);
-                type = attribTree(tree.var.vartype, env, varInfo);
-            }
+            type = attribType(tree.var.vartype, env);
         } else {
             type = resultInfo.pt;
         }
@@ -4169,18 +4162,14 @@ public class Attr extends JCTree.Visitor {
 
     @Override
     public void visitRecordPattern(JCRecordPattern tree) {
-        boolean runInferrence = false;
-        Type type;
-        if (TreeInfo.isDiamond(tree.deconstructor)) {
-            JCExpression recordTypeTree = ((JCTypeApply) tree.deconstructor).clazz;
-            type = attribType(recordTypeTree, env);
-            runInferrence = true;
-        } else {
-            type = attribType(tree.deconstructor, env);
-            runInferrence = !tree.deconstructor.hasTag(TYPEAPPLY) && type.tsym.getTypeParameters().nonEmpty();
-        }
-        if (runInferrence) {
-            type = infer.instantiatePatternType(tree.pos(), resultInfo.pt, type.tsym);
+        Type type = attribType(tree.deconstructor, env);
+        if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
+            Type inferred = infer.instantiatePatternType(tree.pos(), resultInfo.pt, type.tsym);
+            if (inferred == null) {
+                log.error(tree.pos(), Errors.PatternTypeCannotInfer);
+            } else {
+                type = inferred;
+            }
         }
         tree.type = tree.deconstructor.type = type;
         Type site = types.removeWildcards(tree.type);
@@ -4203,11 +4192,7 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> localEnv = env.dup(tree, env.info.dup(env.info.scope.dup()));
         try {
             while (recordTypes.nonEmpty() && nestedPatterns.nonEmpty()) {
-                boolean needsTargetType = false;
-                needsTargetType |= nestedPatterns.head.hasTag(BINDINGPATTERN) &&
-                                   ((JCBindingPattern) nestedPatterns.head).var.vartype == null;
-                needsTargetType |= nestedPatterns.head.hasTag(RECORDPATTERN);
-                attribExpr(nestedPatterns.head, localEnv, needsTargetType ? recordTypes.head : Type.noType);
+                attribExpr(nestedPatterns.head, localEnv, recordTypes.head);
                 checkCastablePattern(nestedPatterns.head.pos(), recordTypes.head, nestedPatterns.head.type);
                 outBindings.addAll(matchBindings.bindingsWhenTrue);
                 matchBindings.bindingsWhenTrue.forEach(localEnv.info.scope::enter);

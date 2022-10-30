@@ -43,9 +43,6 @@ public class GenericRecordDeconstructionPattern {
         runTest(this::runSwitchInference1);
         runTest(this::runSwitchInference2);
         runTest(this::runSwitchInference3);
-        runTest(this::runSwitchInference4);
-        runTest(this::runSwitchInference5);
-        runTest(this::runSwitchInference6);
         testInference3();
     }
 
@@ -75,51 +72,21 @@ public class GenericRecordDeconstructionPattern {
 
     int runSwitchInference1(I<String> b) {
         switch (b) {
-            case Box<>(String s): return s == null ? 1 : s.length();
+            case Box(String s): return s == null ? 1 : s.length();
             default: return -1;
         }
     }
 
     int runSwitchInference2(I<String> b) {
         switch (b) {
-            case Box<>(var s): return s == null ? 1 : s.length();
-            default: return -1;
-        }
-    }
-
-    int runSwitchInference3(I<String> b) {
-        return b instanceof Box<>(var s) ? s == null ? 1 : s.length()
-                                         : -1;
-    }
-
-    int runSwitchInference4(I<String> b) {
-        switch (b) {
-            case Box(String s): return s == null ? 1 : s.length();
-            default: return -1;
-        }
-    }
-
-    int runSwitchInference5(I<String> b) {
-        switch (b) {
             case Box(var s): return s == null ? 1 : s.length();
             default: return -1;
         }
     }
 
-    int runSwitchInference6(I<String> b) {
+    int runSwitchInference3(I<String> b) {
         return b instanceof Box(var s) ? s == null ? 1 : s.length()
                                        : -1;
-    }
-
-    int runSwitchInference7(I<String> b) {
-        switch (b) {
-            case Box<> box: return box.v() == null ? 1 : box.v().length();
-        }
-    }
-
-    int runSwitchInference9(I<String> b) {
-        return b instanceof Box<> box ? box.v() == null ? 1 : box.v().length()
-                                      : -1;
     }
 
     void testInference3() {
@@ -129,7 +96,7 @@ public class GenericRecordDeconstructionPattern {
 
     int runSwitchInferenceNested(I<I<String>> b) {
         switch (b) {
-            case Box<>(Box<>(var s)): return s == null ? 1 : s.length();
+            case Box(Box(var s)): return s == null ? 1 : s.length();
             default: return -1;
         }
     }

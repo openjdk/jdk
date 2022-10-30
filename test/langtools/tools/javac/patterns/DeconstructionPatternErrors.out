@@ -1,5 +1,7 @@
 DeconstructionPatternErrors.java:15:28: compiler.err.underscore.as.identifier
 DeconstructionPatternErrors.java:15:29: compiler.err.expected: token.identifier
+DeconstructionPatternErrors.java:43:37: compiler.err.illegal.start.of.type
+DeconstructionPatternErrors.java:45:28: compiler.err.illegal.start.of.type
 DeconstructionPatternErrors.java:47:42: compiler.err.expected: ';'
 DeconstructionPatternErrors.java:47:43: compiler.err.not.stmt
 DeconstructionPatternErrors.java:16:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.util.List<java.lang.String>, java.util.ArrayList<java.lang.Integer>)
@@ -24,6 +26,7 @@ DeconstructionPatternErrors.java:31:29: compiler.err.prob.found.req: (compiler.m
 DeconstructionPatternErrors.java:32:29: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, long)
 DeconstructionPatternErrors.java:34:21: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, byte)
 DeconstructionPatternErrors.java:35:21: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, long)
+DeconstructionPatternErrors.java:44:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: DeconstructionPatternErrors.java, DEFAULT
 - compiler.note.preview.recompile
-26 errors
+29 errors

@@ -247,14 +247,13 @@ public class JavacParser implements Parser {
     protected static final int TYPEARG = 0x8;
     protected static final int DIAMOND = 0x10;
     protected static final int NOLAMBDA = 0x20;
-    protected static final int ALLOW_DIAMOND = 0x40;
 
     protected void selectExprMode() {
-        mode = (mode & (NOLAMBDA | ALLOW_DIAMOND)) | EXPR;
+        mode = (mode & NOLAMBDA) | EXPR;
     }
 
     protected void selectTypeMode() {
-        mode = (mode & (NOLAMBDA | ALLOW_DIAMOND)) | TYPE;
+        mode = (mode & NOLAMBDA) | TYPE;
     }
 
     /** The current mode.
@@ -777,7 +776,7 @@ public class JavacParser implements Parser {
             JCExpression e;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
-                e = unannotatedType(allowVar, ALLOW_DIAMOND | TYPE | NOLAMBDA);
+                e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
                     e = null;
                 }
@@ -999,7 +998,7 @@ public class JavacParser implements Parser {
                     int patternPos = token.pos;
                     JCModifiers mods = optFinal(0);
                     int typePos = token.pos;
-                    JCExpression type = unannotatedType(false, ALLOW_DIAMOND | TYPE);
+                    JCExpression type = unannotatedType(false);
                     if (token.kind == IDENTIFIER) {
                         checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
                         pattern = parsePattern(patternPos, mods, type, false, false);
@@ -2100,7 +2099,7 @@ public class JavacParser implements Parser {
             (mode & TYPE) != 0 &&
             (mode & NOPARAMS) == 0) {
             selectTypeMode();
-            return typeArguments(t, (mode & ALLOW_DIAMOND) != 0);
+            return typeArguments(t, false);
         } else {
             return t;
         }

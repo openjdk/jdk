@@ -107,7 +107,7 @@ public class InferenceUnitTest {
         checkAsSub("C<String, String>", "E", "E<java.lang.String>");
         checkAsSub("C<String, Integer>", "E", null);
         checkAsSub("C<A<?>, A<?>>", "E", "E<A<?>>");
-        checkAsSub("C<A<? extends Object>, A<?>>", "E", "E<A<? extends java.lang.Object>>"); //TODO: was: E<A<?>>
+        checkAsSub("C<A<? extends Object>, A<?>>", "E", "E<A<? extends java.lang.Object>>");
 
         if (false) {
         //TODO: raw types?
@@ -140,7 +140,7 @@ public class InferenceUnitTest {
         checkAsSub("A<? extends Runnable>", "H", null);
         checkAsSub("A<? extends Runnable>", "I", null);
 
-        checkAsSub("A<? extends B<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks; see XXX in InjectBounds.visitClassType
+        checkAsSub("A<? extends B<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks
         checkAsSub("A<? extends A<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks
 
         checkAsSub("C<? extends Number, Integer>", "E", "E<java.lang.Integer>"); // doesn't know how to mix types and wildcards
