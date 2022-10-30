@@ -3,9 +3,9 @@
 CONF=${CONF:-linux-riscv64-server-release}
 
 TESTSUITE=test/hotspot/jtreg
-NATIVEPATH=build/${CONF}/images/test/hotspot/jtreg/native
+NATIVEPATH=$(pwd)/build/${CONF}/images/test/hotspot/jtreg/native
 
-TMPDIR=${TMPDIR:-/workspace/jdk/build/run-test/tmp}
+TMPDIR=${TMPDIR:-$(pwd)/build/run-test/tmp}
 mkdir -p ${TMPDIR}
 
 ARGS=(
@@ -14,7 +14,7 @@ ARGS=(
     -Xmx1600M
     -Duser.language=en
     -Duser.country=US
-    -Djava.library.path="build/${CONF}/images/test/failure_handler"
+    -Djava.library.path="$(pwd)/build/${CONF}/images/test/failure_handler"
     -Dprogram=jtreg
     -jar /workspace/jtreg/build/images/jtreg/lib/jtreg.jar
     # JTreg arguments
@@ -28,11 +28,11 @@ ARGS=(
     -automatic
     -ignore:quiet
     -e:JIB_DATA_DIR
-    -e:TEST_IMAGE_DIR=build/${CONF}/images/test
-    -dir:/workspace/jdk
-    -reportDir:/workspace/jdk/build/run-test/test-results
-    -workDir:/workspace/jdk/build/run-test/test-support
-    -testjdk:build/${CONF}/images/jdk
+    -e:TEST_IMAGE_DIR=$(pwd)/build/${CONF}/images/test
+    -dir:$(pwd)
+    -reportDir:$(pwd)/build/run-test/test-results
+    -workDir:$(pwd)/build/run-test/test-support
+    -testjdk:$(pwd)/build/${CONF}/images/jdk
     $(test -n "${NATIVEPATH}" && echo "-nativepath:${NATIVEPATH}"|| true)
     -exclude:${TESTSUITE}/ProblemList.txt
     -exclude:${TESTSUITE}/ProblemList-GHA.txt
