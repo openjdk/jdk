@@ -60,7 +60,7 @@ class BitMap {
     unknown_range, small_range, large_range
   } RangeSizeHint;
 
- private:
+ protected:
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
 
@@ -110,7 +110,6 @@ class BitMap {
 
   static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
 
- protected:
   // Return the position of bit within the word that contains it (e.g., if
   // bitmap words are 32 bits, return a number 0 <= n <= 31).
   static idx_t bit_in_word(idx_t bit) { return bit & (BitsPerWord - 1); }
@@ -161,42 +160,6 @@ class BitMap {
   idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
   idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
 
-  // Allocation Helpers.
-
-  // Allocates and clears the bitmap memory.
-  template <class Allocator>
-  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits, bool clear = true);
-
-  // Reallocates and clears the new bitmap memory.
-  template <class Allocator>
-  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
-
-  // Free the bitmap memory.
-  template <class Allocator>
-  static void free(const Allocator&, bm_word_t* map, idx_t size_in_bits);
-
-  // Protected functions, that are used by BitMap sub-classes that support them.
-
-  // Resize the backing bitmap memory.
-  //
-  // Old bits are transferred to the new memory
-  // and the extended memory is cleared.
-  template <class Allocator>
-  void resize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
-
-  // Set up and clear the bitmap memory.
-  //
-  // Precondition: The bitmap was default constructed and has
-  // not yet had memory allocated via resize or (re)initialize.
-  template <class Allocator>
-  void initialize(const Allocator& allocator, idx_t size_in_bits, bool clear);
-
-  // Set up and clear the bitmap memory.
-  //
-  // Can be called on previously initialized bitmaps.
-  template <class Allocator>
-  void reinitialize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
-
   // Set the map and size.
   void update(bm_word_t* map, idx_t size) {
     _map = map;
@@ -204,9 +167,7 @@ class BitMap {
   }
 
   // Protected constructor and destructor.
-  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {
-    verify_size(size_in_bits);
-  }
+  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {}
   ~BitMap() {}
 
  public:
@@ -234,6 +195,10 @@ class BitMap {
   // Set or clear the specified bit.
   inline void set_bit(idx_t bit);
   inline void clear_bit(idx_t bit);
+
+  // lenient getter/setter in alignment with VectorSet
+  bool test(idx_t bit) const { return bit >= _size ? false : at(bit); }
+  void remove(idx_t bit);
 
   // Attempts to change a bit to a desired value. The operation returns true if
   // this thread changed the value of the bit. It was changed with a RMW operation
@@ -354,43 +319,119 @@ class BitMap {
 #endif
 };
 
-// A concrete implementation of the "abstract" BitMap class.
-//
-// The BitMapView is used when the backing storage is managed externally.
-class BitMapView : public BitMap {
- public:
-  BitMapView() : BitMap(NULL, 0) {}
-  BitMapView(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
-};
+template <class Allocator>
+class GrowableBitMap : public BitMap {
+ protected:
+  const Allocator _allocator;
 
-// A BitMap with storage in a ResourceArea.
-class ResourceBitMap : public BitMap {
+  // Allocates and clears the bitmap memory.
+  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits, bool clear = true);
+
+  // Reallocates and clears the new bitmap memory.
+  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
+
+  // Free the bitmap memory.
+  static void free(const Allocator&, bm_word_t* map, idx_t size_in_bits);
+
+  GrowableBitMap(const Allocator& allocator, idx_t size_in_bits, bool clear) : BitMap(nullptr, 0), _allocator(allocator) {
+    update(allocate(_allocator, size_in_bits, clear), size_in_bits);
+  }
+  GrowableBitMap(const GrowableBitMap& rhs) : BitMap(rhs._map, rhs._size), _allocator(rhs._allocator) {}
 
  public:
-  ResourceBitMap() : BitMap(NULL, 0) {}
-  // Conditionally clears the bitmap memory.
-  ResourceBitMap(idx_t size_in_bits, bool clear = true);
+  // Set up and clear the bitmap memory.
+  //
+  // Precondition: The bitmap was default constructed and has
+  // not yet had memory allocated via resize or (re)initialize.
+  void initialize(idx_t size_in_bits, bool clear = true) {
+    assert(map() == NULL, "precondition");
+    assert(size() == 0,   "precondition");
+
+    resize(size_in_bits, clear);
+  }
+
+  // Set up and clear the bitmap memory.
+  //
+  // Can be called on previously initialized bitmaps.
+  void reinitialize(idx_t new_size_in_bits, bool clear = true) {
+    // Remove previous bits - no need to clear
+    resize(0, false /* clear */);
+
+    initialize(new_size_in_bits, clear);
+  }
+
+  // Protected functions, that are used by BitMap sub-classes that support them.
 
   // Resize the backing bitmap memory.
   //
   // Old bits are transferred to the new memory
   // and the extended memory is cleared.
-  void resize(idx_t new_size_in_bits);
+  void resize(idx_t new_size_in_bits, bool clear = true) {
+    bm_word_t* new_map = reallocate(_allocator, map(), size(), new_size_in_bits, clear);
+    update(new_map, new_size_in_bits);
+  }
+};
 
-  // Set up and clear the bitmap memory.
-  //
-  // Precondition: The bitmap was default constructed and has
-  // not yet had memory allocated via resize or initialize.
-  void initialize(idx_t size_in_bits);
+// A concrete implementation of the "abstract" BitMap class.
+//
+// The BitMapView is used when the backing storage is managed externally.
+class BitMapView : public BitMap {
+ public:
+  BitMapView() : BitMapView(nullptr, 0) {}
+  BitMapView(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
+};
 
-  // Set up and clear the bitmap memory.
-  //
-  // Can be called on previously initialized bitmaps.
-  void reinitialize(idx_t size_in_bits);
+typedef BitMap::bm_word_t bm_word_t;
+typedef BitMap::idx_t     idx_t;
+
+class ResourceBitMapAllocator : StackObj {
+ public:
+  bm_word_t* allocate(idx_t size_in_words) const {
+    return NEW_RESOURCE_ARRAY(bm_word_t, size_in_words);
+  }
+  void free(bm_word_t* map, idx_t size_in_words) const {
+    // Don't free resource allocated arrays.
+  }
+};
+
+class CHeapBitMapAllocator : StackObj {
+  MEMFLAGS _flags;
+
+ public:
+  CHeapBitMapAllocator(MEMFLAGS flags) : _flags(flags) {}
+  bm_word_t* allocate(size_t size_in_words) const;
+
+  void free(bm_word_t* map, idx_t size_in_words) const;
+};
+
+class ArenaBitMapAllocator : StackObj {
+  Arena* const _arena;
+
+ public:
+  ArenaBitMapAllocator(Arena* arena) : _arena(arena) {}
+  bm_word_t* allocate(idx_t size_in_words) const;
+
+  void free(bm_word_t* map, idx_t size_in_words) const {
+    // ArenaBitMaps currently don't free memory.
+  }
+};
+
+// A BitMap with storage in a ResourceArea.
+class ResourceBitMap : public GrowableBitMap<ResourceBitMapAllocator> {
+ public:
+  ResourceBitMap() : ResourceBitMap(0) {}
+
+  // Conditionally clears the bitmap memory.
+  ResourceBitMap(idx_t size_in_bits, bool clear = true);
+  ResourceBitMap(const ResourceBitMap& rhs) = default;
+  ResourceBitMap& operator=(const ResourceBitMap& rhs) {
+    update(rhs._map, rhs._size);
+    return *this;
+  }
 };
 
 // A BitMap with storage in a specific Arena.
-class ArenaBitMap : public BitMap {
+class ArenaBitMap : public GrowableBitMap<ArenaBitMapAllocator> {
  public:
   // Clears the bitmap memory.
   ArenaBitMap(Arena* arena, idx_t size_in_bits);
@@ -400,38 +441,17 @@ class ArenaBitMap : public BitMap {
 };
 
 // A BitMap with storage in the CHeap.
-class CHeapBitMap : public BitMap {
-
- private:
+class CHeapBitMap : public GrowableBitMap<CHeapBitMapAllocator> {
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
 
-  // NMT memory type
-  MEMFLAGS _flags;
-
  public:
-  CHeapBitMap(MEMFLAGS flags = mtInternal) : BitMap(NULL, 0), _flags(flags) {}
+  CHeapBitMap() : CHeapBitMap(0, mtInternal, true) {}
+  explicit CHeapBitMap(MEMFLAGS flags) : CHeapBitMap(0, flags, true) {}
   // Clears the bitmap memory.
   CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal, bool clear = true);
   ~CHeapBitMap();
-
-  // Resize the backing bitmap memory.
-  //
-  // Old bits are transferred to the new memory
-  // and the extended memory is (optionally) cleared.
-  void resize(idx_t new_size_in_bits, bool clear = true);
-
-  // Set up and (optionally) clear the bitmap memory.
-  //
-  // Precondition: The bitmap was default constructed and has
-  // not yet had memory allocated via resize or initialize.
-  void initialize(idx_t size_in_bits, bool clear = true);
-
-  // Set up and (optionally) clear the bitmap memory.
-  //
-  // Can be called on previously initialized bitmaps.
-  void reinitialize(idx_t size_in_bits, bool clear = true);
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.
