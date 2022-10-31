@@ -608,26 +608,10 @@ public class BufferedInputStream extends FilterInputStream {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                byte[] buffer = getBufIfOpen();
-
-                // Prevent buffer poisoning (by out.write throwing IOException)
-                byte[] emptyBuffer = new byte[0]; // read-past-EOF is rather unlikely
-                if (!U.compareAndSetReference(this, BUF_OFFSET, buffer, emptyBuffer)) {
-                    // Can't replace buf if there was an async close.
-                    // Note: This would need to be changed if transferTo()
-                    // is ever made accessible to multiple threads.
-                    // But for now, the only way CAS can fail is via close.
-                    // assert buf == null;
-                    throw new IOException("Stream closed");
-                }
-
-                // Prevent leaking of "confidential" buffer content
-                Arrays.fill(buffer, 0, pos, (byte) 0);
-                Arrays.fill(buffer, count, buffer.length, (byte) 0);
-
-                out.write(buffer, pos, avail);
-                count = 0;
-                pos = 0;
+                // Prevent poisoning and leaking of buf
+                byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
+                out.write(buffer);
+                pos = count;
             }
             return avail + getInIfOpen().transferTo(out);
         } else {
