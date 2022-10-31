@@ -425,9 +425,8 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
-            return !isImplicitlyTyped((JCVariableDecl) tree.varOrRecordPattern);
+            return tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE &&
+                    !isImplicitlyTyped((JCVariableDecl) tree.varOrRecordPattern);
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {

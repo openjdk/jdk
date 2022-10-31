@@ -3460,17 +3460,17 @@ public class Lower extends TreeTranslator {
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
                                                     make.Ident(index)).setType(elemtype);
 
-            JCBlock body = null;
-
             Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-            JCVariableDecl oldVar = (JCVariableDecl) tree.varOrRecordPattern;
-            JCVariableDecl loopvardef = (JCVariableDecl) make.VarDef(oldVar.mods,
-                    oldVar.name,
-                    oldVar.vartype,
-                    loopvarinit).setType(oldVar.type);
-            loopvardef.sym = oldVar.sym;
-            body = make.
+            JCVariableDecl jcVariableDecl = (JCVariableDecl) tree.varOrRecordPattern;
+
+            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(jcVariableDecl.mods,
+                    jcVariableDecl.name,
+                    jcVariableDecl.vartype,
+                    loopvarinit).setType(jcVariableDecl.type);
+            loopvardef.sym = jcVariableDecl.sym;
+            JCBlock body = make.
                     Block(0, List.of(loopvardef, tree.body));
+
 
             result = translate(make.
                                ForLoop(loopinit,

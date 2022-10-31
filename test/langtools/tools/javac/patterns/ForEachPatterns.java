@@ -29,12 +29,12 @@ public class ForEachPatterns {
         assertEquals(8, iteratorEnhancedForWithBinding(in));
         assertEquals(8, simpleDecostructionPatternWithAccesses(in));
         assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, null, NullPointerException.class);
-        assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, inWithNull, MatchException.class);
+        assertMatchExceptionWithNested(ForEachPatterns::simpleDecostructionPatternWithAccesses, inWithNull, NullPointerException.class);
         assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, inWithNullComponent, NullPointerException.class);
-        assertEx(ForEachPatterns::simpleDecostructionPatternException, inWithPointEx, MatchException.class);
+        assertMatchExceptionWithNested(ForEachPatterns::simpleDecostructionPatternException, inWithPointEx, TestPatternFailed.class);
         assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, (List<Point>) inRaw, ClassCastException.class);
         assertEquals(2, simpleDecostructionPatternNoComponentAccess(in));
-        assertEx(ForEachPatterns::simpleDecostructionPatternNoComponentAccess, inWithNull, MatchException.class);
+        assertMatchExceptionWithNested(ForEachPatterns::simpleDecostructionPatternNoComponentAccess, inWithNull, NullPointerException.class);
         assertEquals(2, simpleDecostructionPatternNoComponentAccess(inWithNullComponent));
         assertEquals(8, varAndConcrete(in));
         assertEquals(3, returnFromEnhancedFor(in));
@@ -174,6 +174,20 @@ public class ForEachPatterns {
         if (!Objects.equals(expected, actual)) {
             throw new AssertionError("Expected: " + expected + "," +
                     "got: " + actual);
+        }
+    }
+
+    static <T> void assertMatchExceptionWithNested(Function<List<T>, Integer> f, List<T> points, Class<?> nestedExceptionClass) {
+        try {
+            f.apply(points);
+            fail("Expected an exception, but none happened!");
+        }
+        catch(Exception ex) {
+            assertEquals(MatchException.class, ex.getClass());
+
+            MatchException me = (MatchException) ex;
+
+            assertEquals(nestedExceptionClass, me.getCause().getClass());
         }
     }
 

@@ -1546,23 +1546,19 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             }
-            if(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE) {
-                JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
-
-                if (var.isImplicitlyTyped()) {
-                    Type inferredType = chk.checkLocalVarType(var, tree.elementType, var.name);
-                    setSyntheticVariableType(var, inferredType);
+            if (tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                if (jcVariableDecl.isImplicitlyTyped()) {
+                    Type inferredType = chk.checkLocalVarType(jcVariableDecl, tree.elementType, jcVariableDecl.name);
+                    setSyntheticVariableType(jcVariableDecl, inferredType);
                 }
-                attribStat(var, loopEnv);
-                chk.checkType(tree.expr.pos(), tree.elementType, var.sym.type);
+                attribStat(jcVariableDecl, loopEnv);
+                chk.checkType(tree.expr.pos(), tree.elementType, jcVariableDecl.sym.type);
 
                 loopEnv.tree = tree; // before, we were not in loop!
                 attribStat(tree.body, loopEnv);
             }
-            else if (tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN) {
-                JCRecordPattern recordPattern = (JCRecordPattern) tree.varOrRecordPattern;
-
-                attribTree(recordPattern, loopEnv, unknownExprInfo);
+            else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                attribTree(jcRecordPattern, loopEnv, unknownExprInfo);
 
                 // for(<pattern> x : xs) { y }
                 // we include x's bindings when true in y
@@ -1571,7 +1567,7 @@ public class Attr extends JCTree.Visitor {
                 MatchBindings forWithRecordPatternBindings = matchBindings;
                 Env<AttrContext> recordPatternEnv = bindingEnv(loopEnv, forWithRecordPatternBindings.bindingsWhenTrue);
 
-                Type clazztype = recordPattern.type;
+                Type clazztype = jcRecordPattern.type;
 
                 checkCastablePattern(tree.expr.pos(), tree.elementType, clazztype);
 

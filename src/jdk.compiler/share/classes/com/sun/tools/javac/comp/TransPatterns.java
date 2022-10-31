@@ -56,6 +56,7 @@ import com.sun.tools.javac.tree.JCTree.JCSwitch;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
+import com.sun.tools.javac.tree.JCTree.JCThrow;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
@@ -721,7 +722,7 @@ public class TransPatterns extends TreeTranslator {
         bindingContext = new BasicBindingContext();
         VarSymbol prevCurrentValue = currentValue;
         try {
-            if (tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN) {
+            if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
                 /**
                  * A statement of the form
                  *
@@ -750,12 +751,16 @@ public class TransPatterns extends TreeTranslator {
                 JCStatement newForVariableDeclaration =
                         make.at(tree.pos).VarDef(currentValue, null).setType(selectorType);
 
-                List<JCExpression> params = List.of(makeNull(), makeNull());
-                JCTree.JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, params));
+                List<JCExpression> nestedNPEParams = List.of(makeNull());
+                JCNewClass nestedNPE = makeNewClass(syms.nullPointerExceptionType, nestedNPEParams);
+
+                List<JCExpression> matchExParams = List.of(makeNull(), nestedNPE);
+                JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
+
                 JCCase caseNull = make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(makeNull())), List.of(thr), null);
 
                 JCCase casePattern = make.Case(CaseTree.CaseKind.STATEMENT,
-                        List.of(make.PatternCaseLabel((JCPattern) tree.varOrRecordPattern, null)),
+                        List.of(make.PatternCaseLabel(jcRecordPattern, null)),
                         List.of(translate(tree.body)),
                         null);
 
