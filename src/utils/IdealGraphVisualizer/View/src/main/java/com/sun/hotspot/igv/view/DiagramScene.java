@@ -588,7 +588,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         rebuilding = false;
-        updateHiddenNodes(model.getHiddenNodes(), true);
+        updateHiddenNodes(true);
 
         setFigureSelection(selectedFigures);
         centerFigures(selectedFigures, false);
@@ -600,12 +600,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void hiddenNodesChanged() {
-        updateHiddenNodes(model.getHiddenNodes(), true);
+        updateHiddenNodes(true);
         addUndo();
     }
 
     private void selectedNodesChanged() {
-        updateHiddenNodes(model.getHiddenNodes(), false);
+        updateHiddenNodes(false);
     }
 
     protected boolean isRebuilding() {
@@ -632,34 +632,77 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void relayout(Set<Widget> oldVisibleWidgets) {
+        assert oldVisibleWidgets != null;
         Diagram diagram = getModel().getDiagram();
 
-        HashSet<Figure> figures = new HashSet<>();
-
-        for (Figure f : diagram.getFigures()) {
-            FigureWidget w = getWidget(f);
-            if (w.isVisible()) {
-                figures.add(f);
+        HashSet<Figure> visibleFigures = new HashSet<>();
+        for (Figure figure : diagram.getFigures()) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget.isVisible()) {
+                visibleFigures.add(figure);
             }
         }
 
-        HashSet<Connection> edges = new HashSet<>();
-
-        for (Connection c : diagram.getConnections()) {
-            if (isVisible(c)) {
-                edges.add(c);
+        HashSet<Connection> visibleConnections = new HashSet<>();
+        for (Connection connection : diagram.getConnections()) {
+            if (isVisible(connection)) {
+                visibleConnections.add(connection);
             }
         }
 
         if (getModel().getShowSea()) {
-            doSeaLayout(figures, edges);
+            doSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowBlocks()) {
-            doClusteredLayout(edges);
+            doClusteredLayout(visibleConnections);
         } else if (getModel().getShowCFG()) {
-            doCFGLayout(figures, edges);
+            doCFGLayout(visibleFigures, visibleConnections);
         }
 
-        relayoutWithoutLayout(oldVisibleWidgets);
+
+        connectionLayer.removeChildren();
+
+        for (Figure figure : diagram.getFigures()) {
+            for (OutputSlot outputSlot : figure.getOutputSlots()) {
+                List<Connection> connectionList = new ArrayList<>(outputSlot.getConnections());
+                processOutputSlot(outputSlot, connectionList, 0, null, null);
+            }
+        }
+
+        if (getModel().getShowCFG()) {
+            for (BlockConnection blockConnection : diagram.getBlockConnections()) {
+                if (isVisible(blockConnection)) {
+                    processOutputSlot(null, Collections.singletonList(blockConnection), 0, null, null);
+                }
+            }
+        }
+
+        boolean doAnimation = shouldAnimate();
+        SceneAnimator animator = getSceneAnimator();
+        for (Figure figure : diagram.getFigures()) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget.isVisible()) {
+                Point location = new Point(figure.getPosition());
+                if (doAnimation && oldVisibleWidgets.contains(figureWidget)) {
+                    animator.animatePreferredLocation(figureWidget, location);
+                } else {
+                    figureWidget.setPreferredLocation(location);
+                }
+            }
+        }
+
+        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
+            for (Block block : diagram.getBlocks()) {
+                BlockWidget blockWidget = getWidget(block.getInputBlock());
+                if (blockWidget != null && blockWidget.isVisible()) {
+                    Rectangle bounds = new Rectangle(block.getBounds());
+                    if (doAnimation && oldVisibleWidgets.contains(blockWidget)) {
+                        animator.animatePreferredBounds(blockWidget, bounds);
+                    } else {
+                        blockWidget.setPreferredBounds(bounds);
+                    }
+                }
+            }
+        }
     }
 
     private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
@@ -727,7 +770,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         m.doLayout(new LayoutGraph(edges, figures));
     }
 
-    private Set<Pair<Point, Point>> lineCache = new HashSet<>();
+
 
     private boolean shouldAnimate() {
         int visibleFigureCount = 0;
@@ -739,72 +782,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return visibleFigureCount <= ANIMATION_LIMIT;
     }
 
-    private void relayoutWithoutLayout(Set<Widget> oldVisibleWidgets) {
-        assert oldVisibleWidgets != null;
-
-        Diagram diagram = getModel().getDiagram();
-        connectionLayer.removeChildren();
-
-        SceneAnimator connectionAnimator = getSceneAnimator();
-        boolean doAnimation = shouldAnimate();
-        if (!doAnimation) {
-            connectionAnimator = null;
-        }
-
-        Set<Pair<Point, Point>> lastLineCache = lineCache;
-        lineCache = new HashSet<>();
-        for (Figure figure : diagram.getFigures()) {
-            for (OutputSlot outputSlot : figure.getOutputSlots()) {
-                List<Connection> connectionList = new ArrayList<>(outputSlot.getConnections());
-                processOutputSlot(lastLineCache, outputSlot, connectionList, 0, null, null, connectionAnimator);
-            }
-        }
-
-        if (getModel().getShowCFG()) {
-            for (BlockConnection c : diagram.getBlockConnections()) {
-                if (isVisible(c)) {
-                    processOutputSlot(lastLineCache, null, Collections.singletonList(c), 0, null, null, connectionAnimator);
-                }
-            }
-        }
-
-        SceneAnimator animator = getSceneAnimator();
-        for (Figure f : diagram.getFigures()) {
-            FigureWidget w = getWidget(f);
-            if (w.isVisible()) {
-                Point p = f.getPosition();
-                Point p2 = new Point(p.x, p.y);
-                if (doAnimation && oldVisibleWidgets.contains(w)) {
-                    animator.animatePreferredLocation(w, p2);
-                } else {
-                    w.setPreferredLocation(p2);
-                    animator.animatePreferredLocation(w, p2);
-                }
-            }
-        }
-
-        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (Block b : diagram.getBlocks()) {
-                BlockWidget w = getWidget(b.getInputBlock());
-                if (w != null && w.isVisible()) {
-                    Point location = new Point(b.getBounds().x, b.getBounds().y);
-                    Rectangle r = new Rectangle(location.x, location.y, b.getBounds().width, b.getBounds().height);
-
-                    if (doAnimation && oldVisibleWidgets.contains(w)) {
-                        animator.animatePreferredBounds(w, r);
-                    } else {
-                        w.setPreferredBounds(r);
-                        animator.animatePreferredBounds(w, r);
-                    }
-                }
-            }
-        }
-
-        validateAll();
-    }
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
-    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot outputSlot, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, SceneAnimator animator) {
+    private void processOutputSlot(OutputSlot outputSlot, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor) {
         Map<Point, List<Connection>> pointMap = new HashMap<>(connections.size());
 
         for (Connection connection : connections) {
@@ -844,43 +824,30 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             boolean isBold = false;
             boolean isDashed = true;
             boolean isVisible = true;
-
             for (Connection c : connectionList) {
-
                 if (c.getStyle() == Connection.ConnectionStyle.BOLD) {
                     isBold = true;
+                } else if (c.getStyle() == Connection.ConnectionStyle.INVISIBLE) {
+                    isVisible = false;
                 }
-
                 if (c.getStyle() != Connection.ConnectionStyle.DASHED) {
                     isDashed = false;
-                }
-
-                if (c.getStyle() == Connection.ConnectionStyle.INVISIBLE) {
-                    isVisible = false;
                 }
             }
 
             LineWidget newPredecessor = predecessor;
             if (currentPoint != specialNullPoint && lastPoint != specialNullPoint && lastPoint != null) {
-                Point p1 = new Point(lastPoint.x, lastPoint.y);
-                Point p2 = new Point(currentPoint.x, currentPoint.y);
+                Point src = new Point(lastPoint);
+                Point dest = new Point(currentPoint);
+                newPredecessor = new LineWidget(this, outputSlot, connectionList, src, dest, predecessor, isBold, isDashed);
+                newPredecessor.setVisible(isVisible);
 
-                Pair<Point, Point> curPair = new Pair<>(p1, p2);
-                SceneAnimator curAnimator = animator;
-                if (lastLineCache.contains(curPair)) {
-                    curAnimator = null;
-                }
-                LineWidget lineWidget = new LineWidget(this, outputSlot, connectionList, p1, p2, predecessor, curAnimator, isBold, isDashed);
-                lineWidget.setVisible(isVisible);
-                lineCache.add(curPair);
-
-                newPredecessor = lineWidget;
-                connectionLayer.addChild(lineWidget);
-                addObject(new ConnectionSet(connectionList), lineWidget);
-                lineWidget.getActions().addAction(hoverAction);
+                connectionLayer.addChild(newPredecessor);
+                addObject(new ConnectionSet(connectionList), newPredecessor);
+                newPredecessor.getActions().addAction(hoverAction);
             }
 
-            processOutputSlot(lastLineCache, outputSlot, connectionList, controlPointIndex + 1, currentPoint, newPredecessor, animator);
+            processOutputSlot(outputSlot, connectionList, controlPointIndex + 1, currentPoint, newPredecessor);
         }
     }
 
@@ -1037,7 +1004,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         SelectionCoordinator.getInstance().getSelectedChangedEvent().addListener(selectedCoordinatorListener);
     }
 
-    private void updateHiddenNodes(Set<Integer> newHiddenNodes, boolean doRelayout) {
+    private void updateHiddenNodes(boolean doRelayout) {
+        Set<Integer> hiddenNodes = model.getHiddenNodes();
 
         Diagram diagram = getModel().getDiagram();
         assert diagram != null;
@@ -1064,7 +1032,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         for (Figure f : diagram.getFigures()) {
             FigureWidget w = getWidget(f);
             w.setBoundary(false);
-            if (newHiddenNodes.contains(f.getInputNode().getId())) {
+            if (hiddenNodes.contains(f.getInputNode().getId())) {
                 // Figure is hidden
                 w.setVisible(false);
             } else {
@@ -1136,6 +1104,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         if (doRelayout) {
             relayout(oldVisibleWidgets);
         }
+
         validateAll();
     }
 
