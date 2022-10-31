@@ -1026,11 +1026,9 @@ public:
   }
 };
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
-                                   double target_pause_time_ms) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
-  _target_pause_time_ms(target_pause_time_ms),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {
@@ -1075,7 +1073,7 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    calculate_collection_set(jtm.evacuation_info(), _target_pause_time_ms);
+    calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
 
     G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
     G1PreservedMarksSet preserved_marks_set(workers()->active_workers());
