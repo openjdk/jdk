@@ -178,6 +178,7 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on other errors.
      */
+    @Override
     public void encode(DerOutputStream out)
             throws CertificateException, IOException {
         if (rawCertInfo == null) {

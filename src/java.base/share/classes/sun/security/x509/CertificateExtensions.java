@@ -147,6 +147,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on errors.
      */
+    @Override
     public void encode(DerOutputStream out)
             throws CertificateException, IOException {
         encode(out, false);

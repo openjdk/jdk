@@ -59,7 +59,7 @@ public interface CertAttrSet<T> {
      * Encodes the attribute to the output stream in a format
      * that can be parsed by the <code>decode</code> method.
      *
-     * @param out the OutputStream to encode the attribute to.
+     * @param out the DerOutputStream to encode the attribute to.
      *
      * @exception CertificateException on encoding or validity errors.
      * @exception IOException on other errors.

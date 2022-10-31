@@ -143,9 +143,10 @@ public class CertificateValidity implements CertAttrSet<String> {
     /**
      * Encode the CertificateValidity period in DER form to the stream.
      *
-     * @param out the OutputStream to marshal the contents to.
+     * @param out the DerOutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
 
         // in cases where default constructor is used check for

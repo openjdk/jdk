@@ -175,7 +175,7 @@ public class CertificateIssuerExtension extends Extension
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to
+     * @param out the DerOutputStream to write the extension to
      * @exception IOException on encoding errors
      */
     @Override

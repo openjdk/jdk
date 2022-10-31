@@ -116,6 +116,7 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
      * @param out the DerOutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         serial.encode(out);
     }
