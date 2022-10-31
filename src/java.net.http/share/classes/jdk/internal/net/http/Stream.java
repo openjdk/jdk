@@ -355,8 +355,8 @@ class Stream<T> extends ExchangeImpl<T> {
         client().registerSubscriber(subscriber);
     }
 
-    private void subscriberCompleted(Http2StreamResponseSubscriber<?> subscriber) {
-        client().subscriberCompleted(subscriber);
+    private void unregisterResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        client().unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -751,9 +751,14 @@ class Stream<T> extends ExchangeImpl<T> {
         hdrs.setHeader(":method", method);
         URI uri = request.uri();
         hdrs.setHeader(":scheme", uri.getScheme());
-        // TODO: userinfo deprecated. Needs to be removed
-        hdrs.setHeader(":authority", uri.getAuthority());
-        // TODO: ensure header names beginning with : not in user headers
+        String host = uri.getHost();
+        int port = uri.getPort();
+        assert host != null;
+        if (port != -1) {
+            hdrs.setHeader(":authority", host + ":" + port);
+        } else {
+            hdrs.setHeader(":authority", host);
+        }
         String query = uri.getRawQuery();
         String path = uri.getRawPath();
         if (path == null || path.isEmpty()) {
@@ -1541,10 +1546,14 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         protected void complete(Throwable t) {
             try {
-                Stream.this.subscriberCompleted(this);
+                Stream.this.unregisterResponseSubscriber(this);
             } finally {
                 super.complete(t);
             }
+        }
+        @Override
+        protected void onCancel() {
+            Stream.this.unregisterResponseSubscriber(this);
         }
     }
 

@@ -1691,7 +1691,8 @@ public class Attr extends JCTree.Visitor {
             } else {
                 patternSwitch = cases.stream()
                                      .flatMap(c -> c.labels.stream())
-                                     .anyMatch(l -> l.hasTag(PATTERNCASELABEL));
+                                     .anyMatch(l -> l.hasTag(PATTERNCASELABEL) ||
+                                                    TreeInfo.isNullCaseLabel(l));
             }
 
             // Attribute all cases and
@@ -1703,7 +1704,6 @@ public class Attr extends JCTree.Visitor {
             boolean hasNullPattern = false;       // Is there a null pattern?
             CaseTree.CaseKind caseKind = null;
             boolean wasError = false;
-            MatchBindings prevBindings = null;
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 if (caseKind == null) {
@@ -1713,7 +1713,7 @@ public class Attr extends JCTree.Visitor {
                               Errors.SwitchMixingCaseTypes);
                     wasError = true;
                 }
-                MatchBindings currentBindings = prevBindings;
+                MatchBindings currentBindings = null;
                 boolean wasUnconditionalPattern = hasUnconditionalPattern;
                 for (JCCaseLabel label : c.labels) {
                     if (label instanceof JCConstantCaseLabel constLabel) {
@@ -1777,7 +1777,7 @@ public class Attr extends JCTree.Visitor {
                     } else if (label instanceof JCPatternCaseLabel patternlabel) {
                         //pattern
                         JCPattern pat = patternlabel.pat;
-                        attribExpr(pat, switchEnv);
+                        attribExpr(pat, switchEnv, seltype);
                         Type primaryType = TreeInfo.primaryPatternType(pat);
                         if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
@@ -1831,9 +1831,6 @@ public class Attr extends JCTree.Visitor {
 
                 preFlow(c);
                 c.completesNormally = flow.aliveAfter(caseEnv, c, make);
-
-                prevBindings = c.caseKind == CaseTree.CaseKind.STATEMENT && c.completesNormally ? currentBindings
-                                                                                                : null;
             }
             if (patternSwitch) {
                 chk.checkSwitchCaseStructure(cases);
@@ -4104,7 +4101,7 @@ public class Attr extends JCTree.Visitor {
         if (tree.pattern.getTag() == BINDINGPATTERN ||
             tree.pattern.getTag() == PARENTHESIZEDPATTERN ||
             tree.pattern.getTag() == RECORDPATTERN) {
-            attribTree(tree.pattern, env, unknownExprInfo);
+            attribExpr(tree.pattern, env, exprtype);
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous() &&
@@ -4168,8 +4165,7 @@ public class Attr extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern tree) {
         Type type;
         if (tree.var.vartype != null) {
-            ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
-            type = attribTree(tree.var.vartype, env, varInfo);
+            type = attribType(tree.var.vartype, env);
         } else {
             type = resultInfo.pt;
         }
@@ -4192,14 +4188,20 @@ public class Attr extends JCTree.Visitor {
 
     @Override
     public void visitRecordPattern(JCRecordPattern tree) {
-        tree.type = attribType(tree.deconstructor, env);
+        Type type = attribType(tree.deconstructor, env);
+        if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
+            Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
+            if (inferred == null) {
+                log.error(tree.pos(), Errors.PatternTypeCannotInfer);
+            } else {
+                type = inferred;
+            }
+        }
+        tree.type = tree.deconstructor.type = type;
         Type site = types.removeWildcards(tree.type);
         List<Type> expectedRecordTypes;
         if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
-            if (record.type.getTypeArguments().nonEmpty() && tree.type.isRaw()) {
-                log.error(tree.pos(),Errors.RawDeconstructionPattern);
-            }
             expectedRecordTypes = record.getRecordComponents()
                                         .stream()
                                         .map(rc -> types.memberType(site, rc)).collect(List.collector());
@@ -4216,10 +4218,7 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> localEnv = env.dup(tree, env.info.dup(env.info.scope.dup()));
         try {
             while (recordTypes.nonEmpty() && nestedPatterns.nonEmpty()) {
-                boolean nestedIsVarPattern = false;
-                nestedIsVarPattern |= nestedPatterns.head.hasTag(BINDINGPATTERN) &&
-                                      ((JCBindingPattern) nestedPatterns.head).var.vartype == null;
-                attribExpr(nestedPatterns.head, localEnv, nestedIsVarPattern ? recordTypes.head : Type.noType);
+                attribExpr(nestedPatterns.head, localEnv, recordTypes.head);
                 checkCastablePattern(nestedPatterns.head.pos(), recordTypes.head, nestedPatterns.head.type);
                 outBindings.addAll(matchBindings.bindingsWhenTrue);
                 matchBindings.bindingsWhenTrue.forEach(localEnv.info.scope::enter);
@@ -4236,21 +4235,6 @@ public class Attr extends JCTree.Visitor {
                 log.error(tree.pos(),
                           Errors.IncorrectNumberOfNestedPatterns(expectedRecordTypes,
                                                                  nestedTypes));
-            }
-            if (tree.var != null) {
-                BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, tree.type,
-                                                    localEnv.info.scope.owner);
-                v.pos = tree.pos;
-                tree.var.sym = v;
-                if (chk.checkUnique(tree.var.pos(), v, localEnv.info.scope)) {
-                    chk.checkTransparentVar(tree.var.pos(), v, localEnv.info.scope);
-                }
-                if (tree.var.vartype != null) {
-                    annotate.annotateLater(tree.var.mods.annotations, localEnv, v, tree.pos());
-                    annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, localEnv, v, tree.var.pos());
-                    annotate.flush();
-                }
-                outBindings.add(v);
             }
         } finally {
             localEnv.info.scope.leave();

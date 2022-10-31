@@ -530,8 +530,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCRecordPattern t = (JCRecordPattern) node;
         JCExpression deconstructor = copy(t.deconstructor, p);
         List<JCPattern> nested = copy(t.nested, p);
-        JCVariableDecl var = copy(t.var, p);
-        return M.at(t.pos).RecordPattern(deconstructor, nested, var);
+        return M.at(t.pos).RecordPattern(deconstructor, nested);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

@@ -2042,6 +2042,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this.kind = Kind.THROWS;
         }
 
+        public void setNormal() {
+            Assert.check(this.kind == Kind.CAPTURED);
+            this.kind = Kind.NORMAL;
+        }
+
         /**
          * Returns a new copy of this undet var.
          */
