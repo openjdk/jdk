@@ -16974,7 +16974,8 @@ instruct compressBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
     __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
     __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
     __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
-    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);  %}
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0); 
+    %}
   ins_pipe(pipe_slow);
 %}
 
