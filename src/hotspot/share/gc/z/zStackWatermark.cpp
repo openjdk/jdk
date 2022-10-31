@@ -59,7 +59,7 @@ uint32_t ZStackWatermark::epoch_id() const {
 ZStackWatermark::ZStackWatermark(JavaThread* jt) :
     StackWatermark(jt, StackWatermarkKind::gc, *ZPointerStoreGoodMaskLowOrderBitsAddr),
     // First watermark is fake and setup to be replaced at next phase shift
-    _old_watermarks{{ZPointerStoreBadMask, 1}, {0,}},
+    _old_watermarks{{ZPointerStoreBadMask, 1}, {}, {}},
     _old_watermarks_newest(0),
     _stats() {}
 

@@ -445,7 +445,6 @@ public:
 struct ZStatWorkersStats {
   double _accumulated_time;
   double _accumulated_duration;
-  uint _active_workers;
 };
 
 //

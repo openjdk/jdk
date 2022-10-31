@@ -1462,9 +1462,10 @@ void ZStatRelocation::print() {
     return;
   }
 
-  ZStatRelocationSummary small_summary = {0};
-  ZStatRelocationSummary medium_summary = {0};
-  ZStatRelocationSummary large_summary = {0};
+  // Zero initialize
+  ZStatRelocationSummary small_summary{};
+  ZStatRelocationSummary medium_summary{};
+  ZStatRelocationSummary large_summary{};
 
   ZStatTablePrinter age_table(10, 18);
   lt.print("Age Table:");
