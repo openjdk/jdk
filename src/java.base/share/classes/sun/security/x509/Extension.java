@@ -140,6 +140,16 @@ public class Extension implements java.security.cert.Extension {
         return ext;
     }
 
+    /**
+     * Implementing {@link java.security.cert.Extension#encode(OutputStream)}.
+     * This implementation is made final to make sure all {@code encode()}
+     * methods in child classes are actually implementations of
+     * {@link #encode(DerOutputStream)} below.
+     *
+     * @param out the output stream
+     * @throws IOException
+     */
+    @Override
     public final void encode(OutputStream out) throws IOException {
         if (out == null) {
             throw new NullPointerException();

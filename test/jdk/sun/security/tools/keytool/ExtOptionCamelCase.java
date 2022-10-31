@@ -203,9 +203,9 @@ public class ExtOptionCamelCase {
             // ATTENTION: the extensions created above might contain raw
             // extensions (not of a subtype) and we need to store and reload
             // it to resolve them to subtypes.
-            DerOutputStream bout = new DerOutputStream();
-            exts.encode(bout);
-            exts = new CertificateExtensions(new DerValue(bout.toByteArray()).data);
+            DerOutputStream dout = new DerOutputStream();
+            exts.encode(dout);
+            exts = new CertificateExtensions(new DerValue(dout.toByteArray()).data);
 
             if (clazz == null) {
                 throw new Exception("Should fail");

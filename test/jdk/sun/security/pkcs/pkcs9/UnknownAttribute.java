@@ -57,10 +57,10 @@ public class UnknownAttribute {
         if (p2.isKnown()) {
             throw new Exception();
         }
-        DerOutputStream bout = new DerOutputStream();
-        p2.derEncode(bout);
-        HexPrinter.simple().dest(System.err).format(bout.toByteArray());
-        if (!Arrays.equals(data, bout.toByteArray())) {
+        DerOutputStream dout = new DerOutputStream();
+        p2.derEncode(dout);
+        HexPrinter.simple().dest(System.err).format(dout.toByteArray());
+        if (!Arrays.equals(data, dout.toByteArray())) {
             throw new Exception();
         }
         // Unknown attr from value
@@ -75,9 +75,9 @@ public class UnknownAttribute {
         if (p3.isKnown()) {
             throw new Exception();
         }
-        bout = new DerOutputStream();
-        p3.derEncode(bout);
-        if (!Arrays.equals(data, bout.toByteArray())) {
+        dout = new DerOutputStream();
+        p3.derEncode(dout);
+        if (!Arrays.equals(data, dout.toByteArray())) {
             throw new Exception();
         }
     }
