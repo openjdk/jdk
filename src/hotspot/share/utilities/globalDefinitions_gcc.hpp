@@ -142,11 +142,15 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // offset directly when base address is NULL. The -Wno-invalid-offsetof
 // option could be used to suppress this warning, but we instead just
 // avoid the use of offsetof().
+//
+// FIXME: This macro is complex and rather arcane. Perhaps we should
+// use offsetof() instead, with the invalid-offsetof warning
+// temporarily disabled.
 #define offset_of(klass,field)                  \
 []() {                                          \
   char space[sizeof (klass)];                   \
   klass* dummyObj = (klass*)space;              \
-  char* c = (char*)&dummyObj->field;            \
+  char* c = (char*)(void*)&dummyObj->field;     \
   return (size_t)(c - space);                   \
 }()
 
