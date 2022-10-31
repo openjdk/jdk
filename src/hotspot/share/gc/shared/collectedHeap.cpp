@@ -663,3 +663,16 @@ void CollectedHeap::update_capacity_and_used_at_gc() {
   _capacity_at_last_gc = capacity();
   _used_at_last_gc     = used();
 }
+
+bool CollectedHeap::dealloc_archive_regions(MemRegion* range, int num_regions) {
+  if (heap_region_dealloc_supported()) {
+    return dealloc_archive_regions_impl(range, num_regions);
+  }
+  return false;
+}
+
+void CollectedHeap::fill_heap_regions(MemRegion* range, int num_regions) {
+  for (int i = 0; i < num_regions; i++) {
+    fill_with_objects(range[i].start(), range[i].word_size());
+  }
+}

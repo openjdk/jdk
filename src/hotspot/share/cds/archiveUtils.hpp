@@ -79,6 +79,76 @@ public:
   }
 };
 
+class ArchiveHeapRegions : public CHeapObj<mtInternal> {
+public:
+  enum State {
+    UNINITIALIZED,
+    HEAP_RESERVED,
+    MAPPED,
+    MAPPING_FAILED,
+    MAPPING_FAILED_DEALLOCATED,
+  };
+
+private:
+  MemRegion *_dumptime_regions;
+  MemRegion *_runtime_regions;
+  int *_region_idx;
+  int _num_regions;
+  State _state;
+
+public:
+  ArchiveHeapRegions() {}
+  ~ArchiveHeapRegions();
+
+  void init(int max_region_count);
+  void set_state(State state) { _state = state; }
+  bool is_runtime_space_reserved() { return _state == HEAP_RESERVED; }
+  bool is_mapped() { return _state == MAPPED; }
+  bool is_mapping_failed() { return _state == MAPPING_FAILED; }
+  void set_dumptime_region(int index, MemRegion region) { _dumptime_regions[index] = region; }
+  void set_runtime_region(int index, MemRegion region) { _runtime_regions[index] = region; }
+  void set_region_index(int index, int region_index) { _region_idx[index] = region_index; }
+  void set_num_regions(int count) { _num_regions = count; }
+
+  MemRegion* dumptime_regions() { return _dumptime_regions; }
+  MemRegion* runtime_regions() { return _runtime_regions; }
+  MemRegion dumptime_region(int idx) { return _dumptime_regions[idx]; }
+  MemRegion runtime_region(int idx) { return _runtime_regions[idx]; }
+  int region_index(int memory_region_index) { return _region_idx[memory_region_index]; }
+  int num_regions() { return _num_regions; }
+
+  uintptr_t dumptime_to_runtime(uintptr_t ptr) {
+    int idx = contains(ptr);
+    if (idx != -1) {
+      return ptr + delta_for(idx);
+    }
+    return 0;
+  }
+
+  int contains(intptr_t ptr) {
+    for (int i = 0; i < num_regions(); i++) {
+      if (dumptime_region(i).contains((const void *)ptr)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  ptrdiff_t delta_for(int region_idx) {
+    return (uintptr_t)runtime_region(region_idx).start() - (uintptr_t)dumptime_region(region_idx).start();
+  }
+
+  bool is_relocated() {
+    for (int i = 0; i < num_regions(); i++) {
+      if (runtime_region(i).start() != dumptime_region(i).start()) {
+        return true;
+        break;
+      }
+    }
+    return false;
+  }
+};
+
 // SharedDataRelocator is used to shift pointers in the CDS archive.
 //
 // The CDS archive is basically a contiguous block of memory (divided into several regions)
@@ -205,19 +275,61 @@ public:
   bool reading() const { return false; }
 };
 
+class ArchiveOopDecoder : public CHeapObj<mtInternal> {
+public:
+  virtual oop decode(uintptr_t ptr) = 0;
+};
+
+class ArchiveNarrowOopDecoder : public ArchiveOopDecoder {
+private:
+  ArchiveHeapRegions* _closed_regions;
+  ArchiveHeapRegions* _open_regions;
+  address _narrow_oop_base;
+  int _narrow_oop_shift;
+
+public:
+  ArchiveNarrowOopDecoder(ArchiveHeapRegions* closed_regions, ArchiveHeapRegions* open_regions,
+                    address narrow_oop_base, int narrow_oop_shift):
+    _closed_regions(closed_regions),
+    _open_regions(open_regions),
+    _narrow_oop_base(narrow_oop_base),
+    _narrow_oop_shift(narrow_oop_shift)
+  {}
+
+  oop decode(uintptr_t ptr);
+};
+
+class ArchiveWideOopDecoder : public ArchiveOopDecoder {
+private:
+  ArchiveHeapRegions* _closed_regions;
+  ArchiveHeapRegions* _open_regions;
+
+public:
+  ArchiveWideOopDecoder(ArchiveHeapRegions* closed_regions, ArchiveHeapRegions* open_regions) :
+    _closed_regions(closed_regions),
+    _open_regions(open_regions)
+  {}
+
+  oop decode(uintptr_t ptr);
+};
+
 // Closure for serializing initialization data in from a data area
 // (ptr_array) read from the shared file.
 
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
+  ArchiveOopDecoder* _oop_decoder;
 
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+  ReadClosure(intptr_t** ptr_array, ArchiveOopDecoder* oop_decoder = NULL) :
+    _ptr_array(ptr_array),
+    _oop_decoder(oop_decoder)
+  {}
 
   void do_ptr(void** p);
   void do_u4(u4* p);

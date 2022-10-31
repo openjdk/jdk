@@ -510,6 +510,14 @@ private:
 
   void verify_numa_regions(const char* desc);
 
+  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // memory ranges.
+  void populate_archive_regions_bot_part(MemRegion* range, size_t count);
+
+  bool dealloc_archive_regions_impl(MemRegion* range, int num_regions) override;
+
+  virtual bool heap_region_dealloc_supported() override { return true; }
+
 public:
   // If during a concurrent start pause we may install a pending list head which is not
   // otherwise reachable, ensure that it is marked in the bitmap for concurrent marking
@@ -701,32 +709,18 @@ public:
   void end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
                                size_t end_alignment_in_bytes = 0);
 
+  // Commit the appropriate G1 regions containing the specified MemRegions
+  // and mark them as 'archive' regions. The regions in the array must be
+  // non-overlapping and in order of ascending address.
+  virtual bool alloc_archive_regions(MemRegion* dumptime_regions, int num_regions, MemRegion* runtime_regions, bool is_open) override;
+  virtual void complete_archive_regions_alloc(MemRegion* regions, int num_regions) override;
+
   // Facility for allocating a fixed range within the heap and marking
   // the containing regions as 'archive'. For use at JVM init time, when the
   // caller may mmap archived heap data at the specified range(s).
   // Verify that the MemRegions specified in the argument array are within the
   // reserved heap.
   bool check_archive_addresses(MemRegion* range, size_t count);
-
-  // Commit the appropriate G1 regions containing the specified MemRegions
-  // and mark them as 'archive' regions. The regions in the array must be
-  // non-overlapping and in order of ascending address.
-  bool alloc_archive_regions(MemRegion* range, size_t count, bool open);
-
-  // Insert any required filler objects in the G1 regions around the specified
-  // ranges to make the regions parseable. This must be called after
-  // alloc_archive_regions, and after class loading has occurred.
-  void fill_archive_regions(MemRegion* range, size_t count);
-
-  // Populate the G1BlockOffsetTablePart for archived regions with the given
-  // memory ranges.
-  void populate_archive_regions_bot_part(MemRegion* range, size_t count);
-
-  // For each of the specified MemRegions, uncommit the containing G1 regions
-  // which had been allocated by alloc_archive_regions. This should be called
-  // rather than fill_archive_regions at JVM init time if the archive file
-  // mapping failed, with the same non-overlapping and sorted MemRegion array.
-  void dealloc_archive_regions(MemRegion* range, size_t count);
 
 private:
 

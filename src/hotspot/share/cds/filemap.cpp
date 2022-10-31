@@ -2070,42 +2070,9 @@ address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_
   }
 }
 
-static MemRegion *closed_heap_regions = NULL;
-static MemRegion *open_heap_regions = NULL;
-static int num_closed_heap_regions = 0;
-static int num_open_heap_regions = 0;
-
 #if INCLUDE_CDS_JAVA_HEAP
 bool FileMapInfo::has_heap_regions() {
   return (space_at(MetaspaceShared::first_closed_heap_region)->used() > 0);
-}
-
-// Returns the address range of the archived heap regions computed using the
-// current oop encoding mode. This range may be different than the one seen at
-// dump time due to encoding mode differences. The result is used in determining
-// if/how these regions should be relocated at run time.
-MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
-  address start = (address) max_uintx;
-  address end   = NULL;
-
-  for (int i = MetaspaceShared::first_closed_heap_region;
-           i <= MetaspaceShared::last_valid_region;
-           i++) {
-    FileMapRegion* si = space_at(i);
-    size_t size = si->used();
-    if (size > 0) {
-      address s = start_address_as_decoded_with_current_oop_encoding_mode(si);
-      address e = s + size;
-      if (start > s) {
-        start = s;
-      }
-      if (end < e) {
-        end = e;
-      }
-    }
-  }
-  assert(end != NULL, "must have at least one used heap region");
-  return MemRegion((HeapWord*)start, (HeapWord*)end);
 }
 
 void FileMapInfo::map_or_load_heap_regions() {
@@ -2113,7 +2080,8 @@ void FileMapInfo::map_or_load_heap_regions() {
 
   if (can_use_heap_regions()) {
     if (ArchiveHeapLoader::can_map()) {
-      success = map_heap_regions();
+      ArchiveHeapLoader::map_heap_regions(this);
+      success = ArchiveHeapLoader::open_regions_mapped();
     } else if (ArchiveHeapLoader::can_load()) {
       success = ArchiveHeapLoader::load_heap_regions(this);
     } else {
@@ -2158,11 +2126,14 @@ bool FileMapInfo::can_use_heap_regions() {
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+  /* heap range is not available for all GC policies, skip displaying it */
+#if 0
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                 UseCompressedOops ? p2i(CompressedOops::begin()) :
                                     UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
                 UseCompressedOops ? p2i(CompressedOops::end()) :
                                     UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+#endif
 
   if (narrow_klass_base() != CompressedKlassPointers::base() ||
       narrow_klass_shift() != CompressedKlassPointers::shift()) {
@@ -2171,317 +2142,14 @@ bool FileMapInfo::can_use_heap_regions() {
   }
   return true;
 }
-
-// The address where the bottom of this shared heap region should be mapped
-// at runtime
-address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc) {
-  assert(UseSharedSpaces, "runtime only");
-  spc->assert_is_heap_region();
-  if (UseCompressedOops) {
-    return start_address_as_decoded_from_archive(spc);
-  } else {
-    assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
-    return header()->heap_begin() + spc->mapping_offset() + ArchiveHeapLoader::runtime_delta();
-  }
-}
-
-void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
-  if (UseCompressedOops) {
-    ArchiveHeapLoader::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
-  } else {
-    ArchiveHeapLoader::set_runtime_delta(delta);
-  }
-}
-
-//
-// Map the closed and open archive heap objects to the runtime java heap.
-//
-// The shared objects are mapped at (or close to ) the java heap top in
-// closed archive regions. The mapped objects contain no out-going
-// references to any other java heap regions. GC does not write into the
-// mapped closed archive heap region.
-//
-// The open archive heap objects are mapped below the shared objects in
-// the runtime java heap. The mapped open archive heap data only contains
-// references to the shared objects and open archive objects initially.
-// During runtime execution, out-going references to any other java heap
-// regions may be added. GC may mark and update references in the mapped
-// open archive objects.
-void FileMapInfo::map_heap_regions_impl() {
-  if (narrow_oop_mode() != CompressedOops::mode() ||
-      narrow_oop_base() != CompressedOops::base() ||
-      narrow_oop_shift() != CompressedOops::shift()) {
-    log_info(cds)("CDS heap data needs to be relocated because the archive was created with an incompatible oop encoding mode.");
-    _heap_pointers_need_patching = true;
-  } else {
-    if (UseCompressedOops) {
-      MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
-      if (!CompressedOops::is_in(range)) {
-        log_info(cds)("CDS heap data needs to be relocated because");
-        log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
-        log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
-        _heap_pointers_need_patching = true;
-      } else if (header()->heap_end() != CompressedOops::end()) {
-        log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
-        _heap_pointers_need_patching = true;
-      }
-    } else {
-      MemRegion range((HeapWord*)header()->heap_begin(), (HeapWord*)header()->heap_end());
-      if (!G1CollectedHeap::heap()->reserved().contains(range)) {
-        log_info(cds)("CDS heap data needs to be relocated because");
-        log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
-        log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT,
-            p2i((address)G1CollectedHeap::heap()->reserved().start()), p2i((address)G1CollectedHeap::heap()->reserved().end()));
-        _heap_pointers_need_patching = true;
-      } else if (header()->heap_end() != (address)G1CollectedHeap::heap()->reserved().end()) {
-        log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
-        _heap_pointers_need_patching = true;
-      }
-    }
-  }
-
-  ptrdiff_t delta = 0;
-  if (_heap_pointers_need_patching) {
-    //   dumptime heap end  ------------v
-    //   [      |archived heap regions| ]         run time heap end -----v
-    //                                       [   |archived heap regions| ]
-    //          ^
-    //          D                                ^
-    //                                           R
-    //                                  |<-----delta-------------------->|
-    //
-    // At dump time, the archived heap regions were near the top of the heap.
-    // At run time, if the heap ends at a different address, we need to
-    // move them near to top of the run time heap. This can be done by
-    // the simple math of adding the delta as shown above.
-    //
-    // Also: D = bottom of a heap region at dump time
-    //       R = bottom of a heap region at run time
-    //
-    // FileMapRegion* spc = ...;
-    //   address D = header()->heap_begin() + spc->mapping_offset();
-    //   address R = D + delta;
-    address dumptime_heap_end = header()->heap_end();
-    address runtime_heap_end = UseCompressedOops ? CompressedOops::end() :
-                                                   (address)G1CollectedHeap::heap()->reserved().end();
-    delta = runtime_heap_end - dumptime_heap_end;
-  }
-
-  log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
-
-  set_shared_heap_runtime_delta(delta);
-
-  FileMapRegion* si = space_at(MetaspaceShared::first_closed_heap_region);
-  address relocated_closed_heap_region_bottom = heap_region_runtime_start_address(si);
-
-  if (!is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes)) {
-    // Align the bottom of the closed archive heap regions at G1 region boundary.
-    // This will avoid the situation where the highest open region and the lowest
-    // closed region sharing the same G1 region. Otherwise we will fail to map the
-    // open regions.
-    size_t align = size_t(relocated_closed_heap_region_bottom) % HeapRegion::GrainBytes;
-    delta -= align;
-    log_info(cds)("CDS heap data needs to be relocated lower by a further " SIZE_FORMAT
-                  " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
-                  align, delta);
-    set_shared_heap_runtime_delta(delta);
-    relocated_closed_heap_region_bottom = heap_region_runtime_start_address(si);
-    _heap_pointers_need_patching = true;
-  }
-  assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
-         "must be");
-
-  if (_heap_pointers_need_patching) {
-    char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
-      log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
-      _heap_pointers_need_patching = false;
-      return;
-    }
-  }
-
-  // Map the closed heap regions: GC does not write into these regions.
-  if (map_heap_regions(MetaspaceShared::first_closed_heap_region,
-                       MetaspaceShared::max_num_closed_heap_regions,
-                       /*is_open_archive=*/ false,
-                       &closed_heap_regions, &num_closed_heap_regions)) {
-    ArchiveHeapLoader::set_closed_regions_mapped();
-
-    // Now, map the open heap regions: GC can write into these regions.
-    if (map_heap_regions(MetaspaceShared::first_open_heap_region,
-                         MetaspaceShared::max_num_open_heap_regions,
-                         /*is_open_archive=*/ true,
-                         &open_heap_regions, &num_open_heap_regions)) {
-      ArchiveHeapLoader::set_open_regions_mapped();
-    }
-  }
-}
-
-bool FileMapInfo::map_heap_regions() {
-  map_heap_regions_impl();
-
-  if (!ArchiveHeapLoader::closed_regions_mapped()) {
-    assert(closed_heap_regions == NULL &&
-           num_closed_heap_regions == 0, "sanity");
-  }
-
-  if (!ArchiveHeapLoader::open_regions_mapped()) {
-    assert(open_heap_regions == NULL && num_open_heap_regions == 0, "sanity");
-    return false;
-  } else {
-    return true;
-  }
-}
-
-bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
-                                   MemRegion** regions_ret, int* num_regions_ret) {
-  MemRegion* regions = MemRegion::create_array(max, mtInternal);
-
-  struct Cleanup {
-    MemRegion* _regions;
-    uint _length;
-    bool _aborted;
-    Cleanup(MemRegion* regions, uint length) : _regions(regions), _length(length), _aborted(true) { }
-    ~Cleanup() { if (_aborted) { MemRegion::destroy_array(_regions, _length); } }
-  } cleanup(regions, max);
-
-  FileMapRegion* si;
-  int num_regions = 0;
-
-  for (int i = first;
-           i < first + max; i++) {
-    si = space_at(i);
-    size_t size = si->used();
-    if (size > 0) {
-      HeapWord* start = (HeapWord*)heap_region_runtime_start_address(si);
-      regions[num_regions] = MemRegion(start, size / HeapWordSize);
-      num_regions ++;
-      log_info(cds)("Trying to map heap data: region[%d] at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
-                    i, p2i(start), size);
-    }
-  }
-
-  if (num_regions == 0) {
-    return false; // no archived java heap data
-  }
-
-  // Check that regions are within the java heap
-  if (!G1CollectedHeap::heap()->check_archive_addresses(regions, num_regions)) {
-    log_info(cds)("UseSharedSpaces: Unable to allocate region, range is not within java heap.");
-    return false;
-  }
-
-  // allocate from java heap
-  if (!G1CollectedHeap::heap()->alloc_archive_regions(
-             regions, num_regions, is_open_archive)) {
-    log_info(cds)("UseSharedSpaces: Unable to allocate region, java heap range is already in use.");
-    return false;
-  }
-
-  // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
-  // for mapped regions as they are part of the reserved java heap, which is
-  // already recorded.
-  for (int i = 0; i < num_regions; i++) {
-    si = space_at(first + i);
-    char* addr = (char*)regions[i].start();
-    char* base = os::map_memory(_fd, _full_path, si->file_offset(),
-                                addr, regions[i].byte_size(), si->read_only(),
-                                si->allow_exec());
-    if (base == NULL || base != addr) {
-      // dealloc the regions from java heap
-      dealloc_heap_regions(regions, num_regions);
-      log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
-                    INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
-                    p2i(addr), regions[i].byte_size());
-      return false;
-    }
-
-    if (VerifySharedSpaces && !region_crc_check(addr, regions[i].byte_size(), si->crc())) {
-      // dealloc the regions from java heap
-      dealloc_heap_regions(regions, num_regions);
-      log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
-      return false;
-    }
-
-    si->set_mapped_base(base);
-  }
-
-  cleanup._aborted = false;
-  // the shared heap data is mapped successfully
-  *regions_ret = regions;
-  *num_regions_ret = num_regions;
-  return true;
-}
-
-void FileMapInfo::patch_heap_embedded_pointers() {
-  if (!_heap_pointers_need_patching) {
-    return;
-  }
-
-  log_info(cds)("patching heap embedded pointers");
-  patch_heap_embedded_pointers(closed_heap_regions,
-                               num_closed_heap_regions,
-                               MetaspaceShared::first_closed_heap_region);
-
-  patch_heap_embedded_pointers(open_heap_regions,
-                               num_open_heap_regions,
-                               MetaspaceShared::first_open_heap_region);
-}
-
-void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
-                                               int first_region_idx) {
-  char* bitmap_base = map_bitmap_region();
-  assert(bitmap_base != NULL, "must have already been mapped");
-  for (int i=0; i<num_regions; i++) {
-    FileMapRegion* si = space_at(i + first_region_idx);
-    ArchiveHeapLoader::patch_embedded_pointers(
-      regions[i],
-      (address)(space_at(MetaspaceShared::bm)->mapped_base()) + si->oopmap_offset(),
-      si->oopmap_size_in_bits());
-  }
-}
-
-// This internally allocates objects using vmClasses::Object_klass(), so it
-// must be called after the Object_klass is loaded
-void FileMapInfo::fixup_mapped_heap_regions() {
-  assert(vmClasses::Object_klass_loaded(), "must be");
-  // If any closed regions were found, call the fill routine to make them parseable.
-  // Note that closed_heap_regions may be non-NULL even if no regions were found.
-  if (num_closed_heap_regions != 0) {
-    assert(closed_heap_regions != NULL,
-           "Null closed_heap_regions array with non-zero count");
-    G1CollectedHeap::heap()->fill_archive_regions(closed_heap_regions,
-                                                  num_closed_heap_regions);
-    // G1 marking uses the BOT for object chunking during marking in
-    // G1CMObjArrayProcessor::process_slice(); for this reason we need to
-    // initialize the BOT for closed archive regions too.
-    G1CollectedHeap::heap()->populate_archive_regions_bot_part(closed_heap_regions,
-                                                               num_closed_heap_regions);
-  }
-
-  // do the same for mapped open archive heap regions
-  if (num_open_heap_regions != 0) {
-    assert(open_heap_regions != NULL, "NULL open_heap_regions array with non-zero count");
-    G1CollectedHeap::heap()->fill_archive_regions(open_heap_regions,
-                                                  num_open_heap_regions);
-
-    // Populate the open archive regions' G1BlockOffsetTableParts. That ensures
-    // fast G1BlockOffsetTablePart::block_start operations for any given address
-    // within the open archive regions when trying to find start of an object
-    // (e.g. during card table scanning).
-    G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_heap_regions,
-                                                               num_open_heap_regions);
-  }
-}
-
-// dealloc the archive regions from java heap
-void FileMapInfo::dealloc_heap_regions(MemRegion* regions, int num) {
-  if (num > 0) {
-    assert(regions != NULL, "Null archive regions array with non-zero count");
-    G1CollectedHeap::heap()->dealloc_archive_regions(regions, num);
-  }
-}
 #endif // INCLUDE_CDS_JAVA_HEAP
+
+char* FileMapInfo::map_region_at_address(FileMapRegion* si, char* requested_addr, size_t byte_size) const {
+  char* base = os::map_memory(_fd, _full_path, si->file_offset(),
+                              requested_addr, byte_size, si->read_only(),
+                              si->allow_exec());
+  return base;
+}
 
 bool FileMapInfo::region_crc_check(char* buf, size_t size, int expected_crc) {
   int crc = ClassLoader::crc32(0, buf, (jint)size);
@@ -2602,8 +2270,13 @@ char* FileMapInfo::region_addr(int idx) {
   FileMapRegion* si = space_at(idx);
   if (HeapShared::is_heap_region(idx)) {
     assert(DumpSharedSpaces, "The following doesn't work at runtime");
-    return si->used() > 0 ?
-          (char*)start_address_as_decoded_with_current_oop_encoding_mode(si) : NULL;
+    if (si->used() > 0) {
+      size_t offset = si->mapping_offset();
+      narrowOop n = CompressedOops::narrow_oop_cast(offset);
+      return cast_from_oop<char *>(CompressedOops::decode_raw_not_null(n));
+    } else {
+      return NULL;
+    }
   } else {
     return si->mapped_base();
   }
@@ -2735,29 +2408,6 @@ bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
     return true;
   }
   return false;
-}
-
-// Unmap mapped regions of shared space.
-void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
-  MetaspaceShared::set_shared_metaspace_range(NULL, NULL, NULL);
-
-  FileMapInfo *map_info = FileMapInfo::current_info();
-  if (map_info) {
-    map_info->fail_continue("%s", msg);
-    for (int i = 0; i < MetaspaceShared::num_non_heap_regions; i++) {
-      if (!HeapShared::is_heap_region(i)) {
-        map_info->unmap_region(i);
-      }
-    }
-    // Dealloc the archive heap regions only without unmapping. The regions are part
-    // of the java heap. Unmapping of the heap regions are managed by GC.
-    map_info->dealloc_heap_regions(open_heap_regions,
-                                   num_open_heap_regions);
-    map_info->dealloc_heap_regions(closed_heap_regions,
-                                   num_closed_heap_regions);
-  } else if (DumpSharedSpaces) {
-    fail_stop("%s", msg);
-  }
 }
 
 #if INCLUDE_JVMTI

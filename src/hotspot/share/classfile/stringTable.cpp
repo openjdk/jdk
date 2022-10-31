@@ -72,17 +72,19 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
-  if (UseCompressedOops) {
+  FileMapInfo* current_info = FileMapInfo::current_info();
+  ArchiveOopDecoder* oop_decoder = ArchiveHeapLoader::get_oop_decoder(current_info);
+  if (oop_decoder) {
+    uintptr_t ptr = (uintptr_t)offset;
+    if (!UseCompressedOops) {
+      ptr += (uintptr_t)current_info->header()->heap_begin();
+    }
+    return oop_decoder->decode(ptr);
+  } else {
+    assert(UseCompressedOops, "For loaded archive regions, UseCompressedOops must be true");
     assert(sizeof(narrowOop) == sizeof(offset), "must be");
     narrowOop v = CompressedOops::narrow_oop_cast(offset);
     return ArchiveHeapLoader::decode_from_archive(v);
-  } else {
-    intptr_t dumptime_oop = (uintptr_t)offset;
-    assert(dumptime_oop != 0, "null strings cannot be interned");
-    intptr_t runtime_oop = dumptime_oop +
-                           (intptr_t)FileMapInfo::current_info()->header()->heap_begin() +
-                           (intptr_t)ArchiveHeapLoader::runtime_delta();
-    return (oop)cast_to_oop(runtime_oop);
   }
 }
 

@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
+#include "cds/archiveUtils.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -37,6 +38,27 @@ class  FileMapInfo;
 struct LoadedArchiveHeapRegion;
 
 class ArchiveHeapLoader : AllStatic {
+#if INCLUDE_CDS_JAVA_HEAP
+private:
+  static ArchiveOopDecoder* _oop_decoder;
+  static ArchiveHeapRegions _closed_heap_regions;
+  static ArchiveHeapRegions _open_heap_regions;
+
+  static bool _heap_pointers_need_patching;
+
+  static void init_archive_heap_regions(FileMapInfo* map_info, int first_region_idx, int last_region_idx, ArchiveHeapRegions* heap_regions);
+  static void cleanup_regions(FileMapInfo* map_info, ArchiveHeapRegions* heap_regions);
+  static void cleanup(FileMapInfo* map_info);
+  static bool get_heap_range_for_archive_regions(ArchiveHeapRegions* heap_regions, bool is_open);
+  static bool is_pointer_patching_needed(FileMapInfo* map_info);
+  static void log_mapped_regions(ArchiveHeapRegions* heap_regions, bool is_open);
+  static bool map_heap_regions(FileMapInfo* map_info, ArchiveHeapRegions* heap_regions);
+  static bool dealloc_heap_regions(ArchiveHeapRegions* heap_regions);
+  static void patch_embedded_pointers(FileMapInfo* map_info, MemRegion region, address oopmap, size_t oopmap_size_in_bits);
+  static void patch_heap_embedded_pointers(FileMapInfo* map_info, ArchiveHeapRegions* heap_regions);
+  static void fill_failed_mapped_regions();
+#endif /* INCLUDE_CDS_JAVA_HEAP */
+
 public:
   // At runtime, heap regions in the CDS archive can be used in two different ways,
   // depending on the GC type:
@@ -73,26 +95,12 @@ public:
     return is_loaded() || is_mapped();
   }
 
-  static ptrdiff_t runtime_delta() {
-    assert(!UseCompressedOops, "must be");
-    CDS_JAVA_HEAP_ONLY(return _runtime_delta;)
-    NOT_CDS_JAVA_HEAP_RETURN_(0L);
-  }
-
-  static void set_closed_regions_mapped() {
-    CDS_JAVA_HEAP_ONLY(_closed_regions_mapped = true;)
-    NOT_CDS_JAVA_HEAP_RETURN;
-  }
   static bool closed_regions_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _closed_regions_mapped;)
+    CDS_JAVA_HEAP_ONLY(return _closed_heap_regions.is_mapped();)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
-  static void set_open_regions_mapped() {
-    CDS_JAVA_HEAP_ONLY(_open_regions_mapped = true;)
-    NOT_CDS_JAVA_HEAP_RETURN;
-  }
   static bool open_regions_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _open_regions_mapped;)
+    CDS_JAVA_HEAP_ONLY(return _open_heap_regions.is_mapped();)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 
@@ -108,6 +116,11 @@ public:
                                       size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void fixup_regions() NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void map_heap_regions(FileMapInfo* map_info) NOT_CDS_JAVA_HEAP_RETURN;
+  static void complete_heap_regions_mapping() NOT_CDS_JAVA_HEAP_RETURN;
+  static ArchiveOopDecoder* get_oop_decoder(FileMapInfo* map_info) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static void patch_heap_embedded_pointers(FileMapInfo* map_info) NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
 private:
@@ -135,9 +148,6 @@ private:
   static address _narrow_oop_base;
   static int     _narrow_oop_shift;
 
-  // !UseCompressedOops only: used to relocate pointers to the archived objects
-  static ptrdiff_t _runtime_delta;
-
   static int init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
                                  MemRegion& archive_space);
   static void sort_loaded_regions(LoadedArchiveHeapRegion* loaded_regions, int num_loaded_regions,
@@ -162,10 +172,6 @@ public:
     assert(is_in_loaded_heap(o), "must be");
   }
 
-  static void set_runtime_delta(ptrdiff_t delta) {
-    assert(!UseCompressedOops, "must be");
-    _runtime_delta = delta;
-  }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 };

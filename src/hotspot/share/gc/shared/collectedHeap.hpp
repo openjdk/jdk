@@ -419,6 +419,16 @@ class CollectedHeap : public CHeapObj<mtGC> {
     return NULL;
   }
 
+  // For each of the specified MemRegions, deallocate the memory which had
+  // been allocated by alloc_archive_regions.
+  virtual bool dealloc_archive_regions_impl(MemRegion* range, int num_regions) {
+    return false;
+  }
+
+  virtual bool heap_region_dealloc_supported() {
+    return false;
+  }
+
  public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
@@ -517,6 +527,12 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return NULL; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+
+  // Support for mapping archive regions into the heap
+  virtual bool alloc_archive_regions(MemRegion* dumptime_regions, int num_regions, MemRegion* runtime_regions, bool is_open) { return false; }
+  virtual void complete_archive_regions_alloc(MemRegion* regions, int num_regions) { return; }
+  bool dealloc_archive_regions(MemRegion* range, int num_regions);
+  virtual void fill_heap_regions(MemRegion* range, int num_regions);
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

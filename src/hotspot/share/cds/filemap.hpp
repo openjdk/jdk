@@ -28,7 +28,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
 #include "oops/array.hpp"
-#include "oops/compressedOops.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "utilities/align.hpp"
 
 // To understand the layout of the CDS archive file:
@@ -460,12 +460,7 @@ public:
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
   void  map_or_load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-  void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
-                                     int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
@@ -486,9 +481,6 @@ public:
     NOT_CDS(return false;)
   }
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
-
-  // Stop CDS sharing and unmap CDS regions.
-  static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
@@ -554,6 +546,19 @@ public:
     return header()->jvm_ident();
   }
 
+  char* map_region_at_address(FileMapRegion* si, char* requested_addr, size_t byte_size) const;
+
+  address start_address_at_dumptime(FileMapRegion* spc) {
+    if (UseCompressedOops) {
+      size_t offset = spc->mapping_offset();
+      narrowOop n = CompressedOops::narrow_oop_cast(offset);
+      uintptr_t p = ((uintptr_t)narrow_oop_base()) + ((uintptr_t)n << narrow_oop_shift());
+      return (address)p;
+    } else {
+      assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
+      return header()->heap_begin() + spc->mapping_offset();
+    }
+  }
  private:
   void  seek_to_position(size_t pos);
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
@@ -571,16 +576,7 @@ public:
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_regions(int first, int max, bool is_open_archive,
-                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
-  void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
   bool  can_use_heap_regions();
-  bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  address heap_region_runtime_start_address(FileMapRegion* spc) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_shared_heap_runtime_delta(ptrdiff_t delta) NOT_CDS_JAVA_HEAP_RETURN;
-  void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
@@ -588,16 +584,12 @@ public:
 
   address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
 
-  // The starting address of spc, as calculated with CompressedOop::decode_non_null()
-  address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {
-    return decode_start_address(spc, true);
-  }
 public:
+  bool region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
   // The starting address of spc, as calculated with HeapShared::decode_from_archive()
   address start_address_as_decoded_from_archive(FileMapRegion* spc) {
     return decode_start_address(spc, false);
   }
-
 private:
 
 #if INCLUDE_JVMTI
