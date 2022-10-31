@@ -40,9 +40,13 @@ import java.awt.event.MouseEvent;
 
 public class InterruptEDTTest {
 
-    static Frame frame = null;
-    static Thread edt = null;
-    static volatile Robot robot = null;
+    private static Frame frame = null;
+    private static volatile Thread edt = null;
+    private static volatile Robot robot = null;
+    private static volatile int xLocation;
+    private static volatile int yLocation;
+    private static volatile int width;
+    private static volatile int height;
 
     public static void main(String args[]) throws Exception {
         try {
@@ -55,31 +59,37 @@ public class InterruptEDTTest {
                         System.out.println("Mouse clicked Event: " + me);
                     }
                 });
-                frame.setBounds(350, 50, 300, 300);
+                frame.setBounds(350, 50, 400, 400);
+                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
             });
-        } catch (InterruptedException iex) {
-        } catch (Exception exx) {
-            exx.printStackTrace();
-        }
-        ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
-        try {
+            ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
+            EventQueue.invokeAndWait(() -> {
+                xLocation = frame.getX();
+                yLocation = frame.getY();
+                width = frame.getWidth();
+                height = frame.getHeight();
+            });
+            ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
             EventQueue.invokeLater(() -> {
-                robot.mouseMove(frame.getX() + frame.getWidth() / 2,
-                    frame.getY() + frame.getHeight() / 2);
+                robot.mouseMove(xLocation + width / 2, yLocation + height / 2);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             });
-        } catch (Exception exx) {
-            exx.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
         edt.interrupt();
         ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
         try {
-            EventQueue.invokeLater(() -> {
-                robot.mouseMove(frame.getX() + frame.getWidth() / 3,
-                    frame.getY() + frame.getHeight() / 3);
+            EventQueue.invokeAndWait(() -> {
+                xLocation = frame.getX();
+                yLocation = frame.getY();
+                width = frame.getWidth();
+                height = frame.getHeight();
             });
+            robot.mouseMove(xLocation + width / 3, yLocation + height / 3);
         } catch (Exception exx) {
             exx.printStackTrace();
         }
