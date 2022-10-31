@@ -457,12 +457,18 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 nll = 1;
             }
             if (s.contains("<html>")) {
+                /* line break in html text is done by <br> tag
+		 * and not by /n so it's incorrect to address newline
+		 * same as non-html text.
+		 * Text between <html> </html> tags are extracted
+		 * and rendered as JLabel text
+		 */
                 int index1 = s.indexOf("<html>");
                 int index2 = s.indexOf("</html>");
                 String str = "";
                 if (index2 >= 0) {
                     str = s.substring(index2 + "</html>".length());
-                    s = s.substring(index1, index2);
+                    s = s.substring(index1, index2 + + "</html>".length());
                 }
                 JLabel label;
                 label = new JLabel(s, JLabel.LEADING);
