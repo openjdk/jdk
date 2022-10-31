@@ -26,8 +26,11 @@
 package java.lang.template;
 
 import java.lang.invoke.MethodHandle;
-import java.util.*;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -97,7 +100,7 @@ import jdk.internal.javac.PreviewFeature;
  * List<Object> values = st.values();
  * // check or manipulate the fragments and/or values
  * ...
- * String result = TemplateRuntime.interpolate(fragments, values);;
+ * String result = StringTemplate.interpolate(fragments, values);;
  * }
  *
  * @implSpec An instance of {@link StringTemplate} is immutatble. Also, the
@@ -147,7 +150,7 @@ public interface StringTemplate {
      * {@return the interpolation of the StringTemplate}
      */
     default String interpolate() {
-        return TemplateRuntime.interpolate(fragments(), values());
+        return StringTemplate.interpolate(fragments(), values());
     }
 
     /**
@@ -172,7 +175,8 @@ public interface StringTemplate {
      * @implNote The default implementation simply invokes the processor's process
      * method {@code processor.process(this)}.
      */
-    default <R, E extends Throwable> R process(ValidatingProcessor<R, E> processor) throws E {
+    default <R, E extends Throwable> R
+    process(ValidatingProcessor<? extends R, ? extends E> processor) throws E {
         Objects.requireNonNull(processor, "processor should not be null");
 
         return processor.process(this);
@@ -187,7 +191,7 @@ public interface StringTemplate {
      * was synthesized by the compiler, then the types are precisely those of the
      * embedded expressions, otherwise this method returns the values list types.
      */
-    default public List<Class<?>> valueTypes() {
+    default List<Class<?>> valueTypes() {
         return TemplateRuntime.valueTypes(this);
     }
 
@@ -201,8 +205,8 @@ public interface StringTemplate {
      * was synthesized by the compiler, then the MethodHandles are precisely those of the
      * embedded expressions fields, otherwise this method returns getters for the values list.
      */
-    default public List<MethodHandle> valueGetters() {
-        return TemplateRuntime.valueGetters(this);
+    default List<MethodHandle> valueAccessors() {
+        return TemplateRuntime.valueAccessors(this);
     }
 
     /**
@@ -274,7 +278,7 @@ public interface StringTemplate {
      */
     public static StringTemplate of(String string) {
         Objects.requireNonNull(string, "string must not be null");
-        return new SimpleStringTemplate(List.of(string), List.of());
+        return new TemplateRuntime.SimpleStringTemplate(List.of(string), List.of());
     }
 
     /**
@@ -301,12 +305,9 @@ public interface StringTemplate {
             throw new IllegalArgumentException(
                     "fragments list size is not one more than values list size");
         }
-        for (String fragment : fragments) {
-            Objects.requireNonNull(fragment, "fragments elements must be non-null");
-        }
-        fragments = Collections.unmodifiableList(new ArrayList<>(fragments));
-        values = Collections.unmodifiableList(new ArrayList<>(values));
-        return new SimpleStringTemplate(fragments, values);
+        fragments = List.copyOf(fragments);
+        values = TemplateRuntime.toList(values.toArray());
+        return new TemplateRuntime.SimpleStringTemplate(fragments, values);
     }
 
      /**
@@ -321,7 +322,14 @@ public interface StringTemplate {
      * @throws NullPointerException fragments or values is null or if any of the fragments is null
      */
     public static String interpolate(List<String> fragments, List<Object> values) {
-        return TemplateRuntime.interpolate(fragments, values);
+        Objects.requireNonNull(fragments, "fragments must not be null");
+        Objects.requireNonNull(values, "values must not be null");
+        int fragmentsSize = fragments.size();
+        int valuesSize = values.size();
+        if (fragmentsSize != valuesSize + 1) {
+            throw new RuntimeException("fragments must have one more element than values");
+        }
+        return TemplateRuntime.interpolate(List.copyOf(fragments), TemplateRuntime.toList(values.toArray()));
     }
 
     /**
@@ -351,7 +359,7 @@ public interface StringTemplate {
      * }
      * @implNote The result of interpolation is not interned.
      */
-    public static final StringProcessor STR = st -> st.interpolate();
+    public static final StringProcessor STR = StringTemplate::interpolate;
 
     /**
      * No-op template processor. Used to highlight that non-processing of the StringTemplate

@@ -193,8 +193,8 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * int y = 987;
      * String result = FMT."%3d\{x} + %3d\{y} = %4d\{x + y}"; // @highlight substring="FMT"
      * }
-     * {@link FMT} uses the Locale.US {@link Locale}.
+     * {@link FMT} uses the Locale.ROOT {@link Locale}.
      */
-    public static final FormatProcessor FMT = new FormatProcessor(Locale.US);
+    public static final FormatProcessor FMT = new FormatProcessor(Locale.ROOT);
 
 }

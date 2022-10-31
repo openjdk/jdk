@@ -234,9 +234,11 @@ public class StringTemplateTest {
 
     String genSource() {
         return STR."""
-            import static java.util.FormatProcessor.FMT;
+            import java.util.FormatProcessor;
+            import java.util.Locale;
 
             public class StringTemplateTest$ {
+                static final FormatProcessor FMT = new FormatProcessor(Locale.US);
                 static String STR = "this is static String";
                 static char C = 'c';
                 static Character CHAR = 'C';

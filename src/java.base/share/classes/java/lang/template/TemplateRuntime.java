@@ -32,6 +32,7 @@ import java.util.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
@@ -43,6 +44,26 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class TemplateRuntime {
+
+    /**
+     * {@link MethodHandle} to {@link TemplateRuntime#getValue(int, StringTemplate)}.
+     */
+    private static final MethodHandle GET_VALUE_MH;
+
+    /**
+     * Initialize {@link MethodHandle MethodHandles}.
+     */
+    static {
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+            MethodType mt = MethodType.methodType(Object.class, int.class, StringTemplate.class);
+            GET_VALUE_MH = lookup.findStatic(TemplateRuntime.class, "getValue", mt);
+        } catch (ReflectiveOperationException | SecurityException ex) {
+            throw new AssertionError("template runtime init fail", ex);
+        }
+    }
+
     /**
      * Private constructor.
      */
@@ -75,8 +96,8 @@ public final class TemplateRuntime {
         Objects.requireNonNull(fragments, "fragments is null");
 
         MethodType processorGetterType = MethodType.methodType(ValidatingProcessor.class);
-        ValidatingProcessor<?, ? extends Throwable> processor =
-                (ValidatingProcessor<?, ? extends Throwable>)processorGetter.asType(processorGetterType).invokeExact();
+        ValidatingProcessor<?, ?> processor =
+                (ValidatingProcessor<?, ?>)processorGetter.asType(processorGetterType).invokeExact();
         TemplateBootstrap bootstrap = new TemplateBootstrap(lookup, name, type, List.of(fragments), processor);
 
         return bootstrap.processWithProcessor();
@@ -85,7 +106,7 @@ public final class TemplateRuntime {
     /**
      * Manages the boostrapping of {@link ProcessorLinkage} callsites.
      */
-    private static class TemplateBootstrap {
+    private static final class TemplateBootstrap {
         /**
          * {@link MethodHandle} to {@link TemplateBootstrap#defaultProcess}.
          */
@@ -114,7 +135,7 @@ public final class TemplateRuntime {
         /**
          * Static final processor.
          */
-        private final ValidatingProcessor<?, ? extends Throwable> processor;
+        private final ValidatingProcessor<?, ?> processor;
 
         /**
          * Initialize {@link MethodHandle MethodHandles}.
@@ -127,7 +148,7 @@ public final class TemplateRuntime {
                         List.class, ValidatingProcessor.class, Object[].class);
                 DEFAULT_PROCESS_MH = lookup.findStatic(TemplateBootstrap.class, "defaultProcess", mt);
             } catch (ReflectiveOperationException ex) {
-                throw new AssertionError("templated string bootstrap fail", ex);
+                throw new AssertionError("string bootstrap fail", ex);
             }
         }
 
@@ -142,7 +163,7 @@ public final class TemplateRuntime {
          */
         private TemplateBootstrap(MethodHandles.Lookup lookup, String name, MethodType type,
                                   List<String> fragments,
-                                  ValidatingProcessor<?, ? extends Throwable> processor) {
+                                  ValidatingProcessor<?, ?> processor) {
             this.lookup = lookup;
             this.name = name;
             this.type = type;
@@ -194,6 +215,12 @@ public final class TemplateRuntime {
 
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+
+    private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
+
     /**
      * Collect nullable elements from an array into a unmodifiable list.
      *
@@ -208,12 +235,8 @@ public final class TemplateRuntime {
      */
     @SuppressWarnings("unchecked")
     public static <E> List<E> toList(E... elements) {
-        return Collections.unmodifiableList(Arrays.asList(elements));
+        return JUCA.listFromTrustedArrayNullsAllowed(elements);
     }
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
-    private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     /**
      * Return the types of a {@link StringTemplate StringTemplate's} values.
@@ -266,7 +289,7 @@ public final class TemplateRuntime {
      * was synthesized by the compiler, then the MethodHandles are precisely those of the
      * embedded expressions fields, otherwise this method returns getters for the values list.
      */
-    static List<MethodHandle> valueGetters(StringTemplate st) {
+    static List<MethodHandle> valueAccessors(StringTemplate st) {
         Objects.requireNonNull(st, "st must not be null");
         List<MethodHandle> result = new ArrayList<>();
         Class<?> tsClass = st.getClass();
@@ -274,7 +297,9 @@ public final class TemplateRuntime {
             try {
                 for (int i = 0; ; i++) {
                     Field field = tsClass.getDeclaredField("x" + i);
-                    result.add(JLIA.unreflectField(field, false));
+                    MethodHandle mh = JLIA.unreflectField(field, false);
+                    mh = mh.asType(mh.type().changeParameterType(0, StringTemplate.class));
+                    result.add(mh);
                 }
             } catch (NoSuchFieldException ex) {
                 // End of fields
@@ -285,21 +310,18 @@ public final class TemplateRuntime {
             return result;
         }
         try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MethodHandle getter = lookup.findStatic(TemplateRuntime.class, "getValue",
-                MethodType.methodType(Object.class, int.class, StringTemplate.class));
             int size = st.values().size();
             for (int index = 0; index < size; index++) {
-                result.add(MethodHandles.insertArguments(getter, 0, index));
+                result.add(MethodHandles.insertArguments(GET_VALUE_MH, 0, index));
             }
             return result;
-        } catch (ReflectiveOperationException | SecurityException ex) {
+        } catch (SecurityException ex) {
             throw new InternalError(ex);
         }
     }
 
     /**
-     * Private ethod used by {@link TemplateRuntime#valueGetters(StringTemplate)}
+     * Private method used by {@link TemplateRuntime#valueAccessors(StringTemplate)}
      * to access values.
      *
      * @param index values index
@@ -312,6 +334,16 @@ public final class TemplateRuntime {
     }
 
     /**
+     * Generic StringTemplate.
+     *
+     * @param fragments  immutable list of string fragments from string template
+     * @param values     immutable list of expression values
+     */
+    record SimpleStringTemplate(List<String> fragments,
+                                 List<Object> values
+    ) implements StringTemplate {}
+
+    /**
      * Creates a string that interleaves the elements of values between the
      * elements of fragments.
      *
@@ -319,19 +351,11 @@ public final class TemplateRuntime {
      * @param values     list of expression values
      *
      * @return String interpolation of fragments and values
-     *
-     * @throws NullPointerException fragments or values is null or if any of the fragments is null
      */
     static String interpolate(List<String> fragments, List<Object> values) {
-        Objects.requireNonNull(fragments, "fragments must not be null");
-        Objects.requireNonNull(values, "values must not be null");
         int fragmentsSize = fragments.size();
         int valuesSize = values.size();
-        if (fragmentsSize != valuesSize + 1) {
-            throw new RuntimeException("fragments must have one more element than values");
-        }
         if (fragmentsSize == 1) {
-            String fragment = Objects.requireNonNull(fragments.get(0), "fragments must not have null elements");
             return fragments.get(0);
         }
         int size = fragmentsSize + valuesSize;
@@ -339,10 +363,10 @@ public final class TemplateRuntime {
         Iterator<String> fragmentsIter = fragments.iterator();
         int i = 0;
         for (Object value : values) {
-            strings[i++] = Objects.requireNonNull(fragmentsIter.next(), "fragments must not have null elements");
+            strings[i++] = fragmentsIter.next();
             strings[i++] = String.valueOf(value);
         }
-        strings[i++] = Objects.requireNonNull(fragmentsIter.next(), "fragments must not have null elements");
+        strings[i++] = fragmentsIter.next();
         return JLA.join("", "", "", strings, size);
     }
 
@@ -386,7 +410,7 @@ public final class TemplateRuntime {
                 values[j++] = value;
             }
         }
-        return new SimpleStringTemplate(java.lang.template.TemplateRuntime.toList(fragments), java.lang.template.TemplateRuntime.toList(values));
+        return new SimpleStringTemplate(TemplateRuntime.toList(fragments), TemplateRuntime.toList(values));
     }
 
 }

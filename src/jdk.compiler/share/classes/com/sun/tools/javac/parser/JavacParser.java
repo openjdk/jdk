@@ -662,7 +662,8 @@ public class JavacParser implements Parser {
         checkSourceLevel(Feature.STRING_TEMPLATES);
         // Disable standalone string templates
         if (processor == null) {
-            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ProcessorMissingFromStringTemplateExpression);
+            log.error(DiagnosticFlag.SYNTAX, token.pos,
+                    Errors.ProcessorMissingFromStringTemplateExpression);
         }
         int oldmode = mode;
         selectExprMode();
@@ -671,7 +672,7 @@ public class JavacParser implements Parser {
         int endPos = stringToken.endPos;
         TokenKind kind = stringToken.kind;
         String string = token.stringVal();
-        List<String> fragments = List.of(stringToken.stringVal());
+        List<String> fragments = List.of(string);
         List<JCExpression> expressions = List.nil();
         nextToken();
         if (kind != STRINGLITERAL) {
@@ -679,7 +680,7 @@ public class JavacParser implements Parser {
                 stringToken = token;
                 endPos = stringToken.endPos;
                 string = stringToken.stringVal();
-                fragments = fragments.append(stringToken.stringVal());
+                fragments = fragments.append(string);
                 nextToken();
              }
             while (token.pos < endPos && token.kind != DEFAULT && token.kind != ERROR) {

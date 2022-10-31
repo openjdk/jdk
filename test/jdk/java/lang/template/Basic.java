@@ -429,9 +429,9 @@ public class Basic {
         ASSERT(src.valueTypes().get(2), int.class);
 
         try {
-            ASSERT(src.valueGetters().get(0).invoke(src), 10);
-            ASSERT(src.valueGetters().get(1).invoke(src), 20);
-            ASSERT(src.valueGetters().get(2).invoke(src), 30);
+            ASSERT(src.valueAccessors().get(0).invoke(src), 10);
+            ASSERT(src.valueAccessors().get(1).invoke(src), 20);
+            ASSERT(src.valueAccessors().get(2).invoke(src), 30);
         } catch (Throwable ex) {
             throw new RuntimeException(ex);
         }
