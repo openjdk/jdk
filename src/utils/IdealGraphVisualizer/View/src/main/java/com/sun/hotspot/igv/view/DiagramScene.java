@@ -77,11 +77,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final InstanceContent content;
     private final Action[] actions;
     private final Action[] actionsWithSelection;
-    private final LayerWidget connectionLayer;
     private final JScrollPane scrollPane;
     private UndoRedo.Manager undoRedoManager;
     private final LayerWidget mainLayer;
     private final LayerWidget blockLayer;
+    private final LayerWidget connectionLayer;
     private final DiagramViewModel model;
     private ModelState modelState;
     private boolean rebuilding;
@@ -159,7 +159,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         setZoomFactor(zoomFactor);
-        validate();
+        validateAll();
 
         Point location = getScene().getLocation();
         visibleRect.x += (int)(zoomFactor * (double)(location.x + zoomCenter.x)) - (int)(oldZoom * (double)(location.x + zoomCenter.x));
@@ -212,7 +212,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         @Override
         public void filteredChanged(SelectionCoordinator source) {
             setHighlightedObjects(idSetToObjectSet(source.getHighlightedObjects()));
-            validate();
+            validateAll();
         }
     };
     private final ControllableChangedListener<SelectionCoordinator> selectedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
@@ -228,7 +228,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
             centerFigures(figures);
             setSelectedObjects(idSetToObjectSet(ids));
-            validate();
+            validateAll();
         }
     };
 
@@ -550,64 +550,76 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             removeObject(o);
         }
 
-        Diagram d = getModel().getDiagram();
+        Diagram diagram = getModel().getDiagram();
 
         Map<InputBlock, Integer> maxWidth = new HashMap<>();
-        for (InputBlock b : d.getInputBlocks()) {
-            maxWidth.put(b, 10);
+        for (InputBlock inputBlock : diagram.getInputBlocks()) {
+            maxWidth.put(inputBlock, 10);
         }
-        for (Figure f : d.getFigures()) {
+        for (Figure figure : diagram.getFigures()) {
             // Update node text, since it might differ across views.
-            f.updateLines();
+            figure.updateLines();
             // Compute max node width in each block.
-            if (f.getWidth() > maxWidth.get(f.getBlock().getInputBlock())) {
-                maxWidth.put(f.getBlock().getInputBlock(), f.getWidth());
+            if (figure.getWidth() > maxWidth.get(figure.getBlock().getInputBlock())) {
+                maxWidth.put(figure.getBlock().getInputBlock(), figure.getWidth());
             }
         }
 
-        for (Figure f : d.getFigures()) {
+        Set<Figure> selectedFigures = new HashSet<>();
+        for (Figure figure : diagram.getFigures()) {
             // Set all nodes' width to the maximum width in the blocks?
             if (getModel().getShowCFG()) {
-                f.setWidth(maxWidth.get(f.getBlock().getInputBlock()));
+                figure.setWidth(maxWidth.get(figure.getBlock().getInputBlock()));
             }
 
-            FigureWidget w = new FigureWidget(f, this, mainLayer);
-            w.getActions().addAction(ActionFactory.createPopupMenuAction(w));
-            w.getActions().addAction(selectAction);
-            w.getActions().addAction(hoverAction);
-            w.setVisible(false);
+            FigureWidget figureWidget = new FigureWidget(figure, this, mainLayer);
+            figureWidget.getActions().addAction(ActionFactory.createPopupMenuAction(figureWidget));
+            figureWidget.getActions().addAction(selectAction);
+            figureWidget.getActions().addAction(hoverAction);
+            figureWidget.setVisible(false);
 
-            addObject(f, w);
-
-            for (InputSlot s : f.getInputSlots()) {
-                SlotWidget sw = new InputSlotWidget(s, this, w, w);
-                addObject(s, sw);
-                sw.getActions().addAction(new DoubleClickAction(sw));
-                sw.getActions().addAction(hoverAction);
-                sw.getActions().addAction(selectAction);
+            addObject(figure, figureWidget);
+            if (getModel().getSelectedNodes().contains(figure.getInputNode().getId())) {
+                selectedFigures.add(figure);
             }
 
-            for (OutputSlot s : f.getOutputSlots()) {
-                SlotWidget sw = new OutputSlotWidget(s, this, w, w);
-                addObject(s, sw);
-                sw.getActions().addAction(new DoubleClickAction(sw));
-                sw.getActions().addAction(hoverAction);
-                sw.getActions().addAction(selectAction);
+            for (InputSlot inputSlot : figure.getInputSlots()) {
+                SlotWidget slotWidget = new InputSlotWidget(inputSlot, this, figureWidget, figureWidget);
+                addObject(inputSlot, slotWidget);
+                slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
+                slotWidget.getActions().addAction(hoverAction);
+                slotWidget.getActions().addAction(selectAction);
+            }
+
+            for (OutputSlot outputSlot : figure.getOutputSlots()) {
+                SlotWidget slotWidget = new OutputSlotWidget(outputSlot, this, figureWidget, figureWidget);
+                addObject(outputSlot, slotWidget);
+                slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
+                slotWidget.getActions().addAction(hoverAction);
+                slotWidget.getActions().addAction(selectAction);
             }
         }
 
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock bn : d.getInputBlocks()) {
-                BlockWidget w = new BlockWidget(this, bn);
-                w.getActions().addAction(new DoubleClickAction(w));
-                w.setVisible(false);
-                addObject(bn, w);
-                blockLayer.addChild(w);
+            for (InputBlock inputBlock : diagram.getInputBlocks()) {
+                BlockWidget blockWidget = new BlockWidget(this, inputBlock);
+                blockWidget.getActions().addAction(new DoubleClickAction(blockWidget));
+                blockWidget.setVisible(false);
+                addObject(inputBlock, blockWidget);
+                blockLayer.addChild(blockWidget);
             }
         }
 
         rebuilding = false;
         updateHiddenNodes(model.getHiddenNodes(), true);
+
+        setFigureSelection(selectedFigures);
+        centerFigures(selectedFigures);
+    }
+
+    public void validateAll() {
+        validate();
+        scrollPane.validate();
     }
 
     private void hiddenNodesChanged() {
@@ -811,7 +823,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
 
-        validate();
+        validateAll();
     }
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
@@ -951,6 +963,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void centerRectangle(Rectangle r) {
         Rectangle rect = convertSceneToView(r);
         Rectangle viewRect = scrollPane.getViewport().getViewRect();
+
         double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
         if (factor < 1.0) {
             centredZoom(getZoomFactor() * factor, null);
@@ -963,12 +976,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         viewRect.y = rect.y + rect.height / 2 - viewRect.height / 2;
         // Ensure to be within area
         viewRect.x = Math.max(0, viewRect.x);
-        viewRect.x = Math.min(scrollPane.getViewport().getViewSize().width - viewRect.width, viewRect.x);
+        viewRect.x = Math.min(getView().getBounds().width - viewRect.width, viewRect.x);
         viewRect.y = Math.max(0, viewRect.y);
-        viewRect.y = Math.min(scrollPane.getViewport().getViewSize().height - viewRect.height, viewRect.y);
+        viewRect.y = Math.min(getView().getBounds().height - viewRect.height, viewRect.y);
         getView().scrollRectToVisible(viewRect);
     }
-
+    
     @Override
     public void setFigureSelection(Set<Figure> list) {
         super.setSelectedObjects(new HashSet<>(list));
@@ -1099,7 +1112,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         if (doRelayout) {
             relayout(oldVisibleWidgets);
         }
-        validate();
+        validateAll();
     }
 
     public JPopupMenu createPopupMenu() {
