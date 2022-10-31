@@ -388,7 +388,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_avx_ghash_processBlocks();
 
   // ChaCha20 stubs
-  void generate_chapoly_stubs();
+  void generate_chacha_stubs();
   address generate_chacha20Block_avx();
   address generate_chacha20Block_avx512();
 
