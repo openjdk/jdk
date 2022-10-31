@@ -41,7 +41,7 @@ public class MouseZoomAction extends WidgetAction.Adapter implements MouseWheelL
     public static final int PAN_INCREMENT = 32;
 
     private static final int MODIFIER = Utilities.isMac() ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
-    private final DiagramViewer scene;
+    private final DiagramScene scene;
     private int prev_n;
 
     public MouseZoomAction(DiagramScene scene) {

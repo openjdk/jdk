@@ -249,10 +249,6 @@ public final class EditorTopComponent extends TopComponent {
         return scene.getModel();
     }
 
-    private Diagram getDiagram() {
-        return getModel().getDiagram();
-    }
-
     public void setSelectionMode(boolean enable) {
         if (enable) {
             scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
@@ -327,24 +323,11 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
-        Set<Integer> ids = new HashSet<>(getModel().getSelectedNodes());
-        for (InputNode n : nodes) {
-            ids.add(n.getId());
-        }
-        Set<Figure> selectedFigures = new HashSet<>();
-        for (Figure f : getDiagram().getFigures()) {
-            if (ids.contains(f.getInputNode().getId())) {
-                selectedFigures.add(f);
-            }
-        }
-        scene.setFigureSelection(selectedFigures);
-        if (centerSelection) {
-            scene.centerFigures(selectedFigures);
-        }
+        scene.addSelectedNodes(nodes, centerSelection);
     }
 
     public void clearSelectedNodes() {
-        scene.setFigureSelection(Collections.emptySet());
+        scene.clearSelectedNodes();
     }
 
     public Rectangle getSceneBounds() {

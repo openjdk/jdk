@@ -183,30 +183,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return zoomChangedEvent;
     }
 
-    @Override
-    public void centerFigures(Collection<Figure> figures) {
-        getModel().showFigures(figures);
-        Rectangle overallRect = null;
-        for (Figure figure : figures) {
-            FigureWidget figureWidget = getWidget(figure);
-            if (figureWidget != null) {
-                Rectangle bounds = figureWidget.getBounds();
-                if (bounds != null) {
-                    Point location = figureWidget.getLocation();
-                    Rectangle figureRect = new Rectangle(location.x, location.y, bounds.width, bounds.height);
-                    if (overallRect == null) {
-                        overallRect = figureRect;
-                    } else {
-                        overallRect = overallRect.union(figureRect);
-                    }
-                }
-            }
-        }
-        if (overallRect != null) {
-            centerRectangle(overallRect);
-        }
-    }
-
     private final ControllableChangedListener<SelectionCoordinator> highlightedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
 
         @Override
@@ -226,8 +202,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     figures.add(f);
                 }
             }
-            centerFigures(figures);
-            setSelectedObjects(idSetToObjectSet(ids));
+            setFigureSelection(figures);
+            centerFigures(figures, false);
             validateAll();
         }
     };
@@ -488,6 +464,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         update();
     }
 
+    @Override
     public DiagramViewModel getModel() {
         return model;
     }
@@ -498,7 +475,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     public boolean isAllVisible() {
-        return getModel().getHiddenNodes().isEmpty();
+        return model.getHiddenNodes().isEmpty();
     }
 
     public Action createGotoAction(final Figure figure) {
@@ -519,7 +496,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             @Override
             public void actionPerformed(ActionEvent e) {
                 setFigureSelection(Collections.singleton(figure));
-                centerFigures(Collections.singleton(figure));
+                centerFigures(Collections.singleton(figure), true);
             }
         };
 
@@ -614,7 +591,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateHiddenNodes(model.getHiddenNodes(), true);
 
         setFigureSelection(selectedFigures);
-        centerFigures(selectedFigures);
+        centerFigures(selectedFigures, false);
     }
 
     public void validateAll() {
@@ -960,6 +937,54 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return result;
     }
 
+    @Override
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
+        Set<Integer> ids = new HashSet<>(model.getSelectedNodes());
+        for (InputNode n : nodes) {
+            ids.add(n.getId());
+        }
+        Set<Figure> selectedFigures = new HashSet<>();
+        for (Figure f : model.getDiagram().getFigures()) {
+            if (ids.contains(f.getInputNode().getId())) {
+                selectedFigures.add(f);
+            }
+        }
+        setFigureSelection(selectedFigures);
+        if (centerSelection) {
+            centerFigures(selectedFigures, true);
+        }
+    }
+
+    @Override
+    public void clearSelectedNodes() {
+        setFigureSelection(Collections.emptySet());
+    }
+
+    private void centerFigures(Collection<Figure> figures, boolean showIfHidden) {
+        if (showIfHidden) {
+            getModel().showFigures(figures);
+        }
+        Rectangle overallRect = null;
+        for (Figure figure : figures) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget != null) {
+                Rectangle bounds = figureWidget.getBounds();
+                if (bounds != null) {
+                    Point location = figureWidget.getLocation();
+                    Rectangle figureRect = new Rectangle(location.x, location.y, bounds.width, bounds.height);
+                    if (overallRect == null) {
+                        overallRect = figureRect;
+                    } else {
+                        overallRect = overallRect.union(figureRect);
+                    }
+                }
+            }
+        }
+        if (overallRect != null) {
+            centerRectangle(overallRect);
+        }
+    }
+
     private void centerRectangle(Rectangle r) {
         Rectangle rect = convertSceneToView(r);
         Rectangle viewRect = scrollPane.getViewport().getViewRect();
@@ -981,9 +1006,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         viewRect.y = Math.min(getView().getBounds().height - viewRect.height, viewRect.y);
         getView().scrollRectToVisible(viewRect);
     }
-    
-    @Override
-    public void setFigureSelection(Set<Figure> list) {
+
+    private void setFigureSelection(Set<Figure> list) {
         super.setSelectedObjects(new HashSet<>(list));
     }
 
