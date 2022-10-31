@@ -91,8 +91,8 @@ private:
   void expand_allocate_common(AllocateNode* alloc,
                               Node* length,
                               const TypeFunc* slow_call_type,
-                              address slow_call_address);
-  void yank_initalize_node(InitializeNode* node);
+                              address slow_call_address,
+                              Node* valid_length_test);
   void yank_alloc_node(AllocateNode* alloc);
   Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
@@ -221,6 +221,7 @@ public:
   Node* intcon(jint con)        const { return _igvn.intcon(con); }
   Node* longcon(jlong con)      const { return _igvn.longcon(con); }
   Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
+  Node* zerocon(BasicType bt)   const { return _igvn.zerocon(bt); }
   Node* top()                   const { return C->top(); }
 
   Node* prefetch_allocation(Node* i_o,

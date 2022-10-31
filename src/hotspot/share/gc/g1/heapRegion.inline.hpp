@@ -139,11 +139,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   return is_marked_in_bitmap(cast_to_oop(p));
 }
 
-inline bool HeapRegion::obj_is_filler(const oop obj) {
-  Klass* k = obj->klass();
-  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
-}
-
 inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
 
@@ -159,7 +154,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   }
 
   // This object is in the parsable part of the heap, live unless scrubbed.
-  return obj_is_filler(obj);
+  return G1CollectedHeap::is_obj_filler(obj);
 }
 
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
@@ -201,7 +196,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 
   _garbage_bytes = 0;
 
-  set_top_at_mark_start(bottom());
+  reset_top_at_mark_start();
 
   reset_after_full_gc_common();
 }
@@ -322,7 +317,13 @@ inline void HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
 }
 
-inline void HeapRegion::note_end_of_clearing() {
+inline void HeapRegion::init_top_at_mark_start() {
+  reset_top_at_mark_start();
+  _parsable_bottom = bottom();
+  _garbage_bytes = 0;
+}
+
+inline void HeapRegion::reset_top_at_mark_start() {
   // We do not need a release store here because
   //
   // - if this method is called during concurrent bitmap clearing, we do not read

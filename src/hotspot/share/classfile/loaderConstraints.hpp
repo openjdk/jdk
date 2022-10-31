@@ -25,39 +25,27 @@
 #ifndef SHARE_CLASSFILE_LOADERCONSTRAINTS_HPP
 #define SHARE_CLASSFILE_LOADERCONSTRAINTS_HPP
 
-#include "classfile/placeholders.hpp"
-#include "utilities/hashtable.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
 
 class ClassLoaderData;
-class LoaderConstraintEntry;
+class LoaderConstraint;
 class Symbol;
 
-class LoaderConstraintTable : public Hashtable<InstanceKlass*, mtClass> {
+class LoaderConstraintTable : public AllStatic {
 
 private:
-  LoaderConstraintEntry** find_loader_constraint(Symbol* name,
-                                                 Handle loader);
+  static LoaderConstraint* find_loader_constraint(Symbol* name, Handle loader);
 
+  static void add_loader_constraint(Symbol* name, InstanceKlass* klass, oop class_loader1, oop class_loader2);
+
+  static void merge_loader_constraints(Symbol* class_name, LoaderConstraint* pp1,
+                                       LoaderConstraint* pp2, InstanceKlass* klass);
 public:
 
-  LoaderConstraintTable(int table_size);
-
-  LoaderConstraintEntry* new_entry(unsigned int hash, Symbol* name,
-                                   InstanceKlass* klass, int num_loaders,
-                                   int max_loaders);
-  void free_entry(LoaderConstraintEntry *entry);
-
-  LoaderConstraintEntry* bucket(int i) const {
-    return (LoaderConstraintEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
-  }
-
-  LoaderConstraintEntry** bucket_addr(int i) {
-    return (LoaderConstraintEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
-  }
-
   // Check class loader constraints
-  bool add_entry(Symbol* name, InstanceKlass* klass1, Handle loader1,
-                                    InstanceKlass* klass2, Handle loader2);
+  static bool add_entry(Symbol* name, InstanceKlass* klass1, Handle loader1,
+                        InstanceKlass* klass2, Handle loader2);
 
   // Note:  The main entry point for this module is via SystemDictionary.
   // SystemDictionary::check_signature_loaders(Symbol* signature,
@@ -65,71 +53,17 @@ public:
   //                                           Handle loader1, Handle loader2,
   //                                           bool is_method)
 
-  InstanceKlass* find_constrained_klass(Symbol* name, Handle loader);
+  static InstanceKlass* find_constrained_klass(Symbol* name, Handle loader);
 
   // Class loader constraints
+  static bool check_or_update(InstanceKlass* k, Handle loader, Symbol* name);
 
-  void ensure_loader_constraint_capacity(LoaderConstraintEntry *p, int nfree);
-  void extend_loader_constraint(LoaderConstraintEntry* p, Handle loader,
-                                InstanceKlass* klass);
-  void merge_loader_constraints(LoaderConstraintEntry** pp1,
-                                LoaderConstraintEntry** pp2, InstanceKlass* klass);
+  static void purge_loader_constraints();
 
-  bool check_or_update(InstanceKlass* k, Handle loader, Symbol* name);
-
-  void purge_loader_constraints();
-
-  void verify();
-  void print() const;
-  void print_on(outputStream* st) const;
-};
-
-class LoaderConstraintEntry : public HashtableEntry<InstanceKlass*, mtClass> {
-private:
-  Symbol*                _name;                   // class name
-  int                    _num_loaders;
-  int                    _max_loaders;
-  // Loader constraints enforce correct linking behavior.
-  // Thus, it really operates on ClassLoaderData which represents linking domain,
-  // not class loaders.
-  ClassLoaderData**              _loaders;                // initiating loaders
-
-public:
-
-  InstanceKlass* klass() { return literal(); }
-  InstanceKlass** klass_addr() { return literal_addr(); }
-  void set_klass(InstanceKlass* k) { set_literal(k); }
-
-  LoaderConstraintEntry* next() {
-    return (LoaderConstraintEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
-  }
-
-  LoaderConstraintEntry** next_addr() {
-    return (LoaderConstraintEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
-  }
-  void set_next(LoaderConstraintEntry* next) {
-    HashtableEntry<InstanceKlass*, mtClass>::set_next(next);
-  }
-
-  Symbol* name() { return _name; }
-  void set_name(Symbol* name) {
-    _name = name;
-    if (name != NULL) name->increment_refcount();
-  }
-
-  int num_loaders() { return _num_loaders; }
-  void set_num_loaders(int i) { _num_loaders = i; }
-
-  int max_loaders() { return _max_loaders; }
-  void set_max_loaders(int i) { _max_loaders = i; }
-
-  ClassLoaderData** loaders() { return _loaders; }
-  void set_loaders(ClassLoaderData** loaders) { _loaders = loaders; }
-
-  ClassLoaderData* loader_data(int i) { return _loaders[i]; }
-  void set_loader_data(int i, ClassLoaderData* p) { _loaders[i] = p; }
-  // convenience
-  void set_loader(int i, oop p);
+  static void print_table_statistics(outputStream* st);
+  static void verify();
+  static void print();
+  static void print_on(outputStream* st);
 };
 
 #endif // SHARE_CLASSFILE_LOADERCONSTRAINTS_HPP

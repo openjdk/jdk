@@ -305,7 +305,7 @@ public:
     if (hr->is_humongous()) {
       _has_humongous = true;
     }
-    log_info(gc, region, cds)("HeapRegion " INTPTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
+    log_info(gc, region, cds)("HeapRegion " PTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
     return false;
   }
 };
@@ -699,13 +699,13 @@ public:
         _failures = true;
         return true;
       }
-      if (hr->is_continues_humongous() && region_attr.is_humongous()) {
+      if (hr->is_continues_humongous() && region_attr.is_humongous_candidate()) {
         log_error(gc, verify)("## inconsistent region attr type %s for continues humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
     } else {
-      if (region_attr.is_humongous()) {
+      if (region_attr.is_humongous_candidate()) {
         log_error(gc, verify)("## inconsistent region attr type %s for non-humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;

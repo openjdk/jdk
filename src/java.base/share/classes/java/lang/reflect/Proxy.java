@@ -1256,7 +1256,7 @@ public class Proxy implements java.io.Serializable {
                         // check if this method is the resolved method if referenced from
                         // this proxy interface (i.e. this method is not implemented
                         // by any other superinterface)
-                        Method m = proxyIntf.getMethod(method.getName(), method.getParameterTypes());
+                        Method m = proxyIntf.getMethod(method.getName(), method.getSharedParameterTypes());
                         if (m.getDeclaringClass() == declaringClass) {
                             return proxyIntf;
                         }

@@ -53,6 +53,15 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
     return false;
   }
 
+  if (nm->method()->is_continuation_yield_intrinsic()) {
+    return false;
+  }
+
+  if (nm->method()->is_continuation_native_intrinsic()) {
+    guarantee(false, "Unknown Continuation native intrinsic");
+    return false;
+  }
+
   if (!nm->is_native_method() && !nm->is_compiled_by_c2() && !nm->is_compiled_by_c1()) {
     return false;
   }
@@ -72,7 +81,9 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
       // conversion that performs the load barriers. This is too subtle, so we instead
       // perform an explicit keep alive call.
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
-      Universe::heap()->keep_alive(obj);
+      if (obj != nullptr) {
+        Universe::heap()->keep_alive(obj);
+      }
     }
 
     virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
@@ -83,8 +94,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   OopKeepAliveClosure cl;
   nm->oops_do(&cl);
 
-  // CodeCache sweeper support
-  nm->mark_as_maybe_on_continuation();
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
 
   disarm(nm);
 
@@ -115,16 +126,24 @@ public:
 void BarrierSetNMethod::arm_all_nmethods() {
   // Change to a new global GC phase. Doing this requires changing the thread-local
   // disarm value for all threads, to reflect the new GC phase.
+  // We wrap around at INT_MAX. That means that we assume nmethods won't have ABA
+  // problems in their nmethod disarm values after INT_MAX - 1 GCs. Every time a GC
+  // completes, ABA problems are removed, but if a concurrent GC is started and then
+  // aborted N times, that is when there could be ABA problems. If there are anything
+  // close to INT_MAX - 1 GCs starting without being able to finish, something is
+  // seriously wrong.
   ++_current_phase;
-  if (_current_phase == 4) {
+  if (_current_phase == INT_MAX) {
     _current_phase = 1;
   }
   BarrierSetNMethodArmClosure cl(_current_phase);
   Threads::threads_do(&cl);
 
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   // We clear the patching epoch when disarming nmethods, so that
   // the counter won't overflow.
-  AARCH64_PORT_ONLY(BarrierSetAssembler::clear_patching_epoch());
+  BarrierSetAssembler::clear_patching_epoch();
+#endif
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {

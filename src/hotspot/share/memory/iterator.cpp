@@ -62,8 +62,8 @@ void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
     nm->oops_do(_cl);
 
     if (_keepalive_nmethods) {
-      // CodeCache sweeper support
-      nm->mark_as_maybe_on_continuation();
+      // CodeCache unloading support
+      nm->mark_as_maybe_on_stack();
 
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       if (bs_nm != NULL) {

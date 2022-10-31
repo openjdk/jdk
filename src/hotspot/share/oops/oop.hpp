@@ -147,12 +147,15 @@ class oopDesc {
   }
 
   // Access to fields in a instanceOop through these methods.
-  template <DecoratorSet decorator>
+  template<DecoratorSet decorators>
   oop obj_field_access(int offset) const;
   oop obj_field(int offset) const;
+
   void obj_field_put(int offset, oop value);
   void obj_field_put_raw(int offset, oop value);
   void obj_field_put_volatile(int offset, oop value);
+  template<DecoratorSet decorators>
+  void obj_field_put_access(int offset, oop value);
 
   Metadata* metadata_field(int offset) const;
   void metadata_field_put(int offset, Metadata* value);

@@ -245,7 +245,7 @@ public class ToolBox {
     public void copyFile(Path from, Path to) throws IOException {
         if (Files.isDirectory(to)) {
             to = to.resolve(from.getFileName());
-        } else {
+        } else if (to.getParent() != null) {
             Files.createDirectories(to.getParent());
         }
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);

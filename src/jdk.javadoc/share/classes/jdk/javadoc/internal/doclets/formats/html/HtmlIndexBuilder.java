@@ -131,7 +131,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                item.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
+                item.setContainingPackage(utils.getPackageName(utils.containingPackage(containingType)));
                 item.setContainingClass(utils.getSimpleName(containingType));
                 if (configuration.showModules && addModuleInfo) {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));

@@ -592,7 +592,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     st.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
                 p2i(current), p2i(this), exec_mode);
     st.print_cr("   Virtual frames (outermost/oldest first):");
-    tty->print_raw(st.as_string());
+    tty->print_raw(st.freeze());
   }
 
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
@@ -630,7 +630,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       st.print(" - %s", code_name);
       st.print(" @ bci=%d ", bci);
       st.print_cr("sp=" PTR_FORMAT, p2i(elem->iframe()->sp()));
-      tty->print_raw(st.as_string());
+      tty->print_raw(st.freeze());
     }
     elem->unpack_on_stack(caller_actual_parameters,
                           callee_parameters,

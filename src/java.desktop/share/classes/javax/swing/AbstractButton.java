@@ -1268,7 +1268,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     }
 
     /**
-     * Sets the seleted state of the button from the action.  This is defined
+     * Sets the selected state of the button from the action.  This is defined
      * here, but not wired up.  Subclasses like JToggleButton and
      * JCheckBoxMenuItem make use of it.
      *
@@ -1643,25 +1643,25 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * mouse press events for the button to generate the corresponding
      * action events.  After the initial mouse press occurs (and action
      * event generated) any subsequent mouse press events which occur
-     * on intervals less than the threshhold will be ignored and no
-     * corresponding action event generated.  By default the threshhold is 0,
+     * on intervals less than the threshold will be ignored and no
+     * corresponding action event generated.  By default the threshold is 0,
      * which means that for each mouse press, an action event will be
      * fired, no matter how quickly the mouse clicks occur.  In buttons
      * where this behavior is not desirable (for example, the "OK" button
-     * in a dialog), this threshhold should be set to an appropriate
+     * in a dialog), this threshold should be set to an appropriate
      * positive value.
      *
      * @see #getMultiClickThreshhold
-     * @param threshhold the amount of time required between mouse
+     * @param threshold the amount of time required between mouse
      *        press events to generate corresponding action events
-     * @throws   IllegalArgumentException if threshhold &lt; 0
+     * @throws   IllegalArgumentException if threshold &lt; 0
      * @since 1.4
      */
-    public void setMultiClickThreshhold(long threshhold) {
-        if (threshhold < 0) {
-            throw new IllegalArgumentException("threshhold must be >= 0");
+    public void setMultiClickThreshhold(long threshold) {
+        if (threshold < 0) {
+            throw new IllegalArgumentException("threshold must be >= 0");
         }
-        this.multiClickThreshhold = threshhold;
+        this.multiClickThreshhold = threshold;
     }
 
     /**
@@ -2661,7 +2661,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         }
 
         /**
-         * Return the number of characters (valid indicies)
+         * Return the number of characters (valid indices)
          *
          * @return the number of characters
          * @since 1.3

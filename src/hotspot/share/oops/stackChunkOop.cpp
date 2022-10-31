@@ -396,7 +396,7 @@ public:
   void do_oop(oop* p) override {
     assert(UseCompressedOops, "Only needed with compressed oops");
     oop obj = CompressedOops::decode(*(narrowOop*)p);
-    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " INTPTR_FORMAT " obj: " INTPTR_FORMAT, p2i(p), p2i((oopDesc*)obj));
+    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     *p = obj;
   }
 
@@ -461,10 +461,10 @@ public:
   template <typename T> inline void do_oop_work(T* p) {
      _count++;
     oop obj = safe_load(p);
-    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " INTPTR_FORMAT " obj: " INTPTR_FORMAT, p2i(p), p2i((oopDesc*)obj));
+    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     if (_chunk->has_bitmap()) {
       BitMap::idx_t index = _chunk->bit_index_for(p);
-      assert(_chunk->bitmap().at(index), "Bit not set at index " SIZE_FORMAT " corresponding to " INTPTR_FORMAT, index, p2i(p));
+      assert(_chunk->bitmap().at(index), "Bit not set at index " SIZE_FORMAT " corresponding to " PTR_FORMAT, index, p2i(p));
     }
   }
 
@@ -505,14 +505,14 @@ public:
       _num_interpreted_frames++;
     }
 
-    log_develop_trace(continuations)("debug_verify_stack_chunk frame: %d sp: " INTPTR_FORMAT " pc: " INTPTR_FORMAT " interpreted: %d size: %d argsize: %d oops: %d", _num_frames, f.sp() - _chunk->start_address(), p2i(f.pc()), f.is_interpreted(), fsize, _argsize, num_oops);
+    log_develop_trace(continuations)("debug_verify_stack_chunk frame: %d sp: " INTPTR_FORMAT " pc: " PTR_FORMAT " interpreted: %d size: %d argsize: %d oops: %d", _num_frames, f.sp() - _chunk->start_address(), p2i(f.pc()), f.is_interpreted(), fsize, _argsize, num_oops);
     LogTarget(Trace, continuations) lt;
     if (lt.develop_is_enabled()) {
       LogStream ls(lt);
       f.print_on(&ls);
     }
     assert(f.pc() != nullptr,
-           "young: %d num_frames: %d sp: " INTPTR_FORMAT " start: " INTPTR_FORMAT " end: " INTPTR_FORMAT,
+           "young: %d num_frames: %d sp: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT,
            !_chunk->requires_barriers(), _num_frames, p2i(f.sp()), p2i(_chunk->start_address()), p2i(_chunk->bottom_address()));
 
     if (_num_frames == 0) {
@@ -549,7 +549,7 @@ public:
 
     oop obj = safe_load(p);
     assert(obj == nullptr || dbg_is_good_oop(obj),
-           "p: " INTPTR_FORMAT " obj: " INTPTR_FORMAT " index: " SIZE_FORMAT,
+           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: " SIZE_FORMAT,
            p2i(p), p2i((oopDesc*)obj), index);
 
     return true; // continue processing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,8 @@ public class CompilerToVMHelper {
 
     public static HotSpotResolvedJavaMethod lookupMethodInPool(
             ConstantPool constantPool, int cpi, byte opcode) {
-        return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode);
+        HotSpotResolvedJavaMethodImpl caller = null;
+        return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode, null);
     }
 
     public static void resolveInvokeDynamicInPool(
@@ -242,8 +243,8 @@ public class CompilerToVMHelper {
         CTVM.reprofile((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror) {
-        CTVM.invalidateHotSpotNmethod(nmethodMirror);
+    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize) {
+        CTVM.invalidateHotSpotNmethod(nmethodMirror, deoptimize);
     }
 
     public static long[] collectCounters() {

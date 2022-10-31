@@ -68,7 +68,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *
-     * Implementaion of interface methods
+     * Implementation of interface methods
      *
      ************************************************/
 
@@ -143,7 +143,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *
-     * Overriden behaviour
+     * Overridden behaviour
      *
      ************************************************/
     @Override

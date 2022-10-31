@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -40,7 +41,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "metaprogramming/enableIf.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -61,6 +61,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 #if INCLUDE_JFR
@@ -549,6 +550,15 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
   { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
   { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseCodeAging",                 JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "PrintSharedDictionary",          JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+
+  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -742,115 +752,6 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
   return success;
 }
 #endif
-
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  // Don't use strtol -- on 64-bit builds, "long" could be either 32- or 64-bits
-  // so the range tests could be tautological and might cause compiler warnings.
-  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
-  errno = 0; // errno is thread safe
-  long long v = strtoll(s, endptr, base);
-  if (errno != 0 || v < min_jint || v > max_jint) {
-    return false;
-  }
-  *result = static_cast<T>(v);
-  return true;
-}
-
-template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  if (s[0] == '-') {
-    return false;
-  }
-  // Don't use strtoul -- same reason as above.
-  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
-  errno = 0; // errno is thread safe
-  unsigned long long v = strtoull(s, endptr, base);
-  if (errno != 0 || v > max_juint) {
-    return false;
-  }
-  *result = static_cast<T>(v);
-  return true;
-}
-
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  errno = 0; // errno is thread safe
-  *result = strtoll(s, endptr, base);
-  return errno == 0;
-}
-
-template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit
-static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  if (s[0] == '-') {
-    return false;
-  }
-  errno = 0; // errno is thread safe
-  *result = strtoull(s, endptr, base);
-  return errno == 0;
-}
-
-template<typename T>
-static bool multiply_by_1k(T& n) {
-  if (n >= std::numeric_limits<T>::min() / 1024 &&
-      n <= std::numeric_limits<T>::max() / 1024) {
-    n *= 1024;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// All of the integral types that can be used for command line options:
-//   int, uint, intx, uintx, uint64_t, size_t
-//
-// In all supported platforms, these types can be mapped to only 4 native types:
-//    {signed, unsigned} x {32-bit, 64-bit}
-//
-// We use SFINAE to pick the correct parse_integer_impl() function
-template<typename T>
-static bool parse_integer(const char *s, T* result) {
-  if (!isdigit(s[0]) && s[0] != '-') {
-    // strtoll/strtoull may allow leading spaces. Forbid it.
-    return false;
-  }
-
-  T n = 0;
-  bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
-                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
-  char* remainder;
-
-  if (!parse_integer_impl(s, &remainder, (is_hex ? 16 : 10), &n)) {
-    return false;
-  }
-
-  // Fail if no number was read at all or if the remainder contains more than a single non-digit character.
-  if (remainder == s || strlen(remainder) > 1) {
-    return false;
-  }
-
-  switch (*remainder) {
-    case 'T': case 't':
-      if (!multiply_by_1k(n)) return false;
-      // fall-through
-    case 'G': case 'g':
-      if (!multiply_by_1k(n)) return false;
-      // fall-through
-    case 'M': case 'm':
-      if (!multiply_by_1k(n)) return false;
-      // fall-through
-    case 'K': case 'k':
-      if (!multiply_by_1k(n)) return false;
-      break;
-    case '\0':
-      break;
-    default:
-      return false;
-  }
-
-  *result = n;
-  return true;
-}
 
 bool Arguments::atojulong(const char *s, julong* result) {
   return parse_integer(s, result);
@@ -2052,6 +1953,14 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+      return false;
+    }
+  }
+#endif
+
+#if INCLUDE_JFR
+  if (status && (FlightRecorderOptions || StartFlightRecording)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", addmods_count++)) {
       return false;
     }
   }
@@ -3879,11 +3788,13 @@ static void apply_debugger_ergo() {
   }
 #endif
 
+#ifndef PRODUCT
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
   }
+#endif
 
   if (UseDebuggerErgo2) {
     // Debugging with limited number of CPUs
@@ -4146,11 +4057,6 @@ jint Arguments::apply_ergo() {
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
-
-  if (LogTouchedMethods) {
-    warning("LogTouchedMethods is not supported for Zero");
-    FLAG_SET_DEFAULT(LogTouchedMethods, false);
-  }
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -4407,4 +4313,79 @@ bool Arguments::copy_expand_pid(const char* src, size_t srclen,
   }
   *b = '\0';
   return (p == src_end); // return false if not all of the source was copied
+}
+
+bool Arguments::parse_malloc_limit_size(const char* s, size_t* out) {
+  julong limit = 0;
+  Arguments::ArgsRange range = parse_memory_size(s, &limit, 1, SIZE_MAX);
+  switch (range) {
+  case ArgsRange::arg_in_range:
+    *out = (size_t)limit;
+    return true;
+  case ArgsRange::arg_too_big: // only possible on 32-bit
+    vm_exit_during_initialization("MallocLimit: too large", s);
+    break;
+  case ArgsRange::arg_too_small:
+    vm_exit_during_initialization("MallocLimit: limit must be > 0");
+    break;
+  default:
+    break;
+  }
+  return false;
+}
+
+// Helper for parse_malloc_limits
+void Arguments::parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]) {
+  // <category>:<limit>
+  char* colon = ::strchr(expression, ':');
+  if (colon == nullptr) {
+    vm_exit_during_initialization("MallocLimit: colon missing", expression);
+  }
+  *colon = '\0';
+  MEMFLAGS f = NMTUtil::string_to_flag(expression);
+  if (f == mtNone) {
+    vm_exit_during_initialization("MallocLimit: invalid nmt category", expression);
+  }
+  if (parse_malloc_limit_size(colon + 1, limits + (int)f) == false) {
+    vm_exit_during_initialization("Invalid MallocLimit size", colon + 1);
+  }
+}
+
+void Arguments::parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]) {
+
+  // Reset output to 0
+  *total_limit = 0;
+  for (int i = 0; i < mt_number_of_types; i ++) {
+    limits[i] = 0;
+  }
+
+  // We are done if the option is not given.
+  if (MallocLimit == nullptr) {
+    return;
+  }
+
+  // Global form?
+  if (parse_malloc_limit_size(MallocLimit, total_limit)) {
+    return;
+  }
+
+  // No. So it must be in category-specific form: MallocLimit=<nmt category>:<size>[,<nmt category>:<size> ..]
+  char* copy = os::strdup(MallocLimit);
+  if (copy == nullptr) {
+    vm_exit_out_of_memory(strlen(MallocLimit), OOM_MALLOC_ERROR, "MallocLimit");
+  }
+
+  char* p = copy, *q;
+  do {
+    q = p;
+    p = ::strchr(q, ',');
+    if (p != nullptr) {
+      *p = '\0';
+      p ++;
+    }
+    parse_single_category_limit(q, limits);
+  } while (p != nullptr);
+
+  os::free(copy);
+
 }

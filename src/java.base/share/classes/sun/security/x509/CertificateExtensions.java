@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
 
     private static final Debug debug = Debug.getInstance("x509");
 
-    private Map<String,Extension> map = Collections.synchronizedMap(
-            new TreeMap<String,Extension>());
+    private final Map<String,Extension> map = Collections.synchronizedMap(
+            new TreeMap<>());
     private boolean unsupportedCritExt = false;
 
     private Map<String,Extension> unparseableExtensions;
@@ -86,7 +86,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
         }
     }
 
-    private static Class<?>[] PARAMS = {Boolean.class, Object.class};
+    private static final Class<?>[] PARAMS = {Boolean.class, Object.class};
 
     // Parse the encoded extension
     private void parseExtension(Extension ext) throws IOException {
@@ -112,10 +112,10 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
             }
         } catch (InvocationTargetException invk) {
             Throwable e = invk.getCause();
-            if (ext.isCritical() == false) {
+            if (!ext.isCritical()) {
                 // ignore errors parsing non-critical extensions
                 if (unparseableExtensions == null) {
-                    unparseableExtensions = new TreeMap<String,Extension>();
+                    unparseableExtensions = new TreeMap<>();
                 }
                 unparseableExtensions.put(ext.getExtensionId().toString(),
                         new UnparseableExtension(ext, e));
@@ -236,7 +236,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
         map.remove(name);
     }
 
-    public String getNameByOid(ObjectIdentifier oid) throws IOException {
+    public String getNameByOid(ObjectIdentifier oid) {
         for (String name: map.keySet()) {
             if (map.get(name).getExtensionId().equals(oid)) {
                 return name;
@@ -262,11 +262,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     }
 
     public Map<String,Extension> getUnparseableExtensions() {
-        if (unparseableExtensions == null) {
-            return Collections.emptyMap();
-        } else {
-            return unparseableExtensions;
-        }
+        return (unparseableExtensions == null) ?
+                Collections.emptyMap() : unparseableExtensions;
     }
 
     /**

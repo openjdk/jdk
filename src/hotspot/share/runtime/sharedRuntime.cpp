@@ -97,6 +97,7 @@ SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
 #endif // COMPILER2
 
+nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_stubs() {
@@ -270,6 +271,10 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #endif
 JRT_END
 
+JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
+  return (jfloat)x;
+JRT_END
+
 #ifdef __SOFTFP__
 JRT_LEAF(jfloat, SharedRuntime::fadd(jfloat x, jfloat y))
   return x + y;
@@ -301,10 +306,6 @@ JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::ddiv(jdouble x, jdouble y))
   return x / y;
-JRT_END
-
-JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
-  return (jfloat)x;
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::i2d(jint x))
@@ -445,6 +446,86 @@ JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::l2d(jlong x))
   return (jdouble)x;
+JRT_END
+
+// Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
+JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
+  jint doppel = SharedRuntime::f2i(x);
+  jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
+  if (g_isnan(x))
+    return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
+
+  jfloat abs_f = (x >= 0.0f) ? x : (x * -1.0f);
+
+  // Overflow threshold is halffloat max value + 1/2 ulp
+  if (abs_f >= (65504.0f + 16.0f)) {
+    return (jshort)(sign_bit | 0x7c00); // Positive or negative infinity
+  }
+
+  // Smallest magnitude of Halffloat is 0x1.0p-24, half-way or smaller rounds to zero
+  if (abs_f <= (pow(2, -24) * 0.5f)) { // Covers float zeros and subnormals.
+    return sign_bit; // Positive or negative zero
+  }
+
+  jint exp = 0x7f800000 & doppel;
+
+  // For binary16 subnormals, beside forcing exp to -15, retain
+  // the difference exp_delta = E_min - exp.  This is the excess
+  // shift value, in addition to 13, to be used in the
+  // computations below. Further the (hidden) msb with value 1
+  // in f must be involved as well
+  jint exp_delta = 0;
+  jint msb = 0x00000000;
+  if (exp < -14) {
+    exp_delta = -14 - exp;
+    exp = -15;
+    msb = 0x00800000;
+  }
+  jint f_signif_bits = ((doppel & 0x007fffff) | msb);
+
+  // Significand bits as if using rounding to zero
+  jshort signif_bits = (jshort)(f_signif_bits >> (13 + exp_delta));
+
+  jint lsb = f_signif_bits & (1 << (13 + exp_delta));
+  jint round  = f_signif_bits & (1 << (12 + exp_delta));
+  jint sticky = f_signif_bits & ((1 << (12 + exp_delta)) - 1);
+
+  if (round != 0 && ((lsb | sticky) != 0 )) {
+    signif_bits++;
+  }
+
+  return (jshort)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
+JRT_END
+
+// Reference implementation at src/java.base/share/classes/java/lang/Float.java:float16ToFloat
+JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
+  // Halffloat format has 1 signbit, 5 exponent bits and
+  // 10 significand bits
+  jint hf_arg = (jint)x;
+  jint hf_sign_bit = 0x8000 & hf_arg;
+  jint hf_exp_bits = 0x7c00 & hf_arg;
+  jint hf_significand_bits = 0x03ff & hf_arg;
+
+  jint significand_shift = 13; //difference between float and halffloat precision
+
+  jfloat sign = (hf_sign_bit != 0) ? -1.0f : 1.0f;
+
+  // Extract halffloat exponent, remove its bias
+  jint hf_exp = (hf_exp_bits >> 10) - 15;
+
+  if (hf_exp == -15) {
+    // For subnormal values, return 2^-24 * significand bits
+    return (sign * (pow(2,-24)) * hf_significand_bits);
+  }else if (hf_exp == 16) {
+    return (hf_significand_bits == 0) ? sign * float_infinity : (SharedRuntime::i2f((hf_sign_bit << 16) | 0x7f800000 |
+           (hf_significand_bits << significand_shift)));
+  }
+
+  // Add the bias of float exponent and shift
+  int float_exp_bits = (hf_exp + 127) << (24 - 1);
+
+  // Combine sign, exponent and significand bits
+  return SharedRuntime::i2f((hf_sign_bit << 16) | float_exp_bits | (hf_significand_bits << significand_shift));
 JRT_END
 
 // Exception handling across interpreter/compiler boundaries
@@ -995,12 +1076,15 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-jlong SharedRuntime::get_java_tid(Thread* thread) {
-  if (thread != NULL && thread->is_Java_thread()) {
-    oop obj = JavaThread::cast(thread)->threadObj();
-    return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
+jlong SharedRuntime::get_java_tid(JavaThread* thread) {
+  assert(thread != NULL, "No thread");
+  if (thread == NULL) {
+    return 0;
   }
-  return 0;
+  guarantee(Thread::current() != thread || thread->is_oop_safe(),
+            "current cannot touch oops after its GC barrier is detached.");
+  oop obj = thread->threadObj();
+  return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
 }
 
 /**
@@ -1009,14 +1093,14 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
 int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
-  return dtrace_object_alloc(Thread::current(), o, o->size());
+  return dtrace_object_alloc(JavaThread::current(), o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o) {
   return dtrace_object_alloc(thread, o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();
@@ -1290,7 +1374,6 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
     callee = NULL;
   }
-  nmethodLocker nl_callee(callee);
 #ifdef ASSERT
   address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
 #endif
@@ -1386,7 +1469,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
          (!is_virtual && invoke_code == Bytecodes::_invokedynamic) ||
          ( is_virtual && invoke_code != Bytecodes::_invokestatic ), "inconsistent bytecode");
 
-  assert(caller_nm->is_alive() && !caller_nm->is_unloading(), "It should be alive");
+  assert(!caller_nm->is_unloading(), "It should not be unloading");
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
@@ -2014,8 +2097,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
 
   AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
 
-  address entry_point = moop->from_compiled_entry_no_trampoline();
-
   // It's possible that deoptimization can occur at a call site which hasn't
   // been resolved yet, in which case this function will be called from
   // an nmethod that has been patched for deopt and we can ignore the
@@ -2026,8 +2107,16 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // "to interpreter" stub in order to load up the Method*. Don't
   // ask me how I know this...
 
+  // Result from nmethod::is_unloading is not stable across safepoints.
+  NoSafepointVerifier nsv;
+
+  CompiledMethod* callee = moop->code();
+  if (callee == NULL) {
+    return;
+  }
+
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
-  if (cb == NULL || !cb->is_compiled() || entry_point == moop->get_c2i_entry()) {
+  if (cb == NULL || !cb->is_compiled() || callee->is_unloading()) {
     return;
   }
 
@@ -2085,6 +2174,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         }
       }
       address destination = call->destination();
+      address entry_point = callee->verified_entry_point();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
         call->set_destination_mt_safe(entry_point);
       }
@@ -2294,7 +2384,7 @@ class MethodArityHistogram {
 
   static void add_method_to_histogram(nmethod* nm) {
     Method* method = (nm == NULL) ? NULL : nm->method();
-    if ((method != NULL) && nm->is_alive()) {
+    if (method != NULL) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -3004,6 +3094,9 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
+
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
 
   assert(method->is_native(), "must be native");
   assert(method->is_special_native_intrinsic() ||

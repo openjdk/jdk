@@ -1062,7 +1062,7 @@ public class CSS implements Serializable {
     private static final Hashtable<String, Value> valueMap = new Hashtable<String, Value>();
 
     /**
-     * The hashtable and the static initalization block below,
+     * The hashtable and the static initialization block below,
      * set up a mapping from well-known HTML attributes to
      * CSS attributes.  For the most part, there is a 1-1 mapping
      * between the two.  However in the case of certain HTML
@@ -1772,13 +1772,13 @@ public class CSS implements Serializable {
 
     /**
      * Base class to CSS values in the attribute sets.  This
-     * is intended to act as a convertor to/from other attribute
+     * is intended to act as a converter to/from other attribute
      * formats.
      * <p>
      * The CSS parser uses the parseCssValue method to convert
-     * a string to whatever format is appropriate a given key
-     * (i.e. these convertors are stored in a map using the
-     * CSS.Attribute as a key and the CssValue as the value).
+     * a string to whatever format is appropriate for a given key
+     * (i.e. these converters are stored in a map using the
+     * CSS.Attribute as the key and the CssValue as the value).
      * <p>
      * The HTML to CSS conversion process first converts the
      * HTML.Attribute to a CSS.Attribute, and then calls
@@ -3251,7 +3251,7 @@ public class CSS implements Serializable {
         /**
          * Parses the shorthand margin/padding/border string
          * <code>value</code>, placing the result in <code>attr</code>.
-         * <code>names</code> give the 4 instrinsic property names.
+         * <code>names</code> give the 4 intrinsic property names.
          */
         static void parseShorthandMargin(CSS css, String value,
                                          MutableAttributeSet attr,
@@ -3622,7 +3622,7 @@ public class CSS implements Serializable {
 
 
     /*
-     * we need StyleSheet for resolving lenght units. (see
+     * we need StyleSheet for resolving length units. (see
      * isW3CLengthUnits)
      * we can not pass stylesheet for handling relative sizes. (do not
      * think changing public API is necessary)

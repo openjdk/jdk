@@ -423,6 +423,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	-
 #
 # Buenos Aires (BA), Capital Federal (CF),
 Zone America/Argentina/Buenos_Aires -3:53:48 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May    # Córdoba Mean Time
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -440,6 +441,7 @@ Zone America/Argentina/Buenos_Aires -3:53:48 - LMT	1894 Oct 31
 # - Santiago del Estero switched to -4:00 on 1991-04-01,
 #   then to -3:00 on 1991-04-26.
 #
+		#STDOFF	       -4:16:48.25
 Zone America/Argentina/Cordoba -4:16:48 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
@@ -452,6 +454,7 @@ Zone America/Argentina/Cordoba -4:16:48 - LMT	1894 Oct 31
 #
 # Salta (SA), La Pampa (LP), Neuquén (NQ), Rio Negro (RN)
 Zone America/Argentina/Salta -4:21:40 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -464,6 +467,7 @@ Zone America/Argentina/Salta -4:21:40 - LMT	1894 Oct 31
 #
 # Tucumán (TM)
 Zone America/Argentina/Tucuman -4:20:52 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -477,6 +481,7 @@ Zone America/Argentina/Tucuman -4:20:52 - LMT	1894 Oct 31
 #
 # La Rioja (LR)
 Zone America/Argentina/La_Rioja -4:27:24 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -491,6 +496,7 @@ Zone America/Argentina/La_Rioja -4:27:24 - LMT	1894 Oct 31
 #
 # San Juan (SJ)
 Zone America/Argentina/San_Juan -4:34:04 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -505,6 +511,7 @@ Zone America/Argentina/San_Juan -4:34:04 - LMT	1894 Oct 31
 #
 # Jujuy (JY)
 Zone America/Argentina/Jujuy -4:21:12 -	LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -520,6 +527,7 @@ Zone America/Argentina/Jujuy -4:21:12 -	LMT	1894 Oct 31
 #
 # Catamarca (CT), Chubut (CH)
 Zone America/Argentina/Catamarca -4:23:08 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -534,6 +542,7 @@ Zone America/Argentina/Catamarca -4:23:08 - LMT	1894 Oct 31
 #
 # Mendoza (MZ)
 Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -556,6 +565,7 @@ Rule	SanLuis	2008	2009	-	Mar	Sun>=8	0:00	0	-
 Rule	SanLuis	2007	2008	-	Oct	Sun>=8	0:00	1:00	-
 
 Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -574,6 +584,7 @@ Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 #
 # Santa Cruz (SC)
 Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -586,6 +597,7 @@ Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT	1894 Oct 31
 #
 # Tierra del Fuego, Antártida e Islas del Atlántico Sur (TF)
 Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
+		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	-04	1930 Dec
 			-4:00	Arg	-04/-03	1969 Oct  5
@@ -668,7 +680,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Rodrigo Severo (2004-10-04):
 # It's just the biannual change made necessary by the much hyped, supposedly
-# modern Brazilian eletronic voting machines which, apparently, can't deal
+# modern Brazilian ... voting machines which, apparently, can't deal
 # with a time change between the first and the second rounds of the elections.
 
 # From Steffen Thorsen (2007-09-20):
@@ -1164,7 +1176,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # this is known to work for DST transitions starting in 2008 and
 # may well be true for earlier transitions.
 
-# From Tim Parenti (2022-03-15):
+# From Tim Parenti (2022-07-06):
 # For a brief period of roughly six weeks in 1946, DST was only observed on an
 # emergency basis in specific regions of central Chile; namely, "the national
 # territory between the provinces of Coquimbo and Concepción, inclusive".
@@ -1182,7 +1194,14 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # Law Number 8,522, promulgated 1946-08-27, reunified Chilean clocks at their
 # new "Summer Time" of -04, reckoned as that of "the meridian of the
 # Astronomical Observatory of Lo Espejo, advanced by 42 minutes and 45
-# seconds".
+# seconds".  Although this law specified the new Summer Time to start on 1
+# September each year, a special "transitional article" started it a few days
+# early, as soon as the law took effect.  As the law was to take force "from
+# the date of its publication in the 'Diario Oficial', which happened the
+# following day, presume the change took place in Santiago and its environs
+# from 24:00 -03 to 23:00 -04 on Wednesday 1946-08-28.  Although this was a
+# no-op for wall clocks in the north and south of the country, put their formal
+# start to DST an hour later when they reached 24:00 -04.
 # https://www.diariooficial.interior.gob.cl/versiones-anteriores/do-h/19460828/#page/1
 # After a brief "Winter Time" stint at -05 beginning 1947-04-01, Law Number
 # 8,777, promulgated 1947-05-17, established year-round -04 "from 23:00 on the
@@ -1302,11 +1321,25 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # So we extend the new rules on Saturdays at 24:00 mainland time indefinitely.
 # From Juan Correa (2019-02-04):
 # http://www.diariooficial.interior.gob.cl/publicaciones/2018/11/23/42212/01/1498738.pdf
-# From Paul Eggert (2019-09-01):
-# The above says the Magallanes exception expires 2022-04-02 at 24:00,
-# so in theory, they will revert to -04/-03 after that.
-# For now, assume that they will not revert,
-# since they have extended the expiration date once already.
+
+# From Juan Correa (2022-04-02):
+# I found there was a decree published last Thursday that will keep
+# Magallanes region to UTC -3 "indefinitely". The decree is available at
+# https://www.diariooficial.interior.gob.cl/publicaciones/2022/03/31/43217-B/01/2108910.pdf
+
+# From Juan Correa (2022-08-09):
+# the Internal Affairs Ministry (Ministerio del Interior) informed DST
+# for America/Santiago will start on midnight of September 11th;
+# and will end on April 1st, 2023. Magallanes region (America/Punta_Arenas)
+# will keep UTC -3 "indefinitely"...  This is because on September 4th
+# we will have a voting whether to approve a new Constitution.
+#
+# From Eduardo Romero Urra (2022-08-17):
+# https://www.diariooficial.interior.gob.cl/publicaciones/2022/08/13/43327/01/2172567.pdf
+#
+# From Paul Eggert (2022-08-17):
+# Although the presidential decree stops at fall 2026, assume that
+# similar DST rules will continue thereafter.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-
@@ -1344,7 +1377,9 @@ Rule	Chile	2012	2014	-	Sep	Sun>=2	4:00u	1:00	-
 Rule	Chile	2016	2018	-	May	Sun>=9	3:00u	0	-
 Rule	Chile	2016	2018	-	Aug	Sun>=9	4:00u	1:00	-
 Rule	Chile	2019	max	-	Apr	Sun>=2	3:00u	0	-
-Rule	Chile	2019	max	-	Sep	Sun>=2	4:00u	1:00	-
+Rule	Chile	2019	2021	-	Sep	Sun>=2	4:00u	1:00	-
+Rule	Chile	2022	only	-	Sep	Sun>=9	4:00u	1:00	-
+Rule	Chile	2023	max	-	Sep	Sun>=2	4:00u	1:00	-
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1357,9 +1392,9 @@ Zone America/Santiago	-4:42:45 -	LMT	1890
 			-5:00	Chile	-05/-04	1932 Sep  1
 			-4:00	-	-04	1942 Jun  1
 			-5:00	-	-05	1942 Aug  1
-			-4:00	-	-04	1946 Jul 15
-			-4:00	1:00	-03	1946 Sep  1 # central Chile
-			-4:00	-	-04	1947 Apr  1
+			-4:00	-	-04	1946 Jul 14 24:00
+			-4:00	1:00	-03	1946 Aug 28 24:00 # central CL
+			-5:00	1:00	-04	1947 Mar 31 24:00
 			-5:00	-	-05	1947 May 21 23:00
 			-4:00	Chile	-04/-03
 Zone America/Punta_Arenas -4:43:40 -	LMT	1890
@@ -1371,7 +1406,8 @@ Zone America/Punta_Arenas -4:43:40 -	LMT	1890
 			-5:00	Chile	-05/-04	1932 Sep  1
 			-4:00	-	-04	1942 Jun  1
 			-5:00	-	-05	1942 Aug  1
-			-4:00	-	-04	1947 Apr  1
+			-4:00	-	-04	1946 Aug 28 24:00
+			-5:00	1:00	-04	1947 Mar 31 24:00
 			-5:00	-	-05	1947 May 21 23:00
 			-4:00	Chile	-04/-03	2016 Dec  4
 			-3:00	-	-03
@@ -1405,13 +1441,14 @@ Zone Antarctica/Palmer	0	-	-00	1965
 
 # Colombia
 
-# Milne gives 4:56:16.4 for Bogotá time in 1899; round to nearest.  He writes,
+# Milne gives 4:56:16.4 for Bogotá time in 1899.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	CO	1992	only	-	May	 3	0:00	1:00	-
 Rule	CO	1993	only	-	Apr	 4	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-4:56:16.4
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 			-4:56:16 -	BMT	1914 Nov 23 # Bogotá Mean Time
 			-5:00	CO	-05/-04

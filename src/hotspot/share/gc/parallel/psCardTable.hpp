@@ -87,7 +87,7 @@ class PSCardTable: public CardTable {
   }
 
   // ReduceInitialCardMarks support
-  bool is_in_young(oop obj) const;
+  bool is_in_young(const void* p) const override;
 
 #ifdef ASSERT
   bool is_valid_card_address(CardValue* addr) {

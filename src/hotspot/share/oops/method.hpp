@@ -134,7 +134,10 @@ class Method : public Metadata {
 
   virtual bool is_method() const { return true; }
 
+#if INCLUDE_CDS
+  void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+#endif
 
   // accessors for instance variables
 
@@ -144,7 +147,6 @@ class Method : public Metadata {
 
   static address make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
-  address from_compiled_entry_no_trampoline() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -404,14 +406,6 @@ class Method : public Metadata {
     }
   }
 
-  int nmethod_age() const {
-    if (method_counters() == NULL) {
-      return INT_MAX;
-    } else {
-      return method_counters()->nmethod_age();
-    }
-  }
-
   int invocation_count() const;
   int backedge_count() const;
 
@@ -431,10 +425,6 @@ class Method : public Metadata {
   // for PrintMethodData in a product build
   int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
-
-  // Clear (non-shared space) pointers which could not be relevant
-  // if this (shared) method were mapped into another JVM.
-  void remove_unshareable_info();
 
   // nmethod/verified compiler entry
   address verified_code_entry();
@@ -538,9 +528,9 @@ public:
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
   // prints byte codes
-  void print_codes() const            { print_codes_on(tty); }
-  void print_codes_on(outputStream* st) const;
-  void print_codes_on(int from, int to, outputStream* st) const;
+  void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
+  void print_codes_on(outputStream* st, int flags = 0) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
 
   // method parameters
   bool has_method_parameters() const
@@ -736,6 +726,8 @@ public:
 
   // Continuation
   inline bool is_continuation_enter_intrinsic() const;
+  inline bool is_continuation_yield_intrinsic() const;
+  inline bool is_continuation_native_intrinsic() const;
   inline bool is_special_native_intrinsic() const;
 
   static Klass* check_non_bcp_klass(Klass* klass);
@@ -971,9 +963,6 @@ public:
 
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(const methodHandle& m, TRAPS);
-
-  // Return if true if not all classes references in signature, including return type, has been loaded
-  static bool has_unloaded_classes_in_signature(const methodHandle& m, TRAPS);
 
   // Printing
   void print_short_name(outputStream* st = tty) const; // prints as klassname::methodname; Exposed so field engineers can debug VM

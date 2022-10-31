@@ -38,7 +38,7 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_
   _first_nmethod(NULL),
   _claimed_nmethod(NULL) {
   // Get first alive nmethod
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
+  CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   if(iter.next()) {
     _first_nmethod = iter.method();
   }
@@ -52,13 +52,13 @@ CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
 
 void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {
   CompiledMethod* first;
-  CompiledMethodIterator last(CompiledMethodIterator::only_alive);
+  CompiledMethodIterator last(CompiledMethodIterator::all_blobs);
 
   do {
     *num_claimed_nmethods = 0;
 
     first = _claimed_nmethod;
-    last = CompiledMethodIterator(CompiledMethodIterator::only_alive, first);
+    last = CompiledMethodIterator(CompiledMethodIterator::all_blobs, first);
 
     if (first != NULL) {
 

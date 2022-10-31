@@ -100,6 +100,8 @@
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
+                                                                                                                                     \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
@@ -228,7 +230,6 @@
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
-  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
@@ -337,7 +338,6 @@
   static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
   static_field(StubRoutines,                _bigIntegerRightShiftWorker,                      address)                               \
   static_field(StubRoutines,                _bigIntegerLeftShiftWorker,                       address)                               \
-  static_field(StubRoutines,                _cont_doYield,                                    address)                               \
   static_field(StubRoutines,                _cont_thaw,                                       address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \

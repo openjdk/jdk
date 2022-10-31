@@ -174,46 +174,105 @@ char* ReallocateHeap(char *old,
 // handles NULL pointers
 void FreeHeap(void* p);
 
-template <MEMFLAGS F> class CHeapObj {
+class CHeapObjBase {
+ public:
+  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) throw() {
+    return AllocateHeap(size, f);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  MEMFLAGS f,
+                                  const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  MEMFLAGS f,
+                                  const std::nothrow_t&,
+                                  const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  MEMFLAGS f,
+                                  const std::nothrow_t&) throw() {
+    return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) throw() {
+    return AllocateHeap(size, f);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    MEMFLAGS f,
+                                    const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    MEMFLAGS f,
+                                    const std::nothrow_t&,
+                                    const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    MEMFLAGS f,
+                                    const std::nothrow_t&) throw() {
+    return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
+  }
+
+  void operator delete(void* p)     { FreeHeap(p); }
+  void operator delete [] (void* p) { FreeHeap(p); }
+};
+
+// Uses the implicitly static new and delete operators of CHeapObjBase
+template<MEMFLAGS F>
+class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size) throw() {
-    return (void*)AllocateHeap(size, F);
+    return CHeapObjBase::operator new(size, F);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
                                   const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack);
+    return CHeapObjBase::operator new(size, F, stack);
   }
 
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&,
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt,
                                   const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+    return CHeapObjBase::operator new(size, F, nt, stack);
   }
 
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt) throw() {
+    return CHeapObjBase::operator new(size, F, nt);
   }
 
   ALWAYSINLINE void* operator new[](size_t size) throw() {
-    return (void*)AllocateHeap(size, F);
+    return CHeapObjBase::operator new[](size, F);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                  const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack);
-  }
-
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&,
                                     const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+    return CHeapObjBase::operator new[](size, F, stack);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt,
+                                    const NativeCallStack& stack) throw() {
+    return CHeapObjBase::operator new[](size, F, nt, stack);
   }
 
-  void  operator delete(void* p)     { FreeHeap(p); }
-  void  operator delete [] (void* p) { FreeHeap(p); }
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt) throw() {
+    return CHeapObjBase::operator new[](size, F, nt);
+  }
+
+  void operator delete(void* p)     {
+    CHeapObjBase::operator delete(p);
+  }
+
+  void operator delete [] (void* p) {
+    CHeapObjBase::operator delete[](p);
+  }
 };
 
 // Base class for objects allocated on the stack only.
@@ -270,6 +329,7 @@ class MetaspaceObj {
   // non-shared or shared metaspace.
   static bool is_valid(const MetaspaceObj* p);
 
+#if INCLUDE_CDS
   static bool is_shared(const MetaspaceObj* p) {
     // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
     // both be NULL and all values of p will be rejected quickly.
@@ -277,6 +337,10 @@ class MetaspaceObj {
             ((void*)p) >= _shared_metaspace_base);
   }
   bool is_shared() const { return MetaspaceObj::is_shared(this); }
+#else
+  static bool is_shared(const MetaspaceObj* p) { return false; }
+  bool is_shared() const { return false; }
+#endif
 
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 

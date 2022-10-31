@@ -161,12 +161,6 @@ public:
   }
 };
 
-static size_t ceil_log2(size_t value) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
-  return ret;
-}
-
 void SymbolTable::create_table ()  {
   size_t start_size_log_2 = ceil_log2(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
@@ -635,7 +629,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
   ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
   for (int i = 0; i < len; i++) {
-    Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));
+    Symbol* sym = ArchiveBuilder::get_buffered_symbol(symbols->at(i));
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");

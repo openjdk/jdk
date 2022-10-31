@@ -66,6 +66,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void purge(bool at_safepoint);
   static void clear_claimed_marks();
   static void clear_claimed_marks(int claim);
+  static void verify_claimed_marks_cleared(int claim);
   // Iteration through CLDG inside a safepoint; GC support
   static void cld_do(CLDClosure* cl);
   static void cld_unloading_do(CLDClosure* cl);
@@ -103,8 +104,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void verify_dictionary();
   static void print_dictionary(outputStream* st);
   static void print_table_statistics(outputStream* st);
-
-  static int resize_dictionaries();
 
   static bool has_metaspace_oom()           { return _metaspace_oom; }
   static void set_metaspace_oom(bool value) { _metaspace_oom = value; }

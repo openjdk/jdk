@@ -43,15 +43,18 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB), \
-    DISABLED_WARNINGS_gcc := format-nonliteral unused-function, \
-    DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand \
-        format-nonliteral undef, \
-    DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
+    DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral, \
+    DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
+    DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
+    DISABLED_WARNINGS_microsoft_InetAddress.c := 4244, \
+    DISABLED_WARNINGS_microsoft_NetworkInterface.c := 4133, \
+    DISABLED_WARNINGS_microsoft_NetworkInterface_winXP.c := 4133, \
+    DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll, \
     LIBS_unix := -ljvm -ljava, \
-    LIBS_linux := $(LIBDL) -lpthread, \
+    LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_windows := ws2_32.lib jvm.lib secur32.lib iphlpapi.lib winhttp.lib \
         delayimp.lib $(WIN_JAVA_LIB) advapi32.lib, \
@@ -70,8 +73,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     OPTIMIZATION := HIGH, \
     WARNINGS_AS_ERRORS_xlc := false, \
     CFLAGS := $(CFLAGS_JDKLIB), \
-    DISABLED_WARNINGS_gcc := undef, \
-    DISABLED_WARNINGS_clang := undef, \
     EXTRA_HEADER_DIRS := \
         libnio/ch \
         libnio/fs \
@@ -83,7 +84,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation -framework CoreServices, \
-    LIBS_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
+    LIBS_windows := jvm.lib Mswsock.lib ws2_32.lib $(WIN_JAVA_LIB) \
         $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib \
         advapi32.lib, \
 ))
@@ -101,8 +102,7 @@ ifeq ($(call isTargetOs, macosx), true)
         NAME := osxsecurity, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB), \
-        DISABLED_WARNINGS_clang := deprecated-declarations \
-            missing-method-return-type, \
+        DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -130,7 +130,6 @@ ifeq ($(call isTargetOsType, unix), true)
         NAME := jsig, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
-        DISABLED_WARNINGS_gcc := undef, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_linux := $(LIBDL), \

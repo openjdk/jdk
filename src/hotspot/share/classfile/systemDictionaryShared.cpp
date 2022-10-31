@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -60,6 +60,7 @@
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -69,7 +70,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -402,7 +402,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
         THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
-      unsigned int d_hash = dictionary->compute_hash(name);
 
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
@@ -410,7 +409,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       assert(get_loader_lock_or_null(class_loader) == NULL, "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
-        InstanceKlass* check = dictionary->find_class(d_hash, name);
+        InstanceKlass* check = dictionary->find_class(THREAD, name);
         if (check != NULL) {
           return check;
         }
@@ -1060,7 +1059,9 @@ bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
   Method* method = java_lang_invoke_MemberName::vmtarget(mn);
   if (method->klass_name()->equals("java/lang/invoke/LambdaMetafactory") &&
       method->name()->equals("metafactory") &&
-      method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
+      method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;"
+            "Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;"
+            "Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
       return true;
   } else {
     if (log.is_enabled()) {
@@ -1549,73 +1550,3 @@ void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
   CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
   _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
 }
-
-#if INCLUDE_CDS_JAVA_HEAP
-
-class ArchivedMirrorPatcher {
-protected:
-  static void update(Klass* k) {
-    if (k->has_archived_mirror_index()) {
-      oop m = k->archived_java_mirror();
-      if (m != NULL) {
-        java_lang_Class::update_archived_mirror_native_pointers(m);
-      }
-    }
-  }
-
-public:
-  static void update_array_klasses(Klass* ak) {
-    while (ak != NULL) {
-      update(ak);
-      ak = ArrayKlass::cast(ak)->higher_dimension();
-    }
-  }
-
-  void do_value(const RunTimeClassInfo* info) {
-    InstanceKlass* ik = info->_klass;
-    update(ik);
-    update_array_klasses(ik->array_klasses());
-  }
-};
-
-class ArchivedLambdaMirrorPatcher : public ArchivedMirrorPatcher {
-public:
-  void do_value(const RunTimeLambdaProxyClassInfo* info) {
-    InstanceKlass* ik = info->proxy_klass_head();
-    while (ik != NULL) {
-      update(ik);
-      Klass* k = ik->next_link();
-      ik = (k != NULL) ? InstanceKlass::cast(k) : NULL;
-    }
-  }
-};
-
-void SystemDictionaryShared::update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict) {
-  ArchivedMirrorPatcher patcher;
-  dict->iterate(&patcher);
-}
-
-void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict) {
-  ArchivedLambdaMirrorPatcher patcher;
-  dict->iterate(&patcher);
-}
-
-void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::are_archived_mirrors_available()) {
-    return;
-  }
-  if (MetaspaceShared::relocation_delta() == 0) {
-    return;
-  }
-  // mirrors are not archived for the classes in the dynamic archive
-  update_archived_mirror_native_pointers_for(&_static_archive._builtin_dictionary);
-  update_archived_mirror_native_pointers_for(&_static_archive._unregistered_dictionary);
-  update_archived_mirror_native_pointers_for(&_static_archive._lambda_proxy_class_dictionary);
-
-  for (int t = T_BOOLEAN; t <= T_LONG; t++) {
-    Klass* k = Universe::typeArrayKlassObj((BasicType)t);
-    ArchivedMirrorPatcher::update_array_klasses(k);
-  }
-  ArchivedMirrorPatcher::update_array_klasses(Universe::fillerArrayKlassObj());
-}
-#endif

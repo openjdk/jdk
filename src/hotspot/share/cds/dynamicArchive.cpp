@@ -26,6 +26,8 @@
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
+#include "cds/cds_globals.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -55,10 +57,6 @@ public:
   DynamicArchiveBuilder(const char* archive_name) : _archive_name(archive_name) {}
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
-  }
-
-  template <typename T> T get_dumped_addr(T obj) {
-    return (T)ArchiveBuilder::get_dumped_addr((address)obj);
   }
 
   static int dynamic_dump_method_comparator(Method* a, Method* b) {
@@ -211,6 +209,7 @@ void DynamicArchiveBuilder::release_header() {
 
 void DynamicArchiveBuilder::post_dump() {
   ArchivePtrMarker::reset_map_and_vs();
+  ClassPrelinker::dispose();
 }
 
 void DynamicArchiveBuilder::sort_methods() {

@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -221,6 +222,9 @@ void ZHeap::flip_to_remapped() {
 void ZHeap::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
+  // Verification
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
+
   // Flip address view
   flip_to_marked();
 
@@ -335,6 +339,10 @@ void ZHeap::process_non_strong_references() {
   // during the resurrection block window, since such referents
   // are only Finalizable marked.
   _reference_processor.enqueue_references();
+
+  // Clear old markings claim bits.
+  // Note: Clearing _claim_strong also clears _claim_finalizable.
+  ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
 }
 
 void ZHeap::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {

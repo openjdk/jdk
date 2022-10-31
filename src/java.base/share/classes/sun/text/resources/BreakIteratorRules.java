@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,53 +67,6 @@ import java.util.ListResourceBundle;
 public class BreakIteratorRules extends ListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
-            // rules describing how to break between logical characters
-            { "CharacterBreakRules",
-
-              // ignore non-spacing marks and enclosing marks (since we never
-              // put a break before ignore characters, this keeps combining
-              // accents with the base characters they modify)
-              "<enclosing>=[:Mn::Me:];"
-
-              // other category definitions
-              + "<choseong>=[\u1100-\u115f];"
-              + "<jungseong>=[\u1160-\u11a7];"
-              + "<jongseong>=[\u11a8-\u11ff];"
-              + "<surr-hi>=[\ud800-\udbff];"
-              + "<surr-lo>=[\udc00-\udfff];"
-
-              // break after every character, except as follows:
-              + ".;"
-
-              // keep base and combining characters togethers
-              + "<base>=[^<enclosing>^[:Cc::Cf::Zl::Zp:]];"
-              + "<base><enclosing><enclosing>*;"
-
-              // keep CRLF sequences together
-              + "\r\n;"
-
-              // keep surrogate pairs together
-              + "<surr-hi><surr-lo>;"
-
-              // keep Hangul syllables spelled out using conjoining jamo together
-              + "<choseong>*<jungseong>*<jongseong>*;"
-
-              // various additions for Hindi support
-              + "<nukta>=[\u093c];"
-              + "<danda>=[\u0964\u0965];"
-              + "<virama>=[\u094d];"
-              + "<devVowelSign>=[\u093e-\u094c\u0962\u0963];"
-              + "<devConsonant>=[\u0915-\u0939];"
-              + "<devNuktaConsonant>=[\u0958-\u095f];"
-              + "<devCharEnd>=[\u0902\u0903\u0951-\u0954];"
-              + "<devCAMN>=(<devConsonant>{<nukta>});"
-              + "<devConsonant1>=(<devNuktaConsonant>|<devCAMN>);"
-              + "<zwj>=[\u200d];"
-              + "<devConjunct>=({<devConsonant1><virama>{<zwj>}}<devConsonant1>);"
-              + "<devConjunct>{<devVowelSign>}{<devCharEnd>};"
-              + "<danda><nukta>;"
-            },
-
             // default rules for finding word boundaries
             { "WordBreakRules",
               // ignore non-spacing marks, enclosing marks, and format characters,

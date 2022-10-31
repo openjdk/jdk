@@ -62,7 +62,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
     out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
     stringStream ss;
     prof_klass->name()->print_symbol_on(&ss);
-    out->print("%s", ss.as_string());
+    out->print("%s", ss.freeze());
     out->cr();
   }
 }

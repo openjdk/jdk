@@ -68,11 +68,11 @@ public class TestJitRestart {
         Recording r = new Recording();
         r.enable(EventNames.CodeCacheFull);
         r.enable(EventNames.Compilation);
-        r.enable(EventNames.JitRestart);
+        r.enable(EventNames.JITRestart);
         r.start();
         long addr = WHITE_BOX.allocateCodeBlob(availableSize, btype.id);
         WHITE_BOX.freeCodeBlob(addr);
-        WHITE_BOX.forceNMethodSweep();
+        WHITE_BOX.fullGC();
         r.stop();
 
         List<RecordedEvent> events = Events.fromRecording(r);
@@ -91,7 +91,7 @@ public class TestJitRestart {
             if (evt.getEventType().getName().equals("jdk.Compilation") && !compilationCanHappen) {
                 return false;
             }
-            if (evt.getEventType().getName().equals("jdk.JitRestart")) {
+            if (evt.getEventType().getName().equals("jdk.JITRestart")) {
                 System.out.println("--> jdk.JitRestart found");
                 Events.assertField(evt, "codeCacheMaxCapacity").notEqual(0L);
                 Events.assertField(evt, "freedMemory").notEqual(0L);

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
@@ -44,7 +45,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -112,9 +112,10 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool explicit_gc,
                                  bool clear_soft_refs,
-                                 bool do_maximal_compaction) :
+                                 bool do_maximal_compaction,
+                                 G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction),
+    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
@@ -180,6 +181,10 @@ void G1FullCollector::prepare_collection() {
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+    // Need cleared claim bits for the mark phase.
+    ClassLoaderDataGraph::clear_claimed_marks();
+  } else {
+    ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
   }
 
   _heap->gc_prologue(true);
@@ -210,8 +215,8 @@ void G1FullCollector::collect() {
 
   phase4_do_compaction();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 }
 
 void G1FullCollector::complete_collection() {
@@ -221,6 +226,9 @@ void G1FullCollector::complete_collection() {
   // When the pointers have been adjusted and moved, we can
   // update the derived pointer table.
   update_derived_pointers();
+
+  // Need cleared claim bits for the next concurrent marking.
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());

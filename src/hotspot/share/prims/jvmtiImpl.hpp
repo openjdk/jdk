@@ -319,6 +319,7 @@ class VM_BaseGetOrSetLocal : public VM_Operation {
   jvalue      _value;
   javaVFrame* _jvf;
   bool        _set;
+  bool        _self;
 
   static const jvalue _DEFAULT_VALUE;
 
@@ -334,7 +335,7 @@ class VM_BaseGetOrSetLocal : public VM_Operation {
 
 public:
   VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth, jint index,
-                       BasicType type, jvalue value, bool set);
+                       BasicType type, jvalue value, bool set, bool self);
 
   jvalue value()         { return _value; }
   jvmtiError result()    { return _result; }
@@ -358,14 +359,13 @@ class VM_GetOrSetLocal : public VM_BaseGetOrSetLocal {
 
 public:
   // Constructor for non-object getter
-  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type);
+  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, bool self);
 
   // Constructor for object or non-object setter
-  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value);
+  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value, bool self);
 
   // Constructor for object getter
-  VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth,
-                   int index);
+  VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index, bool self);
 
   VMOp_Type type() const { return VMOp_GetOrSetLocal; }
 
@@ -379,7 +379,7 @@ class VM_GetReceiver : public VM_GetOrSetLocal {
   virtual bool getting_receiver() const { return true; }
 
  public:
-  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth);
+  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth, bool self);
   const char* name() const                       { return "get receiver"; }
 };
 
@@ -393,15 +393,15 @@ class VM_VirtualThreadGetOrSetLocal : public VM_BaseGetOrSetLocal {
 
 public:
   // Constructor for non-object getter.
-  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth, jint index, BasicType type);
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth, jint index, BasicType type, bool self);
 
   // Constructor for object or non-object setter.
   VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
-                                jint index, BasicType type, jvalue value);
+                                jint index, BasicType type, jvalue value, bool self);
 
   // Constructor for object getter.
   VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
-                                jint depth, int index);
+                                jint depth, int index, bool self);
 
   VMOp_Type type() const { return VMOp_VirtualThreadGetOrSetLocal; }
 
@@ -413,7 +413,7 @@ class VM_VirtualThreadGetReceiver : public VM_VirtualThreadGetOrSetLocal {
   virtual bool getting_receiver() const { return true; }
 
  public:
-  VM_VirtualThreadGetReceiver(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread, jint depth);
+  VM_VirtualThreadGetReceiver(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread, jint depth, bool self);
   const char* name() const                       { return "virtual thread get receiver"; }
 };
 
@@ -500,7 +500,7 @@ class JvmtiDeferredEvent {
   void post() NOT_JVMTI_RETURN;
   void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers() NOT_JVMTI_RETURN;
-  // Sweeper support to keep nmethods from being zombied while in the queue.
+  // GC support to keep nmethods from unloading while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
@@ -543,7 +543,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void enqueue(JvmtiDeferredEvent event) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers();
 
-  // Sweeper support to keep nmethods from being zombied while in the queue.
+  // GC support to keep nmethods from unloading while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
