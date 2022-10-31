@@ -363,6 +363,7 @@ public class FileOutputStream extends OutputStream
      * @param      off   {@inheritDoc}
      * @param      len   {@inheritDoc}
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {

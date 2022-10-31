@@ -713,6 +713,7 @@ public class ObjectOutputStream
      * @param   off the start offset in the data
      * @param   len the number of bytes that are written
      * @throws  IOException {@inheritDoc}
+     * @throws  IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] buf, int off, int len) throws IOException {
