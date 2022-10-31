@@ -25,7 +25,7 @@
  * @bug 6257207
  * @key headful
  * @summary Verifies if JTable.getDefaultEditor throws NullPointerException
- * @run main JTableBugTest
+ * @run main JTableEditorNPE
  */
 import java.awt.Component;
 import javax.swing.JFrame;
@@ -38,7 +38,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.SwingUtilities;
 
-public class JTableBugTest {
+public class JTableEditorNPE {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
@@ -77,15 +77,18 @@ public class JTableBugTest {
             super.tableChanged(event);
 
             int column = event.getColumn();
-            if(column == TableModelEvent.ALL_COLUMNS)
+            if (column == TableModelEvent.ALL_COLUMNS) {
                 resizeAll();
-            else
+            }
+            else {
                 resize(column);
+            }
         }
 
         protected void resizeAll() {
-            for(int i=0; i<getModel().getColumnCount(); i++)
+            for (int i = 0; i < getModel().getColumnCount(); i++) {
                 resize(i);
+            }
         }
 
         protected void resize(int column) {
@@ -93,10 +96,9 @@ public class JTableBugTest {
             TableCellRenderer renderer = null;
             Component comp;
             int width=0;
-            for(int row=0; row<getModel().getRowCount(); row++) {
+            for (int row = 0; row < getModel().getRowCount(); row++) {
                 editor = this.getCellEditor(row, column);
-                if(editor != null)
-                {
+                if (editor != null) {
                     comp = editor.getTableCellEditorComponent(
                             this, // table
                             getModel().getValueAt(row,column), // value
@@ -104,12 +106,13 @@ public class JTableBugTest {
                             row, // row
                             column // column
                     );
-                    if(comp != null)
+                    if (comp != null) {
                         width = Math.max(width, comp.getPreferredSize().width);
+                    }
                 }
 
                 renderer = this.getCellRenderer(row, column);
-                if(renderer != null) {
+                if (renderer != null) {
                     comp = renderer.getTableCellRendererComponent(
                             this, // table
                             getModel().getValueAt(row,column), // value
@@ -118,8 +121,9 @@ public class JTableBugTest {
                             row, // row
                             column // column
                     );
-                    if(comp != null)
+                    if (comp != null) {
                         width = Math.max(width, comp.getPreferredSize().width);
+                    }
                 }
             }
 
