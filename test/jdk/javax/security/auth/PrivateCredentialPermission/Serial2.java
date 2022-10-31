@@ -32,7 +32,7 @@ import javax.security.auth.*;
 import java.io.*;
 import java.util.*;
 
-public class Serial2 implements java.io.Serializable {
+public class Serial2 {
 
     /*
      * Base64 encoding of Serialized PrivateCredentialPermission object
