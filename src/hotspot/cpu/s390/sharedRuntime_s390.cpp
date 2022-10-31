@@ -2315,9 +2315,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
   address c2i_unverified_entry;
-  Register Rtmp1 = Z_R11;
-  Register Rtmp2 = Z_R10;
-  Register Rtmp3 = Z_R9;
 
   Label skip_fixup;
   {
@@ -2343,15 +2340,15 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Check ic: object class <-> cached class
     // Compress cached class for comparison. That's more efficient.
     if (UseCompressedClassPointers) {
-      __ z_lg(Rtmp1, holder_klass_offset, Z_method);
-      __ compare_klass_ptr(Rtmp1, klass_offset, Z_ARG1, false); // Cached class can't be zero.
+      __ z_lg(Z_R11, holder_klass_offset, Z_method);
+      __ compare_klass_ptr(Z_R11, klass_offset, Z_ARG1, false); // Cached class can't be zero.
     } else {
       __ z_clc(klass_offset, sizeof(void *)-1, Z_ARG1, holder_klass_offset, Z_method);
     }
     __ z_brne(ic_miss);  // Cache miss: call runtime to handle this.
 
     // This def MUST MATCH code in gen_c2i_adapter!
-    const Register code = Rtmp1;
+    const Register code = Z_R11;
 
     __ z_lg(Z_method, holder_metadata_offset, Z_method);
     __ load_and_test_long(Z_R0, method_(code));
@@ -2372,7 +2369,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
       __ z_bfalse(L_skip_barrier); // non-static
     }
 
-    Register klass = Rtmp1;
+    Register klass = Z_R11;
     __ load_method_holder(klass, Z_method);
     __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
 
