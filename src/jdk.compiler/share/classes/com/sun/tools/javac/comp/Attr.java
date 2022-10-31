@@ -1558,7 +1558,7 @@ public class Attr extends JCTree.Visitor {
                 attribStat(tree.body, loopEnv);
             }
             else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
-                attribTree(jcRecordPattern, loopEnv, unknownExprInfo);
+                attribExpr(jcRecordPattern, loopEnv, tree.elementType);
 
                 // for(<pattern> x : xs) { y }
                 // we include x's bindings when true in y

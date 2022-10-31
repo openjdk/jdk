@@ -651,7 +651,7 @@ public class Flow {
                 visitRecordPattern(jcRecordPattern);
 
                 Set<Symbol> coveredSymbols =
-                        coveredSymbols(jcRecordPattern.pos(), tree.elementType, List.of(jcRecordPattern));
+                        coveredSymbols(jcRecordPattern.pos(), List.of(jcRecordPattern));
 
                 boolean isExhaustive =
                         isExhaustive(jcRecordPattern.pos(), tree.elementType, coveredSymbols);

@@ -26,7 +26,6 @@ public class ForEachPatterns {
 
         assertEquals(8, iteratorEnhancedFor(in));
         assertEquals(8, arrayEnhancedFor(inArray));
-        assertEquals(8, iteratorEnhancedForWithBinding(in));
         assertEquals(8, simpleDecostructionPatternWithAccesses(in));
         assertEx(ForEachPatterns::simpleDecostructionPatternWithAccesses, null, NullPointerException.class);
         assertMatchExceptionWithNested(ForEachPatterns::simpleDecostructionPatternWithAccesses, inWithNull, NullPointerException.class);
@@ -55,14 +54,6 @@ public class ForEachPatterns {
         int result = 0;
         for (Point(Integer a, Integer b) : points) {
             result += a + b;
-        }
-        return result;
-    }
-
-    static int iteratorEnhancedForWithBinding(List<Point> points) {
-        int result = 0;
-        for (Point(Integer a, Integer b) p: points) {
-            result += p.x() + p.y();
         }
         return result;
     }
