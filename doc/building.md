@@ -314,7 +314,7 @@ system should be independent factors, but in practice there's more or less a
 one-to-one correlation between target operating system and toolchain. There are
 ongoing efforts to loosen this strict coupling between compiler and operating
 system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
-is expected to be a very long time before this goal can be realized.
+will likely be a very long time before this goal can be realized.
 
  Operating system   Supported toolchain
  ------------------ -------------------------
