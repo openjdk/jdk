@@ -2006,7 +2006,7 @@ void os::die() {
   if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
+    ::raise(SIGKILL);
   } else {
     ::abort();
   }
@@ -2015,4 +2015,3 @@ void os::die() {
 const char* os::file_separator() { return "/"; }
 const char* os::line_separator() { return "\n"; }
 const char* os::path_separator() { return ":"; }
-
