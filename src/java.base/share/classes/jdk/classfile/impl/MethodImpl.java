@@ -88,9 +88,7 @@ public final class MethodImpl
     @Override
     public List<Attribute<?>> attributes() {
         if (attributes == null) {
-            @SuppressWarnings("unchecked")
-            var res = (List<Attribute<?>>) BoundAttribute.readAttributes(this, reader, attributesPos, reader.customAttributes());
-            attributes = res;
+            attributes = BoundAttribute.readAttributes(this, reader, attributesPos, reader.customAttributes());
         }
         return attributes;
     }

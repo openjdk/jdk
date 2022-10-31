@@ -58,9 +58,7 @@ public final class BoundRecordComponentInfo
     @Override
     public List<Attribute<?>> attributes() {
         if (attributes == null) {
-            @SuppressWarnings("unchecked")
-            var res = (List<Attribute<?>>) BoundAttribute.readAttributes(null, reader, attributesPos, reader.customAttributes());
-            attributes = res;
+            attributes = BoundAttribute.readAttributes(null, reader, attributesPos, reader.customAttributes());
         }
         return attributes;
     }
