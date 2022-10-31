@@ -33,7 +33,7 @@ package java.awt;
  * components should be added to the layout.
  * <p>
  * This minimal extension to {@code LayoutManager} is intended for tool
- * providers who wish to the creation of constraint-based layouts.
+ * providers who wish to create constraint-based layouts.
  * It does not yet provide full, general support for custom
  * constraint-based layout managers.
  *
