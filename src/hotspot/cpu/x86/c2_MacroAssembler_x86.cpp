@@ -3334,8 +3334,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   assert_different_registers(ary1, cnt1, result, index, coef, tmp);
   assert_different_registers(vnext, vcoef0, vcoef1, vcoef2, vcoef3, vresult0, vresult1, vresult2, vresult3, vtmp0, vtmp1, vtmp2, vtmp3);
 
-  Label SHORT_UNROLLED_BEGIN, SHORT_UNROLLED_LOOP_BEGIN, SHORT_SCALAR_BEGIN, SHORT_SCALAR_LOOP_BEGIN,
-        LONG, LONG_INIT, LONG_SCALAR_LOOP_BEGIN, LONG_SCALAR_LOOP_END, LONG_VECTOR_LOOP_BEGIN, LONG_VECTOR_LOOP_END,
+  Label SHORT_UNROLLED_BEGIN, SHORT_UNROLLED_LOOP_BEGIN, SHORT_UNROLLED_LOOP_EXIT,
+        SHORT_SCALAR_BEGIN, SHORT_SCALAR_LOOP_BEGIN,
+        LONG, LONG_INIT, LONG_SCALAR_LOOP_BEGIN, LONG_SCALAR_LOOP_END,
+        LONG_VECTOR_LOOP_BEGIN, LONG_VECTOR_LOOP_END,
         END;
 
   // For "renaming" for readibility of the code
@@ -3369,7 +3371,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   if (hashMode == VectorizedHashCodeNode::UTF16) {
     shrl(cnt1, 1);
   }
-  cmpl(cnt1, 4);
+  cmpl(cnt1, 2);
   jcc(Assembler::less, SHORT_SCALAR_BEGIN);
 
   if (generate_vectorized_loop) {
@@ -3514,48 +3516,54 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // } else if (cnt1 < 32) {
 
   bind(SHORT_UNROLLED_BEGIN);
-  // int i = 0;
-  xorl(index, index);
-  // int bound = cnt1 & ~(4 - 1);
-  bound = coef;
-  movl(bound, cnt1);
-  andl(bound, ~(4-1));
-
-  // for (; i < bound; i += 4) {
+  // int i = 1;
+  movl(index, 1);
+  if (!is_string_hashcode) {
+    movl(coef, 961);
+    imull(result, coef);
+  }
+  // for (; i < cnt1 ; i += 2) {
   bind(SHORT_UNROLLED_LOOP_BEGIN);
-  // i < bound;
-  cmpl(index, bound);
-  jccb(Assembler::greaterEqual, SHORT_SCALAR_LOOP_BEGIN);
-  for (int idx = 0; idx < 4; idx++) {
-    // h = (31 * h) or (h << 5 - h);
+  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
+  movl(coef, 31);
+  imull(tmp, coef);
+  addl(result, tmp);
+  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize)), eltype, is_string_hashcode);
+  addl(result, tmp);
+  addl(index, 2);
+  cmpl(index, cnt1);
+  jccb(Assembler::greaterEqual, SHORT_UNROLLED_LOOP_EXIT);
+  movl(coef, 961);
+  imull(result, coef);
+  jmpb(SHORT_UNROLLED_LOOP_BEGIN);
+
+  // }
+  // if (i == cnt1) {
+  bind(SHORT_UNROLLED_LOOP_EXIT);
+  cmpl(index, cnt1);
+  jccb(Assembler::greater, END);
+  movl(coef, result);
+  shll(result, 5);
+  subl(result, coef);
+  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
+  addl(result, tmp);
+  jmpb(END);
+
+  // }
+
+  bind(SHORT_SCALAR_BEGIN);
+  cmpl(cnt1, 0);
+  jccb(Assembler::equal, END);
+  // h = (31 * h) or (h << 5 - h);
+  if (!is_string_hashcode) {
     movl(tmp, result);
     shll(result, 5);
     subl(result, tmp);
-    // h += ary1[i];
-    arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize), idx * elsize), eltype, is_string_hashcode);
-    addl(result, tmp);
   }
-  addl(index, 4);
-  jmpb(SHORT_UNROLLED_LOOP_BEGIN);
-  // }
-  // for (; i < cnt1; i += 1) {
-  bind(SHORT_SCALAR_BEGIN);
-  xorl(index, index);
-  bind(SHORT_SCALAR_LOOP_BEGIN);
-  // i < cnt1;
-  cmpl(index, cnt1);
-  jcc(Assembler::greaterEqual, END);
-
-  // h = (31 * h) or (h << 5 - h);
-  movl(tmp, result);
-  shll(result, 5);
-  subl(result, tmp);
   // h += ary1[i];
-  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize)), eltype, is_string_hashcode);
+  arrays_hashcode_elload(tmp, Address(ary1, 0, Address::times(elsize)), eltype, is_string_hashcode);
   addl(result, tmp);
   // i += 1;
-  incrementl(index);
-  jmpb(SHORT_SCALAR_LOOP_BEGIN);
   // }
 
   // }
