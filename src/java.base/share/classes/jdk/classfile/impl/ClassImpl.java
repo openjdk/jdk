@@ -50,6 +50,7 @@ import jdk.classfile.FieldModel;
 import jdk.classfile.Interfaces;
 import jdk.classfile.MethodModel;
 import jdk.classfile.Superclass;
+import jdk.internal.access.SharedSecrets;
 
 public final class ClassImpl
         extends AbstractElement
@@ -126,16 +127,15 @@ public final class ClassImpl
     @Override
     public List<ClassEntry> interfaces() {
         if (interfaces == null) {
-            // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
             int pos = reader.thisClassPos() + 4;
             int cnt = reader.readU2(pos);
             pos += 2;
-            ClassEntry[] arr = new ClassEntry[cnt];
+            var arr = new Object[cnt];
             for (int i = 0; i < cnt; ++i) {
                 arr[i] = reader.readClassEntry(pos);
                 pos += 2;
             }
-            this.interfaces = List.of(arr);
+            this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(arr);
         }
         return interfaces;
     }

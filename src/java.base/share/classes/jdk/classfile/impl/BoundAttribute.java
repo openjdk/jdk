@@ -41,6 +41,7 @@ import jdk.classfile.constantpool.ModuleEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
 import jdk.classfile.constantpool.PackageEntry;
 import jdk.classfile.constantpool.Utf8Entry;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * BoundAttribute
@@ -117,18 +118,14 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     <E> List<E> readEntryList(int p) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int cnt = classReader.readU2(p);
         p += 2;
-        @SuppressWarnings("unchecked")
-        E[] entries = (E[]) new Object[cnt];
+        var entries = new Object[cnt];
         int end = p + (cnt * 2);
         for (int i = 0; p < end; i++, p += 2) {
-            @SuppressWarnings("unchecked")
-            var entry = (E) classReader.readEntry(p);
-            entries[i] = entry;
+            entries[i] = classReader.readEntry(p);
         }
-        return List.of(entries);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(entries);
     }
 
     public static <A extends Attribute<A>> List<A> readAttributes(AttributedElement enclosing, ClassReader reader, int pos,
