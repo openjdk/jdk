@@ -184,6 +184,10 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
+julong os::Linux::oscontainer_cache_timeout() {
+  return NANOSECS_PER_SEC / OsCachedMetricsRefreshRate;
+}
+
 julong os::available_memory() {
   return Linux::available_memory();
 }

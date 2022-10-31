@@ -77,7 +77,13 @@
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
                                                                         \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
-          "Write map file for Linux perf tool at exit")
+          "Write map file for Linux perf tool at exit")                 \
+                                                                        \
+  product(uint, OsCachedMetricsRefreshRate, 50,                         \
+          "Specify the refresh rate of the OS cached metrics to avoid " \
+          "re-reading container settings too often. [times per second]" \
+          "The default equals to 20ms timeout between re-reads.")       \
+          range(1, NANOSECS_PER_SEC)                                    \
 
 // end of RUNTIME_OS_FLAGS
 
