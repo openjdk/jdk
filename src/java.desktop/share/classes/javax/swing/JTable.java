@@ -704,7 +704,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
         setModel(dm);
 
-
         updateUI();
     }
 
