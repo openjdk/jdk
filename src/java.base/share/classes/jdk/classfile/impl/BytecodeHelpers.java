@@ -324,25 +324,33 @@ public class BytecodeHelpers {
 
     public static LoadableConstantEntry constantEntry(ConstantPoolBuilder constantPool,
                                                       ConstantDesc constantValue) {
-        return switch (constantValue) {
-            case Integer value ->
-                constantPool.intEntry(value);
-            case String value ->
-                constantPool.stringEntry(value);
-            case ClassDesc value ->
-                constantPool.classEntry(value);
-            case Long value ->
-                constantPool.longEntry(value);
-            case Float value ->
-                constantPool.floatEntry(value);
-            case Double value ->
-                constantPool.doubleEntry(value);
-            case MethodTypeDesc value ->
-                constantPool.methodTypeEntry(value);
-            case DirectMethodHandleDesc value ->
-                handleDescToHandleInfo(constantPool, value);
-            case DynamicConstantDesc<?> value ->
-                handleConstantDescToHandleInfo(constantPool, value);
-        };
+        // this method is invoked during JVM bootstrap - cannot use pattern switch
+        if (constantValue instanceof Integer value) {
+            return constantPool.intEntry(value);
+        }
+        if (constantValue instanceof String value) {
+            return constantPool.stringEntry(value);
+        }
+        if (constantValue instanceof ClassDesc value) {
+            return constantPool.classEntry(value);
+        }
+        if (constantValue instanceof Long value) {
+            return constantPool.longEntry(value);
+        }
+        if (constantValue instanceof Float value) {
+            return constantPool.floatEntry(value);
+        }
+        if (constantValue instanceof Double value) {
+            return constantPool.doubleEntry(value);
+        }
+        if (constantValue instanceof MethodTypeDesc value) {
+            return constantPool.methodTypeEntry(value);
+        }
+        if (constantValue instanceof DirectMethodHandleDesc value) {
+            return handleDescToHandleInfo(constantPool, value);
+        } if (constantValue instanceof DynamicConstantDesc<?> value) {
+            return handleConstantDescToHandleInfo(constantPool, value);
+        }
+        throw new UnsupportedOperationException("not yet: " + constantValue);
     }
 }
