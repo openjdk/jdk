@@ -236,7 +236,7 @@ public class Symtab {
 
     // For string templates
     public final Type stringTemplateType;
-    public final Type templateRuntimeType;
+    public final Type templateSupportType;
     public final Type validatingProcessorType;
     public final Type processorLinkage;
 
@@ -627,7 +627,7 @@ public class Symtab {
 
         // For string templates
         stringTemplateType = enterClass("java.lang.template.StringTemplate");
-        templateRuntimeType = enterClass("java.lang.template.TemplateRuntime");
+        templateSupportType = enterClass("java.lang.runtime.TemplateSupport");
         validatingProcessorType = enterClass("java.lang.template.ValidatingProcessor");
         processorLinkage = enterClass("java.lang.template.ProcessorLinkage");
 

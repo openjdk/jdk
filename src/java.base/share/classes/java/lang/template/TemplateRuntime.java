@@ -25,10 +25,16 @@
 
 package java.lang.template;
 
-import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
@@ -43,7 +49,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-public final class TemplateRuntime {
+final class TemplateRuntime {
 
     /**
      * {@link MethodHandle} to {@link TemplateRuntime#getValue(int, StringTemplate)}.
@@ -71,150 +77,6 @@ public final class TemplateRuntime {
         throw new AssertionError("private constructor");
     }
 
-    /**
-     * Templated string bootstrap method.
-     *
-     * @param lookup          method lookup
-     * @param name            method name
-     * @param type            method type
-     * @param processorGetter {@link MethodHandle} to get static final processor
-     * @param fragments       fragments from string template
-     * @return {@link CallSite} to handle templated string processing
-     * @throws NullPointerException if any of the arguments is null
-     * @throws Throwable            if linkage fails
-     */
-    public static CallSite stringTemplateBSM(
-            MethodHandles.Lookup lookup,
-            String name,
-            MethodType type,
-            MethodHandle processorGetter,
-            String... fragments) throws Throwable {
-        Objects.requireNonNull(lookup, "lookup is null");
-        Objects.requireNonNull(name, "name is null");
-        Objects.requireNonNull(type, "type is null");
-        Objects.requireNonNull(processorGetter, "processorGetter is null");
-        Objects.requireNonNull(fragments, "fragments is null");
-
-        MethodType processorGetterType = MethodType.methodType(ValidatingProcessor.class);
-        ValidatingProcessor<?, ?> processor =
-                (ValidatingProcessor<?, ?>)processorGetter.asType(processorGetterType).invokeExact();
-        TemplateBootstrap bootstrap = new TemplateBootstrap(lookup, name, type, List.of(fragments), processor);
-
-        return bootstrap.processWithProcessor();
-    }
-
-    /**
-     * Manages the boostrapping of {@link ProcessorLinkage} callsites.
-     */
-    private static final class TemplateBootstrap {
-        /**
-         * {@link MethodHandle} to {@link TemplateBootstrap#defaultProcess}.
-         */
-        private static final MethodHandle DEFAULT_PROCESS_MH;
-
-        /**
-         * {@link MethodHandles.Lookup} passed to the bootstrap method.
-         */
-        private final MethodHandles.Lookup lookup;
-
-        /**
-         * Name passed to the bootstrap method ("process").
-         */
-        private final String name;
-
-        /**
-         * {@link MethodType} passed to the bootstrap method.
-         */
-        private final MethodType type;
-
-        /**
-         * Fragments from string template.
-         */
-        private final List<String> fragments;
-
-        /**
-         * Static final processor.
-         */
-        private final ValidatingProcessor<?, ?> processor;
-
-        /**
-         * Initialize {@link MethodHandle MethodHandles}.
-         */
-        static {
-            try {
-                MethodHandles.Lookup lookup = MethodHandles.lookup();
-
-                MethodType mt = MethodType.methodType(Object.class,
-                        List.class, ValidatingProcessor.class, Object[].class);
-                DEFAULT_PROCESS_MH = lookup.findStatic(TemplateBootstrap.class, "defaultProcess", mt);
-            } catch (ReflectiveOperationException ex) {
-                throw new AssertionError("string bootstrap fail", ex);
-            }
-        }
-
-        /**
-         * Constructor.
-         *
-         * @param lookup    method lookup
-         * @param name      method name
-         * @param type      method type
-         * @param fragments fragments from string template
-         * @param processor static final processor
-         */
-        private TemplateBootstrap(MethodHandles.Lookup lookup, String name, MethodType type,
-                                  List<String> fragments,
-                                  ValidatingProcessor<?, ?> processor) {
-            this.lookup = lookup;
-            this.name = name;
-            this.type = type;
-            this.fragments = fragments;
-            this.processor = processor;
-
-        }
-
-        /**
-         * Create callsite to invoke specialized processor process method.
-         *
-         * @return {@link CallSite} for processing templated strings.
-         * @throws Throwable if linkage fails
-         */
-        private CallSite processWithProcessor() throws Throwable {
-            MethodHandle mh = processor instanceof ProcessorLinkage processorLinkage ?
-                    processorLinkage.linkage(fragments, type) : defaultProcessMethodHandle();
-
-            return new ConstantCallSite(mh);
-        }
-
-        /**
-         * Creates a simple {@link StringTemplate} and then invokes the processor's process method.
-         *
-         * @param fragments fragments from string template
-         * @param processor {@link ValidatingProcessor} to process
-         * @param values    array of expression values
-         * @return
-         */
-        private static Object defaultProcess(List<String> fragments,
-                                             ValidatingProcessor<Object, Throwable> processor,
-                                             Object[] values) throws Throwable {
-            return processor.process(new SimpleStringTemplate(fragments, List.of(values)));
-        }
-
-        /**
-         * Generate a {@link MethodHandle} which is effectively invokes
-         * {@code processor.process(new StringTemplate(fragments, values...)}.
-         *
-         * @return default process {@link MethodHandle}
-         */
-        private MethodHandle defaultProcessMethodHandle() {
-            MethodHandle mh = MethodHandles.insertArguments(DEFAULT_PROCESS_MH, 0, fragments, processor);
-            mh = mh.withVarargs(true);
-            mh = mh.asType(type);
-
-            return mh;
-        }
-
-    }
-
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
@@ -229,9 +91,6 @@ public final class TemplateRuntime {
      * @return unmodifiable list.
      *
      * @param <E>  type of elements
-     *
-     * @implNote Intended for use by {@link StringTemplate} implementations.
-     * Other usage may lead to undesired effects.
      */
     @SuppressWarnings("unchecked")
     public static <E> List<E> toList(E... elements) {

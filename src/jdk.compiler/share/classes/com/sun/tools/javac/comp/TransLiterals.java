@@ -296,7 +296,7 @@ public final class TransLiterals extends TreeTranslator {
 
         JCMethodInvocation createApplyToList(List<JCExpression> list, Type argType) {
             Type listType = makeListType(argType == null ? syms.objectType : argType);
-            JCMethodInvocation toListApplied = createApply(syms.templateRuntimeType, names.toList, list)
+            JCMethodInvocation toListApplied = createApply(syms.templateSupportType, names.toList, list)
                     .setType(listType);
             toListApplied.varargsElement = argType;
             return toListApplied;
@@ -494,7 +494,7 @@ public final class TransLiterals extends TreeTranslator {
                 staticArgsTypes = staticArgsTypes.append(syms.stringType);
             }
             Symbol bsm = rs.resolveQualifiedMethod(tree.pos(), env,
-                    syms.templateRuntimeType, bootstrapName, staticArgsTypes, List.nil());
+                    syms.templateSupportType, bootstrapName, staticArgsTypes, List.nil());
             MethodType indyType = new MethodType(argTypes, tree.type, List.nil(), syms.methodClass);
             DynamicMethodSymbol dynSym = new DynamicMethodSymbol(
                     methodName,
