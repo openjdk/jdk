@@ -92,8 +92,9 @@ final class TemplateRuntime {
      *
      * @param <E>  type of elements
      */
+    @SafeVarargs
     @SuppressWarnings("unchecked")
-    public static <E> List<E> toList(E... elements) {
+    private static <E> List<E> toList(E... elements) {
         return JUCA.listFromTrustedArrayNullsAllowed(elements);
     }
 
