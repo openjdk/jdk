@@ -41,7 +41,6 @@ public:
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null = NULL);
-  virtual void nmethod_entry_barrier(MacroAssembler* masm);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 
@@ -49,6 +48,8 @@ public:
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
+
+  virtual void nmethod_entry_barrier(MacroAssembler* masm);
 
   virtual void barrier_stubs_init() {}
 };
