@@ -264,7 +264,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
       LoadedArchiveHeapRegion* ri = &loaded_regions[num_loaded_regions++];
       ri->_region_index = i;
       ri->_region_size = r->used();
-      ri->_dumptime_base = (uintptr_t)mapinfo->start_address_as_decoded_from_archive(r);
+      ri->_dumptime_base = (uintptr_t)r->dumptime_base();
     }
   }
 

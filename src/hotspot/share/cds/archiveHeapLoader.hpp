@@ -74,7 +74,6 @@ public:
   }
 
   static ptrdiff_t runtime_delta() {
-    assert(!UseCompressedOops, "must be");
     CDS_JAVA_HEAP_ONLY(return _runtime_delta;)
     NOT_CDS_JAVA_HEAP_RETURN_(0L);
   }
@@ -163,7 +162,6 @@ public:
   }
 
   static void set_runtime_delta(ptrdiff_t delta) {
-    assert(!UseCompressedOops, "must be");
     _runtime_delta = delta;
   }
 #endif // INCLUDE_CDS_JAVA_HEAP

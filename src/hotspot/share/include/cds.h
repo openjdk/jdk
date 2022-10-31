@@ -39,7 +39,7 @@
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
-#define CURRENT_CDS_ARCHIVE_VERSION 15
+#define CURRENT_CDS_ARCHIVE_VERSION 16
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -50,9 +50,10 @@ typedef struct CDSFileMapRegion {
   int     _mapped_from_file;  // Is this region mapped from a file?
                               // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
-  size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
-                              // - for non-heap regions, the base address is SharedBaseAddress
-                              // - for heap regions, the base address is the compressed oop encoding base
+  size_t  _mapping_offset;    // This region should be mapped at this offset from SharedBaseAddress.
+                              // (For non-heap regions only. Must be zero for all other types of regions.)
+  char*   _dumptime_base;     // This region was located at this address during dumptime.
+                              // (For heap regions only. Must be zero for all other types of regions.)
   size_t  _used;              // Number of bytes actually used by this region (excluding padding bytes added
                               // for alignment purposed.
   size_t  _oopmap_offset;     // Bitmap for relocating oop fields in archived heap objects.

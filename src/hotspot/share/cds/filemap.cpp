@@ -264,6 +264,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_begin = CompressedOops::begin();
       _heap_end = CompressedOops::end();
     } else {
+      assert(UseG1GC, "only UseG1GC supports HeapShared::can_write()");
 #if INCLUDE_G1GC
       address start = (address)G1CollectedHeap::heap()->reserved().start();
       address end = (address)G1CollectedHeap::heap()->reserved().end();
@@ -1549,11 +1550,22 @@ size_t FileMapRegion::used_aligned() const {
   return align_up(used(), MetaspaceShared::core_region_alignment());
 }
 
-void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, bool read_only,
+void FileMapRegion::init(int region_index, size_t mapping_offset, char* dumptime_base, size_t size, bool read_only,
                          bool allow_exec, int crc) {
   _is_heap_region = HeapShared::is_heap_region(region_index);
   _is_bitmap_region = (region_index == MetaspaceShared::bm);
+
+  if (_is_heap_region) {
+    assert(mapping_offset == 0, "must be");
+  } else if (_is_bitmap_region) {
+    assert(mapping_offset == 0, "must be");
+    assert(dumptime_base == NULL, "must be");
+  } else {
+    assert(region_index == MetaspaceShared::ro || region_index == MetaspaceShared::rw, "must be");
+    assert(dumptime_base == NULL, "must be");
+  }
   _mapping_offset = mapping_offset;
+  _dumptime_base = dumptime_base;
   _used = size;
   _read_only = read_only;
   _allow_exec = allow_exec;
@@ -1618,6 +1630,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 
   FileMapRegion* si = space_at(region);
   char* requested_base;
+  char* dumptime_base = NULL;
   size_t mapping_offset = 0;
 
   if (region == MetaspaceShared::bm) {
@@ -1628,14 +1641,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(!DynamicDumpSharedSpaces, "must be");
     requested_base = base;
-    if (UseCompressedOops) {
-      mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
-    } else {
-#if INCLUDE_G1GC
-      mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
-#endif
-    }
-    assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
+    dumptime_base = base; // This is the rumtime address of the base (lower end) of this heap region.
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
     requested_base = ArchiveBuilder::current()->to_requested(base);
@@ -1652,7 +1658,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
   }
 
-  si->init(region, mapping_offset, size, read_only, allow_exec, crc);
+  si->init(region, mapping_offset, dumptime_base, size, read_only, allow_exec, crc);
 
   if (base != NULL) {
     write_bytes_aligned(base, size);
@@ -2060,16 +2066,6 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   return count;
 }
 
-address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode) {
-  size_t offset = spc->mapping_offset();
-  narrowOop n = CompressedOops::narrow_oop_cast(offset);
-  if (with_current_oop_encoding_mode) {
-    return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
-  } else {
-    return cast_from_oop<address>(ArchiveHeapLoader::decode_from_archive(n));
-  }
-}
-
 static MemRegion *closed_heap_regions = NULL;
 static MemRegion *open_heap_regions = NULL;
 static int num_closed_heap_regions = 0;
@@ -2080,11 +2076,8 @@ bool FileMapInfo::has_heap_regions() {
   return (space_at(MetaspaceShared::first_closed_heap_region)->used() > 0);
 }
 
-// Returns the address range of the archived heap regions computed using the
-// current oop encoding mode. This range may be different than the one seen at
-// dump time due to encoding mode differences. The result is used in determining
-// if/how these regions should be relocated at run time.
-MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
+// Returns the address range of the archived heap regions during dumptime.
+MemRegion FileMapInfo::dumptime_heap_regions_range() {
   address start = (address) max_uintx;
   address end   = NULL;
 
@@ -2094,8 +2087,8 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
     FileMapRegion* si = space_at(i);
     size_t size = si->used();
     if (size > 0) {
-      address s = start_address_as_decoded_with_current_oop_encoding_mode(si);
-      address e = s + size;
+      address s = (address)si->dumptime_base();
+      address e = (address)si->dumptime_end();
       if (start > s) {
         start = s;
       }
@@ -2177,20 +2170,14 @@ bool FileMapInfo::can_use_heap_regions() {
 address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc) {
   assert(UseSharedSpaces, "runtime only");
   spc->assert_is_heap_region();
-  if (UseCompressedOops) {
-    return start_address_as_decoded_from_archive(spc);
-  } else {
-    assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
-    return header()->heap_begin() + spc->mapping_offset() + ArchiveHeapLoader::runtime_delta();
-  }
+  return (address)(spc->dumptime_base() + ArchiveHeapLoader::runtime_delta());
 }
 
 void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
   if (UseCompressedOops) {
     ArchiveHeapLoader::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
-  } else {
-    ArchiveHeapLoader::set_runtime_delta(delta);
   }
+  ArchiveHeapLoader::set_runtime_delta(delta);
 }
 
 //
@@ -2214,8 +2201,8 @@ void FileMapInfo::map_heap_regions_impl() {
     log_info(cds)("CDS heap data needs to be relocated because the archive was created with an incompatible oop encoding mode.");
     _heap_pointers_need_patching = true;
   } else {
+    MemRegion range = dumptime_heap_regions_range();
     if (UseCompressedOops) {
-      MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
       if (!CompressedOops::is_in(range)) {
         log_info(cds)("CDS heap data needs to be relocated because");
         log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
@@ -2226,7 +2213,6 @@ void FileMapInfo::map_heap_regions_impl() {
         _heap_pointers_need_patching = true;
       }
     } else {
-      MemRegion range((HeapWord*)header()->heap_begin(), (HeapWord*)header()->heap_end());
       if (!G1CollectedHeap::heap()->reserved().contains(range)) {
         log_info(cds)("CDS heap data needs to be relocated because");
         log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
@@ -2599,14 +2585,9 @@ bool FileMapInfo::initialize() {
 }
 
 char* FileMapInfo::region_addr(int idx) {
+  assert(!DumpSharedSpaces, "runtime only");
   FileMapRegion* si = space_at(idx);
-  if (HeapShared::is_heap_region(idx)) {
-    assert(DumpSharedSpaces, "The following doesn't work at runtime");
-    return si->used() > 0 ?
-          (char*)start_address_as_decoded_with_current_oop_encoding_mode(si) : NULL;
-  } else {
-    return si->mapped_base();
-  }
+  return si->mapped_base();
 }
 
 // The 2 core spaces are RW->RO
@@ -2723,40 +2704,6 @@ bool FileMapInfo::validate_header() {
     return true;
   } else {
     return DynamicArchive::validate(this);
-  }
-}
-
-// Check if a given address is within one of the shared regions
-bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
-  assert(idx == MetaspaceShared::ro ||
-         idx == MetaspaceShared::rw, "invalid region index");
-  char* base = region_addr(idx);
-  if (p >= base && p < base + space_at(idx)->used()) {
-    return true;
-  }
-  return false;
-}
-
-// Unmap mapped regions of shared space.
-void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
-  MetaspaceShared::set_shared_metaspace_range(NULL, NULL, NULL);
-
-  FileMapInfo *map_info = FileMapInfo::current_info();
-  if (map_info) {
-    map_info->fail_continue("%s", msg);
-    for (int i = 0; i < MetaspaceShared::num_non_heap_regions; i++) {
-      if (!HeapShared::is_heap_region(i)) {
-        map_info->unmap_region(i);
-      }
-    }
-    // Dealloc the archive heap regions only without unmapping. The regions are part
-    // of the java heap. Unmapping of the heap regions are managed by GC.
-    map_info->dealloc_heap_regions(open_heap_regions,
-                                   num_open_heap_regions);
-    map_info->dealloc_heap_regions(closed_heap_regions,
-                                   num_closed_heap_regions);
-  } else if (DumpSharedSpaces) {
-    fail_stop("%s", msg);
   }
 }
 

@@ -158,8 +158,10 @@ public:
   size_t mapping_end_offset()       const { return _mapping_offset + used_aligned(); }
   size_t used()                     const { return _used; }
   size_t used_aligned()             const; // aligned up to MetaspaceShared::core_region_alignment()
+  char*  dumptime_base()            const { return _dumptime_base; }
+  char*  dumptime_end()             const { return dumptime_base() + used_aligned(); }
   char*  mapped_base()              const { return _mapped_base; }
-  char*  mapped_end()               const { return mapped_base()        + used_aligned(); }
+  char*  mapped_end()               const { return mapped_base() + used_aligned(); }
   bool   read_only()                const { return _read_only != 0; }
   bool   allow_exec()               const { return _allow_exec != 0; }
   bool   mapped_from_file()         const { return _mapped_from_file != 0; }
@@ -170,7 +172,8 @@ public:
   void set_read_only(bool v)         { _read_only = v; }
   void set_mapped_base(char* p)      { _mapped_base = p; }
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
-  void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
+  void init(int region_index, size_t mapping_offset, char* dumptime_base,
+            size_t size, bool read_only,
             bool allow_exec, int crc);
   void init_bitmaps(ArchiveHeapBitmapInfo oopmap, ArchiveHeapBitmapInfo ptrmap);
   BitMapView oopmap_view();
@@ -465,7 +468,7 @@ public:
   void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                      int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
+  MemRegion dumptime_heap_regions_range();
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
@@ -485,10 +488,6 @@ public:
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
   }
-  bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
-
-  // Stop CDS sharing and unmap CDS regions.
-  static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
@@ -585,20 +584,6 @@ public:
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
   static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
-
-  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
-
-  // The starting address of spc, as calculated with CompressedOop::decode_non_null()
-  address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {
-    return decode_start_address(spc, true);
-  }
-public:
-  // The starting address of spc, as calculated with HeapShared::decode_from_archive()
-  address start_address_as_decoded_from_archive(FileMapRegion* spc) {
-    return decode_start_address(spc, false);
-  }
-
-private:
 
 #if INCLUDE_JVMTI
   static ClassPathEntry** _classpath_entries_for_jvmti;
