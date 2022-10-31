@@ -52,501 +52,258 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(1)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Warmup(iterations = 1, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 3, timeUnit = TimeUnit.SECONDS)
 public class ArraysSort {
 
-    @Param({ "100", "1000", "10000", "100000", "1000000" })
+    @Param({ "400", "7000", "50000", "800000", "2000000" })
     int size;
 
-    Random random;
+    @Param
+    Builder builder;
 
-    @Setup(Level.Iteration)
-    public void start() {
-        random = new Random(0x777);
+    int[] b;
+
+    @Setup
+    public void init() {
+        b = new int[size];
+    }
+
+    public enum Builder {
+
+        RANDOM {
+            @Override
+            void build(int[] b) {
+                Random random = new Random(0x777);
+
+                for (int i = 0; i < b.length; ++i) {
+                    b[i] = random.nextInt();
+                }
+            }
+        },
+
+        REPEATED {
+            @Override
+            void build(int[] b) {
+                for (int i = 0; i < b.length; ++i) {
+                    b[i] = i % 11;
+                }
+            }
+        },
+
+        STAGGER {
+            @Override
+            void build(int[] b) {
+                for (int i = 0; i < b.length; ++i) {
+                    b[i] = (i * 3) % b.length;
+                }
+            }
+        },
+
+        SHUFFLE {
+            @Override
+            void build(int[] b) {
+                Random random = new Random(0x777);
+
+                for (int i = 0, j = 0, k = 1; i < b.length; ++i) {
+                    b[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
+                }
+            }
+        };
+
+        abstract void build(int[] b);
     }
 
     public static class Int extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        int[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(int[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = random.nextInt();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(int[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = i % 7;
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(int[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (i * 5) % a.length;
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(int[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
-                    }
-                }
-            };
-
-            abstract void build(int[] a, Random random);
-        }
-
-        @Setup
-        public void setup() {
-            gold = new int[size];
-        }
-
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(b);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(b);
         }
     }
 
     public static class Long extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        long[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(long[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = random.nextLong();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(long[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = i % 7;
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(long[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (i * 5L) % a.length;
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(long[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
-                    }
-                }
-            };
-
-            abstract void build(long[] a, Random random);
-        }
+        long[] a;
 
         @Setup
         public void setup() {
-            gold = new long[size];
+            a = new long[size];
         }
 
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = b[i];
+            }
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(a);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(a);
         }
     }
 
     public static class Byte extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        byte[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(byte[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) random.nextInt();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(byte[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) (i % 7);
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(byte[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) ((i * 5) % a.length);
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(byte[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (byte) (random.nextInt(6) > 0 ? (j += 2) : (k += 2));
-                    }
-                }
-            };
-
-            abstract void build(byte[] a, Random random);
-        }
+        byte[] a;
 
         @Setup
         public void setup() {
-            gold = new byte[size];
+            a = new byte[size];
         }
 
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (byte) b[i];
+            }
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(a);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(a);
         }
     }
 
     public static class Char extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        char[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(char[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) random.nextInt();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(char[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) (i % 7);
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(char[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) ((i * 5) % a.length);
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(char[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (char) (random.nextInt(6) > 0 ? (j += 2) : (k += 2));
-                    }
-                }
-            };
-
-            abstract void build(char[] a, Random random);
-        }
+        char[] a;
 
         @Setup
         public void setup() {
-            gold = new char[size];
+            a = new char[size];
         }
 
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (char) b[i];
+            }
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(a);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(a);
         }
     }
 
     public static class Short extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        short[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(short[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) random.nextInt();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(short[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) (i % 7);
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(short[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) ((i * 5) % a.length);
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(short[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (short) (random.nextInt(6) > 0 ? (j += 2) : (k += 2));
-                    }
-                }
-            };
-
-            abstract void build(short[] a, Random random);
-        }
+        short[] a;
 
         @Setup
         public void setup() {
-            gold = new short[size];
+            a = new short[size];
         }
 
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (short) b[i];
+            }
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(a);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(a);
         }
     }
 
     public static class Float extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        float[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(float[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = random.nextFloat();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(float[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = i % 7;
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(float[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (i * 5) % a.length;
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(float[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
-                    }
-                }
-            };
-
-            abstract void build(float[] a, Random random);
-        }
+        float[] a;
 
         @Setup
         public void setup() {
-            gold = new float[size];
+            a = new float[size];
         }
 
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = b[i];
+            }
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(a);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(a);
         }
     }
 
     public static class Double extends ArraysSort {
 
-        @Param
-        private Type type;
-
-        double[] gold;
-
-        public enum Type {
-
-            RANDOM {
-                @Override
-                void build(double[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = random.nextDouble();
-                    }
-                }
-            },
-
-            REPEATED {
-                @Override
-                void build(double[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = i % 7;
-                    }
-                }
-            },
-
-            STAGGER {
-                @Override
-                void build(double[] a, Random random) {
-                    for (int i = 0; i < a.length; ++i) {
-                        a[i] = (i * 5) % a.length;
-                    }
-                }
-            },
-
-            SHUFFLE {
-                @Override
-                void build(double[] a, Random random) {
-                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
-                    }
-                }
-            };
-
-            abstract void build(double[] a, Random random);
-        }
+        double[] a;
 
         @Setup
         public void setup() {
-            gold = new double[size];
+            a = new double[size];
         }
 
         @Setup(Level.Invocation)
-        public void init() {
-            type.build(gold, random);
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = b[i];
+            }
         }
 
         @Benchmark
         public void testSort() {
-            Arrays.sort(gold);
+            Arrays.sort(a);
         }
 
         @Benchmark
         public void testParallelSort() {
-            Arrays.parallelSort(gold);
+            Arrays.parallelSort(a);
         }
     }
 }

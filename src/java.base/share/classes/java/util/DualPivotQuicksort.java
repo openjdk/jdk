@@ -65,7 +65,7 @@ final class DualPivotQuicksort {
     /**
      * Max array size to use insertion sort.
      */
-    private static final int MAX_INSERTION_SORT_SIZE = 37;
+    private static final int MAX_INSERTION_SORT_SIZE = 44;
 
     /* ----------------- Merging sort section ----------------- */
 
@@ -84,19 +84,24 @@ final class DualPivotQuicksort {
     /**
      * Min array size to use Radix sort.
      */
-    private static final int MIN_RADIX_SORT_SIZE = 768;
+    private static final int MIN_RADIX_SORT_SIZE = 800;
 
     /* ------------------ Counting sort section --------------- */
 
     /**
      * Min size of a byte array to use counting sort.
      */
-    private static final int MIN_BYTE_COUNTING_SORT_SIZE = 64;
+    private static final int MIN_BYTE_COUNTING_SORT_SIZE = 36;
 
     /**
-     * Min size of a short or char array to use counting sort.
+     * Min size of a char array to use counting sort.
      */
-    private static final int MIN_SHORT_OR_CHAR_COUNTING_SORT_SIZE = 1750;
+    private static final int MIN_CHAR_COUNTING_SORT_SIZE = 1700;
+
+    /**
+     * Min size of a short array to use counting sort.
+     */
+    private static final int MIN_SHORT_COUNTING_SORT_SIZE = 2100;
 
     /* -------------------- Common section -------------------- */
 
@@ -240,7 +245,7 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data,
              * taking into account parallel context.
              */
-            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] & a[e3] < a[e4] && a[e4] < a[e5];
+            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5];
 
             if (size > MIN_RADIX_SORT_SIZE && isRandom && (sorter == null || bits > 0)
                     && tryRadixSort(sorter, a, low, high)) {
@@ -260,7 +265,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots on array of random elements.
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -443,28 +448,26 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void mixedInsertionSort(int[] a, int low, int high) {
-        int size = high - low;
+
+        /*
+         * Split part for pin and pair insertion sorts.
+         */
+        int end = high - 3 * ((high - low) >> 3 << 1);
 
         /*
          * Invoke simple insertion sort on small part.
          */
-        if (size < MAX_INSERTION_SORT_SIZE) {
+        if (end == high) {
             for (int i; ++low < high; ) {
                 int ai = a[i = low];
 
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
+                while (ai < a[i - 1]) {
+                    a[i] = a[--i];
                 }
-                a[i + 1] = ai;
+                a[i] = ai;
             }
             return;
         }
-
-        /*
-         * Split part into the golden ratio
-         * for pin and pair insertion sorts.
-         */
-        int end = high - 3 * (size >> 3 << 1);
 
         /*
          * Start with pin insertion sort.
@@ -483,10 +486,10 @@ final class DualPivotQuicksort {
             /*
              * Insert element into sorted part.
              */
-            while (ai < a[--i]) {
-                a[i + 1] = a[i];
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
             }
-            a[i + 1] = ai;
+            a[i] = ai;
         }
 
         /*
@@ -538,21 +541,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             int ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -845,24 +839,24 @@ final class DualPivotQuicksort {
         int[] count3 = new int[2048];
 
         for (int i = low; i < high; ++i) {
-            count1[ a[i]         & 0x3FF]--;
-            count2[(a[i] >>> 10) & 0x7FF]--;
-            count3[(a[i] >>> 21) ^ 0x400]--; // Reverse the sign bit
+            ++count1[ a[i]         & 0x3FF];
+            ++count2[(a[i] >>> 10) & 0x7FF];
+            ++count3[(a[i] >>> 21) ^ 0x400]; // Reverse the sign bit
         }
 
         /*
          * Detect digits to be processed.
          */
-        boolean processDigit1 = processDigit(count1, 1023, -size, high);
-        boolean processDigit2 = processDigit(count2, 2047, -size, high);
-        boolean processDigit3 = processDigit(count3, 2047, -size, high);
+        boolean processDigit1 = processDigit(count1, size, low);
+        boolean processDigit2 = processDigit(count2, size, low);
+        boolean processDigit3 = processDigit(count3, size, low);
 
         /*
          * Process the 1-st digit.
          */
         if (processDigit1) {
-            for (int i = low; i < high; ++i) {
-                b[count1[a[i] & 0x3FF]++ - offset] = a[i];
+            for (int i = high; i > low; ) {
+                b[--count1[a[--i] & 0x3FF] - offset] = a[i];
             }
         }
 
@@ -871,12 +865,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit2) {
             if (processDigit1) {
-                for (int i = start; i < last; ++i) {
-                    a[count2[(b[i] >>> 10) & 0x7FF]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count2[(b[--i] >>> 10) & 0x7FF]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count2[(a[i] >>> 10) & 0x7FF]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count2[(a[--i] >>> 10) & 0x7FF] - offset] = a[i];
                 }
             }
         }
@@ -886,12 +880,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit3) {
             if (processDigit1 ^ processDigit2) {
-                for (int i = start; i < last; ++i) {
-                    a[count3[(b[i] >>> 21) ^ 0x400]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count3[(b[--i] >>> 21) ^ 0x400]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count3[(a[i] >>> 21) ^ 0x400]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count3[(a[--i] >>> 21) ^ 0x400] - offset] = a[i];
                 }
             }
         }
@@ -906,15 +900,14 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Checks the count array and then creates histogram.
+     * Checks the count array and then computes the histogram.
      *
      * @param count the count array
-     * @param last the last index of count array
      * @param total the total number of elements
-     * @param high the index of the last element, exclusive
+     * @param low the index of the first element, inclusive
      * @return {@code true} if the digit must be processed, otherwise {@code false}
      */
-    private static boolean processDigit(int[] count, int last, int total, int high) {
+    private static boolean processDigit(int[] count, int total, int low) {
 
         /*
          * Check if we can skip given digit.
@@ -923,7 +916,7 @@ final class DualPivotQuicksort {
             if (c == total) {
                 return false;
             }
-            if (c < 0) {
+            if (c > 0) {
                 break;
             }
         }
@@ -931,10 +924,10 @@ final class DualPivotQuicksort {
         /*
          * Compute the histogram.
          */
-        count[last] += high;
+        count[0] += low;
 
-        for (int i = last; i > 0; --i) {
-            count[i - 1] += count[i];
+        for (int i = 0; ++i < count.length; ) {
+            count[i] += count[i - 1];
         }
         return true;
     }
@@ -1108,7 +1101,7 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data,
              * taking into account parallel context.
              */
-            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] & a[e3] < a[e4] && a[e4] < a[e5];
+            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5];
 
             if (size > MIN_RADIX_SORT_SIZE && isRandom && (sorter == null || bits > 0)
                     && tryRadixSort(sorter, a, low, high)) {
@@ -1128,7 +1121,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots on array of random elements.
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -1311,28 +1304,26 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void mixedInsertionSort(long[] a, int low, int high) {
-        int size = high - low;
+
+        /*
+         * Split part for pin and pair insertion sorts.
+         */
+        int end = high - 3 * ((high - low) >> 3 << 1);
 
         /*
          * Invoke simple insertion sort on small part.
          */
-        if (size < MAX_INSERTION_SORT_SIZE) {
+        if (end == high) {
             for (int i; ++low < high; ) {
                 long ai = a[i = low];
 
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
+                while (ai < a[i - 1]) {
+                    a[i] = a[--i];
                 }
-                a[i + 1] = ai;
+                a[i] = ai;
             }
             return;
         }
-
-        /*
-         * Split part into the golden ratio
-         * for pin and pair insertion sorts.
-         */
-        int end = high - 3 * (size >> 3 << 1);
 
         /*
          * Start with pin insertion sort.
@@ -1351,10 +1342,10 @@ final class DualPivotQuicksort {
             /*
              * Insert element into sorted part.
              */
-            while (ai < a[--i]) {
-                a[i + 1] = a[i];
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
             }
-            a[i + 1] = ai;
+            a[i] = ai;
         }
 
         /*
@@ -1406,21 +1397,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             long ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -1716,30 +1698,30 @@ final class DualPivotQuicksort {
         int[] count6 = new int[1024];
 
         for (int i = low; i < high; ++i) {
-            count1[(int)  (a[i]         & 0x3FF)]--;
-            count2[(int) ((a[i] >>> 10) & 0x7FF)]--;
-            count3[(int) ((a[i] >>> 21) & 0x7FF)]--;
-            count4[(int) ((a[i] >>> 32) & 0x7FF)]--;
-            count5[(int) ((a[i] >>> 43) & 0x7FF)]--;
-            count6[(int) ((a[i] >>> 54) ^ 0x200)]--; // Reverse the sign bit
+            ++count1[(int)  (a[i]         & 0x3FF)];
+            ++count2[(int) ((a[i] >>> 10) & 0x7FF)];
+            ++count3[(int) ((a[i] >>> 21) & 0x7FF)];
+            ++count4[(int) ((a[i] >>> 32) & 0x7FF)];
+            ++count5[(int) ((a[i] >>> 43) & 0x7FF)];
+            ++count6[(int) ((a[i] >>> 54) ^ 0x200)]; // Reverse the sign bit
         }
 
         /*
          * Detect digits to be processed.
          */
-        boolean processDigit1 = processDigit(count1, 1023, -size, high);
-        boolean processDigit2 = processDigit(count2, 2047, -size, high);
-        boolean processDigit3 = processDigit(count3, 2047, -size, high);
-        boolean processDigit4 = processDigit(count4, 2047, -size, high);
-        boolean processDigit5 = processDigit(count5, 2047, -size, high);
-        boolean processDigit6 = processDigit(count6, 1023, -size, high);
+        boolean processDigit1 = processDigit(count1, size, low);
+        boolean processDigit2 = processDigit(count2, size, low);
+        boolean processDigit3 = processDigit(count3, size, low);
+        boolean processDigit4 = processDigit(count4, size, low);
+        boolean processDigit5 = processDigit(count5, size, low);
+        boolean processDigit6 = processDigit(count6, size, low);
 
         /*
          * Process the 1-st digit.
          */
         if (processDigit1) {
-            for (int i = low; i < high; ++i) {
-                b[count1[(int) (a[i] & 0x3FF)]++ - offset] = a[i];
+            for (int i = high; i > low; ) {
+                b[--count1[(int) (a[--i] & 0x3FF)] - offset] = a[i];
             }
         }
 
@@ -1748,12 +1730,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit2) {
             if (processDigit1) {
-                for (int i = start; i < last; ++i) {
-                    a[count2[(int) ((b[i] >>> 10) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count2[(int) ((b[--i] >>> 10) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count2[(int) ((a[i] >>> 10) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count2[(int) ((a[--i] >>> 10) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -1763,12 +1745,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit3) {
             if (processDigit1 ^ processDigit2) {
-                for (int i = start; i < last; ++i) {
-                    a[count3[(int) ((b[i] >>> 21) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count3[(int) ((b[--i] >>> 21) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count3[(int) ((a[i] >>> 21) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count3[(int) ((a[--i] >>> 21) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -1778,12 +1760,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit4) {
             if (processDigit1 ^ processDigit2 ^ processDigit3) {
-                for (int i = start; i < last; ++i) {
-                    a[count4[(int) ((b[i] >>> 32) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count4[(int) ((b[--i] >>> 32) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count4[(int) ((a[i] >>> 32) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count4[(int) ((a[--i] >>> 32) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -1793,12 +1775,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit5) {
             if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4) {
-                for (int i = start; i < last; ++i) {
-                    a[count5[(int) ((b[i] >>> 43) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count5[(int) ((b[--i] >>> 43) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count5[(int) ((a[i] >>> 43) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count5[(int) ((a[--i] >>> 43) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -1808,12 +1790,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit6) {
             if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4 ^ processDigit5) {
-                for (int i = start; i < last; ++i) {
-                    a[count6[(int) ((b[i] >>> 54) ^ 0x200)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count6[(int) ((b[--i] >>> 54) ^ 0x200)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count6[(int) ((a[i] >>> 54) ^ 0x200)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count6[(int) ((a[--i] >>> 54) ^ 0x200)] - offset] = a[i];
                 }
             }
         }
@@ -1895,11 +1877,6 @@ final class DualPivotQuicksort {
     private static final int NUM_BYTE_VALUES = 1 << 8;
 
     /**
-     * Max index of byte counter.
-     */
-    private static final int MAX_BYTE_INDEX = Byte.MAX_VALUE + NUM_BYTE_VALUES + 1;
-
-    /**
      * Sorts the specified range of the array using counting sort.
      *
      * @param a the array to be sorted
@@ -1910,32 +1887,21 @@ final class DualPivotQuicksort {
         int[] count = new int[NUM_BYTE_VALUES];
 
         /*
-         * Compute the histogram for all values.
+         * Compute the histogram.
          */
         for (int i = high; i > low; ++count[a[--i] & 0xFF]);
 
         /*
          * Put values on their final positions.
          */
-        if (high - low > NUM_BYTE_VALUES) {
-            for (int i = MAX_BYTE_INDEX; --i > Byte.MAX_VALUE; ) {
-                int value = i & 0xFF;
+        for (int i = Byte.MAX_VALUE + 1; high > low; ) {
+            while (count[--i & 0xFF] == 0);
 
-                for (low = high - count[value]; high > low;
-                    a[--high] = (byte) value
-                );
-            }
-        } else {
-            for (int i = MAX_BYTE_INDEX; high > low; ) {
-                while (count[--i & 0xFF] == 0);
+            int num = count[i & 0xFF];
 
-                int value = i & 0xFF;
-                int c = count[value];
-
-                do {
-                    a[--high] = (byte) value;
-                } while (--c > 0);
-            }
+            do {
+                a[--high] = (byte) i;
+            } while (--num > 0);
         }
     }
 
@@ -1950,21 +1916,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             byte ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -1980,7 +1937,7 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(char[] a, int low, int high) {
-        if (high - low > MIN_SHORT_OR_CHAR_COUNTING_SORT_SIZE) {
+        if (high - low > MIN_CHAR_COUNTING_SORT_SIZE) {
             countingSort(a, low, high);
         } else {
             sort(a, 0, low, high);
@@ -2003,7 +1960,7 @@ final class DualPivotQuicksort {
         int[] count = new int[NUM_CHAR_VALUES];
 
         /*
-         * Compute the histogram for all values.
+         * Compute the histogram.
          */
         for (int i = high; i > low; ++count[a[--i]]);
 
@@ -2012,18 +1969,19 @@ final class DualPivotQuicksort {
          */
         if (high - low > NUM_CHAR_VALUES) {
             for (int i = NUM_CHAR_VALUES; i > 0; ) {
-                for (low = high - count[--i]; high > low;
-                    a[--high] = (char) i
-                );
+                for (low = high - count[--i]; high > low; ) {
+                    a[--high] = (char) i;
+                }
             }
         } else {
             for (int i = NUM_CHAR_VALUES; high > low; ) {
                 while (count[--i] == 0);
-                int c = count[i];
+
+                int num = count[i];
 
                 do {
                     a[--high] = (char) i;
-                } while (--c > 0);
+                } while (--num > 0);
             }
         }
     }
@@ -2117,7 +2075,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots on array of random elements.
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -2285,21 +2243,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             char ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -2315,7 +2264,7 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(short[] a, int low, int high) {
-        if (high - low > MIN_SHORT_OR_CHAR_COUNTING_SORT_SIZE) {
+        if (high - low > MIN_SHORT_COUNTING_SORT_SIZE) {
             countingSort(a, low, high);
         } else {
             sort(a, 0, low, high);
@@ -2328,11 +2277,6 @@ final class DualPivotQuicksort {
     private static final int NUM_SHORT_VALUES = 1 << 16;
 
     /**
-     * Max index of short counter.
-     */
-    private static final int MAX_SHORT_INDEX = Short.MAX_VALUE + NUM_SHORT_VALUES + 1;
-
-    /**
      * Sorts the specified range of the array using counting sort.
      *
      * @param a the array to be sorted
@@ -2343,31 +2287,28 @@ final class DualPivotQuicksort {
         int[] count = new int[NUM_SHORT_VALUES];
 
         /*
-         * Compute the histogram for all values.
+         * Compute the histogram.
          */
         for (int i = high; i > low; ++count[a[--i] & 0xFFFF]);
 
         /*
-         * Put values on their final positions.
+         * Place values on their final positions.
          */
         if (high - low > NUM_SHORT_VALUES) {
-            for (int i = MAX_SHORT_INDEX; --i > Short.MAX_VALUE; ) {
-                int value = i & 0xFFFF;
-
-                for (low = high - count[value]; high > low;
-                    a[--high] = (short) value
+            for (int i = Short.MAX_VALUE; i >= Short.MIN_VALUE; --i) {
+                for (low = high - count[i & 0xFFFF]; high > low;
+                    a[--high] = (short) i
                 );
             }
         } else {
-            for (int i = MAX_SHORT_INDEX; high > low; ) {
+            for (int i = Short.MAX_VALUE + 1; high > low; ) {
                 while (count[--i & 0xFFFF] == 0);
 
-                int value = i & 0xFFFF;
-                int c = count[value];
+                int num = count[i & 0xFFFF];
 
                 do {
-                    a[--high] = (short) value;
-                } while (--c > 0);
+                    a[--high] = (short) i;
+                } while (--num > 0);
             }
         }
     }
@@ -2461,7 +2402,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots on array of random elements.
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -2629,21 +2570,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             short ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -2825,7 +2757,7 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data,
              * taking into account parallel context.
              */
-            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] & a[e3] < a[e4] && a[e4] < a[e5];
+            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5];
 
             if (size > MIN_RADIX_SORT_SIZE && isRandom && (sorter == null || bits > 0)
                     && tryRadixSort(sorter, a, low, high)) {
@@ -2845,7 +2777,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots on array of random elements.
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -3028,28 +2960,26 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void mixedInsertionSort(float[] a, int low, int high) {
-        int size = high - low;
+
+        /*
+         * Split part for pin and pair insertion sorts.
+         */
+        int end = high - 3 * ((high - low) >> 3 << 1);
 
         /*
          * Invoke simple insertion sort on small part.
          */
-        if (size < MAX_INSERTION_SORT_SIZE) {
+        if (end == high) {
             for (int i; ++low < high; ) {
                 float ai = a[i = low];
 
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
+                while (ai < a[i - 1]) {
+                    a[i] = a[--i];
                 }
-                a[i + 1] = ai;
+                a[i] = ai;
             }
             return;
         }
-
-        /*
-         * Split part into the golden ratio
-         * for pin and pair insertion sorts.
-         */
-        int end = high - 3 * (size >> 3 << 1);
 
         /*
          * Start with pin insertion sort.
@@ -3068,10 +2998,10 @@ final class DualPivotQuicksort {
             /*
              * Insert element into sorted part.
              */
-            while (ai < a[--i]) {
-                a[i + 1] = a[i];
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
             }
-            a[i + 1] = ai;
+            a[i] = ai;
         }
 
         /*
@@ -3123,21 +3053,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             float ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -3430,24 +3351,24 @@ final class DualPivotQuicksort {
         int[] count3 = new int[2048];
 
         for (int i = low; i < high; ++i) {
-            count1[ fti(a[i])         & 0x3FF]--;
-            count2[(fti(a[i]) >>> 10) & 0x7FF]--;
-            count3[(fti(a[i]) >>> 21) & 0x7FF]--;
+            ++count1[ fti(a[i])         & 0x3FF];
+            ++count2[(fti(a[i]) >>> 10) & 0x7FF];
+            ++count3[(fti(a[i]) >>> 21) & 0x7FF];
         }
 
         /*
          * Detect digits to be processed.
          */
-        boolean processDigit1 = processDigit(count1, 1023, -size, high);
-        boolean processDigit2 = processDigit(count2, 2047, -size, high);
-        boolean processDigit3 = processDigit(count3, 2047, -size, high);
+        boolean processDigit1 = processDigit(count1, size, low);
+        boolean processDigit2 = processDigit(count2, size, low);
+        boolean processDigit3 = processDigit(count3, size, low);
 
         /*
          * Process the 1-st digit.
          */
         if (processDigit1) {
-            for (int i = low; i < high; ++i) {
-                b[count1[fti(a[i]) & 0x3FF]++ - offset] = a[i];
+            for (int i = high; i > low; ) {
+                b[--count1[fti(a[--i]) & 0x3FF] - offset] = a[i];
             }
         }
 
@@ -3456,12 +3377,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit2) {
             if (processDigit1) {
-                for (int i = start; i < last; ++i) {
-                    a[count2[(fti(b[i]) >>> 10) & 0x7FF]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count2[(fti(b[--i]) >>> 10) & 0x7FF]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count2[(fti(a[i]) >>> 10) & 0x7FF]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count2[(fti(a[--i]) >>> 10) & 0x7FF] - offset] = a[i];
                 }
             }
         }
@@ -3471,12 +3392,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit3) {
             if (processDigit1 ^ processDigit2) {
-                for (int i = start; i < last; ++i) {
-                    a[count3[(fti(b[i]) >>> 21) & 0x7FF]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count3[(fti(b[--i]) >>> 21) & 0x7FF]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count3[(fti(a[i]) >>> 21) & 0x7FF]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count3[(fti(a[--i]) >>> 21) & 0x7FF] - offset] = a[i];
                 }
             }
         }
@@ -3722,7 +3643,7 @@ final class DualPivotQuicksort {
              * Try Radix sort on large fully random data,
              * taking into account parallel context.
              */
-            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] & a[e3] < a[e4] && a[e4] < a[e5];
+            isRandom &= a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5];
 
             if (size > MIN_RADIX_SORT_SIZE && isRandom && (sorter == null || bits > 0)
                     && tryRadixSort(sorter, a, low, high)) {
@@ -3742,7 +3663,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots on array of random elements.
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -3925,28 +3846,26 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void mixedInsertionSort(double[] a, int low, int high) {
-        int size = high - low;
+
+        /*
+         * Split part for pin and pair insertion sorts.
+         */
+        int end = high - 3 * ((high - low) >> 3 << 1);
 
         /*
          * Invoke simple insertion sort on small part.
          */
-        if (size < MAX_INSERTION_SORT_SIZE) {
+        if (end == high) {
             for (int i; ++low < high; ) {
                 double ai = a[i = low];
 
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
+                while (ai < a[i - 1]) {
+                    a[i] = a[--i];
                 }
-                a[i + 1] = ai;
+                a[i] = ai;
             }
             return;
         }
-
-        /*
-         * Split part into the golden ratio
-         * for pin and pair insertion sorts.
-         */
-        int end = high - 3 * (size >> 3 << 1);
 
         /*
          * Start with pin insertion sort.
@@ -3965,10 +3884,10 @@ final class DualPivotQuicksort {
             /*
              * Insert element into sorted part.
              */
-            while (ai < a[--i]) {
-                a[i + 1] = a[i];
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
             }
-            a[i + 1] = ai;
+            a[i] = ai;
         }
 
         /*
@@ -4020,21 +3939,12 @@ final class DualPivotQuicksort {
         for (int i, k = low; ++k < high; ) {
             double ai = a[i = k];
 
-            if (ai < a[low]) {
-
+            if (ai < a[i - 1]) {
                 do {
-                    a[i] = a[i - 1];
-                } while (--i > low);
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
 
-                a[low] = ai;
-
-             } else if (ai < a[i - 1]) {
-
-                do {
-                    a[i] = a[i - 1];
-                } while (ai < a[--i]);
-
-                a[i + 1] = ai;
+                a[i ] = ai;
             }
         }
     }
@@ -4330,30 +4240,30 @@ final class DualPivotQuicksort {
         int[] count6 = new int[1024];
 
         for (int i = low; i < high; ++i) {
-            count1[(int)  (dtl(a[i])         & 0x3FF)]--;
-            count2[(int) ((dtl(a[i]) >>> 10) & 0x7FF)]--;
-            count3[(int) ((dtl(a[i]) >>> 21) & 0x7FF)]--;
-            count4[(int) ((dtl(a[i]) >>> 32) & 0x7FF)]--;
-            count5[(int) ((dtl(a[i]) >>> 43) & 0x7FF)]--;
-            count6[(int) ((dtl(a[i]) >>> 54) & 0x3FF)]--;
+            ++count1[(int)  (dtl(a[i])         & 0x3FF)];
+            ++count2[(int) ((dtl(a[i]) >>> 10) & 0x7FF)];
+            ++count3[(int) ((dtl(a[i]) >>> 21) & 0x7FF)];
+            ++count4[(int) ((dtl(a[i]) >>> 32) & 0x7FF)];
+            ++count5[(int) ((dtl(a[i]) >>> 43) & 0x7FF)];
+            ++count6[(int) ((dtl(a[i]) >>> 54) & 0x3FF)];
         }
 
         /*
          * Detect digits to be processed.
          */
-        boolean processDigit1 = processDigit(count1, 1023, -size, high);
-        boolean processDigit2 = processDigit(count2, 2047, -size, high);
-        boolean processDigit3 = processDigit(count3, 2047, -size, high);
-        boolean processDigit4 = processDigit(count4, 2047, -size, high);
-        boolean processDigit5 = processDigit(count5, 2047, -size, high);
-        boolean processDigit6 = processDigit(count6, 1023, -size, high);
+        boolean processDigit1 = processDigit(count1, size, low);
+        boolean processDigit2 = processDigit(count2, size, low);
+        boolean processDigit3 = processDigit(count3, size, low);
+        boolean processDigit4 = processDigit(count4, size, low);
+        boolean processDigit5 = processDigit(count5, size, low);
+        boolean processDigit6 = processDigit(count6, size, low);
 
         /*
          * Process the 1-st digit.
          */
         if (processDigit1) {
-            for (int i = low; i < high; ++i) {
-                b[count1[(int) (dtl(a[i]) & 0x3FF)]++ - offset] = a[i];
+            for (int i = high; i > low; ) {
+                b[--count1[(int) (dtl(a[--i]) & 0x3FF)] - offset] = a[i];
             }
         }
 
@@ -4362,12 +4272,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit2) {
             if (processDigit1) {
-                for (int i = start; i < last; ++i) {
-                    a[count2[(int) ((dtl(b[i]) >>> 10) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count2[(int) ((dtl(b[--i]) >>> 10) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count2[(int) ((dtl(a[i]) >>> 10) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count2[(int) ((dtl(a[--i]) >>> 10) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -4377,12 +4287,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit3) {
             if (processDigit1 ^ processDigit2) {
-                for (int i = start; i < last; ++i) {
-                    a[count3[(int) ((dtl(b[i]) >>> 21) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count3[(int) ((dtl(b[--i]) >>> 21) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count3[(int) ((dtl(a[i]) >>> 21) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count3[(int) ((dtl(a[--i]) >>> 21) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -4392,12 +4302,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit4) {
             if (processDigit1 ^ processDigit2 ^ processDigit3) {
-                for (int i = start; i < last; ++i) {
-                    a[count4[(int) ((dtl(b[i]) >>> 32) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count4[(int) ((dtl(b[--i]) >>> 32) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count4[(int) ((dtl(a[i]) >>> 32) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count4[(int) ((dtl(a[--i]) >>> 32) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -4407,12 +4317,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit5) {
             if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4) {
-                for (int i = start; i < last; ++i) {
-                    a[count5[(int) ((dtl(b[i]) >>> 43) & 0x7FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count5[(int) ((dtl(b[--i]) >>> 43) & 0x7FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count5[(int) ((dtl(a[i]) >>> 43) & 0x7FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count5[(int) ((dtl(a[--i]) >>> 43) & 0x7FF)] - offset] = a[i];
                 }
             }
         }
@@ -4422,12 +4332,12 @@ final class DualPivotQuicksort {
          */
         if (processDigit6) {
             if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4 ^ processDigit5) {
-                for (int i = start; i < last; ++i) {
-                    a[count6[(int) ((dtl(b[i]) >>> 54) & 0x3FF)]++] = b[i];
+                for (int i = last; i > start; ) {
+                    a[--count6[(int) ((dtl(b[--i]) >>> 54) & 0x3FF)]] = b[i];
                 }
             } else {
-                for (int i = low; i < high; ++i) {
-                    b[count6[(int) ((dtl(a[i]) >>> 54) & 0x3FF)]++ - offset] = a[i];
+                for (int i = high; i > low; ) {
+                    b[--count6[(int) ((dtl(a[--i]) >>> 54) & 0x3FF)] - offset] = a[i];
                 }
             }
         }
@@ -4515,7 +4425,7 @@ final class DualPivotQuicksort {
             this.size = size;
             this.offset = low;
 
-            while ((parallelism >>= 1) > 0 && (size >>= 8) > 0) {
+            while ((parallelism >>= 2) > 0 && (size >>= 2) > 0) {
                 depth -= 2;
             }
             this.b = tryAllocate(a, this.size);
