@@ -893,7 +893,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
-        setSelectedObjects(Collections.emptySet());
+        clearSelectedNodes();
     }
 
     private class ConnectionSet {
@@ -957,7 +957,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void clearSelectedNodes() {
-        setFigureSelection(Collections.emptySet());
+        setSelectedObjects(Collections.emptySet());
     }
 
     private void centerFigures(Collection<Figure> figures, boolean showIfHidden) {
