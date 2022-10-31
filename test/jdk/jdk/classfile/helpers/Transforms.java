@@ -32,8 +32,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
 import java.lang.constant.ConstantDescs;
 import java.util.stream.Stream;
 
@@ -193,9 +191,9 @@ public class Transforms {
             this.transform = bytes -> Classfile.parse(bytes, this.options).transform(classTransform);
         }
 
-        public Optional<ClassRecord> classRecord(byte[] bytes) throws IOException, ConstantPoolException {
+        public Optional<ClassRecord> classRecord(byte[] bytes) throws IOException {
             return switch (this) {
-                case ARRAYCOPY -> Optional.of(ClassRecord.ofClassFile(ClassFile.read(new ByteArrayInputStream(bytes))));
+                case ARRAYCOPY -> Optional.of(ClassRecord.ofClassModel(Classfile.parse(bytes)));
                 case SHARED_1, SHARED_2, SHARED_3,
                         UNSHARED_1, UNSHARED_2, UNSHARED_3,
                             BUILD_FROM_SCRATCH

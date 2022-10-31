@@ -50,25 +50,7 @@ import java.util.stream.Stream;
 
 import jdk.classfile.*;
 import jdk.classfile.attribute.*;
-import jdk.classfile.constantpool.ClassEntry;
-import jdk.classfile.constantpool.ConstantDynamicEntry;
-import jdk.classfile.constantpool.ConstantPool;
-import jdk.classfile.constantpool.DoubleEntry;
-import jdk.classfile.constantpool.FieldRefEntry;
-import jdk.classfile.constantpool.FloatEntry;
-import jdk.classfile.constantpool.IntegerEntry;
-import jdk.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.classfile.constantpool.InvokeDynamicEntry;
-import jdk.classfile.constantpool.LongEntry;
-import jdk.classfile.constantpool.MethodHandleEntry;
-import jdk.classfile.constantpool.MethodRefEntry;
-import jdk.classfile.constantpool.MethodTypeEntry;
-import jdk.classfile.constantpool.ModuleEntry;
-import jdk.classfile.constantpool.NameAndTypeEntry;
-import jdk.classfile.constantpool.PackageEntry;
-import jdk.classfile.constantpool.PoolEntry;
-import jdk.classfile.constantpool.StringEntry;
-import jdk.classfile.constantpool.Utf8Entry;
+import jdk.classfile.constantpool.*;
 import jdk.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
@@ -147,21 +129,6 @@ public record ClassRecord(
                 AttributesRecord.ofAttributes(cl::attributes, compatibilityFilter));
     }
 
-    public static ClassRecord ofClassFile(com.sun.tools.classfile.ClassFile cf, CompatibilityFilter... compatibilityFilter) {
-        return wrapException(() -> new ClassRecord(
-                cf.major_version,
-                cf.minor_version,
-                cf.getName(),
-                cf.super_class == 0 ? null : cf.getSuperclassName(),
-                IntStream.range(0, cf.interfaces.length).boxed().map(wrapException(i -> cf.getInterfaceName(i))).collect(toSet()),
-                Flags.toString(cf.access_flags.flags, false),
-                Stream.of(cf.fields).collect(toMap(wrapException(f -> f.getName(cf.constant_pool) + f.descriptor.getValue(cf.constant_pool)), f
-                        -> FieldRecord.ofClassFileField(f, cf.constant_pool, compatibilityFilter))),
-                Stream.of(cf.methods).collect(toMap(wrapException(m -> m.getName(cf.constant_pool) + m.descriptor.getValue(cf.constant_pool)), m
-                        -> MethodRecord.ofClassFileMethod(m, cf.constant_pool, compatibilityFilter))),
-                AttributesRecord.ofClassFileAttributes(cf.attributes, cf.constant_pool, compatibilityFilter)));
-    }
-
     public record FieldRecord(
             String fieldName,
             String fieldType,
@@ -182,14 +149,6 @@ public record ClassRecord(
                     f.fieldType().stringValue(),
                     Flags.toString(f.flags().flagsMask(), false),
                     AttributesRecord.ofAttributes(f::attributes, compatibilityFilter));
-        }
-
-        public static FieldRecord ofClassFileField(com.sun.tools.classfile.Field f, com.sun.tools.classfile.ConstantPool p, CompatibilityFilter... compatibilityFilter) {
-            return wrapException(() -> new FieldRecord(
-                    f.getName(p),
-                    f.descriptor.getValue(p),
-                    Flags.toString(f.access_flags.flags, false),
-                    AttributesRecord.ofClassFileAttributes(f.attributes, p, compatibilityFilter)));
         }
     }
 
@@ -213,14 +172,6 @@ public record ClassRecord(
                     m.methodType().stringValue(),
                     Flags.toString(m.flags().flagsMask(), true),
                     AttributesRecord.ofAttributes(m::attributes, compatibilityFilter));
-        }
-
-        public static MethodRecord ofClassFileMethod(com.sun.tools.classfile.Method m, com.sun.tools.classfile.ConstantPool p, CompatibilityFilter... compatibilityFilter) {
-            return wrapException(() -> new MethodRecord(
-                    m.getName(p),
-                    m.descriptor.getValue(p),
-                    Flags.toString(m.access_flags.flags, true),
-                    AttributesRecord.ofClassFileAttributes(m.attributes, p, compatibilityFilter)));
         }
     }
 
@@ -250,10 +201,6 @@ public record ClassRecord(
         default <T extends Attribute<T>> Stream<T> findAll(AttributeMapper<T> m) {
             return get().stream().filter(a -> a.attributeMapper() == m).map(a -> (T)a);
         }
-    }
-
-    private static Stream<com.sun.tools.classfile.Attribute> getAllByName(com.sun.tools.classfile.Attributes attrs, com.sun.tools.classfile.ConstantPool p, String name) {
-        return Stream.of(attrs.attrs).filter(a -> name.equals(wrapException( () -> a.getName(p))));
     }
 
     public static <T> Collector<T,?,Set<T>> toSetOrNull() {
@@ -368,54 +315,6 @@ public record ClassRecord(
                     af.findAndMap(Attributes.SOURCE_ID, a -> a.sourceId().stringValue()),
                     af.findAndMap(Attributes.SYNTHETIC, a -> DefinedValue.DEFINED));
         }
-
-        public static AttributesRecord ofClassFileAttributes(com.sun.tools.classfile.Attributes attrs, com.sun.tools.classfile.ConstantPool p, CompatibilityFilter... cf) {
-            return new AttributesRecord(
-                    map(attrs.get(com.sun.tools.classfile.Attribute.AnnotationDefault), a -> ElementValueRecord.ofClassFileElementValue(((com.sun.tools.classfile.AnnotationDefault_attribute) a).default_value, p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.BootstrapMethods), a -> Stream.of(((com.sun.tools.classfile.BootstrapMethods_attribute) a).bootstrap_method_specifiers)
-                            .map(bm -> BootstrapMethodRecord.ofClassFileBootstrapMethodSpecifier(bm, p)).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Code), a -> CodeRecord.ofClassFileCodeAttribute((com.sun.tools.classfile.Code_attribute) a, p, cf)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.CompilationID), a -> p.getUTF8Value(((com.sun.tools.classfile.CompilationID_attribute) a).compilationID_index)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.ConstantValue), a -> ConstantPoolEntryRecord.ofClassFileCPInfo(p.get(((com.sun.tools.classfile.ConstantValue_attribute) a).constantvalue_index), p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Deprecated), a -> DefinedValue.DEFINED),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.EnclosingMethod), a -> EnclosingMethodRecord.ofClassFileEnclosingMethodAttribute((com.sun.tools.classfile.EnclosingMethod_attribute) a, p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Exceptions), a -> IntStream.range(0, ((com.sun.tools.classfile.Exceptions_attribute)a).number_of_exceptions).boxed()
-                            .map(wrapException(i -> ((com.sun.tools.classfile.Exceptions_attribute)a).getException(i, p))).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.InnerClasses), a -> Stream.of(((com.sun.tools.classfile.InnerClasses_attribute) a).classes)
-                            .collect(toMap(wrapException(innerClassInfo -> innerClassInfo.getInnerClassInfo(p).getName()), innerClassInfo -> InnerClassRecord.ofClassFileICInfo(innerClassInfo, p)))),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.MethodParameters), a -> Stream.of(((com.sun.tools.classfile.MethodParameters_attribute) a).method_parameter_table).map(mp -> MethodParameterRecord.ofClassFileMPEntry(mp, p)).toList()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Module), a -> ModuleRecord.ofClassFileModuleAttribute((com.sun.tools.classfile.Module_attribute) a, p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.ModuleHashes), a -> ModuleHashesRecord.ofClassFileModuleHashesAttribute((com.sun.tools.classfile.ModuleHashes_attribute) a, p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.ModuleMainClass), a -> ((com.sun.tools.classfile.ModuleMainClass_attribute) a).getMainClassName(p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.ModulePackages), a -> Arrays.stream(((com.sun.tools.classfile.ModulePackages_attribute) a).packages_index).boxed()
-                            .map(wrapException(i -> p.getPackageInfo(i).getName())).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.ModuleResolution), a -> ((com.sun.tools.classfile.ModuleResolution_attribute) a).resolution_flags),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.ModuleTarget), a -> p.getUTF8Value(((com.sun.tools.classfile.ModuleTarget_attribute) a).target_platform_index)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.NestHost), a -> ((com.sun.tools.classfile.NestHost_attribute) a).getNestTop(p).getName()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.NestMembers), a -> IntStream.of(((com.sun.tools.classfile.NestMembers_attribute) a).members_indexes).boxed()
-                            .map(wrapException(i -> p.getClassInfo(i).getName())).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.PermittedSubclasses), a -> IntStream.range(0, ((com.sun.tools.classfile.PermittedSubclasses_attribute)a).subtypes.length).boxed()
-                            .map(wrapException(i -> p.getClassInfo(((com.sun.tools.classfile.PermittedSubclasses_attribute)a).subtypes[i]).getName())).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Record), a -> Stream.of(((com.sun.tools.classfile.Record_attribute) a).component_info_arr)
-                            .map(ci -> RecordComponentRecord.ofClassFileComponentInfo(ci, p, cf)).toList()),
-                    getAllByName(attrs, p, com.sun.tools.classfile.Attribute.RuntimeVisibleAnnotations).flatMap(a -> Stream.of(((com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute) a).annotations))
-                            .map(ann -> AnnotationRecord.ofClassFileAnnotation(ann, p)).collect(toSetOrNull()),
-                    getAllByName(attrs, p, com.sun.tools.classfile.Attribute.RuntimeInvisibleAnnotations).flatMap(a -> Stream.of(((com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute) a).annotations))
-                            .map(ann -> AnnotationRecord.ofClassFileAnnotation(ann, p)).collect(toSetOrNull()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.RuntimeVisibleParameterAnnotations), a -> Stream.of(((com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute) a).parameter_annotations)
-                            .map(list -> Stream.of(list).map(ann -> AnnotationRecord.ofClassFileAnnotation(ann, p)).collect(toSet())).toList()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.RuntimeInvisibleParameterAnnotations), a -> Stream.of(((com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute) a).parameter_annotations)
-                            .map(list -> Stream.of(list).map(ann -> AnnotationRecord.ofClassFileAnnotation(ann, p)).collect(toSet())).toList()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.RuntimeVisibleTypeAnnotations), a -> Stream.of(((com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute) a).annotations)
-                            .map(ann -> TypeAnnotationRecord.ofClassFileTypeAnnotation(ann, p, null)).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.RuntimeInvisibleTypeAnnotations), a -> Stream.of(((com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute) a).annotations)
-                            .map(ann -> TypeAnnotationRecord.ofClassFileTypeAnnotation(ann, p, null)).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Signature), a -> ((com.sun.tools.classfile.Signature_attribute) a).getSignature(p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.SourceDebugExtension), a -> ((com.sun.tools.classfile.SourceDebugExtension_attribute) a).getValue()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.SourceFile), a -> ((com.sun.tools.classfile.SourceFile_attribute) a).getSourceFile(p)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.SourceID), a -> p.getUTF8Value(((com.sun.tools.classfile.SourceID_attribute) a).sourceID_index)),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.Synthetic), a -> DefinedValue.DEFINED));
-        }
     }
 
     public record CodeAttributesRecord(
@@ -463,22 +362,6 @@ public record ClassRecord(
                     af.findAndMap(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(ann -> TypeAnnotationRecord.ofTypeAnnotation(ann, lr, code)).collect(toSet())),
                     af.findAndMap(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(ann -> TypeAnnotationRecord.ofTypeAnnotation(ann, lr, code)).collect(toSet())));
         }
-
-        static CodeAttributesRecord ofClassFileAttributes(com.sun.tools.classfile.Attributes attrs, com.sun.tools.classfile.ConstantPool p, CodeNormalizerHelper code, CompatibilityFilter... cf) {
-            return new CodeAttributesRecord(
-                    getAllByName(attrs, p, com.sun.tools.classfile.Attribute.CharacterRangeTable).flatMap(a -> Stream.of(((com.sun.tools.classfile.CharacterRangeTable_attribute) a).character_range_table))
-                            .map(cr -> CharacterRangeRecord.ofClassFileCRTEntry(cr, code)).collect(toSetOrNull()),
-                    getAllByName(attrs, p, com.sun.tools.classfile.Attribute.LineNumberTable).flatMap(a -> Stream.of(((com.sun.tools.classfile.LineNumberTable_attribute)a).line_number_table))
-                            .map(ln -> new LineNumberRecord(ln.line_number, code.targetIndex(ln.start_pc))).collect(toSetOrNull()),
-                    getAllByName(attrs, p, com.sun.tools.classfile.Attribute.LocalVariableTable).flatMap(a -> Stream.of(((com.sun.tools.classfile.LocalVariableTable_attribute) a).local_variable_table))
-                            .map(lv -> LocalVariableRecord.ofClassFileLVTEntry(lv, code, p)).collect(toSetOrNull()),
-                    getAllByName(attrs, p, com.sun.tools.classfile.Attribute.LocalVariableTypeTable).flatMap(a -> Stream.of(((com.sun.tools.classfile.LocalVariableTypeTable_attribute) a).local_variable_table))
-                            .map(lv -> LocalVariableTypeRecord.ofClassFileLVTTEntry(lv, code, p)).collect(toSetOrNull()),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.RuntimeVisibleTypeAnnotations), a -> Stream.of(((com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute) a).annotations)
-                            .map(ann -> TypeAnnotationRecord.ofClassFileTypeAnnotation(ann, p, code)).collect(toSet())),
-                    map(attrs.get(com.sun.tools.classfile.Attribute.RuntimeInvisibleTypeAnnotations), a -> Stream.of(((com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute) a).annotations)
-                            .map(ann -> TypeAnnotationRecord.ofClassFileTypeAnnotation(ann, p, code)).collect(toSet())));
-        }
     }
 
     public record AnnotationRecord(
@@ -490,12 +373,6 @@ public record ClassRecord(
                     ann.className().stringValue(),
                     ann.elements().stream().collect(toMap(evp -> evp.name().stringValue(), evp -> ElementValueRecord.ofElementValue(evp.value()))));
         }
-
-        public static AnnotationRecord ofClassFileAnnotation(com.sun.tools.classfile.Annotation ann, com.sun.tools.classfile.ConstantPool p) {
-            return new AnnotationRecord(
-                    wrapException(() -> p.getUTF8Value(ann.type_index)),
-                    Stream.of(ann.element_value_pairs).collect(toMap(wrapException(evp -> p.getUTF8Value(evp.element_name_index)), evp -> ElementValueRecord.ofClassFileElementValue(evp.value, p))));
-        }
     }
 
     public record BootstrapMethodRecord(
@@ -506,12 +383,6 @@ public record ClassRecord(
             return new BootstrapMethodRecord(
                     ConstantPoolEntryRecord.ofCPEntry(bm.bootstrapMethod()),
                     bm.arguments().stream().map(arg -> ConstantPoolEntryRecord.ofCPEntry(arg)).toList());
-        }
-
-        public static BootstrapMethodRecord ofClassFileBootstrapMethodSpecifier(com.sun.tools.classfile.BootstrapMethods_attribute.BootstrapMethodSpecifier bm, com.sun.tools.classfile.ConstantPool p) {
-            return new BootstrapMethodRecord(
-                    ConstantPoolEntryRecord.ofClassFileCPInfo(wrapException(() -> p.get(bm.bootstrap_method_ref)), p),
-                    IntStream.of(bm.bootstrap_arguments).boxed().map(wrapException(i -> ConstantPoolEntryRecord.ofClassFileCPInfo(p.get(i), p))).toList());
         }
     }
 
@@ -530,10 +401,6 @@ public record ClassRecord(
             return new CharacterRangeRecord(
                     code.targetIndex(cr.startPc()),
                     code.targetIndex(cr.endPc() + 1), cr.characterRangeStart(), cr.characterRangeEnd(), cr.flags());
-        }
-
-        public static CharacterRangeRecord ofClassFileCRTEntry(com.sun.tools.classfile.CharacterRangeTable_attribute.Entry cre, CodeNormalizerHelper code) {
-            return new CharacterRangeRecord(code.targetIndex(cre.start_pc), code.targetIndex(cre.end_pc + 1), cre.character_range_start, cre.character_range_end, cre.flags);
         }
     }
 
@@ -722,96 +589,6 @@ public record ClassRecord(
                     CodeAttributesRecord.ofAttributes(a::attributes, codeHelper, a, cf));
         }
 
-        public static CodeRecord ofClassFileCodeAttribute(com.sun.tools.classfile.Code_attribute a, com.sun.tools.classfile.ConstantPool p, CompatibilityFilter... cf) {
-            var codeHelper = new CodeNormalizerHelper(a.code);
-            return new CodeRecord(
-                    By_ClassBuilder.isNotDirectlyComparable(cf, a.max_stack),
-                    By_ClassBuilder.isNotDirectlyComparable(cf, a.max_locals),
-                    By_ClassBuilder.isNotDirectlyComparable(cf, a.code_length),
-                    ((Supplier<List<String>>) (() -> {
-                        ArrayList<String> insList = new ArrayList<>();
-                        for (com.sun.tools.classfile.Instruction ins : a.getInstructions()) {
-                            String opCode[] = {opcodeMask(ins.getOpcode().name())};
-                            Integer hash = ins.accept(new com.sun.tools.classfile.Instruction.KindVisitor<Integer, Void>() {
-
-                                private int parametersHash(com.sun.tools.classfile.Instruction instr) {
-                                    return codeHelper.hash(instr.getPC() + 1, instr.length());
-                                }
-
-                                @Override
-                                public Integer visitNoOperands(com.sun.tools.classfile.Instruction instr, Void v) {
-                                    return null;
-                                }
-
-                                @Override
-                                public Integer visitArrayType(com.sun.tools.classfile.Instruction instr, com.sun.tools.classfile.Instruction.TypeKind kind, Void v) {
-                                    return new ConstantPoolEntryRecord.CpClassRecord("[" + ("    ZCFDBSIJ".charAt(kind.value))).hashCode() + 1;
-                                }
-
-                                @Override
-                                public Integer visitBranch(com.sun.tools.classfile.Instruction instr, int offset, Void v) {
-                                    return codeHelper.targetIndex(instr.getPC() + offset);
-                                }
-
-                                @Override
-                                public Integer visitConstantPoolRef(com.sun.tools.classfile.Instruction instr, int index, Void v) {
-                                    var cper = ConstantPoolEntryRecord.ofClassFileCPInfo(wrapException(() -> p.get(index)), p);
-                                    String altOpcode;
-                                    if (opCode[0].startsWith("LDC") && (altOpcode = cper.altOpcode()) != null) {
-                                        opCode[0] = altOpcode;
-                                        return null;
-                                    } else if (opCode[0].startsWith("NEWARRAY")) {
-                                        String type = ((ConstantPoolEntryRecord.CpClassRecord)cper).cpClass;
-                                        if (!type.startsWith("[")) type = "L" + type + ";";
-                                        return new ConstantPoolEntryRecord.CpClassRecord("[" + type).hashCode() + 1;
-                                    } else {
-                                        return cper.hashCode();
-                                    }
-                                }
-
-                                @Override
-                                public Integer visitConstantPoolRefAndValue(com.sun.tools.classfile.Instruction instr, int index, int value, Void v) {
-                                    return ConstantPoolEntryRecord.ofClassFileCPInfo(wrapException(() -> p.get(index)), p).hashCode() + (instr.getOpcode() == com.sun.tools.classfile.Opcode.INVOKEINTERFACE ? 0 : value);
-                                }
-
-                                @Override
-                                public Integer visitLocal(com.sun.tools.classfile.Instruction instr, int index, Void v) {
-                                    return index;
-                                }
-
-                                @Override
-                                public Integer visitLocalAndValue(com.sun.tools.classfile.Instruction instr, int index, int value, Void v) {
-                                    return parametersHash(instr);
-                                }
-
-                                @Override
-                                public Integer visitLookupSwitch(com.sun.tools.classfile.Instruction instr, int default_, int npairs, int[] matches, int[] offsets, Void v) {
-                                    return codeHelper.multipleTargetsHash(instr.getPC(), default_, offsets, matches);
-                                }
-
-                                @Override
-                                public Integer visitTableSwitch(com.sun.tools.classfile.Instruction instr, int default_, int low, int high, int[] offsets, Void v) {
-                                    return codeHelper.multipleTargetsHash(instr.getPC(), default_, Arrays.stream(offsets).filter(o -> o != default_).toArray(), low, high);
-                                }
-
-                                @Override
-                                public Integer visitValue(com.sun.tools.classfile.Instruction instr, int value, Void v) {
-                                    return value;
-                                }
-
-                                @Override
-                                public Integer visitUnknown(com.sun.tools.classfile.Instruction instr, Void v) {
-                                    return parametersHash(instr);
-                                }
-                            }, null);
-                            insList.add(opCode[0] + (hash != null ? '#' + Integer.toHexString(hash & 0xfff) : ""));
-                        }
-                        return insList;
-                    })).get(),
-                    Stream.of(a.exception_table).map(eh -> ExceptionHandlerRecord.ofClassFileExceptionData(eh, codeHelper, p)).collect(toSet()),
-                    CodeAttributesRecord.ofClassFileAttributes(a.attributes, p, codeHelper, cf));
-        }
-
         public record ExceptionHandlerRecord(
                 int startIndex,
                 int endIndex,
@@ -825,14 +602,6 @@ public record ClassRecord(
                         code.targetIndex(labelContext.labelToBci(et.handler())),
                         et.catchType().map(ct -> ConstantPoolEntryRecord.ofCPEntry(ct)).orElse(null));
             }
-
-            public static ExceptionHandlerRecord ofClassFileExceptionData(com.sun.tools.classfile.Code_attribute.Exception_data ed, CodeNormalizerHelper code, com.sun.tools.classfile.ConstantPool p) {
-                return new ExceptionHandlerRecord(
-                        code.targetIndex(ed.start_pc),
-                        code.targetIndex(ed.end_pc),
-                        code.targetIndex(ed.handler_pc),
-                        wrapException(() -> ed.catch_type == 0 ? null : ConstantPoolEntryRecord.ofClassFileCPInfo(p.get(ed.catch_type), p)));
-            }
         }
     }
 
@@ -844,12 +613,6 @@ public record ClassRecord(
             return new EnclosingMethodRecord(
                     ema.enclosingClass().asInternalName(),
                     ema.enclosingMethod().map(m -> ConstantPoolEntryRecord.ofCPEntry(m)).orElse(null));
-        }
-
-        public static EnclosingMethodRecord ofClassFileEnclosingMethodAttribute(com.sun.tools.classfile.EnclosingMethod_attribute ema, com.sun.tools.classfile.ConstantPool p) {
-            return wrapException(() -> new EnclosingMethodRecord(
-                    ema.getClassName(p),
-                    ema.method_index == 0 ? null : ConstantPoolEntryRecord.ofClassFileCPInfo(p.get(ema.method_index), p)));
         }
     }
 
@@ -865,14 +628,6 @@ public record ClassRecord(
                     ic.innerName().map(Utf8Entry::stringValue).orElse(null),
                     ic.outerClass().map(ClassEntry::asInternalName).orElse(null),
                     Flags.toString(ic.flagsMask(), false));
-        }
-
-        public static InnerClassRecord ofClassFileICInfo(com.sun.tools.classfile.InnerClasses_attribute.Info ic, com.sun.tools.classfile.ConstantPool p) {
-            return wrapException(() -> new InnerClassRecord(
-                    ic.getInnerClassInfo(p).getName(),
-                    ic.getInnerName(p),
-                    map(ic.getOuterClassInfo(p), ici -> ici.getName()),
-                    Flags.toString(ic.inner_class_access_flags.flags, false)));
         }
     }
 
@@ -904,15 +659,6 @@ public record ClassRecord(
                     lv.type().stringValue(),
                     lv.slot());
         }
-
-        public static LocalVariableRecord ofClassFileLVTEntry(com.sun.tools.classfile.LocalVariableTable_attribute.Entry lv, CodeNormalizerHelper code, com.sun.tools.classfile.ConstantPool p) {
-            return wrapException(() -> new LocalVariableRecord(
-                    code.targetIndex(lv.start_pc),
-                    code.targetIndex(lv.start_pc + lv.length),
-                    p.getUTF8Value(lv.name_index),
-                    p.getUTF8Value(lv.descriptor_index),
-                    lv.index));
-        }
     }
 
     public record LocalVariableTypeRecord(
@@ -939,15 +685,6 @@ public record ClassRecord(
                     lvt.signature().stringValue(),
                     lvt.slot());
         }
-
-        public static LocalVariableTypeRecord ofClassFileLVTTEntry(com.sun.tools.classfile.LocalVariableTypeTable_attribute.Entry lv, CodeNormalizerHelper code, com.sun.tools.classfile.ConstantPool p) {
-            return wrapException(() -> new LocalVariableTypeRecord(
-                    code.targetIndex(lv.start_pc),
-                    code.targetIndex(lv.start_pc + lv.length),
-                    p.getUTF8Value(lv.name_index),
-                    p.getUTF8Value(lv.signature_index),
-                    lv.index));
-        }
     }
 
     public record MethodParameterRecord(
@@ -956,10 +693,6 @@ public record ClassRecord(
 
         public static MethodParameterRecord ofMethodParameter(MethodParameterInfo mp) {
             return new MethodParameterRecord(mp.name().map(Utf8Entry::stringValue).orElse(null), mp.flagsMask());
-        }
-
-        public static MethodParameterRecord ofClassFileMPEntry(com.sun.tools.classfile.MethodParameters_attribute.Entry mp, com.sun.tools.classfile.ConstantPool p) {
-            return new MethodParameterRecord(mp.name_index == 0 ? null : wrapException(() -> p.getUTF8Value(mp.name_index)), mp.flags);
         }
     }
 
@@ -985,18 +718,6 @@ public record ClassRecord(
                     m.provides().stream().map(p -> ProvidesRecord.ofProvide(p)).collect(toSet()));
         }
 
-        public static ModuleRecord ofClassFileModuleAttribute(com.sun.tools.classfile.Module_attribute m, com.sun.tools.classfile.ConstantPool p) {
-            return wrapException(() -> new ModuleRecord(
-                    p.getModuleInfo(m.module_name).getName(),
-                    m.module_flags,
-                    m.module_version_index == 0 ? null : p.getUTF8Value(m.module_version_index),
-                    Stream.of(m.requires).map(re -> RequiresRecord.ofClassFileRequiresEntry(re, p)).collect(toSet()),
-                    Stream.of(m.exports).map(ee -> ExportsRecord.ofClassFileExportsEntry(ee, p)).collect(toSet()),
-                    Stream.of(m.opens).map(oe -> OpensRecord.ofClassFileOpensEntry(oe, p)).collect(toSet()),
-                    Arrays.stream(m.uses_index).boxed().map(wrapException(ui -> p.getClassInfo(ui).getName())).collect(toSet()),
-                    Stream.of(m.provides).map(pe -> ProvidesRecord.ofClassFileProvidesEntry(pe, p)).collect(toSet())));
-        }
-
         public record RequiresRecord(
                 String requires,
                 int requiresFlags,
@@ -1004,13 +725,6 @@ public record ClassRecord(
 
             public static RequiresRecord ofRequire(ModuleRequireInfo r) {
                 return new RequiresRecord(r.requires().name().stringValue(), r.requiresFlagsMask(), r.requiresVersion().map(v -> v.stringValue()).orElse(null));
-            }
-
-            public static RequiresRecord ofClassFileRequiresEntry(com.sun.tools.classfile.Module_attribute.RequiresEntry re, com.sun.tools.classfile.ConstantPool p) {
-                return wrapException(() -> new RequiresRecord(
-                        p.getModuleInfo(re.requires_index).getName(),
-                        re.requires_flags,
-                        re.requires_version_index == 0 ? null : p.getUTF8Value(re.requires_version_index)));
             }
         }
 
@@ -1025,14 +739,6 @@ public record ClassRecord(
                         e.exportsFlagsMask(),
                         e.exportsTo().stream().map(to -> to.name().stringValue()).collect(toSet()));
             }
-
-            public static ExportsRecord ofClassFileExportsEntry(com.sun.tools.classfile.Module_attribute.ExportsEntry ee, com.sun.tools.classfile.ConstantPool p) {
-                return new ExportsRecord(
-                        wrapException(() -> p.getPackageInfo(ee.exports_index).getName()),
-                        ee.exports_flags,
-                        Arrays.stream(ee.exports_to_index).boxed().map(wrapException(i -> p.getModuleInfo(i).getName())).collect(toSet())
-                );
-            }
         }
 
         public record OpensRecord(
@@ -1046,14 +752,6 @@ public record ClassRecord(
                         o.opensFlagsMask(),
                         o.opensTo().stream().map(to -> to.name().stringValue()).collect(toSet()));
             }
-
-            public static OpensRecord ofClassFileOpensEntry(com.sun.tools.classfile.Module_attribute.OpensEntry oe, com.sun.tools.classfile.ConstantPool p) {
-                return new OpensRecord(
-                        wrapException(() -> p.getPackageInfo(oe.opens_index).getName()),
-                        oe.opens_flags,
-                        Arrays.stream(oe.opens_to_index).boxed().map(wrapException(i -> p.getModuleInfo(i).getName())).collect(toSet())
-                );
-            }
         }
 
         public record ProvidesRecord(
@@ -1064,12 +762,6 @@ public record ClassRecord(
                 return new ProvidesRecord(
                         p.provides().asInternalName(),
                         p.providesWith().stream().map(w -> w.asInternalName()).collect(toSet()));
-            }
-
-            public static ProvidesRecord ofClassFileProvidesEntry(com.sun.tools.classfile.Module_attribute.ProvidesEntry pe, com.sun.tools.classfile.ConstantPool p) {
-                return new ProvidesRecord(
-                        wrapException(() -> p.getClassInfo(pe.provides_index).getName()),
-                        Arrays.stream(pe.with_index).boxed().map(wrapException(w -> p.getClassInfo(w).getName())).collect(toSet()));
             }
         }
 
@@ -1084,12 +776,6 @@ public record ClassRecord(
                     mh.algorithm().stringValue(),
                     mh.hashes().stream().collect(toMap(e -> e.moduleName().name().stringValue(), e -> new BigInteger(1, e.hash()).toString(16))));
         }
-
-        public static ModuleHashesRecord ofClassFileModuleHashesAttribute(com.sun.tools.classfile.ModuleHashes_attribute mh, com.sun.tools.classfile.ConstantPool p) {
-            return new ModuleHashesRecord(
-                    wrapException(() -> p.getUTF8Value(mh.algorithm_index)),
-                    Stream.of(mh.hashes_table).collect(toMap(wrapException(e -> p.getModuleInfo(e.module_name_index).getName()), e -> new BigInteger(1, e.hash).toString(16))));
-        }
     }
 
     public record RecordComponentRecord(
@@ -1100,13 +786,6 @@ public record ClassRecord(
         public static RecordComponentRecord ofRecordComponent(RecordComponentInfo rc, CompatibilityFilter... compatibilityFilter) {
             return new RecordComponentRecord(rc.name().stringValue(), rc.descriptor().stringValue(),
                                              AttributesRecord.ofAttributes(rc::attributes, compatibilityFilter));
-        }
-
-        public static RecordComponentRecord ofClassFileComponentInfo(com.sun.tools.classfile.Record_attribute.ComponentInfo ci, com.sun.tools.classfile.ConstantPool p, CompatibilityFilter... compatibilityFilter) {
-            return wrapException(() -> new RecordComponentRecord(
-                    ci.getName(p),
-                    ci.descriptor.getValue(p),
-                    AttributesRecord.ofClassFileAttributes(ci.attributes, p, compatibilityFilter)));
         }
     }
 
@@ -1154,14 +833,6 @@ public record ClassRecord(
                     AnnotationRecord.ofAnnotation(ann));
         }
 
-        public static TypeAnnotationRecord ofClassFileTypeAnnotation(com.sun.tools.classfile.TypeAnnotation ann, com.sun.tools.classfile.ConstantPool p, CodeNormalizerHelper code) {
-            return new TypeAnnotationRecord(
-                    ann.position.type.targetTypeValue(),
-                    TargetInfoRecord.ofClassFilePossition(ann.position, code),
-                    ann.position.location.stream().map(tpe -> TypePathRecord.ofClassFileTypePathEntry(tpe)).collect(toSet()),
-                    AnnotationRecord.ofClassFileAnnotation(ann.annotation, p));
-        }
-
         public interface TargetInfoRecord {
 
             public static TargetInfoRecord ofTargetInfo(TypeAnnotation.TargetInfo tiu, CodeAttribute lr, CodeNormalizerHelper code) {
@@ -1189,46 +860,6 @@ public record ClassRecord(
                 } else {
                     throw new IllegalArgumentException(tiu.getClass().getName());
                 }
-            }
-
-            public static TargetInfoRecord ofClassFilePossition(com.sun.tools.classfile.TypeAnnotation.Position pos, CodeNormalizerHelper code) {
-                return switch (pos.type) {
-                    case INSTANCEOF:
-                    case NEW:
-                    case CONSTRUCTOR_REFERENCE:
-                    case METHOD_REFERENCE:
-                        yield new OffsetTargetRecord(code.targetIndex(pos.offset));
-                    case LOCAL_VARIABLE:
-                    case RESOURCE_VARIABLE:
-                        yield new LocalVarTargetRecord(IntStream.range(0, pos.lvarOffset.length).mapToObj(i
-                                -> new LocalVarTargetRecord.EntryRecord(code.targetIndex(pos.lvarOffset[i]), code.targetIndex(pos.lvarOffset[i] + pos.lvarLength[i]), pos.lvarIndex[i])).collect(toSet()));
-                    case EXCEPTION_PARAMETER:
-                        yield new CatchTargetRecord(pos.exception_index);
-                    case CLASS_TYPE_PARAMETER:
-                    case METHOD_TYPE_PARAMETER:
-                        yield new TypeParameterTargetRecord(pos.parameter_index);
-                    case CLASS_TYPE_PARAMETER_BOUND:
-                    case METHOD_TYPE_PARAMETER_BOUND:
-                        yield new TypeParameterBoundTargetRecord(pos.parameter_index, pos.bound_index);
-                    case CLASS_EXTENDS:
-                        yield new SupertypeTargetRecord(pos.type_index);
-                    case THROWS:
-                        yield new ThrowsTargetRecord(pos.type_index);
-                    case METHOD_FORMAL_PARAMETER:
-                        yield new FormalParameterTargetRecord(pos.parameter_index);
-                    case CAST:
-                    case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
-                    case METHOD_INVOCATION_TYPE_ARGUMENT:
-                    case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
-                    case METHOD_REFERENCE_TYPE_ARGUMENT:
-                        yield new TypeArgumentTargetRecord(code.targetIndex(pos.offset), pos.type_index);
-                    case METHOD_RECEIVER:
-                    case METHOD_RETURN:
-                    case FIELD:
-                        yield new EmptyTargetRecord();
-                    case UNKNOWN:
-                        throw new IllegalArgumentException(pos.toString());
-                };
             }
 
             public record CatchTargetRecord(int exceptionTableIndex) implements TargetInfoRecord{}
@@ -1261,10 +892,6 @@ public record ClassRecord(
 
             public static TypePathRecord ofTypePathComponent(TypeAnnotation.TypePathComponent tpc) {
                 return new TypePathRecord(tpc.typePathKind().tag(), tpc.typeArgumentIndex());
-            }
-
-            public static TypePathRecord ofClassFileTypePathEntry(com.sun.tools.classfile.TypeAnnotation.Position.TypePathEntry tpe) {
-                return new TypePathRecord(tpe.tag.tag, tpe.arg);
             }
         }
     }
@@ -1309,112 +936,6 @@ public record ClassRecord(
                     new CpPackageRecord(((PackageEntry) cpInfo).name().stringValue());
                 default -> throw new IllegalArgumentException(Integer.toString(cpInfo.tag()));
             };
-        }
-
-        public static ConstantPoolEntryRecord ofClassFileCPInfo(com.sun.tools.classfile.ConstantPool.CPInfo cpInfo, com.sun.tools.classfile.ConstantPool p) {
-            return cpInfo.accept(new com.sun.tools.classfile.ConstantPool.Visitor<ConstantPoolEntryRecord, Void>() {
-                @Override
-                public ConstantPoolEntryRecord visitClass(com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info info, Void v) {
-                    return wrapException(() -> new CpClassRecord(info.getName()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitDouble(com.sun.tools.classfile.ConstantPool.CONSTANT_Double_info info, Void v) {
-                    return new CpDoubleRecord(info.value);
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitFieldref(com.sun.tools.classfile.ConstantPool.CONSTANT_Fieldref_info info, Void v) {
-                    return wrapException(() -> new CpFieldRefRecord(
-                            info.getClassName(),
-                            info.getNameAndTypeInfo().getName(),
-                            info.getNameAndTypeInfo().getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitFloat(com.sun.tools.classfile.ConstantPool.CONSTANT_Float_info info, Void v) {
-                    return new CpFloatRecord(info.value);
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitInteger(com.sun.tools.classfile.ConstantPool.CONSTANT_Integer_info info, Void v) {
-                    return new CpIntegerRecord(info.value);
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitInterfaceMethodref(com.sun.tools.classfile.ConstantPool.CONSTANT_InterfaceMethodref_info info, Void v) {
-                    return wrapException(() -> new CpInterfaceMethodRefRecord(
-                            info.getClassName(),
-                            info.getNameAndTypeInfo().getName(),
-                            info.getNameAndTypeInfo().getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitInvokeDynamic(com.sun.tools.classfile.ConstantPool.CONSTANT_InvokeDynamic_info info, Void v) {
-                    return wrapException(() -> new CpInvokeDynamicRecord(
-                            info.getNameAndTypeInfo().getName(),
-                            info.getNameAndTypeInfo().getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitDynamicConstant(com.sun.tools.classfile.ConstantPool.CONSTANT_Dynamic_info info, Void v) {
-                    return wrapException(() -> new CpConstantDynamicRecord(
-                            info.getNameAndTypeInfo().getName(),
-                            info.getNameAndTypeInfo().getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitLong(com.sun.tools.classfile.ConstantPool.CONSTANT_Long_info info, Void v) {
-                    return new CpLongRecord(info.value);
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitMethodref(com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info info, Void v) {
-                    return wrapException(() -> new CpMethodRefRecord(
-                            info.getClassName(),
-                            info.getNameAndTypeInfo().getName(),
-                            info.getNameAndTypeInfo().getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitMethodHandle(com.sun.tools.classfile.ConstantPool.CONSTANT_MethodHandle_info info, Void v) {
-                    return wrapException(() -> new CpMethodHandleRecord(
-                            ConstantPoolEntryRecord.ofClassFileCPInfo(info.getCPRefInfo(), p),
-                            info.reference_kind.tag));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitMethodType(com.sun.tools.classfile.ConstantPool.CONSTANT_MethodType_info info, Void v) {
-                    return wrapException(() -> new CpMethodTypeRecord(info.getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitModule(com.sun.tools.classfile.ConstantPool.CONSTANT_Module_info info, Void v) {
-                    return wrapException(() -> new CpModuleRecord(info.getName()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitNameAndType(com.sun.tools.classfile.ConstantPool.CONSTANT_NameAndType_info info, Void v) {
-                    return wrapException(() -> new CpNameAndTypeRecord(
-                            info.getName(),
-                            info.getType()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitPackage(com.sun.tools.classfile.ConstantPool.CONSTANT_Package_info info, Void v) {
-                    return wrapException(() -> new CpPackageRecord(info.getName()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitString(com.sun.tools.classfile.ConstantPool.CONSTANT_String_info info, Void v) {
-                    return wrapException(() -> new CpStringRecord(info.getString()));
-                }
-
-                @Override
-                public ConstantPoolEntryRecord visitUtf8(com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info info, Void v) {
-                    return new CpUTF8Record(info.value);
-                }
-            }, null);
         }
 
         default String altOpcode() {
@@ -1546,35 +1067,6 @@ public record ClassRecord(
                 case AnnotationValue.OfArray evav -> new EvArrayRecord(ev.tag(), evav.values().stream().map(ElementValueRecord::ofElementValue).toList());
                 case null, default -> throw new IllegalArgumentException(ev.getClass().getName());
             };
-        }
-
-        public static ElementValueRecord ofClassFileElementValue(com.sun.tools.classfile.Annotation.element_value ev, com.sun.tools.classfile.ConstantPool p) {
-            return ev.accept(new com.sun.tools.classfile.Annotation.element_value.Visitor<ElementValueRecord, Void>() {
-                @Override
-                public ElementValueRecord visitPrimitive(com.sun.tools.classfile.Annotation.Primitive_element_value ev, Void v) {
-                    return new EvConstRecord(ev.tag, ConstantPoolEntryRecord.ofClassFileCPInfo(wrapException(() -> p.get(ev.const_value_index)), p));
-                }
-
-                @Override
-                public ElementValueRecord visitEnum(com.sun.tools.classfile.Annotation.Enum_element_value ev, Void v) {
-                    return wrapException(() -> new EvEnumConstRecord(ev.tag, p.getUTF8Value(ev.type_name_index), p.getUTF8Value(ev.const_name_index)));
-                }
-
-                @Override
-                public ElementValueRecord visitClass(com.sun.tools.classfile.Annotation.Class_element_value ev, Void v) {
-                    return new EvClassRecord(ev.tag, wrapException(() -> p.getUTF8Value(ev.class_info_index)));
-                }
-
-                @Override
-                public ElementValueRecord visitAnnotation(com.sun.tools.classfile.Annotation.Annotation_element_value ev, Void v) {
-                    return new EvAnnotationRecord(ev.tag, AnnotationRecord.ofClassFileAnnotation(ev.annotation_value, p));
-                }
-
-                @Override
-                public ElementValueRecord visitArray(com.sun.tools.classfile.Annotation.Array_element_value ev, Void v) {
-                    return new EvArrayRecord(ev.tag, Stream.of(ev.values).map(e -> ElementValueRecord.ofClassFileElementValue(e, p)).toList());
-                }
-            }, null);
         }
 
         public record EvAnnotationRecord(
@@ -1771,61 +1263,5 @@ public record ClassRecord(
                 throw new RuntimeException(ex);
             }
         };
-    }
-
-    private static ClassRecord readClassRecord(Path path, String thisSwitch, String otherClassSwitch) throws IOException, com.sun.tools.classfile.ConstantPoolException {
-        var filter = "-b".equals(otherClassSwitch) ? CompatibilityFilter.By_ClassBuilder : CompatibilityFilter.Read_all;
-        return switch (thisSwitch) {
-            case "-m" -> ClassRecord.ofClassModel(Classfile.parse(path), filter);
-            case "-b" -> ClassRecord.ofClassModel(Classfile.parse(path), CompatibilityFilter.By_ClassBuilder);
-            case "-s" -> ClassRecord.ofStreamingElements(Classfile.parse(path), filter);
-            case "-f" -> ClassRecord.ofClassFile(com.sun.tools.classfile.ClassFile.read(path), filter);
-            default -> throw new IllegalArgumentException("Unknown command line option: " + thisSwitch);
-        };
-    }
-
-    public static void main(String args[]) throws Exception {
-        try {
-            Iterator<String> cmd = Arrays.asList(args).iterator();
-            var switches = new String[2];
-            var paths = new Path[2];
-            for (int i=0; i < 2; i++) {
-                switches[i] = cmd.next();
-                if (switches[i].charAt(0) == '-') {
-                    paths[i] = Path.of(cmd.next());
-                } else {
-                    paths[i] = Path.of(switches[i]);
-                    switches[i] = "-m";
-                }
-            }
-            assertEqualsDeep(
-                    readClassRecord(paths[0], switches[0], switches[1]),
-                    readClassRecord(paths[1], switches[1], switches[0]),
-                    paths[0].getFileName().toString() + " [" + switches[0] + "] (actual) vs " + paths[1].getFileName().toString() + " [" + switches[1] + "] (expected)");
-            System.out.println("no differences found");
-        } catch (AssertionError e) {
-            System.err.println(e.getLocalizedMessage());
-            System.exit(1);
-        } catch (NoSuchElementException e) {
-            System.err.println(
-                    """
-                    missing argument(s)
-                    usage: java --enable-preview -jar bytecode-lib-1.0-SNAPSHOT-tests.jar [-m | -b | -s | -f] <class_file> [-m | -b | -s | -f] <expected_class_file>
-
-                    options:
-                        -m      following class is analyzed from ClassModel (default)
-                        -b      following class is analyzed from ClassModel, filtering only features comparable after passing through ClassBuilder
-                        -s      following class is analyzed from streaming Elements
-                        -f      following class is analyzed from com.sun.tools.classfile.ClassFile (requires JVM option --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED)
-
-                    examples:
-                        java --enable-preview -jar bytecode-lib-1.0-SNAPSHOT-tests.jar MyClass.class MySecondClass.class
-                            - analyzes MyClass.class and MySecondClass.class files by ClassModel, asserts their equality and prints differences
-
-                        java --enable-preview --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED -jar bytecode-lib-1.0-SNAPSHOT-tests.jar -s MyClass.class -f MyClass.class
-                            - analyzes MyClass.class file from streaming Elements and compares it with the MyClass.class analyzed from com.sun.tools.classfile.ClassFile
-                    """);
-            System.exit(1);
-        }
     }
 }

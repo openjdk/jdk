@@ -29,7 +29,6 @@
  * @compile -g testdata/Lvt.java
  * @run junit LvtTest
  */
-import com.sun.tools.classfile.*;
 import helpers.ClassRecord;
 import helpers.Transforms;
 import jdk.classfile.*;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jdk.classfile.AccessFlags;
+import jdk.classfile.Attributes;
 import jdk.classfile.attribute.SourceFileAttribute;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.constantpool.Utf8Entry;
@@ -107,22 +107,12 @@ class LvtTest {
     @Test
     void buildLVTEntries() throws Exception {
         ClassModel c = Classfile.parse(fileBytes);
-        ClassFile cf = ClassFile.read(new ByteArrayInputStream(fileBytes));
-
-        // Compare untransformed model and view from ClassFile
-        ClassRecord orig = ClassRecord.ofClassModel(c);
-        ClassRecord origClassFile = ClassRecord.ofClassFile(cf);
-        ClassRecord.assertEqualsDeep(orig, origClassFile);
 
         // Compare transformed model and original with CodeBuilder filter
         byte[] newClass = c.transform(Transforms.threeLevelNoop);
-        orig = ClassRecord.ofClassModel(Classfile.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        ClassRecord orig = ClassRecord.ofClassModel(Classfile.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord transformed = ClassRecord.ofClassModel(Classfile.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
-
-        // ClassFile vs transformed
-        origClassFile = ClassRecord.ofClassFile(cf, ClassRecord.CompatibilityFilter.By_ClassBuilder);
-        ClassRecord.assertEqualsDeep(transformed, origClassFile);
     }
 
     @Test
@@ -182,18 +172,16 @@ class LvtTest {
                               }));
         });
 
-        ClassFile cf = ClassFile.read(new ByteArrayInputStream(bytes));
-        Method main = cf.methods[1];
-        LocalVariableTable_attribute lvt = (LocalVariableTable_attribute) ((Code_attribute) main.attributes.get("Code")).attributes.get("LocalVariableTable");
-        LocalVariableTable_attribute.Entry[] entries = lvt.local_variable_table;
+        var c = Classfile.parse(bytes);
+        var main = c.methods().get(1);
+        var lvt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TABLE).get();
+        var lvs = lvt.localVariables();
 
-        assertEquals(entries.length, 3);
-
-        List<LocalVariableTable_attribute.Entry> lvs = Arrays.asList(entries);
+        assertEquals(lvs.size(), 3);
         List<ExpectedLvRecord> expected = List.of(
-                ExpectedLvRecord.of(1, "res", "I", 2, 25, cf.constant_pool),
-                ExpectedLvRecord.of(2, "i", "I", 4, 23, cf.constant_pool),
-                ExpectedLvRecord.of(0, "this", "LMyClass;", 0, 28, cf.constant_pool));
+                ExpectedLvRecord.of(1, "res", "I", 2, 25),
+                ExpectedLvRecord.of(2, "i", "I", 4, 23),
+                ExpectedLvRecord.of(0, "this", "LMyClass;", 0, 28));
 
         // Exploits non-symmetric "equals" in ExpectedLvRecord
         assertTrue(expected.equals(lvs));
@@ -287,13 +275,10 @@ class LvtTest {
                                         .localVariable(1, u, jlObject, start, end);
                                   }));
         });
-
-        ClassFile cf = ClassFile.read(new ByteArrayInputStream(bytes));
-        Method m = cf.methods[1];
-
-        LocalVariableTypeTable_attribute lvtt = (LocalVariableTypeTable_attribute) ((Code_attribute) m.attributes.get("Code")).attributes.get("LocalVariableTypeTable");
-        LocalVariableTypeTable_attribute.Entry[] entries = lvtt.local_variable_table;
-        List<LocalVariableTypeTable_attribute.Entry> lvts = Arrays.asList(entries);
+        var c = Classfile.parse(bytes);
+        var main = c.methods().get(1);
+        var lvtt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).get();
+        var lvts = lvtt.localVariableTypes();
 
         /* From javap:
 
@@ -304,8 +289,8 @@ class LvtTest {
          */
 
         List<ExpectedLvtRecord> expected = List.of(
-                ExpectedLvtRecord.of(1, "u", "TU;", 0, 10, cf.constant_pool),
-                ExpectedLvtRecord.of(2, "l", "Ljava/util/List<+Ljava/lang/Object;>;", 8, 2, cf.constant_pool)
+                ExpectedLvtRecord.of(1, "u", "TU;", 0, 10),
+                ExpectedLvtRecord.of(2, "l", "Ljava/util/List<+Ljava/lang/Object;>;", 8, 2)
         );
 
         // Exploits non-symmetric "equals" in ExpectedLvRecord

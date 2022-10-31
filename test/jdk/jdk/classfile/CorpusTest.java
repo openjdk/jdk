@@ -29,9 +29,6 @@
  * @build helpers.* testdata.*
  * @run junit/othervm -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
  */
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
 import helpers.Transforms;
@@ -43,8 +40,6 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import java.io.ByteArrayInputStream;
 import java.util.*;
 
-import static com.sun.tools.classfile.ConstantPool.CONSTANT_Double;
-import static com.sun.tools.classfile.ConstantPool.CONSTANT_Long;
 import static helpers.ClassRecord.assertEqualsDeep;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,6 +58,9 @@ import jdk.classfile.Attributes;
 import jdk.classfile.BufWriter;
 import jdk.classfile.Classfile;
 import jdk.classfile.ClassTransform;
+import jdk.classfile.constantpool.ConstantPool;
+import jdk.classfile.constantpool.PoolEntry;
+import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.DirectCodeBuilder;
 import jdk.classfile.impl.UnboundAttribute;
 import jdk.classfile.instruction.LineNumber;
@@ -158,26 +156,13 @@ class CorpusTest {
                 switch (m) {
                     case SHARED_1, SHARED_2, SHARED_3, SHARED_3L, SHARED_3P:
                         if (newDups.size() > baseDups.size()) {
-                            ClassFile cf = ClassFile.read(new ByteArrayInputStream(transformed));
-                            com.sun.tools.classfile.ConstantPool pool = cf.constant_pool;
                             System.out.println(String.format("Incremental dups in file %s (%s): %s / %s", path, m, baseDups, newDups));
-                            for (Map.Entry<Integer, Integer> entry : newDups.entrySet()) {
-                                System.out.println(String.format("  %d: %s", entry.getKey(), pool.get(entry.getKey())));
-                                System.out.println(String.format("  %d: %s", entry.getValue(), pool.get(entry.getValue())));
-                            }
                         }
                         compareCp(bytes, transformed);
                         break;
                     case UNSHARED_1, UNSHARED_2, UNSHARED_3:
                         if (!newDups.isEmpty()) {
-                            ClassFile cf = ClassFile.read(new ByteArrayInputStream(transformed));
-                            com.sun.tools.classfile.ConstantPool pool = cf.constant_pool;
                             System.out.println(String.format("Dups in file %s (%s): %s", path, m, newDups));
-
-                            for (Map.Entry<Integer, Integer> entry : newDups.entrySet()) {
-                                System.out.println(String.format("  %d: %s", entry.getKey(), pool.get(entry.getKey())));
-                                System.out.println(String.format("  %d: %s", entry.getValue(), pool.get(entry.getValue())));
-                            }
                         }
                         break;
                 }
@@ -208,16 +193,12 @@ class CorpusTest {
 
     @ParameterizedTest
     @MethodSource("corpus")
-    void testReadAndTransform(Path path) throws IOException, ConstantPoolException {
+    void testReadAndTransform(Path path) throws IOException {
         byte[] bytes = Files.readAllBytes(path);
 
         var classModel = Classfile.parse(bytes);
-        var classFile = ClassFile.read(new ByteArrayInputStream(bytes));
-        assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofClassFile(classFile),
-                         "ClassModel (actual) vs ClassFile (expected)");
-
-        assertEqualsDeep(ClassRecord.ofStreamingElements(classModel), ClassRecord.ofClassFile(classFile),
-                "StreamingElements (actual) vs ClassFile (expected)");
+        assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofStreamingElements(classModel),
+                         "ClassModel (actual) vs StreamingElements (expected)");
 
         byte[] newBytes = Classfile.build(
                 classModel.thisClass().asSymbol(),
@@ -244,80 +225,44 @@ class CorpusTest {
 //    }
 
     private void compareCp(byte[] orig, byte[] transformed) {
-        try {
-            ClassFile c1 = ClassFile.read(new ByteArrayInputStream(orig));
-            ClassFile c2 = ClassFile.read(new ByteArrayInputStream(transformed));
+        var cp1 = Classfile.parse(orig).constantPool();
+        var cp2 = Classfile.parse(transformed).constantPool();
 
-            List<ConstantPool.CPInfo> entryList1 = cpiEntries(c1.constant_pool);
-            List<ConstantPool.CPInfo> entryList2 = cpiEntries(c2.constant_pool);
-
-            for (int i=0; i<entryList1.size(); i++) {
-                assertEquals(cpiToString(entryList1.get(i)), cpiToString(entryList2.get(i)));
-            }
-
-            if (entryList1.size() != entryList2.size()) {
-                StringBuilder failMsg = new StringBuilder("Extra entries in constant pool (" + (entryList2.size() - entryList1.size()) + "): ");
-                for (int i=entryList1.size(); i < entryList2.size(); i++)
-                    failMsg.append("\n").append(entryList2.get(i));
-                fail(failMsg.toString());
-            }
+        for (int i = 1; i < cp1.entryCount(); i += cp1.entryByIndex(i).poolEntries()) {
+            assertEquals(cpiToString(cp1.entryByIndex(i)), cpiToString(cp2.entryByIndex(i)));
         }
-        catch (IOException | ConstantPoolException e) {
-            throw new RuntimeException(e);
+
+        if (cp1.entryCount() != cp2.entryCount()) {
+            StringBuilder failMsg = new StringBuilder("Extra entries in constant pool (" + (cp2.entryCount() - cp1.entryCount()) + "): ");
+            for (int i = cp1.entryCount(); i < cp2.entryCount(); i += cp2.entryByIndex(i).poolEntries())
+                failMsg.append("\n").append(cp2.entryByIndex(i));
+            fail(failMsg.toString());
         }
     }
 
-    private static String cpiToString(ConstantPool.CPInfo e) {
-        if (e == null)
-            return "";
+    private static String cpiToString(PoolEntry e) {
         String s = e.toString();
-        if (e instanceof ConstantPool.CONSTANT_Utf8_info ue)
-            s = "CONSTANT_Utf8_info[value: \"%s\"]".formatted(ue.value);
+        if (e instanceof Utf8Entry ue)
+            s = "CONSTANT_Utf8_info[value: \"%s\"]".formatted(ue.stringValue());
         return s;
     }
 
-    private static List<ConstantPool.CPInfo> cpiEntries(ConstantPool pool) {
-        List<ConstantPool.CPInfo> entryList = new ArrayList<>();
-        entryList.add(null);
-        for (com.sun.tools.classfile.ConstantPool.CPInfo e : pool.entries()) {
-            entryList.add(e);
-            if (e.getTag() == CONSTANT_Double || e.getTag() == CONSTANT_Long)
-                entryList.add(null);
-        }
-        return entryList;
-    }
-
     private static Map<Integer, Integer> findDups(byte[] bytes) {
-        try {
-            Map<Integer, Integer> dups = new HashMap<>();
-            ClassFile cf = ClassFile.read(new ByteArrayInputStream(bytes));
-            com.sun.tools.classfile.ConstantPool pool = cf.constant_pool;
-
-            List<ConstantPool.CPInfo> entryList = cpiEntries(pool);
-            assertEquals(entryList.size(), pool.size());
-
-            Set<String> entryStrings = new HashSet<>();
-            for (int i=1; i<pool.size(); i++) {
-                ConstantPool.CPInfo e = entryList.get(i);
-                if (e == null)
-                    continue;
-                String s = cpiToString(e);
-                if (entryStrings.contains(s)) {
-                    for (int j=1; j<i; j++) {
-                        ConstantPool.CPInfo e2 = entryList.get(j);
-                        if (e2 == null)
-                            continue;
-                        if (s.equals(cpiToString(e2)))
-                            dups.put(i, j);
-                    }
+        Map<Integer, Integer> dups = new HashMap<>();
+        var cf = Classfile.parse(bytes);
+        var pool = cf.constantPool();
+        Set<String> entryStrings = new HashSet<>();
+        for (int i = 1; i < pool.entryCount(); i += pool.entryByIndex(i).poolEntries()) {
+            String s = cpiToString(pool.entryByIndex(i));
+            if (entryStrings.contains(s)) {
+                for (int j=1; j<i; j += pool.entryByIndex(j).poolEntries()) {
+                    var e2 = pool.entryByIndex(j);
+                    if (s.equals(cpiToString(e2)))
+                        dups.put(i, j);
                 }
-                entryStrings.add(s);
             }
-
-            return dups;
+            entryStrings.add(s);
         }
-        catch (ConstantPoolException | IOException exception) {
-            throw new RuntimeException(exception);
-        }
+        return dups;
     }
 }
