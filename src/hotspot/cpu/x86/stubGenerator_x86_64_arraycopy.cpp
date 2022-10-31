@@ -1886,7 +1886,8 @@ address StubGenerator::generate_conjoint_long_oop_copy(bool aligned, bool is_oop
                                                        address *entry, const char *name,
                                                        bool dest_uninitialized) {
 #if COMPILER2_OR_JVMCI
-  if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
+  // TODO: Vectorize avx3 arraycopy for ZGC
+  if (!(UseZGC && is_oop) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
      return generate_conjoint_copy_avx3_masked(entry, "jlong_conjoint_arraycopy_avx3", 3,
                                                nooverlap_target, aligned, is_oop, dest_uninitialized);
   }
