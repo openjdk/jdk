@@ -1113,10 +1113,11 @@ void SuperWord::dependence_graph() {
         int cmp = p1.cmp(p2);
         if (SuperWordRTDepCheck &&
             p1.base() != p2.base() && p1.valid() && p2.valid()) {
-          // Create a runtime check to disambiguate
+          // Trace disjoint pointers
           OrderedPair pp(p1.base(), p2.base());
           _disjoint_ptrs.append_if_missing(pp);
-        } else if (!SWPointer::not_equal(cmp)) {
+        }
+        if (!SWPointer::not_equal(cmp)) {
           // Possibly same address
           _dg.make_edge(s1, s2);
           sink_dependent = false;

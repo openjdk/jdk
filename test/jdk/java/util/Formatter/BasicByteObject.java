@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ public class BasicByteObject extends Basic {
 
 
     private static Byte negate(Byte v) {
-        return new Byte((byte) -v.byteValue());
+        return (byte) -v.byteValue();
     }
 
 
@@ -435,7 +435,7 @@ public class BasicByteObject extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +493,7 @@ public class BasicByteObject extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -525,7 +525,17 @@ public class BasicByteObject extends Basic {
 
 
 
-        Byte minByte = new Byte(Byte.MIN_VALUE);
+
+
+
+        Byte minByte = Byte.MIN_VALUE;
+
+
+
+
+
+
+
 
 
         //---------------------------------------------------------------------
