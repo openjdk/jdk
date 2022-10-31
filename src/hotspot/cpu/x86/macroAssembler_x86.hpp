@@ -1982,6 +1982,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
+  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

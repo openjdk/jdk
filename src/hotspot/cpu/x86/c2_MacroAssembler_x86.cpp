@@ -557,7 +557,7 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
 // rax,: tmp -- KILLED
 // scr: tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg,
-                                 Register scrReg, Register cx1Reg, Register cx2Reg,
+                                 Register scrReg, Register cx1Reg, Register cx2Reg, Register thread,
                                  RTMLockingCounters* rtm_counters,
                                  RTMLockingCounters* stack_rtm_counters,
                                  Metadata* method_data,
@@ -610,20 +610,30 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   jccb(Assembler::notZero, IsInflated);
 
   if (!UseHeavyMonitors) {
-    // Attempt stack-locking ...
-    orptr (tmpReg, markWord::unlocked_value);
-    movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-    lock();
-    cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-    jcc(Assembler::equal, COUNT);           // Success
+    if (UseFastLocking) {
+      Label slow_path;
+      fast_lock_impl(objReg, tmpReg, thread, scrReg, slow_path);
+      xorptr(rax, rax); // Set ZF = 1 (success)
+      jmp(COUNT);
+      bind(slow_path);
+      // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
+      testptr(objReg, objReg);
+    } else {
+      // Attempt stack-locking ...
+      orptr (tmpReg, markWord::unlocked_value);
+      movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
+      lock();
+      cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
+      jcc(Assembler::equal, COUNT);           // Success
 
-    // Recursive locking.
-    // The object is stack-locked: markword contains stack pointer to BasicLock.
-    // Locked by current thread if difference with current SP is less than one page.
-    subptr(tmpReg, rsp);
-    // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
-    movptr(Address(boxReg, 0), tmpReg);
+      // Recursive locking.
+      // The object is stack-locked: markword contains stack pointer to BasicLock.
+      // Locked by current thread if difference with current SP is less than one page.
+      subptr(tmpReg, rsp);
+      // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
+      andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+      movptr(Address(boxReg, 0), tmpReg);
+    }
   } else {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
     testptr(objReg, objReg);
@@ -786,7 +796,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 #endif
 
-  if (!UseHeavyMonitors) {
+  if (!UseHeavyMonitors && !UseFastLocking) {
     cmpptr(Address(boxReg, 0), NULL_WORD);                            // Examine the displaced header
     jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
@@ -794,6 +804,15 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   if (!UseHeavyMonitors) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
     jccb   (Assembler::zero, Stacked);
+    if (UseFastLocking) {
+      // If the owner is ANONYMOUS, we need to fix it - in the slow-path.
+      Label L;
+      cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
+      jccb(Assembler::notEqual, L);
+      testptr(objReg, objReg); // Clear ZF to indicate failure at DONE_LABEL.
+      jmp(DONE_LABEL);
+      bind(L);
+    }
   }
 
   // It's inflated.
@@ -845,16 +864,21 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
   bind (Stacked);
-  // It's not inflated and it's not recursively stack-locked.
-  // It must be stack-locked.
-  // Try to reset the header to displaced header.
-  // The "box" value on the stack is stable, so we can reload
-  // and be assured we observe the same value as above.
-  movptr(tmpReg, Address(boxReg, 0));
-  lock();
-  cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-  // Intention fall-thru into DONE_LABEL
-
+  if (UseFastLocking) {
+    mov(boxReg, tmpReg);
+    fast_unlock_impl(objReg, boxReg, tmpReg, DONE_LABEL);
+    xorptr(rax, rax); // Set ZF = 1 (success)
+  } else {
+    // It's not inflated and it's not recursively stack-locked.
+    // It must be stack-locked.
+    // Try to reset the header to displaced header.
+    // The "box" value on the stack is stable, so we can reload
+    // and be assured we observe the same value as above.
+    movptr(tmpReg, Address(boxReg, 0));
+    lock();
+    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    // Intention fall-thru into DONE_LABEL
+  }
   // DONE_LABEL is a hot target - we'd really like to place it at the
   // start of cache line by padding with NOPs.
   // See the AMD and Intel software optimization manuals for the
@@ -938,9 +962,15 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   if (!UseHeavyMonitors) {
     bind  (Stacked);
-    movptr(tmpReg, Address (boxReg, 0));      // re-fetch
-    lock();
-    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    if (UseFastLocking) {
+      mov(boxReg, tmpReg);
+      fast_unlock_impl(objReg, boxReg, tmpReg, DONE_LABEL);
+      xorptr(rax, rax); // Set ZF = 1 (success)
+    } else {
+      movptr(tmpReg, Address (boxReg, 0));      // re-fetch
+      lock();
+      cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    }
   }
 #endif
   bind(DONE_LABEL);
