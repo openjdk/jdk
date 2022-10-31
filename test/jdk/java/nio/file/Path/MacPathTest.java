@@ -48,8 +48,7 @@ public class MacPathTest {
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb;
         if (ENABLE_FILE_NAME_ENCODING) {
-            String option = ENABLE_FILE_NAME_ENCODING ?
-                "-D" + FILE_NAME_ENCODING_PROPERTY + "=true" : "";
+            String option = "-D" + FILE_NAME_ENCODING_PROPERTY + "=true";
             pb = ProcessTools.createTestJvm(option, MacPath.class.getName());
         } else {
             pb = ProcessTools.createTestJvm(MacPath.class.getName());
