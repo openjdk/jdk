@@ -499,7 +499,7 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
     break;
   default:
     st->print("r%-2d=", n-3);
-    print_location(st, (intptr_t)uc->uc_mcontext.regs.gpr[n-3]);
+    print_location(st, (intptr_t)uc->uc_mcontext.regs->gpr[n-3]);
     break;
   }
 }
