@@ -1658,11 +1658,22 @@ bool nmethod::is_unloading() {
   // or because is_cold() heuristically determines it is time to unload.
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
-  state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+  uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
 
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+  // Note that if an nmethod has dead oops, everyone will agree that the
+  // nmethod is_unloading. However, the is_cold heuristics can yield
+  // different outcomes, so we guard the computed result with a CAS
+  // to ensure all threads have a shared view of whether an nmethod
+  // is_unloading or not.
+  if (Atomic::cmpxchg(&_is_unloading_state, state, new_state, memory_order_relaxed) == state) {
+    // Our view of the world won
+    return state_is_unloading;
+  }
 
-  return state_is_unloading;
+  // If we lost the race, we call is_unloading again to see what the winner
+  // determined. This can't recurse as the second time we call the state is
+  // guaranteed to be cached for the current unloading cycle.
+  return is_unloading();
 }
 
 void nmethod::clear_unloading_state() {
