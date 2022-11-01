@@ -37,7 +37,7 @@ import java.util.Set;
 public class SelectWhenRefused {
 
     public static void main(String[] args) throws IOException {
-        //If another datagram test interferes with this test ignoreStrayWakeup
+        // If another datagram test interferes with this test ignoreStrayWakeup
         // will be set to true, and the loop below will retry the test
         boolean ignoreStrayWakeup;
 
@@ -55,7 +55,7 @@ public class SelectWhenRefused {
             dc.configureBlocking(false);
             dc.register(sel, SelectionKey.OP_READ);
 
-            for (;;) {
+            for (int i = 0; i < 3; i++) {
                 /* Test 1: not connected so ICMP port unreachable should not be received */
                 sendDatagram(dc, refuser);
                 int n = sel.select(2000);
@@ -70,12 +70,13 @@ public class SelectWhenRefused {
                     DatagramChannel.open().bind(refuser).close();
                     throw new RuntimeException("Unexpected wakeup");
                 }
-
+            }
+            for (int i = 0; i < 3; i++) {
                 /* Test 2: connected so ICMP port unreachable may be received */
                 dc.connect(refuser);
                 try {
                     sendDatagram(dc, refuser);
-                    n = sel.select(2000);
+                    int n = sel.select(2000);
                     if (n > 0) {
                         sel.selectedKeys().clear();
                         try {
@@ -84,11 +85,13 @@ public class SelectWhenRefused {
                             String message = new String(buf.array());
                             System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
                             //If any received data contains the message from sendDatagram then return true
-                            if (message.contains("Greetings!")) {
+                            if (message.contains("Greetings from SelectWhenRefused!")) {
                                 throw new RuntimeException("Unexpected datagram received");
                             }
-                            //unexpected datagram received from elsewhere, retry
-                            continue;
+                            // BindException will be thrown if another service is using
+                            // our expected refuser port, cannot run just exit.
+                            DatagramChannel.open().bind(refuser).close();
+                            throw new RuntimeException("PortUnreachableException not raised");
                         } catch (PortUnreachableException pue) {
                             // expected
                         }
@@ -96,10 +99,11 @@ public class SelectWhenRefused {
                 } finally {
                     dc.disconnect();
                 }
-
+            }
+            for (int i = 0; i < 3; i++) {
                 /* Test 3: not connected so ICMP port unreachable should not be received */
                 sendDatagram(dc, refuser);
-                n = sel.select(2000);
+                int n = sel.select(2000);
                 if (n > 0) {
                     ignoreStrayWakeup = checkUnexpectedWakeup(dc, sel.selectedKeys());
                     sel.selectedKeys().clear();
@@ -121,11 +125,12 @@ public class SelectWhenRefused {
     static void sendDatagram(DatagramChannel dc, SocketAddress remote)
         throws IOException
     {
-        ByteBuffer bb = ByteBuffer.wrap("Greetings!".getBytes());
+        ByteBuffer bb = ByteBuffer.wrap("Greetings from SelectWhenRefused!".getBytes());
         dc.send(bb, remote);
     }
 
     static boolean checkUnexpectedWakeup(DatagramChannel dc, Set<SelectionKey> selectedKeys) {
+        System.out.format("Received %d keys%n", selectedKeys.size());
         for (SelectionKey key : selectedKeys) {
             if (!key.isValid() || !key.isReadable()) {
                 System.out.println("Invalid or unreadable key: " + key);
@@ -136,9 +141,9 @@ public class SelectWhenRefused {
                 ByteBuffer buf = ByteBuffer.allocate(100);
                 SocketAddress sa = dc.receive(buf);
                 String message = new String(buf.array());
-                System.out.format("received %s from %s%n", message, sa);
+                System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
                 //If any received data contains the message from sendDatagram then return true
-                if (message.contains("Greetings!")) {
+                if (message.contains("Greetings from SelectWhenRefused!")) {
                     return true;
                 }
             } catch (IOException io) {
