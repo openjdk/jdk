@@ -4403,7 +4403,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     scratch_class->enclosing_method_method_index());
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
-  the_class->set_has_been_redefined();
+  if (!the_class->has_been_redefined()) {
+    the_class->set_has_been_redefined();
+  }
 
   // Scratch class is unloaded but still needs cleaning, and skipping for CDS.
   scratch_class->set_is_scratch_class();

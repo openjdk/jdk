@@ -1332,7 +1332,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 RSAKeyFactory.checkKeyLengths(keyLength, null,
                     -1, Integer.MAX_VALUE);
             } catch (InvalidKeyException e) {
-                throw new KeyStoreException(e.getMessage());
+                throw new KeyStoreException(e.getMessage(), e);
             }
 
             return P11Key.privateKey(session,
