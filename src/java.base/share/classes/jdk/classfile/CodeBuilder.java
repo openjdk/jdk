@@ -378,7 +378,6 @@ public sealed interface CodeBuilder
                                Consumer<CatchBuilder> catchesHandler) {
         Label tryCatchEnd = newLabel();
 
-        // @@@ the tryHandler does not have access to tryCatchEnd
         BlockCodeBuilderImpl tryBlock = new BlockCodeBuilderImpl(this, tryCatchEnd);
         tryBlock.start();
         tryHandler.accept(tryBlock);
