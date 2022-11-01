@@ -379,7 +379,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
-            var error = TRACKER.check(1,
+            var error = TRACKER.check(100,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testGetSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -490,7 +490,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
-            var error = TRACKER.check(1,
+            var error = TRACKER.check(100,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -552,7 +552,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                 throw failed;
             }
 
-            var error = TRACKER.check(1,
+            var error = TRACKER.check(100,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
