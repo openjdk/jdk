@@ -359,7 +359,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
           // Check users as well because def might be spilled
           for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
             Node* u = m->fast_out(j);
-            if (u->is_SpillCopy() || u->is_Phi()) {
+            if ((u->is_SpillCopy() && u->in(1) == m) || u->is_Phi()) {
               worklist.push(u);
             }
           }
