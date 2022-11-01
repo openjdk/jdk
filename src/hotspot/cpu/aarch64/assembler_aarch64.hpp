@@ -303,24 +303,29 @@ public:
 class PrePost {
   int _offset;
   Register _r;
-public:
+protected:
   PrePost(Register reg, int o) : _offset(o), _r(reg) { }
-  int offset() { return _offset; }
-  Register reg() { return _r; }
+  ~PrePost() = default;
+  PrePost(const PrePost&) = default;
+  PrePost& operator=(const PrePost&) = default;
+public:
+  int offset() const { return _offset; }
+  Register reg() const { return _r; }
 };
 
 class Pre : public PrePost {
 public:
   Pre(Register reg, int o) : PrePost(reg, o) { }
 };
+
 class Post : public PrePost {
   Register _idx;
   bool _is_postreg;
 public:
-  Post(Register reg, int o) : PrePost(reg, o) { _idx = noreg; _is_postreg = false; }
-  Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; _is_postreg = true; }
-  Register idx_reg() { return _idx; }
-  bool is_postreg() {return _is_postreg; }
+  Post(Register reg, int o) : PrePost(reg, o), _idx(noreg), _is_postreg(false) {}
+  Post(Register reg, Register idx) : PrePost(reg, 0), _idx(idx), _is_postreg(true) {}
+  Register idx_reg() const { return _idx; }
+  bool is_postreg() const { return _is_postreg; }
 };
 
 namespace ext
