@@ -637,7 +637,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * The section is being built sequentially from top to bottom.
      *
-     * Adapts one off methods of writer to continuous building.
+     * Adapts one-off methods of writer to continuous building.
      */
     private static class ExceptionSectionBuilder {
 

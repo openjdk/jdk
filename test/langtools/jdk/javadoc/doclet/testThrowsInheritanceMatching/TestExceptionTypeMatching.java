@@ -57,8 +57,8 @@ public class TestExceptionTypeMatching extends JavadocTester {
 
     /*
      * In Child, MyException is c.MyException, whereas in Parent, MyException
-     * is p.MyException. Those are different exceptions which happen two
-     * share a simple name.
+     * is p.MyException. Those are different exceptions which happen to
+     * share the simple name.
      */
     @Test
     public void testDifferentPackages(Path base) throws Exception {
@@ -145,7 +145,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
      * Type parameters declared by methods where one of the methods overrides
      * the other, are matched by position, not by name.
      *
-     * Here the match is cris-cross:
+     * Here the match is criss-cross:
      *
      *   - Child.m's <K> corresponds to Parent.m's <V>
      *   - Child.m's <V> corresponds to Parent.m's <K>
@@ -235,7 +235,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
     // introduced here because it tests for the error condition that is
     // detected by JDK-8291869, which is tested by tests in this test
     // suite.
-    // TODO: consider moving this test to a more suitable test suit.
+    // TODO: consider moving this test to a more suitable test suite.
     @Test
     public void testWrongType(Path base) throws Exception {
         var src = base.resolve("src");
@@ -274,7 +274,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
     // introduced here because it tests for the error condition that is
     // detected by JDK-8291869, which is tested by tests in this test
     // suite.
-    // TODO: consider moving this test to a more suitable test suit.
+    // TODO: consider moving this test to a more suitable test suite.
     @Test
     public void testExceptionTypeNotFound(Path base) throws Exception {
         var src = base.resolve("src");
