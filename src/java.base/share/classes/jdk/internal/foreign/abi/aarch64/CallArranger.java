@@ -85,7 +85,7 @@ public abstract class CallArranger {
         new VMStorage[] { r0, r1 },
         new VMStorage[] { v0, v1, v2, v3 },
         new VMStorage[] { r9, r10, r11, r12, r13, r14, r15 },
-        new VMStorage[] { v16, v17, v18, v19, v20, v21, v22, v23, v25,
+        new VMStorage[] { v16, v17, v18, v19, v20, v21, v22, v23, v24, v25,
                           v26, v27, v28, v29, v30, v31 },
         16,  // Stack is always 16 byte aligned on AArch64
         0,   // No shadow space
