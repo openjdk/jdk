@@ -197,7 +197,7 @@ ZPage* ZPage::split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem) {
 
   assert(vmem.end() == _virtual.start(), "Should be consecutive");
 
-  log_debug(gc, page)("Split page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
+  log_trace(gc, page)("Split page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
       untype(vmem.start()),
       untype(vmem.end()),
       untype(_virtual.end()));
