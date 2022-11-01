@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -163,18 +162,6 @@ implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            crlNumber = null;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the CRLNumberExtension.
@@ -217,19 +204,11 @@ implements CertAttrSet<String> {
        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NUMBER);
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (extensionName);
     }

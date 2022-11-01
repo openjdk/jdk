@@ -138,6 +138,7 @@ public class AuthorityInfoAccessExtension extends Extension
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -189,29 +190,7 @@ public class AuthorityInfoAccessExtension extends Extension
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions = new ArrayList<>();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DESCRIPTIONS);
-        return elements.elements();
-    }
 
      // Encode this extension value
     private void encodeThis() throws IOException {
