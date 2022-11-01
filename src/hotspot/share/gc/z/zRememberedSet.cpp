@@ -77,12 +77,12 @@ void ZRememberedSet::clear_all(const char* where) {
 }
 
 void ZRememberedSet::clear_current() {
-  log_debug(gc, remset)("Clear remset current: " PTR_FORMAT, p2i(current()));
+  log_trace(gc, remset)("Clear remset current: " PTR_FORMAT, p2i(current()));
   current()->clear_large();
 }
 
 void ZRememberedSet::clear_previous(const char* where) {
-  log_debug(gc, remset)("Clear remset previous: " PTR_FORMAT " %s", p2i(previous()), where);
+  log_trace(gc, remset)("Clear remset previous: " PTR_FORMAT " %s", p2i(previous()), where);
   previous()->clear_large();
 }
 
