@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,28 +635,21 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
     Method* m = method_if_resolved(cph);
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
-    st->print_cr(" -     Method: " INTPTR_FORMAT " %s", p2i(m), m != nullptr ? m->external_name() : nullptr);
+    st->print_cr(" - method: " INTPTR_FORMAT " %s", p2i(m), m != nullptr ? m->external_name() : nullptr);
     st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]",
-               flag_state(), has_local_signature(), has_appendix(),
-               is_forced_virtual(), is_final(), is_vfinal(),
-               indy_resolution_failed(), parameter_size());
+                 flag_state(), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
     st->print_cr(" - tos: %s\n - local signature: %01x\n"
-          " - has appendix: %01x\n - forced virtual: %01x\n"
-          " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
-          " - num parameters: %02x",
-               type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
-               is_forced_virtual(), is_final(), is_vfinal(),
-               indy_resolution_failed(), parameter_size());
-    if ((bytecode_1() == Bytecodes::_invokehandle ||
-       bytecode_1() == Bytecodes::_invokedynamic)) {
+                 " - has appendix: %01x\n - forced virtual: %01x\n"
+                 " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
+                 " - num parameters: %02x",
+                 type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
+    if (bytecode_1() == Bytecodes::_invokehandle ||
+        bytecode_1() == Bytecodes::_invokedynamic) {
       oop appendix = appendix_if_resolved(cph);
-      if (m != nullptr) {
-        st->print_cr("  Method%s: " INTPTR_FORMAT " %s.%s%s",
-                    m->is_native() ? " (native)" : "",
-                    p2i(m),
-                    m->method_holder()->name()->as_C_string(),
-                    m->name()->as_C_string(), m->signature()->as_C_string());
-      }
       if (appendix != nullptr) {
         st->print("  appendix: ");
         appendix->print_on(st);
@@ -668,9 +661,9 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
     st->print_cr(" - flag values: [%02x|0|1|0|0|0|%01x|%01x|0|0|%04x]",
-               flag_state(), is_final(), is_volatile(), field_index());
+                 flag_state(), is_final(), is_volatile(), field_index());
     st->print_cr(" - tos: %s\n - final: %d\n - volatile: %d\n - field index: %04x",
-          type2name(as_BasicType(flag_state())), is_final(), is_volatile(), field_index());
+                 type2name(as_BasicType(flag_state())), is_final(), is_volatile(), field_index());
   }
   st->print_cr("                 -------------");
 }
