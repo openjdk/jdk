@@ -25,11 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+
+import java.util.List;
 
 import javax.lang.model.element.Element;
-import java.util.List;
+
+import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * A taglet should implement this interface if it supports an {@code {@inheritDoc}}
