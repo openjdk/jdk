@@ -132,6 +132,24 @@ import sun.security.action.GetPropertyAction;
  *
  * <h2><a id="constructor-deprecation"></a>Constructing instances of {@code URL}</h2>
  *
+ * The {@code java.net.URL} constructors are deprecated.
+ * Developers are encouraged to use {@link URI java.net.URI} to parse
+ * or construct a {@code URL}. In cases where an instance of {@code
+ * java.net.URL} is needed to open a connection, {@link URI} can be used
+ * to construct or parse the URL string, possibly calling {@link
+ * URI#parseServerAuthority()} to validate that the authority component
+ * can be parsed as a server-based authority, and then calling
+ * {@link URI#toURL()} to create the {@code URL} instance.
+ * <p>
+ * The URL constructors are specified to throw
+ * {@link MalformedURLException} but the actual parsing/validation
+ * that is performed is implementation dependent. Some parsing/validation
+ * may be delayed until later, when the underlying {@linkplain
+ * URLStreamHandler stream handler's implementation} is called.
+ * Being able to construct an instance of {@code URL} doesn't
+ * provide any guarantee about its conformance to the URL
+ * syntax specification.
+ * <p>
  * The URL class does not itself encode or decode any URL components
  * according to the escaping mechanism defined in RFC2396. It is the
  * responsibility of the caller to encode any fields, which need to be
@@ -151,25 +169,6 @@ import sun.security.action.GetPropertyAction;
  * The {@link URLEncoder} and {@link URLDecoder} classes can also be
  * used, but only for HTML form encoding, which is not the same
  * as the encoding scheme defined in RFC2396.
- * <p>
- * The URL constructors are specified to throw
- * {@link MalformedURLException} but the actual parsing/validation
- * that are performed is implementation dependent. Some parsing/validation
- * may be delayed until later, when the underlying {@linkplain
- * URLStreamHandler stream handler's implementation} is called.
- * Being able to construct an instance of {@code URL} doesn't
- * provide any guarantee about its conformance to the URL
- * syntax specification.
- * <p>
- * The {@code java.net.URL} constructors are deprecated.
- * Developers are encouraged to use {@link URI java.net.URI} to parse
- * or construct any {@code URL}. In cases where an instance of {@code
- * java.net.URL} is needed to open a connection, {@link URI} can be used
- * to construct or parse the URL string, possibly calling {@link
- * URI#parseServerAuthority()} to validate that the authority component
- * can be parsed as a server-based authority, and then calling
- * {@link URI#toURL()} to create the {@code URL} instance.
- *
  *
  * @apiNote
  *
@@ -818,7 +817,7 @@ public final class URL implements java.io.Serializable {
      *
      * @param uri the {@code URI} from which the returned {@code URL} should
      *           be built
-     * @param streamHandler a custom protocol stream handler for
+     * @param handler a custom protocol stream handler for
      *                      the returned {@code URL}. Can be {@code null},
      *                      in which case the default stream handler for
      *                      the protocol if any, will be used.
@@ -849,7 +848,7 @@ public final class URL implements java.io.Serializable {
      *
      * @since 20
      */
-    public static URL of(URI uri, URLStreamHandler streamHandler)
+    public static URL of(URI uri, URLStreamHandler handler)
         throws MalformedURLException {
         if (!uri.isAbsolute()) {
             throw new IllegalArgumentException("URI is not absolute");
@@ -865,7 +864,7 @@ public final class URL implements java.io.Serializable {
         //
         // Case-sensitive comparison for performance; malformed protocols will
         // be handled correctly by the slow path.
-        if (streamHandler == null && protocol.equals("jrt") && !uri.isOpaque()
+        if (handler == null && protocol.equals("jrt") && !uri.isOpaque()
                 && uri.getRawAuthority() == null
                 && uri.getRawFragment() == null) {
 
@@ -900,13 +899,13 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        if (streamHandler != null && !isOverrideable(protocol)) {
+        if (handler != null && !isOverrideable(protocol)) {
             throw new IllegalArgumentException("Can't override URLStreamHandler for protocol "
                     + protocol);
         }
 
         @SuppressWarnings("deprecation")
-        var result = new URL((URL)null, uri.toString(), streamHandler);
+        var result = new URL((URL)null, uri.toString(), handler);
         return result;
     }
 
