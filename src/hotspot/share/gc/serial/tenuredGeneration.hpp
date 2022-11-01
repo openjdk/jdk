@@ -123,10 +123,11 @@ class TenuredGeneration: public Generation {
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
-  void complete_loaded_archive_space(MemRegion archive_space);
+  void complete_archive_region_alloc(MemRegion archive_space);
 
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  virtual inline HeapWord* par_allocate_aligned(size_t word_size, size_t alignment, bool is_tlab);
 
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* cl);

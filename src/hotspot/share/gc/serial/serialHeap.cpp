@@ -114,12 +114,40 @@ void SerialHeap::safepoint_synchronize_end() {
   }
 }
 
-HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
-  MutexLocker ml(Heap_lock);
-  return old_gen()->allocate(word_size, false /* is_tlab */);
+bool SerialHeap::alloc_archive_regions(MemRegion* dumptime_regions, int num_regions, MemRegion* runtime_regions, bool is_open) {
+  size_t total_size = 0;
+  size_t alignment = os::vm_page_size();
+
+  for (int i = 0; i < num_regions; i++) {
+    size_t region_size = dumptime_regions[i].byte_size();
+    assert(is_aligned(region_size, alignment), "region size (" SIZE_FORMAT " bytes) "
+           "is not aligned to OS default page size", region_size);
+    total_size += region_size;
+  }
+
+  HeapWord* result = old_gen()->par_allocate_aligned(total_size / HeapWordSize, alignment, false);
+  if (result == NULL) {
+    return false;
+  }
+
+  for (int i = 0; i < num_regions; i++) {
+    size_t word_size = dumptime_regions[i].word_size();
+    MemRegion* curr_range = &runtime_regions[i];
+    if (i == 0) {
+      curr_range->set_start(result);
+    } else {
+      // next range should be aligned to page size
+      curr_range->set_start(runtime_regions[i-1].end());
+    }
+    assert(is_aligned(curr_range->start(), alignment), "region does not start at OS default page size");
+    curr_range->set_end(curr_range->start() + word_size);
+  }
+  return true;
 }
 
-void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
-  assert(old_gen()->used_region().contains(archive_space), "Archive space not contained in old gen");
-  old_gen()->complete_loaded_archive_space(archive_space);
+void SerialHeap::complete_archive_regions_alloc(MemRegion* regions, int num_regions) {
+  for (int i = 0; i < num_regions; i++) {
+    assert(old_gen()->used_region().contains(regions[i]), "Archive space not contained in old gen");
+    old_gen()->complete_archive_region_alloc(regions[i]);
+  }
 }
