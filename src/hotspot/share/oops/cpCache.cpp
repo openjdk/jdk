@@ -642,8 +642,8 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                indy_resolution_failed(), parameter_size());
     st->print_cr(" - tos: %s\n - local signature: %01x\n"
           " - has appendix: %01x\n - forced virtual: %01x\n"
-          " - final: %01x\n - virtual Final: %01x\n - resolution Failed: %01x\n"
-          " - num Parameters: %02x",
+          " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
+          " - num parameters: %02x",
                type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
                is_forced_virtual(), is_final(), is_vfinal(),
                indy_resolution_failed(), parameter_size());
