@@ -804,7 +804,7 @@ jint universe_init() {
     // currently mapped regions.
     MetaspaceShared::initialize_shared_spaces();
     StringTable::create_table();
-    if (ArchiveHeapLoader::is_loaded()) {
+    if (Universe::heap()->can_archive_regions_be_collected()) {
       StringTable::transfer_shared_strings_to_local_table();
     }
   } else

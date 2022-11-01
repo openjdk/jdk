@@ -709,6 +709,8 @@ public:
   void end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
                                size_t end_alignment_in_bytes = 0);
 
+  virtual bool can_archive_regions_be_collected() override { return false; }
+
   // Commit the appropriate G1 regions containing the specified MemRegions
   // and mark them as 'archive' regions. The regions in the array must be
   // non-overlapping and in order of ascending address.

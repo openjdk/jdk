@@ -533,6 +533,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void complete_archive_regions_alloc(MemRegion* regions, int num_regions) { return; }
   bool dealloc_archive_regions(MemRegion* range, int num_regions);
   virtual void fill_heap_regions(MemRegion* range, int num_regions);
+  virtual bool can_archive_regions_be_collected() { return true; }
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

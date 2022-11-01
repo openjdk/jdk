@@ -226,7 +226,8 @@ void oopDesc::release_double_field_put(int offset, jdouble value)     { Atomic::
 #ifdef ASSERT
 void oopDesc::verify_forwardee(oop forwardee) {
 #if INCLUDE_CDS_JAVA_HEAP
-  assert(!Universe::heap()->is_archived_object(forwardee) && !Universe::heap()->is_archived_object(this),
+  assert(Universe::heap()->can_archive_regions_be_collected() ||
+        (!Universe::heap()->is_archived_object(forwardee) && !Universe::heap()->is_archived_object(this)),
          "forwarding archive object");
 #endif
 }

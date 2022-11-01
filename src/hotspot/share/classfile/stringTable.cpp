@@ -859,7 +859,6 @@ public:
 // _shared_table invalid. Therefore, we proactively copy all the shared
 // strings into the _local_table, which can deal with oop relocation.
 void StringTable::transfer_shared_strings_to_local_table() {
-  assert(ArchiveHeapLoader::is_loaded(), "must be");
   EXCEPTION_MARK;
 
   // Reset _shared_table so that during the transfer, StringTable::intern()
