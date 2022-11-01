@@ -35,6 +35,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import jdk.classfile.ClassSignature;
@@ -75,33 +76,31 @@ class SignaturesTest {
 
         assertEqualsDeep(
                 MethodSignature.of(
-                        List.of(
-                                Signature.of(CD_byte.arrayType()),
-                                ClassTypeSig.of(ClassDesc.of("jdk.internal.reflect.ConstantPool")),
-                                ClassTypeSig.of(CD_Class, TypeArg.unbounded()),
-                                ArrayTypeSig.of(
-                                        ClassTypeSig.of(CD_Class,
-                                                TypeArg.extendsOf(
-                                                        ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))))),
                         ClassTypeSig.of(
                                 CD_Map,
                                 ClassTypeSig.of(
                                         CD_Class,
                                             TypeArg.extendsOf(
                                                     ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))),
-                                ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))),
+                                ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation"))),
+                        Signature.of(CD_byte.arrayType()),
+                        ClassTypeSig.of(ClassDesc.of("jdk.internal.reflect.ConstantPool")),
+                        ClassTypeSig.of(CD_Class, TypeArg.unbounded()),
+                        ArrayTypeSig.of(
+                                ClassTypeSig.of(CD_Class,
+                                        TypeArg.extendsOf(
+                                                ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))))),
                 MethodSignature.parseFrom("([BLjdk/internal/reflect/ConstantPool;Ljava/lang/Class<*>;[Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;)Ljava/util/Map<Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;Ljava/lang/annotation/Annotation;>;"));
 
         assertEqualsDeep(
                 MethodSignature.of(
                         List.of(
-                                TypeParam.of("T", null, ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))),
-                        List.of(
-                                ClassTypeSig.of(CD_Class, TypeVarSig.of("T"))),
-                        ArrayTypeSig.of(TypeVarSig.of("T")),
+                                TypeParam.of("T", Optional.empty(), ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))),
                         List.of(
                                 ClassTypeSig.of(ClassDesc.of("java.lang.IOException")),
-                                ClassTypeSig.of(ClassDesc.of("java.lang.IllegalAccessError")))),
+                                ClassTypeSig.of(ClassDesc.of("java.lang.IllegalAccessError"))),
+                        ArrayTypeSig.of(TypeVarSig.of("T")),
+                        ClassTypeSig.of(CD_Class, TypeVarSig.of("T"))),
                 MethodSignature.parseFrom("<T::Ljava/lang/annotation/Annotation;>(Ljava/lang/Class<TT;>;)[TT;^Ljava/lang/IOException;^Ljava/lang/IllegalAccessError;"));
 
         assertEqualsDeep(

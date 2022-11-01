@@ -33,15 +33,7 @@ import java.util.Optional;
 import jdk.classfile.impl.Util;
 
 /**
- * Models generic signatures on class, method, and field declarations, as defined
- * in JVMS 4.7.9.1.  Signatures encode generic information that is erased from
- * field and method descriptors, so it can be recovered by compilers,
- * reflection, and debuggers.
- *
- * <p>Signatures come in three kinds: class, method, and field.  Signatures
- * can model type parameters of a class or method, including bounds, and how
- * type parameters flow into supertypes, exceptions, and types in the field
- * or method descriptor.
+ * Models generic Java type signatures, as defined in JVMS 4.7.9.1.
  */
 public sealed interface Signature {
 
@@ -49,19 +41,17 @@ public sealed interface Signature {
     String signatureString();
 
     /**
-     * Represent an ordinary method or field descriptor as a signature
-     * @param descriptor the descriptor
-     * @return the signature
+     * Parses generic Java type signature from raw string
+     * @param javaTypeSignature raw Java type signature string
+     * @return Java type signature
      */
-    public static Signature parseFrom(String descriptor) {
-        requireNonNull(descriptor);
-        return new SignaturesImpl().parseSignature(descriptor);
+    public static Signature parseFrom(String javaTypeSignature) {
+        return new SignaturesImpl().parseSignature(requireNonNull(javaTypeSignature));
     }
 
     /**
-     * {@return a signature for an ordinary type, with no generic information}
-     * @param classDesc the symbolic description of the type
-     * @return the signature
+     * @param classDesc the symbolic description of the Java type
+     * @return Java type signature
      */
     public static Signature of(ClassDesc classDesc) {
         requireNonNull(classDesc);
@@ -241,8 +231,7 @@ public sealed interface Signature {
          * @param identifier the name of the type variable
          */
         public static TypeVarSig of(String identifier) {
-            requireNonNull(identifier);
-            return new SignaturesImpl.TypeVarSigImpl(identifier);
+            return new SignaturesImpl.TypeVarSigImpl(requireNonNull(identifier));
         }
     }
 
@@ -261,7 +250,7 @@ public sealed interface Signature {
          * @param componentSignature the component type
          */
         public static ArrayTypeSig of(Signature componentSignature) {
-            return of(1, componentSignature);
+            return of(1, requireNonNull(componentSignature));
         }
 
         /**
@@ -301,8 +290,23 @@ public sealed interface Signature {
          * @param interfaceBounds the interface bounds of the type parameter
          */
         public static TypeParam of(String identifier, RefTypeSig classBound, RefTypeSig... interfaceBounds) {
-            requireNonNull(identifier);
-            return new SignaturesImpl.TypeParamImpl(identifier, Optional.ofNullable(classBound), List.of(interfaceBounds));
+            return new SignaturesImpl.TypeParamImpl(
+                    requireNonNull(identifier),
+                    Optional.ofNullable(classBound),
+                    List.of(interfaceBounds));
+        }
+
+        /**
+         * {@return a signature for a type parameter}
+         * @param identifier the name of the type parameter
+         * @param classBound the class bound of the type parameter
+         * @param interfaceBounds the interface bounds of the type parameter
+         */
+        public static TypeParam of(String identifier, Optional<RefTypeSig> classBound, RefTypeSig... interfaceBounds) {
+            return new SignaturesImpl.TypeParamImpl(
+                    requireNonNull(identifier),
+                    requireNonNull(classBound),
+                    List.of(interfaceBounds));
         }
     }
 

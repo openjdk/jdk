@@ -24,13 +24,16 @@
  */
 package jdk.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Collections;
 import jdk.classfile.ClassSignature;
 import jdk.classfile.MethodSignature;
 import jdk.classfile.Signature;
 import jdk.classfile.Signature.*;
+import static java.util.Objects.requireNonNull;
 
 public final class SignaturesImpl {
 
@@ -40,13 +43,12 @@ public final class SignaturesImpl {
     private String sig;
     private int sigp;
 
-    // @@@ Move to ClassSignatureImpl to avoid list copying
-    public ClassSignature parseClassSignature(String sig) {
-        this.sig = sig;
+    public ClassSignature parseClassSignature(String signature) {
+        this.sig = signature;
         sigp = 0;
         List<TypeParam> typeParamTypes = parseParamTypes();
         RefTypeSig superclass = referenceTypeSig();
-        List<RefTypeSig> superinterfaces = null;
+        ArrayList<RefTypeSig> superinterfaces = null;
         while (sigp < sig.length()) {
             if (superinterfaces == null)
                 superinterfaces = new ArrayList<>();
@@ -55,19 +57,21 @@ public final class SignaturesImpl {
         return new ClassSignatureImpl(typeParamTypes, superclass, null2Empty(superinterfaces));
     }
 
-    // @@@ Move to ClassSignatureImpl to avoid list copying
-    public MethodSignature parseMethodSignature(String sig) {
-        this.sig = sig;
+    public MethodSignature parseMethodSignature(String signature) {
+        this.sig = signature;
         sigp = 0;
         List<TypeParam> typeParamTypes = parseParamTypes();
         assert sig.charAt(sigp) == '(';
         sigp++;
-        List<Signature> paramTypes = new ArrayList<>();
-        while (sig.charAt(sigp) != ')')
+        ArrayList<Signature> paramTypes = null;
+        while (sig.charAt(sigp) != ')') {
+            if (paramTypes == null)
+                 paramTypes = new ArrayList<>();
             paramTypes.add(typeSig());
+        }
         sigp++;
         Signature returnType = typeSig();
-        List<ThrowableSig> throwsTypes = null;
+        ArrayList<ThrowableSig> throwsTypes = null;
         while (sigp < sig.length() && sig.charAt(sigp) == '^') {
             sigp++;
             if (throwsTypes == null)
@@ -78,17 +82,17 @@ public final class SignaturesImpl {
             else
                 throw new IllegalStateException("not a valid type signature: " + sig);
         }
-        return new MethodSignatureImpl(typeParamTypes, paramTypes, returnType, null2Empty(throwsTypes));
+        return new MethodSignatureImpl(typeParamTypes, null2Empty(throwsTypes), returnType, null2Empty(paramTypes));
     }
 
-    public Signature parseSignature(String sig) {
-        this.sig = sig;
+    public Signature parseSignature(String signature) {
+        this.sig = signature;
         sigp = 0;
         return typeSig();
     }
 
     private List<TypeParam> parseParamTypes() {
-        List<TypeParam> typeParamTypes = null;
+        ArrayList<TypeParam> typeParamTypes = null;
         if (sig.charAt(sigp) == '<') {
             sigp++;
             typeParamTypes = new ArrayList<>();
@@ -96,7 +100,7 @@ public final class SignaturesImpl {
                 int sep = sig.indexOf(":", sigp);
                 String name = sig.substring(sigp, sep);
                 RefTypeSig classBound = null;
-                List<RefTypeSig> interfaceBounds = null;
+                ArrayList<RefTypeSig> interfaceBounds = null;
                 sigp = sep + 1;
                 if (sig.charAt(sigp) != ':')
                     classBound = referenceTypeSig();
@@ -128,7 +132,7 @@ public final class SignaturesImpl {
         switch (c) {
             case 'L':
                 StringBuilder sb = new StringBuilder();
-                List<Signature> argTypes = null;
+                ArrayList<Signature> argTypes = null;
                 Signature.ClassTypeSig t = null;
                 char sigch ;
                 do {
@@ -193,12 +197,6 @@ public final class SignaturesImpl {
     public static record ClassTypeSigImpl(Optional<ClassTypeSig> outerType, String className, List<Signature> typeArgs)
             implements Signature.ClassTypeSig {
 
-        public ClassTypeSigImpl(Optional<ClassTypeSig> outerType, String className, List<Signature> typeArgs) {
-            this.outerType = outerType;
-            this.className = className;
-            this.typeArgs = List.copyOf(typeArgs);
-        }
-
         @Override
         public String signatureString() {
             String prefix = "L";
@@ -208,7 +206,7 @@ public final class SignaturesImpl {
                 prefix = prefix.substring(0, prefix.length() - 1) + '.';
             }
             String suffix = ";";
-            if (typeArgs != null && !typeArgs.isEmpty()) {
+            if (!typeArgs.isEmpty()) {
                 var sb = new StringBuilder();
                 sb.append('<');
                 for (var ta : typeArgs)
@@ -232,11 +230,6 @@ public final class SignaturesImpl {
 
     public static record TypeParamImpl(String identifier, Optional<RefTypeSig> classBound, List<RefTypeSig> interfaceBounds)
             implements TypeParam {
-        public TypeParamImpl(String identifier, Optional<RefTypeSig> classBound, List<RefTypeSig> interfaceBounds) {
-            this.identifier = identifier;
-            this.classBound = classBound;
-            this.interfaceBounds = List.copyOf(interfaceBounds);
-        }
     }
 
     private static StringBuilder printTypeParameters(List<TypeParam> typeParameters) {
@@ -258,13 +251,6 @@ public final class SignaturesImpl {
     public static record ClassSignatureImpl(List<TypeParam> typeParameters, RefTypeSig superclassSignature,
             List<RefTypeSig> superinterfaceSignatures) implements ClassSignature {
 
-        public ClassSignatureImpl(List<TypeParam> typeParameters, RefTypeSig superclassSignature,
-                                  List<RefTypeSig> superinterfaceSignatures) {
-            this.typeParameters = List.copyOf(typeParameters);
-            this.superclassSignature = superclassSignature;
-            this.superinterfaceSignatures = List.copyOf(superinterfaceSignatures);
-        }
-
         @Override
         public String signatureString() {
             var sb = printTypeParameters(typeParameters);
@@ -275,18 +261,11 @@ public final class SignaturesImpl {
         }
     }
 
-    public static record MethodSignatureImpl(List<TypeParam> typeParameters,
-            List<Signature> arguments,
+    public static record MethodSignatureImpl(
+            List<TypeParam> typeParameters,
+            List<ThrowableSig> throwableSignatures,
             Signature result,
-            List<ThrowableSig> throwableSignatures) implements MethodSignature {
-
-        public MethodSignatureImpl(List<TypeParam> typeParameters, List<Signature> arguments, Signature result,
-                                   List<ThrowableSig> throwableSignatures) {
-            this.typeParameters = List.copyOf(typeParameters);
-            this.arguments = List.copyOf(arguments);
-            this.result = result;
-            this.throwableSignatures = List.copyOf(throwableSignatures);
-        }
+            List<Signature> arguments) implements MethodSignature {
 
         @Override
         public String signatureString() {
@@ -295,14 +274,14 @@ public final class SignaturesImpl {
             for (var a : arguments)
                 sb.append(a.signatureString());
             sb.append(')').append(result.signatureString());
-            if (throwableSignatures != null && !throwableSignatures.isEmpty())
+            if (!throwableSignatures.isEmpty())
                 for (var t : throwableSignatures)
                     sb.append('^').append(t.signatureString());
             return sb.toString();
         }
     }
 
-    public static <T> List<T> null2Empty(List<T> l) {
-        return l == null ? List.of() : l;
+    private static <T> List<T> null2Empty(ArrayList<T> l) {
+        return l == null ? List.of() : Collections.unmodifiableList(l);
     }
 }
