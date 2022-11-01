@@ -191,6 +191,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // a subtype of super_klass.
   void gen_subtype_check( Register sub_klass, Label &ok_is_subtype );
 
+  void get_invokedynamic_entry(Register cache, Register tmp, int bcp_offset);
+
   // Dispatching
   void dispatch_prolog(TosState state, int step = 0);
   void dispatch_epilog(TosState state, int step = 0);

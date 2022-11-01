@@ -17,14 +17,14 @@ public:
         _resolved_references_index(0),
         _cpool_index(0),
         _number_of_parameters(0),
-        _return_type(0), 
+        _return_type(0),
         _has_appendix(false) {}
-    ResolvedInvokeDynamicInfo(u2 resolved_references_index, u2 cpool_index) : 
+    ResolvedInvokeDynamicInfo(u2 resolved_references_index, u2 cpool_index) :
                 _method(nullptr),
                 _resolved_references_index(resolved_references_index),
                 _cpool_index(cpool_index),
                 _number_of_parameters(0),
-                _return_type(0), 
+                _return_type(0),
                 _has_appendix(false) {}
     bool has_local_signature() const { return true; }
     bool is_final() const { return true; }
@@ -51,6 +51,9 @@ public:
         _has_appendix = has_appendix;
     }
     void metaspace_pointers_do(MetaspaceClosure* it);
+
+    static int method_offset() { return offset_of(ResolvedInvokeDynamicInfo, _method); }
+    static int result_type_offset() { return offset_of(ResolvedInvokeDynamicInfo, _return_type); }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP

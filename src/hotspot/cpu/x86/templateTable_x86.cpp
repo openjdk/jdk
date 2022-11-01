@@ -2719,11 +2719,11 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
 }
 
 // <newcode>
-void TemplateTable::resolve_invokedynamic_entry(int byte_no, Register indy_entry, Register tmp) {
+/*void TemplateTable::resolve_invokedynamic_entry(int byte_no, Register indy_entry, Register tmp) {
   Bytecodes::Code code = bytecode();
   Label resolved;
 
-  __ get_field_entry(indy_entry, tmp, 1);
+  __ get_invokedynamic_entry(indy_entry, tmp, 1);
   assert(byte_no == TemplateTable::f1_byte || byte_no == TemplateTable::f2_byte, "Sanity check");
   Register byte_code = tmp;
     if (byte_no == f1_byte) {
@@ -2737,17 +2737,43 @@ void TemplateTable::resolve_invokedynamic_entry(int byte_no, Register indy_entry
   __ movl(byte_code, code);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache), byte_code);
   // Update registers with resolved info
-  __ get_field_entry(indy_entry, tmp, 1);
+  __ get_invokedynamic_entry(indy_entry, tmp, 1);
 
   __ bind(resolved);
+}*/
+
+void TemplateTable::load_invokedynamic_entry(int byte_no,
+                                             Register method,
+                                             Register itable_index,
+                                             Register flags) {
+  // load
+
+  // setup registers
+  const Register cache = rcx;
+  const Register index = rdx;
+  assert_different_registers(method, flags);
+  assert_different_registers(method, cache, index);
+  assert_different_registers(itable_index, flags);
+  assert_different_registers(itable_index, cache, index);
+
+  /*const int method_offset = in_bytes(
+    ConstantPoolCache::base_offset() +
+      ((byte_no == TemplateTable::f2_byte)
+       ? ConstantPoolCacheEntry::f2_offset()
+       : ConstantPoolCacheEntry::f1_offset()));
+  movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method* */
+  const int method_offset = in_bytes(ResolvedInvokeDynamicInfo::method_offset());
+  movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method*
+  __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
+
+    if (itable_index != noreg) {
+    // pick up itable or appendix index from f2 also:
+    __ movptr(itable_index, Address(cache, index, Address::times_ptr, index_offset));
+  }
+  __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
 }
 
-void TemplateTable::load_invokedynamic_entry(Register obj,
-                               Register fentry,
-                               Register off,
-                               Register flags,
-                               bool is_static) {
-  // do stuff
+  __ movl(flags, ResolvedInvokeDynamicInfo::result_type_offset());
 }
 
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
