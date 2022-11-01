@@ -54,7 +54,8 @@ public class ClassVersionChecker {
         SEVENTEEN("17", 61),
         EIGHTEEN("18", 62),
         NINETEEN("19", 63),
-        TWENTY("20", 64);
+        TWENTY("20", 64),
+        TWENTY_ONE("21", 65);
 
         private Version(String release, int classFileVer) {
             this.release = release;

@@ -71,9 +71,9 @@ public class Versions {
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19", "20");
+               "15", "16", "17", "18", "19", "20", "21");
 
-    public static final String LATEST_MAJOR_VERSION = "64.0";
+    public static final String LATEST_MAJOR_VERSION = "65.0";
 
     static enum SourceTarget {
         EIGHT(true,   "52.0",  "8", Versions::checksrc8),
@@ -88,7 +88,8 @@ public class Versions {
         SEVENTEEN(false, "61.0", "17", Versions::checksrc17),
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
         NINETEEN(false,  "63.0", "19", Versions::checksrc19),
-        TWENTY(false,  "64.0", "20", Versions::checksrc20);
+        TWENTY(false,  "64.0", "20", Versions::checksrc20),
+        TWENTY_ONE(false,  "65.0", "21", Versions::checksrc20);
 
         private final boolean dotOne;
         private final String classFileVer;
