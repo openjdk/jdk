@@ -81,7 +81,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ load_klass(t2, j_rarg0);
+  __ load_klass(t2, j_rarg0, t0);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -192,7 +192,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
-  __ load_klass(recv_klass_reg, j_rarg0);
+  __ load_klass(recv_klass_reg, j_rarg0, t0);
 
   // Receiver subtype check against REFC.
   __ lookup_interface_method(// inputs: rec. class, interface

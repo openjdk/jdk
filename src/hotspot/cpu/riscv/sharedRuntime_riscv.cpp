@@ -639,7 +639,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   {
     __ block_comment("c2i_unverified_entry {");
-    __ load_klass(t0, receiver);
+    __ load_klass(t0, receiver, tmp);
     __ ld(tmp, Address(holder, CompiledICHolder::holder_klass_offset()));
     __ ld(xmethod, Address(holder, CompiledICHolder::holder_metadata_offset()));
     __ beq(t0, tmp, ok);
@@ -1406,13 +1406,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   const Register ic_reg = t1;
   const Register receiver = j_rarg0;
+  const Register tmp_reg = t2;
 
   Label hit;
   Label exception_pending;
 
-  assert_different_registers(ic_reg, receiver, t0);
   __ verify_oop(receiver);
-  __ cmp_klass(receiver, ic_reg, t0, hit);
+  assert_different_registers(ic_reg, receiver, t0, tmp_reg);
+  __ cmp_klass(receiver, ic_reg, t0, tmp_reg, hit);
+#ifdef ASSERT
+  __ mv(t2, 0);  // Kill the t2 to verify we can use it as a tmp reg: see SharedRuntime::generate_i2c2i_adapters
+#endif
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 

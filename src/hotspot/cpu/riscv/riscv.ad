@@ -1738,7 +1738,10 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   C2_MacroAssembler _masm(&cbuf);
 
   Label skip;
-  __ cmp_klass(j_rarg0, t1, t0, skip);
+  __ cmp_klass(j_rarg0, t1, t0, t2 /* as a tmp */, skip);
+#ifdef ASSERT
+  __ mv(t2, 0);  // Kill the t2 to verify we can use it as a tmp reg: see SharedRuntime::generate_i2c2i_adapters
+#endif
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   __ bind(skip);
 
@@ -2380,7 +2383,7 @@ encode %{
     __ ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
-      __ load_klass(flag, oop);
+      __ load_klass(flag, oop, t0);
       __ lwu(flag, Address(flag, Klass::access_flags_offset()));
       __ andi(flag, flag, JVM_ACC_IS_VALUE_BASED_CLASS, tmp /* tmp */);
       __ bnez(flag, cont, true /* is_far */);
