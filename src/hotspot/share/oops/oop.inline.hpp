@@ -356,6 +356,11 @@ intptr_t oopDesc::identity_hash() {
   }
 }
 
+bool oopDesc::has_no_hash() {
+  markWord mrk = mark_acquire();
+  return mrk.has_no_hash();
+}
+
 bool oopDesc::has_displaced_mark() const {
   return mark().has_displaced_mark_helper();
 }
