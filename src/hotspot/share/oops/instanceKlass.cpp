@@ -2621,36 +2621,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   }
   return true;
 }
-
-void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
-  switch (loader_type) {
-  case ClassLoader::BOOT_LOADER:
-    _misc_flags |= _misc_is_shared_boot_class;
-    break;
-  case ClassLoader::PLATFORM_LOADER:
-    _misc_flags |= _misc_is_shared_platform_class;
-    break;
-  case ClassLoader::APP_LOADER:
-    _misc_flags |= _misc_is_shared_app_class;
-    break;
-  default:
-    ShouldNotReachHere();
-    break;
-  }
-}
-
-void InstanceKlass::assign_class_loader_type() {
-  ClassLoaderData *cld = class_loader_data();
-  if (cld->is_boot_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
-  }
-  else if (cld->is_platform_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::PLATFORM_LOADER);
-  }
-  else if (cld->is_system_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::APP_LOADER);
-  }
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
