@@ -700,6 +700,22 @@ bool ArchiveHeapLoader::is_archived_object(oop object) {
   return false;
 }
 
+bool ArchiveHeapLoader::is_archived_object(oop object) {
+  if (_closed_heap_regions.is_mapped()) {
+    if (_closed_heap_regions.is_in_runtime_region(cast_from_oop<uintptr_t>(object))) {
+      return true;
+    }
+    if (_open_heap_regions.is_mapped()) {
+      if (_open_heap_regions.is_in_runtime_region(cast_from_oop<uintptr_t>(object))) {
+        return true;
+      }
+    }
+  } else {
+    assert(!_open_heap_regions.is_mapped(), "open heap regions should not be mapped when closed heap regions are not mapped");
+  }
+  return false;
+}
+
 void ArchiveHeapLoader::fill_failed_mapped_regions() {
   if (_closed_heap_regions.is_mapping_failed()) {
     Universe::heap()->fill_heap_regions(_closed_heap_regions.runtime_regions(), _closed_heap_regions.num_regions());

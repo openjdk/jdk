@@ -96,6 +96,15 @@ private:
   int _num_regions;
   State _state;
 
+  int dumptime_region_index_for(intptr_t ptr) {
+    for (int i = 0; i < num_regions(); i++) {
+      if (dumptime_region(i).contains((const void *)ptr)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
 public:
   ArchiveHeapRegions() {}
   ~ArchiveHeapRegions();
@@ -118,20 +127,11 @@ public:
   int num_regions() { return _num_regions; }
 
   uintptr_t dumptime_to_runtime(uintptr_t ptr) {
-    int idx = contains(ptr);
+    int idx = dumptime_region_index_for(ptr);
     if (idx != -1) {
       return ptr + delta_for(idx);
     }
     return 0;
-  }
-
-  int contains(intptr_t ptr) {
-    for (int i = 0; i < num_regions(); i++) {
-      if (dumptime_region(i).contains((const void *)ptr)) {
-        return i;
-      }
-    }
-    return -1;
   }
 
   ptrdiff_t delta_for(int region_idx) {
@@ -143,6 +143,15 @@ public:
       if (runtime_region(i).start() != dumptime_region(i).start()) {
         return true;
         break;
+      }
+    }
+    return false;
+  }
+
+  bool is_in_runtime_region(uintptr_t ptr) {
+    for(int i = 0; i < num_regions(); i++) {
+      if (runtime_region(i).contains((const void *)ptr)) {
+        return true;
       }
     }
     return false;

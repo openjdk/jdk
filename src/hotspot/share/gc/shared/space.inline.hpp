@@ -43,6 +43,66 @@ inline HeapWord* Space::block_start(const void* p) {
   return block_start_const(p);
 }
 
+// This version requires locking.
+inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
+  assert(Heap_lock->owned_by_self() ||
+         (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()),
+         "not locked");
+  HeapWord* obj = top();
+  if (pointer_delta(end(), obj) >= size) {
+    HeapWord* new_top = obj + size;
+    set_top(new_top);
+    assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+    return obj;
+  } else {
+    return NULL;
+  }
+}
+
+// This version is lock-free.
+inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
+  do {
+    HeapWord* obj = top();
+    if (pointer_delta(end(), obj) >= size) {
+      HeapWord* new_top = obj + size;
+      HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
+      // result can be one of two:
+      //  the old top value: the exchange succeeded
+      //  otherwise: the new value of the top is returned.
+      if (result == obj) {
+        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        return obj;
+      }
+    } else {
+      return NULL;
+    }
+  } while (true);
+}
+
+// This version is lock-free.
+inline HeapWord* ContiguousSpace::par_allocate_aligned_impl(size_t size, size_t alignment) {
+  do {
+    HeapWord* curr_top = top();
+    HeapWord* obj = align_up(curr_top, alignment);
+    if (pointer_delta(end(), obj) >= size) {
+      HeapWord* new_top = obj + size;
+      HeapWord* result = Atomic::cmpxchg(top_addr(), curr_top, new_top);
+      // result can be one of two:
+      //  the old top value: the exchange succeeded
+      //  otherwise: the new value of the top is returned.
+      if (result == curr_top) {
+        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        if (curr_top != obj) {
+          CollectedHeap::fill_with_object(curr_top, obj);
+        }
+        return curr_top;
+      }
+    } else {
+      return NULL;
+    }
+  } while (true);
+}
+
 #if INCLUDE_SERIALGC
 inline HeapWord* OffsetTableContigSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
@@ -68,6 +128,16 @@ inline HeapWord* OffsetTableContigSpace::par_allocate(size_t size) {
   HeapWord* res = ContiguousSpace::par_allocate(size);
   if (res != NULL) {
     _offsets.alloc_block(res, size);
+  }
+  return res;
+}
+
+inline HeapWord* OffsetTableContigSpace::par_allocate_aligned(size_t size, size_t alignment) {
+  MutexLocker x(&_par_alloc_lock);
+  HeapWord* res = ContiguousSpace::par_allocate_aligned(size, alignment);
+  if (res != NULL) {
+    size_t actual_size = size + align_up(res, alignment) - res;
+    _offsets.alloc_block(res, actual_size);
   }
   return res;
 }

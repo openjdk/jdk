@@ -214,6 +214,10 @@ class Space: public CHeapObj<mtGC> {
   // Allocation (return NULL if full).  Enforces mutual exclusion internally.
   virtual HeapWord* par_allocate(size_t word_size) = 0;
 
+  // Allocation (return NULL if full).  Enforces mutual exclusion internally.
+  // Returned address is aligned to "alignment" bytes.
+  virtual HeapWord* par_allocate_aligned(size_t word_size, size_t alignment) = 0;
+
 #if INCLUDE_SERIALGC
   // Mark-sweep-compact support: all spaces can update pointers to objects
   // moving as a part of compaction.
@@ -433,6 +437,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Allocation helpers (return NULL if full).
   inline HeapWord* allocate_impl(size_t word_size);
   inline HeapWord* par_allocate_impl(size_t word_size);
+  inline HeapWord* par_allocate_aligned_impl(size_t word_size, size_t alignment);
 
  public:
   ContiguousSpace();
@@ -484,6 +489,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Allocation (return NULL if full)
   virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* par_allocate(size_t word_size);
+  virtual HeapWord* par_allocate_aligned(size_t word_size, size_t alignment);
 
   // Iteration
   void oop_iterate(OopIterateClosure* cl);
@@ -628,6 +634,7 @@ class OffsetTableContigSpace: public ContiguousSpace {
   // Add offset table update.
   virtual inline HeapWord* allocate(size_t word_size);
   inline HeapWord* par_allocate(size_t word_size);
+  virtual inline HeapWord* par_allocate_aligned(size_t word_size, size_t alignment);
 
   // MarkSweep support phase3
   virtual void initialize_threshold();

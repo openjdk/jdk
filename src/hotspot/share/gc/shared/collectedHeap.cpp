@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveHeapLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
@@ -649,7 +650,7 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
 }
 
 bool CollectedHeap::is_archived_object(oop object) const {
-  return false;
+  return ArchiveHeapLoader::is_archived_object(object);
 }
 
 uint32_t CollectedHeap::hash_oop(oop obj) const {

@@ -70,7 +70,7 @@ public:
 
   // Can this VM map archived heap regions? Currently only G1+compressed{oops,cp}
   static bool can_map() {
-    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedClassPointers);)
+    CDS_JAVA_HEAP_ONLY(return ((UseG1GC || UseEpsilonGC) && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
   static bool is_mapped() {
@@ -121,6 +121,7 @@ public:
   static void complete_heap_regions_mapping() NOT_CDS_JAVA_HEAP_RETURN;
   static ArchiveOopDecoder* get_oop_decoder(FileMapInfo* map_info) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static void patch_heap_embedded_pointers(FileMapInfo* map_info) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool is_archived_object(oop object) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
 #if INCLUDE_CDS_JAVA_HEAP
 private:
