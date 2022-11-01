@@ -307,7 +307,7 @@ public:
   bool validate();
   int compute_crc();
 
-  FileMapRegion* space_at(int i) {
+  FileMapRegion* region_at(int i) {
     assert(is_valid_region(i), "invalid region");
     return FileMapRegion::cast(&_space[i]);
   }
@@ -378,7 +378,7 @@ public:
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }
   void   set_header_crc(int crc)     { header()->set_crc(crc); }
-  int    space_crc(int i)      const { return space_at(i)->crc(); }
+  int    space_crc(int i)      const { return region_at(i)->crc(); }
   void   populate_header(size_t core_region_alignment);
   bool   validate_header();
   void   invalidate();
@@ -542,8 +542,8 @@ public:
   FileMapRegion* first_core_space() const;
   FileMapRegion* last_core_space() const;
 
-  FileMapRegion* space_at(int i) const {
-    return header()->space_at(i);
+  FileMapRegion* region_at(int i) const {
+    return header()->region_at(i);
   }
 
   void print(outputStream* st) {
