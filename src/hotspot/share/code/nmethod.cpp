@@ -474,7 +474,8 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     if (exception_handler != -1) {
       offsets.set_value(CodeOffsets::Exceptions, exception_handler);
     }
-    nm = new (native_nmethod_size, CompLevel_none)
+
+    nm = new (native_nmethod_size, method->is_method_handle_intrinsic())
     nmethod(method(), compiler_none, native_nmethod_size,
             compile_id, &offsets,
             code_buffer, frame_size,
@@ -714,6 +715,14 @@ nmethod::nmethod(
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
+}
+
+void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {
+  // Try MethodNonProfiled and MethodProfiled.
+  void* return_value = CodeCache::allocate(nmethod_size, CodeBlobType::MethodNonProfiled);
+  if (return_value != nullptr || !allow_NonNMethod_space) return return_value;
+  // Try NonNMethod or give up.
+  return CodeCache::allocate(nmethod_size, CodeBlobType::NonNMethod);
 }
 
 nmethod::nmethod(
