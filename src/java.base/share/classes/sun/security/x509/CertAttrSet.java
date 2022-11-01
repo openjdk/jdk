@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package sun.security.x509;
 
+import sun.security.util.DerOutputStream;
+
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.cert.CertificateException;
 import java.util.Enumeration;
 
@@ -58,12 +59,12 @@ public interface CertAttrSet<T> {
      * Encodes the attribute to the output stream in a format
      * that can be parsed by the <code>decode</code> method.
      *
-     * @param out the OutputStream to encode the attribute to.
+     * @param out the DerOutputStream to encode the attribute to.
      *
      * @exception CertificateException on encoding or validity errors.
      * @exception IOException on other errors.
      */
-    void encode(OutputStream out)
+    void encode(DerOutputStream out)
         throws CertificateException, IOException;
 
     /**
