@@ -2756,6 +2756,7 @@ void TemplateTable::load_invokedynamic_entry(int byte_no,
   assert_different_registers(itable_index, flags);
   assert_different_registers(itable_index, cache, index);
 
+
   /*const int method_offset = in_bytes(
     ConstantPoolCache::base_offset() +
       ((byte_no == TemplateTable::f2_byte)
@@ -2763,14 +2764,14 @@ void TemplateTable::load_invokedynamic_entry(int byte_no,
        : ConstantPoolCacheEntry::f1_offset()));
   movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method* */
   const int method_offset = in_bytes(ResolvedInvokeDynamicInfo::method_offset());
-  movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method*
-  __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
+  __ movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method*
+  //__ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
 
     if (itable_index != noreg) {
     // pick up itable or appendix index from f2 also:
     __ movptr(itable_index, Address(cache, index, Address::times_ptr, index_offset));
   }
-  __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
+ // __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
 }
 
   __ movl(flags, ResolvedInvokeDynamicInfo::result_type_offset());
@@ -3622,8 +3623,11 @@ void TemplateTable::prepare_invoke(int byte_no,
   // save 'interpreter return address'
   __ save_bcp();
 
-  load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
-  // <newcode> load resolvedinvokedynamic_info here
+  if (UseNewCode) {
+      // <newcode> load resolvedinvokedynamic_info here
+  } else {
+    load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
+  }
 
 
   // maybe push appendix to arguments (just before return address)
