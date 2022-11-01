@@ -31,50 +31,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
 import javax.lang.model.element.ExecutableElement;
 
 public class DocFinder {
 
     /*
-     * A specialized function that accepts a method in the hierarchy and
-     * returns a value that controls the search or throws a possibly
-     * checked exception, which terminates the search and transparently
-     * bubbles up the stack.
-     *
-     * FIXME: If a method does not meet the criterion, returns an empty optional.
-     *
-     * In a rare case, if a criterion performs inner searches and the search
-     * client needs to disambiguate between the outer search exceptions and
-     * any inner search exceptions, the criterion needs to provide extra code
-     * (to wrap and/or unwrap exceptions). For example:
-     *
-     *     try {
-     *         r = finder.trySearch(method, m -> {
-     *             ...
-     *             try {
-     *                 r1 = finder.trySearch(...);
-     *             } catch (NoOverriddenMethodsFound e) {
-     *                 throw new MyInnerSearchException(e);
-     *             }
-     *             ...
-     *         });
-     *     } catch (NoOverriddenMethodsFound e) {
-     *         ...
-     *     } catch (MyInnerSearchException e) {
-     *         ...
-     *     }
-     *
-     * Since such a use case should be rare, this API does not account for it.
-     * This allows to reduce bloat and streamline a typical use case.
-     *
-     * Here are some examples of the API bloat avoided:
-     *
-     *   - unconditional unwrapping of a dedicated exception thrown by
-     *     a search method
-     *   - either unconditional handling of a dedicated exception thrown by
-     *     a search method, or having multiple (overloaded?) search methods
-     *     and types of criterion: a criterion that can throw and a criterion
-     *     that cannot throw an exception
+     * A specialized, possibly stateful, function that accepts a method in the
+     * hierarchy and returns a value that controls the search or throws an
+     * exception, which terminates the search and transparently bubbles
+     * up the stack.
      */
     @FunctionalInterface
     public interface Criterion<T, X extends Throwable> {
@@ -125,18 +91,24 @@ public class DocFinder {
     }
 
     /*
-     * Overridden methods hierarchy search.
+     * Searches through the overridden methods hierarchy of the provided method.
      *
-     * Depending on how it is instructed, search starts either from the given
-     * method or the first method it overrides. The search then applies the
-     * given criterion to that method and methods up the hierarchy, in order,
-     * until either of the following happens:
+     * Depending on how it is instructed, the search begins from either the given
+     * method or the first method that the given method overrides. The search
+     * then applies the given criterion to methods it encounters, in the
+     * hierarchy order, until either of the following happens:
      *
-     *  - the criterion returns a non-empty optional
+     *  - the criterion concludes the search
      *  - the criterion throws an exception
      *  - the hierarchy is exhausted
-     *  - the given method overrides no methods and
-     *    the search is instructed to detect that
+     *
+     * If the search succeeds, the returned result is of type Conclude.
+     * Otherwise, the returned result is generally that of the most
+     * recent call to Criterion::apply.
+     *
+     * If the given method overrides no methods (i.e. hierarchy consists of the
+     * given method only) and the search is instructed to detect that, the
+     * search terminates with an exception.
      */
     private <T, X extends Throwable> Result<T> search0(ExecutableElement method,
                                                        boolean includeMethodInSearch,
@@ -144,9 +116,8 @@ public class DocFinder {
                                                        Criterion<T, X> criterion)
             throws NoOverriddenMethodsFound, X
     {
-        // if the "overrides" check is requested, perform it first so that we
-        // could throw the exception regardless of the search outcome on
-        // this method
+        // if the "overrides" check is requested and does not pass, throw the exception
+        // first so that it trumps the result that the search would otherwise had
         Iterator<ExecutableElement> methods = methodsOverriddenBy(method);
         if (throwExceptionIfDoesNotOverride && !methods.hasNext() ) {
             throw new NoOverriddenMethodsFound();
@@ -165,9 +136,10 @@ public class DocFinder {
         return r;
     }
 
-    // we see overridden and implemented methods as overridden (the way JLS does)
+    // We see both overridden and implemented methods as overridden
+    // (see JLS 8.4.8.1. Overriding (by Instance Methods))
     private Iterator<ExecutableElement> methodsOverriddenBy(ExecutableElement method) {
-        // TODO: add laziness if required
+        // TODO: create a lazy iterator if required
         var list = new ArrayList<ExecutableElement>();
         ExecutableElement overridden = overriddenMethodLookup.apply(method);
         if (overridden != null) {
@@ -177,83 +149,94 @@ public class DocFinder {
         return list.iterator();
     }
 
-    // SKIP and CONTINUE could alternatively be modelled as constants of an
-    // enum that implements Control<T> in a sealed fashion. However, there
-    // are a few issues with that:
-    //
-    //   1. Since enums cannot be generic, such an enum would need to implement
-    //      Control<Object> and each use of its constants directly would
-    //      require ugly casts. Yes, helper static methods could
-    //      remediate that, but then those methods would
-    //      coexist with enum constants. That won't be
-    //      clean. (See Collections.EMPTY_LIST and
-    //      Collections.emptyList().)
-    //   2. Having pattern match on Control<T> subtypes in switch would
-    //      then require a subsequent switch on the enum.
-    //      (Result is not an enum, so it has to be
-    //      ruled out first. Then a switch could
-    //      determine a particular constant.)
-    //
-    // `Conclude` could be modelled as a record implementing Control<T>, but
-    // it would be a bit limiting and asymmetric with respect to other
-    // controls.
-    //
-    // For those and other reasons a simpler approach was chosen.
+    private static final Result<?> SKIP = new Skipped<>();
+    private static final Result<?> CONTINUE = new Continued<>();
 
-    private static final Result<?> SKIP = new Result.Skip<>();
-    private static final Result<?> CONTINUE = new Result.Continue<>();
-
-    // only DocFinder should instantiate subtypes of Result<T>
+    /*
+     * Use static factory methods to get the desired result to return from
+     * Criterion. Use instanceof to check for a result type returned from
+     * a search. If a use case permits and you prefer Optional API, use
+     * the fromOptional/toOptional convenience methods to get and
+     * check for the result respectively.
+     */
     public sealed interface Result<T> {
 
-        final class Skip<T> implements Result<T> {
-            private Skip() { }
+        sealed interface Skip<T> extends Result<T> permits Skipped { }
+
+        sealed interface Continue<T> extends Result<T> permits Continued { }
+
+        sealed interface Conclude<T> extends Result<T> permits Concluded {
+
+            T value();
         }
 
-        final class Continue<T> implements Result<T> {
-            private Continue() { }
-        }
-
-        final class Conclude<T> implements Result<T> {
-
-            private final T value;
-
-            private Conclude(T value) {
-                this.value = Objects.requireNonNull(value);
-            }
-
-            public T value() {
-                return value;
-            }
-
-            @Override
-            public Optional<T> toOptional() {
-                return Optional.of(value);
-            }
-        }
-
+        /*
+         * Skips the search on the part of the hierarchy above the method for
+         * which this result is returned and continues the search from that
+         * method sibling, if any.
+         */
         @SuppressWarnings("unchecked")
         static <T> Result<T> SKIP() {
             return (Result<T>) SKIP;
         }
 
+        /*
+         * Continues the search.
+         */
         @SuppressWarnings("unchecked")
         static <T> Result<T> CONTINUE() {
             return (Result<T>) CONTINUE;
         }
 
+        /*
+         * Concludes the search with the given result.
+         */
         static <T> Result<T> CONCLUDE(T value) {
-            return new Conclude<>(value);
+            return new Concluded<>(value);
         }
 
-        // A pair of convenience methods for the most typical scenario
-
+        /*
+         * Translates this Result into Optional.
+         *
+         * Convenience method. Call on the result of a search if you are only
+         * interested in whether the search succeeded or failed and you
+         * prefer the Optional API.
+         */
         default Optional<T> toOptional() {
             return Optional.empty();
         }
 
+        /*
+         * Translates the given Optional into a binary decision whether to
+         * conclude the search or continue it.
+         *
+         * Convenience method. Use in Criterion that can easily provide
+         * suitable Optional. Don't use if Criterion needs to skip.
+         */
         static <T> Result<T> fromOptional(Optional<T> optional) {
             return optional.map(Result::CONCLUDE).orElseGet(Result::CONTINUE);
+        }
+    }
+
+    // Note: we hide records behind interfaces, as implementation detail.
+    // We don't directly implement Result with these records because it
+    // would require more exposure and commitment than is desired. For
+    // example, there would need to be public constructors, which
+    // would circumvent static factory methods.
+
+    private record Skipped<T>() implements DocFinder.Result.Skip<T> { }
+
+    private record Continued<T>() implements DocFinder.Result.Continue<T> { }
+
+    private record Concluded<T>(T value) implements DocFinder.Result.Conclude<T> {
+
+        Concluded {
+            Objects.requireNonNull(value);
+        }
+
+        @Override
+        public Optional<T> toOptional() {
+            return Optional.of(value);
         }
     }
 }
