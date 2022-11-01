@@ -52,8 +52,8 @@ public:
     }
     void metaspace_pointers_do(MetaspaceClosure* it);
 
-    static int method_offset() { return offset_of(ResolvedInvokeDynamicInfo, _method); }
-    static int result_type_offset() { return offset_of(ResolvedInvokeDynamicInfo, _return_type); }
+    static ByteSize method_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _method); }
+    static ByteSize result_type_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _return_type); }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
