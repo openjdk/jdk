@@ -97,6 +97,7 @@ private:
   ZMajorTracer      _jfr_tracer;
   size_t            _used_at_start;
 
+  void collect_young(const ZDriverRequest& request);
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
 

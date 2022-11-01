@@ -30,6 +30,18 @@
 #include "runtime/safepoint.hpp"
 
 uint GCId::_next_id = 0;
+GCIdPrinter GCId::_default_printer;
+GCIdPrinter* GCId::_printer = &_default_printer;
+
+size_t GCIdPrinter::print_gc_id(uint gc_id, char* buf, size_t len) {
+  int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
+  assert(ret > 0, "Failed to print prefix. Log buffer too small?");
+  return (size_t)ret;
+}
+
+void GCId::set_printer(GCIdPrinter* printer) {
+  _printer = printer;
+}
 
 NamedThread* currentNamedthread() {
   assert(Thread::current()->is_Named_thread(), "This thread must be NamedThread");
@@ -59,9 +71,7 @@ size_t GCId::print_prefix(char* buf, size_t len) {
   if (thread != NULL) {
     uint gc_id = current_or_undefined();
     if (gc_id != undefined()) {
-      int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
-      assert(ret > 0, "Failed to print prefix. Log buffer too small?");
-      return (size_t)ret;
+      return _printer->print_gc_id(gc_id, buf, len);
     }
   }
   return 0;

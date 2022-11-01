@@ -30,6 +30,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGCIdPrinter.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
@@ -183,6 +184,7 @@ public:
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
   ZDriverScopeMinor scope(request, &_gc_timer);
+  ZGCIdMinor minor_id(gc_id());
   ZGeneration::young()->collect(ZYoungType::minor, &_gc_timer);
 }
 
@@ -392,9 +394,8 @@ public:
   }
 };
 
-void ZDriverMajor::gc(const ZDriverRequest& request) {
-  ZDriverScopeMajor scope(request, &_gc_timer);
-
+void ZDriverMajor::collect_young(const ZDriverRequest& request) {
+  ZGCIdMajor major_id(gc_id(), 'Y');
   if (should_preclean_young(request.cause())) {
     // Collect young generation and promote everything to old generation
     ZGeneration::young()->collect(ZYoungType::major_full_preclean, &_gc_timer);
@@ -408,14 +409,21 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
     ZGeneration::young()->collect(ZYoungType::major_partial_roots, &_gc_timer);
   }
 
+  // Requires the additional abort point in the caller.
   abortpoint();
 
   // Handle allocations waiting for a young collection
   handle_alloc_stalling_for_young();
+}
+
+void ZDriverMajor::gc(const ZDriverRequest& request) {
+  ZDriverScopeMajor scope(request, &_gc_timer);
+  collect_young(request);
 
   abortpoint();
 
   // Collect old generation
+  ZGCIdMajor major_id(gc_id(), 'O');
   ZGeneration::old()->collect(&_gc_timer);
 }
 

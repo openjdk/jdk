@@ -26,6 +26,7 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zCPU.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGCIdPrinter.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
@@ -57,6 +58,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZBarrierSet::set_barrier_set(barrier_set);
   ZJNICritical::initialize();
   ZDriver::initialize();
+  ZGCIdPrinter::initialize();
 
   pd_initialize();
 }
