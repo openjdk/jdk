@@ -621,15 +621,13 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassEntry catchType) {
-        requireNonNull(catchType);
-        with(ExceptionCatch.of(handler, start, end, catchType));
+        with(ExceptionCatch.of(handler, start, end, Optional.of(catchType)));
         return this;
     }
 
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, Optional<ClassEntry> catchType) {
-        return catchType.isPresent()
-               ? exceptionCatch(start, end, handler, catchType.get())
-               : exceptionCatchAll(start, end, handler);
+        with(ExceptionCatch.of(handler, start, end, catchType));
+        return this;
     }
 
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassDesc catchType) {
@@ -1099,7 +1097,6 @@ public sealed interface CodeBuilder
         return typeCheckInstruction(Opcode.INSTANCEOF, constantPool().classEntry(target));
     }
 
-    // @@@ Other overloads?
     default CodeBuilder invokedynamic(InvokeDynamicEntry ref) {
         return invokeDynamicInstruction(ref);
     }

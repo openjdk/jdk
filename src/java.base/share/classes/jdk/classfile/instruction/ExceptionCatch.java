@@ -65,21 +65,6 @@ sealed public interface ExceptionCatch extends PseudoInstruction
      */
     Optional<ClassEntry> catchType();
 
-    // @@@ Should we hide this?
-    /**
-     * {@return an exception table pseudo-instruction}
-     * @param handler the handler for the exception
-     * @param tryStart the beginning of the instruction range for the gaurded instructions
-     * @param tryEnd the end of the instruction range for the gaurded instructions
-     * @param catchTypeEntry the type of exception to catch, or null if this
-     *                       handler is unconditional
-     */
-    static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd,
-                             ClassEntry catchTypeEntry) {
-        Objects.requireNonNull(catchTypeEntry);
-        return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry);
-    }
-
     /**
      * {@return an exception table pseudo-instruction}
      * @param handler the handler for the exception
