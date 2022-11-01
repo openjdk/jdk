@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.security.x509;
 import java.security.PublicKey;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import sun.security.util.*;
@@ -97,14 +96,12 @@ public class CertificateX509Key implements CertAttrSet<String> {
     /**
      * Encode the key in DER form to the stream.
      *
-     * @param out the OutputStream to marshal the contents to.
+     * @param out the DerOutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
-        tmp.write(key.getEncoded());
-
-        out.write(tmp.toByteArray());
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
+        out.write(key.getEncoded());
     }
 
     /**

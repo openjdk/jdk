@@ -332,7 +332,7 @@ namespace ext
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
+  enum mode { no_mode, base_plus_offset, pre, post, post_reg,
               base_plus_offset_reg, literal };
 
   // Shift and extend for base reg + reg offset addressing
