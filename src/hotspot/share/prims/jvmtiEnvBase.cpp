@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -793,40 +795,39 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
 
 jvmtiError
 JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **group_objs_p) {
-  ObjectLocker ol(group_hdl, current_thread);
 
-  int ngroups = java_lang_ThreadGroup::ngroups(group_hdl());
-  int nweaks = java_lang_ThreadGroup::nweaks(group_hdl());
+  // This call collects the strong and weak groups
+  JavaThread* THREAD = current_thread;
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result,
+                          group_hdl,
+                          vmClasses::ThreadGroup_klass(),
+                          SymbolTable::new_permanent_symbol("subgroupsArray"),
+                          vmSymbols::void_threadgroup_array_signature(),
+                          THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
 
-  jint count = 0;
-  Handle *group_objs = NULL;
-  if (ngroups > 0 || nweaks > 0) {
-    group_objs = NEW_RESOURCE_ARRAY_RETURN_NULL(Handle, ngroups + nweaks);
+  assert(result.get_type() == T_OBJECT, "just checking");
+  objArrayOop groups = (objArrayOop)result.get_oop();
+
+  Handle* group_objs = nullptr;
+  int count = 0;
+
+  int length = groups->length();
+  if (length > 0) {
+    group_objs = NEW_RESOURCE_ARRAY_RETURN_NULL(Handle, length);
     NULL_CHECK(group_objs, JVMTI_ERROR_OUT_OF_MEMORY);
 
-    if (ngroups > 0) {
-      // Strongly reachable subgroups:
-      objArrayOop groups = java_lang_ThreadGroup::groups(group_hdl());
-      for (int j = 0; j < ngroups; j++) {
-        oop group_obj = groups->obj_at(j);
-        assert(group_obj != NULL, "group_obj != NULL");
-        group_objs[count++] = Handle(current_thread, group_obj);
-      }
-    }
-
-    if (nweaks > 0) {
-      // Weakly reachable subgroups:
-      objArrayOop weaks = java_lang_ThreadGroup::weaks(group_hdl());
-      for (int j = 0; j < nweaks; j++) {
-        oop weak_obj = weaks->obj_at(j);
-        assert(weak_obj != NULL, "weak_obj != NULL");
-        oop group_obj = java_lang_ref_Reference::weak_referent(weak_obj);
-        if (group_obj != NULL) {
-          group_objs[count++] = Handle(current_thread, group_obj);
-        }
-      }
+    for (int i = 0; i < length; i++) {
+      oop group_obj = groups->obj_at(i);
+      assert(group_obj != NULL, "group_obj != NULL");
+      group_objs[count++] = Handle(current_thread, group_obj);
     }
   }
+
   *group_objs_p = group_objs;
   *count_ptr = count;
   return JVMTI_ERROR_NONE;
