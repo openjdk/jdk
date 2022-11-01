@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,19 +319,19 @@ public class BasicDoubleObject extends Basic {
 
 
     private static Double create(double v) {
-        return new Double(v);
+        return v;
     }
 
     private static Double negate(Double v) {
-        return new Double(-v.doubleValue());
+        return -v.doubleValue();
     }
 
     private static Double mult(Double v, double mul) {
-        return new Double(v.doubleValue() * mul);
+        return v.doubleValue() * mul;
     }
 
     private static Double recip(Double v) {
-        return new Double(1.0 / v.doubleValue());
+        return 1.0 / v.doubleValue();
     }
 
 
@@ -435,7 +435,7 @@ public class BasicDoubleObject extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +493,7 @@ public class BasicDoubleObject extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -903,12 +903,22 @@ public class BasicDoubleObject extends Basic {
 
 
 
+
+
+
+
+
+
+
+
+
+
         //---------------------------------------------------------------------
         // %s - Double
         //---------------------------------------------------------------------
-        Double one = new Double(1.0);
-        Double ten = new Double(10.0);
-        Double pi  = new Double(Math.PI);
+        Double one = 1.0d;
+        Double ten = 10.0d;
+        Double pi  = (double) Math.PI;
 
         test("%s", "3.141592653589793", pi);
 
