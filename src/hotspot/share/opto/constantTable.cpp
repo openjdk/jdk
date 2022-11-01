@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,6 +269,7 @@ ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) 
   BasicType type = oper->type()->basic_type();
   switch (type) {
   case T_LONG:    value.j = oper->constantL(); break;
+  case T_INT:     value.i = oper->constant();  break;
   case T_FLOAT:   value.f = oper->constantF(); break;
   case T_DOUBLE:  value.d = oper->constantD(); break;
   case T_OBJECT:

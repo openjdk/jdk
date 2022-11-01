@@ -17068,12 +17068,31 @@ instruct compressBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
   format %{ "mov    $tsrc, $src\n\t"
             "mov    $tmask, $mask\n\t"
-            "bext   $tdst, $tsrc, $tmask\t# parallel bit extract\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
             "mov    $dst, $tdst"
           %}
   ins_encode %{
     __ mov($tsrc$$FloatRegister, __ S, 0, $src$$Register);
     __ mov($tmask$$FloatRegister, __ S, 0, $mask$$Register);
+    __ sve_bext($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits (LoadI mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrs   $tsrc, $mem\n\t"
+            "ldrs   $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ ldrs($tmask$$FloatRegister, $constantaddress($mask));
     __ sve_bext($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
     __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
   %}
@@ -17086,15 +17105,34 @@ instruct compressBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
   format %{ "mov    $tsrc, $src\n\t"
             "mov    $tmask, $mask\n\t"
-            "bext   $tdst, $tsrc, $tmask\t# parallel bit extract\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
             "mov    $dst, $tdst"
           %}
   ins_encode %{
     __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
     __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
     __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
-    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0); 
-    %}
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits (LoadL mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrd   $tsrc, $mem\n\t"
+            "ldrd   $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
+    __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -17104,7 +17142,7 @@ instruct expandBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
   format %{ "mov    $tsrc, $src\n\t"
             "mov    $tmask, $mask\n\t"
-            "bdep   $tdst, $tsrc, $tmask\t# parallel bit deposit\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
             "mov    $dst, $tdst"
           %}
   ins_encode %{
@@ -17112,7 +17150,26 @@ instruct expandBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
     __ mov($tmask$$FloatRegister, __ S, 0, $mask$$Register);
     __ sve_bdep($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
     __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
-    %}
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits (LoadI mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrs   $tsrc, $mem\n\t"
+            "ldrs   $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ ldrs($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bdep($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -17122,12 +17179,32 @@ instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
   format %{ "mov    $tsrc, $src\n\t"
             "mov    $tmask, $mask\n\t"
-            "bdep   $tdst, $tsrc, $tmask\t# parallel bit deposit\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
             "mov    $dst, $tdst"
           %}
   ins_encode %{
     __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
     __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
+    __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits (LoadL mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrd   $tsrc, $mem\n\t"
+            "ldrd   $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
+    __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
     __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
     __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
   %}
