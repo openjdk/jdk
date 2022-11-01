@@ -26,6 +26,7 @@
 #include "jvm_io.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
+#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
@@ -36,6 +37,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
+#include "memory/resourceArea.hpp"
 
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -103,6 +105,11 @@ void NonJavaThread::remove_from_the_list() {
 }
 
 void NonJavaThread::pre_run() {
+  {
+    ResourceMark rm;
+    log_debug(logging, thread)("Starting %s thread, tid = " INTX_FORMAT, name(), os::current_thread_id());
+  }
+
   add_to_the_list();
 
   // This is slightly odd in that NamedThread is a subclass, but
