@@ -283,7 +283,7 @@ void PSOldGen::shrink(size_t bytes) {
   }
 }
 
-void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
+void PSOldGen::complete_archive_region_alloc(MemRegion archive_space) {
   HeapWord* cur = archive_space.start();
   while (cur < archive_space.end()) {
     _start_array.allocate_block(cur);

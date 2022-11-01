@@ -843,6 +843,13 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   return p;
 }
 
+HeapWord* MutableNUMASpace::cas_allocate_aligned(size_t size, size_t alignment) {
+  // MutableNUMASpace is never used for allocating archived regions,
+  // and this API is used only for allocating archived regions.
+  ShouldNotReachHere();
+  return NULL;
+}
+
 void MutableNUMASpace::print_short_on(outputStream* st) const {
   MutableSpace::print_short_on(st);
   st->print(" (");

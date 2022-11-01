@@ -78,6 +78,16 @@ class PSOldGen : public CHeapObj<mtGC> {
     return res;
   }
 
+  HeapWord* cas_allocate_aligned_noexpand(size_t word_size, size_t alignment) {
+    assert_locked_or_safepoint(Heap_lock);
+    HeapWord* res = object_space()->cas_allocate_aligned(word_size, alignment);
+    if (res != NULL) {
+      DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
+      _start_array.allocate_block(res);
+    }
+    return align_up(res, alignment);
+  }
+
   bool expand_for_allocate(size_t word_size);
   bool expand(size_t bytes);
   bool expand_by(size_t bytes);
@@ -134,7 +144,7 @@ class PSOldGen : public CHeapObj<mtGC> {
     return virtual_space()->uncommitted_size() == 0;
   }
 
-  void complete_loaded_archive_space(MemRegion archive_space);
+  void complete_archive_region_alloc(MemRegion archive_space);
 
   // Calculating new sizes
   void resize(size_t desired_free_space);
@@ -143,6 +153,15 @@ class PSOldGen : public CHeapObj<mtGC> {
     HeapWord* res;
     do {
       res = cas_allocate_noexpand(word_size);
+      // Retry failed allocation if expand succeeds.
+    } while ((res == nullptr) && expand_for_allocate(word_size));
+    return res;
+  }
+
+  HeapWord* allocate_aligned(size_t word_size, size_t alignment) {
+    HeapWord* res;
+    do {
+      res = cas_allocate_aligned_noexpand(word_size, alignment);
       // Retry failed allocation if expand succeeds.
     } while ((res == nullptr) && expand_for_allocate(word_size));
     return res;

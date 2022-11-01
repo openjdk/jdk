@@ -228,6 +228,7 @@ class MutableNUMASpace : public MutableSpace {
 
   // Allocation (return NULL if full)
   virtual HeapWord* cas_allocate(size_t word_size);
+  virtual HeapWord* cas_allocate_aligned(size_t word_size, size_t alignment);
 
   // Debugging
   virtual void print_on(outputStream* st) const;
