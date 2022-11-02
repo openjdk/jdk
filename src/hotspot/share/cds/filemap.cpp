@@ -1555,6 +1555,8 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, char* dumptime
   _is_heap_region = HeapShared::is_heap_region(region_index);
   _is_bitmap_region = (region_index == MetaspaceShared::bm);
 
+  // _mapping_offset is used only by ro/rw regions
+  // _dumptime_base is used only by heap regions
   if (_is_heap_region) {
     assert(mapping_offset == 0, "must be");
   } else if (_is_bitmap_region) {
@@ -1564,6 +1566,7 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, char* dumptime
     assert(region_index == MetaspaceShared::ro || region_index == MetaspaceShared::rw, "must be");
     assert(dumptime_base == NULL, "must be");
   }
+
   _mapping_offset = mapping_offset;
   _dumptime_base = dumptime_base;
   _used = size;
@@ -1641,7 +1644,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(!DynamicDumpSharedSpaces, "must be");
     requested_base = base;
-    dumptime_base = base; // This is the rumtime address of the base (lower end) of this heap region.
+    dumptime_base = base; // This is the runtime address of the base (lower end) of this heap region.
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
     requested_base = ArchiveBuilder::current()->to_requested(base);

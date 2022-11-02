@@ -51,7 +51,7 @@ typedef struct CDSFileMapRegion {
                               // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
   size_t  _mapping_offset;    // This region should be mapped at this offset from SharedBaseAddress.
-                              // (For non-heap regions only. Must be zero for all other types of regions.)
+                              // (For RO/RW regions only. Must be zero for all other types of regions.)
   char*   _dumptime_base;     // This region was located at this address during dumptime.
                               // (For heap regions only. Must be zero for all other types of regions.)
   size_t  _used;              // Number of bytes actually used by this region (excluding padding bytes added
