@@ -4,7 +4,7 @@ Updating libpng in OpenJDK
 Usually this is just a matter of updating the version at the top,
 and in the embedded text, and extending the copyright date.
 
-The updated info comes from the LICENSE file.
+The updated info comes from the LICENSE and TRADEMARK files.
 
 2) Copy LICENSE, README, and CHANGES from the new version into OpenJDK's
 libpng source directory
