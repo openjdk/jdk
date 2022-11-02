@@ -251,6 +251,7 @@ public class InflaterInputStream extends FilterInputStream {
 
     /**
      * Fills input buffer with more data to decompress.
+     * @implSpec
      * This method will read up to {@link #buf}.length bytes into the input
      * buffer, {@link #buf}, starting at element {@code 0}. The {@link #len}
      * field will be set to the number of bytes read.
