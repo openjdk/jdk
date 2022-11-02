@@ -655,8 +655,7 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
         appendix->print_on(st);
       }
     }
-  }
-  else {
+  } else {
     assert(is_field_entry(), "must be a field entry");
     st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
     st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
