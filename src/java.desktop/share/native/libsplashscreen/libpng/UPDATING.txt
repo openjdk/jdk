@@ -4,7 +4,7 @@ Updating libpng in OpenJDK
 Usually this is just a matter of updating the version at the top,
 and in the embedded text, and extending the copyright date.
 
-The updated info comes from the LICENSE and TRADEMARK files.
+The updated info comes from the LICENSE, TRADEMARK and AUTHORS files.
 
 2) Copy LICENSE, README, and CHANGES from the new version into OpenJDK's
 libpng source directory
@@ -37,19 +37,18 @@ and instead just tweak the existing one.
 
 First cd into the libpng folder and run the following scripts.
 
-    Use expand to remove tabs
-        for f in *.c *.h;
-        do
-        expand ${f} > ${f}.tmp;
-        mv ${f}.tmp $f;
-        done
+    for f in *.c *.h;
+    do
+      # replace tabs with spaces
+      expand ${f} > ${f}.tmp;
+      mv ${f}.tmp $f;
 
-    Use sed to remove trailing white space
-        for f in *.c *.h;
-        do
-        sed -e 's/[ ]* $//' ${f} > ${f}.tmp;
-        mv ${f}.tmp $f;
-        done
+      # fix line endings to LF
+      sed -i -e 's/\r$//g' ${f};
+
+      # remove trailing spaces
+      sed -i -e 's/[ ]* $//g' ${f};
+    done
 
 Make sure all the updated files have UNIX-STYLE (LF) line endings to avoid
 whitespace errors.
