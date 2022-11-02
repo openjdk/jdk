@@ -84,10 +84,9 @@ public class ListItemEventsTest {
             robot.waitForIdle();
 
             Point listAt = list.getLocationOnScreen();
-            Dimension listSize  = list.getSize();
-            
-            robot.mouseMove(listAt.x + listSize .width / 2,
-                listAt.y + listSize .height / 2);
+            Dimension listSize = list.getSize();
+            robot.mouseMove(listAt.x + listSize.width / 2,
+                listAt.y + listSize.height / 2);
 
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
