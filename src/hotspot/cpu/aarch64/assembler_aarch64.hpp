@@ -332,7 +332,7 @@ namespace ext
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
+  enum mode { no_mode, base_plus_offset, pre, post, post_reg,
               base_plus_offset_reg, literal };
 
   // Shift and extend for base reg + reg offset addressing
@@ -372,11 +372,6 @@ class Address {
 
   RelocationHolder _rspec;
 
-  // Typically we use AddressLiterals we want to use their rval
-  // However in some situations we want the lval (effect address) of
-  // the item.  We provide a special factory for making those lvals.
-  bool _is_lval;
-
   // If the target is far we'll need to load the ea of this to a
   // register to reach it. Otherwise if near we can do PC-relative
   // addressing.
@@ -405,7 +400,6 @@ class Address {
   Address(address target, RelocationHolder const& rspec)
     : _mode(literal),
       _rspec(rspec),
-      _is_lval(false),
       _target(target)  { }
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
   Address(Register base, RegisterOrConstant index, extend ext = lsl())

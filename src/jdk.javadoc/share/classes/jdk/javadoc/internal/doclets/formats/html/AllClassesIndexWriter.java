@@ -111,16 +111,16 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addContents(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
+                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.records, e -> utils.isRecord(e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
@@ -146,7 +146,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param table the table to which the row will be added
      * @param klass the type to be added to the table
      */
-    protected void addTableRow(Table table, TypeElement klass) {
+    protected void addTableRow(Table<TypeElement> table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
         Content classLink = getLink(new HtmlLinkInfo(
                 configuration, HtmlLinkInfo.Kind.INDEX, klass));

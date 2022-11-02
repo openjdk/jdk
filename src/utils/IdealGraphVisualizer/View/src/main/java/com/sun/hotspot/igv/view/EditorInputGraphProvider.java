@@ -27,7 +27,7 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import java.util.Set;
+import java.util.Collection;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -57,9 +57,16 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     }
 
     @Override
-    public void setSelectedNodes(Set<InputNode> nodes) {
+    public void addSelectedNodes(Collection<InputNode> nodes) {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
-            editor.setSelectedNodes(nodes);
+            editor.addSelectedNodes(nodes, false);
+        }
+    }
+
+    @Override
+    public void clearSelectedNodes() {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.clearSelectedNodes();
         }
     }
 

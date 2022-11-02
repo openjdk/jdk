@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -299,23 +301,6 @@ void ConstantPool::archive_resolved_references() {
   }
 }
 
-void ConstantPool::resolve_class_constants(TRAPS) {
-  assert(DumpSharedSpaces, "used during dump time only");
-  // The _cache may be NULL if the _pool_holder klass fails verification
-  // at dump time due to missing dependencies.
-  if (cache() == NULL || reference_map() == NULL) {
-    return; // nothing to do
-  }
-
-  constantPoolHandle cp(THREAD, this);
-  for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_string()) {
-      int cache_index = cp->cp_to_object_index(index);
-      string_at_impl(cp, index, cache_index, CHECK);
-    }
-  }
-}
-
 void ConstantPool::add_dumped_interned_strings() {
   objArrayOop rr = resolved_references();
   if (rr != NULL) {
@@ -388,43 +373,68 @@ void ConstantPool::remove_unshareable_info() {
     resolved_references() != NULL ? resolved_references()->length() : 0);
   set_resolved_references(OopHandle());
 
-  int num_klasses = 0;
+  bool archived = false;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_unresolved_klass_in_error()) {
+    switch (tag_at(index).value()) {
+    case JVM_CONSTANT_UnresolvedClassInError:
       tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-    } else if (tag_at(index).is_method_handle_in_error()) {
+      break;
+    case JVM_CONSTANT_MethodHandleInError:
       tag_at_put(index, JVM_CONSTANT_MethodHandle);
-    } else if (tag_at(index).is_method_type_in_error()) {
+      break;
+    case JVM_CONSTANT_MethodTypeInError:
       tag_at_put(index, JVM_CONSTANT_MethodType);
-    } else if (tag_at(index).is_dynamic_constant_in_error()) {
+      break;
+    case JVM_CONSTANT_DynamicInError:
       tag_at_put(index, JVM_CONSTANT_Dynamic);
-    }
-    if (tag_at(index).is_klass()) {
-      // This class was resolved as a side effect of executing Java code
-      // during dump time. We need to restore it back to an UnresolvedClass,
-      // so that the proper class loading and initialization can happen
-      // at runtime.
-      bool clear_it = true;
-      if (pool_holder()->is_hidden() && index == pool_holder()->this_class_index()) {
-        // All references to a hidden class's own field/methods are through this
-        // index. We cannot clear it. See comments in ClassFileParser::fill_instance_klass.
-        clear_it = false;
-      }
-      if (clear_it) {
-        CPKlassSlot kslot = klass_slot_at(index);
-        int resolved_klass_index = kslot.resolved_klass_index();
-        int name_index = kslot.name_index();
-        assert(tag_at(name_index).is_symbol(), "sanity");
-        resolved_klasses()->at_put(resolved_klass_index, NULL);
-        tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-        assert(klass_name_at(index) == symbol_at(name_index), "sanity");
-      }
+      break;
+    case JVM_CONSTANT_Class:
+      archived = maybe_archive_resolved_klass_at(index);
+      ArchiveBuilder::alloc_stats()->record_klass_cp_entry(archived);
+      break;
     }
   }
+
   if (cache() != NULL) {
     // cache() is NULL if this class is not yet linked.
     cache()->remove_unshareable_info();
   }
+}
+
+bool ConstantPool::maybe_archive_resolved_klass_at(int cp_index) {
+  assert(ArchiveBuilder::current()->is_in_buffer_space(this), "must be");
+  assert(tag_at(cp_index).is_klass(), "must be resolved");
+
+  if (pool_holder()->is_hidden() && cp_index == pool_holder()->this_class_index()) {
+    // All references to a hidden class's own field/methods are through this
+    // index, which was resolved in ClassFileParser::fill_instance_klass. We
+    // must preserve it.
+    return true;
+  }
+
+  CPKlassSlot kslot = klass_slot_at(cp_index);
+  int resolved_klass_index = kslot.resolved_klass_index();
+  Klass* k = resolved_klasses()->at(resolved_klass_index);
+  // k could be NULL if the referenced class has been excluded via
+  // SystemDictionaryShared::is_excluded_class().
+
+  if (k != NULL) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    if (ClassPrelinker::can_archive_resolved_klass(src_cp, cp_index)) {
+      if (log_is_enabled(Debug, cds, resolve)) {
+        ResourceMark rm;
+        log_debug(cds, resolve)("Resolved klass CP entry [%d]: %s => %s", cp_index,
+                                pool_holder()->external_name(), k->external_name());
+      }
+      return true;
+    }
+  }
+
+  // This referenced class cannot be archived. Revert the tag to UnresolvedClass,
+  // so that the proper class loading and initialization can happen at runtime.
+  resolved_klasses()->at_put(resolved_klass_index, NULL);
+  tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
+  return false;
 }
 #endif // INCLUDE_CDS
 

@@ -23,14 +23,12 @@
 
 class ClassLoadingThread extends Thread {
 
-    private ClassLoader ldr1;
-    private ClassLoader ldr2;
-    private int which;
+    private String className;
+    private ClassLoader ldr;
 
-    public ClassLoadingThread(ClassLoader loader1, ClassLoader loader2, int i) {
-        ldr1 = loader1;
-        ldr2 = loader2;
-        which = i;
+    public ClassLoadingThread(String name, ClassLoader loader) {
+        className = name;
+        ldr = loader;
     }
 
     private boolean success = true;
@@ -50,10 +48,6 @@ class ClassLoadingThread extends Thread {
     }
 
     public void run() {
-       if (which == 0) {
-           callForName("A",ldr1);
-       } else {
-           callForName("C", ldr2);
-       }
+       callForName(className, ldr);
     }
 }
