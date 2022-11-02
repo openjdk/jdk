@@ -368,19 +368,7 @@ void ReadClosure::do_oop(oop *p) {
   if (_oop_decoder) {
     *p = _oop_decoder->decode(ptr);
   } else {
-    if (UseCompressedOops) {
-      narrowOop o = CompressedOops::narrow_oop_cast(ptr);
-      if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_fully_available()) {
-        *p = NULL;
-      } else {
-        assert(ArchiveHeapLoader::can_use(), "sanity");
-        assert(ArchiveHeapLoader::is_fully_available(), "must be");
-        *p = ArchiveHeapLoader::decode_from_archive(o);
-      }
-    } else {
-      assert(!ArchiveHeapLoader::is_fully_available(), "heap loading is enabled only for UseCompressedOops");
-      *p = NULL;
-    }
+    *p = NULL;
   }
 }
 

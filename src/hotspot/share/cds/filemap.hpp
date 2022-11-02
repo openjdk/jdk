@@ -480,7 +480,6 @@ public:
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
   }
-  bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
@@ -582,14 +581,9 @@ public:
   static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
   static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
 
-  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
-
 public:
   bool region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
-  // The starting address of spc, as calculated with HeapShared::decode_from_archive()
-  address start_address_as_decoded_from_archive(FileMapRegion* spc) {
-    return decode_start_address(spc, false);
-  }
+
 private:
 
 #if INCLUDE_JVMTI

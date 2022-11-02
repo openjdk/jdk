@@ -272,7 +272,7 @@ oop HeapShared::get_root(int index, bool clear) {
 void HeapShared::clear_root(int index) {
   assert(index >= 0, "sanity");
   assert(UseSharedSpaces, "must be");
-  if (ArchiveHeapLoader::is_fully_available()) {
+  if (ArchiveHeapLoader::is_archived_heap_available()) {
     if (log_is_enabled(Debug, cds, heap)) {
       oop old = roots()->obj_at(index);
       log_debug(cds, heap)("Clearing root %d: was " PTR_FORMAT, index, p2i(old));
@@ -444,7 +444,7 @@ void HeapShared::check_enum_obj(int level,
 
 // See comments in HeapShared::check_enum_obj()
 bool HeapShared::initialize_enum_klass(InstanceKlass* k, TRAPS) {
-  if (!ArchiveHeapLoader::is_fully_available()) {
+  if (!ArchiveHeapLoader::is_archived_heap_available()) {
     return false;
   }
 
@@ -841,7 +841,7 @@ void HeapShared::serialize(SerializeClosure* soc) {
     assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
     // Create an OopHandle only if we have actually mapped or loaded the roots
     if (roots_oop != NULL) {
-      assert(ArchiveHeapLoader::is_fully_available(), "must be");
+      assert(ArchiveHeapLoader::is_archived_heap_available(), "must be");
       _roots = OopHandle(Universe::vm_global(), roots_oop);
     }
   } else {
@@ -896,7 +896,7 @@ static void verify_the_heap(Klass* k, const char* which) {
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
 void HeapShared::resolve_classes(JavaThread* current) {
   assert(UseSharedSpaces, "runtime only!");
-  if (!ArchiveHeapLoader::is_fully_available()) {
+  if (!ArchiveHeapLoader::is_archived_heap_available()) {
     return; // nothing to do
   }
   resolve_classes_for_subgraphs(current, closed_archive_subgraph_entry_fields);
@@ -929,7 +929,7 @@ void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) 
 
 void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k) {
   JavaThread* THREAD = current;
-  if (!ArchiveHeapLoader::is_fully_available()) {
+  if (!ArchiveHeapLoader::is_archived_heap_available()) {
     return; // nothing to do
   }
 

@@ -2060,36 +2060,21 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   return count;
 }
 
-address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode) {
-  size_t offset = spc->mapping_offset();
-  narrowOop n = CompressedOops::narrow_oop_cast(offset);
-  if (with_current_oop_encoding_mode) {
-    return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
-  } else {
-    return cast_from_oop<address>(ArchiveHeapLoader::decode_from_archive(n));
-  }
-}
-
 #if INCLUDE_CDS_JAVA_HEAP
 bool FileMapInfo::has_heap_regions() {
   return (space_at(MetaspaceShared::first_closed_heap_region)->used() > 0);
 }
 
 void FileMapInfo::map_or_load_heap_regions() {
-  bool success = false;
-
   if (can_use_heap_regions()) {
-    if (ArchiveHeapLoader::can_map()) {
+    if (ArchiveHeapLoader::can_use()) {
       ArchiveHeapLoader::map_heap_regions(this);
-      success = ArchiveHeapLoader::open_regions_mapped();
-    } else if (ArchiveHeapLoader::can_load()) {
-      success = ArchiveHeapLoader::load_heap_regions(this);
     } else {
-      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+      log_info(cds)("Cannot use CDS heap data."); 
     }
   }
 
-  if (!success) {
+  if (!ArchiveHeapLoader::is_archived_heap_available()) {
     MetaspaceShared::disable_full_module_graph();
   }
 }
@@ -2397,17 +2382,6 @@ bool FileMapInfo::validate_header() {
   } else {
     return DynamicArchive::validate(this);
   }
-}
-
-// Check if a given address is within one of the shared regions
-bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
-  assert(idx == MetaspaceShared::ro ||
-         idx == MetaspaceShared::rw, "invalid region index");
-  char* base = region_addr(idx);
-  if (p >= base && p < base + space_at(idx)->used()) {
-    return true;
-  }
-  return false;
 }
 
 #if INCLUDE_JVMTI

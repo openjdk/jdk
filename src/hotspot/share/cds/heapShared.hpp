@@ -245,13 +245,6 @@ private:
   static void init_subgraph_entry_fields(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[], TRAPS);
 
-  // UseCompressedOops only: Used by decode_from_archive
-  static address _narrow_oop_base;
-  static int     _narrow_oop_shift;
-
-  // !UseCompressedOops only: used to relocate pointers to the archived objects
-  static ptrdiff_t _runtime_delta;
-
   typedef ResourceHashtable<oop, bool,
       15889, // prime number
       ResourceObj::C_HEAP,
