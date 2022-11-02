@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +210,38 @@ jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.max_usage_in_bytes",
                      "Maximum Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, memmaxusage);
   return memmaxusage;
+}
+
+
+jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.usage_in_bytes",
+                     "Kernel Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, kmem_usage);
+  return kmem_usage;
+}
+
+jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
+  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.kmem.limit_in_bytes",
+                     "Kernel Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, kmem_limit);
+  if (kmem_limit >= os::Linux::physical_memory()) {
+    return (jlong)-1;
+  }
+  return (jlong)kmem_limit;
+}
+
+jlong CgroupV1Subsystem::kernel_memory_max_usage_in_bytes() {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.max_usage_in_bytes",
+                     "Maximum Kernel Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, kmem_max_usage);
+  return kmem_max_usage;
+}
+
+void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
+  jlong kmem_usage = kernel_memory_usage_in_bytes();
+  jlong kmem_limit = kernel_memory_limit_in_bytes();
+  jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();
+
+  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
+  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_limit_in_bytes");
 }
 
 char * CgroupV1Subsystem::cpu_cpuset_cpus() {

@@ -252,12 +252,15 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual jlong memory_and_swap_limit_in_bytes() = 0;
     virtual jlong memory_soft_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
+
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
     virtual jlong read_memory_limit_in_bytes() = 0;
     virtual const char * container_type() = 0;
     virtual CachingCgroupController* memory_controller() = 0;
     virtual CachingCgroupController* cpu_controller() = 0;
+
+    virtual void print_version_specific_info(outputStream* st) = 0;
 };
 
 // Utility class for storing info retrieved from /proc/cgroups,
