@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -242,34 +241,6 @@ implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DIGITAL_SIGNATURE)) {
-            set(0,false);
-        } else if (name.equalsIgnoreCase(NON_REPUDIATION)) {
-            set(1,false);
-        } else if (name.equalsIgnoreCase(KEY_ENCIPHERMENT)) {
-            set(2,false);
-        } else if (name.equalsIgnoreCase(DATA_ENCIPHERMENT)) {
-            set(3,false);
-        } else if (name.equalsIgnoreCase(KEY_AGREEMENT)) {
-            set(4,false);
-        } else if (name.equalsIgnoreCase(KEY_CERTSIGN)) {
-            set(5,false);
-        } else if (name.equalsIgnoreCase(CRL_SIGN)) {
-            set(6,false);
-        } else if (name.equalsIgnoreCase(ENCIPHER_ONLY)) {
-            set(7,false);
-        } else if (name.equalsIgnoreCase(DECIPHER_ONLY)) {
-            set(8,false);
-        } else {
-          throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:KeyUsage.");
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the KeyUsage.
@@ -327,24 +298,6 @@ implements CertAttrSet<String> {
        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DIGITAL_SIGNATURE);
-        elements.addElement(NON_REPUDIATION);
-        elements.addElement(KEY_ENCIPHERMENT);
-        elements.addElement(DATA_ENCIPHERMENT);
-        elements.addElement(KEY_AGREEMENT);
-        elements.addElement(KEY_CERTSIGN);
-        elements.addElement(CRL_SIGN);
-        elements.addElement(ENCIPHER_ONLY);
-        elements.addElement(DECIPHER_ONLY);
-
-        return (elements.elements());
-    }
 
 
     public boolean[] getBits() {
@@ -354,6 +307,7 @@ implements CertAttrSet<String> {
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }

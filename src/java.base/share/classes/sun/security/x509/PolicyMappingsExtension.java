@@ -188,32 +188,9 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(MAP)) {
-            maps = null;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:PolicyMappingsExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements () {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(MAP);
-
-        return elements.elements();
-    }
-
-    /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName () {
         return (NAME);
     }

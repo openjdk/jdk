@@ -23,7 +23,7 @@
         <folder name="File">
             <file name="ExportActionSeparator.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
-                <attr name="position" intvalue="700"/>
+                <attr name="position" intvalue="2000"/>
             </file>
         </folder>
     </folder>

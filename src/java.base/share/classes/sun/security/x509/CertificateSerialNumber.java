@@ -27,7 +27,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.Enumeration;
 import java.util.Random;
 
 import sun.security.util.*;
@@ -146,36 +145,6 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
             throw new IOException("Attribute name not recognized by " +
                                 "CertAttrSet:CertificateSerialNumber.");
         }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            serial = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:CertificateSerialNumber.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NUMBER);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return (NAME);
     }
 
     /**

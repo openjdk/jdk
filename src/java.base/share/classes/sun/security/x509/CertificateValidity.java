@@ -27,7 +27,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.*;
 import java.util.Date;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -199,39 +198,6 @@ public class CertificateValidity implements CertAttrSet<String> {
             throw new IOException("Attribute name not recognized by " +
                             "CertAttrSet: CertificateValidity.");
         }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(NOT_BEFORE)) {
-            notBefore = null;
-        } else if (name.equalsIgnoreCase(NOT_AFTER)) {
-            notAfter = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                            "CertAttrSet: CertificateValidity.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NOT_BEFORE);
-        elements.addElement(NOT_AFTER);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return (NAME);
     }
 
     /**
