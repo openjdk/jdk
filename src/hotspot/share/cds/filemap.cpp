@@ -1761,7 +1761,7 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
       int oopmap_idx = i * 2;
       int ptrmap_idx = i * 2 + 1;
       region_at(region_idx)->init_bitmaps(bitmaps->at(oopmap_idx),
-                                         bitmaps->at(ptrmap_idx));
+                                          bitmaps->at(ptrmap_idx));
     }
   }
   return total_size;
@@ -2610,11 +2610,11 @@ char* FileMapInfo::region_addr(int idx) {
 }
 
 // The 2 core spaces are RW->RO
-FileMapRegion* FileMapInfo::first_core_space() const {
+FileMapRegion* FileMapInfo::first_core_region() const {
   return region_at(MetaspaceShared::rw);
 }
 
-FileMapRegion* FileMapInfo::last_core_space() const {
+FileMapRegion* FileMapInfo::last_core_region() const {
   return region_at(MetaspaceShared::ro);
 }
 
