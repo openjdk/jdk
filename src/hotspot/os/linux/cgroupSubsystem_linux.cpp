@@ -507,7 +507,7 @@ int CgroupSubsystem::active_processor_count() {
   log_trace(os, container)("OSContainer::active_processor_count: %d", result);
 
   // Update cached metric to avoid re-reading container settings too often
-  cpu_limit->set_value(result, os::Linux::oscontainer_cache_timeout());
+  cpu_limit->set_value(result, OSContainer::oscontainer_cache_timeout());
 
   return result;
 }
@@ -552,7 +552,7 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   }
 
   // Update cached metric to avoid re-reading container settings too often
-  memory_limit->set_value(mem_limit, os::Linux::oscontainer_cache_timeout());
+  memory_limit->set_value(mem_limit, OSContainer::oscontainer_cache_timeout());
   return mem_limit;
 }
 

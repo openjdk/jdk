@@ -62,6 +62,10 @@ void OSContainer::init() {
   _is_containerized = true;
 }
 
+julong OSContainer::oscontainer_cache_timeout() {
+  return NANOSECS_PER_SEC / OsCachedMetricsRefreshRate;
+}
+
 const char * OSContainer::container_type() {
   assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
   return cgroup_subsystem->container_type();

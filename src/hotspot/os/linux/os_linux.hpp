@@ -56,8 +56,6 @@ class os::Linux {
   static julong _physical_memory;
   static pthread_t _main_thread;
 
-  static julong oscontainer_cache_timeout();
-
   static julong available_memory();
   static int active_processor_count();
 
