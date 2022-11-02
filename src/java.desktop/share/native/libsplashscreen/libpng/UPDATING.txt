@@ -35,13 +35,24 @@ and instead just tweak the existing one.
 
 5) Run scripts to expand tabs and remove trailing white space from source files.
 
-Use expand to remove tabs
-expand ${f} > ${f}.tmp
-mv ${f}.tmp $f
+First cd into the libpng folder and run the following scripts.
 
-Use sed to remove trailing white space
-sed -e 's/[ ]* $//' ${f} > ${f}.tmp
-mv ${f}.tmp $f
+    Use expand to remove tabs
+        for f in *.c *.h;
+        do
+        expand ${f} > ${f}.tmp;
+        mv ${f}.tmp $f;
+        done
+
+    Use sed to remove trailing white space
+        for f in *.c *.h;
+        do
+        sed -e 's/[ ]* $//' ${f} > ${f}.tmp;
+        mv ${f}.tmp $f;
+        done
+
+Make sure all the updated files have UNIX-STYLE (LF) line endings to avoid
+whitespace errors.
 
 6) As with all native code, run it through the official build systems, in case
 the updated code trigger any fatal warnings with the official compilers.
