@@ -201,6 +201,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
         jdk.jfr;
+    exports jdk.internal.template;
     exports jdk.internal.misc to
         java.desktop,
         java.logging,

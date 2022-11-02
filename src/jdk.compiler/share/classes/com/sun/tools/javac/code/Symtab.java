@@ -627,7 +627,7 @@ public class Symtab {
 
         // For string templates
         stringTemplateType = enterClass("java.lang.template.StringTemplate");
-        templateSupportType = enterClass("java.lang.runtime.TemplateSupport");
+        templateSupportType = enterClass("jdk.internal.template.TemplateSupport");
         validatingProcessorType = enterClass("java.lang.template.ValidatingProcessor");
         processorLinkage = enterClass("java.lang.template.ProcessorLinkage");
 

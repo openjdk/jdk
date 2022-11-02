@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.template;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -73,7 +73,7 @@ public final class TemplateSupport {
     private final List<String> fragments;
 
     /**
-     * Static final processor.
+     * Static final processor that triggered the BSM generation.
      */
     private final ValidatingProcessor<?, ?> processor;
 
