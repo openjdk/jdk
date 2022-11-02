@@ -938,9 +938,6 @@ void VM_Version::get_processor_features() {
       warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
     }
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
-  } else if (UseAVX < 0) {
-    warning("UseAVX=%d is not valid, setting it to UseAVX=0", (int) UseAVX);
-    FLAG_SET_DEFAULT(UseAVX, 0);
   }
 
   if (UseAVX < 3) {
@@ -1038,7 +1035,7 @@ void VM_Version::get_processor_features() {
           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
         }
       } else {
-        if (UseSSE > 3) {
+        if (supports_sse4_1()) {
           if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
             FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
           }
