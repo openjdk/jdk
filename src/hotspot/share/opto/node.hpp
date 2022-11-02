@@ -559,6 +559,7 @@ public:
     if (_in[i] != NULL) _in[i]->del_out((Node *)this);
     _in[i] = n;
     n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
 
   // Set this node's index, used by cisc_version to replace current node
@@ -1187,56 +1188,34 @@ public:
 
 //----------------- Printing, etc
 #ifndef PRODUCT
- private:
-  int _indent;
-
  public:
-  void set_indent(int indent) { _indent = indent; }
-
- private:
-  static bool add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space);
-public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options); // Print BFS traversal
-  void dump_bfs(const int max_distance); // dump_bfs(max_distance, nullptr, nullptr)
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
-  public:
+   public:
     // overridden to implement coloring of node idx
     virtual void pre_dump(outputStream *st, const Node* n) = 0;
     virtual void post_dump(outputStream *st) = 0;
   };
   void dump_idx(bool align = false, outputStream* st = tty, DumpConfig* dc = nullptr) const;
   void dump_name(outputStream* st = tty, DumpConfig* dc = nullptr) const;
-  void dump() const { dump("\n"); }  // Print this node.
+  void dump() const; // print node with newline
   void dump(const char* suffix, bool mark = false, outputStream* st = tty, DumpConfig* dc = nullptr) const; // Print this node.
   void dump(int depth) const;        // Print this node, recursively to depth d
   void dump_ctrl(int depth) const;   // Print control nodes, to depth d
   void dump_comp() const;            // Print this node in compact representation.
   // Print this node in compact representation.
   void dump_comp(const char* suffix, outputStream *st = tty) const;
+ private:
   virtual void dump_req(outputStream* st = tty, DumpConfig* dc = nullptr) const;    // Print required-edge info
   virtual void dump_prec(outputStream* st = tty, DumpConfig* dc = nullptr) const;   // Print precedence-edge info
   virtual void dump_out(outputStream* st = tty, DumpConfig* dc = nullptr) const;    // Print the output edge info
+ public:
   virtual void dump_spec(outputStream *st) const {};      // Print per-node info
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
-  void dump_related() const;             // Print related nodes (depends on node at hand).
-  // Print related nodes up to given depths for input and output nodes.
-  void dump_related(uint d_in, uint d_out) const;
-  void dump_related_compact() const;     // Print related nodes in compact representation.
-  // Collect related nodes.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-  // Collect nodes starting from this node, explicitly including/excluding control and data links.
-  void collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const;
-
-  // Node collectors, to be used in implementations of Node::rel().
-  // Collect the entire data input graph. Include control inputs if requested.
-  void collect_nodes_in_all_data(GrowableArray<Node*> *ns, bool ctrl) const;
-  // Collect the entire control input graph. Include data inputs if requested.
-  void collect_nodes_in_all_ctrl(GrowableArray<Node*> *ns, bool data) const;
-  // Collect the entire output graph until hitting and including control nodes.
-  void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
 
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
@@ -1245,19 +1224,7 @@ public:
   virtual const char *Name() const;
 
   void dump_format(PhaseRegAlloc *ra) const; // debug access to MachNode::format(...)
-  // RegMask Print Functions
-  void dump_in_regmask(int idx) { in_RegMask(idx).dump(); }
-  void dump_out_regmask() { out_RegMask().dump(); }
-  static bool in_dump() { return Compile::current()->_in_dump_cnt > 0; }
-  void fast_dump() const {
-    tty->print("%4d: %-17s", _idx, Name());
-    for (uint i = 0; i < len(); i++)
-      if (in(i))
-        tty->print(" %4d", in(i)->_idx);
-      else
-        tty->print(" NULL");
-    tty->print("\n");
-  }
+  static bool in_dump() { return Compile::current()->_in_dump_cnt > 0; } // check if we are in a dump call
 #endif
 #ifdef ASSERT
   void verify_construction();

@@ -292,8 +292,8 @@ class ConstantPoolCacheEntry {
 
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
-  Method*      method_if_resolved(const constantPoolHandle& cpool);
-  oop        appendix_if_resolved(const constantPoolHandle& cpool);
+  Method*      method_if_resolved(const constantPoolHandle& cpool) const;
+  oop        appendix_if_resolved(const constantPoolHandle& cpool) const;
 
   void set_parameter_size(int value);
 
@@ -379,7 +379,7 @@ class ConstantPoolCacheEntry {
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
-  void print (outputStream* st, int index) const;
+  void print (outputStream* st, int index, const ConstantPoolCache* cache) const;
   void verify(outputStream* st) const;
 
   static void verify_tos_state_shift() {
@@ -455,9 +455,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
 
-  // CDS support
+#if INCLUDE_CDS
   void remove_unshareable_info();
   void save_for_archive(TRAPS);
+#endif
+
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }

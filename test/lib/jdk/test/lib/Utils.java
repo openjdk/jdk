@@ -381,7 +381,7 @@ public final class Utils {
     }
 
     /**
-     * Returns the free port on the local host.
+     * Returns the free port on the loopback address.
      *
      * @return The port number
      * @throws IOException if an I/O error occurs when opening the socket

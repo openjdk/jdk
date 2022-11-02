@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.regex.Grapheme;
 
 /**
  * A compiled representation of a regular expression.
@@ -1842,12 +1843,24 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         topClosureNodes = null;
     }
 
-    Map<String, Integer> namedGroups() {
+    private Map<String, Integer> namedGroupsMap() {
         Map<String, Integer> groups = namedGroups;
         if (groups == null) {
             namedGroups = groups = new HashMap<>(2);
         }
         return groups;
+    }
+
+    /**
+     * Returns an unmodifiable map from capturing group names to group numbers.
+     * If there are no named groups, returns an empty map.
+     *
+     * @return an unmodifiable map from capturing group names to group numbers
+     *
+     * @since 20
+     */
+    public Map<String, Integer> namedGroups() {
+        return Map.copyOf(namedGroupsMap());
     }
 
     /**
@@ -2553,14 +2566,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (read() != '<')
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
-            if (!namedGroups().containsKey(name))
+            if (!namedGroupsMap().containsKey(name))
                 throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
-                    root = new CIBackRef(namedGroups().get(name), has(UNICODE_CASE));
+                    root = new CIBackRef(namedGroupsMap().get(name), has(UNICODE_CASE));
                 else
-                    root = new BackRef(namedGroups().get(name));
+                    root = new BackRef(namedGroupsMap().get(name));
             }
             return -1;
         case 'l':
@@ -3007,13 +3020,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (ch != '=' && ch != '!') {
                         // named captured group
                         String name = groupname(ch);
-                        if (namedGroups().containsKey(name))
+                        if (namedGroupsMap().containsKey(name))
                             throw error("Named capturing group <" + name
                                         + "> is already defined");
                         capturingGroup = true;
                         head = createGroup(false);
                         tail = root;
-                        namedGroups().put(name, capturingGroupCount - 1);
+                        namedGroupsMap().put(name, capturingGroupCount - 1);
                         head.next = expr(tail);
                         break;
                     }

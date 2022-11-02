@@ -238,6 +238,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_countPositives:
     case vmIntrinsics::_Reference_get:
     case vmIntrinsics::_Continuation_doYield:
+    case vmIntrinsics::_Continuation_enterSpecial:
       break;
     default:
       return true;

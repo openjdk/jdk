@@ -338,6 +338,11 @@ inline int SignatureStream::scan_type(BasicType type) {
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
+    // If we discovered only the string of '[', this means something is wrong.
+    if (end >= limit) {
+      assert(false, "Invalid type detected");
+      return limit;
+    }
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);

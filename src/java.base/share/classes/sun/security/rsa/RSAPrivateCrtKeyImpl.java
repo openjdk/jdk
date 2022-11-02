@@ -67,12 +67,12 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger qe;      // prime exponent q
     private BigInteger coeff;   // CRT coefficient
 
-    private transient KeyType type;
+    private final transient KeyType type;
 
     // Optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId.
     // Must be null for "RSA" keys.
-    private transient AlgorithmParameterSpec keyParams;
+    private final transient AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new RSAPrivate(Crt)Key from the specified type,
@@ -171,7 +171,7 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     /**
-     * Construct a RSA key from its components. Used by the
+     * Construct an RSA key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
     RSAPrivateCrtKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,

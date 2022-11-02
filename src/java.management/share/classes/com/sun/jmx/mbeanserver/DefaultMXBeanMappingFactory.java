@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,8 +177,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     }
 
     private static synchronized void putMapping(Type type, MXBeanMapping mapping) {
-        WeakReference<MXBeanMapping> wr =
-            new WeakReference<MXBeanMapping>(mapping);
+        WeakReference<MXBeanMapping> wr = new WeakReference<>(mapping);
         mappings.put(type, wr);
     }
 
@@ -303,7 +302,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     private static <T extends Enum<T>> MXBeanMapping
             makeEnumMapping(Class<?> enumClass, Class<T> fake) {
         ReflectUtil.checkPackageAccess(enumClass);
-        return new EnumMapping<T>(Util.<Class<T>>cast(enumClass));
+        return new EnumMapping<>(Util.<Class<T>>cast(enumClass));
     }
 
     /* Make the converter for an array type, or a collection such as
@@ -1286,7 +1285,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                         BitSet u = new BitSet();
                         u.or(a); u.or(b);
                         if (!getterIndexSets.contains(u)) {
-                            Set<String> names = new TreeSet<String>();
+                            Set<String> names = new TreeSet<>();
                             for (int i = u.nextSetBit(0); i >= 0;
                                  i = u.nextSetBit(i+1))
                                 names.add(itemNames[i]);

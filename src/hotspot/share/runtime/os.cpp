@@ -474,9 +474,6 @@ void os::initialize_jdk_signal_support(TRAPS) {
     JavaThread::vm_exit_on_osthread_failure(thread);
 
     JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
-
-    // Handle ^BREAK
-    os::signal(SIGBREAK, os::user_handler());
   }
 }
 
@@ -657,6 +654,11 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   }
 
   const size_t outer_size = size + MemTracker::overhead_per_malloc();
+
+  // Check for overflow.
+  if (outer_size < size) {
+    return NULL;
+  }
 
   ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == NULL) {
@@ -936,6 +938,11 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   long minutes = (sec/60) - (days * 1440) - (hours * 60);
   if (startStr == NULL) startStr = "";
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
+}
+
+void os::print_tos(outputStream* st, address sp) {
+  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
 }
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
@@ -1904,17 +1911,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -1923,7 +1930,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }

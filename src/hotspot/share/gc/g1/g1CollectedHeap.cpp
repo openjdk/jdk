@@ -144,6 +144,16 @@ void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   workers()->run_task(cl, num_workers);
 }
 
+uint G1CollectedHeap::get_chunks_per_region() {
+  uint log_region_size = HeapRegion::LogOfHRGrainBytes;
+  // Limit the expected input values to current known possible values of the
+  // (log) region size. Adjust as necessary after testing if changing the permissible
+  // values for region size.
+  assert(log_region_size >= 20 && log_region_size <= 29,
+         "expected value in [20,29], but got %u", log_region_size);
+  return 1u << (log_region_size / 2 - 4);
+}
+
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
   return new HeapRegion(hrs_index, bot(), mr, &_card_set_config);
@@ -1099,7 +1109,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
   collector.prepare_collection();
   collector.collect();
@@ -1523,7 +1533,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
 jint G1CollectedHeap::initialize_concurrent_refinement() {
   jint ecode = JNI_OK;
-  _cr = G1ConcurrentRefine::create(&ecode);
+  _cr = G1ConcurrentRefine::create(policy(), &ecode);
   return ecode;
 }
 
@@ -1702,9 +1712,6 @@ jint G1CollectedHeap::initialize() {
   if (ecode != JNI_OK) {
     return ecode;
   }
-
-  // Initialize and schedule sampling task on service thread.
-  _rem_set->initialize_sampling_task(service_thread());
 
   // Create and schedule the periodic gc task on the service thread.
   _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");
@@ -2275,6 +2282,10 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrm.iterate(cl);
 }
 
+void G1CollectedHeap::heap_region_iterate(HeapRegionIndexClosure* cl) const {
+  _hrm.iterate(cl);
+}
+
 void G1CollectedHeap::heap_region_par_iterate_from_worker_offset(HeapRegionClosure* cl,
                                                                  HeapRegionClaimer *hrclaimer,
                                                                  uint worker_id) const {
@@ -2513,7 +2524,7 @@ public:
     if (occupied == 0) {
       tty->print_cr("  RSet is empty");
     } else {
-      tty->print_cr("hrrs " INTPTR_FORMAT, p2i(hrrs));
+      tty->print_cr("hrrs " PTR_FORMAT, p2i(hrrs));
     }
     tty->print_cr("----------");
     return false;
@@ -2854,7 +2865,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   GCIdMark gc_id_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
-  GCTraceCPUTime tcpu;
+  GCTraceCPUTime tcpu(_gc_tracer_stw);
 
   _bytes_used_during_gc = 0;
 
@@ -3290,11 +3301,13 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
-void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
-  // All objects failing evacuation are live. What we'll do is
-  // that we'll update the marking info so that they are
-  // all below TAMS and explicitly marked.
+void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  assert(!_cm->is_marked_in_bitmap(obj), "must be");
+
   _cm->raw_mark_in_bitmap(obj);
+  if (collector_state()->in_concurrent_start_gc()) {
+    _cm->add_to_liveness(worker_id, obj, obj_size);
+  }
 }
 
 // Optimized nmethod scanning

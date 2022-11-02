@@ -36,7 +36,6 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -65,6 +64,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -1647,6 +1647,12 @@ void ciEnv::find_dynamic_call_sites() {
 void ciEnv::dump_compile_data(outputStream* out) {
   CompileTask* task = this->task();
   if (task) {
+#ifdef COMPILER2
+    if (ReplayReduce && compiler_data() != NULL) {
+      // Dump C2 "reduced" inlining data.
+      ((Compile*)compiler_data())->dump_inline_data_reduced(out);
+    }
+#endif
     Method* method = task->method();
     int entry_bci = task->osr_bci();
     int comp_level = task->comp_level();

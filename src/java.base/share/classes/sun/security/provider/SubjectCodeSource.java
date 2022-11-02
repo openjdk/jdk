@@ -49,13 +49,13 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 6039418085604715275L;
 
-    private Subject subject;
-    private LinkedList<PrincipalEntry> principals;
+    private final Subject subject;
+    private final LinkedList<PrincipalEntry> principals;
     private static final Class<?>[] PARAMS = { String.class };
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("auth", "\t[Auth Access]");
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private ClassLoader sysClassLoader;
+    private final ClassLoader sysClassLoader;
 
     /**
      * Creates a new <code>SubjectCodeSource</code>
@@ -231,7 +231,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
                     Iterator<Principal> i =
                                 that.getSubject().getPrincipals().iterator();
 
-                    subjectList = new LinkedList<PrincipalEntry>();
+                    subjectList = new LinkedList<>();
                     while (i.hasNext()) {
                         Principal p = i.next();
                         PrincipalEntry spppe = new PrincipalEntry
@@ -315,13 +315,11 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
         if (obj == this)
             return true;
 
-        if (super.equals(obj) == false)
+        if (!super.equals(obj))
             return false;
 
-        if (!(obj instanceof SubjectCodeSource))
+        if (!(obj instanceof SubjectCodeSource that))
             return false;
-
-        SubjectCodeSource that = (SubjectCodeSource)obj;
 
         // the principal lists must match
         try {
@@ -335,11 +333,9 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             (this.principals != null && that.principals == null))
             return false;
 
-        if (this.principals != null && that.principals != null) {
-            if (!this.principals.containsAll(that.principals) ||
-                !that.principals.containsAll(this.principals))
-
-                return false;
+        if (this.principals != null) {
+            return this.principals.containsAll(that.principals) &&
+                    that.principals.containsAll(this.principals);
         }
 
         return true;

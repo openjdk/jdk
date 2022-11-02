@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8247352
+ * @test 8247352 8293348
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -661,5 +661,36 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .run()
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
+    }
+
+    @Test //JDK-8293348
+    public void testSupertypePermitsLoop(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "class Main implements T2 {}",
+                          "non-sealed interface T2 extends T {}",
+                          "sealed interface T permits T2 {}");
+
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .outdir(out)
+                .files(findJavaFiles(src))
+                .run()
+                .writeAll();
+
+        Files.delete(out.resolve("Main.class"));
+        Files.delete(out.resolve("T.class"));
+
+        new JavacTask(tb)
+                .outdir(out)
+                .options("-cp", out.toString(),
+                         "-sourcepath", src.toString())
+                .files(src.resolve("Main.java"))
+                .run()
+                .writeAll();
     }
 }

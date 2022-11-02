@@ -470,7 +470,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_HEX ") differs.", real_pagesize);
+          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -997,8 +997,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return ".so"; }
 
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.

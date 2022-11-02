@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
@@ -54,8 +53,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
 
     private static final Debug debug = Debug.getInstance("x509");
 
-    private Map<String,Extension> map = Collections.synchronizedMap(
-            new TreeMap<String,Extension>());
+    private final Map<String,Extension> map = Collections.synchronizedMap(
+            new TreeMap<>());
     private boolean unsupportedCritExt = false;
 
     private Map<String,Extension> unparseableExtensions;
@@ -86,7 +85,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
         }
     }
 
-    private static Class<?>[] PARAMS = {Boolean.class, Object.class};
+    private static final Class<?>[] PARAMS = {Boolean.class, Object.class};
 
     // Parse the encoded extension
     private void parseExtension(Extension ext) throws IOException {
@@ -112,10 +111,10 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
             }
         } catch (InvocationTargetException invk) {
             Throwable e = invk.getCause();
-            if (ext.isCritical() == false) {
+            if (!ext.isCritical()) {
                 // ignore errors parsing non-critical extensions
                 if (unparseableExtensions == null) {
-                    unparseableExtensions = new TreeMap<String,Extension>();
+                    unparseableExtensions = new TreeMap<>();
                 }
                 unparseableExtensions.put(ext.getExtensionId().toString(),
                         new UnparseableExtension(ext, e));
@@ -148,8 +147,9 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out)
-    throws CertificateException, IOException {
+    @Override
+    public void encode(DerOutputStream out)
+            throws CertificateException, IOException {
         encode(out, false);
     }
 
@@ -161,33 +161,21 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out, boolean isCertReq)
+    public void encode(DerOutputStream out, boolean isCertReq)
     throws CertificateException, IOException {
         DerOutputStream extOut = new DerOutputStream();
-        Collection<Extension> allExts = map.values();
-        Object[] objs = allExts.toArray();
-
-        for (int i = 0; i < objs.length; i++) {
-            if (objs[i] instanceof CertAttrSet)
-                ((CertAttrSet)objs[i]).encode(extOut);
-            else if (objs[i] instanceof Extension)
-                ((Extension)objs[i]).encode(extOut);
-            else
-                throw new CertificateException("Illegal extension object");
+        for (Extension ext : map.values()) {
+            ext.encode(extOut);
         }
 
-        DerOutputStream seq = new DerOutputStream();
-        seq.write(DerValue.tag_Sequence, extOut);
-
-        DerOutputStream tmp;
         if (!isCertReq) { // certificate
-            tmp = new DerOutputStream();
-            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
+            DerOutputStream seq = new DerOutputStream();
+            seq.write(DerValue.tag_Sequence, extOut);
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
                     seq);
-        } else
-            tmp = seq; // pkcs#10 certificateRequest
-
-        out.write(tmp.toByteArray());
+        } else {
+            out.write(DerValue.tag_Sequence, extOut);
+        }
     }
 
     /**
@@ -236,7 +224,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
         map.remove(name);
     }
 
-    public String getNameByOid(ObjectIdentifier oid) throws IOException {
+    public String getNameByOid(ObjectIdentifier oid) {
         for (String name: map.keySet()) {
             if (map.get(name).getExtensionId().equals(oid)) {
                 return name;
@@ -262,11 +250,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     }
 
     public Map<String,Extension> getUnparseableExtensions() {
-        if (unparseableExtensions == null) {
-            return Collections.emptyMap();
-        } else {
-            return unparseableExtensions;
-        }
+        return (unparseableExtensions == null) ?
+                Collections.emptyMap() : unparseableExtensions;
     }
 
     /**

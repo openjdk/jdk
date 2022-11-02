@@ -993,7 +993,7 @@ public class Check {
         }
 
         //upward project the initializer type
-        return types.upward(t, types.captures(t));
+        return types.upward(t, types.captures(t)).baseType();
     }
 
     Type checkMethod(final Type mtype,
@@ -2088,8 +2088,13 @@ public class Check {
                          types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
-                        log.error(pos, Errors.TypesIncompatible(t1, t2,
-                                Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
+                        if (types.isSameType(t1, t2)) {
+                            log.error(pos, Errors.IncompatibleDiffRetSameType(t1,
+                                    s2.name, types.memberType(t2, s2).getParameterTypes()));
+                        } else {
+                            log.error(pos, Errors.TypesIncompatible(t1, t2,
+                                    Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
+                        }
                         return s2;
                     }
                 } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
@@ -2575,7 +2580,7 @@ public class Check {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, m2), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source)) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2)) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
                     if (m1 == sym) {
@@ -2620,7 +2625,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getSymbolsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source))) {
+            if (!types.isSubSignature(sym.type, types.memberType(site, s))) {
                 if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                     log.error(pos,
                               Errors.NameClashSameErasureNoHide(sym, sym.location(), s, s.location()));
@@ -2724,7 +2729,6 @@ public class Check {
     void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
             MethodSymbol msym1, MethodSymbol msym2) {
         if (msym1 != msym2 &&
-                Feature.DEFAULT_METHODS.allowedInSource(source) &&
                 lint.isEnabled(LintCategory.OVERLOADS) &&
                 (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
                 (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
@@ -3001,9 +3005,15 @@ public class Check {
                     rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
                             Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
                     ).collect(List.collector()));
-                    rc.setTypeAttributes(s.getRawTypeAttributes());
-                    // to get all the type annotations applied to the type
-                    rc.type = s.type;
+
+                    /* At this point, we used to carry over any type annotations from the VARDEF to the record component, but
+                     * that is problematic, since we get here only when *some* annotation is applied to the SE5 (declaration)
+                     * annotation location, inadvertently failing to carry over the type annotations when the VarDef has no
+                     * annotations in the SE5 annotation location.
+                     *
+                     * Now type annotations are assigned to record components in a method that would execute irrespective of
+                     * whether there are SE5 annotations on a VarDef viz com.sun.tools.javac.code.TypeAnnotations.TypeAnnotationPositions.visitVarDef
+                     */
                 }
             }
         }
@@ -3690,7 +3700,8 @@ public class Check {
      *  constructors.
      */
     void checkCyclicConstructors(JCClassDecl tree) {
-        Map<Symbol,Symbol> callMap = new HashMap<>();
+        // use LinkedHashMap so we generate errors deterministically
+        Map<Symbol,Symbol> callMap = new LinkedHashMap<>();
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
@@ -3719,7 +3730,7 @@ public class Check {
                                         Map<Symbol,Symbol> callMap) {
         if (ctor != null && (ctor.flags_field & ACYCLIC) == 0) {
             if ((ctor.flags_field & LOCKED) != 0) {
-                log.error(TreeInfo.diagnosticPositionFor(ctor, tree),
+                log.error(TreeInfo.diagnosticPositionFor(ctor, tree, false, t -> t.hasTag(IDENT)),
                           Errors.RecursiveCtorInvocation);
             } else {
                 ctor.flags_field |= LOCKED;
@@ -3749,6 +3760,22 @@ public class Check {
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
                 deferredLintHandler.report(() -> warnDivZero(pos));
             }
+        }
+    }
+
+    /**
+     *  Check for possible loss of precission
+     *  @param pos           Position for error reporting.
+     *  @param found    The computed type of the tree
+     *  @param req  The computed type of the tree
+     */
+    void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
+        if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
+            deferredLintHandler.report(() -> {
+                if (lint.isEnabled(LintCategory.LOSSY_CONVERSIONS))
+                    log.warning(LintCategory.LOSSY_CONVERSIONS,
+                            pos, Warnings.PossibleLossOfPrecision(found, req));
+            });
         }
     }
 

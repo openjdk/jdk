@@ -482,12 +482,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   return __ addr_at(entry_offset);
 }
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Inputs:
   //  Z_ARG1 - receiver

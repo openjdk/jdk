@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import sun.security.util.*;
@@ -62,7 +61,7 @@ extends Extension implements CertAttrSet<String> {
     public static final String ISSUER_NAME = "issuer_name";
 
     // private data members
-    GeneralNames names = null;
+    GeneralNames names;
 
     // Encode this extension
     private void encodeThis() throws IOException {
@@ -159,18 +158,17 @@ extends Extension implements CertAttrSet<String> {
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to.
+     * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding error.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.IssuerAlternativeName_Id;
             critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**

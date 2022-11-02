@@ -156,7 +156,7 @@ class JVMCIEnv : public ResourceObj {
   friend class JNIAccessMark;
 
   // Initializes the _env, _mode and _runtime fields.
-  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env);
+  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool attach_OOME_is_fatal = true);
 
   void init(JavaThread* thread, bool is_hotspot, const char* file, int line);
 
@@ -168,6 +168,7 @@ class JVMCIEnv : public ResourceObj {
   bool        _throw_to_caller;  // Propagate an exception raised in this env to the caller?
   const char*            _file;  // The file and ...
   int                    _line;  // ... line where this JNIEnv was created
+  bool    _attach_threw_OOME;    // Failed to attach thread due to OutOfMemoryError, the JVMCIEnv is invalid
 
   // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
   // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
@@ -412,9 +413,11 @@ public:
   // Destroys a JNI global handle created by JVMCIEnv::make_global.
   void destroy_global(JVMCIObject object);
 
-  // Deoptimizes the nmethod (if any) in the HotSpotNmethod.address
-  // field of mirror. The field is subsequently zeroed.
-  void invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS);
+  // Updates the nmethod (if any) in the HotSpotNmethod.address
+  // field of `mirror` to prevent it from being called.
+  // If `deoptimize` is true, the nmethod is immediately deoptimized.
+  // The HotSpotNmethod.address field is zero upon returning.
+  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, JVMCI_TRAPS);
 
   void initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS);
 

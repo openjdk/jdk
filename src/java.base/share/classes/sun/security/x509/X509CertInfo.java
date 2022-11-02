@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import java.security.cert.*;
 import java.util.*;
@@ -114,7 +113,7 @@ public class X509CertInfo implements CertAttrSet<String> {
     private byte[]      rawCertInfo = null;
 
     // The certificate attribute name to integer mapping stored here
-    private static final Map<String,Integer> map = new HashMap<String,Integer>();
+    private static final Map<String,Integer> map = new HashMap<>();
     static {
         map.put(VERSION, Integer.valueOf(ATTR_VERSION));
         map.put(SERIAL_NUMBER, Integer.valueOf(ATTR_SERIAL));
@@ -179,14 +178,15 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on other errors.
      */
-    public void encode(OutputStream out)
-    throws CertificateException, IOException {
+    @Override
+    public void encode(DerOutputStream out)
+            throws CertificateException, IOException {
         if (rawCertInfo == null) {
-            DerOutputStream tmp = new DerOutputStream();
-            emit(tmp);
-            rawCertInfo = tmp.toByteArray();
+            emit(out);
+            rawCertInfo = out.toByteArray();
+        } else {
+            out.write(rawCertInfo.clone());
         }
-        out.write(rawCertInfo.clone());
     }
 
     /**
@@ -342,7 +342,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 }
             }
             Map<String,Extension> invalid = extensions.getUnparseableExtensions();
-            if (invalid.isEmpty() == false) {
+            if (!invalid.isEmpty()) {
                 sb.append("\nUnparseable certificate extensions: ")
                     .append(invalid.size());
                 int i = 1;
@@ -717,7 +717,7 @@ public class X509CertInfo implements CertAttrSet<String> {
      */
     private void verifyCert(X500Name subject,
         CertificateExtensions extensions)
-        throws CertificateParsingException, IOException {
+        throws CertificateParsingException {
 
         // if SubjectName is empty, check for SubjectAlternativeNameExtension
         if (subject.isEmpty()) {
@@ -726,8 +726,8 @@ public class X509CertInfo implements CertAttrSet<String> {
                         "incomplete: subject field is empty, and certificate " +
                         "has no extensions");
             }
-            SubjectAlternativeNameExtension subjectAltNameExt = null;
-            GeneralNames names = null;
+            SubjectAlternativeNameExtension subjectAltNameExt;
+            GeneralNames names;
             try {
                 subjectAltNameExt = (SubjectAlternativeNameExtension)
                         extensions.get(SubjectAlternativeNameExtension.NAME);
@@ -744,7 +744,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: subject field is empty, and " +
                         "SubjectAlternativeName extension is empty");
-            } else if (subjectAltNameExt.isCritical() == false) {
+            } else if (!subjectAltNameExt.isCritical()) {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: SubjectAlternativeName extension MUST " +
                         "be marked critical when subject field is empty");

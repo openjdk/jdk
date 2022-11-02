@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,32 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @bug 8167108 8266130
+ * @summary converted from VM Testbase nsk/monitoring/ThreadInfo/isSuspended/issuspended002.
+ * VM Testbase keywords: [quick, monitoring]
+ * VM Testbase readme:
+ * DESCRIPTION
+ *     Same test as issuspended001 with additional calls to
+ *     ThreadInfo.isSuspended() as the worker thread is exiting.
+ * COMMENT
+ *     Derived from nsk/monitoring/ThreadInfo/isSuspended/issuspended001.
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ *          /testlibrary
+ * @run main/othervm nsk.monitoring.ThreadInfo.isSuspended.issuspended002
+ */
+
 package nsk.monitoring.ThreadInfo.isSuspended;
 
 import java.lang.management.*;
 import java.io.*;
 import nsk.share.*;
+
+import jvmti.JVMTIUtils;
 
 public class issuspended002 {
     private final static int DEF_TIME_MAX = 30;  // default max # secs to test
@@ -78,7 +99,7 @@ public class issuspended002 {
                 break;
             }
 
-            thread.suspend();
+            JVMTIUtils.suspendThread(thread);
             info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
             isSuspended = info.isSuspended();
             if (!isSuspended) {
@@ -89,7 +110,7 @@ public class issuspended002 {
                 break;
             }
 
-            thread.resume();
+            JVMTIUtils.resumeThread(thread);
             info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
             isSuspended = info.isSuspended();
             if (isSuspended) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import sun.security.util.*;
@@ -74,7 +73,7 @@ implements CertAttrSet<String> {
         DerOutputStream tmp = new DerOutputStream();
 
         if (ca) {
-            tmp.putBoolean(ca);
+            tmp.putBoolean(true);
             // Only encode pathLen when ca == true
             if (pathLen >= 0) {
                 tmp.putInteger(pathLen);
@@ -190,20 +189,14 @@ implements CertAttrSet<String> {
       *
       * @param out the DerOutputStream to encode the extension to.
       */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
+     @Override
+     public void encode(DerOutputStream out) throws IOException {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
-             if (ca) {
-                 critical = true;
-             } else {
-                 critical = false;
-             }
+             critical = ca;
              encodeThis();
          }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
+         super.encode(out);
      }
 
     /**

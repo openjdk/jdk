@@ -58,6 +58,24 @@ public class DictionaryStatsTest {
     // Variance of bucket size :     0.045
     // Std. dev. of bucket size:     0.211
     // Maximum bucket size     :         1
+    // LoaderConstraintTable statistics:
+    // Number of buckets       :       107 =       856 bytes, each 8
+    // Number of entries       :        31 =      1736 bytes, each 56
+    // Number of literals      :        31 =      1120 bytes, avg  36.000
+    // Total footprint         :           =      3712 bytes
+    // Average bucket size     :     0.290
+    // Variance of bucket size :     0.281
+    // Std. dev. of bucket size:     0.530
+    // Maximum bucket size     :         2
+    // ProtectionDomainCacheTable statistics:
+    // Number of buckets       :      1009 =      8072 bytes, each 8
+    // Number of entries       :         0 =         0 bytes, each 0
+    // Total footprint         :           =      8072 bytes
+    // Average bucket size     :     0.000
+    // Variance of bucket size :     0.000
+    // Std. dev. of bucket size:     0.000
+    // Maximum bucket size     :         0
+
 
     public void run(CommandExecutor executor) throws ClassNotFoundException {
 
@@ -80,6 +98,11 @@ public class DictionaryStatsTest {
         output.shouldContain("Variance of bucket size");
         output.shouldContain("Std. dev. of bucket size");
         output.shouldContain("Maximum bucket size");
+        output.shouldMatch("LoaderConstraintTable statistics:");
+        // Would be nice to run this with "-Djava.security.manager=allow"
+        // so the numbers aren't 0 (running make with VM_OPTIONS allowing
+        // security manager does get 12 entries in this table.)
+        output.shouldMatch("ProtectionDomainCacheTable statistics:");
 
         // what is this?
         Reference.reachabilityFence(named_cl);

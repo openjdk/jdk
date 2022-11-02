@@ -210,7 +210,6 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
-    private final boolean allowEffectivelyFinalInInnerClasses;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -335,7 +334,6 @@ public class Flow {
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
-        allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
     }
 
     /**
@@ -696,7 +694,7 @@ public class Flow {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
             }
-            if (!tree.hasUnconditionalPattern) {
+            if (!tree.hasUnconditionalPattern && !exhaustiveSwitch) {
                 alive = Liveness.ALIVE;
             }
             alive = alive.or(resolveBreaks(tree, prevPendingExits));
@@ -2008,14 +2006,13 @@ public class Flow {
         void letInit(DiagnosticPosition pos, VarSymbol sym) {
             if (sym.adr >= firstadr && trackable(sym)) {
                 if ((sym.flags() & EFFECTIVELY_FINAL) != 0) {
-                    if (!uninits.isMember(sym.adr)) {
-                        //assignment targeting an effectively final variable
-                        //makes the variable lose its status of effectively final
-                        //if the variable is _not_ definitively unassigned
+                    if (inits.isMember(sym.adr) || !uninits.isMember(sym.adr)) {
+                        //assignment targeting an effectively final variable makes the
+                        //variable lose its status of effectively final if the variable
+                        //is definitely assigned or _not_ definitively unassigned
                         sym.flags_field &= ~EFFECTIVELY_FINAL;
-                    } else {
-                        uninit(sym);
                     }
+                    uninit(sym);
                 }
                 else if ((sym.flags() & FINAL) != 0) {
                     if ((sym.flags() & PARAMETER) != 0) {
@@ -2304,7 +2301,8 @@ public class Flow {
                     // leave caught unchanged.
                     scan(tree.body);
 
-                    boolean isCompactConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0;
+                    boolean isCompactOrGeneratedRecordConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
+                            (tree.sym.flags() & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD);
                     if (isInitialConstructor) {
                         boolean isSynthesized = (tree.sym.flags() &
                                                  GENERATEDCONSTR) != 0;
@@ -2314,10 +2312,10 @@ public class Flow {
                             if (var.owner == classDef.sym) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
-                                if (isSynthesized && !isCompactConstructor) {
+                                if (isSynthesized && !isCompactOrGeneratedRecordConstructor) {
                                     checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
                                             var, Errors.VarNotInitializedInDefaultConstructor(var));
-                                } else if (isCompactConstructor) {
+                                } else if (isCompactOrGeneratedRecordConstructor) {
                                     boolean isInstanceRecordField = var.enclClass().isRecord() &&
                                             (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
                                             !var.isStatic() &&
@@ -3073,12 +3071,6 @@ public class Flow {
                     sym.pos < currentTree.getStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
-                        if (!allowEffectivelyFinalInInnerClasses) {
-                            if ((sym.flags() & FINAL) == 0) {
-                                reportInnerClsNeedsFinalError(pos, sym);
-                            }
-                            break;
-                        }
                     case PATTERNCASELABEL:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
@@ -3099,10 +3091,6 @@ public class Flow {
                         ((VarSymbol)sym).pos < currentTree.getStartPosition()) {
                     switch (currentTree.getTag()) {
                         case CLASSDEF:
-                            if (!allowEffectivelyFinalInInnerClasses) {
-                                reportInnerClsNeedsFinalError(tree, sym);
-                                break;
-                            }
                         case CASE:
                         case LAMBDA:
                             reportEffectivelyFinalError(tree, sym);
@@ -3119,11 +3107,6 @@ public class Flow {
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
             log.error(pos, Errors.CantRefNonEffectivelyFinalVar(sym, diags.fragment(subKey)));
-        }
-
-        void reportInnerClsNeedsFinalError(DiagnosticPosition pos, Symbol sym) {
-            log.error(pos,
-                      Errors.LocalVarAccessedFromIclsNeedsFinal(sym));
         }
 
     /*************************************************************************

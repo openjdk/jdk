@@ -771,7 +771,7 @@ void Metaspace::global_initialize() {
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
-                    "(must be aligned to " SIZE_FORMAT_HEX ").",
+                    "(must be aligned to " SIZE_FORMAT_X ").",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),

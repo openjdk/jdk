@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import sun.security.util.*;
@@ -126,7 +125,7 @@ implements CertAttrSet<String> {
         if (!critical.booleanValue())
             throw new IOException("Criticality cannot be false for " +
                                   "InhibitAnyPolicy");
-        this.critical = critical.booleanValue();
+        this.critical = true;
 
         this.extensionValue = (byte[]) value;
         DerValue val = new DerValue(this.extensionValue);
@@ -151,8 +150,7 @@ implements CertAttrSet<String> {
       * Return user readable form of extension.
       */
      public String toString() {
-         String s = super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
-         return s;
+         return super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
      }
 
      /**
@@ -160,16 +158,14 @@ implements CertAttrSet<String> {
       *
       * @param out the DerOutputStream to encode the extension to.
       */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
+     @Override
+     public void encode(DerOutputStream out) throws IOException {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.InhibitAnyPolicy_Id;
              critical = true;
              encodeThis();
          }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
+         super.encode(out);
      }
 
     /**

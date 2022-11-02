@@ -2147,7 +2147,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     Label no_block, sync;
 
     // Force this write out before the read below.
-    __ fence();
+    if (!UseSystemMemoryBarrier) {
+      __ fence();
+    }
 
     Register sync_state_addr = r_temp_4;
     Register sync_state      = r_temp_5;

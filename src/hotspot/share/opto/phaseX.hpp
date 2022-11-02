@@ -531,10 +531,22 @@ public:
     n->set_req_X(i, in, this);
   }
 
+  // Add "in" as input (req) of "n"
+  void add_input_to(Node* n, Node* in) {
+    rehash_node_delayed(n);
+    n->add_req(in);
+  }
+
   // Delete ith edge of "n"
   void delete_input_of(Node* n, int i) {
     rehash_node_delayed(n);
     n->del_req(i);
+  }
+
+  // Delete precedence edge i of "n"
+  void delete_precedence_of(Node* n, int i) {
+    rehash_node_delayed(n);
+    n->rm_prec(i);
   }
 
   bool delay_transform() const { return _delay_transform; }
@@ -566,7 +578,7 @@ protected:
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
-  Unique_Node_List _safepoints;
+  Unique_Node_List _root_and_safepoints;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 

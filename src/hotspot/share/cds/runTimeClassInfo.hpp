@@ -25,11 +25,12 @@
 #ifndef SHARED_CDS_SHAREDCLASSINFO_HPP
 #define SHARED_CDS_SHAREDCLASSINFO_HPP
 
-#include "classfile/compactHashtable.hpp"
-#include "classfile/javaClasses.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/compactHashtable.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "prims/jvmtiExport.hpp"

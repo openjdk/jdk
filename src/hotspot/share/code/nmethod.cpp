@@ -430,7 +430,7 @@ int nmethod::total_size() const {
 const char* nmethod::compile_kind() const {
   if (is_osr_method())     return "osr";
   if (method() != NULL && is_native_method()) {
-    if (method()->is_continuation_enter_intrinsic()) {
+    if (method()->is_continuation_native_intrinsic()) {
       return "cnt";
     }
     return "c2n";
@@ -627,7 +627,7 @@ nmethod::nmethod(
     _orig_pc_offset          = 0;
     _gc_epoch                = CodeCache::gc_epoch();
 
-    _consts_offset           = data_offset();
+    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
     _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     _oops_offset             = data_offset();
     _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);

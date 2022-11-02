@@ -2883,6 +2883,8 @@ uint64_t VM_Version::feature_flags() {
       _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
     result |= CPU_AVX;
     result |= CPU_VZEROUPPER;
+    if (_cpuid_info.std_cpuid1_ecx.bits.f16c != 0)
+      result |= CPU_F16C;
     if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
       result |= CPU_AVX2;
     if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
@@ -2987,6 +2989,22 @@ uint64_t VM_Version::feature_flags() {
     if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
       result |= CPU_3DNOW_PREFETCH;
     }
+  }
+
+  // Protection key features.
+  if (_cpuid_info.sef_cpuid7_ecx.bits.pku != 0) {
+    result |= CPU_PKU;
+  }
+  if (_cpuid_info.sef_cpuid7_ecx.bits.ospke != 0) {
+    result |= CPU_OSPKE;
+  }
+
+  // Control flow enforcement (CET) features.
+  if (_cpuid_info.sef_cpuid7_ecx.bits.cet_ss != 0) {
+    result |= CPU_CET_SS;
+  }
+  if (_cpuid_info.sef_cpuid7_edx.bits.cet_ibt != 0) {
+    result |= CPU_CET_IBT;
   }
 
   // Composite features.

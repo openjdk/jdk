@@ -53,8 +53,8 @@ const size_t END_SIZE = 24;
 // If a chain gets to 100 something might be wrong
 const size_t REHASH_LEN = 100;
 
-Dictionary::Dictionary(ClassLoaderData* loader_data, size_t table_size, bool resizable)
-  : _resizable(resizable), _number_of_entries(0), _loader_data(loader_data) {
+Dictionary::Dictionary(ClassLoaderData* loader_data, size_t table_size)
+  : _number_of_entries(0), _loader_data(loader_data) {
 
   size_t start_size_log_2 = MAX2(ceil_log2(table_size), (size_t)2); // 2 is minimum size even though some dictionaries only have one entry
   size_t current_size = ((size_t)1) << start_size_log_2;
@@ -104,8 +104,7 @@ int Dictionary::table_size() const {
 }
 
 bool Dictionary::check_if_needs_resize() {
-  return (_resizable &&
-         (_number_of_entries > (_resize_load_trigger * table_size())) &&
+  return ((_number_of_entries > (_resize_load_trigger * table_size())) &&
          !_table->is_max_size_reached());
 }
 
@@ -166,9 +165,9 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 void DictionaryEntry::add_protection_domain(ClassLoaderData* loader_data, Handle protection_domain) {
   assert_lock_strong(SystemDictionary_lock);
   if (!contains_protection_domain(protection_domain())) {
-    ProtectionDomainCacheEntry* entry = SystemDictionary::pd_cache_table()->get(protection_domain);
+    WeakHandle obj = ProtectionDomainCacheTable::add_if_absent(protection_domain);
     // Additions and deletions hold the SystemDictionary_lock, readers are lock-free
-    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(entry, _pd_set);
+    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(obj, _pd_set);
     release_set_pd_set(new_head);
   }
   LogTarget(Trace, protectiondomain) lt;
@@ -480,8 +479,8 @@ void DictionaryEntry::print_count(outputStream *st) {
 // ----------------------------------------------------------------------------
 
 void Dictionary::print_size(outputStream* st) const {
-  st->print_cr("Java dictionary (table_size=%d, classes=%d, resizable=%s)",
-               table_size(), _number_of_entries, BOOL_TO_STR(_resizable));
+  st->print_cr("Java dictionary (table_size=%d, classes=%d)",
+               table_size(), _number_of_entries);
 }
 
 void Dictionary::print_on(outputStream* st) const {
