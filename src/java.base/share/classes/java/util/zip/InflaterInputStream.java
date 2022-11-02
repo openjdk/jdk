@@ -52,7 +52,7 @@ public class InflaterInputStream extends FilterInputStream {
     protected byte[] buf;
 
     /**
-     * The total number of bytes read into the buffer.
+     * The total number of bytes read into the input buffer.
      */
     protected int len;
 
