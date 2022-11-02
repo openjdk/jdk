@@ -31,7 +31,6 @@ import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.concurrent.CountDownLatch;
 
 /*
  * @test
@@ -42,7 +41,8 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ListItemEventsTest {
 
-    private static final int waitDelay = 1000;
+    private static final int MOUSE_DELAY = 100;
+    private static final int KEYBOARD_DELAY = 1000;
 
     private static Frame frame;
     private volatile static List list;
@@ -77,19 +77,17 @@ public class ListItemEventsTest {
     public static void main(String[] s) throws Exception {
         robot = new Robot();
         try {
-
-            robot.setAutoDelay(100);
+            robot.setAutoDelay(MOUSE_DELAY);
             robot.setAutoWaitForIdle(true);
 
             EventQueue.invokeLater(ListItemEventsTest::initializeGUI);
             robot.waitForIdle();
 
             Point listAt = list.getLocationOnScreen();
-
-            Dimension listDimension = list.getSize();
-
-            robot.mouseMove(listAt.x + listDimension.width / 2,
-                listAt.y + listDimension.height / 2);
+            Dimension listSize  = list.getSize();
+            
+            robot.mouseMove(listAt.x + listSize .width / 2,
+                listAt.y + listSize .height / 2);
 
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -114,6 +112,7 @@ public class ListItemEventsTest {
             actionPerformed = false;
 
             EventQueue.invokeAndWait(() -> list.select(0));
+            robot.waitForIdle();
 
             if (itemStateChanged) {
                 throw new RuntimeException(
@@ -121,7 +120,7 @@ public class ListItemEventsTest {
                         + "calling the API!");
             }
 
-            robot.setAutoDelay(waitDelay);
+            robot.setAutoDelay(KEYBOARD_DELAY);
 
             itemStateChanged = false;
             typeKey(KeyEvent.VK_DOWN);
