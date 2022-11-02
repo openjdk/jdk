@@ -21,20 +21,17 @@
  * questions.
  */
 
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /*
  * @test
@@ -47,12 +44,11 @@ public class ListItemEventsTest {
 
     private static final int waitDelay = 1000;
 
-    private volatile static Frame frame;
+    private static Frame frame;
     private volatile static List list;
     private volatile static boolean actionPerformed = false;
     private volatile static boolean itemStateChanged = false;
-    private volatile static Robot robot;
-    private volatile static CountDownLatch latch;
+    private static Robot robot;
 
     public static void initializeGUI() {
         frame = new Frame("Test Frame");
@@ -71,12 +67,6 @@ public class ListItemEventsTest {
             System.out.println("Got an ActionEvent:" + event);
             actionPerformed = true;
         });
-        list.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent event) {
-                System.out.println("Got an FocusEvent:" + event);
-                latch.countDown();
-            }
-        });
 
         frame.add(list);
         frame.pack();
@@ -85,7 +75,6 @@ public class ListItemEventsTest {
     }
 
     public static void main(String[] s) throws Exception {
-        latch = new CountDownLatch(1);
         robot = new Robot();
         try {
 
@@ -96,19 +85,14 @@ public class ListItemEventsTest {
             robot.waitForIdle();
 
             Point listAt = list.getLocationOnScreen();
-            // get bounds of button
-            Rectangle bounds = list.getBounds();
 
-            robot.mouseMove(listAt.x + bounds.width / 2,
-                listAt.y + bounds.height / 2);
+            Dimension listDimension = list.getSize();
+
+            robot.mouseMove(listAt.x + listDimension.width / 2,
+                listAt.y + listDimension.height / 2);
 
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-            if (!latch.await(15, TimeUnit.SECONDS)) {
-                throw new RuntimeException(
-                    "Fail: Timed out waiting for list to gain focus, test cannot proceed!!");
-            }
 
             if (!itemStateChanged) {
                 throw new RuntimeException(
@@ -140,7 +124,7 @@ public class ListItemEventsTest {
             robot.setAutoDelay(waitDelay);
 
             itemStateChanged = false;
-            keyType(KeyEvent.VK_DOWN);
+            typeKey(KeyEvent.VK_DOWN);
 
             if (!itemStateChanged) {
                 throw new RuntimeException(
@@ -149,7 +133,7 @@ public class ListItemEventsTest {
             }
 
             itemStateChanged = false;
-            keyType(KeyEvent.VK_UP);
+            typeKey(KeyEvent.VK_UP);
 
             if (!itemStateChanged) {
                 throw new RuntimeException(
@@ -164,7 +148,7 @@ public class ListItemEventsTest {
             }
 
             actionPerformed = false;
-            keyType(KeyEvent.VK_ENTER);
+            typeKey(KeyEvent.VK_ENTER);
 
             if (!actionPerformed) {
                 throw new RuntimeException(
@@ -186,7 +170,7 @@ public class ListItemEventsTest {
         }
     }
 
-    private static void keyType(int key) throws Exception {
+    private static void typeKey(int key) throws Exception {
         robot.keyPress(key);
         robot.keyRelease(key);
     }
