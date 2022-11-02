@@ -154,6 +154,7 @@ public class FolderNode extends AbstractNode {
         children.getFolder().setName(name);
         fireDisplayNameChange(null, null);
     }
+    
     @Override
     public String getName() {
         return children.getFolder().getName();

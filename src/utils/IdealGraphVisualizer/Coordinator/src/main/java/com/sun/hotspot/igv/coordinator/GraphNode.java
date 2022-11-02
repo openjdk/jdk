@@ -63,6 +63,7 @@ public class GraphNode extends AbstractNode {
         graph.setName(name);
         fireDisplayNameChange(null, null);
     }
+
     @Override
     public String getName() {
         return graph.getName();
