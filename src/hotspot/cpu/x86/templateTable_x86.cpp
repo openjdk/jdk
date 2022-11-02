@@ -2742,39 +2742,81 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   __ bind(resolved);
 }*/
 
-void TemplateTable::load_invokedynamic_entry(int byte_no,
-                                             Register method,
-                                             Register itable_index,
-                                             Register flags) {
+void TemplateTable::load_invokedynamic_entry(Register method,
+                                             Register appendix) {
   // load
 
   // setup registers
   const Register cache = rcx;
   const Register index = rdx;
-  assert_different_registers(method, flags);
-  assert_different_registers(method, cache, index);
-  assert_different_registers(itable_index, flags);
-  assert_different_registers(itable_index, cache, index);
+  assert_different_registers(method, appendix, cache, index);
 
-
-  /*const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == TemplateTable::f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
-  movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method* */
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  // get_cache_index_at_bcp(index, bcp_offset, sizeof(u4)); // where is bcp_offset???
+  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  const int array_offset = in_bytes(ConstantPoolCache::base_offset() +
+                                    ConstantPoolCache::invokedynamic_entries_offset());
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
   const int method_offset = in_bytes(ResolvedInvokeDynamicInfo::method_offset());
-  __ movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method*
-  //__ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
+  // __ movptr(method, Address(cache, index, Address::times_ptr, method_offset));
+  __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo));
+  __ movptr(method, Address(cache, index, Address::times_ptr, array_offset + method_offset));
+  // Compare the method to zero
+  __ testl(method, method);
 
-    if (itable_index != noreg) {
-    // pick up itable or appendix index from f2 also:
-    __ movptr(itable_index, Address(cache, index, Address::times_ptr, index_offset));
+  // Copy bit in resolve_cache_and_index()
+  /*const Register temp = rbx;
+  assert_different_registers(cache, index, temp);
+
+  Label L_clinit_barrier_slow;
+  Label resolved;
+
+  Bytecodes::Code code = bytecode();
+  switch (code) {
+  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
   }
- // __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
-}
 
-  __ movl(flags, ResolvedInvokeDynamicInfo::result_type_offset());
+  __ get_cache_and_index_and_bytecode_at_bcp(cache, index, temp, byte_no, 1, sizeof(u4));
+  __ cmpl(temp, code);  // have we resolved this bytecode?
+  __ jcc(Assembler::equal, resolved);
+
+  // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ movl(temp, code);
+  __ call_VM(noreg, entry, temp);
+  // Update registers with resolved info
+  __ get_cache_and_index_at_bcp(cache, index, 1, sizeof(u4));
+
+  __ bind(resolved);*/
+
+  // Reload method
+  __ movptr(method, Address(cache, index, Address::times_ptr, array_offset + method_offset));
+
+  // load_invoke
+
+  Label L_no_push;
+  //__ testl(flags, (1 << ConstantPoolCacheEntry::has_appendix_shift));
+  // Check if there is an appendix
+  __ load_unsigned_short(index, Address(cache, index, Address::times_ptr, in_bytes(ResolvedInvokeDynamicInfo::has_appendix_offset())));
+  __ testl(index, index);
+  __ jcc(Assembler::zero, L_no_push);
+
+  // Get appendix
+  __ load_unsigned_short(index, Address(cache, index, Address::times_ptr, in_bytes(ResolvedInvokeDynamicInfo::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter.
+  // This must be done before we get the receiver,
+  // since the parameter_size includes it.
+  __ push(rbx);
+  __ mov(rbx, index);
+  __ load_resolved_reference_at_index(index, rbx);
+  __ pop(rbx);
+  __ push(index);  // push appendix (MethodType, CallSite, etc.)
+  __ bind(L_no_push);
 }
 
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
@@ -3594,7 +3636,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 
 //-----------------------------------------------------------------------------
 // Calls
-
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)
                                    Register index,   // itable index, MethodType, etc.
@@ -3623,11 +3664,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   // save 'interpreter return address'
   __ save_bcp();
 
-  if (UseNewCode) {
-      // <newcode> load resolvedinvokedynamic_info here
-  } else {
-    load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
-  }
+  load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
 
   // maybe push appendix to arguments (just before return address)
@@ -3957,6 +3994,9 @@ void TemplateTable::invokedynamic(int byte_no) {
   const Register rbx_method   = rbx;
   const Register rax_callsite = rax;
 
+  if (UseNewCode) {
+    load_invokedynamic_entry(rbx_method, rax_callsite);
+  }
   prepare_invoke(byte_no, rbx_method, rax_callsite);
 
   // rax: CallSite object (from cpool->resolved_references[f1])

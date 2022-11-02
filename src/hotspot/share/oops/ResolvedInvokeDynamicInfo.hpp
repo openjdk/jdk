@@ -52,8 +52,10 @@ public:
     }
     void metaspace_pointers_do(MetaspaceClosure* it);
 
-    static ByteSize method_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _method); }
-    static ByteSize result_type_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _return_type); }
+    static ByteSize method_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _method);                                       }
+    static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _resolved_references_index); }
+    static ByteSize result_type_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _return_type);                             }
+    static ByteSize has_appendix_offset() { return byte_offset_of(ResolvedInvokeDynamicInfo, _has_appendix);                           }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
