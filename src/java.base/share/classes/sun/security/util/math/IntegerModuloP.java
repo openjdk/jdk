@@ -404,11 +404,6 @@ public interface IntegerModuloP {
                     }
                 }
 
-                // Note that the last 4 bits was handled in the for-lopp above
-                // as it hapeens to be 4. For bit set other than 4 bits, for
-                // example, 3 bits set (0x8), the value should be added back.
-                // d.setProduct(w[2]);
-
                 return d.fixed();
             }
         }
