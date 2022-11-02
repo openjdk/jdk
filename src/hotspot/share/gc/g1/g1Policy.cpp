@@ -851,7 +851,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
     if (copied_bytes > 0) {
       double cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / copied_bytes;
-      _analytics->report_cost_per_byte_ms(cost_per_byte_ms, collector_state()->mark_or_rebuild_in_progress());
+      _analytics->report_cost_per_byte_ms(cost_per_byte_ms, is_young_only_pause);
     }
 
     if (_collection_set->young_region_length() > 0) {
@@ -1055,12 +1055,12 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
   if (bytes_to_copy != NULL) {
     *bytes_to_copy = expected_bytes;
   }
-  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->mark_or_rebuild_in_progress());
+  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());
 }
 
 double G1Policy::predict_region_copy_time_ms(HeapRegion* hr) const {
   size_t const bytes_to_copy = predict_bytes_to_copy(hr);
-  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->mark_or_rebuild_in_progress());
+  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->in_young_only_phase());
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
