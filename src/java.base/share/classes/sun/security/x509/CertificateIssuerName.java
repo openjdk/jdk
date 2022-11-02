@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import javax.security.auth.x500.X500Principal;
@@ -107,11 +106,9 @@ public class CertificateIssuerName implements CertAttrSet<String> {
      * @param out the DerOutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
-        dnName.encode(tmp);
-
-        out.write(tmp.toByteArray());
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
+        dnName.encode(out);
     }
 
     /**
