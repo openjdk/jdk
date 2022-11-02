@@ -2474,6 +2474,9 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register base = c_rarg0, interval = c_rarg1, first = t0, last = t1;
 
+    // It needs to align on `CacheLineSize`. That's in case interval < CacheLineSize
+    // but first + interval spans more than a cache line. In that case we want
+    // to make sure we prefetch the two cache lines.
     __ andi(first, base, ~(CacheLineSize - 1));
     __ addi(interval, interval, -1);
     __ add(last, base, interval);

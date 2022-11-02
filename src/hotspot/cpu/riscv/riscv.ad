@@ -5194,7 +5194,6 @@ instruct prefetchalloc( memory mem ) %{
 
   ins_encode %{
     __ addi(t0, as_Register($mem$$base), $mem$$disp);
-    __ andi(t0, t0, ~(CacheLineSize - 1));
     __ prefetch_w(t0, 0);
   %}
 
