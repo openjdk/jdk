@@ -558,7 +558,7 @@ GetJavaProperties(JNIEnv* env)
                         /* Windows server 2022 build number is 20348 */
                         if (buildNumber > 20347) {
                             sprops.os_name = "Windows Server 2022";
-                        } else if (buildNumber > 17676) {
+                        } else if (buildNumber > 17762) {
                             sprops.os_name = "Windows Server 2019";
                         } else {
                             sprops.os_name = "Windows Server 2016";

@@ -79,8 +79,8 @@ class JfrBuffer {
 
  public:
   JfrBuffer();
-  bool initialize(size_t header_size, size_t size);
-  void reinitialize(bool exclusion = false);
+  void initialize(size_t header_size, size_t size);
+  void reinitialize();
 
   const u1* start() const {
     return ((const u1*)this) + _header_size;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
-import sun.security.util.*;
+import sun.security.util.BitArray;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
 
 /**
  * Represent the CRL Reason Flags.
@@ -190,13 +190,6 @@ public class ReasonFlags {
     }
 
     /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        set(name, Boolean.FALSE);
-    }
-
-    /**
      * Returns a printable representation of the ReasonFlags.
      */
     public String toString() {
@@ -242,17 +235,5 @@ public class ReasonFlags {
      */
     public void encode(DerOutputStream out) throws IOException {
         out.putTruncatedUnalignedBitString(new BitArray(this.bitString));
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements () {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        for( int i=0; i<NAMES.length; i++ ) {
-            elements.addElement(NAMES[i]);
-        }
-        return (elements.elements());
     }
 }

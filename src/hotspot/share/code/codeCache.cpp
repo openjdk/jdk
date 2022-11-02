@@ -990,7 +990,7 @@ void CodeCache::flush_unlinked_nmethods() {
   if (!CompileBroker::should_compile_new_jobs() && freed_memory != 0) {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log_info(codecache)("Restarting compiler");
-    EventJitRestart event;
+    EventJITRestart event;
     event.set_freedMemory(freed_memory);
     event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
     event.commit();
@@ -1498,7 +1498,6 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
       warning("%s", msg1);
       warning("%s", msg2);
     }
-    ResourceMark rm;
     stringStream s;
     // Dump code cache into a buffer before locking the tty.
     {
@@ -1507,7 +1506,7 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
     }
     {
       ttyLocker ttyl;
-      tty->print("%s", s.as_string());
+      tty->print("%s", s.freeze());
     }
 
     if (full_count == 1) {

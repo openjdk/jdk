@@ -154,7 +154,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
-    const char *msg = msg_stream.as_string();
+    const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       tty->print("%s", msg);
@@ -215,7 +215,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
     msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
-    const char *msg = msg_stream.as_string();
+    const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining_stream()->print("%s", msg);
@@ -514,9 +514,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
   case vmIntrinsics::_doubleToLongBits:
-  case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
+  case vmIntrinsics::_doubleIsFinite:
   case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
 
   case vmIntrinsics::_numberOfLeadingZeros_i:
@@ -714,6 +718,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_extract();
   case vmIntrinsics::_VectorCompressExpand:
     return inline_vector_compress_expand();
+  case vmIntrinsics::_IndexVector:
+    return inline_index_vector();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -4440,6 +4446,8 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   case vmIntrinsics::_intBitsToFloat:       result = new MoveI2FNode(arg);  break;
   case vmIntrinsics::_doubleToRawLongBits:  result = new MoveD2LNode(arg);  break;
   case vmIntrinsics::_longBitsToDouble:     result = new MoveL2DNode(arg);  break;
+  case vmIntrinsics::_floatToFloat16:       result = new ConvF2HFNode(arg); break;
+  case vmIntrinsics::_float16ToFloat:       result = new ConvHF2FNode(arg); break;
 
   case vmIntrinsics::_doubleToLongBits: {
     // two paths (plus control) merge in a wood
@@ -4539,8 +4547,14 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatIsInfinite:
     result = new IsInfiniteFNode(arg);
     break;
+  case vmIntrinsics::_floatIsFinite:
+    result = new IsFiniteFNode(arg);
+    break;
   case vmIntrinsics::_doubleIsInfinite:
     result = new IsInfiniteDNode(arg);
+    break;
+  case vmIntrinsics::_doubleIsFinite:
+    result = new IsFiniteDNode(arg);
     break;
   default:
     fatal_unexpected_iid(id);

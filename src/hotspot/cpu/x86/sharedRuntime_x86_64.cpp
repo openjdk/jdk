@@ -1271,6 +1271,100 @@ static void check_continuation_enter_argument(VMReg actual_vmreg,
          name, actual_vmreg->as_Register()->name(), expected_reg->name());
 }
 
+
+//---------------------------- continuation_enter_setup ---------------------------
+//
+// Arguments:
+//   None.
+//
+// Results:
+//   rsp: pointer to blank ContinuationEntry
+//
+// Kills:
+//   rax
+//
+static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  stack_slots += checked_cast<int>(ContinuationEntry::size()) / wordSize;
+  __ subptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
+
+  int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
+  OopMap* map = new OopMap(frame_size, 0);
+  ContinuationEntry::setup_oopmap(map);
+
+  __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);
+  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rsp);
+
+  return map;
+}
+
+//---------------------------- fill_continuation_entry ---------------------------
+//
+// Arguments:
+//   rsp: pointer to blank Continuation entry
+//   reg_cont_obj: pointer to the continuation
+//   reg_flags: flags
+//
+// Results:
+//   rsp: pointer to filled out ContinuationEntry
+//
+// Kills:
+//   rax
+//
+static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
+  assert_different_registers(rax, reg_cont_obj, reg_flags);
+#ifdef ASSERT
+  __ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());
+#endif
+  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), reg_cont_obj);
+  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), reg_flags);
+  __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
+  __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
+  __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
+
+  __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
+  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
+  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
+
+  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
+}
+
+//---------------------------- continuation_enter_cleanup ---------------------------
+//
+// Arguments:
+//   rsp: pointer to the ContinuationEntry
+//
+// Results:
+//   rsp: pointer to the spilled rbp in the entry frame
+//
+// Kills:
+//   rbx
+//
+void static continuation_enter_cleanup(MacroAssembler* masm) {
+#ifdef ASSERT
+  Label L_good_sp;
+  __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ jcc(Assembler::equal, L_good_sp);
+  __ stop("Incorrect rsp at continuation_enter_cleanup");
+  __ bind(L_good_sp);
+#endif
+
+  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
+  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
+
+  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
+  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
+  __ addptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
+}
+
 static void gen_continuation_enter(MacroAssembler* masm,
                                    const VMRegPair* regs,
                                    int& exception_offset,
@@ -1330,13 +1424,13 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ enter();
 
     stack_slots = 2; // will be adjusted in setup
-    OopMap* map = __ continuation_enter_setup(stack_slots);
+    OopMap* map = continuation_enter_setup(masm, stack_slots);
     // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
     // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
 
     __ verify_oop(reg_cont_obj);
 
-    __ fill_continuation_entry(reg_cont_obj, reg_is_virtual);
+    fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
     // If continuation, call to thaw. Otherwise, resolve the call and exit.
     __ testptr(reg_is_cont, reg_is_cont);
@@ -1365,14 +1459,14 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ enter();
 
   stack_slots = 2; // will be adjusted in setup
-  OopMap* map = __ continuation_enter_setup(stack_slots);
+  OopMap* map = continuation_enter_setup(masm, stack_slots);
 
   // Frame is now completed as far as size and linkage.
   frame_complete = __ pc() - start;
 
   __ verify_oop(reg_cont_obj);
 
-  __ fill_continuation_entry(reg_cont_obj, reg_is_virtual);
+  fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
   // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
   __ testptr(reg_is_cont, reg_is_cont);
@@ -1415,7 +1509,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(L_exit);
 
-  __ continuation_enter_cleanup();
+  continuation_enter_cleanup(masm);
   __ pop(rbp);
   __ ret(0);
 
@@ -1423,7 +1517,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   exception_offset = __ pc() - start;
 
-  __ continuation_enter_cleanup();
+  continuation_enter_cleanup(masm);
   __ pop(rbp);
 
   __ movptr(c_rarg0, r15_thread);
@@ -1447,11 +1541,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
 static void gen_continuation_yield(MacroAssembler* masm,
                                    const VMRegPair* regs,
-                                   int& exception_offset,
                                    OopMapSet* oop_maps,
                                    int& frame_complete,
                                    int& stack_slots,
-                                   int& interpreted_entry_offset,
                                    int& compiled_entry_offset) {
   enum layout {
     rbp_off,
@@ -1489,7 +1581,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
   __ jcc(Assembler::notZero, L_pinned);
 
   __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ continuation_enter_cleanup();
+  continuation_enter_cleanup(masm);
   __ pop(rbp);
   __ ret(0);
 
@@ -1585,12 +1677,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
   if (method->is_continuation_native_intrinsic()) {
-    int vep_offset = 0;
-    int exception_offset = 0;
-    int frame_complete = 0;
-    int stack_slots = 0;
+    int exception_offset = -1;
     OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
     int interpreted_entry_offset = -1;
+    int vep_offset = -1;
     if (method->is_continuation_enter_intrinsic()) {
       gen_continuation_enter(masm,
                              in_regs,
@@ -1603,15 +1695,27 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else if (method->is_continuation_yield_intrinsic()) {
       gen_continuation_yield(masm,
                              in_regs,
-                             exception_offset,
                              oop_maps,
                              frame_complete,
                              stack_slots,
-                             interpreted_entry_offset,
                              vep_offset);
     } else {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -2823,7 +2927,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
               Deoptimization::Unpack_uncommon_trap);
     __ jcc(Assembler::equal, L);
-    __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
   }
 #endif

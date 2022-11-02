@@ -182,9 +182,12 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  int32_t offset = 0;
-  la_patchable(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
-  addi(xdispatch, xdispatch, offset);
+  ExternalAddress target((address)Interpreter::dispatch_table());
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(xdispatch, target, offset);
+    addi(xdispatch, xdispatch, offset);
+  });
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
@@ -280,11 +283,11 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Load pointer for resolved_references[] objArray
   ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result, tmp);
+  resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
-  load_heap_oop(result, Address(result, 0));
+  load_heap_oop(result, Address(result, 0), tmp, t1);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
@@ -368,12 +371,12 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
-  flw(r, esp, 0);
+  flw(r, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
-  fld(r, esp, 0);
+  fld(r, Address(esp, 0));
   addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 

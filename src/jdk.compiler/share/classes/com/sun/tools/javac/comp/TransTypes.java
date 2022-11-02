@@ -578,7 +578,7 @@ public class TransTypes extends TreeTranslator {
             selsuper.tsym == syms.enumSym;
         Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
         tree.selector = translate(tree.selector, target);
-        tree.cases = translate(tree.cases);
+        tree.cases = translate(tree.cases, tree.type);
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
     }

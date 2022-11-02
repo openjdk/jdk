@@ -283,6 +283,12 @@ void ClassLoaderData::clear_claim(int claim) {
   }
 }
 
+#ifdef ASSERT
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found claim: %d bits in _claim: %d", claim, _claim);
+}
+#endif
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);
@@ -598,23 +604,16 @@ const int _default_loader_dictionary_size = 107;
 Dictionary* ClassLoaderData::create_dictionary() {
   assert(!has_class_mirror_holder(), "class mirror holder cld does not have a dictionary");
   int size;
-  bool resizable = false;
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else {
     size = _default_loader_dictionary_size;
-    resizable = true;
   }
-  if (!DynamicallyResizeSystemDictionaries || DumpSharedSpaces) {
-    resizable = false;
-  }
-  return new Dictionary(this, size, resizable);
+  return new Dictionary(this, size);
 }
 
 // Tell the GC to keep this klass alive. Needed while iterating ClassLoaderDataGraph,
