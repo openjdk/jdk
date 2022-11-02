@@ -154,7 +154,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
-  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_dsqrt:
   case vmIntrinsics::_dsqrt_strict:

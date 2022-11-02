@@ -87,7 +87,7 @@ class JavaThread: public Thread {
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
-  OopHandle      _extentLocalCache;
+  OopHandle      _scopedValueCache;
 
   static OopStorage* _thread_oop_storage;
 
@@ -464,9 +464,9 @@ private:
   inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
 
  public:
-  jlong _extentLocal_hash_table_shift;
+  jlong _scopedValue_hash_table_shift;
 
-  void allocate_extentLocal_hash_table(int count);
+  void allocate_scopedValue_hash_table(int count);
 
  public:
   // Constructor
@@ -520,8 +520,8 @@ private:
   void set_threadOopHandles(oop p);
   oop vthread() const;
   void set_vthread(oop p);
-  oop extentLocalCache() const;
-  void set_extentLocalCache(oop p);
+  oop scopedValueCache() const;
+  void set_scopedValueCache(oop p);
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
 
@@ -752,7 +752,7 @@ private:
   void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
   bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
 
-  static ByteSize extentLocalCache_offset()       { return byte_offset_of(JavaThread, _extentLocalCache); }
+  static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }

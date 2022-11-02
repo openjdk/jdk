@@ -372,6 +372,12 @@ JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue cache in case we got a StackOverflowError
+  // while we were trying to remove ScopedValue bindings.
+  current->set_scopedValueCache(NULL);
+  // And the ScopedValue bindings too.
+  oop threadObj = current->vthread();
+  java_lang_Thread::clear_scopedValueBindings(threadObj);
   THROW_HANDLE(exception);
 JRT_END
 
@@ -383,6 +389,12 @@ JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread*
           Universe::delayed_stack_overflow_error_message());
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue cache in case we got a StackOverflowError
+  // while we were trying to remove ScopedValue bindings.
+  current->set_scopedValueCache(NULL);
+  // And the ScopedValue bindings too.
+  oop threadObj = current->vthread();
+  java_lang_Thread::clear_scopedValueBindings(threadObj);
   THROW_HANDLE(exception);
 JRT_END
 

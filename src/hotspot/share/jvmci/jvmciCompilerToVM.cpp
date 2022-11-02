@@ -1599,12 +1599,12 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
   for (int frame_index = 0; frame_index < virtualFrames->length(); frame_index++) {
     compiledVFrame* cvf = virtualFrames->at(frame_index);
 
-    GrowableArray<ScopeValue*>* extentLocals = cvf->scope()->locals();
+    GrowableArray<ScopeValue*>* scopedValues = cvf->scope()->locals();
     StackValueCollection* locals = cvf->locals();
     if (locals != NULL) {
       for (int i2 = 0; i2 < locals->size(); i2++) {
         StackValue* var = locals->at(i2);
-        if (var->type() == T_OBJECT && extentLocals->at(i2)->is_object()) {
+        if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
           jvalue val;
           val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
           cvf->update_local(T_OBJECT, i2, val);

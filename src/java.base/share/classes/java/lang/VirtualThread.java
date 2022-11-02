@@ -24,6 +24,7 @@
  */
 package java.lang;
 
+import java.lang.ref.Reference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
@@ -283,11 +284,14 @@ final class VirtualThread extends BaseVirtualThread {
             event.commit();
         }
 
+        Object bindings = scopedValueBindings();
+        ensureMaterializedForStackWalk(bindings);
         try {
             task.run();
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
+            Reference.reachabilityFence(bindings);
             try {
 
                 // pop any remaining scopes from the stack, this may block
@@ -488,8 +492,8 @@ final class VirtualThread extends BaseVirtualThread {
         boolean started = false;
         container.onStart(this); // may throw
         try {
-            // extent locals may be inherited
-            inheritExtentLocalBindings(container);
+            // scoped values may be inherited
+            inheritScopedValueBindings(container);
 
             // submit task to run thread
             submitRunContinuation();

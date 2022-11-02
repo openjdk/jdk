@@ -66,7 +66,6 @@ public:
 
   inline oop xchg(oop new_value);
 
-  // Used only for removing handle.
   oop* ptr_raw() const { return _obj; }
 };
 

@@ -46,7 +46,7 @@ import jdk.internal.access.SharedSecrets;
  */
 public class Continuation {
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final boolean PRESERVE_EXTENT_LOCAL_CACHE;
+    private static final boolean PRESERVE_SCOPED_VALUE_CACHE;
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static {
         ContinuationSupport.ensureSupported();
@@ -54,8 +54,8 @@ public class Continuation {
 
         StackChunk.init(); // ensure StackChunk class is initialized
 
-        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveExtentLocalCache");
-        PRESERVE_EXTENT_LOCAL_CACHE = (value == null) || Boolean.parseBoolean(value);
+        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveScopedValueCache");
+        PRESERVE_SCOPED_VALUE_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
 
     private static final VarHandle MOUNTED;
@@ -129,7 +129,7 @@ public class Continuation {
     private Object yieldInfo;
     private boolean preempted;
 
-    private Object[] extentLocalCache;
+    private Object[] scopedValueCache;
 
     /**
      * Constructs a continuation
@@ -238,7 +238,7 @@ public class Continuation {
     public final void run() {
         while (true) {
             mount();
-            JLA.setExtentLocalCache(extentLocalCache);
+            JLA.setScopedValueCache(scopedValueCache);
 
             if (done)
                 throw new IllegalStateException("Continuation terminated");
@@ -270,12 +270,12 @@ public class Continuation {
                     postYieldCleanup();
 
                     unmount();
-                    if (PRESERVE_EXTENT_LOCAL_CACHE) {
-                        extentLocalCache = JLA.extentLocalCache();
+                    if (PRESERVE_SCOPED_VALUE_CACHE) {
+                        scopedValueCache = JLA.scopedValueCache();
                     } else {
-                        extentLocalCache = null;
+                        scopedValueCache = null;
                     }
-                    JLA.setExtentLocalCache(null);
+                    JLA.setScopedValueCache(null);
                 } catch (Throwable e) { e.printStackTrace(); System.exit(1); }
             }
             // we're now in the parent continuation

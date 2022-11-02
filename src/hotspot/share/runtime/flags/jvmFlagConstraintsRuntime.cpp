@@ -92,18 +92,6 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error ExtentLocalCacheSizeConstraintFunc(intx value, bool verbose) {
-  if (!is_power_of_2(value)) {
-    JVMFlag::printError(verbose,
-                        "ExtentLocalCacheSize (" INTX_FORMAT ") must be "
-                        "power of 2\n",
-                        value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
-}
-
 JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbose) {
   size_t min = os::vm_allocation_granularity();
   size_t max = NOT_LP64(2*G) LP64_ONLY(8192*G);

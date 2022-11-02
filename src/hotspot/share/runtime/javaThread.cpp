@@ -157,7 +157,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
   _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _extentLocalCache = OopHandle(_thread_oop_storage, NULL);
+  _scopedValueCache = OopHandle(_thread_oop_storage, NULL);
 }
 
 oop JavaThread::threadObj() const {
@@ -186,13 +186,16 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-oop JavaThread::extentLocalCache() const {
-  return _extentLocalCache.resolve();
+oop JavaThread::scopedValueCache() const {
+  return _scopedValueCache.resolve();
 }
 
-void JavaThread::set_extentLocalCache(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
-  _extentLocalCache.replace(p);
+void JavaThread::set_scopedValueCache(oop p) {
+  if (_scopedValueCache.ptr_raw() != NULL) { // i.e. if the OopHandle has been allocated
+    _scopedValueCache.replace(p);
+  } else {
+    assert(p == NULL, "not yet initialized");
+  }
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
@@ -1067,11 +1070,11 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   // We cannot call Exceptions::_throw(...) here because we cannot block
   set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-  // Clear any extent-local bindings
-  set_extentLocalCache(NULL);
+  // Clear any scoped-value bindings
+  set_scopedValueCache(NULL);
   oop threadOop = threadObj();
   assert(threadOop != NULL, "must be");
-  java_lang_Thread::clear_extentLocalBindings(threadOop);
+  java_lang_Thread::clear_scopedValueBindings(threadOop);
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
