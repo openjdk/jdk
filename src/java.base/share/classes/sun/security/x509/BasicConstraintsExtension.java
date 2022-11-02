@@ -26,8 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -190,16 +188,14 @@ implements CertAttrSet<String> {
       *
       * @param out the DerOutputStream to encode the extension to.
       */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
+     @Override
+     public void encode(DerOutputStream out) throws IOException {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
              critical = ca;
              encodeThis();
          }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
+         super.encode(out);
      }
 
     /**
@@ -237,36 +233,12 @@ implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(IS_CA)) {
-            ca = false;
-        } else if (name.equalsIgnoreCase(PATH_LEN)) {
-            pathLen = -1;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:BasicConstraints.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(IS_CA);
-        elements.addElement(PATH_LEN);
-
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }

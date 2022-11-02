@@ -2474,7 +2474,7 @@ encode %{
 
     // Handle existing monitor.
     __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ andi(t0, disp_hdr, markWord::monitor_value);
+    __ andi(t0, tmp, markWord::monitor_value);
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
