@@ -14,7 +14,7 @@
         <file name="D-BACK_SPACE.shadow">
             <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
         </file>
-        <file name="D-DELETE.shadow">
+        <file name="DELETE.shadow">
             <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
         </file>
         <file name="DS-W.shadow">
