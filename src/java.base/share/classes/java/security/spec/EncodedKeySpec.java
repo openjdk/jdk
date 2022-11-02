@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package java.security.spec;
 
 import jdk.internal.access.SharedSecrets;
+import sun.security.util.KeyUtil;
 
 import java.io.IOException;
-import java.security.Key;
 import java.util.Arrays;
 
 /**
@@ -66,6 +66,11 @@ public abstract class EncodedKeySpec implements KeySpec {
      */
     public EncodedKeySpec(byte[] encodedKey) {
         this.encodedKey = encodedKey.clone();
+        try {
+            algorithmName = KeyUtil.getAlgorithm(this.encodedKey).getName();
+        } catch (IOException e) {
+            // On error just leave algorithmName as is
+        }
     }
 
     /**

@@ -99,8 +99,6 @@ public class PKCS8Key implements PrivateKey {
         decode(new ByteArrayInputStream(input));
     }
 
-    public PKCS8Key(String s) {}
-
     public int getVersion() {
         return version;
     }
@@ -135,7 +133,9 @@ public class PKCS8Key implements PrivateKey {
             }
 
             // OPTIONAL Context tag 0 for Attributes for PKCS8 v1 & v2
-            var result = val.data.getOptionalImplicitContextSpecific(0, DerValue.tag_Sequence);
+            var result =
+                val.data.getOptionalImplicitContextSpecific(0,
+                    DerValue.tag_Sequence);
             if (result.isPresent()) {
                 attributes = result.get().toByteArray();
                 if (val.data.available() == 0) {
@@ -145,10 +145,12 @@ public class PKCS8Key implements PrivateKey {
 
             // OPTIONAL context tag 1 for Public Key for PKCS8 v2 only
             if (version == V2) {
-                result = val.data.getOptionalImplicitContextSpecific(1, DerValue.tag_BitString);
+                result = val.data.getOptionalImplicitContextSpecific(1,
+                    DerValue.tag_BitString);
                 if (result.isPresent()) {
                     // Store public key material for later parsing
-                    pubKeyEncoded = new X509Key(algid, result.get().getUnalignedBitString()).getEncoded();
+                    pubKeyEncoded = new X509Key(algid,
+                        result.get().getUnalignedBitString()).getEncoded();
                 }
             }
 
@@ -182,7 +184,8 @@ public class PKCS8Key implements PrivateKey {
         try {
             PKCS8Key rawKey = new PKCS8Key(encoded);
             byte[] internal = rawKey.getEncodedInternal();
-            PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(internal);
+            PKCS8EncodedKeySpec pkcs8KeySpec =
+                new PKCS8EncodedKeySpec(internal);
             PrivateKey result = null;
             try {
                 result = KeyFactory.getInstance(rawKey.algid.getName())
@@ -210,21 +213,6 @@ public class PKCS8Key implements PrivateKey {
         return algid.getName();
     }
 
-    /**
-     * Returns the algorithm ID to be used with this key.
-     */
-    public AlgorithmId getAlgorithmId () {
-        return algid;
-    }
-
-    public byte[] getAttributes() {
-        return attributes;
-    }
-
-    public byte[] getPrivKeyMaterial() {
-        return privKeyMaterial;
-    }
-
     public byte[] getPubKeyEncoded() {
         return pubKeyEncoded;
     }
@@ -246,6 +234,27 @@ public class PKCS8Key implements PrivateKey {
     }
 
     /**
+     * With a given encoded Public and Private key, generate and return a
+     * PKCS8v2 DER-encoded byte[].
+     *
+     * @param pubKeyEncoded DER-encoded PublicKey
+     * @param privKeyEncoded DER-encoded PrivateKey
+     * @return DER-encoded byte array
+     * @throws IOException thrown on encoding failure
+     */
+    public static byte[] getEncoded(byte[] pubKeyEncoded, byte[] privKeyEncoded)
+        throws IOException {
+        PKCS8Key privKey;
+        try {
+            privKey = new PKCS8Key(privKeyEncoded);
+        } catch (InvalidKeyException e) {
+            throw new IOException(e);
+        }
+        privKey.pubKeyEncoded = pubKeyEncoded;
+        return privKey.generateEncoding();
+    }
+
+    /**
      * DER-encodes this key as a byte array stored inside this object
      * and return it.
      *
@@ -254,17 +263,42 @@ public class PKCS8Key implements PrivateKey {
     private synchronized byte[] getEncodedInternal() {
         if (encodedKey == null) {
             try {
-                DerOutputStream tmp = new DerOutputStream();
-                tmp.putInteger(V1);
-                algid.encode(tmp);
-                tmp.putOctetString(privKeyMaterial);
-                DerValue out = DerValue.wrap(DerValue.tag_Sequence, tmp);
-                encodedKey = out.toByteArray();
-                out.clear();
+                encodedKey = generateEncoding();
             } catch (IOException e) {
                 // encodedKey is still null
             }
         }
+        return encodedKey;
+    }
+
+    private byte[] generateEncoding() throws IOException {
+        //private byte[] generatePKCS8v2() throws IOException {
+
+        DerOutputStream out = new DerOutputStream();
+        out.putInteger((pubKeyEncoded == null) ? 0 : 1);
+        algid.encode(out);
+        out.putOctetString(privKeyMaterial);
+
+        byte[] attribute = attributes;
+        if (attribute != null) {
+            var d = new DerValue[] {DerValue.wrap(attribute)};
+            out.writeImplicit(
+                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 0),
+                new DerOutputStream().putSequence(d));
+        }
+
+        if (pubKeyEncoded != null) {
+            X509Key x = (X509Key) X509Key.parseKey(pubKeyEncoded);
+            DerOutputStream pubOut = new DerOutputStream();
+            pubOut.putUnalignedBitString(x.getKey());
+            out.writeImplicit(
+                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 1),
+                pubOut);
+        }
+
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        encodedKey = val.toByteArray();
+        val.clear();
         return encodedKey;
     }
 

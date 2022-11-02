@@ -336,22 +336,7 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
-     * Encrypted private key info encoded key spec.
-     *
-     * @param eks       the eks
-     * @param password  the password
-     * @param algorithm the algorithm
-     * @param aps       the ap
-     * @return the encoded key spec
-     * @throws IOException the io exception
-     */
-    public static byte[] encryptKey(PKCS8EncodedKeySpec eks, char[] password,
-        String algorithm, AlgorithmParameterSpec aps) throws IOException {
-        return encryptKey(eks.getEncoded(), password, algorithm, aps);
-    }
-
-    /**
-     * Encrypt key byte [ ].
+     * Encrypt key byte [].
      *
      * @param encodedBytes the encoded bytes
      * @param password     the password
@@ -398,6 +383,18 @@ public class EncryptedPrivateKeyInfo {
         }
     }
 
+    /**
+     * Encrypt key byte [].
+     *
+     * @param encodedBytes the encoded bytes
+     * @param password     the password
+     * @return the byte [ ]
+     * @throws IOException the io exception
+     */
+    public static byte[] encryptKey(byte[] encodedBytes, char[] password)
+        throws IOException {
+        return encryptKey(encodedBytes, password, DEFAULT_ALGO, null);
+    }
     /**
      * Extract the enclosed PKCS8EncodedKeySpec object from the
      * encrypted data and return it.
