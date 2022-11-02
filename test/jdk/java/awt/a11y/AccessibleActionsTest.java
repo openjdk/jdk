@@ -40,6 +40,8 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.Hashtable;
 import java.util.concurrent.CountDownLatch;
 
@@ -92,6 +94,32 @@ public class AccessibleActionsTest extends AccessibleComponentTest {
     super.createUI(panel, "AccessibleActionsTest");
   }
 
+  private void createEditableTextArea() {
+    AccessibleComponentTest.INSTRUCTIONS = "INSTRUCTIONS:\n"
+            + "Check a11y show context menu in editable JTextArea.\n\n"
+            + "Turn screen reader on and press Tab to move to the text area\n"
+            + "Perform the VO action \"Open a shortcut menu\" (VO+Shift+m)\n\n"
+            + "If the menu appears  tab further and press PASS, otherwise press FAIL.";
+
+    JTextArea textArea = new MyTextArea("some text to edit");
+    JLabel label = new JLabel(textArea.getText().length() + " chars");
+    label.setLabelFor(textArea);
+    textArea.setEditable(true);
+    textArea.addKeyListener(new KeyAdapter() {
+      @Override
+      public void keyReleased(KeyEvent e) {
+        label.setText(String.valueOf(textArea.getText().length()) + " chars");
+      }
+    });
+
+    JPanel panel = new JPanel();
+    panel.setLayout(new FlowLayout());
+    panel.add(textArea);
+    panel.add(label);
+    exceptionString = "Editable text area test failed!";
+    super.createUI(panel, "AccessibleTextTest");
+  }
+
   public static void main(String[] args) throws Exception {
     AccessibleActionsTest test = new AccessibleActionsTest();
 
@@ -105,6 +133,14 @@ public class AccessibleActionsTest extends AccessibleComponentTest {
 
     countDownLatch = test.createCountDownLatch();
     SwingUtilities.invokeLater(test::createTree);
+    countDownLatch.await();
+
+    if (!testResult) {
+      throw new RuntimeException(a11yTest.exceptionString);
+    }
+
+    countDownLatch = test.createCountDownLatch();
+    SwingUtilities.invokeLater(test::createEditableTextArea);
     countDownLatch.await();
 
     if (!testResult) {
@@ -167,17 +203,70 @@ public class AccessibleActionsTest extends AccessibleComponentTest {
       }
     }
 
-    private static JPopupMenu createPopup() {
-      JPopupMenu popup = new JPopupMenu("MENU");
-      popup.add("One");
-      popup.add("Two");
-      popup.add("Three");
-      return popup;
-    }
+
 
     private static void changeText(JLabel label, String text) {
       label.setText(text);
     }
 
+  }
+
+  private static class MyTextArea extends JTextArea {
+
+    public MyTextArea(String some_text_to_edit) {
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+      if (accessibleContext == null) {
+        accessibleContext = new MyAccessibleJTextArea();
+      }
+      return accessibleContext;
+    }
+
+    private class MyAccessibleJTextArea extends JTextArea.AccessibleJTextArea {
+      @Override
+      public AccessibleAction getAccessibleAction() {
+        return new AccessibleAction() {
+          @Override
+          public int getAccessibleActionCount() {
+            AccessibleAction aa = MyAccessibleJTextArea.super.getAccessibleAction();
+            if (aa == null) {
+              return 1;
+            }
+            int count = aa.getAccessibleActionCount();
+            return aa.getAccessibleActionCount() + 1;
+}
+
+          @Override
+          public String getAccessibleActionDescription(int i) {
+            AccessibleAction aa = MyAccessibleJTextArea.super.getAccessibleAction();
+            if ((aa != null) && (i >= 0) && (i < aa.getAccessibleActionCount())) {
+              return aa.getAccessibleActionDescription(i);
+            }
+            return AccessibleAction.TOGGLE_POPUP;
+          }
+
+          @Override
+          public boolean doAccessibleAction(int i) {
+            AccessibleAction aa = MyAccessibleJTextArea.super.getAccessibleAction();
+            if ((aa != null) && (i >= 0) && (i < aa.getAccessibleActionCount())) {
+              return aa.doAccessibleAction(i);
+            }
+            JPopupMenu popup = createPopup();
+            popup.show(MyTextArea.this, 0, 0);
+            return true;
+          }
+        };
+      }
+    }
+  }
+
+  private static JPopupMenu createPopup() {
+    JPopupMenu popup = new JPopupMenu("MENU");
+    popup.add("One");
+    popup.add("Two");
+    popup.add("Three");
+    return popup;
   }
 }
