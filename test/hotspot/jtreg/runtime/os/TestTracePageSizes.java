@@ -141,11 +141,12 @@ public class TestTracePageSizes {
         //  (e.g. "40fa00000-439b80000 rw-p 00000000 00:00 0 ") and look for keywords inside the section.
         // Section will be finished and written into a RangeWithPageSize when either the next section is found
         //  or the end of file is encountered.
-        static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
+        static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4} [a-f0-9]+ [a-f0-9]{2}:[a-f0-9]{2} [a-f0-9]+[\\s]+(.*)");
         static final Pattern KERNEL_PAGESIZE_PATT = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
         static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
         String start;
         String end;
+        String file;
         String ps;
         String vmFlags;
         int lineno;
@@ -159,7 +160,7 @@ public class TestTracePageSizes {
 
         public void finish() {
             if (start != null) {
-                RangeWithPageSize range = new RangeWithPageSize(start, end, ps, vmFlags);
+                RangeWithPageSize range = new RangeWithPageSize(start, end, file, ps, vmFlags);
                 ranges.add(range);
                 debug("Added range: " + range);
                 reset();
@@ -173,6 +174,7 @@ public class TestTracePageSizes {
                 finish();
                 start = matSectionStart.group(1);
                 end = matSectionStart.group(2);
+                file = matSectionStart.group(3);
                 ps = null;
                 vmFlags = null;
                 return;
@@ -289,6 +291,9 @@ public class TestTracePageSizes {
                         // Page sizes mismatch because we can't know what underlying page size will
                         // be used when THP is enabled. So this is not a failure.
                         debug("Success: " + pageSizeFromTrace + " > " + pageSizeFromSmaps + " and THP enabled");
+                    } else if (pageSizeFromTrace > pageSizeFromSmaps && !range.getBackingFile().isEmpty()) {
+                        // For file mapping, the page size can mismatch
+                        debug("Success: " + pageSizeFromTrace + " > " + pageSizeFromSmaps + " and is a file mapping");
                     } else {
                         debug("Failure: " + pageSizeFromSmaps + " != " + pageSizeFromTrace);
                         throw new AssertionError("Page sizes mismatch: " + pageSizeFromSmaps + " != " + pageSizeFromTrace);
@@ -325,15 +330,17 @@ public class TestTracePageSizes {
 class RangeWithPageSize {
     private long start;
     private long end;
+    private String backingFile;
     private long pageSize;
     private boolean vmFlagHG;
     private boolean vmFlagHT;
 
-    public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
+    public RangeWithPageSize(String start, String end, String file, String pageSize, String vmFlags) {
         // Note: since we insist on kernels >= 3.8, all the following information should be present
         //  (none of the input strings be null).
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
+        this.backingFile = file;
         this.pageSize = Long.parseLong(pageSize);
 
         vmFlagHG = false;
@@ -348,6 +355,10 @@ class RangeWithPageSize {
                 vmFlagHG = true;
             }
         }
+    }
+
+    public String getBackingFile() {
+        return backingFile;
     }
 
     public long getPageSize() {
