@@ -28,7 +28,6 @@ package java.security;
 import sun.nio.cs.ISO_8859_1;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.*;
-import sun.security.x509.X509Key;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
@@ -73,32 +72,22 @@ public class PEMFormat {
 
     enum KeyType {UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE}
 
+    // PEM Data for single key operations (PKCS8 v1, X509)
     private PEMData pemData;
-    private PEMData pemDataOAS; // Only used for Public Key with OneAsymmetricKey
+    // PEM Data for encodings that has a second key which is a public key
+    // such as OneAsymmetricKey
+    private PEMData pemDataOAS;
 
-    /**
+    /*
      * Constructor
      */
-
-     /**
-      * Create a new PEMFormat from this one
-      *
-      * @param p the p
-      */
-    PEMFormat(PEMFormat p) {
-        //this.key = p.key;
-        //this.encodedBytes = p.encodedBytes;
-        pemData = new PEMData(p.pemData.data(), p.pemData.algorithm(), p.pemData.keyType());
-
-    }
 
     /**
      * Constructor for raw bytes, PEM or DER.
      *
      * @param data byte[] could contain PEM or DER.
-     * @throws IOException the io exception
      */
-    PEMFormat(byte[] data) throws IOException {
+    PEMFormat(byte[] data) {
         pemData = new PEMData(data, null, null);
     }
 
@@ -107,9 +96,8 @@ public class PEMFormat {
      *
      * @param data    the data
      * @param keyType the key type
-     * @throws IOException the io exception
      */
-    private PEMFormat(byte[] data, KeyType keyType) throws IOException {
+    private PEMFormat(byte[] data, KeyType keyType) {
         pemData = new PEMData(data, null, keyType);
     }
 
@@ -137,7 +125,7 @@ public class PEMFormat {
      *
      * @param key the key
      */
-    PEMFormat(Key key) throws IOException {
+    PEMFormat(Key key) {
         if (key instanceof PrivateKey) {
             pemData = new PEMData(key.getEncoded(), key.getAlgorithm(), KeyType.PRIVATE);
         } else if (key instanceof PublicKey) {
@@ -239,41 +227,6 @@ public class PEMFormat {
         return new PEMFormat(keyPair);
     }
 
-    private byte[] generatePKCS8v2() throws IOException {
-
-        PKCS8Key privateKey;
-        try {
-            privateKey = new PKCS8Key(pemData.data());
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
-        DerOutputStream out = new DerOutputStream();
-        out.putInteger(1); // version 2
-        privateKey.getAlgorithmId().encode(out);
-        out.putOctetString(privateKey.getPrivKeyMaterial());
-
-        byte[] attribute = privateKey.getAttributes();
-        if (attribute != null) {
-            var d = new DerValue[] {DerValue.wrap(attribute)};
-            out.writeImplicit(
-                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 0),
-                new DerOutputStream().putSequence(d));
-            //out.putDerValue(new DerValue(attribute));
-        }
-        if (pemDataOAS != null) {
-            X509Key x = (X509Key) X509Key.parseKey(pemDataOAS.data());
-            DerOutputStream pubOut = new DerOutputStream();
-            pubOut.putUnalignedBitString(x.getKey());
-            out.writeImplicit(
-                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 1),
-                pubOut);
-        }
-
-    DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-    return val.toByteArray();
-}
-
     private KeyPair parsePKCS8v2(Provider p, byte[] encodedBytes) throws IOException {
 
         PKCS8Key priKey;
@@ -357,8 +310,6 @@ public class PEMFormat {
                     PKCS8FOOTER, 0, PKCS8FOOTER.length) == 0)) {
                 encodedBytes = Base64.getMimeDecoder().decode(
                     Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
-                //String algo = KeyUtil.getAlgorithm(encodedBytes).getName();
-                //return new PKCS8EncodedKeySpec(encodedBytes, algo);
                 kt = KeyType.PRIVATE;
 
             } else if (kt == KeyType.PUBLIC ||
@@ -404,24 +355,26 @@ public class PEMFormat {
      * @return the encoded key. Returns a new array each time
      * this method is called.
      */
-    private byte[] encode() throws IOException {
+ /*   private byte[] encode() throws IOException {
         if (pemData == null) {
             throw new IOException("No encoded data provided");
         }
         if (pemDataOAS != null) {
-            return generatePKCS8v2();
+            return PKCS8Key.getEncoded(pemData.data, pemDataOAS.data);
         }
         return pemData.data();
     }
-
+*/
     private String encodeString() throws IOException {
         if (pemData == null) {
             throw new IOException("No encoded data provided");
         }
-        byte[] encodedBytes = pemData.data();
+        byte[] encodedBytes;
 
-        if (pemDataOAS != null) {
-            encodedBytes = generatePKCS8v2();
+        if (pemDataOAS == null) {
+            encodedBytes = pemData.data();
+        } else {
+            encodedBytes = PKCS8Key.getEncoded(pemData.data, pemDataOAS.data);
         }
 
         Base64.Encoder encoder = Base64.getMimeEncoder();
@@ -460,7 +413,7 @@ public class PEMFormat {
      * @throws IOException the io exception
      */
     public byte[] getEncoded() throws IOException {
-        return encode();
+        return encodeString().getBytes();
     }
 
     @Override
@@ -484,9 +437,9 @@ public class PEMFormat {
             pemData = decode(pemData);
         }
         if (pemData.keyType() == KeyType.PRIVATE) {
-            return getKey(p, PrivateKey.class);
+            return get(p, PrivateKey.class);
         } else if (pemData.keyType() == KeyType.PUBLIC) {
-            return getKey(p, PublicKey.class);
+            return get(p, PublicKey.class);
         }
         return null;
 
@@ -531,8 +484,8 @@ public class PEMFormat {
      * @return the key
      * @throws IOException the io exception
      */
-    public <T> T getKey(Class<T> key) throws IOException {
-        return getKey(null, key);
+    public <T> T get(Class<T> key) throws IOException {
+        return get(null, key);
     }
 
     /**
@@ -544,7 +497,7 @@ public class PEMFormat {
      * @return the key
      * @throws IOException the io exception
      */
-    public <T> T getKey(Provider p, Class<T> kClass) throws IOException {
+    public <T> T get(Provider p, Class<T> kClass) throws IOException {
         Key key = null;
 
         if (!pemData.isComplete()) {
@@ -589,6 +542,11 @@ public class PEMFormat {
     /**
      * Gets keys.
      *
+     * XXX Unsure if this is a desired method.  The user can call
+     * getKey(), which defaults to private for PKCS8 and getKey(PublicKey.class)
+     * It's unlikely users will need the keys in a KeyPair and they will want
+     * them separate anyway
+     *
      * @return the keys
      * @throws IOException the io exception
      */
@@ -603,7 +561,7 @@ public class PEMFormat {
      * @throws IOException the io exception
      */
     public Key getKey() throws IOException {
-        return getKey((Provider) null);
+        return getKey(null);
     }
 
     /**
@@ -625,24 +583,28 @@ public class PEMFormat {
      * @throws IOException the io exception
      */
     public PEMFormat encrypt(char[] password) throws IOException {
-        return encrypt(password, DEFAULT_ALGO, null);
+        if (pemData.keyType() != KeyType.PRIVATE) {
+            throw new IOException("Encryption can only happen on Private Keys");
+        }
+        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password);
+        return new PEMFormat(encoded, KeyType.ENCRYPTED_PRIVATE);
     }
 
     /**
      * Encrypt pem format.
      *
      * @param password  the password
-     * @param algorithm the algorithm
+     * @param pbeAlgo the algorithm
      * @param aps       the aps
      * @return the pem format
      * @throws IOException the io exception
      */
-    public PEMFormat encrypt(char[] password, String algorithm,
+    public PEMFormat encrypt(char[] password, String pbeAlgo,
         AlgorithmParameterSpec aps) throws IOException {
         if (pemData.keyType() != KeyType.PRIVATE) {
             throw new IOException("Encryption can only happen on Private Keys");
         }
-        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password, algorithm, aps);
+        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password, pbeAlgo, aps);
         return new PEMFormat(encoded, KeyType.ENCRYPTED_PRIVATE);
     }
 
