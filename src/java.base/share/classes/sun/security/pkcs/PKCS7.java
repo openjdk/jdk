@@ -478,7 +478,7 @@ public class PKCS7 {
                 else {
                     try {
                         byte[] encoded = certificates[i].getEncoded();
-                        implCerts[i] = X509CertImpl.newX509CertImpl(encoded);
+                        implCerts[i] = new X509CertImpl(encoded);
                     } catch (CertificateException ce) {
                         throw new IOException(ce);
                     }
