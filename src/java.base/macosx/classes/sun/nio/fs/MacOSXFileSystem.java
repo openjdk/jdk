@@ -36,15 +36,16 @@ import static sun.nio.fs.MacOSXNativeDispatcher.*;
 
 class MacOSXFileSystem extends BsdFileSystem {
 
-    private static final String PROPERTY_ENABLE_FILE_NAME_ENCODING =
+    private static final String PROPERTY_NORMALIZE_FILE_PATHS =
         "jdk.nio.path.useNormalizationFormD";
 
-    private static final boolean ENCODE_FILE_NAMES;
+    private static final boolean NORMALIZE_FILE_PATHS;
 
     static {
-        final String name = PROPERTY_ENABLE_FILE_NAME_ENCODING;
+        final String name = PROPERTY_NORMALIZE_FILE_PATHS;
         String value = GetPropertyAction.privilegedGetProperty(name);
-        ENCODE_FILE_NAMES = "true".equalsIgnoreCase(value);
+        NORMALIZE_FILE_PATHS = (value != null)
+            && ("".equals(value) || Boolean.parseBoolean(value));
     }
 
     MacOSXFileSystem(UnixFileSystemProvider provider, String dir) {
@@ -58,7 +59,7 @@ class MacOSXFileSystem extends BsdFileSystem {
 
     @Override
     String normalizeNativePath(String path) {
-        if (ENCODE_FILE_NAMES) {
+        if (NORMALIZE_FILE_PATHS) {
             for (int i = 0; i < path.length(); i++) {
                 char c = path.charAt(i);
                 if (c > 0x80)
@@ -71,7 +72,7 @@ class MacOSXFileSystem extends BsdFileSystem {
 
     @Override
     String normalizeJavaPath(String path) {
-        if (ENCODE_FILE_NAMES) {
+        if (NORMALIZE_FILE_PATHS) {
             for (int i = 0; i < path.length(); i++) {
                 if (path.charAt(i) > 0x80)
                     return new String(normalizepath(path.toCharArray(),

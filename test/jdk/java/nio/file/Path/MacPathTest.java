@@ -40,15 +40,15 @@
 import jdk.test.lib.process.ProcessTools;
 
 public class MacPathTest {
-    private static final String FILE_NAME_ENCODING_PROPERTY =
+    private static final String PROPERTY_NORMALIZE_FILE_PATHS =
         "jdk.nio.path.useNormalizationFormD";
-    private static final boolean ENABLE_FILE_NAME_ENCODING =
-        Boolean.getBoolean(FILE_NAME_ENCODING_PROPERTY);
+    private static final boolean NORMALIZE_FILE_PATHS =
+        Boolean.getBoolean(PROPERTY_NORMALIZE_FILE_PATHS);
 
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb;
-        if (ENABLE_FILE_NAME_ENCODING) {
-            String option = "-D" + FILE_NAME_ENCODING_PROPERTY + "=true";
+        if (NORMALIZE_FILE_PATHS) {
+            String option = "-D" + PROPERTY_NORMALIZE_FILE_PATHS + "=true";
             pb = ProcessTools.createTestJvm(option, MacPath.class.getName());
         } else {
             pb = ProcessTools.createTestJvm(MacPath.class.getName());

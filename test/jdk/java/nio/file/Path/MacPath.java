@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MacPath {
-    private static final String FILE_NAME_ENCODING_PROPERTY =
+    private static final String PROPERTY_NORMALIZE_FILE_PATHS =
         "jdk.nio.path.useNormalizationFormD";
 
     public static void main(String args[]) throws Throwable {
@@ -84,8 +84,8 @@ public class MacPath {
         throws Throwable
     {
         String fname = null;
-        Normalizer.Form form = Boolean.getBoolean(FILE_NAME_ENCODING_PROPERTY) ?
-            Normalizer.Form.NFD : Normalizer.Form.NFC;
+        Normalizer.Form form = Boolean.getBoolean(PROPERTY_NORMALIZE_FILE_PATHS)
+            ? Normalizer.Form.NFD : Normalizer.Form.NFC;
         String dname_nfd = Normalizer.normalize(dname, form);
         String fname_nfd = Normalizer.normalize(fname_nfc, form);
 
