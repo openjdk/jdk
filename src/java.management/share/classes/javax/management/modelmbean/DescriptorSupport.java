@@ -1234,14 +1234,13 @@ public class DescriptorSupport
             MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
-        String respStr = "";
         String[] fields = getFields();
 
         if ((fields == null) || (fields.length == 0)) {
             if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
                 MODELMBEAN_LOGGER.log(Level.TRACE, "Empty Descriptor");
             }
-            return respStr;
+            return "";
         }
 
         if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
@@ -1249,13 +1248,7 @@ public class DescriptorSupport
                     "Printing " + fields.length + " fields");
         }
 
-        for (int i=0; i < fields.length; i++) {
-            if (i == (fields.length - 1)) {
-                respStr = respStr.concat(fields[i]);
-            } else {
-                respStr = respStr.concat(fields[i] + ", ");
-            }
-        }
+        String respStr = String.join(", ", fields);
 
         if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
             MODELMBEAN_LOGGER.log(Level.TRACE, "Exit returning " + respStr);
