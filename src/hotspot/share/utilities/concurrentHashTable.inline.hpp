@@ -497,34 +497,36 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // own read-side.
   GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(thread);
   for (size_t bucket_it = start_idx; bucket_it < stop_idx; bucket_it++) {
-    Bucket* bucket = table->get_bucket(bucket_it);
-    Bucket* prefetch_bucket = (bucket_it+1) < stop_idx ?
-                              table->get_bucket(bucket_it+1) : NULL;
+    for (;;) {
+      Bucket* bucket = table->get_bucket(bucket_it);
+      Bucket* prefetch_bucket = (bucket_it+1) < stop_idx ?
+                                table->get_bucket(bucket_it+1) : NULL;
 
-    if (!HaveDeletables<IsPointer<VALUE>::value, EVALUATE_FUNC>::
+      if (!HaveDeletables<IsPointer<VALUE>::value, EVALUATE_FUNC>::
         have_deletable(bucket, eval_f, prefetch_bucket)) {
         // Nothing to remove in this bucket.
-        continue;
-    }
+        break;
+      }
 
-    GlobalCounter::critical_section_end(thread, cs_context);
-    // We left critical section but the bucket cannot be removed while we hold
-    // the _resize_lock.
-    bucket->lock();
-    size_t nd = delete_check_nodes(bucket, eval_f, BULK_DELETE_LIMIT, ndel);
-    bucket->unlock();
-    if (is_mt) {
-      GlobalCounter::write_synchronize();
-    } else {
-      write_synchonize_on_visible_epoch(thread);
+      GlobalCounter::critical_section_end(thread, cs_context);
+      // We left critical section but the bucket cannot be removed while we hold
+      // the _resize_lock.
+      bucket->lock();
+      size_t nd = delete_check_nodes(bucket, eval_f, BULK_DELETE_LIMIT, ndel);
+      bucket->unlock();
+      if (is_mt) {
+        GlobalCounter::write_synchronize();
+      } else {
+        write_synchonize_on_visible_epoch(thread);
+      }
+      for (size_t node_it = 0; node_it < nd; node_it++) {
+        del_f(ndel[node_it]->value());
+        Node::destroy_node(_context, ndel[node_it]);
+        JFR_ONLY(safe_stats_remove();)
+        DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
+      }
+      cs_context = GlobalCounter::critical_section_begin(thread);
     }
-    for (size_t node_it = 0; node_it < nd; node_it++) {
-      del_f(ndel[node_it]->value());
-      Node::destroy_node(_context, ndel[node_it]);
-      JFR_ONLY(safe_stats_remove();)
-      DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
-    }
-    cs_context = GlobalCounter::critical_section_begin(thread);
   }
   GlobalCounter::critical_section_end(thread, cs_context);
 }
