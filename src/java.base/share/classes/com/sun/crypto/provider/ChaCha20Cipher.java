@@ -1033,7 +1033,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                     keyStrLimit = chaCha20Block(startState, counter, keyStream);
                     counter += (keyStrLimit / KS_BLK_SIZE);
                     if (counter > finalCounterValue) {
-                        keyStrLimit -= (counter - finalCounterValue) * 64;
+                        keyStrLimit -= (int)(counter - finalCounterValue) * 64;
                     }
                     keyStrOffset = 0;
                     ksRemain = keyStrLimit;
