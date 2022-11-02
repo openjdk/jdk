@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -210,40 +209,14 @@ implements CertAttrSet<String> {
                                   "CertAttrSet:InhibitAnyPolicy.");
     }
 
-    /**
-     * Delete the attribute value.
-     *
-     * @param name name of attribute to delete. Must be SKIP_CERTS.
-     * @throws IOException on error.  In this case, IOException will always be
-     *                     thrown, because the only attribute, SKIP_CERTS, is
-     *                     required.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(SKIP_CERTS))
-            throw new IOException("Attribute " + SKIP_CERTS +
-                                  " may not be deleted.");
-        else
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:InhibitAnyPolicy.");
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     *
-     * @return enumeration of elements
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(SKIP_CERTS);
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      *
      * @return name of attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,44 +40,70 @@ class ConcurrentHashTable<CONFIG, F>::BucketsOperation {
  protected:
   ConcurrentHashTable<CONFIG, F>* _cht;
 
+  class InternalTableClaimer {
+    volatile size_t _next;
+    size_t _limit;
+    size_t _size;
+
+public:
+    InternalTableClaimer() : _next(0), _limit(0), _size(0){ }
+
+    InternalTableClaimer(size_t claim_size, InternalTable* table) :
+      InternalTableClaimer()
+    {
+      set(claim_size, table);
+    }
+
+    void set(size_t claim_size, InternalTable* table) {
+      assert(table != nullptr, "precondition");
+      _limit = table->_size;
+      _size  = MIN2(claim_size, _limit);
+    }
+
+    bool claim(size_t* start, size_t* stop) {
+      if (Atomic::load(&_next) < _limit) {
+        size_t claimed = Atomic::fetch_and_add(&_next, _size);
+        if (claimed < _limit) {
+          *start = claimed;
+          *stop  = MIN2(claimed + _size, _limit);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    bool have_work() {
+      return _limit > 0;
+    }
+
+    bool have_more_work() {
+      return Atomic::load_acquire(&_next) >= _limit;
+    }
+  };
+
   // Default size of _task_size_log2
   static const size_t DEFAULT_TASK_SIZE_LOG2 = 12;
 
-  // The table is split into ranges, every increment is one range.
-  volatile size_t _next_to_claim;
-  size_t _task_size_log2; // Number of buckets.
-  size_t _stop_task;      // Last task
-  size_t _size_log2;      // Table size.
-  bool   _is_mt;
+  InternalTableClaimer _table_claimer;
+  bool _is_mt;
 
   BucketsOperation(ConcurrentHashTable<CONFIG, F>* cht, bool is_mt = false)
-    : _cht(cht), _next_to_claim(0), _task_size_log2(DEFAULT_TASK_SIZE_LOG2),
-    _stop_task(0), _size_log2(0), _is_mt(is_mt) {}
+    : _cht(cht), _table_claimer(DEFAULT_TASK_SIZE_LOG2, _cht->_table), _is_mt(is_mt) {}
 
   // Returns true if you succeeded to claim the range start -> (stop-1).
   bool claim(size_t* start, size_t* stop) {
-    size_t claimed = Atomic::fetch_and_add(&_next_to_claim, 1u);
-    if (claimed >= _stop_task) {
-      return false;
-    }
-    *start = claimed * (((size_t)1) << _task_size_log2);
-    *stop  = ((*start) + (((size_t)1) << _task_size_log2));
-    return true;
+    return _table_claimer.claim(start, stop);
   }
 
   // Calculate starting values.
   void setup(Thread* thread) {
     thread_owns_resize_lock(thread);
-    _size_log2 = _cht->_table->_log2_size;
-    _task_size_log2 = MIN2(_task_size_log2, _size_log2);
-    size_t tmp = _size_log2 > _task_size_log2 ?
-                 _size_log2 - _task_size_log2 : 0;
-    _stop_task = (((size_t)1) << tmp);
+    _table_claimer.set(DEFAULT_TASK_SIZE_LOG2, _cht->_table);
   }
 
   // Returns false if all ranges are claimed.
   bool have_more_work() {
-    return Atomic::load_acquire(&_next_to_claim) >= _stop_task;
+    return _table_claimer.have_more_work();
   }
 
   void thread_owns_resize_lock(Thread* thread) {
@@ -199,6 +225,65 @@ class ConcurrentHashTable<CONFIG, F>::GrowTask :
     this->thread_owns_resize_lock(thread);
     BucketsOperation::_cht->internal_grow_epilog(thread);
     this->thread_do_not_own_resize_lock(thread);
+  }
+};
+
+template <typename CONFIG, MEMFLAGS F>
+class ConcurrentHashTable<CONFIG, F>::ScanTask :
+  public BucketsOperation
+{
+  // If there is a paused resize, we need to scan items already
+  // moved to the new resized table.
+  typename BucketsOperation::InternalTableClaimer _new_table_claimer;
+
+  // Returns true if you succeeded to claim the range [start, stop).
+  bool claim(size_t* start, size_t* stop, InternalTable** table) {
+    if (this->_table_claimer.claim(start, stop)) {
+      *table = this->_cht->get_table();
+      return true;
+    }
+
+    // If there is a paused resize, we also need to operate on the already resized items.
+    if (!_new_table_claimer.have_work()) {
+      assert(this->_cht->get_new_table() == nullptr || this->_cht->get_new_table() == POISON_PTR, "Precondition");
+      return false;
+    }
+
+    *table = this->_cht->get_new_table();
+    return _new_table_claimer.claim(start, stop);
+  }
+
+ public:
+  ScanTask(ConcurrentHashTable<CONFIG, F>* cht, size_t claim_size) : BucketsOperation(cht), _new_table_claimer() {
+    set(cht, claim_size);
+  }
+
+  void set(ConcurrentHashTable<CONFIG, F>* cht, size_t claim_size) {
+    this->_table_claimer.set(claim_size, cht->get_table());
+
+    InternalTable* new_table = cht->get_new_table();
+    if (new_table == nullptr) { return; }
+
+    DEBUG_ONLY(if (new_table == POISON_PTR) { return; })
+
+    _new_table_claimer.set(claim_size, new_table);
+  }
+
+  template <typename SCAN_FUNC>
+  void  do_safepoint_scan(SCAN_FUNC& scan_f) {
+    assert(SafepointSynchronize::is_at_safepoint(),
+           "must only be called in a safepoint");
+
+    size_t start_idx = 0, stop_idx = 0;
+    InternalTable* table = nullptr;
+
+    while (claim(&start_idx, &stop_idx, &table)) {
+      assert(table != nullptr, "precondition");
+      if (!this->_cht->do_scan_for_range(scan_f, start_idx, stop_idx, table)) {
+        return;
+      }
+      table = nullptr;
+    }
   }
 };
 

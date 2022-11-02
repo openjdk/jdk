@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -272,39 +271,12 @@ implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(KEY_ID)) {
-            id = null;
-        } else if (name.equalsIgnoreCase(AUTH_NAME)) {
-            names = null;
-        } else if (name.equalsIgnoreCase(SERIAL_NUMBER)) {
-            serialNum = null;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:AuthorityKeyIdentifier.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(KEY_ID);
-        elements.addElement(AUTH_NAME);
-        elements.addElement(SERIAL_NUMBER);
-
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }
