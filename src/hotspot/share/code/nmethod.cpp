@@ -1662,15 +1662,15 @@ bool nmethod::is_unloading() {
   // different outcomes, so we guard the computed result with a CAS
   // to ensure all threads have a shared view of whether an nmethod
   // is_unloading or not.
-  if (Atomic::cmpxchg(&_is_unloading_state, state, new_state, memory_order_relaxed) == state) {
-    // Our view of the world won
-    return state_is_unloading;
-  }
+  uint8_t found_state = Atomic::cmpxchg(&_is_unloading_state, state, new_state, memory_order_relaxed);
 
-  // If we lost the race, we call is_unloading again to see what the winner
-  // determined. This can't recurse as the second time we call the state is
-  // guaranteed to be cached for the current unloading cycle.
-  return is_unloading();
+  if (found_state == state) {
+    // First to change state, we win
+    return state_is_unloading;
+  } else {
+    // State already set, so use it
+    return IsUnloadingState::is_unloading(found_state);
+  }
 }
 
 void nmethod::clear_unloading_state() {
