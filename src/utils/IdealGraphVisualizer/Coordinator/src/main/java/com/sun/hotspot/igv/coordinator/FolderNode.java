@@ -30,6 +30,8 @@ import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.Action;
+import org.openide.actions.PropertiesAction;
 import org.openide.actions.RenameAction;
 import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
