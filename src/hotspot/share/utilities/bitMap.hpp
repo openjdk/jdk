@@ -196,10 +196,6 @@ class BitMap {
   inline void set_bit(idx_t bit);
   inline void clear_bit(idx_t bit);
 
-  // lenient getter/setter in alignment with VectorSet
-  bool test(idx_t bit) const { return bit >= _size ? false : at(bit); }
-  void remove(idx_t bit);
-
   // Attempts to change a bit to a desired value. The operation returns true if
   // this thread changed the value of the bit. It was changed with a RMW operation
   // using the specified memory_order. The operation returns false if the change
@@ -336,7 +332,6 @@ class GrowableBitMap : public BitMap {
   GrowableBitMap(const Allocator& allocator, idx_t size_in_bits, bool clear) : BitMap(nullptr, 0), _allocator(allocator) {
     update(allocate(_allocator, size_in_bits, clear), size_in_bits);
   }
-  GrowableBitMap(const GrowableBitMap& rhs) : BitMap(rhs._map, rhs._size), _allocator(rhs._allocator) {}
 
  public:
   // Set up and clear the bitmap memory.

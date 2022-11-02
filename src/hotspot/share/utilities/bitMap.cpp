@@ -138,12 +138,6 @@ void BitMap::verify_range(idx_t beg, idx_t end) const {
 }
 #endif // #ifdef ASSERT
 
-void BitMap::remove(idx_t bit) {
-  if (bit < _size) {
-    clear_bit(bit);
-  }
-}
-
 void BitMap::pretouch() {
   os::pretouch_memory(word_addr(0), word_addr(size()));
 }
