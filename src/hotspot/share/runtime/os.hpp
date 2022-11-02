@@ -647,9 +647,6 @@ class os: AllStatic {
   static struct dirent* readdir(DIR* dirp);
   static int            closedir(DIR* dirp);
 
-  // Dynamic library extension
-  static const char*    dll_file_extension();
-
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
 
@@ -875,13 +872,10 @@ class os: AllStatic {
   static int connect(int fd, struct sockaddr* him, socklen_t len);
   static struct hostent* get_host_by_name(char* name);
 
-  // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
+  // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
   static void  signal_notify(int signal_number);
-  static void* signal(int signal_number, void* handler);
-  static void  signal_raise(int signal_number);
   static int   signal_wait();
-  static void* user_handler();
   static void  terminate_signal_thread();
   static int   sigexitnum_pd();
 

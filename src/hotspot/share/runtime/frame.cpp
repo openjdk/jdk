@@ -570,8 +570,8 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
   for (BasicObjectLock* current = interpreter_frame_monitor_end();
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
-    st->print(" - obj    [");
-    current->obj()->print_value_on(st);
+    st->print(" - obj    [%s", current->obj() == nullptr ? "null" : "");
+    if (current->obj() != nullptr) current->obj()->print_value_on(st);
     st->print_cr("]");
     st->print(" - lock   [");
     current->lock()->print_on(st, current->obj());

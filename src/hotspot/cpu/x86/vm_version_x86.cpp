@@ -2991,6 +2991,22 @@ uint64_t VM_Version::feature_flags() {
     }
   }
 
+  // Protection key features.
+  if (_cpuid_info.sef_cpuid7_ecx.bits.pku != 0) {
+    result |= CPU_PKU;
+  }
+  if (_cpuid_info.sef_cpuid7_ecx.bits.ospke != 0) {
+    result |= CPU_OSPKE;
+  }
+
+  // Control flow enforcement (CET) features.
+  if (_cpuid_info.sef_cpuid7_ecx.bits.cet_ss != 0) {
+    result |= CPU_CET_SS;
+  }
+  if (_cpuid_info.sef_cpuid7_edx.bits.cet_ibt != 0) {
+    result |= CPU_CET_IBT;
+  }
+
   // Composite features.
   if (supports_tscinv_bit() &&
       ((is_amd_family() && !is_amd_Barcelona()) ||

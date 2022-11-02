@@ -67,13 +67,11 @@ static uint par_ids_start() { return 0; }
 
 G1DirtyCardQueueSet::G1DirtyCardQueueSet(BufferNode::Allocator* allocator) :
   PtrQueueSet(allocator),
-  _refinement_notification_thread(nullptr),
   _num_cards(0),
+  _mutator_refinement_threshold(SIZE_MAX),
   _completed(),
   _paused(),
   _free_ids(par_ids_start(), num_par_ids()),
-  _max_cards(MaxCardsUnlimited),
-  _padded_max_cards(MaxCardsUnlimited),
   _detached_refinement_stats()
 {}
 
@@ -126,17 +124,12 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   assert(cbn != NULL, "precondition");
   // Increment _num_cards before adding to queue, so queue removal doesn't
   // need to deal with _num_cards possibly going negative.
-  size_t new_num_cards = Atomic::add(&_num_cards, buffer_size() - cbn->index());
-  {
-    // Perform push in CS.  The old tail may be popped while the push is
-    // observing it (attaching it to the new buffer).  We need to ensure it
-    // can't be reused until the push completes, to avoid ABA problems.
-    GlobalCounter::CriticalSection cs(Thread::current());
-    _completed.push(*cbn);
-  }
-  if (_refinement_notification_thread != nullptr) {
-    _refinement_notification_thread->notify(new_num_cards);
-  }
+  Atomic::add(&_num_cards, buffer_size() - cbn->index());
+  // Perform push in CS.  The old tail may be popped while the push is
+  // observing it (attaching it to the new buffer).  We need to ensure it
+  // can't be reused until the push completes, to avoid ABA problems.
+  GlobalCounter::CriticalSection cs(Thread::current());
+  _completed.push(*cbn);
 }
 
 // Thread-safe attempt to remove and return the first buffer from
@@ -493,7 +486,7 @@ void G1DirtyCardQueueSet::handle_completed_buffer(BufferNode* new_node,
   enqueue_completed_buffer(new_node);
 
   // No need for mutator refinement if number of cards is below limit.
-  if (Atomic::load(&_num_cards) <= Atomic::load(&_padded_max_cards)) {
+  if (Atomic::load(&_num_cards) <= Atomic::load(&_mutator_refinement_threshold)) {
     return;
   }
 
@@ -542,6 +535,9 @@ void G1DirtyCardQueueSet::abandon_logs() {
   abandon_completed_buffers();
   _detached_refinement_stats.reset();
 
+  // Disable mutator refinement until concurrent refinement decides otherwise.
+  set_mutator_refinement_threshold(SIZE_MAX);
+
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
   struct AbandonThreadLogClosure : public ThreadClosure {
@@ -557,13 +553,13 @@ void G1DirtyCardQueueSet::abandon_logs() {
 }
 
 void G1DirtyCardQueueSet::concatenate_logs() {
-  // Iterate over all the threads, if we find a partial log add it to
-  // the global list of logs.  Temporarily turn off the limit on the number
-  // of outstanding buffers.
   assert_at_safepoint();
-  size_t old_limit = max_cards();
-  set_max_cards(MaxCardsUnlimited);
 
+  // Disable mutator refinement until concurrent refinement decides otherwise.
+  set_mutator_refinement_threshold(SIZE_MAX);
+
+  // Iterate over all the threads, if we find a partial log add it to
+  // the global list of logs.
   struct ConcatenateThreadLogClosure : public ThreadClosure {
     G1DirtyCardQueueSet& _qset;
     ConcatenateThreadLogClosure(G1DirtyCardQueueSet& qset) : _qset(qset) {}
@@ -579,7 +575,6 @@ void G1DirtyCardQueueSet::concatenate_logs() {
 
   enqueue_all_paused_buffers();
   verify_num_cards();
-  set_max_cards(old_limit);
 }
 
 G1ConcurrentRefineStats G1DirtyCardQueueSet::get_and_reset_refinement_stats() {
@@ -616,27 +611,10 @@ void G1DirtyCardQueueSet::record_detached_refinement_stats(G1ConcurrentRefineSta
   stats->reset();
 }
 
-size_t G1DirtyCardQueueSet::max_cards() const {
-  return _max_cards;
+size_t G1DirtyCardQueueSet::mutator_refinement_threshold() const {
+  return Atomic::load(&_mutator_refinement_threshold);
 }
 
-void G1DirtyCardQueueSet::set_max_cards(size_t value) {
-  _max_cards = value;
-  Atomic::store(&_padded_max_cards, value);
-}
-
-void G1DirtyCardQueueSet::set_max_cards_padding(size_t padding) {
-  // Compute sum, clipping to max.
-  size_t limit = _max_cards + padding;
-  if (limit < padding) {        // Check for overflow.
-    limit = MaxCardsUnlimited;
-  }
-  Atomic::store(&_padded_max_cards, limit);
-}
-
-void G1DirtyCardQueueSet::discard_max_cards_padding() {
-  // Being racy here is okay, since all threads store the same value.
-  if (_max_cards != Atomic::load(&_padded_max_cards)) {
-    Atomic::store(&_padded_max_cards, _max_cards);
-  }
+void G1DirtyCardQueueSet::set_mutator_refinement_threshold(size_t value) {
+  Atomic::store(&_mutator_refinement_threshold, value);
 }

@@ -77,7 +77,7 @@ final class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
         if (peer == null) {
             // A failure to map the peer should only happen for a
             // lightweight component, then find the actual native parent from
-            // that component.  The event coorinates are going to have to be
+            // that component.  The event coordinates are going to have to be
             // remapped as well.
             Component nativeOrigin = WToolkit.getNativeContainer(origin);
             e.target = nativeOrigin;

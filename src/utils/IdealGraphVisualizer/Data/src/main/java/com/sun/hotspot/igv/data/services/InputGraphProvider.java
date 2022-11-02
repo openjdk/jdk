@@ -26,7 +26,7 @@ package com.sun.hotspot.igv.data.services;
 
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  *
@@ -36,7 +36,10 @@ public interface InputGraphProvider {
 
     InputGraph getGraph();
 
-    void setSelectedNodes(Set<InputNode> nodes);
+    void addSelectedNodes(Collection<InputNode> nodes);
+
+    void clearSelectedNodes();
+
 
     /**
      * @return an iterator walking forward through the {@link InputGraph}s following the {@link #getGraph()}
