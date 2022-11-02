@@ -50,7 +50,9 @@ public:
 #define ASSERT_RANGE_IS_MARKED_WITH(p, size, mark)  ASSERT_TRUE(GtestUtils::check_range(p, size, mark))
 #define ASSERT_RANGE_IS_MARKED(p, size)             ASSERT_TRUE(GtestUtils::check_range(p, size))
 
-// Convenience asserts
+// Mimicking the official ASSERT_xx and EXPECT_xx counterparts of the googletest suite.
+// (ASSERT|EXPECT)_NOT_NULL: check that the given pointer is not NULL
+// (ASSERT|EXPECT)_NULL: check that the given pointer is NULL
 #define ASSERT_NOT_NULL(p)  ASSERT_NE(p2i(p), 0)
 #define ASSERT_NULL(p)      ASSERT_EQ(p2i(p), 0)
 #define EXPECT_NOT_NULL(p)  EXPECT_NE(p2i(p), 0)
