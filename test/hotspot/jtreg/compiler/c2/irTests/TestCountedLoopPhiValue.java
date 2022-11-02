@@ -39,7 +39,7 @@ public class TestCountedLoopPhiValue {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.IF })
     public static float test1() {
         int i = 0;
@@ -64,7 +64,7 @@ public class TestCountedLoopPhiValue {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.IF })
     public static float test2() {
         int i = 0;
@@ -89,7 +89,7 @@ public class TestCountedLoopPhiValue {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.IF })
     public static float test3() {
         int i = 10;
@@ -114,7 +114,7 @@ public class TestCountedLoopPhiValue {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.IF })
     public static float test4() {
         int i = 10;
@@ -144,7 +144,7 @@ public class TestCountedLoopPhiValue {
     final static int last_test5_iteration = Integer.MIN_VALUE + Integer.divideUnsigned(test5_limit - Integer.MIN_VALUE, int_stride) * int_stride;
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.IF })
     public static float test5() {
         int i = Integer.MIN_VALUE;
@@ -173,7 +173,7 @@ public class TestCountedLoopPhiValue {
     final static int last_test6_iteration = Integer.MAX_VALUE - Integer.divideUnsigned(Integer.MAX_VALUE - test6_limit, int_stride) * int_stride;
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.IF })
     public static float test6() {
         int i = Integer.MAX_VALUE;
@@ -203,7 +203,7 @@ public class TestCountedLoopPhiValue {
     final static long last_test7_iteration = Long.MIN_VALUE + Long.divideUnsigned(test7_limit - Long.MIN_VALUE, long_stride) * long_stride;
 
     @Test
-    @IR(counts = { IRNode.LONGCOUNTEDLOOP, "1", IRNode.IF, "1" })
+    @IR(counts = {IRNode.LONG_COUNTED_LOOP, "1", IRNode.IF, "1" })
     public static float test7() {
         long i = Long.MIN_VALUE;
         long j;
@@ -231,7 +231,7 @@ public class TestCountedLoopPhiValue {
     final static long last_test8_iteration = Long.MAX_VALUE - Long.divideUnsigned(Long.MAX_VALUE - test8_limit, long_stride) * long_stride;
 
     @Test
-    @IR(counts = { IRNode.LONGCOUNTEDLOOP, "1", IRNode.IF, "1" })
+    @IR(counts = {IRNode.LONG_COUNTED_LOOP, "1", IRNode.IF, "1" })
     public static float test8() {
         long i = Long.MAX_VALUE;
         long j;

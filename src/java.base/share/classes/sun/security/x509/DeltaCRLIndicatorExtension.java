@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package sun.security.x509;
 
+import sun.security.util.DerOutputStream;
+
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 
 /**
@@ -106,7 +107,8 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         super.encode(out, PKIXExtensions.DeltaCRLIndicator_Id, true);
     }
 }
