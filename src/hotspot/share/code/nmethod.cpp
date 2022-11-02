@@ -482,6 +482,21 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
             basic_lock_owner_sp_offset,
             basic_lock_sp_offset,
             oop_maps);
+#ifdef ASSERT
+    // Method handle instrinsics may get allocated in NonNMethod space.
+    // GC may not look for Oops, there.
+    if (method->is_method_handle_intrinsic()) {
+      assert(oop_maps == nullptr, "expectation");
+      assert(nm->oops_size() == 0, "must not contain oop constants");
+
+      if (relocInfo::mustIterateImmediateOopsInCode()) {
+        RelocIterator iter(nm, nm->oops_reloc_begin());
+        while (iter.next()) {
+          assert(iter.type() != relocInfo::oop_type, "must not contain oops in code");
+        }
+      }
+    }
+#endif
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
   }
 
