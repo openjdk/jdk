@@ -85,6 +85,8 @@ import javax.tools.ToolProvider;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.api.JavacTaskPool;
+import com.sun.tools.javac.api.JavacTaskPool.Worker;
 import java.util.Objects;
 
 public class JavacParserTest extends TestCase {
@@ -2033,6 +2035,63 @@ public class JavacParserTest extends TestCase {
                 return super.visitModifiers(node, p);
             }
         }.scan(cut, null);
+    }
+
+    @Test
+    void testIncompleteStringTemplate() throws IOException {
+        String template = "\"\\{o.toString()}\"";
+        String prefix = """
+                      package t;
+                      class Test {
+                          void test(Object o) {
+                              String s = STR.""";
+
+        Worker<Void> verifyParseable = task -> {
+            try {
+                task.parse().iterator().next();
+                return null;
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+            }
+        };
+        JavacTaskPool pool = new JavacTaskPool(1);
+        DiagnosticListener<JavaFileObject> dl = d -> {};
+        List<String> options = List.of("--enable-preview",
+                                       "-source", System.getProperty("java.specification.version"));
+        for (int i = 0; i < template.length(); i++) {
+            pool.getTask(null, fm, dl, options,
+                    null, Arrays.asList(new MyFileObject(prefix + template.substring(0, i))),
+                    verifyParseable
+            );
+        }
+        for (int i = 0; i < template.length() - 1; i++) {
+            pool.getTask(null, fm, dl, options,
+                    null, Arrays.asList(new MyFileObject(prefix + template.substring(0, i) + "\"")),
+                    verifyParseable);
+        }
+        String incomplete = prefix + "\"\\{o.";
+        pool.getTask(null, fm, dl, options,
+                null, Arrays.asList(new MyFileObject(incomplete)), task -> {
+            try {
+                CompilationUnitTree cut = task.parse().iterator().next();
+                String result = cut.toString().replaceAll("\\R", "\n");
+                assertEquals("incorrect AST",
+                             result,
+                             """
+                             package t;
+
+                             class Test {
+                                 \n\
+                                 void test(Object o) {
+                                     String s = [STR]"\\{}"(o.<error>);
+                                 }
+                             }""");
+                return null;
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+
+            }
+        });
     }
 
     void run(String[] args) throws Exception {

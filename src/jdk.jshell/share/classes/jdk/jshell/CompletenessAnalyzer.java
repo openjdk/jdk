@@ -485,7 +485,7 @@ class CompletenessAnalyzer {
                 do {
                     scanner.nextToken();
                     current = scanner.token();
-                } while (current != null && current.endPos <= endPos);
+                } while (current != null && current.endPos <= endPos && current.kind != TokenKind.EOF);
             } else {
                 scanner.nextToken();
                 current = scanner.token();

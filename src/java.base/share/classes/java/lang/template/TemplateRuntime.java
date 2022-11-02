@@ -29,9 +29,11 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -93,8 +95,8 @@ final class TemplateRuntime {
      * @param <E>  type of elements
      */
     @SafeVarargs
-    @SuppressWarnings("unchecked")
-    private static <E> List<E> toList(E... elements) {
+    @SuppressWarnings({"unchecked", "varargs"})
+    static <E> List<E> toList(E... elements) {
         return JUCA.listFromTrustedArrayNullsAllowed(elements);
     }
 
@@ -109,13 +111,14 @@ final class TemplateRuntime {
      *
      * @implNote The default method determines if the {@link StringTemplate}
      * was synthesized by the compiler, then the types are precisely those of the
-     * embedded expressions, otherwise this method returns the values list types.
+     * embedded expressions, otherwise this method returns a list of
+     * {@code Object.class}.
      */
     static List<Class<?>> valueTypes(StringTemplate st) {
         Objects.requireNonNull(st, "st must not be null");
-        List<Class<?>> result = new ArrayList<>();
         Class<?> tsClass = st.getClass();
         if (tsClass.isSynthetic()) {
+            List<Class<?>> result = new ArrayList<>();
             try {
                 for (int i = 0; ; i++) {
                     Field field = tsClass.getDeclaredField("x" + i);
@@ -126,13 +129,12 @@ final class TemplateRuntime {
             } catch (SecurityException ex) {
                 throw new InternalError(ex);
             }
-
             return result;
         }
-        for (Object value : st.values()) {
-            result.add(value == null ? Object.class : value.getClass());
-        }
-        return result;
+        int size = st.values().size();
+        Class<?>[] types = new Class<?>[size];
+        Arrays.fill(types, Object.class);
+        return List.of(types);
     }
 
     /**

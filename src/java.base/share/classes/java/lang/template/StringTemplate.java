@@ -148,6 +148,9 @@ public interface StringTemplate {
 
     /**
      * {@return the interpolation of the StringTemplate}
+     *
+     * @implNote Compiler generated {@link StringTemplate StringTemplates} create a specialized
+     * optimal version of interpolate for each string template expression.
      */
     default String interpolate() {
         return StringTemplate.interpolate(fragments(), values());
@@ -263,8 +266,8 @@ public interface StringTemplate {
         Objects.requireNonNull(a, "StringTemplate a should not be null");
         Objects.requireNonNull(b, "StringTemplate b should not be null");
         return a instanceof StringTemplate aST && b instanceof StringTemplate bST &&
-               Objects.equals(aST.fragments(), bST.fragments()) &&
-               Objects.equals(aST.values(), bST.values());
+                Objects.equals(aST.fragments(), bST.fragments()) &&
+                Objects.equals(aST.values(), bST.values());
     }
 
     /**
@@ -306,11 +309,11 @@ public interface StringTemplate {
                     "fragments list size is not one more than values list size");
         }
         fragments = List.copyOf(fragments);
-        values = TemplateRuntime.toList(values.toArray());
+        values = TemplateRuntime.toList(values.toArray().clone());
         return new TemplateRuntime.SimpleStringTemplate(fragments, values);
     }
 
-     /**
+    /**
      * Creates a string that interleaves the elements of values between the
      * elements of fragments.
      *

@@ -41,7 +41,9 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Manages the template creation and bootstrapping.
+ * Manages the template creation and bootstrapping. These methods may be used, for example,
+ * by Java compiler implementations to implement the bodies of Object methods for
+ * {@link StringTemplate} classes.
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class TemplateSupport {
@@ -169,7 +171,7 @@ public final class TemplateSupport {
                                          ValidatingProcessor<Object, Throwable> processor,
                                          Object[] values) throws Throwable {
         return processor.process(
-            StringTemplate.of(fragments, toList(values)));
+            StringTemplate.of(fragments, JUCA.listFromTrustedArrayNullsAllowed(values)));
     }
 
     /**
@@ -196,7 +198,7 @@ public final class TemplateSupport {
      * @param <E>  type of elements
      */
     @SafeVarargs
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "varargs"})
     public static <E> List<E> toList(E... elements) {
         return JUCA.listFromTrustedArrayNullsAllowed(elements);
     }

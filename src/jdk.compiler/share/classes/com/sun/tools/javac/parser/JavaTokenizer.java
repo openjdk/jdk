@@ -393,6 +393,8 @@ public class JavaTokenizer extends UnicodeReader {
             } else if (token.kind == TokenKind.STRINGFRAGMENT) {
                 tokens = tokens.appendList(tokenizer.pendingTokens);
                 tokenizer.pendingTokens = List.nil();
+            } else if (token.kind == TokenKind.EOF) {
+                break;
             }
         }
 
@@ -559,8 +561,12 @@ public class JavaTokenizer extends UnicodeReader {
 
         // String ended without close delimiter sequence.
         if (isStringTemplate) {
+            TokenKind prevTK = tk;
             lexError(pos, isTextBlock ? Errors.UnclosedTextBlockTemplate
                                       : Errors.UnclosedStringTemplate);
+            if (prevTK == TokenKind.STRINGLITERAL) {
+                tk = TokenKind.STRINGFRAGMENT;
+            }
         } else {
             lexError(pos, isTextBlock ? Errors.UnclosedTextBlock
                                       : Errors.UnclosedStrLit);
