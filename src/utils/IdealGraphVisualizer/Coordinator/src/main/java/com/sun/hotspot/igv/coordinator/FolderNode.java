@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import java.util.HashMap;
 import java.util.Map;
+import org.openide.actions.RenameAction;
 import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
@@ -178,6 +179,14 @@ public class FolderNode extends AbstractNode {
     @Override
     public Image getOpenedIcon(int i) {
         return getIcon(i);
+    }
+
+    @Override
+    public Action[] getActions(boolean b) {
+        return new Action[]{
+                RenameAction.findObject(RenameAction.class, true),
+                PropertiesAction.findObject(PropertiesAction.class, true),
+        };
     }
 
     public static void clearGraphNodeMap() {

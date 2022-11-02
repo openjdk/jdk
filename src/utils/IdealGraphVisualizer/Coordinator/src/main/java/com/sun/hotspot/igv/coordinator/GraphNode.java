@@ -32,6 +32,7 @@ import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import javax.swing.Action;
 import org.openide.actions.OpenAction;
+import org.openide.actions.RenameAction;
 import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
@@ -137,7 +138,12 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Action[] getActions(boolean b) {
-        return new Action[]{DiffGraphAction.findObject(DiffGraphAction.class, true), CloneGraphAction.findObject(CloneGraphAction.class, true), OpenAction.findObject(OpenAction.class, true)};
+        return new Action[]{
+                RenameAction.findObject(RenameAction.class, true),
+                DiffGraphAction.findObject(DiffGraphAction.class, true),
+                CloneGraphAction.findObject(CloneGraphAction.class, true),
+                OpenAction.findObject(OpenAction.class, true)
+        };
     }
 
     @Override
