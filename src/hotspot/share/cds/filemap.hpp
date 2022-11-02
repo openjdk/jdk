@@ -378,7 +378,7 @@ public:
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }
   void   set_header_crc(int crc)     { header()->set_crc(crc); }
-  int    region_crc(int i)      const { return region_at(i)->crc(); }
+  int    region_crc(int i)     const { return region_at(i)->crc(); }
   void   populate_header(size_t core_region_alignment);
   bool   validate_header();
   void   invalidate();
@@ -527,7 +527,7 @@ public:
   char* region_addr(int idx);
 
   // The offset of the first core region in the archive, relative to SharedBaseAddress
-  size_t mapping_base_offset() const { return first_core_region()->mapping_offset(); }
+  size_t mapping_base_offset() const { return first_core_region()->mapping_offset();    }
   // The offset of the (exclusive) end of the last core region in this archive, relative to SharedBaseAddress
   size_t mapping_end_offset()  const { return last_core_region()->mapping_end_offset(); }
 
@@ -540,7 +540,7 @@ public:
   }
 
   FileMapRegion* first_core_region() const;
-  FileMapRegion* last_core_region() const;
+  FileMapRegion* last_core_region()  const;
 
   FileMapRegion* region_at(int i) const {
     return header()->region_at(i);
