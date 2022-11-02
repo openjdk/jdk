@@ -1583,22 +1583,33 @@ void ZStatReferences::set_phantom(size_t encountered, size_t discovered, size_t 
   set(&_phantom, encountered, discovered, enqueued);
 }
 
-void ZStatReferences::print(const char* name, const ZStatReferences::ZCount& ref) {
-  log_info(gc, ref)("%s: "
-                    SIZE_FORMAT " encountered, "
-                    SIZE_FORMAT " discovered, "
-                    SIZE_FORMAT " enqueued",
-                    name,
-                    ref.encountered,
-                    ref.discovered,
-                    ref.enqueued);
-}
-
 void ZStatReferences::print() {
-  print("Soft", _soft);
-  print("Weak", _weak);
-  print("Final", _final);
-  print("Phantom", _phantom);
+  LogTarget(Info, gc, ref) lt;
+  if (!lt.is_enabled()) {
+    // Nothing to log
+    return;
+  }
+  ZStatTablePrinter refs(20, 12);
+  lt.print("%s", refs()
+           .fill()
+           .right("Encountered")
+           .right("Discovered")
+           .right("Enqueued")
+           .end());
+
+  auto ref_print = [&] (const char* name, const ZStatReferences::ZCount& ref) {
+    lt.print("%s", refs()
+             .left("%s References:", name)
+             .right("%zu", ref.encountered)
+             .right("%zu", ref.discovered)
+             .right("%zu", ref.enqueued)
+             .end());
+  };
+
+  ref_print("Soft", _soft);
+  ref_print("Weak", _weak);
+  ref_print("Final", _final);
+  ref_print("Phantom", _phantom);
 }
 
 //

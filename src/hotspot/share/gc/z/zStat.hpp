@@ -567,7 +567,6 @@ private:
   } _soft, _weak, _final, _phantom;
 
   static void set(ZCount* count, size_t encountered, size_t discovered, size_t enqueued);
-  static void print(const char* name, const ZCount& ref);
 
 public:
   static void set_soft(size_t encountered, size_t discovered, size_t enqueued);
