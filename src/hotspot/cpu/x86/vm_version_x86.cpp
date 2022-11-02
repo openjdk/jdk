@@ -902,9 +902,6 @@ void VM_Version::get_processor_features() {
   } else if (UseSSE > use_sse_limit) {
     warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", (int) UseSSE, use_sse_limit);
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  } else if (UseSSE < 0) {
-    warning("UseSSE=%d is not valid, setting it to UseSSE=0", (int) UseSSE);
-    FLAG_SET_DEFAULT(UseSSE, 0);
   }
 
   // first try initial setting and detect what we can support
