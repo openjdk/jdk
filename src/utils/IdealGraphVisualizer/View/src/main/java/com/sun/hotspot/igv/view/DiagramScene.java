@@ -933,7 +933,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         SelectionCoordinator.getInstance().getSelectedChangedEvent().addListener(selectedCoordinatorListener);
     }
 
-    private void rebuildConnectionLayer(Set<Widget> oldVisibleWidgets) {
+    private void rebuildConnectionLayer() {
         connectionLayer.removeChildren();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
@@ -949,54 +949,30 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         }
-
-        boolean doAnimation = shouldAnimate();
-        SceneAnimator animator = getSceneAnimator();
-        for (Figure figure : getModel().getDiagram().getFigures()) {
-            FigureWidget figureWidget = getWidget(figure);
-            if (figureWidget.isVisible()) {
-                Point location = new Point(figure.getPosition());
-                if (doAnimation && oldVisibleWidgets.contains(figureWidget)) {
-                    animator.animatePreferredLocation(figureWidget, location);
-                } else {
-                    figureWidget.setPreferredLocation(location);
-                }
-            }
-        }
-
-        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (Block block : getModel().getDiagram().getBlocks()) {
-                BlockWidget blockWidget = getWidget(block.getInputBlock());
-                if (blockWidget != null && blockWidget.isVisible()) {
-                    Rectangle bounds = new Rectangle(block.getBounds());
-                    if (doAnimation && oldVisibleWidgets.contains(blockWidget)) {
-                        animator.animatePreferredBounds(blockWidget, bounds);
-                    } else {
-                        blockWidget.setPreferredBounds(bounds);
-                    }
-                }
-            }
-        }
     }
 
-    private Set<Widget> getVisibleWidgets() {
-        Set<Widget> visibleWidgets = new HashSet<>();
+    private Set<FigureWidget> getVisibleFigureWidgets() {
+        Set<FigureWidget> visibleFigureWidgets = new HashSet<>();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             FigureWidget figureWidget = getWidget(figure);
             if (figureWidget != null && figureWidget.isVisible()) {
-                visibleWidgets.add(figureWidget);
+                visibleFigureWidgets.add(figureWidget);
             }
         }
+        return visibleFigureWidgets;
+    }
 
+    private Set<BlockWidget> getVisibleBlockWidgets() {
+        Set<BlockWidget> visibleBlockWidgets = new HashSet<>();
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
             for (InputBlock inputBlock : getModel().getDiagram().getInputBlocks()) {
                 BlockWidget blockWidget = getWidget(inputBlock);
                 if (blockWidget.isVisible()) {
-                    visibleWidgets.add(blockWidget);
+                    visibleBlockWidgets.add(blockWidget);
                 }
             }
         }
-        return visibleWidgets;
+        return visibleBlockWidgets;
     }
 
     private void updateVisibleFigureWidgets() {
@@ -1091,13 +1067,47 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return visibleConnections;
     }
 
+    private void updateFigureWidgetLocations(Set<FigureWidget> oldVisibleFigureWidgets) {
+        boolean doAnimation = shouldAnimate();
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget.isVisible()) {
+                Point location = new Point(figure.getPosition());
+                if (doAnimation && oldVisibleFigureWidgets.contains(figureWidget)) {
+                    getSceneAnimator().animatePreferredLocation(figureWidget, location);
+                } else {
+                    figureWidget.setPreferredLocation(location);
+                }
+            }
+        }
+    }
+
+    private void updateBlockWidgetBounds(Set<BlockWidget> oldVisibleBlockWidgets) {
+        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
+            boolean doAnimation = shouldAnimate();
+            for (Block block : getModel().getDiagram().getBlocks()) {
+                BlockWidget blockWidget = getWidget(block.getInputBlock());
+                if (blockWidget != null && blockWidget.isVisible()) {
+                    Rectangle bounds = new Rectangle(block.getBounds());
+                    if (doAnimation && oldVisibleBlockWidgets.contains(blockWidget)) {
+                        getSceneAnimator().animatePreferredBounds(blockWidget, bounds);
+                    } else {
+                        blockWidget.setPreferredBounds(bounds);
+                    }
+                }
+            }
+        }
+    }
+
     private void relayout() {
         rebuilding = true;
-        Set<Widget> oldVisibleWidgets = getVisibleWidgets();
+        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
+        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
+
         updateVisibleFigureWidgets();
         updateNodeHull();
         updateVisibleBlockWidgets();
-        
+
         HashSet<Figure> visibleFigures = getVisibleFigures();
         HashSet<Connection> visibleConnections = getVisibleConnections();
         if (getModel().getShowSea()) {
@@ -1107,7 +1117,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         } else if (getModel().getShowCFG()) {
             doCFGLayout(visibleFigures, visibleConnections);
         }
-        rebuildConnectionLayer(oldVisibleWidgets);
+        rebuildConnectionLayer();
+
+        updateFigureWidgetLocations(oldVisibleFigureWidgets);
+        updateBlockWidgetBounds(oldVisibleBlockWidgets);
+
         validateAll();
         rebuilding = false;
     }
