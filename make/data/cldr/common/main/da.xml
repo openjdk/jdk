@@ -37,6 +37,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">amharisk</language>
 			<language type="an">aragonesisk</language>
 			<language type="ang">oldengelsk</language>
+			<language type="ann">obolo</language>
 			<language type="anp">angika</language>
 			<language type="ar">arabisk</language>
 			<language type="ar_001">moderne standardarabisk</language>
@@ -49,6 +50,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="as">assamesisk</language>
 			<language type="asa">asu</language>
 			<language type="ast">asturisk</language>
+			<language type="atj">atikamekw</language>
 			<language type="av">avarisk</language>
 			<language type="awa">awadhi</language>
 			<language type="ay">aymara</language>
@@ -60,7 +62,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bas">basaa</language>
 			<language type="bax">bamun</language>
 			<language type="bbj">ghomala</language>
-			<language type="be">hviderussisk</language>
+			<language type="be">belarusisk</language>
 			<language type="bej">beja</language>
 			<language type="bem">bemba</language>
 			<language type="bez">bena</language>
@@ -108,13 +110,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ckb">sorani</language>
 			<language type="ckb" alt="menu">kurdisk, sorani</language>
 			<language type="ckb" alt="variant">centralkurdisk</language>
+			<language type="clc">chilcotin</language>
 			<language type="co">korsikansk</language>
 			<language type="cop">koptisk</language>
 			<language type="cr">cree</language>
+			<language type="crg">michif</language>
 			<language type="crh">krimtatarisk</language>
+			<language type="crj">sydøstcree</language>
+			<language type="crk">plains cree</language>
+			<language type="crl">nordøstcree</language>
+			<language type="crm">Moose-cree</language>
+			<language type="crr">carolina algonquisk</language>
 			<language type="crs">seselwa (kreol-fransk)</language>
 			<language type="cs">tjekkisk</language>
 			<language type="csb">kasjubisk</language>
+			<language type="csw">swampy cree</language>
 			<language type="cu">kirkeslavisk</language>
 			<language type="cv">chuvash</language>
 			<language type="cy">walisisk</language>
@@ -150,9 +160,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">australsk engelsk</language>
 			<language type="en_CA">canadisk engelsk</language>
 			<language type="en_GB">britisk engelsk</language>
-			<language type="en_GB" alt="short">britisk engelsk</language>
 			<language type="en_US">amerikansk engelsk</language>
-			<language type="en_US" alt="short">amerikansk engelsk</language>
 			<language type="enm">middelengelsk</language>
 			<language type="eo">esperanto</language>
 			<language type="es">spansk</language>
@@ -209,8 +217,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hai">haida</language>
 			<language type="hak">hakka-kinesisk</language>
 			<language type="haw">hawaiiansk</language>
+			<language type="hax">sydhaida</language>
 			<language type="he">hebraisk</language>
 			<language type="hi">hindi</language>
+			<language type="hi_Latn" alt="variant">hinglish</language>
 			<language type="hil">hiligaynon</language>
 			<language type="hit">hittitisk</language>
 			<language type="hmn">hmong</language>
@@ -221,6 +231,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">haitisk</language>
 			<language type="hu">ungarsk</language>
 			<language type="hup">hupa</language>
+			<language type="hur">halkomelem</language>
 			<language type="hy">armensk</language>
 			<language type="hz">herero</language>
 			<language type="ia">interlingua</language>
@@ -231,6 +242,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">igbo</language>
 			<language type="ii">sichuan yi</language>
 			<language type="ik">inupiaq</language>
+			<language type="ikt">vestcanadisk inuktitut</language>
 			<language type="ilo">iloko</language>
 			<language type="inh">ingush</language>
 			<language type="io">ido</language>
@@ -258,6 +270,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">kapverdisk</language>
 			<language type="kfo">koro</language>
 			<language type="kg">kongo</language>
+			<language type="kgp">kaingang</language>
 			<language type="kha">khasi</language>
 			<language type="kho">khotanesisk</language>
 			<language type="khq">koyra-chiini</language>
@@ -288,6 +301,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">kutenaj</language>
 			<language type="kv">komi</language>
 			<language type="kw">cornisk</language>
+			<language type="kwk">kwakʼwala</language>
 			<language type="ky">kirgisisk</language>
 			<language type="la">latin</language>
 			<language type="lad">ladino</language>
@@ -298,6 +312,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezghian</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgsk</language>
+			<language type="lil">lillooet</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
@@ -305,6 +320,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">Louisiana-kreolsk</language>
 			<language type="loz">lozi</language>
 			<language type="lrc">nordluri</language>
+			<language type="lsm">saamia</language>
 			<language type="lt">litauisk</language>
 			<language type="lu">luba-Katanga</language>
 			<language type="lua">luba-Lulua</language>
@@ -340,6 +356,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">mongolsk</language>
 			<language type="mnc">manchu</language>
 			<language type="mni">manipuri</language>
+			<language type="moe">innu-aimun</language>
 			<language type="moh">mohawk</language>
 			<language type="mos">mossi</language>
 			<language type="mr">marathisk</language>
@@ -367,7 +384,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ng">ndonga</language>
 			<language type="nia">nias</language>
 			<language type="niu">niueansk</language>
-			<language type="nl">hollandsk</language>
+			<language type="nl">nederlandsk</language>
 			<language type="nl_BE">flamsk</language>
 			<language type="nmg">kwasio</language>
 			<language type="nn">nynorsk</language>
@@ -388,6 +405,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">nzima</language>
 			<language type="oc">occitansk</language>
 			<language type="oj">ojibwa</language>
+			<language type="ojb">nordvestojibwa</language>
+			<language type="ojc">centralojibwa</language>
+			<language type="ojs">oji-cree</language>
+			<language type="ojw">vestojibwa</language>
+			<language type="oka">okanagan</language>
 			<language type="om">oromo</language>
 			<language type="or">oriya</language>
 			<language type="os">ossetisk</language>
@@ -403,8 +425,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="peo">oldpersisk</language>
 			<language type="phn">fønikisk</language>
 			<language type="pi">pali</language>
+			<language type="pis">pijin</language>
 			<language type="pl">polsk</language>
 			<language type="pon">ponape</language>
+			<language type="pqm">maliseet-passamaquoddy</language>
 			<language type="prg">preussisk</language>
 			<language type="pro">oldprovencalsk</language>
 			<language type="ps">pashto</language>
@@ -457,6 +481,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">sidamo</language>
 			<language type="sk">slovakisk</language>
 			<language type="sl">slovensk</language>
+			<language type="slh">sydlushootseed</language>
 			<language type="sm">samoansk</language>
 			<language type="sma">sydsamisk</language>
 			<language type="smj">lulesamisk</language>
@@ -473,6 +498,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">swati</language>
 			<language type="ssy">saho</language>
 			<language type="st">sydsotho</language>
+			<language type="str">straits salish</language>
 			<language type="su">sundanesisk</language>
 			<language type="suk">sukuma</language>
 			<language type="sus">susu</language>
@@ -484,13 +510,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syc">klassisk syrisk</language>
 			<language type="syr">syrisk</language>
 			<language type="ta">tamil</language>
+			<language type="tce">sydtutchone</language>
 			<language type="te">telugu</language>
 			<language type="tem">temne</language>
 			<language type="teo">teso</language>
 			<language type="ter">tereno</language>
 			<language type="tet">tetum</language>
 			<language type="tg">tadsjikisk</language>
+			<language type="tgx">tagish</language>
 			<language type="th">thai</language>
+			<language type="tht">tahltan</language>
 			<language type="ti">tigrinya</language>
 			<language type="tig">tigre</language>
 			<language type="tiv">tivi</language>
@@ -503,12 +532,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">tswana</language>
 			<language type="to">tongansk</language>
 			<language type="tog">nyasa tongansk</language>
+			<language type="tok">toki pona</language>
 			<language type="tpi">tok pisin</language>
 			<language type="tr">tyrkisk</language>
 			<language type="trv">taroko</language>
 			<language type="ts">tsonga</language>
 			<language type="tsi">tsimshisk</language>
 			<language type="tt">tatarisk</language>
+			<language type="ttm">nordtutchone</language>
 			<language type="tum">tumbuka</language>
 			<language type="tvl">tuvaluansk</language>
 			<language type="tw">twi</language>
@@ -538,7 +569,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="was">washo</language>
 			<language type="wbp">walbiri</language>
 			<language type="wo">wolof</language>
-			<language type="wuu" draft="contributed">wu-kinesisk</language>
+			<language type="wuu">wu-kinesisk</language>
 			<language type="xal">kalmyk</language>
 			<language type="xh">xhosa</language>
 			<language type="xog">soga</language>
@@ -548,6 +579,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">yemba</language>
 			<language type="yi">jiddisch</language>
 			<language type="yo">yoruba</language>
+			<language type="yrl">nheengatu</language>
 			<language type="yue">kantonesisk</language>
 			<language type="yue" alt="menu">kantonesisk (Kina)</language>
 			<language type="za">zhuang</language>
@@ -565,10 +597,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">adlam</script>
 			<script type="Afak" draft="contributed">afaka</script>
 			<script type="Arab">arabisk</script>
 			<script type="Arab" alt="variant">persisk-arabisk</script>
-			<script type="Aran" draft="contributed">nastaliq</script>
+			<script type="Aran">nastaliq</script>
 			<script type="Armi">armi</script>
 			<script type="Armn">armensk</script>
 			<script type="Avst">avestansk</script>
@@ -583,7 +616,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Brai">punktskrift</script>
 			<script type="Bugi">buginesisk</script>
 			<script type="Buhd">buhid</script>
-			<script type="Cakm">cakm</script>
+			<script type="Cakm">chakma</script>
 			<script type="Cans">oprindelige canadiske symboler</script>
 			<script type="Cari">kariansk</script>
 			<script type="Cham">cham</script>
@@ -683,6 +716,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Prti">prti</script>
 			<script type="Qaag" draft="contributed">zawgyi</script>
 			<script type="Rjng">rejang</script>
+			<script type="Rohg">hanifi</script>
 			<script type="Roro">rongo-rongo</script>
 			<script type="Runr">runer</script>
 			<script type="Samr">samaritansk</script>
@@ -800,7 +834,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BT">Bhutan</territory>
 			<territory type="BV">Bouvetøen</territory>
 			<territory type="BW">Botswana</territory>
-			<territory type="BY">Hviderusland</territory>
+			<territory type="BY">Belarus</territory>
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Canada</territory>
 			<territory type="CC">Cocosøerne</territory>
@@ -942,12 +976,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NF">Norfolk Island</territory>
 			<territory type="NG">Nigeria</territory>
 			<territory type="NI">Nicaragua</territory>
-			<territory type="NL">Holland</territory>
+			<territory type="NL">Nederlandene</territory>
 			<territory type="NO">Norge</territory>
 			<territory type="NP">Nepal</territory>
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">New Zealand</territory>
+			<territory type="NZ" alt="variant">Aotearoa New Zealand</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -1132,7 +1167,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="islamic-civil">verdslig islamisk kalender</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">islamisk kalender (Saudi-Arabien, observation)</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">islamisk kalender (tabellarisk, astronomisk epoke)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">islamisk kalender (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura">islamisk kalender (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601-kalender</type>
 			<type key="calendar" type="japanese">japansk kalender</type>
 			<type key="calendar" type="persian">persisk kalender</type>
@@ -1149,13 +1184,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseLevel" type="no" draft="contributed">Sortér uden forskel på store og små bogstaver</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sortér med skelnen mellem store og små bogstaver</type>
 			<type key="collation" type="big5han">sorteringsrækkefølge uforkortet kinesisk - Big5</type>
-			<type key="collation" type="compat" draft="contributed">tidligere sorteringsrækkefølge, kompatibilitet</type>
+			<type key="collation" type="compat">tidligere sorteringsrækkefølge, kompatibilitet</type>
 			<type key="collation" type="dictionary">sorteringsrækkefølge for ordbog</type>
 			<type key="collation" type="ducet">Unicode-standardsorteringsrækkefølge</type>
 			<type key="collation" type="eor" draft="contributed">europæisk sorteringsrækkefølge</type>
 			<type key="collation" type="gb2312han">sorteringsrækkefølge forkortet kinesisk - GB2312</type>
 			<type key="collation" type="phonebook">sorteringsrækkefølge i telefonbøger</type>
-			<type key="collation" type="phonetic" draft="contributed">fonetisk sorteringsrækkefølge</type>
+			<type key="collation" type="phonetic">fonetisk sorteringsrækkefølge</type>
 			<type key="collation" type="pinyin">pinyin-baseret sorteringsrækkefølge</type>
 			<type key="collation" type="reformed">ny sorteringsrækkefølge</type>
 			<type key="collation" type="search">generel søgning</type>
@@ -1164,7 +1199,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="stroke">stregbaseret sorteringsrækkefølge</type>
 			<type key="collation" type="traditional">traditionel sorteringsrækkefølge</type>
 			<type key="collation" type="unihan">sortering efter streger i rodtegn</type>
-			<type key="collation" type="zhuyin" draft="contributed">zhuyin-sorteringsrækkefølge</type>
+			<type key="collation" type="zhuyin">zhuyin-sorteringsrækkefølge</type>
 			<type key="colNormalization" type="no" draft="contributed">Sortér uden normalisering</type>
 			<type key="colNormalization" type="yes" draft="contributed">Sortér Unicode efter første normalisering</type>
 			<type key="colNumeric" type="no" draft="contributed">Sortér efter individuelle cifre</type>
@@ -1196,7 +1231,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="bali" draft="contributed">Balinesiske tal</type>
 			<type key="numbers" type="beng">bengali tal</type>
 			<type key="numbers" type="brah" draft="contributed">Brahmi-tal</type>
-			<type key="numbers" type="cakm" draft="contributed">Chakma-tal</type>
+			<type key="numbers" type="cakm">chakma-tal</type>
 			<type key="numbers" type="cham" draft="contributed">Cham-tal</type>
 			<type key="numbers" type="deva">devanagariske tal</type>
 			<type key="numbers" type="ethi">etiopiske tal</type>
@@ -1213,7 +1248,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">traditionelle kinesiske tal</type>
 			<type key="numbers" type="hantfin">traditionelle kinesiske finansielle tal</type>
 			<type key="numbers" type="hebr">hebraiske tal</type>
-			<type key="numbers" type="java" draft="contributed">Javanesiske tal</type>
+			<type key="numbers" type="java">javanesiske tal</type>
 			<type key="numbers" type="jpan">japanske tal</type>
 			<type key="numbers" type="jpanfin">japanske finansielle tal</type>
 			<type key="numbers" type="kali" draft="contributed">Kayah Li-tal</type>
@@ -1227,12 +1262,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="limb" draft="contributed">Limbu-tal</type>
 			<type key="numbers" type="mlym">malayalamske tal</type>
 			<type key="numbers" type="mong" draft="contributed">Mongolske tal</type>
-			<type key="numbers" type="mtei" draft="contributed">Meetei Mayek-tal</type>
+			<type key="numbers" type="mtei">Meetei Mayek-tal</type>
 			<type key="numbers" type="mymr">Myanmar-tal</type>
 			<type key="numbers" type="mymrshan" draft="contributed">Myanmar Shan-tal</type>
-			<type key="numbers" type="native" draft="contributed">Nationale cifre</type>
+			<type key="numbers" type="native">nationale tal</type>
 			<type key="numbers" type="nkoo" draft="contributed">N’Ko-tal</type>
-			<type key="numbers" type="olck" draft="contributed">Ol Chiki-tal</type>
+			<type key="numbers" type="olck">ol chiki-tal</type>
 			<type key="numbers" type="orya">oriya-tal</type>
 			<type key="numbers" type="osma" draft="contributed">Osmanya-tal</type>
 			<type key="numbers" type="roman">romertal</type>
@@ -1249,7 +1284,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="thai">thailandske tal</type>
 			<type key="numbers" type="tibt">tibetanske tal</type>
 			<type key="numbers" type="traditional" draft="contributed">Traditionelle tal</type>
-			<type key="numbers" type="vaii" draft="contributed">Vai-tal</type>
+			<type key="numbers" type="vaii">vai-tal</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">det metriske system</measurementSystemName>
@@ -1417,7 +1452,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>d/M/y</pattern>
+							<pattern>d.M.y</pattern>
 							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1452,24 +1487,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h.mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h.mm.ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E 'd'. d.</dateFormatItem>
-						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH.mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d. MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
-						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="M">M</dateFormatItem>
-						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="Md">d.M</dateFormatItem>
+						<dateFormatItem id="MEd">E d.M</dateFormatItem>
 						<dateFormatItem id="MMM">MMM</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
@@ -1478,9 +1513,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="ms">mm.ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d.M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E d.M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E d. MMM y G</dateFormatItem>
@@ -1540,33 +1575,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E 'den' d. MMM y–E 'den' d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h.mm a – h.mm a</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="a">h.mm a – h.mm a</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h.mm a – h.mm a v</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="a">h.mm a – h.mm a v</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1727,9 +1762,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dayWidth type="abbreviated">
 							<day type="sun">søn.</day>
 							<day type="mon">man.</day>
-							<day type="tue">tir.</day>
+							<day type="tue">tirs.</day>
 							<day type="wed">ons.</day>
-							<day type="thu">tor.</day>
+							<day type="thu">tors.</day>
 							<day type="fri">fre.</day>
 							<day type="sat">lør.</day>
 						</dayWidth>
@@ -1743,13 +1778,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">L</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">sø</day>
-							<day type="mon">ma</day>
-							<day type="tue">ti</day>
-							<day type="wed">on</day>
-							<day type="thu">to</day>
-							<day type="fri">fr</day>
-							<day type="sat">lø</day>
+							<day type="sun">sø.</day>
+							<day type="mon">ma.</day>
+							<day type="tue">ti.</day>
+							<day type="wed">on.</day>
+							<day type="thu">to.</day>
+							<day type="fri">fr.</day>
+							<day type="sat">lø.</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">søndag</day>
@@ -1763,13 +1798,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun">søn</day>
-							<day type="mon">man</day>
-							<day type="tue">tir</day>
-							<day type="wed">ons</day>
-							<day type="thu">tor</day>
-							<day type="fri">fre</day>
-							<day type="sat">lør</day>
+							<day type="sun">søn.</day>
+							<day type="mon">man.</day>
+							<day type="tue">tirs.</day>
+							<day type="wed">ons.</day>
+							<day type="thu">tors.</day>
+							<day type="fri">fre.</day>
+							<day type="sat">lør.</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">S</day>
@@ -1781,13 +1816,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">L</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">sø</day>
-							<day type="mon">ma</day>
-							<day type="tue">ti</day>
-							<day type="wed">on</day>
-							<day type="thu">to</day>
-							<day type="fri">fr</day>
-							<day type="sat">lø</day>
+							<day type="sun">sø.</day>
+							<day type="mon">ma.</day>
+							<day type="tue">ti.</day>
+							<day type="wed">on.</day>
+							<day type="thu">to.</day>
+							<day type="fri">fr.</day>
+							<day type="sat">lø.</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">søndag</day>
@@ -1910,9 +1945,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">f.Kr.</era>
+						<era type="0">før Kristus</era>
 						<era type="0" alt="variant">før vesterlandsk tidsregning</era>
-						<era type="1">e.Kr.</era>
+						<era type="1">efter Kristus</era>
 						<era type="1" alt="variant">vesterlandsk tidsregning</era>
 					</eraNames>
 					<eraAbbr>
@@ -1983,11 +2018,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2010,24 +2051,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h.mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h.mm.ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E 'den' d.</dateFormatItem>
-						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH.mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d. MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
-						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h.mm.ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h.mm.ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH.mm.ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h.mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h.mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH.mm v</dateFormatItem>
 						<dateFormatItem id="M">M</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
@@ -2083,7 +2124,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
@@ -2121,33 +2162,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E d. MMM y–E d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a–h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a–h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h.mm a–h.mm a</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="a">h.mm a–h.mm a</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h.mm a–h.mm a v</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="a">h.mm a–h.mm a v</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a–h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a–h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -5431,9 +5472,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -7186,7 +7229,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other">{0} dage</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Tag den {0}. vej til højre.</ordinalMinimalPairs>
 			<caseMinimalPairs case="genitive">Med {0} mellemrum</caseMinimalPairs>
-			<caseMinimalPairs case="nominative">Jeg tror, ​​at {0} er nok.</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">Jeg tror, at {0} er nok.</caseMinimalPairs>
 			<genderMinimalPairs gender="common">En {0}</genderMinimalPairs>
 			<genderMinimalPairs gender="neuter">Et {0}</genderMinimalPairs>
 		</minimalPairs>
@@ -7630,6 +7673,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} års</unitPattern>
 				<perUnitPattern>{0} om året</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<gender>neuter</gender>
+				<displayName>kvartaler</displayName>
+				<unitPattern count="one">{0} kvartal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvartals</unitPattern>
+				<unitPattern count="other">{0} kvartaler</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvartalers</unitPattern>
+				<perUnitPattern>{0}/pr. kvartal</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<gender>common</gender>
 				<displayName>måneder</displayName>
@@ -8067,7 +8119,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<gender>common</gender>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>neuter</gender>
 				<displayName>tons</displayName>
 				<unitPattern count="one">{0} ton</unitPattern>
@@ -8801,6 +8853,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} år</unitPattern>
 				<perUnitPattern>{0}/år</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>kvartaler</displayName>
+				<unitPattern count="one">{0} kvt.</unitPattern>
+				<unitPattern count="other">{0} kvt.</unitPattern>
+				<perUnitPattern>{0}/pr. kvt.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>måneder</displayName>
 				<unitPattern count="one">{0} md.</unitPattern>
@@ -9042,7 +9100,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -9547,6 +9605,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} år</unitPattern>
 				<perUnitPattern>{0}/år</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>kvartal</displayName>
+				<unitPattern count="one">{0} kvt.</unitPattern>
+				<unitPattern count="other">{0} kvt.</unitPattern>
+				<perUnitPattern>{0}/kvt.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>måned</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
@@ -9833,10 +9897,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ML</unitPattern>
 				<unitPattern count="other">{0}ML</unitPattern>
 			</unit>
-			<unit type="volume-hectoliter">
-				<unitPattern count="one" draft="contributed">{0}hL</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}hL</unitPattern>
-			</unit>
 			<unit type="volume-liter">
 				<displayName>liter</displayName>
 				<unitPattern count="one">{0} l</unitPattern>
@@ -9845,10 +9905,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-deciliter">
 				<unitPattern count="one">{0}dl</unitPattern>
 				<unitPattern count="other">{0}dl</unitPattern>
-			</unit>
-			<unit type="volume-milliliter">
-				<unitPattern count="one" draft="contributed">{0}mL</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}mL</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<unitPattern count="one">{0} mpt</unitPattern>
@@ -10115,4 +10171,136 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">tabulære tal</featureName>
 		<featureName type="zero">nul med skråstreg igennem</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und da</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}, {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}, {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Bjørn</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Irene</nameField>
+			<nameField type="surname">Møller</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Lars</nameField>
+			<nameField type="given2">Holm</nameField>
+			<nameField type="surname">Hansen</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Dr.</nameField>
+			<nameField type="given">Lise Lotte</nameField>
+			<nameField type="given-informal">Lotte</nameField>
+			<nameField type="given2">Sofie Amalie</nameField>
+			<nameField type="surname-prefix">von</nameField>
+			<nameField type="surname-core">Holstein</nameField>
+			<nameField type="surname2">Birk Nielsen</nameField>
+			<nameField type="suffix">Cand.med., Ph.d.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

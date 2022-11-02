@@ -110,7 +110,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     }
 
     @Override
-    protected void addTableTabs(Table table, String headingKey) {
+    protected void addTableTabs(Table<Element> table, String headingKey) {
         table.setGridStyle(HtmlStyle.threeColumnSummary)
                 .setDefaultTab(getTableCaption(headingKey))
                 .setAlwaysShowDefaultTab(true)

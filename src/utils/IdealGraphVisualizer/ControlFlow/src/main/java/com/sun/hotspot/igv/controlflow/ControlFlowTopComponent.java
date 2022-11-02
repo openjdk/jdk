@@ -28,7 +28,6 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
-import java.io.Serializable;
 import javax.swing.JScrollPane;
 import org.openide.ErrorManager;
 import org.openide.util.NbBundle;
@@ -51,12 +50,11 @@ final class ControlFlowTopComponent extends TopComponent implements ChangedListe
         setToolTipText(NbBundle.getMessage(ControlFlowTopComponent.class, "HINT_ControlFlowTopComponent"));
 
         scene = new ControlFlowScene();
-        this.setLayout(new BorderLayout());
-        this.associateLookup(scene.getLookup());
-
+        setLayout(new BorderLayout());
+        associateLookup(scene.getLookup());
 
         JScrollPane panel = new JScrollPane(scene.createView());
-        this.add(panel, BorderLayout.CENTER);
+        add(panel, BorderLayout.CENTER);
     }
 
     /**
@@ -115,11 +113,6 @@ final class ControlFlowTopComponent extends TopComponent implements ChangedListe
     }
 
     @Override
-    public Object writeReplace() {
-        return new ResolvableHelper();
-    }
-
-    @Override
     protected String preferredID() {
         return PREFERRED_ID;
     }
@@ -128,15 +121,6 @@ final class ControlFlowTopComponent extends TopComponent implements ChangedListe
     public void requestActive() {
         super.requestActive();
         scene.getView().requestFocus();
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return ControlFlowTopComponent.getDefault();
-        }
     }
 
     /** This method is called from within the constructor to

@@ -836,9 +836,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
-
 static int local_dladdr(const void* addr, Dl_info* info) {
 #ifdef __APPLE__
   if (addr == (void*)-1) {
@@ -944,7 +941,6 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
-// ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional

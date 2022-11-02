@@ -5,14 +5,14 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "41" >
+<!ATTLIST version cldrVersion CDATA #FIXED "42" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "14.0.0" >
@@ -367,6 +367,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 <!ATTLIST paperSize alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
+
+<!ELEMENT unitIdComponents ( unitIdComponent* ) >
+
+<!ELEMENT unitIdComponent EMPTY >
+<!ATTLIST unitIdComponent type NMTOKEN #REQUIRED >
+    <!--@MATCH:literal/prefix, suffix, power, and, per-->
+<!ATTLIST unitIdComponent values NMTOKENS #REQUIRED >
+    <!--@MATCH:set/regex/[a-z]+[0-9]*-->
+    <!--@VALUE-->
 
 <!ELEMENT unitConstants ( unitConstant* ) >
 
@@ -899,6 +908,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:set/validity/locale-->
     <!--@VALUE-->
 
+<!ELEMENT personNamesDefaults ( alias | ( nameOrderLocalesDefault* ) ) >
+
+<!ELEMENT nameOrderLocalesDefault ( #PCDATA ) >
+<!ATTLIST nameOrderLocalesDefault order (givenFirst | surnameFirst) #REQUIRED >
+<!ATTLIST nameOrderLocalesDefault references CDATA #IMPLIED >
+    <!--@METADATA-->
+
 <!ELEMENT likelySubtags ( likelySubtag* ) >
 
 <!ELEMENT likelySubtag EMPTY >
@@ -1016,7 +1032,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST numberingSystem radix NMTOKEN #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST numberingSystem digits CDATA #IMPLIED >
-    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00016AC0-\U00016AC9]]-->
+    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00011F50-\U00011F59\U0001E4F0-\U0001E4F9]]-->
     <!--@VALUE-->
 <!ATTLIST numberingSystem rules CDATA #IMPLIED >
     <!--@MATCH:any-->
@@ -1189,7 +1205,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!-- # Coverage levels -->
 
-<!ELEMENT coverageLevels ( approvalRequirements, coverageVariable*, coverageLevel* ) >
+<!ELEMENT coverageLevels ( approvalRequirements, coverageVariable*, coverageLevel*, pathMatch* ) >
     <!--@METADATA-->
 
 <!ELEMENT approvalRequirements ( approvalRequirement* ) >
@@ -1224,6 +1240,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@VALUE-->
 <!ATTLIST coverageLevel match CDATA #REQUIRED >
     <!--@MATCH:any-->
+
+<!ELEMENT pathMatch EMPTY >
+<!ATTLIST pathMatch id NMTOKENS #IMPLIED >
+    <!--@MATCH:any-->
+<!ATTLIST pathMatch match CDATA #REQUIRED >
+    <!--@MATCH:any-->
+    <!--@VALUE-->
 
 <!ELEMENT idValidity ( id* ) >
 
