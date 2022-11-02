@@ -42,6 +42,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.BOT;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
@@ -205,6 +206,41 @@ public class TreeInfo {
                 return true;
             case SELECT:
                 return isThisQualifier(((JCFieldAccess)tree).selected);
+            default:
+                return false;
+        }
+    }
+
+    /** Check if the given tree is a reference to the 'this' instance of the class
+     *  'currentClass' which is currently being compiled. This is true if tree is:
+     *  - An unqualified 'this' identifier
+     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *    but also NOT an enclosing outer class of 'currentClass'.
+     */
+    public static boolean isThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isThisReference(types, currentClass, skipParens(tree));
+            case IDENT:
+            {
+                JCIdent ident = (JCIdent)tree;
+                Names names = ident.name.table.names;
+                return ident.name == names._this;
+            }
+            case SELECT:
+            {
+                JCFieldAccess select = (JCFieldAccess)tree;
+                Type selectedType = types.erasure(select.selected.type);
+                if (!selectedType.hasTag(CLASS))
+                    return false;
+                Type.ClassType selectecClassType = (Type.ClassType)selectedType;
+                currentClass = (Type.ClassType)types.erasure(currentClass);
+                Names names = select.name.table.names;
+                return types.isSubtype(currentClass, selectecClassType) &&
+                        (select.name == names._super ||
+                        (select.name == names._this && !currentClass.isInnerClassOf(types, selectecClassType)));
+            }
             default:
                 return false;
         }

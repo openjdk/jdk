@@ -1148,6 +1148,22 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             return true;
         }
 
+        /** Determine whether the given outer class strictly encloses this one.
+         */
+        public boolean isInnerClassOf(Types types, Type outerType) {
+            if (!outerType.hasTag(CLASS))
+                return false;
+            outerType = types.erasure(outerType);
+            for (Type type = getEnclosingType();
+                    type != null && type.hasTag(CLASS);
+                    type = type.getEnclosingType()) {
+                if (types.erasure(type).equalsIgnoreMetadata(outerType)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /** A cache for the rank. */
         int rank_field = -1;
 

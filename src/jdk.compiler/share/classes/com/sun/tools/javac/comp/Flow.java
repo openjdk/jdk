@@ -2891,12 +2891,13 @@ public class Flow {
             letInit(tree.lhs);
         }
 
-        // check fields accessed through this.<field> are definitely
+        // check fields accessed through [<Type>.]this.<field> are definitely
         // assigned before reading their value
         public void visitSelect(JCFieldAccess tree) {
             super.visitSelect(tree);
-            if (TreeInfo.isThisQualifier(tree.selected) &&
-                tree.sym.kind == VAR) {
+            if (classDef != null &&
+                tree.sym.kind == VAR &&
+                TreeInfo.isThisReference(types, (Type.ClassType)classDef.sym.type, tree.selected)) {
                 checkInit(tree.pos(), (VarSymbol)tree.sym);
             }
         }

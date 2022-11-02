@@ -1,0 +1,2 @@
+QualifiedThis.java:12:46: compiler.err.var.might.not.have.been.initialized: foo
+1 error
