@@ -879,7 +879,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                      null, null);
                 points = Collections.singletonList(point);
             } else {
-                points = ext.get(CRLDistributionPointsExtension.POINTS);
+                points = ext.getDistributionPoints();
             }
             Set<X509CRL> results = new HashSet<>();
             for (DistributionPoint point : points) {

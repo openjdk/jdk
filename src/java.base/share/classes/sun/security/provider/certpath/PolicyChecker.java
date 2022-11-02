@@ -265,42 +265,30 @@ class PolicyChecker extends PKIXCertPathChecker {
      * occurs
      */
     static int mergeExplicitPolicy(int explicitPolicy, X509CertImpl currCert,
-        boolean finalCert) throws CertPathValidatorException
-    {
+        boolean finalCert) throws CertPathValidatorException {
         if ((explicitPolicy > 0) && !X509CertImpl.isSelfIssued(currCert)) {
             explicitPolicy--;
         }
 
-        try {
-            PolicyConstraintsExtension polConstExt
+        PolicyConstraintsExtension polConstExt
                 = currCert.getPolicyConstraintsExtension();
-            if (polConstExt == null)
-                return explicitPolicy;
-            int require =
-                polConstExt.get(PolicyConstraintsExtension.REQUIRE).intValue();
-            if (debug != null) {
-                debug.println("PolicyChecker.mergeExplicitPolicy() "
-                   + "require Index from cert = " + require);
-            }
-            if (!finalCert) {
-                if (require != -1) {
-                    if ((explicitPolicy == -1) || (require < explicitPolicy)) {
-                        explicitPolicy = require;
-                    }
-                }
-            } else {
-                if (require == 0)
-                    explicitPolicy = require;
-            }
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("PolicyChecker.mergeExplicitPolicy "
-                              + "unexpected exception");
-                e.printStackTrace();
-            }
-            throw new CertPathValidatorException(e);
+        if (polConstExt == null)
+            return explicitPolicy;
+        int require = polConstExt.getRequire();
+        if (debug != null) {
+            debug.println("PolicyChecker.mergeExplicitPolicy() "
+                    + "require Index from cert = " + require);
         }
-
+        if (!finalCert) {
+            if (require != -1) {
+                if ((explicitPolicy == -1) || (require < explicitPolicy)) {
+                    explicitPolicy = require;
+                }
+            }
+        } else {
+            if (require == 0)
+                explicitPolicy = require;
+        }
         return explicitPolicy;
     }
 
@@ -318,36 +306,25 @@ class PolicyChecker extends PKIXCertPathChecker {
      * occurs
      */
     static int mergePolicyMapping(int policyMapping, X509CertImpl currCert)
-        throws CertPathValidatorException
-    {
+        throws CertPathValidatorException {
         if ((policyMapping > 0) && !X509CertImpl.isSelfIssued(currCert)) {
             policyMapping--;
         }
 
-        try {
-            PolicyConstraintsExtension polConstExt
+        PolicyConstraintsExtension polConstExt
                 = currCert.getPolicyConstraintsExtension();
-            if (polConstExt == null)
-                return policyMapping;
+        if (polConstExt == null)
+            return policyMapping;
 
-            int inhibit =
-                polConstExt.get(PolicyConstraintsExtension.INHIBIT).intValue();
-            if (debug != null)
-                debug.println("PolicyChecker.mergePolicyMapping() "
+        int inhibit = polConstExt.getInhibit();
+        if (debug != null)
+            debug.println("PolicyChecker.mergePolicyMapping() "
                     + "inhibit Index from cert = " + inhibit);
 
-            if (inhibit != -1) {
-                if ((policyMapping == -1) || (inhibit < policyMapping)) {
-                    policyMapping = inhibit;
-                }
+        if (inhibit != -1) {
+            if ((policyMapping == -1) || (inhibit < policyMapping)) {
+                policyMapping = inhibit;
             }
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("PolicyChecker.mergePolicyMapping "
-                              + "unexpected exception");
-                e.printStackTrace();
-            }
-            throw new CertPathValidatorException(e);
         }
 
         return policyMapping;
@@ -366,38 +343,26 @@ class PolicyChecker extends PKIXCertPathChecker {
      * occurs
      */
     static int mergeInhibitAnyPolicy(int inhibitAnyPolicy,
-        X509CertImpl currCert) throws CertPathValidatorException
-    {
+        X509CertImpl currCert) throws CertPathValidatorException {
         if ((inhibitAnyPolicy > 0) && !X509CertImpl.isSelfIssued(currCert)) {
             inhibitAnyPolicy--;
         }
 
-        try {
-            InhibitAnyPolicyExtension inhAnyPolExt = (InhibitAnyPolicyExtension)
+        InhibitAnyPolicyExtension inhAnyPolExt = (InhibitAnyPolicyExtension)
                 currCert.getExtension(InhibitAnyPolicy_Id);
-            if (inhAnyPolExt == null)
-                return inhibitAnyPolicy;
+        if (inhAnyPolExt == null)
+            return inhibitAnyPolicy;
 
-            int skipCerts =
-                inhAnyPolExt.get(InhibitAnyPolicyExtension.SKIP_CERTS).intValue();
-            if (debug != null)
-                debug.println("PolicyChecker.mergeInhibitAnyPolicy() "
+        int skipCerts = inhAnyPolExt.getSkipCerts();
+        if (debug != null)
+            debug.println("PolicyChecker.mergeInhibitAnyPolicy() "
                     + "skipCerts Index from cert = " + skipCerts);
 
-            if (skipCerts != -1) {
-                if (skipCerts < inhibitAnyPolicy) {
-                    inhibitAnyPolicy = skipCerts;
-                }
+        if (skipCerts != -1) {
+            if (skipCerts < inhibitAnyPolicy) {
+                inhibitAnyPolicy = skipCerts;
             }
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("PolicyChecker.mergeInhibitAnyPolicy "
-                              + "unexpected exception");
-                e.printStackTrace();
-            }
-            throw new CertPathValidatorException(e);
         }
-
         return inhibitAnyPolicy;
     }
 
@@ -449,12 +414,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                 debug.println("PolicyChecker.processPolicies() "
                     + "policiesCritical = " + policiesCritical);
 
-            try {
-                policyInfo = currCertPolicies.get(CertificatePoliciesExtension.POLICIES);
-            } catch (IOException ioe) {
-                throw new CertPathValidatorException("Exception while "
-                    + "retrieving policyOIDs", ioe);
-            }
+            policyInfo = currCertPolicies.getCertPolicies();
 
             if (debug != null)
                 debug.println("PolicyChecker.processPolicies() "
@@ -747,17 +707,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                 + "inside policyMapping check");
 
         List<CertificatePolicyMap> maps;
-        try {
-            maps = polMappingsExt.get(PolicyMappingsExtension.MAP);
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("PolicyChecker.processPolicyMappings() "
-                    + "mapping exception");
-                e.printStackTrace();
-            }
-            throw new CertPathValidatorException("Exception while checking "
-                                                 + "mapping", e);
-        }
+        maps = polMappingsExt.getMaps();
 
         boolean childDeleted = false;
         for (CertificatePolicyMap polMap : maps) {
@@ -853,13 +803,7 @@ class PolicyChecker extends PKIXCertPathChecker {
         CertificatePoliciesExtension currCertPolicies)
         throws CertPathValidatorException
     {
-        List<PolicyInformation> policyInfo;
-        try {
-            policyInfo = currCertPolicies.get(CertificatePoliciesExtension.POLICIES);
-        } catch (IOException ioe) {
-            throw new CertPathValidatorException("Exception while "
-                + "retrieving policyOIDs", ioe);
-        }
+        List<PolicyInformation> policyInfo = currCertPolicies.getCertPolicies();
 
         boolean childDeleted = false;
         for (PolicyInformation curPolInfo : policyInfo) {

@@ -843,8 +843,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public KeyIdentifier getAuthKeyId() throws IOException {
         AuthorityKeyIdentifierExtension aki = getAuthKeyIdExtension();
         if (aki != null) {
-            return (KeyIdentifier)aki.get(
-                    AuthorityKeyIdentifierExtension.KEY_ID);
+            return aki.getKeyIdentifier();
         } else {
             return null;
         }
@@ -882,7 +881,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public BigInteger getCRLNumber() throws IOException {
         CRLNumberExtension numExt = getCRLNumberExtension();
         if (numExt != null) {
-            return numExt.get(CRLNumberExtension.NUMBER);
+            return numExt.getCrlNumber();
         } else {
             return null;
         }
@@ -910,7 +909,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public BigInteger getBaseCRLNumber() throws IOException {
         DeltaCRLIndicatorExtension dciExt = getDeltaCRLIndicatorExtension();
         if (dciExt != null) {
-            return dciExt.get(DeltaCRLIndicatorExtension.NUMBER);
+            return dciExt.getCrlNumber();
         } else {
             return null;
         }
@@ -1026,7 +1025,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
                     }
                 }
             } else
-                crlExt = extensions.get(extAlias);
+                crlExt = extensions.getExtension(extAlias);
             if (crlExt == null)
                 return null;
             byte[] extData = crlExt.getExtensionValue();
@@ -1051,7 +1050,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             return null;
 
         // XXX Consider cloning this
-        return extensions.get(OIDMap.getName(oid));
+        return extensions.getExtension(OIDMap.getName(oid));
     }
 
     /*
@@ -1248,7 +1247,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         CertificateIssuerExtension ciExt =
             entry.getCertificateIssuerExtension();
         if (ciExt != null) {
-            GeneralNames names = ciExt.get(CertificateIssuerExtension.ISSUER);
+            GeneralNames names = ciExt.getNames();
             X500Name issuerDN = (X500Name) names.get(0).getName();
             return issuerDN.asX500Principal();
         } else {

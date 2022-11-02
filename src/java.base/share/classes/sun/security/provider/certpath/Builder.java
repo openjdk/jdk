@@ -300,8 +300,7 @@ abstract class Builder {
         SubjectAlternativeNameExtension altNameExt =
             certImpl.getSubjectAlternativeNameExtension();
         if (altNameExt != null) {
-            GeneralNames altNames = altNameExt.get(
-                    SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames altNames = altNameExt.getNames();
             /* see if any alternative name matches target */
             if (altNames != null) {
                 for (int j = 0, n = altNames.size(); j < n; j++) {
@@ -337,10 +336,8 @@ abstract class Builder {
                 + constraints);
         }
         /* reduce permitted by excluded */
-        GeneralSubtrees permitted =
-                constraints.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-        GeneralSubtrees excluded =
-                constraints.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+        GeneralSubtrees permitted = constraints.getPermittedSubtrees();
+        GeneralSubtrees excluded = constraints.getExcludedSubtrees();
         if (permitted != null) {
             permitted.reduce(excluded);
         }
