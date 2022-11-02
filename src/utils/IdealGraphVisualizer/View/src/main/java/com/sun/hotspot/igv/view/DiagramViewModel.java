@@ -118,6 +118,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setHideDuplicates(boolean hideDuplicates) {
+        this.hideDuplicates = hideDuplicates;
         InputGraph currentGraph = getFirstGraph();
         if (hideDuplicates) {
             // Back up to the unhidden equivalent graph
@@ -129,12 +130,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         filterGraphs();
         selectGraph(currentGraph);
-        diagramChangedEvent.fire();
     }
 
 
     public DiagramViewModel(InputGraph graph, FilterChain filterChain, FilterChain sequenceFilterChain) {
-        super(Collections.singletonList("default"));
         assert filterChain != null;
         assert sequenceFilterChain != null;
 
