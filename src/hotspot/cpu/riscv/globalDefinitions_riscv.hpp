@@ -49,4 +49,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
+#define DEFAULT_CACHE_LINE_SIZE 64
+
 #endif // CPU_RISCV_GLOBALDEFINITIONS_RISCV_HPP

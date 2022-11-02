@@ -671,26 +671,36 @@ class StubGenerator: public StubCodeGenerator {
   address generate_zero_blocks() {
     Label done;
 
-    const Register base = x28, cnt = x29;
+    const Register base = x28, cnt = x29, tmp1 = x30, tmp2 = x31;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "zero_blocks");
     address start = __ pc();
 
+    if (UseBlockZeroing) {
+      // Ensure count >= 2*CacheLineSize so that it still deserves a cbo.zero
+      // after alignment.
+      Label small;
+      int low_limit = MAX2(2 * CacheLineSize, BlockZeroingLowLimit) / wordSize;
+      __ mv(tmp1, low_limit);
+      __ blt(cnt, tmp1, small);
+      __ zero_dcache_blocks(base, cnt, tmp1, tmp2);
+      __ bind(small);
+    }
+
     {
       // Clear the remaining blocks.
       Label loop;
-      __ sub(cnt, cnt, MacroAssembler::zero_words_block_size);
-      __ bltz(cnt, done);
+      __ mv(tmp1, MacroAssembler::zero_words_block_size);
+      __ blt(cnt, tmp1, done);
       __ bind(loop);
       for (int i = 0; i < MacroAssembler::zero_words_block_size; i++) {
-        __ sd(zr, Address(base, 0));
-        __ add(base, base, 8);
+        __ sd(zr, Address(base, i * wordSize));
       }
+      __ add(base, base, MacroAssembler::zero_words_block_size * wordSize);
       __ sub(cnt, cnt, MacroAssembler::zero_words_block_size);
-      __ bgez(cnt, loop);
+      __ bge(cnt, tmp1, loop);
       __ bind(done);
-      __ add(cnt, cnt, MacroAssembler::zero_words_block_size);
     }
 
     __ ret();

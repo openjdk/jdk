@@ -32,8 +32,8 @@ import java.util.List;
  */
 public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument>, Folder {
 
-    private List<FolderElement> elements;
-    private ChangedEvent<GraphDocument> changedEvent;
+    private final List<FolderElement> elements;
+    private final ChangedEvent<GraphDocument> changedEvent;
 
     public GraphDocument() {
         elements = new ArrayList<>();

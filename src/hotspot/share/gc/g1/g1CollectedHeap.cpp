@@ -1534,7 +1534,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
 jint G1CollectedHeap::initialize_concurrent_refinement() {
   jint ecode = JNI_OK;
-  _cr = G1ConcurrentRefine::create(&ecode);
+  _cr = G1ConcurrentRefine::create(policy(), &ecode);
   return ecode;
 }
 
@@ -1713,9 +1713,6 @@ jint G1CollectedHeap::initialize() {
   if (ecode != JNI_OK) {
     return ecode;
   }
-
-  // Initialize and schedule sampling task on service thread.
-  _rem_set->initialize_sampling_task(service_thread());
 
   // Create and schedule the periodic gc task on the service thread.
   _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");

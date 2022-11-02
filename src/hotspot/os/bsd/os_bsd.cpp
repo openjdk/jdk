@@ -836,9 +836,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
-
 static int local_dladdr(const void* addr, Dl_info* info) {
 #ifdef __APPLE__
   if (addr == (void*)-1) {

@@ -147,7 +147,6 @@ class Method : public Metadata {
 
   static address make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
-  address from_compiled_entry_no_trampoline() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -529,9 +528,9 @@ public:
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
   // prints byte codes
-  void print_codes() const            { print_codes_on(tty); }
-  void print_codes_on(outputStream* st) const;
-  void print_codes_on(int from, int to, outputStream* st) const;
+  void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
+  void print_codes_on(outputStream* st, int flags = 0) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
 
   // method parameters
   bool has_method_parameters() const
