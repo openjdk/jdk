@@ -160,6 +160,10 @@ class MallocSiteTable : AllStatic {
     return false;
   }
 
+  // Revert a previous memory deallocation. This is to handle realloc failures where
+  // the original block is still intact.
+  static void revert_deallocation_at(size_t size, uint32_t marker);
+
   // Walk this table.
   static bool walk_malloc_site(MallocSiteWalker* walker);
 

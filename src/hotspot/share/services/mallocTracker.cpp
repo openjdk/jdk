@@ -211,6 +211,22 @@ void* MallocTracker::record_free(void* memblock) {
   return (void*)header;
 }
 
+void MallocTracker::revert_record_free(void* memblock) {
+  assert(MemTracker::enabled(), "Sanity");
+  assert(memblock != NULL, "precondition");
+
+  // We expect the malloc header to still exist, but its canaries to hold
+  // the "dead" markers (see record_free()). Everything else in the header
+  // shall still be valid. In particular, we expect the mst marker to be
+  // valid.
+  MallocHeader* const header = malloc_header(memblock);
+  header->revive_block();
+  MallocMemorySummary::record_malloc(header->size(), header->flags());
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::revert_deallocation_at(header->size(), header->mst_marker());
+  }
+}
+
 // Given a pointer, if it seems to point to the start of a valid malloced block,
 // print the block. Note that since there is very low risk of memory looking
 // accidentally like a valid malloc block header (canaries and all) this is not

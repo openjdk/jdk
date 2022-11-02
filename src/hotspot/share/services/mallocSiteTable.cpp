@@ -27,6 +27,8 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "services/mallocSiteTable.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry**  MallocSiteTable::_table = NULL;
@@ -245,6 +247,18 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
     st->print_cr("\t%d: %d", i, stack_depth_distribution[i]);
   }
   st->cr();
+}
+
+// Revert a previous memory deallocation. This is to handle realloc failures where
+// the original block is still intact.
+void MallocSiteTable::revert_deallocation_at(size_t size, uint32_t marker) {
+  MallocSite* site = malloc_site(marker);
+  // Should not happen - MST entries are never removed, so the entry described by the marker must
+  // exist.
+  assert(site != nullptr, "Cannot find MST entry for marker " UINT32_FORMAT_X_0 ".", marker);
+  if (site != NULL) {
+    site->allocate(size);
+  }
 }
 
 bool MallocSiteHashtableEntry::atomic_insert(MallocSiteHashtableEntry* entry) {

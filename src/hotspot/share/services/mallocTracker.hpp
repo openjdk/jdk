@@ -294,6 +294,11 @@ class MallocTracker : AllStatic {
   // Record free on specified memory block
   static void* record_free(void* memblock);
 
+  // Revert a previous record_free() operation on a memblock that has not been freed.
+  // The memblock must still be valid.
+  // This handles the case of failed realloc(3) calls.
+  static void revert_record_free(void* memblock);
+
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);
   }
