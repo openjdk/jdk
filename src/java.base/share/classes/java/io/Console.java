@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.io.spi.ConsoleProvider;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
@@ -93,7 +94,7 @@ import sun.security.action.GetPropertyAction;
  * @since   1.6
  */
 
-public final class Console implements Flushable
+public class Console implements Flushable
 {
    /**
     * Retrieves the unique {@link java.io.PrintWriter PrintWriter} object
@@ -595,12 +596,19 @@ public final class Console implements Flushable
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                if (istty) {
-                    if (cons == null)
-                        cons = new Console();
-                    return cons;
+                boolean allowProviders = System.getProperty("console.allowproviders", "false").equalsIgnoreCase("true");
+                boolean useJLine = System.getProperty("console.usejline", "true").equalsIgnoreCase("true");
+
+                if (cons == null) {
+                    // Try loading providers
+                    cons = ServiceLoader.load(ConsoleProvider.class).stream()
+                       .map(ServiceLoader.Provider::get)
+                       .filter(cp -> "jdk.internal.le".equals(cp.getClass().getModule().getName()) && useJLine || allowProviders)
+                       .findAny()
+                       .map(ConsoleProvider::console)
+                       .orElse(istty ? new Console() : null);
                 }
-                return null;
+                return cons;
             }
 
             public Charset charset() {
@@ -610,7 +618,11 @@ public final class Console implements Flushable
     }
     private static Console cons;
     private static native boolean istty();
-    private Console() {
+
+    /**
+     * Sole constructor
+     */
+    protected Console() {
         readLock = new Object();
         writeLock = new Object();
         out = StreamEncoder.forOutputStreamWriter(

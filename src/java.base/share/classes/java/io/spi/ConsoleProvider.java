@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,24 @@
  * questions.
  */
 
+package java.io.spi;
+
+import java.io.Console;
+
 /**
- * Internal API for line editing
+ * ConsoleProvider
  *
- * @since 9
+ * @since 20
  */
-module jdk.internal.le {
-    exports jdk.internal.org.jline.keymap to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.completer to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.history to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal to
-        jdk.jshell;
-    exports jdk.internal.org.jline.utils to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.spi to
-        jdk.jshell;
+public abstract class ConsoleProvider {
+    /**
+     * {@return the Console instance}
+     */
+    public abstract Console console();
 
-    uses jdk.internal.org.jline.terminal.spi.JnaSupport;
-
-    // Console
-    provides java.io.spi.ConsoleProvider with
-            jdk.internal.org.jline.ConsoleProviderImpl;
+    /**
+     * Sole constructor
+     */
+    protected ConsoleProvider() {
+    }
 }
-
