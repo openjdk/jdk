@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
@@ -148,8 +147,9 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out)
-    throws CertificateException, IOException {
+    @Override
+    public void encode(DerOutputStream out)
+            throws CertificateException, IOException {
         encode(out, false);
     }
 
@@ -161,33 +161,21 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out, boolean isCertReq)
+    public void encode(DerOutputStream out, boolean isCertReq)
     throws CertificateException, IOException {
         DerOutputStream extOut = new DerOutputStream();
-        Collection<Extension> allExts = map.values();
-        Object[] objs = allExts.toArray();
-
-        for (int i = 0; i < objs.length; i++) {
-            if (objs[i] instanceof CertAttrSet)
-                ((CertAttrSet)objs[i]).encode(extOut);
-            else if (objs[i] instanceof Extension)
-                ((Extension)objs[i]).encode(extOut);
-            else
-                throw new CertificateException("Illegal extension object");
+        for (Extension ext : map.values()) {
+            ext.encode(extOut);
         }
 
-        DerOutputStream seq = new DerOutputStream();
-        seq.write(DerValue.tag_Sequence, extOut);
-
-        DerOutputStream tmp;
         if (!isCertReq) { // certificate
-            tmp = new DerOutputStream();
-            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
+            DerOutputStream seq = new DerOutputStream();
+            seq.write(DerValue.tag_Sequence, extOut);
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
                     seq);
-        } else
-            tmp = seq; // pkcs#10 certificateRequest
-
-        out.write(tmp.toByteArray());
+        } else {
+            out.write(DerValue.tag_Sequence, extOut);
+        }
     }
 
     /**
