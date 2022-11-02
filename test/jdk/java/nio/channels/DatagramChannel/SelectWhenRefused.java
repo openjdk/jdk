@@ -35,8 +35,8 @@ import java.io.IOException;
 import java.util.Set;
 
 public class SelectWhenRefused {
-    static int MAX_TRIES = 3;
-    static String GREETINGS_MESSAGE = "Greetings from SelectWhenRefused!";
+    static final int MAX_TRIES = 3;
+    static final String GREETINGS_MESSAGE = "Greetings from SelectWhenRefused!";
 
     public static void main(String[] args) throws IOException {
         // If another datagram test interferes with this test ignoreStrayWakeup
@@ -62,7 +62,7 @@ public class SelectWhenRefused {
                 sendDatagram(dc, refuser);
                 int n = sel.select(2000);
                 if (n > 0) {
-                    ignoreStrayWakeup = checkUnexpectedWakeup(dc, sel.selectedKeys());
+                    ignoreStrayWakeup = checkUnexpectedWakeup(sel.selectedKeys());
                     sel.selectedKeys().clear();
                     if (ignoreStrayWakeup) {
                         if (i < MAX_TRIES - 1) continue;
@@ -71,9 +71,8 @@ public class SelectWhenRefused {
                     // our expected refuser port, cannot run just exit.
                     DatagramChannel.open().bind(refuser).close();
                     throw new RuntimeException("Unexpected wakeup");
-                } else {
-                    break;
                 }
+                break;
             }
             /* Test 2: connected so ICMP port unreachable may be received */
             dc.connect(refuser);
@@ -110,7 +109,7 @@ public class SelectWhenRefused {
                 sendDatagram(dc, refuser);
                 int n = sel.select(2000);
                 if (n > 0) {
-                    ignoreStrayWakeup = checkUnexpectedWakeup(dc, sel.selectedKeys());
+                    ignoreStrayWakeup = checkUnexpectedWakeup(sel.selectedKeys());
                     sel.selectedKeys().clear();
                     if (ignoreStrayWakeup) {
                         if (i < MAX_TRIES - 1) continue;
@@ -133,7 +132,7 @@ public class SelectWhenRefused {
         dc.send(bb, remote);
     }
 
-    static boolean checkUnexpectedWakeup(DatagramChannel dc, Set<SelectionKey> selectedKeys) {
+    static boolean checkUnexpectedWakeup(Set<SelectionKey> selectedKeys) {
         System.out.format("Received %d keys%n", selectedKeys.size());
         for (SelectionKey key : selectedKeys) {
             if (!key.isValid() || !key.isReadable()) {
@@ -142,10 +141,13 @@ public class SelectWhenRefused {
             }
             try {
                 System.out.println("Attempting to read datagram from key: " + key);
+                DatagramChannel datagramChannel = (DatagramChannel) key.channel();
                 ByteBuffer buf = ByteBuffer.allocate(100);
-                SocketAddress sa = dc.receive(buf);
+                SocketAddress sa = datagramChannel.receive(buf);
                 String message = new String(buf.array());
-                System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
+                if (sa != null) {
+                    System.out.format("received %s at %s from %s%n", message, datagramChannel.getLocalAddress(), sa);
+                }
                 //If any received data contains the message from sendDatagram then return true
                 if (message.contains(GREETINGS_MESSAGE)) {
                     return true;
