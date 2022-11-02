@@ -1359,12 +1359,11 @@ public class StyleSheet extends StyleContext {
                            Vector<SelectorMapping> styles,
                            String[] tags, String[] ids, String[] classes,
                            int index, int numElements,
-                           Hashtable<SelectorMapping, SelectorMapping> alreadyChecked) {
-        // Avoid desending the same mapping twice.
-        if (alreadyChecked.contains(parentMapping)) {
+                           HashSet<SelectorMapping> alreadyChecked) {
+        // Avoid descending the same mapping twice.
+        if (!alreadyChecked.add(parentMapping)) {
             return;
         }
-        alreadyChecked.put(parentMapping, parentMapping);
         Style style = parentMapping.getStyle();
         if (style != null) {
             addSortedStyle(parentMapping, styles);
@@ -1422,8 +1421,7 @@ public class StyleSheet extends StyleContext {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
         @SuppressWarnings("unchecked")
         Vector<SelectorMapping> tempVector = sb.getVector();
-        @SuppressWarnings("unchecked")
-        Hashtable<SelectorMapping, SelectorMapping> tempHashtable = sb.getHashtable();
+        HashSet<SelectorMapping> alreadyChecked = sb.getHashSet();
         // Determine all the Styles that are appropriate, placing them
         // in tempVector
         try {
@@ -1434,7 +1432,7 @@ public class StyleSheet extends StyleContext {
                                                    tagString, false);
             if (childMapping != null) {
                 getStyles(childMapping, tempVector, tags, ids, classes, 1,
-                          numElements, tempHashtable);
+                          numElements, alreadyChecked);
             }
             if (classes[0] != null) {
                 String className = classes[0];
@@ -1442,13 +1440,13 @@ public class StyleSheet extends StyleContext {
                                        tagString + "." + className, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes, 1,
-                              numElements, tempHashtable);
+                              numElements, alreadyChecked);
                 }
                 childMapping = mapping.getChildSelectorMapping(
                                        "." + className, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashtable);
+                              1, numElements, alreadyChecked);
                 }
             }
             if (ids[0] != null) {
@@ -1457,13 +1455,13 @@ public class StyleSheet extends StyleContext {
                                        tagString + "#" + idName, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashtable);
+                              1, numElements, alreadyChecked);
                 }
                 childMapping = mapping.getChildSelectorMapping(
                                        "#" + idName, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashtable);
+                              1, numElements, alreadyChecked);
                 }
             }
             // Create a new Style that will delegate to all the matching
@@ -1754,7 +1752,7 @@ public class StyleSheet extends StyleContext {
         // A set of temporary variables that can be used in whatever way.
         Vector vector = null;
         StringBuffer stringBuffer = null;
-        Hashtable hashtable = null;
+        HashSet<SelectorMapping> hashSet = null;
 
         /**
          * Returns an instance of SearchBuffer. Be sure and issue
@@ -1797,11 +1795,11 @@ public class StyleSheet extends StyleContext {
             return vector;
         }
 
-        Hashtable getHashtable() {
-            if (hashtable == null) {
-                hashtable = new Hashtable();
+        HashSet<SelectorMapping> getHashSet() {
+            if (hashSet == null) {
+                hashSet = new HashSet<>();
             }
-            return hashtable;
+            return hashSet;
         }
 
         void empty() {
@@ -1811,8 +1809,8 @@ public class StyleSheet extends StyleContext {
             if (vector != null) {
                 vector.removeAllElements();
             }
-            if (hashtable != null) {
-                hashtable.clear();
+            if (hashSet != null) {
+                hashSet.clear();
             }
         }
     }
