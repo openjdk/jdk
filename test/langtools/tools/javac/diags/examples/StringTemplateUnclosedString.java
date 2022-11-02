@@ -25,7 +25,7 @@
  // key: compiler.note.preview.recompile
  // key: compiler.err.unclosed.str.lit
  // key: compiler.err.unclosed.string.template
- // key: compiler.err.not.stmt
+ // key: compiler.err.expected
  // key: compiler.err.premature.eof
  // options: --enable-preview -source 20
 

@@ -115,10 +115,10 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
     }
 
     // %[argument_index$][flags][width][.precision][t]conversion
-    private static final String formatSpecifier
+    private static final String FORMAT_SPECIFIER
             = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
 
-    private static final Pattern fsPattern = Pattern.compile(formatSpecifier);
+    private static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
 
     /**
      * Find a format specification at the end of a fragment.
@@ -131,7 +131,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * @throws MissingFormatArgumentException if not at end or found and not needed
      */
     private static boolean findFormat(String fragment, boolean needed) {
-        Matcher matcher = fsPattern.matcher(fragment);
+        Matcher matcher = FORMAT_SPECIFIER_PATTERN.matcher(fragment);
         String group;
 
         while (matcher.find()) {

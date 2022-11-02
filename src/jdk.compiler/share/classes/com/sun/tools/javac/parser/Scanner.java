@@ -97,8 +97,7 @@ public class Scanner implements Lexer {
     //where
         private void ensureLookahead(int lookahead) {
             for (int i = savedTokens.size() ; i < lookahead ; i++) {
-                Token ahead = tokenizer.readToken();
-                savedTokens.add(ahead);
+                savedTokens.add(tokenizer.readToken());
             }
         }
 

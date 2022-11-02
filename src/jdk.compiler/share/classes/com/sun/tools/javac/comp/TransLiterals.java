@@ -226,7 +226,7 @@ public final class TransLiterals extends TreeTranslator {
         }
     }
 
-    class TransStringTemplate {
+    final class TransStringTemplate {
         JCStringTemplate tree;
         JCExpression processor;
         List<String> fragments;
@@ -535,17 +535,6 @@ public final class TransLiterals extends TreeTranslator {
             newClass.varargsElement = useValuesList ? syms.objectType : null;
 
             return newClass;
-        }
-
-        boolean isProcessor(Name name) {
-            if (processor instanceof JCIdent ident && ident.sym instanceof VarSymbol varSym) {
-                if (varSym.flags() == (PUBLIC | FINAL | STATIC) &&
-                        varSym.name == name &&
-                        types.isSameType(varSym.owner.type, syms.stringTemplateType)) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         boolean isSTRProcessor() {
