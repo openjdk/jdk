@@ -1,6 +1,5 @@
 #include "precompiled.hpp"
 #include "gc/noop/noopBarrierSet.hpp"
-#include "gc/noop/noopThreadLocalData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #ifdef COMPILER1
@@ -19,9 +18,7 @@ NoopBarrierSet::NoopBarrierSet() : BarrierSet(
         BarrierSet::FakeRtti(BarrierSet::NoopBarrierSet)) {}
 
 void NoopBarrierSet::on_thread_create(Thread *thread) {
-    NoopThreadLocalData::create(thread);
 }
 
 void NoopBarrierSet::on_thread_destroy(Thread *thread) {
-    NoopThreadLocalData::destroy(thread);
 }

@@ -1,6 +1,5 @@
 #include "gc/noop/noopHeap.hpp"
 #include "gc/noop/noopMemoryPool.hpp"
-#include "gc/noop/noopThreadLocalData.hpp"
 #include "gc/noop/noopInitLogger.hpp"
 #include "precompiled.hpp"
 #include "memory/universe.hpp"
@@ -123,10 +122,8 @@ HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
                                          size_t* actual_size) {
     Thread* thread = Thread::current();
 
-    // Defaults in case elastic paths are not taken
     bool fits = true;
     size_t size = requested_size;
-    size_t ergo_tlab = requested_size;
     int64_t time = 0;
 
     // Always honor boundaries
@@ -144,18 +141,6 @@ HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
            "Size honors max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, _max_tlab_size);
     assert(size <= CollectedHeap::max_tlab_size(),
            "Size honors global max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, CollectedHeap::max_tlab_size());
-
-    if (log_is_enabled(Trace, gc)) {
-        ResourceMark rm;
-        log_trace(gc)("TLAB size for \"%s\" (Requested: " SIZE_FORMAT "K, Min: " SIZE_FORMAT
-        "K, Max: " SIZE_FORMAT "K, Ergo: " SIZE_FORMAT "K) -> " SIZE_FORMAT "K",
-                thread->name(),
-                requested_size * HeapWordSize / K,
-                min_size * HeapWordSize / K,
-                _max_tlab_size * HeapWordSize / K,
-                ergo_tlab * HeapWordSize / K,
-                size * HeapWordSize / K);
-    }
 
     // All prepared, let's do it!
     HeapWord* res = allocate_work(size);
