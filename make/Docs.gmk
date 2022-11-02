@@ -595,7 +595,7 @@ ifeq ($(ENABLE_PANDOC), true)
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
   # Unset the following to suppress the link to the tool guides
   NAV_LINK_GUIDES := --nav-link-guides
-  HEADER_RIGHT_SIDE_INFO := '<strong>$(subst &amp;,&,$(JDK_SHORT_NAME))$(DRAFT_MARKER_STR)</strong>'
+  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))$(DRAFT_MARKER_STR)</strong>
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
@@ -612,7 +612,7 @@ ifeq ($(ENABLE_PANDOC), true)
             REPLACEMENTS := \
 		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \
 		@@VERSION_STRING@@ => $(VERSION_STRING), \
-            POST_PROCESS := $(TOOL_FIXUPPANDOC) --insert-nav --nav-right-info $(HEADER_RIGHT_SIDE_INFO) \
+            POST_PROCESS := $(TOOL_FIXUPPANDOC) --insert-nav --nav-right-info '$(HEADER_RIGHT_SIDE_INFO)' \
                 --nav-subdirs $($m_$f_NOF_SUBDIRS) $(NAV_LINK_GUIDES), \
         )) \
         $(eval JDK_SPECS_TARGETS += $($($m_$f_NAME))) \
@@ -647,7 +647,7 @@ ifeq ($(ENABLE_PANDOC), true)
 		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
 		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
             OPTIONS := --toc -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
-            POST_PROCESS := $(TOOL_FIXUPPANDOC) --insert-nav --nav-right-info $(HEADER_RIGHT_SIDE_INFO) \
+            POST_PROCESS := $(TOOL_FIXUPPANDOC) --insert-nav --nav-right-info '$(HEADER_RIGHT_SIDE_INFO)' \
                 --nav-subdirs 1 --nav-link-guides, \
             EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
                 $(PANDOC_HTML_MANPAGE_FILTER_SOURCE), \
@@ -663,13 +663,25 @@ endif
 
 # Special treatment for generated documentation
 
+SPEC_HEADER_BLOCK := \
+<header id="title-block-header"> \
+    <div class="navbar"> \
+        <div>$(HEADER_RIGHT_SIDE_INFO)</div> \
+        <nav><ul><li><a href="PATH_TO_SPECS/../api/index.html">API</a> \
+        <li><a href="PATH_TO_SPECS/index.html">OTHER SPECIFICATIONS \
+        <li><a href="PATH_TO_SPECS/man/index.html">TOOL GUIDES</a></ul></nav> \
+    </div> \
+</header>
+
 JDWP_PROTOCOL := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
 ifneq ($(call ApplySpecFilter, $(JDWP_PROTOCOL)), )
+  JDWP_HEADER_BLOCK := $(subst PATH_TO_SPECS,..,$(SPEC_HEADER_BLOCK))
   $(eval $(call SetupTextFileProcessing, PROCESS_JDWP_PROTOCOL, \
       SOURCE_FILES := $(JDWP_PROTOCOL), \
       OUTPUT_DIR := $(DOCS_OUTPUTDIR)/specs/jdwp, \
       REPLACEMENTS := \
-          <body> => <body>$(SPECS_TOP) ; \
+          <style> => <link rel="stylesheet" href="../../resources/jdk-default.css"/><style> ; \
+          <body> => <body>$(SPECS_TOP)$(JDWP_HEADER_BLOCK) ; \
           </body> => $(SPECS_BOTTOM_1)</body>, \
   ))
   JDK_SPECS_TARGETS += $(PROCESS_JDWP_PROTOCOL)
@@ -678,11 +690,13 @@ endif
 # Get jvmti.html from the main jvm variant (all variants' jvmti.html are identical).
 JVMTI_HTML ?= $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/gensrc/jvmtifiles/jvmti.html
 ifneq ($(call ApplySpecFilter, $(JVMTI_HTML)), )
+  JVMTI_HEADER_BLOCK := $(subst PATH_TO_SPECS,.,$(SPEC_HEADER_BLOCK))
   $(eval $(call SetupTextFileProcessing, PROCESS_JVMTI_HTML, \
       SOURCE_FILES := $(JVMTI_HTML), \
       OUTPUT_DIR := $(DOCS_OUTPUTDIR)/specs/, \
       REPLACEMENTS := \
-          <body> => <body>$(SPECS_TOP) ; \
+          <style> => <link rel="stylesheet" href="../resources/jdk-default.css"/><style> ; \
+          <body> => <body>$(SPECS_TOP)$(JVMTI_HEADER_BLOCK) ; \
           </body> => $(SPECS_BOTTOM_0)</body>, \
   ))
   JDK_SPECS_TARGETS += $(PROCESS_JVMTI_HTML)
