@@ -123,6 +123,7 @@ public class TestDumpOnCrash {
         List<String> options = new ArrayList<>();
         options.add("-Xmx64m");
         options.add("-XX:-CreateCoredumpOnCrash");
+        options.add("-XX:-TieredCompilation"); // Avoid secondary crashes (see JDK-8293166)
         options.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         options.add("-XX:StartFlightRecording:dumponexit=true,disk=" + Boolean.toString(disk));
         if (dumppath != null) {
