@@ -525,25 +525,20 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return action;
     }
 
-    private void update() {
-        mainLayer.removeChildren();
-        blockLayer.removeChildren();
-
-        rebuilding = true;
-
+    private void clearObjects() {
         Collection<Object> objects = new ArrayList<>(getObjects());
         for (Object o : objects) {
             removeObject(o);
         }
+    }
 
-        Diagram diagram = getModel().getDiagram();
-
+    private void updateFigureWidths() {
         if (getModel().getShowCFG()) {
             Map<InputBlock, Integer> maxWidth = new HashMap<>();
-            for (InputBlock inputBlock : diagram.getInputBlocks()) {
+            for (InputBlock inputBlock : getModel().getDiagram().getInputBlocks()) {
                 maxWidth.put(inputBlock, 10);
             }
-            for (Figure figure : diagram.getFigures()) {
+            for (Figure figure : getModel().getDiagram().getFigures()) {
                 // Update node text, since it might differ across views.
                 figure.updateLines();
                 // Compute max node width in each block.
@@ -551,14 +546,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     maxWidth.put(figure.getBlock().getInputBlock(), figure.getWidth());
                 }
             }
-            for (Figure figure : diagram.getFigures()) {
+            for (Figure figure : getModel().getDiagram().getFigures()) {
                 // Set all nodes' width to the maximum width in the blocks?
                 figure.setWidth(maxWidth.get(figure.getBlock().getInputBlock()));
             }
         }
+    }
 
-        Set<Figure> selectedFigures = new HashSet<>();
-        for (Figure figure : diagram.getFigures()) {
+    private void rebuildMainLayer() {
+        mainLayer.removeChildren();
+        for (Figure figure : getModel().getDiagram().getFigures()) {
             FigureWidget figureWidget = new FigureWidget(figure, this);
             figureWidget.setVisible(false);
             figureWidget.getActions().addAction(ActionFactory.createPopupMenuAction(figureWidget));
@@ -566,10 +563,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             figureWidget.getActions().addAction(hoverAction);
             addObject(figure, figureWidget);
             mainLayer.addChild(figureWidget);
-
-            if (getModel().getSelectedNodes().contains(figure.getInputNode().getId())) {
-                selectedFigures.add(figure);
-            }
 
             for (InputSlot inputSlot : figure.getInputSlots()) {
                 SlotWidget slotWidget = new InputSlotWidget(inputSlot, this, figureWidget, figureWidget);
@@ -587,9 +580,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 addObject(outputSlot, slotWidget);
             }
         }
+    }
 
+    private void rebuildBlockLayer() {
+        blockLayer.removeChildren();
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock inputBlock : diagram.getInputBlocks()) {
+            for (InputBlock inputBlock : getModel().getDiagram().getInputBlocks()) {
                 BlockWidget blockWidget = new BlockWidget(this, inputBlock);
                 blockWidget.getActions().addAction(new DoubleClickAction(blockWidget));
                 blockWidget.setVisible(false);
@@ -597,12 +593,28 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 blockLayer.addChild(blockWidget);
             }
         }
+    }
 
-        rebuilding = false;
-        relayout();
-
+    private void updateSelectedFigures() {
+        Set<Figure> selectedFigures = new HashSet<>();
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            if (getModel().getSelectedNodes().contains(figure.getInputNode().getId())) {
+                selectedFigures.add(figure);
+            }
+        }
         setFigureSelection(selectedFigures);
         centerFigures(selectedFigures, false);
+    }
+
+    private void update() {
+        rebuilding = true;
+        clearObjects();
+        updateFigureWidths();
+        rebuildMainLayer();
+        rebuildBlockLayer();
+        relayout();
+        updateSelectedFigures();
+        rebuilding = false;
     }
 
     public void validateAll() {
@@ -921,126 +933,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         SelectionCoordinator.getInstance().getSelectedChangedEvent().addListener(selectedCoordinatorListener);
     }
 
-    private void relayout() {
-        rebuilding = true;
-        Set<Integer> hiddenNodes = model.getHiddenNodes();
-
-        Diagram diagram = getModel().getDiagram();
-
-        Set<Widget> oldVisibleWidgets = new HashSet<>();
-        for (Figure figure : diagram.getFigures()) {
-            FigureWidget figureWidget = getWidget(figure);
-            if (figureWidget != null && figureWidget.isVisible()) {
-                oldVisibleWidgets.add(figureWidget);
-            }
-        }
-
-        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock inputBlock : diagram.getInputBlocks()) {
-                BlockWidget blockWidget = getWidget(inputBlock);
-                if (blockWidget.isVisible()) {
-                    oldVisibleWidgets.add(blockWidget);
-                }
-            }
-        }
-
-        Set<InputBlock> visibleBlocks = new HashSet<>();
-        for (Figure figure : diagram.getFigures()) {
-            FigureWidget figureWidget = getWidget(figure);
-            figureWidget.setBoundary(false);
-            if (hiddenNodes.contains(figure.getInputNode().getId())) {
-                // Figure is hidden
-                figureWidget.setVisible(false);
-            } else {
-                // Figure is shown
-                figureWidget.setVisible(true);
-                visibleBlocks.add(figure.getBlock().getInputBlock());
-            }
-        }
-
-        if (getModel().getShowNodeHull()) {
-            List<FigureWidget> boundaries = new ArrayList<>();
-            for (Figure figure : diagram.getFigures()) {
-                FigureWidget figureWidget = getWidget(figure);
-                if (!figureWidget.isVisible()) {
-                    Set<Figure> neighborSet = new HashSet<>(figure.getPredecessorSet());
-                    neighborSet.addAll(figure.getSuccessorSet());
-
-                    boolean hasVisibleNeighbor = false;
-                    for (Figure neighbor : neighborSet) {
-                        FigureWidget neighborWidget = getWidget(neighbor);
-                        if (neighborWidget.isVisible()) {
-                            hasVisibleNeighbor = true;
-                            break;
-                        }
-                    }
-
-                    if (hasVisibleNeighbor) {
-                        figureWidget.setBoundary(true);
-                        visibleBlocks.add(figure.getBlock().getInputBlock());
-                        boundaries.add(figureWidget);
-                    }
-                }
-            }
-
-            for (FigureWidget figureWidget : boundaries) {
-                if (figureWidget.isBoundary()) {
-                    figureWidget.setVisible(true);
-                }
-            }
-        }
-
-        if (getModel().getShowCFG()) {
-            // Blockless figures and artificial blocks are hidden in this view.
-            for (Figure f : diagram.getFigures()) {
-                if (f.getBlock().getInputBlock().isArtificial()) {
-                    FigureWidget w = getWidget(f);
-                    w.setVisible(false);
-                }
-            }
-            if (getModel().getShowEmptyBlocks()) {
-                // Add remaining blocks.
-                visibleBlocks.addAll(diagram.getInputBlocks());
-            }
-        }
-
-        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock b : diagram.getInputBlocks()) {
-                // A block is visible if it is marked as such, except for
-                // artificial or null blocks in the CFG view.
-                boolean visibleAfter = visibleBlocks.contains(b) &&
-                    !(getModel().getShowCFG() && (b.isArtificial() || b.getNodes().isEmpty()));
-
-                BlockWidget w = getWidget(b);
-                w.setVisible(visibleAfter);
-            }
-        }
-
-        HashSet<Figure> visibleFigures = new HashSet<>();
-        for (Figure figure : diagram.getFigures()) {
-            FigureWidget figureWidget = getWidget(figure);
-            if (figureWidget.isVisible()) {
-                visibleFigures.add(figure);
-            }
-        }
-
-        HashSet<Connection> visibleConnections = new HashSet<>();
-        for (Connection connection : diagram.getConnections()) {
-            if (isVisible(connection)) {
-                visibleConnections.add(connection);
-            }
-        }
-
-        if (getModel().getShowSea()) {
-            doSeaLayout(visibleFigures, visibleConnections);
-        } else if (getModel().getShowBlocks()) {
-            doClusteredLayout(visibleConnections);
-        } else if (getModel().getShowCFG()) {
-            doCFGLayout(visibleFigures, visibleConnections);
-        }
-
+    private void rebuildConnectionLayer(Set<Widget> oldVisibleWidgets) {
         connectionLayer.removeChildren();
-        for (Figure figure : diagram.getFigures()) {
+        for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
                 List<Connection> connectionList = new ArrayList<>(outputSlot.getConnections());
                 processOutputSlot(outputSlot, connectionList, 0, null, null);
@@ -1048,7 +943,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         if (getModel().getShowCFG()) {
-            for (BlockConnection blockConnection : diagram.getBlockConnections()) {
+            for (BlockConnection blockConnection : getModel().getDiagram().getBlockConnections()) {
                 if (isVisible(blockConnection)) {
                     processOutputSlot(null, Collections.singletonList(blockConnection), 0, null, null);
                 }
@@ -1057,7 +952,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         boolean doAnimation = shouldAnimate();
         SceneAnimator animator = getSceneAnimator();
-        for (Figure figure : diagram.getFigures()) {
+        for (Figure figure : getModel().getDiagram().getFigures()) {
             FigureWidget figureWidget = getWidget(figure);
             if (figureWidget.isVisible()) {
                 Point location = new Point(figure.getPosition());
@@ -1070,7 +965,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (Block block : diagram.getBlocks()) {
+            for (Block block : getModel().getDiagram().getBlocks()) {
                 BlockWidget blockWidget = getWidget(block.getInputBlock());
                 if (blockWidget != null && blockWidget.isVisible()) {
                     Rectangle bounds = new Rectangle(block.getBounds());
@@ -1082,7 +977,137 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         }
+    }
 
+    private Set<Widget> getVisibleWidgets() {
+        Set<Widget> visibleWidgets = new HashSet<>();
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget != null && figureWidget.isVisible()) {
+                visibleWidgets.add(figureWidget);
+            }
+        }
+
+        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
+            for (InputBlock inputBlock : getModel().getDiagram().getInputBlocks()) {
+                BlockWidget blockWidget = getWidget(inputBlock);
+                if (blockWidget.isVisible()) {
+                    visibleWidgets.add(blockWidget);
+                }
+            }
+        }
+        return visibleWidgets;
+    }
+
+    private void updateVisibleFigureWidgets() {
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            FigureWidget figureWidget = getWidget(figure);
+            figureWidget.setBoundary(false);
+            figureWidget.setVisible(!model.getHiddenNodes().contains(figure.getInputNode().getId()));
+        }
+    }
+
+    private void updateNodeHull() {
+        if (getModel().getShowNodeHull()) {
+            List<FigureWidget> boundaries = new ArrayList<>();
+            for (Figure figure : getModel().getDiagram().getFigures()) {
+                FigureWidget figureWidget = getWidget(figure);
+                if (!figureWidget.isVisible()) {
+                    Set<Figure> neighborSet = new HashSet<>(figure.getPredecessorSet());
+                    neighborSet.addAll(figure.getSuccessorSet());
+                    boolean hasVisibleNeighbor = false;
+                    for (Figure neighbor : neighborSet) {
+                        FigureWidget neighborWidget = getWidget(neighbor);
+                        if (neighborWidget.isVisible()) {
+                            hasVisibleNeighbor = true;
+                            break;
+                        }
+                    }
+                    if (hasVisibleNeighbor) {
+                        figureWidget.setBoundary(true);
+                        boundaries.add(figureWidget);
+                    }
+                }
+            }
+            for (FigureWidget figureWidget : boundaries) {
+                figureWidget.setVisible(true);
+            }
+        }
+    }
+
+    private void updateVisibleBlockWidgets() {
+        if (getModel().getShowBlocks() || getModel().getShowCFG()) {
+            Set<InputBlock> visibleBlocks = new HashSet<>();
+            for (Figure figure : getModel().getDiagram().getFigures()) {
+                FigureWidget figureWidget = getWidget(figure);
+                if (figureWidget.isVisible()) {
+                    visibleBlocks.add(figure.getBlock().getInputBlock());
+                }
+            }
+            if (getModel().getShowCFG() && getModel().getShowEmptyBlocks()) {
+                // Add remaining blocks.
+                visibleBlocks.addAll(getModel().getDiagram().getInputBlocks());
+            }
+            if (getModel().getShowCFG()) {
+                // Blockless figures and artificial blocks are hidden in this view.
+                for (Figure figure : getModel().getDiagram().getFigures()) {
+                    if (figure.getBlock().getInputBlock().isArtificial()) {
+                        FigureWidget figureWidget = getWidget(figure);
+                        figureWidget.setVisible(false);
+                    }
+                }
+            }
+
+            for (InputBlock inputBlock : getModel().getDiagram().getInputBlocks()) {
+                // A block is visible if it is marked as such, except for
+                // artificial or null blocks in the CFG view.
+                boolean visibleAfter = visibleBlocks.contains(inputBlock) &&
+                        !(getModel().getShowCFG() && (inputBlock.isArtificial() || inputBlock.getNodes().isEmpty()));
+
+                BlockWidget blockWidget = getWidget(inputBlock);
+                blockWidget.setVisible(visibleAfter);
+            }
+        }
+    }
+
+    private HashSet<Figure> getVisibleFigures() {
+        HashSet<Figure> visibleFigures = new HashSet<>();
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget.isVisible()) {
+                visibleFigures.add(figure);
+            }
+        }
+        return visibleFigures;
+    }
+
+    private HashSet<Connection> getVisibleConnections() {
+        HashSet<Connection> visibleConnections = new HashSet<>();
+        for (Connection connection : getModel().getDiagram().getConnections()) {
+            if (isVisible(connection)) {
+                visibleConnections.add(connection);
+            }
+        }
+        return visibleConnections;
+    }
+
+    private void relayout() {
+        rebuilding = true;
+        Set<Widget> oldVisibleWidgets = getVisibleWidgets();
+        updateVisibleFigureWidgets();
+        updateNodeHull();
+        updateVisibleBlockWidgets();
+        
+        HashSet<Figure> visibleFigures = getVisibleFigures();
+        HashSet<Connection> visibleConnections = getVisibleConnections();
+        if (getModel().getShowSea()) {
+            doSeaLayout(visibleFigures, visibleConnections);
+        } else if (getModel().getShowBlocks()) {
+            doClusteredLayout(visibleConnections);
+        } else if (getModel().getShowCFG()) {
+            doCFGLayout(visibleFigures, visibleConnections);
+        }
+        rebuildConnectionLayer(oldVisibleWidgets);
         validateAll();
         rebuilding = false;
     }
