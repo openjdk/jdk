@@ -79,7 +79,7 @@
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
           "Write map file for Linux perf tool at exit")                 \
                                                                         \
-  product(uint, OsCachedMetricsRefreshRate, 50,                         \
+  product(uint, OsCachedMetricsRefreshRate, 50, DIAGNOSTIC,             \
           "Specify the refresh rate of the OS cached metrics to avoid " \
           "re-reading container settings too often. [times per second]" \
           "The default equals to 20ms timeout between re-reads.")       \
