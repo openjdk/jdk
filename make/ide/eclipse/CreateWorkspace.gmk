@@ -61,10 +61,10 @@ endif
 RandomDigits = \
     $(shell od -An -N8 -d /dev/urandom | sed -e 's| ||g' -e 's|\(.\{$(strip $1)\}\).*|\1|')
 
-# Cache a 10 digit number as the configuration id for the workspace where needed
+# Cache a 10 digit number as the workspace id where needed
 # This needs to be the same everywhere it's used anyway, and doing this also avoids
 # regenerating the number every time
-RANDOM := $(call RandomDigits, 10)
+WORKSPACE_ID := $(call RandomDigits, 10)
 
 # Modified version of utility from JdkNativeCompilation.gmk
 # The full path could be omitted, but it was chosen not to so wildcard
@@ -233,10 +233,10 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
     $$(call AppendFile,    <storageModule moduleId="org.eclipse.cdt.core.settings">, $(NATIVE_FILE))
-    $$(call AppendFile,        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(RANDOM)">, $(NATIVE_FILE))
+    $$(call AppendFile,        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)">, $(NATIVE_FILE))
     $$(call AppendFile,            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(RANDOM)" moduleId="org.eclipse.cdt.core.settings" name="Java SE">, $(NATIVE_FILE))
+    $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" moduleId="org.eclipse.cdt.core.settings" name="Java SE">, $(NATIVE_FILE))
     $$(call AppendFile,                <externalSettings/>, $(NATIVE_FILE))
 
     # For some strange reason Eclipse requires the binary parsers be listed for the workspace to be recognised as a C/C++ one
@@ -251,11 +251,11 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,            </storageModule>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
     $$(call AppendFile,            <storageModule moduleId="cdtBuildSystem" version="4.0.0">, $(NATIVE_FILE))
-    $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(RANDOM)" name="Java SE" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
-    $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(RANDOM).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
+    $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java SE" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
+    $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
     $$(call AppendFile,                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">, $(NATIVE_FILE))
     $$(call AppendFile,                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.$(RANDOM)" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.$(WORKSPACE_ID)" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>, $(NATIVE_FILE))
     $$(call AppendFile,                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>, $(NATIVE_FILE))
     $$(call AppendFile,                        </toolChain>, $(NATIVE_FILE))
     $$(call AppendFile,                    </folderInfo>, $(NATIVE_FILE))
@@ -308,7 +308,7 @@ define SetupEclipseWorkspaceBody
 
     $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,<project>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(RANDOM)" name="Java SE">, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java SE">, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,        <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">, $(LANGUAGE_SETTINGS))
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
@@ -359,6 +359,14 @@ define SetupEclipseWorkspaceBody
     $$(foreach src,$(JAVA_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
   endif
 
+  ifeq ($$($1_NATURE), HOTSPOT)
+    # Workspace support for only the Java Virtual Machine was requested
+    # However, some headers from java.base are still needed by it, so if only the VM
+    # was requested, add a special case here to pull in all those headers
+    $$(foreach src,$$(strip $$(patsubst $(TOPDIR)/%,%/include,$$(call FindModuleNativeDirs, java.base))),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
+    $$(call EmitLinkedDirectory, src/java.base/share/native/libjimage,$(TOPDIR)/src/java.base/share/native/libjimage)
+  endif
+
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
 
     # If CDT support was indicated there's no harm in including make, the cost of
@@ -367,12 +375,6 @@ define SetupEclipseWorkspaceBody
 
     $$(call EmitLinkedDirectory, src/hotspot,$(TOPDIR)/src/hotspot)
 
-  endif
-
-  ifeq ($$($1_NATURE), HOTSPOT)
-    # HotSpot still needs these source directories even if indexing for only it is requested
-    $$(foreach src,$$(strip $$(patsubst $(TOPDIR)/%,%/include,$$(call FindModuleNativeDirs, java.base))),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
-    $$(call EmitLinkedDirectory, src/java.base/share/native/libjimage,$(TOPDIR)/src/java.base/share/native/libjimage)
   endif
 
   ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
