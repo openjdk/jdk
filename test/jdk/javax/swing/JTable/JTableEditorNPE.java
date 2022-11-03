@@ -55,11 +55,9 @@ public class JTableEditorNPE {
                 myModel.addRow(new Object[]{"item2.1", "item2.2", "item2.3"});
                 MyTable tbl = new MyTable(myModel);
                 frame.getContentPane().add(tbl);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+                frame.validate();
             });
         } finally {
-            Thread.sleep(1000);
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
@@ -79,8 +77,7 @@ public class JTableEditorNPE {
             int column = event.getColumn();
             if (column == TableModelEvent.ALL_COLUMNS) {
                 resizeAll();
-            }
-            else {
+            } else {
                 resize(column);
             }
         }
@@ -115,7 +112,7 @@ public class JTableEditorNPE {
                 if (renderer != null) {
                     comp = renderer.getTableCellRendererComponent(
                             this, // table
-                            getModel().getValueAt(row,column), // value
+                            getModel().getValueAt(row, column), // value
                             false, // isSelected
                             false, // hasFocus
                             row, // row
@@ -134,3 +131,4 @@ public class JTableEditorNPE {
         }
     }
 }
+
