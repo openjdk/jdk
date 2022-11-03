@@ -639,17 +639,15 @@ class ResourceTracker : public StackObj {
 // Jvmti monitor closure to collect off stack monitors.
 class JvmtiMonitorClosure: public MonitorClosure {
  private:
-  JavaThread *_java_thread;
   JavaThread *_calling_thread;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
   jvmtiError _error;
   JvmtiEnvBase *_env;
 
  public:
-  JvmtiMonitorClosure(JavaThread* thread, JavaThread *calling_thread,
+  JvmtiMonitorClosure(JavaThread *calling_thread,
                       GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors,
                       JvmtiEnvBase *env) {
-    _java_thread = thread;
     _calling_thread = calling_thread;
     _owned_monitors_list = owned_monitors;
     _error = JVMTI_ERROR_NONE;
