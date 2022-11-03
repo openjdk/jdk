@@ -27,7 +27,6 @@
 #define OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP
 
 #include "runtime/prefetch.hpp"
-#include "runtime/stubRoutines.hpp"
 
 inline void Prefetch::read(const void *loc, intx interval) {
     if (interval >= 0 && UseZicbop) {
