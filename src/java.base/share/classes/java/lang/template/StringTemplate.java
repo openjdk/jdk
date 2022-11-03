@@ -100,7 +100,7 @@ import jdk.internal.javac.PreviewFeature;
  * List<Object> values = st.values();
  * // check or manipulate the fragments and/or values
  * ...
- * String result = StringTemplate.interpolate(fragments, values);;
+ * String result = StringTemplate.interpolate(fragments, values);
  * }
  *
  * @implSpec An instance of {@link StringTemplate} is immutatble. Also, the
@@ -186,33 +186,6 @@ public interface StringTemplate {
     }
 
     /**
-     * Return the types of this {@link StringTemplate StringTemplate's} values.
-     *
-     * @return list of value types
-     *
-     * @implNote The default method determines if the {@link StringTemplate}
-     * was synthesized by the compiler, then the types are precisely those of the
-     * embedded expressions, otherwise this method returns the values list types.
-     */
-    default List<Class<?>> valueTypes() {
-        return TemplateRuntime.valueTypes(this);
-    }
-
-    /**
-     * Return {@link MethodHandle MethodHandles} to access this
-     * {@link StringTemplate StringTemplate's} values.
-     *
-     * @return list of value types
-     *
-     * @implNote The default method determines if the {@link java.lang.template.StringTemplate}
-     * was synthesized by the compiler, then the MethodHandles are precisely those of the
-     * embedded expressions fields, otherwise this method returns getters for the values list.
-     */
-    default List<MethodHandle> valueAccessors() {
-        return TemplateRuntime.valueAccessors(this);
-    }
-
-    /**
      * Produces a diagnostic string representing the supplied
      * {@link StringTemplate}.
      *
@@ -245,8 +218,7 @@ public interface StringTemplate {
      */
     public static int hashCode(StringTemplate stringTemplate) {
         Objects.requireNonNull(stringTemplate, "stringTemplate should not be null");
-        return Objects.hashCode(stringTemplate.fragments()) ^
-               Objects.hashCode(stringTemplate.values());
+        return Objects.hash(stringTemplate.fragments(), stringTemplate.values());
     }
 
     /**

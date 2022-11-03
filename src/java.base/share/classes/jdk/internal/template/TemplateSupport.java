@@ -73,7 +73,7 @@ public final class TemplateSupport {
     private final List<String> fragments;
 
     /**
-     * Static final processor that triggered the BSM generation.
+     * The static final processor that triggered the BSM generation.
      */
     private final ValidatingProcessor<?, ?> processor;
 
@@ -138,9 +138,7 @@ public final class TemplateSupport {
         Objects.requireNonNull(processorGetter, "processorGetter is null");
         Objects.requireNonNull(fragments, "fragments is null");
 
-        MethodType processorGetterType = MethodType.methodType(ValidatingProcessor.class);
-        ValidatingProcessor<?, ?> processor =
-                (ValidatingProcessor<?, ?>)processorGetter.asType(processorGetterType).invokeExact();
+        ValidatingProcessor<?, ?> processor = (ValidatingProcessor<?, ?>)processorGetter.invoke();
         TemplateSupport support = new TemplateSupport(lookup, name, type, List.of(fragments), processor);
 
         return support.processWithProcessor();
@@ -182,10 +180,7 @@ public final class TemplateSupport {
      */
     private MethodHandle defaultProcessMethodHandle() {
         MethodHandle mh = MethodHandles.insertArguments(DEFAULT_PROCESS_MH, 0, fragments, processor);
-        mh = mh.withVarargs(true);
-        mh = mh.asType(type);
-
-        return mh;
+        return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
     }
 
     /**

@@ -424,17 +424,6 @@ public class Basic {
         ASSERT(tsValues.interpolate(), x + " + " + y + " = " + (x + y));
         ASSERT(StringTemplate.combine(src, src).interpolate(),
                 RAW."\{x} + \{y} = \{x + y}\{x} + \{y} = \{x + y}".interpolate());
-        ASSERT(src.valueTypes().get(0), int.class);
-        ASSERT(src.valueTypes().get(1), int.class);
-        ASSERT(src.valueTypes().get(2), int.class);
-
-        try {
-            ASSERT(src.valueAccessors().get(0).invoke(src), 10);
-            ASSERT(src.valueAccessors().get(1).invoke(src), 20);
-            ASSERT(src.valueAccessors().get(2).invoke(src), 30);
-        } catch (Throwable ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
     /*

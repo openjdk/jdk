@@ -1113,8 +1113,10 @@ public final class StringConcatFactory {
             }
 
             Class<?> ttype = ttypes[pos];
+            // (long,byte[],ttype) -> long
             MethodHandle prepender = prepender(lastFragment.isEmpty() ? null : fragment, ttype);
             initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, fragment);
+            // (byte[],long,ttypes...) -> String (unchanged)
             mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,1, 0, 2 + pos);
 
             pos++;
@@ -1122,21 +1124,26 @@ public final class StringConcatFactory {
 
         MethodHandle newArrayCombinator = lastFragment.isEmpty() ? newArray() :
                 newArrayWithSuffix(lastFragment);
+        // (long,ttypes...) -> String
         mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArrayCombinator,
                 1 // index
         );
 
         pos = 0;
         for (Class<?> ttype : ttypes) {
+            // (long,ttype) -> long
             MethodHandle mix = mixer(ttypes[pos]);
             boolean lastPType = pos == ttypes.length - 1;
 
             if (lastPType) {
+                // (ttype) -> long
                 mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
+                // (ttypes...) -> String
                 mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
                         1 + pos // selected argument
                 );
             } else {
+                // (long,ttypes...) -> String
                 mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, mix,
                         0, // old-index
                         1 + pos // selected argument

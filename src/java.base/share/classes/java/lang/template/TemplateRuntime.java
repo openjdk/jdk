@@ -54,25 +54,6 @@ import jdk.internal.javac.PreviewFeature;
 final class TemplateRuntime {
 
     /**
-     * {@link MethodHandle} to {@link TemplateRuntime#getValue(int, StringTemplate)}.
-     */
-    private static final MethodHandle GET_VALUE_MH;
-
-    /**
-     * Initialize {@link MethodHandle MethodHandles}.
-     */
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-
-            MethodType mt = MethodType.methodType(Object.class, int.class, StringTemplate.class);
-            GET_VALUE_MH = lookup.findStatic(TemplateRuntime.class, "getValue", mt);
-        } catch (ReflectiveOperationException | SecurityException ex) {
-            throw new AssertionError("template runtime init fail", ex);
-        }
-    }
-
-    /**
      * Private constructor.
      */
     private TemplateRuntime() {
@@ -80,8 +61,6 @@ final class TemplateRuntime {
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
-    private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
 
@@ -98,101 +77,6 @@ final class TemplateRuntime {
     @SuppressWarnings({"unchecked", "varargs"})
     static <E> List<E> toList(E... elements) {
         return JUCA.listFromTrustedArrayNullsAllowed(elements);
-    }
-
-    /**
-     * Return the types of a {@link StringTemplate StringTemplate's} values.
-     *
-     * @param st  StringTemplate to examine
-     *
-     * @return list of value types
-     *
-     * @throws NullPointerException if st is null
-     *
-     * @implNote The default method determines if the {@link StringTemplate}
-     * was synthesized by the compiler, then the types are precisely those of the
-     * embedded expressions, otherwise this method returns a list of
-     * {@code Object.class}.
-     */
-    static List<Class<?>> valueTypes(StringTemplate st) {
-        Objects.requireNonNull(st, "st must not be null");
-        Class<?> tsClass = st.getClass();
-        if (tsClass.isSynthetic()) {
-            List<Class<?>> result = new ArrayList<>();
-            try {
-                for (int i = 0; ; i++) {
-                    Field field = tsClass.getDeclaredField("x" + i);
-                    result.add(field.getType());
-                }
-            } catch (NoSuchFieldException ex) {
-                // End of fields
-            } catch (SecurityException ex) {
-                throw new InternalError(ex);
-            }
-            return result;
-        }
-        int size = st.values().size();
-        Class<?>[] types = new Class<?>[size];
-        Arrays.fill(types, Object.class);
-        return List.of(types);
-    }
-
-    /**
-     * Return {@link MethodHandle MethodHandles} to access a
-     * {@link StringTemplate StringTemplate's} values.
-     *
-     * @param st  StringTemplate to examine
-     *
-     * @return list of {@link MethodHandle MethodHandles}
-     *
-     * @throws NullPointerException if st is null
-     *
-     * @implNote The default method determines if the {@link StringTemplate}
-     * was synthesized by the compiler, then the MethodHandles are precisely those of the
-     * embedded expressions fields, otherwise this method returns getters for the values list.
-     */
-    static List<MethodHandle> valueAccessors(StringTemplate st) {
-        Objects.requireNonNull(st, "st must not be null");
-        List<MethodHandle> result = new ArrayList<>();
-        Class<?> tsClass = st.getClass();
-        if (tsClass.isSynthetic()) {
-            try {
-                for (int i = 0; ; i++) {
-                    Field field = tsClass.getDeclaredField("x" + i);
-                    MethodHandle mh = JLIA.unreflectField(field, false);
-                    mh = mh.asType(mh.type().changeParameterType(0, StringTemplate.class));
-                    result.add(mh);
-                }
-            } catch (NoSuchFieldException ex) {
-                // End of fields
-            } catch (ReflectiveOperationException | SecurityException ex) {
-                throw new InternalError(ex);
-            }
-
-            return result;
-        }
-        try {
-            int size = st.values().size();
-            for (int index = 0; index < size; index++) {
-                result.add(MethodHandles.insertArguments(GET_VALUE_MH, 0, index));
-            }
-            return result;
-        } catch (SecurityException ex) {
-            throw new InternalError(ex);
-        }
-    }
-
-    /**
-     * Private method used by {@link TemplateRuntime#valueAccessors(StringTemplate)}
-     * to access values.
-     *
-     * @param index values index
-     * @param st    the {@link StringTemplate}
-     *
-     * @return value at index
-     */
-    private static Object getValue(int index, StringTemplate st) {
-        return st.values().get(index);
     }
 
     /**
