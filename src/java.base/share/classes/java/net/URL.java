@@ -880,9 +880,7 @@ public final class URL implements java.io.Serializable {
 
             int port = uri.getPort();
 
-            @SuppressWarnings("deprecation")
-            var result = new URL("jrt", host, port, file, null);
-            return result;
+            return new URL("jrt", host, port, file, null);
         }
 
         // slow path (will work for non-canonical forms of jrt: too)
