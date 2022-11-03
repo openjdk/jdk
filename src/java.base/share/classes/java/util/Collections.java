@@ -370,6 +370,11 @@ public class Collections {
      *
      * This method runs in linear time.
      *
+     * @apiNote
+     * This method mutates the specified list in-place. To obtain a
+     * reversed-ordered view of a list without mutating it, use the
+     * {@link List#reversed List::reversed} method.
+     *
      * @param  list the list whose elements are to be reversed.
      * @throws UnsupportedOperationException if the specified list or
      *         its list-iterator does not support the {@code set} operation.
@@ -1133,6 +1138,7 @@ public class Collections {
      * @param  c the collection for which an unmodifiable view is to be
      *         returned.
      * @return an unmodifiable view of the specified collection.
+     * @since 20
      */
     @SuppressWarnings("unchecked")
     public static <T> SequencedCollection<T> unmodifiableSequencedCollection(SequencedCollection<? extends T> c) {
@@ -1202,6 +1208,7 @@ public class Collections {
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
+     * @since 20
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
@@ -1948,6 +1955,7 @@ public class Collections {
      * @param <V> the class of the map values
      * @param  m the map for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified map.
+     * @since 20
      */
     @SuppressWarnings("unchecked")
     public static <K,V> SequencedMap<K,V> unmodifiableSequencedMap(SequencedMap<? extends K, ? extends V> m) {
@@ -5927,6 +5935,11 @@ public class Collections {
      * one exception.  The {@link Queue#addAll addAll} method is
      * implemented as a sequence of {@link Deque#addFirst addFirst}
      * invocations on the backing deque.
+     *
+     * @apiNote
+     * This method provides a view that inverts the sense of certain operations,
+     * but it doesn't reverse the encounter order. To obtain a reversed-ordered
+     * view, use the {@link Deque#reversed Deque::reversed} method.
      *
      * @param  <T> the class of the objects in the deque
      * @param deque the deque

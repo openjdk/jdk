@@ -621,6 +621,7 @@ public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
      * Deque that delegates its operations to this Deque.
      *
      * @return a reverse-ordered view of this collection, as a {@code Deque}
+     * @since 20
      */
     default Deque<E> reversed() {
         return ReverseOrderDequeView.of(this);

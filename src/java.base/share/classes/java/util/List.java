@@ -784,16 +784,19 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     default void addFirst(E e) { this.add(0, e); }
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     default void addLast(E e) { this.add(e); }
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     default E getFirst() {
         if (this.isEmpty())
@@ -803,6 +806,7 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     default E getLast() {
         if (this.isEmpty())
@@ -812,6 +816,7 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     default E removeFirst() {
         if (this.isEmpty())
@@ -821,6 +826,7 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     default E removeLast() {
         if (this.isEmpty())
@@ -836,6 +842,7 @@ public interface List<E> extends SequencedCollection<E> {
      * List that delegates its operations to this List.
      *
      * @return a reverse-ordered view of this collection, as a {@code List}
+     * @since 20
      */
     default List<E> reversed() {
         return ReverseOrderListView.of(this);

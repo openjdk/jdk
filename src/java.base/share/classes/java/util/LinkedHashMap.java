@@ -375,6 +375,7 @@ public class LinkedHashMap<K,V>
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     public V putFirst(K k, V v) {
         try {
@@ -387,6 +388,7 @@ public class LinkedHashMap<K,V>
 
     /**
      * {@inheritDoc}
+     * @since 20
      */
     public V putLast(K k, V v) {
         try {
@@ -614,7 +616,9 @@ public class LinkedHashMap<K,V>
      * Returns a {@link SequencedSet} view of the keys contained in this map.
      * Other than the return type, the returned view has the same characteristics
      * as specified in the {@link #keySet keySet} method.
+     *
      * @return a SequencedSet view of the keys contained in this map
+     * @since 20
      */
     public SequencedSet<K> sequencedKeySet() {
         Set<K> ks = keySet;
@@ -760,7 +764,9 @@ public class LinkedHashMap<K,V>
      * Returns a {@link SequencedCollection} view of the values contained in this map.
      * Other than the return type, the returned view has the same characteristics
      * as specified in the {@link #values values} method.
+     *
      * @return a SequencedCollection view of the values contained in this map
+     * @since 20
      */
     public SequencedCollection<V> sequencedValues() {
         Collection<V> vs = values;
@@ -862,7 +868,9 @@ public class LinkedHashMap<K,V>
      * Returns a {@link SequencedSet} view of the mappings contained in this map.
      * Other than the return type, the returned view has the same characteristics
      * as specified in the {@link #entrySet entrySet} method.
+     *
      * @return a SequencedSet view of the mappings contained in this map
+     * @since 20
      */
     public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
         Set<Map.Entry<K, V>> es = entrySet;
@@ -1062,6 +1070,7 @@ public class LinkedHashMap<K,V>
      * this map are visible in the returned view.
      *
      * @return a reverse-ordered view of this map
+     * @since 20
      */
     public SequencedMap<K, V> reversed() {
         return new ReversedLinkedHashMapView<>(this);
