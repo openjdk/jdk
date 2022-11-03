@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/ostream.hpp"
@@ -390,6 +391,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
+  Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
   a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli

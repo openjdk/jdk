@@ -36,6 +36,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -637,7 +638,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _print_inlining_stream(new stringStream()),
+                  _print_inlining_stream(new (mtCompiler) stringStream()),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
@@ -910,7 +911,7 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _print_inlining_stream(new stringStream()),
+    _print_inlining_stream(new (mtCompiler) stringStream()),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),

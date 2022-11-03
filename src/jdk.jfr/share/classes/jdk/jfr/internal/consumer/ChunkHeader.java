@@ -164,8 +164,18 @@ public final class ChunkHeader {
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finalChunk=" + finalChunk);
                     absoluteChunkEnd = absoluteChunkStart + chunkSize;
                     return;
-                } else if (finished) {
-                    throw new IOException("No metadata event found in finished chunk.");
+                } else {
+                    if (finished) {
+                        throw new IOException("No metadata event found in finished chunk.");
+                    }
+                    if (chunkSize == HEADER_SIZE) {
+                        // This ensures that a non-streaming parser is able
+                        // to break out of the loop in case the file is
+                        // ended before the first metadata event has
+                        // been written. This can happen during a failed crash
+                        // dump.
+                        input.pollWait();
+                    }
                 }
             }
         }

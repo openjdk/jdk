@@ -256,6 +256,7 @@ public:
 
   // Support for GC barriers emitted during parsing
   virtual bool has_load_barrier_nodes() const { return false; }
+  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
 
