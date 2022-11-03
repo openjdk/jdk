@@ -1825,8 +1825,7 @@ public final class URL implements java.io.Serializable {
         String urlString = tempState.reconstituteUrlString();
 
         try {
-            @SuppressWarnings("deprecation")
-            var _unused = replacementURL = new URL(urlString);
+            replacementURL = new URL(urlString);
         } catch (MalformedURLException mEx) {
             resetState();
             InvalidObjectException invoEx = new InvalidObjectException(
