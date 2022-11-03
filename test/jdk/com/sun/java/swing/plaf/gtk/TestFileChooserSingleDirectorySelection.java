@@ -45,48 +45,136 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-public class TestFileChooserSingleDirectorySelection  {
+public class TestFileChooserSingleDirectorySelection {
     private static JFrame frame;
     private static JFileChooser fileChooser;
     private static JButton getSelectedFilesButton;
     private static Robot robot;
     private static boolean passed;
+    private static File[] testDir;
+    private static File[] tempFile;
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("sun.java2d.uiScale", "1.0");
         robot = new Robot();
         robot.setAutoDelay(100);
+
+        try {
+            // create test directory
+            String tmpDir = System.getProperty("user.home");
+            testDir = new File[1];
+            testDir[0] = new File(tmpDir, "testDir");
+            if (!testDir[0].exists())
+                testDir[0].mkdir();
+            testDir[0].deleteOnExit();
+
+            // create temporary files inside testDir
+            tempFile = new File[5];
+            for (int i = 0; i < 5; ++i) {
+                tempFile[i] = File.createTempFile("temp", ".txt",
+                        new File(testDir[0].getAbsolutePath()));
+                tempFile[i].deleteOnExit();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         for (UIManager.LookAndFeelInfo laf :
-                UIManager.getInstalledLookAndFeels()) {
+                        UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF: " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            checkFileOnlyTest(laf);
+            checkDirectoriesOnlyTest(laf);
+            checkFilesAndDirectoriesTest(laf);
+            System.out.println("Passed");
+        }
+    }
 
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    createAndShowUI();
-                });
-                robot.waitForIdle();
-                robot.delay(1000);
+    private static void checkFileOnlyTest(UIManager.LookAndFeelInfo laf)
+            throws Exception {
+        System.out.println("Testing File Only mode");
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                createAndShowUI();
+                fileChooser.setCurrentDirectory(testDir[0]);
+            });
 
-                Point pt = fileChooser.getLocationOnScreen();
-                int frameHeight = frame.getHeight();
-                ClickMouse(pt, 0, frameHeight, 50);
+            robot.waitForIdle();
+            robot.delay(1000);
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            Point frameLocation = fileChooser.getLocationOnScreen();
+            int frameWidth = frame.getWidth();
+            int frameHeight = frame.getHeight();
 
-                pt = getSelectedFilesButton.getLocationOnScreen();
-                int btnWidth = getSelectedFilesButton.getWidth();
-                int btnHeight = getSelectedFilesButton.getHeight();
-                ClickMouse(pt, btnWidth, btnHeight, 0);
+            Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
+            int btnWidth = getSelectedFilesButton.getWidth();
+            int btnHeight = getSelectedFilesButton.getHeight();
+            clickMouse(frameLocation, 0, frameHeight, 230);
+            clickMouse(btnLocation, btnWidth, btnHeight, 0);
+            checkResult(laf);
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+    }
 
-                if (!passed)
-                    throw new RuntimeException("getSelectedFiles returned empty array.");
-                else
-                    System.out.println("passed");
-            } finally {
-                SwingUtilities.invokeAndWait(() -> {
-                    if (frame != null) {
-                        frame.dispose();
-                    }
-                });
-            }
+    private static void checkDirectoriesOnlyTest(UIManager.LookAndFeelInfo laf)
+            throws Exception  {
+        System.out.println("Testing Directories Only mode");
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                createAndShowUI();
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            Point frameLocation = fileChooser.getLocationOnScreen();
+            int frameWidth = frame.getWidth();
+            int frameHeight = frame.getHeight();
+
+            Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
+            int btnWidth = getSelectedFilesButton.getWidth();
+            int btnHeight = getSelectedFilesButton.getHeight();
+            clickMouse(frameLocation, 0, frameHeight, 50);
+            clickMouse(btnLocation, btnWidth, btnHeight, 0);
+            checkResult(laf);
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+    }
+
+    private static void checkFilesAndDirectoriesTest(UIManager.LookAndFeelInfo laf)
+            throws Exception  {
+        System.out.println("Testing Files and Directories mode");
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                createAndShowUI();
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            Point frameLocation = fileChooser.getLocationOnScreen();
+            int frameWidth = frame.getWidth();
+            int frameHeight = frame.getHeight();
+
+            Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
+            int btnWidth = getSelectedFilesButton.getWidth();
+            int btnHeight = getSelectedFilesButton.getHeight();
+            clickMouse(frameLocation, 0, frameHeight, 50);
+            clickMouse(btnLocation, btnWidth, btnHeight, 0);
+            checkResult(laf);
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -94,7 +182,6 @@ public class TestFileChooserSingleDirectorySelection  {
         frame = new JFrame("Test File Chooser Single Directory Selection");
         frame.getContentPane().setLayout(new BorderLayout());
         fileChooser = new JFileChooser("user.home");
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setControlButtonsAreShown(false);
 
@@ -102,9 +189,9 @@ public class TestFileChooserSingleDirectorySelection  {
         getSelectedFilesButton.setText("Print selected Files");
         getSelectedFilesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-            passed = false;
+                passed = false;
                 File files[] = fileChooser.getSelectedFiles();
-                if(files.length != 0) {
+                if (files.length != 0) {
                     passed = true;
                 }
             }
@@ -129,10 +216,17 @@ public class TestFileChooserSingleDirectorySelection  {
         }
     }
 
-    private static void ClickMouse(Point point, int width, int height, int xOffset) {
-        robot.mouseMove(point.x + width/2 + xOffset , point.y + height/2);
+    private static void clickMouse(Point point, int width, int height,
+                                   int xOffset) {
+        robot.mouseMove(point.x + width/2 + xOffset , point.y + height/3);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(100);
+    }
+
+    private static void checkResult(UIManager.LookAndFeelInfo laf) {
+        if (!passed)
+            throw new RuntimeException("getSelectedFiles returned " +
+                    "empty array for LAF: "+laf.getClassName());
     }
 }
