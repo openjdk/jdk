@@ -1111,7 +1111,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
   docs-javase-api: docs-javase-api-graphs
   docs-reference-api: docs-reference-api-graphs
 
-  # We must generated javadoc first so we know what graphs are needed
+  # We must generate javadoc first so we know what graphs are needed
   docs-jdk-api-graphs: docs-jdk-api-javadoc
   docs-javase-api-graphs: docs-javase-api-javadoc
   docs-reference-api-graphs: docs-reference-api-javadoc
