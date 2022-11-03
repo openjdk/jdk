@@ -1,5 +1,5 @@
 # IR Test Framework
-This folder contains a test framework whose main purpose is to perform regex-based checks on the C2 IR shape of test methods emitted by the VM flags _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. The framework can also be used for other non-IR matching (and non-compiler) tests by providing easy to use annotations for commonly used testing patterns and compiler control flags.
+This folder contains a test framework whose main purpose is to perform regex-based checks on the C2 IR shape of test methods emitted by the VM flags `-XX:+PrintIdeal`, `-XX:CompileCommand=PrintIdealPhase` and/or `-XX:+PrintOptoAssembly`. The framework can also be used for other non-IR matching (and non-compiler) tests by providing easy to use annotations for commonly used testing patterns and compiler control flags.
 
 ## 1. How to Use the Framework
 The framework is intended to be used in JTreg tests. The JTreg header of the test must contain `@library /test/lib /` (2 paths) and should be run as a driver with `@run driver`. Annotate the test code with the supported framework annotations and call the framework from within the test's `main()` method. A simple example is shown below:
@@ -51,22 +51,61 @@ Neither the base nor the checked tests provide any control over how a `@Test` an
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
 ### 2.2 IR Verification
-The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. For simplicity, we will refer to the "IR" or "IR matching" when actually meaning the combined output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ for a C2 compilation.
+The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of `-XX:+PrintIdeal`, `-XX:+PrintOptoAssembly` and/or on specific compile phases emitted by the compile command `-XX:CompileCommand=PrintIdealPhase` which supports the same set of compile phases as the Ideal Graph Visualizer (IGV).
 
-The user has the possibility to add an additional `@IR` annotation to any `@Test` annotated method (regardless of the kind of test mentioned in section 2.1) to specify a constraint/rule on the compiled IR shape. The `@IR` annotation provides two kinds of regex checks:
+The user has the possibility to add one or more `@IR` annotations to any `@Test` annotated method (regardless of the kind of test mentioned in section 2.1) to specify regex constraints/rules on the compiled IR shape of any compile phase (for simplicity, the framework treats the output of `-XX:+PrintIdeal` and `-XX:+PrintOptoAssembly` as a separate compile phase next to the compile phases emitted by `-XX:CompileCommand=PrintIdealPhase`).
 
- - A `failOn` check that verifies that the provided regex is not matched in the C2 IR.
- - A `counts` check that verifies that the provided regex is matched a user defined number of times in the C2 IR.
+#### Pre-defined Regexes for IR Nodes
+To perform a matching on a C2 IR node, the user can directly use the `public static final` strings defined in class [IRNode](./IRNode.java) which mostly represent either a real IR node or group of IR nodes as found in the C2 compiler as node classes (there are rare exceptions). These strings represent special placeholder strings (referred to as "IR placeholder string" or just "IR node") which are replaced by the framework by regexes depending on which compile phases (defined with attribute `phase` in [@IR](./IR.java)) the IR rule should be applied on. If an IR node placeholder string cannot be used for a specific compile phase (e.g. the IR node does not exist in this phase), a format violation will be reported.
 
-A regex can either be a custom string or any of the default regexes provided by the framework in [IRNode](./IRNode.java) for some commonly used IR nodes (also provides the possibility of composite regexes).
+The exact mapping from an IR node placeholder string to regexes for different compile phases together with a default phase (see next section) is defined in a static block directly below the corresponding IR node placeholder string in [IRNode](./IRNode.java).
 
-An IR verification cannot always be performed. For example, a JTreg test could be run with _-Xint_ or not a debug build (_-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ are debug build flags). But also CI tier testing could add additional JTreg VM and Javaoptions flags which could make an IR rule unstable.
+#### Composite IR Nodes
+There are also special composite IR node placeholder strings which expect an additional user defined string which are then inserted in the final regex. For example, `IRNode.STORE_OF_FIELD` matches any store to the user defined field name. In the following `@IR` rule, we fail because we have a store to `iFld`:
 
-In general, the framework will only perform IR verification if the used VM flags allow a C2 compilation and if non-critical additional JTreg VM and Javaoptions are provided (see whiteflag list in [TestFramework](./TestFramework.java)). The user test code, however, can specify any flags which still allow an IR verification to be performed if a C2 compilation is done (expected flags by user defined `@IR` annotations).
+```
+@Test
+@IR(failOn = {IRNode.STORE_OF_FIELD, "iFld"})
+public void test() {
+    iFld = 34;
+}
+```
 
-An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation). If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction.
+#### User-defined Regexes
 
-More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java) and [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (an internal framework test).
+The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to [IRNode](./IRNode.java) for it instead together with a static regex mapping block.
+
+#### Default Compile Phase
+When not specifying any compile phase with `phase` in [@IR](./IR.java) (or explicitly setting `CompilePhase.DEFAULT`), the framework will perform IR matching on a default compile phase which for most IR nodes is `CompilePhase.PRINT_IDEAL` (output of flag `-XX:+PrintIdeal`, the state of the machine independent ideal graph after applying optimizations). The default phase for each IR node is defined in the static regex mapping block below each IR node placeholder string in [IRNode](./IRNode.java).
+
+#### Two Kinds of IR Checks
+The [@IR](./IR.java) annotation provides two kinds of checks:
+
+ - `failOn`: A list of one or more IR nodes/user-defined regexes which are not allowed to occur in any compilation output of any compile phase.
+ - `counts`: A list of one or more "IR node/user-defined regex - counter" pairs which specify how often each IR node/user-defined regex should be matched on the compilation output of each compile phase.
+
+#### Disable/Enable IR Rules based on VM Flags
+One might also want to restrict the application of certain `@IR` rules depending on the used flags in the test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITE_LIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
+
+- `applyIf`: Only apply a rule if a flag has the specified value/range of values.
+- `applyIfNot`: Only apply a rule if a flag has **not** a specified value/range of values
+               (inverse of `applyIf`).
+- `applyIfAnd`: Only apply a rule if **all** flags have the specified value/range of values.
+- `applyIfOr`:  Only apply a rule if **at least one** flag has the specified value/range of values.
+
+#### Disable/Enable IR Rules based on available CPU Features
+Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with
+the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+
+#### Implicitly Skipping IR Verification
+An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:
+
+- `-DVerifyIR=false` is used
+- The test is run with a non-debug build.
+- `-Xcomp`, `-Xint`, `-XX:-UseCompile`, `-XX:CompileThreshold`, `-DFlipC1C2=true`, or `-DExcludeRandom=true` are used.
+- JTreg specifies non-whitelisted flags as VM and/or Javaoptions (could change the IR in unexpected ways).
+
+More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java), [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (internal framework test), and [TestPhaseIRMatching](../../../testlibrary_tests/ir_framework/tests/TestPhaseIRMatching.java) (internal framework test).
 
 ### 2.3 Test VM Flags and Scenarios
 The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.

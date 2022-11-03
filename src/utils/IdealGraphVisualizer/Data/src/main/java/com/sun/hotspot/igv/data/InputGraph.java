@@ -38,29 +38,35 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final Map<String, InputBlock> blocks;
     private final List<InputBlockEdge> blockEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
-    private boolean isDiffGraph;
-    private InputGraph firstGraph;
-    private InputGraph secondGraph;
-
+    private final boolean isDiffGraph;
+    private final InputGraph firstGraph;
+    private final InputGraph secondGraph;
+    private final ChangedEvent<InputGraph> displayNameChangedEvent = new ChangedEvent<>(this);
 
     public InputGraph(InputGraph firstGraph, InputGraph secondGraph) {
-        this(firstGraph.getName() + " Δ " + secondGraph.getName());
+        this(firstGraph.getName() + " Δ " + secondGraph.getName(), firstGraph, secondGraph);
         assert !firstGraph.isDiffGraph() && !secondGraph.isDiffGraph();
-        this.firstGraph = firstGraph;
-        this.secondGraph = secondGraph;
-        isDiffGraph = true;
+
     }
 
     public InputGraph(String name) {
+        this(name, null, null);
+    }
+
+    private InputGraph(String name, InputGraph firstGraph, InputGraph secondGraph) {
         setName(name);
         nodes = new LinkedHashMap<>();
         edges = new ArrayList<>();
         blocks = new LinkedHashMap<>();
         blockEdges = new ArrayList<>();
         nodeToBlock = new LinkedHashMap<>();
-        firstGraph = null;
-        secondGraph = null;
-        isDiffGraph = false;
+        isDiffGraph = firstGraph != null && secondGraph != null;
+        this.firstGraph = firstGraph;
+        this.secondGraph = secondGraph;
+        if (isDiffGraph) {
+            this.firstGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+            this.secondGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
+        }
     }
 
     public boolean isDiffGraph() {
@@ -81,6 +87,9 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         if (parent instanceof Group) {
             assert this.parentGroup == null;
             this.parentGroup = (Group) parent;
+            assert displayNameChangedEvent != null;
+            assert this.parentGroup.getDisplayNameChangedEvent() != null;
+            this.parentGroup.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
         }
     }
 
@@ -220,13 +229,33 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return parentGroup.getPrev(this);
     }
 
-    private void setName(String name) {
-        this.getProperties().setProperty("name", name);
+    @Override
+    public ChangedEvent<InputGraph> getDisplayNameChangedEvent() {
+        return displayNameChangedEvent;
+    }
+
+    @Override
+    public void setName(String name) {
+        getProperties().setProperty("name", name);
+        displayNameChangedEvent.fire();
     }
 
     @Override
     public String getName() {
         return getProperties().get("name");
+    }
+
+    @Override
+    public String getDisplayName() {
+        if (isDiffGraph) {
+            return firstGraph.getDisplayName() + " Δ " + secondGraph.getDisplayName();
+        } else {
+            return getIndex()+1 + ". " + getName();
+        }
+    }
+
+    public int getIndex() {
+        return getGroup().getGraphs().indexOf(this);
     }
 
     public Collection<InputNode> getNodes() {
