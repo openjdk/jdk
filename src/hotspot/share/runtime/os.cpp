@@ -513,8 +513,6 @@ void os::initialize_jdk_signal_support(TRAPS) {
       Threads::add(signal_thread);
       Thread::start(signal_thread);
     }
-    // Handle ^BREAK
-    os::signal(SIGBREAK, os::user_handler());
   }
 }
 
