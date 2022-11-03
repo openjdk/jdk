@@ -268,4 +268,14 @@ public class Diagram {
 
         System.out.println("=============================================================");
     }
+
+    public Figure getRootFigure() {
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
+        Figure root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Root"));
+        if (root == null) {
+            root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Start"));
+        }
+        return root;
+    }
+
 }

@@ -66,7 +66,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showEmptyBlocks;
     private boolean hideDuplicates;
 
-    private final ChangedListener<FilterChain> filterChainChangedListener = source -> rebuildDiagram();
+    private final ChangedListener<FilterChain> filterChainChangedListener = source -> filterChanged();
 
     public Group getGroup() {
         return group;
@@ -201,7 +201,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setSelectedNodes(Set<Integer> nodes) {
-        this.selectedNodes = nodes;
+        selectedNodes = nodes;
         List<Color> colors = new ArrayList<>();
         for (String ignored : getPositions()) {
             colors.add(Color.black);
@@ -279,6 +279,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return filterChain;
     }
 
+    private void filterChanged() {
+        rebuildDiagram();
+        diagramChangedEvent.fire();
+    }
+
     private void rebuildDiagram() {
         // clear diagram
         InputGraph graph = getGraph();
@@ -301,8 +306,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             f.addRule(stateColorRule("deleted", Color.red));
             f.apply(diagram);
         }
-
-        diagramChangedEvent.fire();
     }
 
     public FilterChain getFilterChain() {
@@ -404,9 +407,20 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             cachedInputGraph = getFirstGraph();
         }
         rebuildDiagram();
+        if (selectedNodes.isEmpty()) {
+            selectRootNode();
+        }
+        diagramChangedEvent.fire();
         graphChangedEvent.fire();
         assert titleChangedListener != null;
         cachedInputGraph.getDisplayNameChangedEvent().addListener(titleChangedListener);
+    }
+
+    private void selectRootNode() {
+        Figure figure = diagram.getRootFigure();
+        if (figure != null) {
+            setSelectedNodes(Collections.singleton(figure.getInputNode().getId()));
+        }
     }
 
     void addTitleCallback(Consumer<InputGraph> titleCallback) {
