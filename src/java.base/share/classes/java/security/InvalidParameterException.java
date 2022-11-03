@@ -58,4 +58,25 @@ public class InvalidParameterException extends IllegalArgumentException {
     public InvalidParameterException(String msg) {
         super(msg);
     }
+
+    /**
+     * Constructs an {@code InvalidParameterException} with the
+     * specified detail message and cause.
+     *
+     * @param msg the detail message.
+     * @param cause the cause.
+     */
+    public InvalidParameterException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
+
+    /**
+     * Constructs an {@code InvalidParameterException} with the
+     * specified cause.
+     *
+     * @param cause the cause.
+     */
+    public InvalidParameterException(Throwable cause) {
+        super(cause);
+    }
 }
