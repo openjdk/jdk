@@ -24,7 +24,6 @@
  */
 package jdk.classfile.impl;
 
-import jdk.classfile.Opcode;
 import jdk.classfile.attribute.LocalVariableTypeInfo;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.instruction.LocalVariableType;

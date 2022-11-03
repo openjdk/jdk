@@ -655,7 +655,8 @@ public final class StackMapGenerator {
                 Frame newFrame = currentFrame.frameInExceptionHandler(flags);
                 var catchType = exhandler.catchType();
                 newFrame.pushStack(catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp) : Type.THROWABLE_TYPE);
-                checkJumpTarget(newFrame, labelContext.labelToBci(exhandler.handler()));
+                int handler = labelContext.labelToBci(exhandler.handler());
+                if (handler != -1) checkJumpTarget(newFrame, handler);
             }
         }
     }
@@ -872,7 +873,7 @@ public final class StackMapGenerator {
             err.addSuppressed(suppresed);
             throw err;
         }
-        throw new VerifyError(sb.toString());
+        throw new IllegalStateException(sb.toString());
     }
 
     /**
@@ -942,7 +943,8 @@ public final class StackMapGenerator {
         for (var exhandler : exceptionTable) try {
             offsets.set(labelContext.labelToBci(exhandler.handler()));
         } catch (IllegalArgumentException iae) {
-            generatorError("Detected exception handler out of bytecode range");
+            if (!(boolean)cp.optionValue(Option.Key.FILTER_DEAD_LABELS))
+                generatorError("Detected exception handler out of bytecode range");
         }
         return offsets;
     }

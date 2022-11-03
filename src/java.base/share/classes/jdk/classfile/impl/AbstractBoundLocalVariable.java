@@ -85,10 +85,13 @@ public class AbstractBoundLocalVariable
         return code.classReader.readU2(offset + 8);
     }
 
-    public void writeTo(BufWriter b) {
+    public boolean writeTo(BufWriter b) {
         var lc = ((BufWriterImpl)b).labelContext();
         int startBci = lc.labelToBci(startScope());
         int endBci = lc.labelToBci(endScope());
+        if (startBci == -1 || endBci == -1) {
+            return false;
+        }
         int length = endBci - startBci;
         b.writeU2(startBci);
         b.writeU2(length);
@@ -101,5 +104,6 @@ public class AbstractBoundLocalVariable
             b.writeIndex(secondaryEntry());
         }
         b.writeU2(slot());
+        return true;
     }
 }

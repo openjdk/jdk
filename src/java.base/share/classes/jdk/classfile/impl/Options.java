@@ -48,6 +48,7 @@ public class Options {
     public Boolean cpSharing = true;
     public Boolean fixJumps = true;
     public Boolean patchCode = true;
+    public Boolean filterDeadLabels = false;
     public ClassHierarchyResolver classHierarchyResolver = DEFAULT_CLASS_HIERARCHY_RESOLVER;
     public Function<Utf8Entry, AttributeMapper<?>> attributeMapper = new Function<>() {
         @Override
@@ -69,6 +70,7 @@ public class Options {
                 case PATCH_DEAD_CODE -> patchCode = (Boolean) v.value();
                 case HIERARCHY_RESOLVER -> classHierarchyResolver = (ClassHierarchyResolver) v.value();
                 case ATTRIBUTE_MAPPER -> attributeMapper = (Function<Utf8Entry, AttributeMapper<?>>) v.value();
+                case FILTER_DEAD_LABELS -> filterDeadLabels = (Boolean) v.value();
             }
     }
 
@@ -84,6 +86,7 @@ public class Options {
             case ATTRIBUTE_MAPPER -> (T) attributeMapper;
             case GENERATE_STACK_MAPS -> (T) generateStackmaps;
             case HIERARCHY_RESOLVER -> (T) classHierarchyResolver;
+            case FILTER_DEAD_LABELS -> (T) filterDeadLabels;
         };
     }
 }
