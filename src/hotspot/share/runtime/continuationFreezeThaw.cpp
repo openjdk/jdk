@@ -1572,6 +1572,13 @@ private:
   static inline void derelativize_interpreted_frame_metadata(const frame& hf, const frame& f);
   static inline void set_interpreter_frame_bottom(const frame& f, intptr_t* bottom);
 
+  enum {
+    // maximum number of frames thawed on the slow path including an extra frame
+    // that is thawed if it is compiled and the current bottom frame is interpreted
+    // (see ThawBase::recurse_thaw_java_frame())
+    max_num_frames_slow = 3
+  };
+
  public:
   CONT_JFR_ONLY(FreezeThawJfrInfo& jfr_info() { return _jfr_info; })
 
@@ -1579,8 +1586,7 @@ private:
     int padding_words = (frame::frame_alignment >> LogBytesPerWord) - 1;
     // interpreter frames need alignement of fp and sp on some platforms
     int max_padding_per_frame = 2 * padding_words;
-    int max_num_frames_slow = 3;
-    int size = chunk->stack_used() + max_num_frames_slow * max_padding_per_frame;
+    int size = chunk->stack_used() + ThawBase::max_num_frames_slow * max_padding_per_frame;
     size += frame::metadata_words; // For the top pc+fp in push_return_frame or top = stack_sp - frame::metadata_words in thaw_fast
     size += 2*frame::align_wiggle; // in case of alignments at the top and bottom
     return size;
@@ -1840,7 +1846,7 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
 #endif
 
   DEBUG_ONLY(_frames = 0;)
-  int num_frames = (return_barrier ? 1 : 2);
+  int num_frames = (return_barrier ? 1 : (ThawBase::max_num_frames_slow - 1));
 
   _stream = StackChunkFrameStream<ChunkFrames::Mixed>(chunk);
   _top_unextended_sp_before_thaw = _stream.unextended_sp();
@@ -2187,6 +2193,7 @@ void ThawBase::finish_thaw(frame& f) {
   assert(_cont.is_empty() == _cont.last_frame().is_empty(), "");
 
   log_develop_trace(continuations)("thawed %d frames", _frames);
+  assert(_frames <= ThawBase::max_num_frames_slow, "");
 
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
