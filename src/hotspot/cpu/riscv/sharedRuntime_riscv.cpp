@@ -1027,7 +1027,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // exception handling
   exception_offset = __ pc() - start;
   {
-    __ mv(x9, x10); // save return value contaning the exception oop in callee-saved R9
+    __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
 
     continuation_enter_cleanup(masm);
 
@@ -1053,11 +1053,9 @@ static void gen_continuation_yield(MacroAssembler* masm,
                                    const methodHandle& method,
                                    const BasicType* sig_bt,
                                    const VMRegPair* regs,
-                                   int& exception_offset,
                                    OopMapSet* oop_maps,
                                    int& frame_complete,
                                    int& stack_slots,
-                                   int& interpreted_entry_offset,
                                    int& compiled_entry_offset) {
   enum layout {
     fp_off,
@@ -1202,12 +1200,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
   if (method->is_continuation_native_intrinsic()) {
-    int vep_offset = 0;
-    int exception_offset = 0;
-    int frame_complete = 0;
-    int stack_slots = 0;
-    OopMapSet* oop_maps =  new OopMapSet();
+    int exception_offset = -1;
+    OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
     int interpreted_entry_offset = -1;
+    int vep_offset = -1;
     if (method->is_continuation_enter_intrinsic()) {
       gen_continuation_enter(masm,
                              method,
@@ -1224,15 +1222,26 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                              method,
                              in_sig_bt,
                              in_regs,
-                             exception_offset,
                              oop_maps,
                              frame_complete,
                              stack_slots,
-                             interpreted_entry_offset,
                              vep_offset);
     } else {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
 
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,

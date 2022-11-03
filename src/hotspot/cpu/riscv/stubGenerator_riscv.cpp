@@ -3876,7 +3876,7 @@ class StubGenerator: public StubCodeGenerator {
     if (return_barrier_exception) {
       __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
       __ verify_oop(x10);
-      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved R9
+      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
 
