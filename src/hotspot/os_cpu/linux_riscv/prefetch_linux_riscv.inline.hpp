@@ -30,18 +30,16 @@
 #include "runtime/stubRoutines.hpp"
 
 inline void Prefetch::read(const void *loc, intx interval) {
-    void (*stub)(const void*, intptr_t) =
-        (void (*)(const void*, intptr_t))StubRoutines::riscv::prefetch_r();
-    if (interval >= 0 && stub != NULL) {
-        stub(loc, interval);
+    if (interval >= 0 && UseZicbop) {
+        // encoding for prefetch.r
+        asm("ori zero, %0, 1" : : "r"(intptr_t(loc)+interval));
     }
 }
 
 inline void Prefetch::write(void *loc, intx interval) {
-    void (*stub)(const void*, intptr_t) =
-        (void (*)(const void*, intptr_t))StubRoutines::riscv::prefetch_w();
-    if (interval >= 0 && stub != NULL) {
-        stub(loc, interval);
+    if (interval >= 0 && UseZicbop) {
+        // encoding for prefetch.w
+        asm("ori zero, %0, 3" : : "r"(intptr_t(loc)+interval));
     }
 }
 

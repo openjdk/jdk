@@ -5193,8 +5193,12 @@ instruct prefetchalloc( memory mem ) %{
   format %{ "prefetch_w $mem\t# Prefetch for write" %}
 
   ins_encode %{
-    __ addi(t0, as_Register($mem$$base), $mem$$disp);
-    __ prefetch_w(t0, 0);
+    if ((($mem$$disp) & 0x1f) == 0) {
+      __ prefetch_w(as_Register($mem$$base), $mem$$disp);
+    } else {
+      __ addi(t0, as_Register($mem$$base), $mem$$disp);
+      __ prefetch_w(t0, 0);
+    }
   %}
 
   ins_pipe(iload_prefetch);
