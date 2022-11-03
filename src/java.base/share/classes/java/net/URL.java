@@ -902,9 +902,7 @@ public final class URL implements java.io.Serializable {
                     + protocol);
         }
 
-        @SuppressWarnings("deprecation")
-        var result = new URL((URL)null, uri.toString(), handler);
-        return result;
+        return new URL((URL)null, uri.toString(), handler);
     }
 
     /*
