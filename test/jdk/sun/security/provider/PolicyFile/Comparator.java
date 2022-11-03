@@ -24,13 +24,16 @@
 /*
  * @test
  * @bug 5037004
- * @summary Frivolous ClassCastExceptions thrown by CodeSource.implies
+ * @summary Frivolous ClassCastExceptions thrown by SubjectCodeSource.implies
  * @modules java.base/sun.security.provider
  * @run main/othervm Comparator
  *
  * Note:  if you want to see the java.security.debug output,
  *        you can not simply set the system property.
  *        you must run this test by hand and pass -Djava.security.debug=...
+ *
+ * Note: SubjectCodeSource removed, but PolicyFile might have the same problem. Keep the test as-is
+ *
  */
 
 import java.io.*;
