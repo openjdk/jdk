@@ -85,7 +85,10 @@ public class SelectWhenRefused {
                         try {
                             ByteBuffer buf = ByteBuffer.allocate(100);
                             SocketAddress sa = dc.receive(buf);
-                            String message = new String(buf.array());
+                            buf.flip();
+                            byte[] bytes = new byte[buf.remaining()];
+                            buf.get(bytes);
+                            String message = new String(bytes);
                             System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
                             //If any received data contains the message from sendDatagram then return true
                             if (message.contains(GREETINGS_MESSAGE)) {
@@ -94,9 +97,10 @@ public class SelectWhenRefused {
                             // BindException will be thrown if another service is using
                             // our expected refuser port, cannot run just exit.
                             DatagramChannel.open().bind(refuser).close();
+                            if (i < MAX_TRIES - 1) continue;
                             throw new RuntimeException("PortUnreachableException not raised");
                         } catch (PortUnreachableException pue) {
-                            // expected
+                            System.out.println("Got expected PortUnreachableException " + pue);
                         }
                     }
                     break;
@@ -144,18 +148,21 @@ public class SelectWhenRefused {
                 DatagramChannel datagramChannel = (DatagramChannel) key.channel();
                 ByteBuffer buf = ByteBuffer.allocate(100);
                 SocketAddress sa = datagramChannel.receive(buf);
-                String message = new String(buf.array());
+                buf.flip();
+                byte[] bytes = new byte[buf.remaining()];
+                buf.get(bytes);
+                String message = new String(bytes);
                 if (sa != null) {
                     System.out.format("received %s at %s from %s%n", message, datagramChannel.getLocalAddress(), sa);
                 }
-                //If any received data contains the message from sendDatagram then return true
+                //If any received data contains the message from sendDatagram then return false
                 if (message.contains(GREETINGS_MESSAGE)) {
-                    return true;
+                    return false;
                 }
             } catch (IOException io) {
                 System.out.println("Unable to read from datagram " + io);
             }
         }
-        return false;
+        return true;
     }
 }
