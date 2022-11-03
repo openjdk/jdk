@@ -92,7 +92,7 @@
  * Repeated injection of the same code block must be relabeled, so each instance of
  * {@link jdk.classfile.Label} is bound in the target bytecode exactly once.
  * <p>
- * Sample code trnasformation relabeling all labels in all methods:
+ * Sample transformation relabeling all methods:
  * <p>
  * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="codeRelabeling"}
  *
