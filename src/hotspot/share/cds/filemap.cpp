@@ -2070,7 +2070,7 @@ void FileMapInfo::map_or_load_heap_regions() {
     if (ArchiveHeapLoader::can_use()) {
       ArchiveHeapLoader::map_heap_regions(this);
     } else {
-      log_info(cds)("Cannot use CDS heap data."); 
+      log_info(cds)("Cannot use CDS heap data.");
     }
   }
 
