@@ -2750,52 +2750,37 @@ void TemplateTable::load_invokedynamic_entry(Register method,
   const Register cache = rcx;
   const Register index = rdx;
   assert_different_registers(method, appendix, cache, index);
-
-  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
-  // get_cache_index_at_bcp(index, bcp_offset, sizeof(u4)); // where is bcp_offset???
-  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
-  // Get address of invokedynamic array
-  const int array_offset = in_bytes(ConstantPoolCache::base_offset() +
-                                    ConstantPoolCache::invokedynamic_entries_offset());
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  const int method_offset = in_bytes(ResolvedInvokeDynamicInfo::method_offset());
-  // __ movptr(method, Address(cache, index, Address::times_ptr, method_offset));
-  __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo));
-  __ movptr(method, Address(cache, index, Address::times_ptr, array_offset + method_offset));
-  // Compare the method to zero
-  __ testl(method, method);
-
-  // Copy bit in resolve_cache_and_index()
-  /*const Register temp = rbx;
-  assert_different_registers(cache, index, temp);
-
-  Label L_clinit_barrier_slow;
   Label resolved;
 
-  Bytecodes::Code code = bytecode();
-  switch (code) {
-  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
-  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
-  default: break;
-  }
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  const int array_offset = in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCache::invokedynamic_entries_offset());
+  __ movptr(cache, Address(cache, array_offset));
+  __ movptr(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
+  __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  //const int method_offset = in_bytes(ResolvedInvokeDynamicInfo::method_offset());
 
-  __ get_cache_and_index_and_bytecode_at_bcp(cache, index, temp, byte_no, 1, sizeof(u4));
-  __ cmpl(temp, code);  // have we resolved this bytecode?
-  __ jcc(Assembler::equal, resolved);
+  __ movptr(method, Address(cache, index, Address::times_ptr, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
+  // Compare the method to zero
+  __ testptr(method, method);
+  __ jcc(Assembler::notZero, resolved);
 
-  // resolve first time through
-  // Class initialization barrier slow path lands here as well.
-  __ bind(L_clinit_barrier_slow);
+  // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ movl(temp, code);
-  __ call_VM(noreg, entry, temp);
-  // Update registers with resolved info
-  __ get_cache_and_index_at_bcp(cache, index, 1, sizeof(u4));
+  __ movl(method, bytecode()); // this is essentially Bytecodes::_invokedynamic
+  __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
+  __ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
 
-  __ bind(resolved);*/
+#ifdef ASSERT
+  __ testptr(method, method);
+  __ jcc(Assembler::notZero, resolved);
+  __ stop("Should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
 
   // Reload method
-  __ movptr(method, Address(cache, index, Address::times_ptr, array_offset + method_offset));
+  __ movptr(method, Address(cache, index, Address::times_ptr, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
 
   // load_invoke
 
