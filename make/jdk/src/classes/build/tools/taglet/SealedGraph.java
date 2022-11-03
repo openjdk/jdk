@@ -26,19 +26,20 @@
 package build.tools.taglet;
 
 import com.sun.source.doctree.DocTree;
-import java.nio.file.Path;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
-
-import java.io.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.System.lineSeparator;
+import static java.nio.file.StandardOpenOption.*;
 import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
