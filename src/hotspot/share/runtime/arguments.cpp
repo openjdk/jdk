@@ -2836,26 +2836,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
                     tail);
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
-#if defined(DTRACE_ENABLED)
-      warning("Option ExtendedDTraceProbes was deprecated in version 19 and will likely be removed in a future release.");
-      warning("Use the combination of -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.");
-      if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(DTraceMethodProbes, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(DTraceAllocProbes, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(DTraceMonitorProbes, true) != JVMFlag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-#else // defined(DTRACE_ENABLED)
-      jio_fprintf(defaultStream::error_stream(),
-                  "ExtendedDTraceProbes flag is not applicable for this configuration\n");
-      return JNI_EINVAL;
+#if !defined(DTRACE_ENABLED)
     } else if (match_option(option, "-XX:+DTraceMethodProbes")) {
       jio_fprintf(defaultStream::error_stream(),
                   "DTraceMethodProbes flag is not applicable for this configuration\n");
@@ -2868,7 +2849,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       jio_fprintf(defaultStream::error_stream(),
                   "DTraceMonitorProbes flag is not applicable for this configuration\n");
       return JNI_EINVAL;
-#endif // defined(DTRACE_ENABLED)
+#endif // !defined(DTRACE_ENABLED)
 #ifdef ASSERT
     } else if (match_option(option, "-XX:+FullGCALot")) {
       if (FLAG_SET_CMDLINE(FullGCALot, true) != JVMFlag::SUCCESS) {
