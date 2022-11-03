@@ -416,13 +416,19 @@ public class ECOperations {
 
     sealed interface PointMultiplier {
         Map<ECPoint, PointMultiplier> multipliers = Map.of(
-                Secp256R1GeneratorMultiplier.point,
+                Secp256R1GeneratorMultiplier.generator,
                 Secp256R1GeneratorMultiplier.multiplier);
 
         // Multiply the point by a scalar and return the result as a mutable
         // point.  The multiplier point is specified by the implementation of
         // this interface, which could be a general EC point or EC generator
         // point.
+        //
+        // Multiply the ECPoint (that is specified in the implementation) by
+        // a scalar and return the result as a ProjectivePoint.Mutable point.
+        // The point to be multiplied can be a general EC point or the
+        // generator of a named EC group.  The scalar multiplier is an integer
+        // in little endian byte array representation.
         ProjectivePoint.Mutable pointMultiply(byte[] scalar);
 
         static PointMultiplier of(ECOperations ecOps, AffinePoint affPoint) {
@@ -536,7 +542,7 @@ public class ECOperations {
         }
 
         final class Secp256R1GeneratorMultiplier implements PointMultiplier {
-            private static final ECPoint point =
+            private static final ECPoint generator =
                     CurveDB.lookup("secp256r1").getGenerator();
             private static final PointMultiplier multiplier =
                     new Secp256R1GeneratorMultiplier();
@@ -563,10 +569,10 @@ public class ECOperations {
                     secp256r1Ops.setDouble(d, t0, t1, t2, t3, t4);
                     for (int j = 3; j >= 0; j--) {
                         int pos = i + j * 16;
-                        int index = (posit(s, pos + 192) << 3) |
-                                    (posit(s, pos + 128) << 2) |
-                                    (posit(s, pos +  64) << 1) |
-                                     posit(s, pos);
+                        int index = (bit(s, pos + 192) << 3) |
+                                    (bit(s, pos + 128) << 2) |
+                                    (bit(s, pos +  64) << 1) |
+                                     bit(s, pos);
 
                         lookup(P256.points[j], index, r);
                         secp256r1Ops.setSum(d, r, t0, t1, t2, t3, t4);
@@ -576,17 +582,17 @@ public class ECOperations {
                 return d;
             }
 
-            private static int posit(byte[] k, int i) {
+            private static int bit(byte[] k, int i) {
                 return (k[i >> 3] >> (i & 0x07)) & 0x01;
             }
 
             // Lazy loading of the tables.
             private static final class P256 {
-                // Pre-computed tables to speed up the point multiplication.
+                // Pre-computed table to speed up the point multiplication.
                 //
-                // This is a 4 dimensions table, and each dimension contains
-                // 16 elements. For the 1st dimension, each element in it is
-                // a pre-computed generator point multiplication value.
+                // This is a 4x16 array of ProjectivePoint.Immutable elements.
+                // The first row contains the following multiples of the
+                // generator.
                 //
                 // index   |    point
                 // --------+----------------
@@ -607,9 +613,7 @@ public class ECOperations {
                 // 0x000E  | (2^192 + 2^128 + 2^64)G
                 // 0x000F  | (2^192 + 2^128 + 2^64 + 1)G
                 //
-                // For the following dimensions, each element is multiplied
-                // by 2^16 of the corresponding element value in the previous
-                // dimension.
+                // For the other 3 rows, points[i][j] = 2^16 * (points[i-1][j].
                 private static final ProjectivePoint.Immutable[][] points;
 
                 // Generate the pre-computed tables.  This block may be
@@ -649,7 +653,7 @@ public class ECOperations {
                             } else {
                                 PointMultiplier multiplier = new Default(
                                     secp256r1Ops, AffinePoint.fromECPoint(
-                                        point, zero.getField()));
+                                        generator, zero.getField()));
                                 byte[] s = bi.toByteArray();
                                 ArrayUtil.reverse(s);
                                 ProjectivePoint.Mutable m =
