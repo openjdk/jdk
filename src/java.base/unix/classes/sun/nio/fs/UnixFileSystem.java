@@ -119,7 +119,7 @@ abstract class UnixFileSystem
         return needToResolveAgainstDefaultDirectory;
     }
 
-    boolean isCaseInsensitiveAndRetentive() {
+    boolean isCaseInsensitiveAndPreserving() {
         return false;
     }
 

@@ -39,7 +39,7 @@ class MacOSXFileSystem extends BsdFileSystem {
         super(provider, dir);
     }
 
-    boolean isCaseInsensitiveAndRetentive() {
+    boolean isCaseInsensitiveAndPreserving() {
         return true;
     }
 

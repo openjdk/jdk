@@ -868,7 +868,7 @@ class UnixPath implements Path {
         }
 
         // Return if the file system is not both case insensitive and retentive
-        if (!fs.isCaseInsensitiveAndRetentive())
+        if (!fs.isCaseInsensitiveAndPreserving())
             return result;
 
         UnixPath path = fs.rootDirectory();
@@ -879,59 +879,52 @@ class UnixPath implements Path {
         // any '..' elements intact, and replacing other elements with the
         // entry in the same directory which has an equal key
         for (int i = 0; i < result.getNameCount(); i++ ) {
-            UnixPath elt = result.getName(i);
+            UnixPath element = result.getName(i);
 
             // If the element is "..", append it directly and continue
-            if (elt.toString().equals("..")) {
-                path = path.resolve(elt);
+            if (element.toString().equals("..")) {
+                path = path.resolve(element);
                 continue;
             }
 
             // Derive full path to element and check readability
-            UnixPath eltPath = path.resolve(elt);
-            if (sm != null)
-                sm.checkRead(eltPath.getPathForPermissionCheck());
+            UnixPath elementPath = path.resolve(element);
 
             // Derive element key
             UnixFileAttributes attrs = null;
             try {
-                attrs = UnixFileAttributes.get(eltPath, false);
+                attrs = UnixFileAttributes.get(elementPath, false);
             } catch (UnixException x) {
                 x.rethrowAsIOException(result);
             }
-            final UnixFileKey eltKey = attrs.fileKey();
-
-            // Check readbility of path thus far
-            if (sm != null)
-                sm.checkRead(path.getPathForPermissionCheck());
-
-            // Filter entries whose UnixFileKey equals 'eltKey'
-            DirectoryStream.Filter<Path> filter = (p) -> {
-                UnixFileAttributes attributes = null;
-                try {
-                    attributes = UnixFileAttributes.get(toUnixPath(p), false);
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(this);
-                }
-                UnixFileKey key = attributes.fileKey();
-                return key.equals(eltKey);
-            };
+            final UnixFileKey elementKey = attrs.fileKey();
 
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
+            DirectoryStream.Filter<Path> filter = (p) -> { return true; };
             try (DirectoryStream<Path> entries =
                 getFileSystem().provider().newDirectoryStream(path, filter)) {
                 boolean found = false;
                 for (Path entry : entries) {
-                    path = path.resolve(entry.getFileName());
-                    found = true;
-                    break;
+                    UnixPath p = path.resolve(entry.getFileName());
+                    UnixFileAttributes attributes = null;
+                    try {
+                        attributes = UnixFileAttributes.get(p, false);
+                        UnixFileKey key = attributes.fileKey();
+                        if (key.equals(elementKey)) {
+                            path = path.resolve(entry);
+                            found = true;
+                            break;
+                        }
+                    } catch (UnixException ignore) {
+                        continue;
+                    }
                 }
 
-                // Fallback which should never happen
+                // Fallback which should in theory never happen
                 if (!found) {
-                    path = path.resolve(elt);
+                    path = path.resolve(element);
                 }
             }
         }
