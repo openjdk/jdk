@@ -487,14 +487,8 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     // GC may not look for Oops, there.
     if (method->is_method_handle_intrinsic()) {
       assert(oop_maps == nullptr, "expectation");
-      assert(nm->oops_size() == 0, "must not contain oop constants");
-
-      if (relocInfo::mustIterateImmediateOopsInCode()) {
-        RelocIterator iter(nm, nm->oops_reloc_begin());
-        while (iter.next()) {
-          assert(iter.type() != relocInfo::oop_type, "must not contain oops in code");
-        }
-      }
+      assert(!nm->contains_oops(), "no oops allowed");
+      assert(nm->metadata_size() == 0, "metadata usage not expected");
     }
 #endif
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
@@ -1735,6 +1729,19 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
     if (*p == Universe::non_oop_word())  continue;  // skip non-oops
     f->do_oop(p);
   }
+}
+
+bool nmethod::contains_oops() {
+  if (oops_size() > 0) return true;
+
+  if (relocInfo::mustIterateImmediateOopsInCode()) {
+    RelocIterator iter(this, oops_reloc_begin());
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type) return true;
+    }
+  }
+
+  return false;
 }
 
 void nmethod::follow_nmethod(OopIterateClosure* cl) {
