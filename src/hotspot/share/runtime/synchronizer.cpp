@@ -978,13 +978,6 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
   }
 }
 
-// Deprecated -- use FastHashCode() instead.
-
-intptr_t ObjectSynchronizer::identity_hash_value_for(Handle obj) {
-  return FastHashCode(Thread::current(), obj());
-}
-
-
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {
   assert(current == JavaThread::current(), "Can only be called on current thread");
