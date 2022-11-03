@@ -111,6 +111,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     final Logger debugtimeout = Utils.getDebugLogger(this::dbgString, DEBUGTIMEOUT);
     static final AtomicLong CLIENT_IDS = new AtomicLong();
     private final AtomicLong CONNECTION_IDS = new AtomicLong();
+    static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 600;
+    static final long KEEP_ALIVE_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout", DEFAULT_KEEP_ALIVE_TIMEOUT);
+    // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
+    static final long IDLE_CONNECTION_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -1523,7 +1527,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     Optional<Duration> idleConnectionTimeout() {
-        return Optional.ofNullable(getIdleConnectionTimeoutProp());
+        return Optional.ofNullable(getIdleConnectionTimeout());
     }
 
     @Override
@@ -1690,16 +1694,22 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return sslBufferSupplier;
     }
 
-    private Duration getIdleConnectionTimeoutProp() {
-        String s = Utils.getNetProperty("jdk.httpclient.keepalive.timeout");
-        if (s != null) {
-            try {
-                long val = Long.parseLong(s);
-                if (val >= 0)
-                    return Duration.ofSeconds(Long.parseLong(s));
-            } catch (NumberFormatException ignored) {}
-        }
+    private Duration getIdleConnectionTimeout() {
+        if (IDLE_CONNECTION_TIMEOUT >= 0)
+            return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT);
         return null;
+    }
+
+    private static long getTimeoutProp(String prop, long def) {
+        String s = Utils.getNetProperty(prop);
+        try {
+            if (s != null) {
+                long timeoutVal = Long.parseLong(s);
+                System.err.println(timeoutVal);
+                if (timeoutVal >= 0) return timeoutVal;
+            }
+        } catch (NumberFormatException ignored) {}
+        return def;
     }
 
     // An implementation of BufferSupplier that manages a pool of

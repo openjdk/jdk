@@ -733,9 +733,7 @@ class Http2Connection  {
             closed = true;
         }
         if (Log.errors()) {
-            if (idleConnectionTimeoutEvent != null && idleConnectionTimeoutEvent.isFired()) {
-                Log.logError("idleConnectionTimeout timeout fired, shutting down connection: {0}", t.getMessage());
-            } else if (!(t instanceof EOFException) || isActive()) {
+            if (!(t instanceof EOFException) || isActive()) {
                 Log.logError(t);
             } else if (t != null) {
                 Log.logError("Shutting down connection: {0}", t.getMessage());

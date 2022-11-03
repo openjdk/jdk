@@ -45,14 +45,14 @@ import java.util.stream.Collectors;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
+import static jdk.internal.net.http.HttpClientImpl.KEEP_ALIVE_TIMEOUT;
 
 /**
  * Http 1.1 connection pool.
  */
 final class ConnectionPool {
 
-    static final long KEEP_ALIVE = Utils.getIntegerNetProperty(
-            "jdk.httpclient.keepalive.timeout", 600); // seconds
+    static final long KEEP_ALIVE = KEEP_ALIVE_TIMEOUT; // seconds
     static final long MAX_POOL_SIZE = Utils.getIntegerNetProperty(
             "jdk.httpclient.connectionPoolSize", 0); // unbounded
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);

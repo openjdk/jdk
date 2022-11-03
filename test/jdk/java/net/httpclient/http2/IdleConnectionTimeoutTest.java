@@ -32,9 +32,12 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm -Djdk.httpclient.keepalive.timeout=8 IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.keepalive.timeout=1 IdleConnectionTimeoutTest
- * @run testng/othervm  IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=2 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=1 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=abc IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=-1 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=1 -Djdk.httpclient.keepalive.timeout=2 IdleConnectionTimeoutTest
  */
 
 import org.testng.annotations.BeforeTest;
@@ -58,7 +61,8 @@ public class IdleConnectionTimeoutTest {
     Http2TestServer http2TestServer;
     URI timeoutUri;
     URI noTimeoutUri;
-    final String IDLE_CONN_PROPERTY = "jdk.httpclient.keepalive.timeout";
+    final String IDLE_CONN_PROPERTY = "jdk.httpclient.keepalive.timeout.h2";
+    final String KEEP_ALIVE_PROPERTY = "jdk.httpclient.keepalive.timeout";
     final String TIMEOUT_PATH = "/serverTimeoutHandler";
     final String NO_TIMEOUT_PATH = "/noServerTimeoutHandler";
     static final PrintStream testLog = System.err;
@@ -83,27 +87,41 @@ public class IdleConnectionTimeoutTest {
     @Test
     public void test() throws InterruptedException {
         String timeoutVal = System.getProperty(IDLE_CONN_PROPERTY);
-        testLog.println("Test run for jdk.httpclient.keepalive.timeout=" + timeoutVal);
+        String keepAliveVal = System.getProperty(KEEP_ALIVE_PROPERTY);
+        testLog.println("Test run for " + IDLE_CONN_PROPERTY + "=" + timeoutVal);
 
         int sleepTime = 0;
         HttpClient hc = HttpClient.newBuilder().version(HTTP_2).build();
         HttpRequest hreq;
         HttpResponse<String> hresp;
         if (timeoutVal != null) {
-            if (timeoutVal.equals("1")) {
+            if (keepAliveVal != null) {
+                // In this case, specified h2 timeout should override keep alive timeout.
+                // Timeout should occur
                 hreq = HttpRequest.newBuilder(timeoutUri).version(HTTP_2).GET().build();
-                sleepTime = 8000;
+                sleepTime = 2000;
                 hresp = runRequest(hc, hreq, sleepTime);
                 assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was expected but did not occur");
-            } else if (timeoutVal.equals("8")) {
+            } else if (timeoutVal.equals("1")) {
+                // Timeout should occur
+                hreq = HttpRequest.newBuilder(timeoutUri).version(HTTP_2).GET().build();
+                sleepTime = 2000;
+                hresp = runRequest(hc, hreq, sleepTime);
+                assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was expected but did not occur");
+            } else if (timeoutVal.equals("2")) {
+                // Timeout should not occur
                 hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
                 sleepTime = 1000;
                 hresp = runRequest(hc, hreq, sleepTime);
                 assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
+            } else if (timeoutVal.equals("abc") || timeoutVal.equals("-1")) {
+                // Timeout should not occur
+                hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
+                hresp = runRequest(hc, hreq, sleepTime);
+                assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
             }
         } else {
-            // When a poorly formatted property value is given or no value is specified
-            // then no timeout should occur
+            // When no value is specified then no timeout should occur (default keep alive value of 600 used)
             hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
             hresp = runRequest(hc, hreq, sleepTime);
             assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent should not occur, no value was specified for this property");
