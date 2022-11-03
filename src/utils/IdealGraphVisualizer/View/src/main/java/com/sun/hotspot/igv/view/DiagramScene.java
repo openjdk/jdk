@@ -1008,6 +1008,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             for (FigureWidget figureWidget : boundaries) {
                 figureWidget.setVisible(true);
             }
+        } else {
+            getModel().getSelectedNodes().removeAll(getModel().getHiddenNodes());
         }
     }
 

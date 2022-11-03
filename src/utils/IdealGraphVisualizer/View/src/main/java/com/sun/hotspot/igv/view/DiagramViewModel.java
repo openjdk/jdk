@@ -270,7 +270,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setHiddenNodes(Set<Integer> nodes) {
-        this.hiddenNodes = nodes;
+        hiddenNodes = nodes;
+        selectedNodes.removeAll(hiddenNodes);
         hiddenNodesChangedEvent.fire();
     }
 
