@@ -38,6 +38,19 @@ header extends java/lang/Object implements java/lang/Appendable,java/lang/CharSe
 innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/lang/Character$UnicodeBlock
+field name ARABIC_EXTENDED_C descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name DEVANAGARI_EXTENDED_A descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name KAWI descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name KAKTOVIK_NUMERALS descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name CYRILLIC_EXTENDED_D descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name NAG_MUNDARI descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+
+class name java/lang/Character$UnicodeScript
+field name KAWI descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name NAG_MUNDARI descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+
 class name java/lang/Class
 header extends java/lang/Object implements java/io/Serializable,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor$OfField,java/lang/constant/Constable flags 31 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/io/Serializable;Ljava/lang/reflect/GenericDeclaration;Ljava/lang/reflect/Type;Ljava/lang/reflect/AnnotatedElement;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/Class<*>;>;Ljava/lang/constant/Constable;
 innerclass innerClass java/lang/reflect/AccessFlag$Location outerClass java/lang/reflect/AccessFlag innerClassName Location flags 4019
@@ -470,6 +483,9 @@ header extends java/nio/ByteBuffer sealed true flags 421
 
 class name java/nio/ShortBuffer
 header extends java/nio/Buffer implements java/lang/Comparable sealed true flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/ShortBuffer;>;
+
+class name java/nio/file/Path
+method name getExtension descriptor ()Ljava/lang/String; flags 1
 
 class name java/nio/file/spi/FileSystemProvider
 method name exists descriptor (Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z flags 81
