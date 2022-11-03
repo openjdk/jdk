@@ -1063,7 +1063,7 @@ void G1CollectedHeap::abort_refinement() {
   }
 
   // Discard all remembered set updates and reset refinement statistics.
-  G1BarrierSet::dirty_card_queue_set().abandon_logs();
+  G1BarrierSet::dirty_card_queue_set().abandon_logs_and_stats();
   assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
          "DCQS should be empty");
   concurrent_refine()->get_and_reset_refinement_stats();
