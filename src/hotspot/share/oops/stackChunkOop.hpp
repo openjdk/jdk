@@ -76,6 +76,8 @@ public:
 
   inline int stack_size() const;
 
+  inline int stack_used() const;
+
   inline int sp() const;
   inline void set_sp(int value);
 
@@ -89,9 +91,6 @@ public:
   inline uint8_t flags_acquire() const;
   inline void set_flags(uint8_t value);
   inline void release_set_flags(uint8_t value);
-
-  inline int max_thawing_size() const;
-  inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
   template<typename P> inline oop cont() const;

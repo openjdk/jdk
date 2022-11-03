@@ -483,11 +483,10 @@ public:
   int _num_oops;
   int _num_frames;
   int _num_interpreted_frames;
-  int _num_i2c;
 
   VerifyStackChunkFrameClosure(stackChunkOop chunk, int num_frames, int size)
     : _chunk(chunk), _sp(nullptr), _cb(nullptr), _callee_interpreted(false),
-      _size(size), _argsize(0), _num_oops(0), _num_frames(num_frames), _num_interpreted_frames(0), _num_i2c(0) {}
+      _size(size), _argsize(0), _num_oops(0), _num_frames(num_frames), _num_interpreted_frames(0) {}
 
   template <ChunkFrames frame_kind, typename RegisterMapT>
   bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
@@ -517,11 +516,6 @@ public:
 
     if (_num_frames == 0) {
       assert(f.pc() == _chunk->pc(), "");
-    }
-
-    if (_num_frames > 0 && !_callee_interpreted && f.is_interpreted()) {
-      log_develop_trace(continuations)("debug_verify_stack_chunk i2c");
-      _num_i2c++;
     }
 
     StackChunkVerifyOopsClosure oops_closure(_chunk);
@@ -567,7 +561,6 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
 
   if (is_empty()) {
     assert(argsize() == 0, "");
-    assert(max_thawing_size() == 0, "");
   }
 
   assert(oopDesc::is_oop_or_null(parent()), "");
@@ -605,13 +598,6 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
     assert(argsize() == closure._argsize,
            "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
            argsize(), closure._argsize, closure._callee_interpreted);
-
-    int calculated_max_size = closure._size
-                              + closure._num_i2c * frame::align_wiggle
-                              + closure._num_interpreted_frames * frame::align_wiggle;
-    assert(max_thawing_size() == calculated_max_size,
-           "max_size(): %d calculated_max_size: %d argsize: %d num_i2c: %d",
-           max_thawing_size(), calculated_max_size, closure._argsize, closure._num_i2c);
 
     if (out_size   != nullptr) *out_size   += size;
     if (out_oops   != nullptr) *out_oops   += closure._num_oops;

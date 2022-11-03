@@ -57,6 +57,8 @@ inline void stackChunkOopDesc::set_parent_access(oop value)    { jdk_internal_vm
 
 inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm_StackChunk::size(as_oop()); }
 
+inline int stackChunkOopDesc::stack_used() const        { return stack_size() - sp(); }
+
 inline int stackChunkOopDesc::sp() const                { return jdk_internal_vm_StackChunk::sp(as_oop()); }
 inline void stackChunkOopDesc::set_sp(int value)        { jdk_internal_vm_StackChunk::set_sp(this, value); }
 
@@ -77,12 +79,6 @@ inline void stackChunkOopDesc::release_set_flags(uint8_t value) {
 
 inline bool stackChunkOopDesc::try_set_flags(uint8_t prev_flags, uint8_t new_flags) {
   return jdk_internal_vm_StackChunk::try_set_flags(this, prev_flags, new_flags);
-}
-
-inline int stackChunkOopDesc::max_thawing_size() const          { return jdk_internal_vm_StackChunk::maxThawingSize(as_oop()); }
-inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
-  assert(value >= 0, "size must be >= 0");
-  jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
 inline oop stackChunkOopDesc::cont() const              { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }

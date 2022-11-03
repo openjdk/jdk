@@ -353,7 +353,6 @@ protected:
   intptr_t* _bottom_address;
 
   int _freeze_size; // total size of all frames plus metadata in words.
-  int _total_align_size;
 
   intptr_t* _cont_stack_top;
   intptr_t* _cont_stack_bottom;
@@ -498,7 +497,6 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 
 void FreezeBase::init_rest() { // we want to postpone some initialization after chunk handling
   _freeze_size = 0;
-  _total_align_size = 0;
   NOT_PRODUCT(_frames = 0;)
 }
 
@@ -591,9 +589,6 @@ void FreezeBase::freeze_fast_existing_chunk() {
     const int chunk_start_sp = chunk->sp() + _cont.argsize(); // we overlap; we'll overwrite the chunk's top frame's callee arguments
     assert(chunk_start_sp <= chunk->stack_size(), "sp not pointing into stack");
 
-    // increase max_size by what we're freezing minus the overlap
-    chunk->set_max_thawing_size(chunk->max_thawing_size() + cont_size() - _cont.argsize());
-
     intptr_t* const bottom_sp = _cont_stack_bottom - _cont.argsize();
     assert(bottom_sp == _bottom_address, "");
     // Because the chunk isn't empty, we know there's a caller in the chunk, therefore the bottom-most frame
@@ -612,7 +607,6 @@ void FreezeBase::freeze_fast_existing_chunk() {
 
     assert(chunk_start_sp == chunk->stack_size(), "");
 
-    chunk->set_max_thawing_size(cont_size());
     chunk->set_argsize(_cont.argsize());
 
     freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
@@ -630,7 +624,6 @@ bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
     return false;
   }
 
-  chunk->set_max_thawing_size(cont_size());
   chunk->set_argsize(_cont.argsize());
 
   // in a fresh chunk, we freeze *with* the bottom-most frame's stack arguments.
@@ -876,8 +869,6 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
 
   stackChunkOop chunk = _cont.tail();
 
-  assert(chunk == nullptr || (chunk->max_thawing_size() == 0) == chunk->is_empty(), "");
-
   _freeze_size += frame::metadata_words; // for top frame's metadata
 
   int overlap = 0; // the args overlap the caller -- if there is one in this chunk and is of the same kind
@@ -948,7 +939,6 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
       chunk->set_sp(sp);
       chunk->set_argsize(argsize);
       _freeze_size += overlap;
-      assert(chunk->max_thawing_size() == 0, "");
     } DEBUG_ONLY(else empty_chunk = false;)
   }
   assert(!chunk->is_gc_mode(), "");
@@ -965,8 +955,6 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   // writing into the chunk. This is so that an asynchronous stack walk (not at a safepoint) that suspends us here
   // will either see no continuation or a consistent chunk.
   unwind_frames();
-
-  chunk->set_max_thawing_size(chunk->max_thawing_size() + _freeze_size - frame::metadata_words);
 
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
@@ -1073,7 +1061,6 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   DEBUG_ONLY(before_freeze_java_frame(f, caller, fsize, 0, is_bottom_frame);)
 
   frame hf = new_heap_frame<ContinuationHelper::InterpretedFrame>(f, caller);
-  _total_align_size += frame::align_wiggle; // add alignment room for internal interpreted frame alignment om AArch64
 
   intptr_t* heap_frame_top = ContinuationHelper::InterpretedFrame::frame_top(hf, callee_argsize, callee_interpreted);
   intptr_t* heap_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(hf);
@@ -1128,10 +1115,6 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
 
   copy_to_chunk(stack_frame_top, heap_frame_top, fsize);
   assert(!is_bottom_frame || !caller.is_compiled_frame() || (heap_frame_top + fsize) == (caller.unextended_sp() + argsize), "");
-
-  if (caller.is_interpreted_frame()) {
-    _total_align_size += frame::align_wiggle; // See Thaw::align
-  }
 
   patch(f, hf, caller, is_bottom_frame);
 
@@ -1201,8 +1184,6 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
 
   chunk->set_sp(chunk->to_offset(top.sp()));
   chunk->set_pc(top.pc());
-
-  chunk->set_max_thawing_size(chunk->max_thawing_size() + _total_align_size);
 
   // At this point the chunk is consistent
 
@@ -1283,7 +1264,6 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   assert(chunk->size() >= stack_size, "chunk->size(): %zu size: %zu", chunk->size(), stack_size);
   assert(chunk->sp() == chunk->stack_size(), "");
   assert((intptr_t)chunk->start_address() % 8 == 0, "");
-  assert(chunk->max_thawing_size() == 0, "");
   assert(chunk->pc() == nullptr, "");
   assert(chunk->argsize() == 0, "");
   assert(chunk->flags() == 0, "");
@@ -1529,7 +1509,11 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
 /////////////// THAW ////
 
 static int thaw_size(stackChunkOop chunk) {
-  int size = chunk->max_thawing_size();
+  int padding_words = (frame::frame_alignment >> LogBytesPerWord) - 1;
+  // interpreter frames need alignement of fp and sp on some platforms
+  int max_padding_per_frame = 2 * padding_words;
+  int max_num_frames_slow = 3;
+  int size = chunk->stack_used() + max_num_frames_slow * max_padding_per_frame;
   size += frame::metadata_words; // For the top pc+fp in push_return_frame or top = stack_sp - frame::metadata_words in thaw_fast
   size += 2*frame::align_wiggle; // in case of alignments at the top and bottom
   return size;
@@ -1562,7 +1546,6 @@ static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier)
 
   // Verification
   chunk->verify();
-  assert(chunk->max_thawing_size() > 0, "chunk invariant violated; expected to not be empty");
 
   // Only make space for the last chunk because we only thaw from the last chunk
   int size = thaw_size(chunk) << LogBytesPerWord;
@@ -1588,7 +1571,6 @@ protected:
   intptr_t* _fastpath;
   bool _barriers;
   intptr_t* _top_unextended_sp_before_thaw;
-  int _align_size;
   DEBUG_ONLY(intptr_t* _top_stack_address);
 
   StackChunkFrameStream<ChunkFrames::Mixed> _stream;
@@ -1707,7 +1689,6 @@ public:
 inline void ThawBase::clear_chunk(stackChunkOop chunk) {
   chunk->set_sp(chunk->stack_size());
   chunk->set_argsize(0);
-  chunk->set_max_thawing_size(0);
 }
 
  int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize) {
@@ -1728,7 +1709,6 @@ inline void ThawBase::clear_chunk(stackChunkOop chunk) {
     clear_chunk(chunk);
   } else {
     chunk->set_sp(chunk->sp() + frame_size);
-    chunk->set_max_thawing_size(chunk->max_thawing_size() - frame_size);
     // We set chunk->pc to the return pc into the next frame
     chunk->set_pc(f.pc());
     assert(f.pc() == *(address*)(chunk_sp + frame_size - frame::sender_sp_ret_address_offset()), "unexpected pc");
@@ -1859,7 +1839,6 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
 #endif
 
   DEBUG_ONLY(_frames = 0;)
-  _align_size = 0;
   int num_frames = (return_barrier ? 1 : 2);
 
   _stream = StackChunkFrameStream<ChunkFrames::Mixed>(chunk);
@@ -1952,9 +1931,6 @@ void ThawBase::finalize_thaw(frame& entry, int argsize) {
   }
   assert(_stream.is_done() == chunk->is_empty(), "");
 
-  int total_thawed = _stream.unextended_sp() - _top_unextended_sp_before_thaw;
-  chunk->set_max_thawing_size(chunk->max_thawing_size() - total_thawed);
-
   _cont.set_argsize(argsize);
   entry = new_entry_frame();
 
@@ -2026,8 +2002,6 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
 
   DEBUG_ONLY(before_thaw_java_frame(hf, caller, is_bottom_frame, num_frames);)
 
-  _align_size += frame::align_wiggle; // possible added alignment for internal interpreted frame alignment om AArch64
-
   frame f = new_stack_frame<ContinuationHelper::InterpretedFrame>(hf, caller, is_bottom_frame);
 
   intptr_t* const stack_frame_top = f.sp();
@@ -2085,10 +2059,6 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   DEBUG_ONLY(before_thaw_java_frame(hf, caller, is_bottom_frame, num_frames);)
 
   assert(caller.sp() == caller.unextended_sp(), "");
-
-  if ((!is_bottom_frame && caller.is_interpreted_frame()) || (is_bottom_frame && Interpreter::contains(_cont.tail()->pc()))) {
-    _align_size += frame::align_wiggle; // we add one whether or not we've aligned because we add it in freeze_interpreted_frame
-  }
 
   // new_stack_frame must construct the resulting frame using hf.pc() rather than hf.raw_pc() because the frame is not
   // yet laid out in the stack, and so the original_pc is not stored in it.
@@ -2203,12 +2173,8 @@ void ThawBase::finish_thaw(frame& f) {
     } else {
       chunk->set_has_mixed_frames(false);
     }
-    chunk->set_max_thawing_size(0);
     assert(chunk->argsize() == 0, "");
-  } else {
-    chunk->set_max_thawing_size(chunk->max_thawing_size() - _align_size);
   }
-  assert(chunk->is_empty() == (chunk->max_thawing_size() == 0), "");
 
   if ((intptr_t)f.sp() % frame::frame_alignment != 0) {
     assert(f.is_interpreted_frame(), "");

@@ -187,16 +187,4 @@ inline bool jdk_internal_vm_StackChunk::try_set_flags(oop chunk, uint8_t expecte
   return Atomic::cmpxchg(chunk->field_addr<uint8_t>(_flags_offset), expected_value, new_value) == expected_value;
 }
 
-inline int jdk_internal_vm_StackChunk::maxThawingSize(oop chunk) {
-  return chunk->int_field(_maxThawingSize_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value) {
-#ifdef ASSERT
-  jint old = maxThawingSize(chunk);
-  log_develop_trace(continuations)("%s max_size: %d -> %d", value >= old ? "add" : "sub", old, value);
-#endif
-  chunk->int_field_put(_maxThawingSize_offset, value);
-}
-
 #endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP
