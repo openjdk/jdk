@@ -1508,60 +1508,6 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
 
 /////////////// THAW ////
 
-static int thaw_size(stackChunkOop chunk) {
-  int padding_words = (frame::frame_alignment >> LogBytesPerWord) - 1;
-  // interpreter frames need alignement of fp and sp on some platforms
-  int max_padding_per_frame = 2 * padding_words;
-  int max_num_frames_slow = 3;
-  int size = chunk->stack_used() + max_num_frames_slow * max_padding_per_frame;
-  size += frame::metadata_words; // For the top pc+fp in push_return_frame or top = stack_sp - frame::metadata_words in thaw_fast
-  size += 2*frame::align_wiggle; // in case of alignments at the top and bottom
-  return size;
-}
-
-// make room on the stack for thaw
-// returns the size in bytes, or 0 on failure
-static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier) {
-  log_develop_trace(continuations)("~~~~ prepare_thaw return_barrier: %d", return_barrier);
-
-  assert(thread == JavaThread::current(), "");
-
-  ContinuationEntry* ce = thread->last_continuation();
-  assert(ce != nullptr, "");
-  oop continuation = ce->cont_oop();
-  assert(continuation == get_continuation(thread), "");
-  verify_continuation(continuation);
-
-  stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
-  assert(chunk != nullptr, "");
-
-  // The tail can be empty because it might still be available for another freeze.
-  // However, here we want to thaw, so we get rid of it (it will be GCed).
-  if (UNLIKELY(chunk->is_empty())) {
-    chunk = chunk->parent();
-    assert(chunk != nullptr, "");
-    assert(!chunk->is_empty(), "");
-    jdk_internal_vm_Continuation::set_tail(continuation, chunk);
-  }
-
-  // Verification
-  chunk->verify();
-
-  // Only make space for the last chunk because we only thaw from the last chunk
-  int size = thaw_size(chunk) << LogBytesPerWord;
-
-  const address bottom = (address)thread->last_continuation()->entry_sp();
-  // 300 is an estimate for stack size taken for this native code, in addition to StackShadowPages
-  // for the Java frames in the check below.
-  if (!stack_overflow_check(thread, size + 300, bottom)) {
-    return 0;
-  }
-
-  log_develop_trace(continuations)("prepare_thaw bottom: " INTPTR_FORMAT " top: " INTPTR_FORMAT " size: %d",
-                              p2i(bottom), p2i(bottom - size), size);
-  return size;
-}
-
 class ThawBase : public StackObj {
 protected:
   JavaThread* _thread;
@@ -1628,7 +1574,62 @@ private:
 
  public:
   CONT_JFR_ONLY(FreezeThawJfrInfo& jfr_info() { return _jfr_info; })
+
+  static int thaw_size(stackChunkOop chunk) {
+    int padding_words = (frame::frame_alignment >> LogBytesPerWord) - 1;
+    // interpreter frames need alignement of fp and sp on some platforms
+    int max_padding_per_frame = 2 * padding_words;
+    int max_num_frames_slow = 3;
+    int size = chunk->stack_used() + max_num_frames_slow * max_padding_per_frame;
+    size += frame::metadata_words; // For the top pc+fp in push_return_frame or top = stack_sp - frame::metadata_words in thaw_fast
+    size += 2*frame::align_wiggle; // in case of alignments at the top and bottom
+    return size;
+  }
 };
+
+// make room on the stack for thaw
+// returns the size in bytes, or 0 on failure
+static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier) {
+  log_develop_trace(continuations)("~~~~ prepare_thaw return_barrier: %d", return_barrier);
+
+  assert(thread == JavaThread::current(), "");
+
+  ContinuationEntry* ce = thread->last_continuation();
+  assert(ce != nullptr, "");
+  oop continuation = ce->cont_oop();
+  assert(continuation == get_continuation(thread), "");
+  verify_continuation(continuation);
+
+  stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
+  assert(chunk != nullptr, "");
+
+  // The tail can be empty because it might still be available for another freeze.
+  // However, here we want to thaw, so we get rid of it (it will be GCed).
+  if (UNLIKELY(chunk->is_empty())) {
+    chunk = chunk->parent();
+    assert(chunk != nullptr, "");
+    assert(!chunk->is_empty(), "");
+    jdk_internal_vm_Continuation::set_tail(continuation, chunk);
+  }
+
+  // Verification
+  chunk->verify();
+
+  // Only make space for the last chunk because we only thaw from the last chunk
+  int size = ThawBase::thaw_size(chunk) << LogBytesPerWord;
+
+  const address bottom = (address)thread->last_continuation()->entry_sp();
+  // 300 is an estimate for stack size taken for this native code, in addition to StackShadowPages
+  // for the Java frames in the check below.
+  if (!stack_overflow_check(thread, size + 300, bottom)) {
+    return 0;
+  }
+
+  log_develop_trace(continuations)("prepare_thaw bottom: " INTPTR_FORMAT " top: " INTPTR_FORMAT " size: %d",
+                              p2i(bottom), p2i(bottom - size), size);
+  return size;
+}
+
 
 template <typename ConfigT>
 class Thaw : public ThawBase {
