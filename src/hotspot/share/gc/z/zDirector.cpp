@@ -278,6 +278,28 @@ static bool is_young_small(ZDirectorStats& stats) {
   return young_used_percent <= 5.0;
 }
 
+template <typename PrintFn = void(*)(size_t, double)>
+static bool is_high_usage(ZDirectorStats& stats, PrintFn* print_function = nullptr) {
+  // Calculate amount of free memory available. Note that we take the
+  // relocation headroom into account to avoid in-place relocation.
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t used = stats._heap._used;
+  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
+  const double free_percent = percent_of(free, soft_max_capacity);
+
+  if (print_function != nullptr) {
+    (*print_function)(free, free_percent);
+  }
+
+  // The heap has high usage if there is less than 5% free memory left
+  return free_percent <= 5.0;
+}
+
+static bool is_major_urgent(ZDirectorStats& stats) {
+  return is_young_small(stats) && is_high_usage(stats);
+}
+
 static bool rule_minor_allocation_rate(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
@@ -311,24 +333,24 @@ static bool rule_minor_high_usage(ZDirectorStats& stats) {
     return false;
   }
 
-  // Perform GC if the amount of free memory is 5% or less. This is a preventive
+  // Perform GC if the amount of free memory is small. This is a preventive
   // measure in the case where the application has a very low allocation rate,
   // such that the allocation rate rule doesn't trigger, but the amount of free
   // memory is still slowly but surely heading towards zero. In this situation,
   // we start a GC cycle to avoid a potential allocation stall later.
 
-  // Calculate amount of free memory available. Note that we take the
-  // relocation headroom into account to avoid in-place relocation.
   const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
   const size_t used = stats._heap._used;
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const double free_percent = percent_of(free, soft_max_capacity);
 
-  log_debug(gc, director)("Rule Minor: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
-                          free / M, free_percent);
+  auto print_function = [&](size_t free, double free_percent) {
+    log_debug(gc, director)("Rule Minor: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
+                            free / M, free_percent);
+  };
 
-  return free_percent <= 5.0;
+  return is_high_usage(stats, &print_function);
 }
 
 // Major GC rules
@@ -464,6 +486,12 @@ static bool rule_major_allocation_rate(ZDirectorStats& stats) {
 }
 
 static uint calculate_old_workers(ZDirectorStats& stats) {
+  // Boost old GC if the amount of freeeable young memory is 5% or less.
+  // and the usage is high; now freeing old memory is "urgent".
+  if (is_major_urgent(stats)) {
+    return ConcGCThreads;
+  }
+
   // Calculate max serial/parallel times of an old collection. The times
   // are moving averages, we add ~3.3 sigma to account for the variance.
   const double old_serial_gc_time = stats._old_stats._cycle._avg_serial_time + (stats._old_stats._cycle._sd_serial_time * one_in_1000);
