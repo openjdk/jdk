@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import org.openide.ErrorManager;
 import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
@@ -102,14 +103,16 @@ final class ControlFlowTopComponent extends TopComponent implements ChangedListe
 
     @Override
     public void changed(InputGraphProvider lastProvider) {
-        if (lastProvider != null) {
-            InputGraph graph = lastProvider.getGraph();
-            if (graph != null) {
-                scene.setGraph(graph);
-                return;
+        SwingUtilities.invokeLater(() -> {
+            if (lastProvider != null) {
+                InputGraph graph = lastProvider.getGraph();
+                if (graph != null) {
+                    scene.setGraph(graph);
+                    return;
+                }
             }
-        }
-        scene.setGraph(new InputGraph(""));
+            scene.setGraph(new InputGraph(""));
+        });
     }
 
     @Override

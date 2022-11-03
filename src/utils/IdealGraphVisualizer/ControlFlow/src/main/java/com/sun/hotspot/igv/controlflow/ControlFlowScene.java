@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.BorderFactory;
+import javax.swing.SwingUtilities;
 import org.netbeans.api.visual.action.*;
 import org.netbeans.api.visual.anchor.AnchorFactory;
 import org.netbeans.api.visual.anchor.AnchorShape;
@@ -98,6 +99,9 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         for (InputBlockEdge e : edges) {
             removeEdge(e);
         }
+
+        edgeLayer.removeChildren();
+        mainLayer.removeChildren();
 
         for (InputBlock b : g.getBlocks()) {
             addNode(b);
