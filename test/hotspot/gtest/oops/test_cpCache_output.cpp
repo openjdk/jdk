@@ -49,7 +49,7 @@ TEST_VM(ConstantPoolCache, print_on) {
   ASSERT_TRUE(strstr(output, "cp index:") != NULL) << "must have constant pool index";
   ASSERT_TRUE(strstr(output, "F1:") != NULL) << "must have F1 value";
   ASSERT_TRUE(strstr(output, "F2:") != NULL) << "must have F2 value";
-  ASSERT_TRUE(strstr(output, "Method:") != NULL) << "must have a method";
+  ASSERT_TRUE(strstr(output, "method:") != NULL) << "must have a method";
   ASSERT_TRUE(strstr(output, "flag values:") != NULL) << "must have a flag";
   ASSERT_TRUE(strstr(output, "tos:") != NULL) << "must have result type";
   ASSERT_TRUE(strstr(output, "local signature:") != NULL) << "must have local signature flag";
