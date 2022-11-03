@@ -27,12 +27,12 @@ package java.lang;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.FormatConcatItem;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.FormatConcatItem;
 
 /**
  * Helper for string concatenation. These methods are mostly looked up with private lookups

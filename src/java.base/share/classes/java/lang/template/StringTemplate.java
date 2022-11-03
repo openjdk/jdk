@@ -222,7 +222,7 @@ public interface StringTemplate {
     }
 
     /**
-     * Tests for equality of two {@link StringTemplate}.
+     * Tests equality of two {@link StringTemplate}.
      *
      * @param a  first {@link StringTemplate}
      * @param b  second {@link StringTemplate}
@@ -341,9 +341,9 @@ public interface StringTemplate {
      * was intentional.
      * {@snippet :
      * // The string template before interpolation
-     * System.out.println(RAW."\{x} = \{y} = \{x + y}");
+     * System.out.println(RAW."\{x} = \{y} = \{x + y}"); // @highlight substring="RAW"
      * // The string template after interpolation
-     * System.out.println(STR."\{x} = \{y} = \{x + y}");
+     * System.out.println(STR."\{x} = \{y} = \{x + y}"); // @highlight substring="STR"
      * }
      */
     public static final TemplateProcessor<StringTemplate> RAW = st -> st;

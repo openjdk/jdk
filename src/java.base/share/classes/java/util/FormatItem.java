@@ -38,6 +38,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.Digits;
 import jdk.internal.util.Digits.*;
+import jdk.internal.util.FormatConcatItem;
 
 import static java.lang.invoke.MethodType.methodType;
 

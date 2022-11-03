@@ -23,20 +23,7 @@
  * questions.
  */
 
-package java.util;
-
-import java.util.FormatItem.FormatItemDecimal;
-import java.util.FormatItem.FormatItemHexadecimal;
-import java.util.FormatItem.FormatItemOctal;
-import java.util.FormatItem.FormatItemBoolean;
-import java.util.FormatItem.FormatItemCharacter;
-import java.util.FormatItem.FormatItemString;
-import java.util.FormatItem.FormatItemFormatSpecifier;
-import java.util.FormatItem.FormatItemModifier;
-import java.util.FormatItem.FormatItemFillLeft;
-import java.util.FormatItem.FormatItemFillRight;
-import java.util.FormatItem.FormatItemUpper;
-import java.util.FormatItem.FormatItemNull;
+package jdk.internal.util;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -48,20 +35,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-public sealed interface FormatConcatItem
-    permits FormatItemDecimal,
-            FormatItemHexadecimal,
-            FormatItemOctal,
-            FormatItemBoolean,
-            FormatItemCharacter,
-            FormatItemString,
-            FormatItemFormatSpecifier,
-            FormatItemModifier,
-            FormatItemFillLeft,
-            FormatItemFillRight,
-            FormatItemUpper,
-            FormatItemNull
-{
+public interface FormatConcatItem {
     /**
      * Calculate the length of the insertion.
      *

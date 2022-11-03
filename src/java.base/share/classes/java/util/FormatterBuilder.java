@@ -36,6 +36,7 @@ import java.util.FormatItem.*;
 import java.util.Formatter.*;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.FormatConcatItem;
 
 import sun.invoke.util.Wrapper;
 import sun.util.locale.provider.LocaleProviderAdapter;

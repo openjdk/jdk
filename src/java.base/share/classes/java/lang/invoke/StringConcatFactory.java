@@ -28,13 +28,13 @@ package java.lang.invoke;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.FormatConcatItem;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.template.StringTemplate;
 import java.util.ArrayList;
-import java.util.FormatConcatItem;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
