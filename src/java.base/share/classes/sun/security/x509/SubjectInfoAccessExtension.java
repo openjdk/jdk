@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 
-import java.util.Collections;
 import java.util.*;
 
 import sun.security.util.DerOutputStream;
@@ -143,6 +142,7 @@ public class SubjectInfoAccessExtension extends Extension
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -194,30 +194,7 @@ public class SubjectInfoAccessExtension extends Extension
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions =
-                Collections.emptyList();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DESCRIPTIONS);
-        return elements.elements();
-    }
 
      // Encode this extension value
     private void encodeThis() throws IOException {

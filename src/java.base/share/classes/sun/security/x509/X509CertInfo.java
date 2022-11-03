@@ -190,33 +190,6 @@ public class X509CertInfo implements CertAttrSet<String> {
     }
 
     /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(VERSION);
-        elements.addElement(SERIAL_NUMBER);
-        elements.addElement(ALGORITHM_ID);
-        elements.addElement(ISSUER);
-        elements.addElement(VALIDITY);
-        elements.addElement(SUBJECT);
-        elements.addElement(KEY);
-        elements.addElement(ISSUER_ID);
-        elements.addElement(SUBJECT_ID);
-        elements.addElement(EXTENSIONS);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
-    }
-
-    /**
      * Returns the encoded certificate info.
      *
      * @exception CertificateEncodingException on encoding information errors.
@@ -448,84 +421,6 @@ public class X509CertInfo implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the certificate attribute.
-     *
-     * @param name the name of the Certificate attribute.
-     * @exception CertificateException on invalid attributes.
-     * @exception IOException on other errors.
-     */
-    public void delete(String name)
-    throws CertificateException, IOException {
-        X509AttributeName attrName = new X509AttributeName(name);
-
-        int attr = attributeMap(attrName.getPrefix());
-        if (attr == 0) {
-            throw new CertificateException("Attribute name not recognized: "
-                                           + name);
-        }
-        // set rawCertInfo to null, so that we are forced to re-encode
-        rawCertInfo = null;
-        String suffix = attrName.getSuffix();
-
-        switch (attr) {
-        case ATTR_VERSION:
-            if (suffix == null) {
-                version = null;
-            } else {
-                version.delete(suffix);
-            }
-            break;
-        case (ATTR_SERIAL):
-            if (suffix == null) {
-                serialNum = null;
-            } else {
-                serialNum.delete(suffix);
-            }
-            break;
-        case (ATTR_ALGORITHM):
-            if (suffix == null) {
-                algId = null;
-            } else {
-                algId.delete(suffix);
-            }
-            break;
-        case (ATTR_ISSUER):
-            issuer = null;
-            break;
-        case (ATTR_VALIDITY):
-            if (suffix == null) {
-                interval = null;
-            } else {
-                interval.delete(suffix);
-            }
-            break;
-        case (ATTR_SUBJECT):
-            subject = null;
-            break;
-        case (ATTR_KEY):
-            if (suffix == null) {
-                pubKey = null;
-            } else {
-                pubKey.delete(suffix);
-            }
-            break;
-        case (ATTR_ISSUER_ID):
-            issuerUniqueId = null;
-            break;
-        case (ATTR_SUBJECT_ID):
-            subjectUniqueId = null;
-            break;
-        case (ATTR_EXTENSIONS):
-            if (suffix == null) {
-                extensions = null;
-            } else {
-                if (extensions != null)
-                   extensions.delete(suffix);
-            }
-            break;
-        }
-    }
 
     /**
      * Get the certificate attribute.

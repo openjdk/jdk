@@ -215,6 +215,15 @@ public class Extension implements java.security.cert.Extension {
         return extensionValue;
     }
 
+    /**
+     * Returns the extension name. The default implementation returns the
+     * string form of the extensionId. Known extensions should override this
+     * method to return a human readable name.
+     */
+    public String getName() {
+        return getId();
+    }
+
     public String getId() {
         return extensionId.toString();
     }
