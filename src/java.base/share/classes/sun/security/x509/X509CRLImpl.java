@@ -207,11 +207,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             X500Principal badCertIssuer = crlIssuer;
             for (int i = 0; i < badCerts.length; i++) {
                 X509CRLEntryImpl badCert = (X509CRLEntryImpl)badCerts[i];
-                try {
-                    badCertIssuer = getCertIssuer(badCert, badCertIssuer);
-                } catch (IOException ioe) {
-                    throw new CRLException(ioe);
-                }
+                badCertIssuer = getCertIssuer(badCert, badCertIssuer);
                 badCert.setCertificateIssuer(crlIssuer, badCertIssuer);
                 X509IssuerSerial issuerSerial = new X509IssuerSerial
                     (badCertIssuer, badCert.getSerialNumber());
@@ -838,9 +834,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      *
      * @return AuthorityKeyIdentifier or null
      *         (if no AuthorityKeyIdentifierExtension)
-     * @throws IOException on error
      */
-    public KeyIdentifier getAuthKeyId() throws IOException {
+    public KeyIdentifier getAuthKeyId() {
         AuthorityKeyIdentifierExtension aki = getAuthKeyIdExtension();
         if (aki != null) {
             return aki.getKeyIdentifier();
@@ -853,32 +848,28 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * return the AuthorityKeyIdentifierExtension, if any.
      *
      * @return AuthorityKeyIdentifierExtension or null (if no such extension)
-     * @throws IOException on error
      */
-    public AuthorityKeyIdentifierExtension getAuthKeyIdExtension()
-        throws IOException {
-        Object obj = getExtension(PKIXExtensions.AuthorityKey_Id);
-        return (AuthorityKeyIdentifierExtension)obj;
+    public AuthorityKeyIdentifierExtension getAuthKeyIdExtension() {
+        return (AuthorityKeyIdentifierExtension)
+                getExtension(PKIXExtensions.AuthorityKey_Id);
     }
 
     /**
      * return the CRLNumberExtension, if any.
      *
      * @return CRLNumberExtension or null (if no such extension)
-     * @throws IOException on error
      */
-    public CRLNumberExtension getCRLNumberExtension() throws IOException {
-        Object obj = getExtension(PKIXExtensions.CRLNumber_Id);
-        return (CRLNumberExtension)obj;
+    public CRLNumberExtension getCRLNumberExtension() {
+        return (CRLNumberExtension)
+                getExtension(PKIXExtensions.CRLNumber_Id);
     }
 
     /**
      * return the CRL number from the CRLNumberExtension, if any.
      *
      * @return number or null (if no such extension)
-     * @throws IOException on error
      */
-    public BigInteger getCRLNumber() throws IOException {
+    public BigInteger getCRLNumber() {
         CRLNumberExtension numExt = getCRLNumberExtension();
         if (numExt != null) {
             return numExt.getCrlNumber();
@@ -891,22 +882,18 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * return the DeltaCRLIndicatorExtension, if any.
      *
      * @return DeltaCRLIndicatorExtension or null (if no such extension)
-     * @throws IOException on error
      */
-    public DeltaCRLIndicatorExtension getDeltaCRLIndicatorExtension()
-        throws IOException {
-
-        Object obj = getExtension(PKIXExtensions.DeltaCRLIndicator_Id);
-        return (DeltaCRLIndicatorExtension)obj;
+    public DeltaCRLIndicatorExtension getDeltaCRLIndicatorExtension() {
+        return (DeltaCRLIndicatorExtension)
+                getExtension(PKIXExtensions.DeltaCRLIndicator_Id);
     }
 
     /**
      * return the base CRL number from the DeltaCRLIndicatorExtension, if any.
      *
      * @return number or null (if no such extension)
-     * @throws IOException on error
      */
-    public BigInteger getBaseCRLNumber() throws IOException {
+    public BigInteger getBaseCRLNumber() {
         DeltaCRLIndicatorExtension dciExt = getDeltaCRLIndicatorExtension();
         if (dciExt != null) {
             return dciExt.getCrlNumber();
@@ -919,12 +906,10 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * return the IssuerAlternativeNameExtension, if any.
      *
      * @return IssuerAlternativeNameExtension or null (if no such extension)
-     * @throws IOException on error
      */
-    public IssuerAlternativeNameExtension getIssuerAltNameExtension()
-        throws IOException {
-        Object obj = getExtension(PKIXExtensions.IssuerAlternativeName_Id);
-        return (IssuerAlternativeNameExtension)obj;
+    public IssuerAlternativeNameExtension getIssuerAltNameExtension() {
+        return (IssuerAlternativeNameExtension)
+                getExtension(PKIXExtensions.IssuerAlternativeName_Id);
     }
 
     /**
@@ -932,13 +917,11 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      *
      * @return IssuingDistributionPointExtension or null
      *         (if no such extension)
-     * @throws IOException on error
      */
     public IssuingDistributionPointExtension
-        getIssuingDistributionPointExtension() throws IOException {
-
-        Object obj = getExtension(PKIXExtensions.IssuingDistributionPoint_Id);
-        return (IssuingDistributionPointExtension) obj;
+            getIssuingDistributionPointExtension() {
+        return (IssuingDistributionPointExtension)
+                getExtension(PKIXExtensions.IssuingDistributionPoint_Id);
     }
 
     /**
@@ -1242,7 +1225,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      *   prevCertIssuer if it does not exist
      */
     private X500Principal getCertIssuer(X509CRLEntryImpl entry,
-        X500Principal prevCertIssuer) throws IOException {
+        X500Principal prevCertIssuer) {
 
         CertificateIssuerExtension ciExt =
             entry.getCertificateIssuerExtension();

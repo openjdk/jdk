@@ -272,9 +272,8 @@ public class X509CRLEntryImpl extends X509CRLEntry
      * get Reason Code from CRL entry.
      *
      * @return Integer or null, if no such extension
-     * @throws IOException on error
      */
-    public Integer getReasonCode() throws IOException {
+    public Integer getReasonCode() {
         Object obj = getExtension(PKIXExtensions.ReasonCode_Id);
         if (obj == null)
             return null;
