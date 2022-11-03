@@ -291,7 +291,7 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  inline bool has_no_hash();
+  inline bool fast_no_hash_check();
   inline intptr_t identity_hash();
   intptr_t slow_identity_hash();
 

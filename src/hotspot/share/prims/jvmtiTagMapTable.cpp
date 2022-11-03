@@ -113,7 +113,7 @@ JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) 
 }
 
 JvmtiTagMapEntry* JvmtiTagMapTable::find(oop obj) {
-  if (obj->has_no_hash()) {
+  if (obj->fast_no_hash_check()) {
     // Objects in the table all have a hashcode.
     return NULL;
   }
