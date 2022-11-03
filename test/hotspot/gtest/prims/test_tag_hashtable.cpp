@@ -21,12 +21,13 @@
  * questions.
  *
  */
-#include "jvm.h"
+#include "precompiled.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "jvm.h"
 #include "jvmti.h"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "precompiled.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/javaThread.hpp"
