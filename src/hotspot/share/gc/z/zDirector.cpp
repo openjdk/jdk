@@ -265,6 +265,19 @@ static bool rule_minor_allocation_rate_static(ZDirectorStats& stats) {
   return time_until_gc <= 0;
 }
 
+static bool is_young_small(ZDirectorStats& stats) {
+  // Calculate amount of freeable memory available.
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t young_used = stats._young_stats._general._used;
+
+  const double young_used_percent = percent_of(young_used, soft_max_capacity);
+
+  // If the freeable memory isn't even 5% of the heap, we can't expect to free up
+  // all that much memory, so let's not even try - it will likely be a wasted effort
+  // that takes away CPU power to the hopefullt more profitable major colelction.
+  return young_used_percent <= 5.0;
+}
+
 static bool rule_minor_allocation_rate(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
@@ -273,6 +286,10 @@ static bool rule_minor_allocation_rate(ZDirectorStats& stats) {
 
   if (ZHeap::heap()->is_alloc_stalling_for_old()) {
     // Don't collect young if we have threads stalled waiting for an old collection
+    return false;
+  }
+
+  if (is_young_small(stats)) {
     return false;
   }
 
@@ -287,6 +304,10 @@ static bool rule_minor_allocation_rate(ZDirectorStats& stats) {
 static bool rule_minor_high_usage(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
+    return false;
+  }
+
+  if (is_young_small(stats)) {
     return false;
   }
 
