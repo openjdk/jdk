@@ -39,9 +39,9 @@ tier1_part2 = \
 
 tier1_part3 = \
     :jdk_math \
-    :jdk_vector_sanity \
     :jdk_svc_sanity \
     :jdk_foreign \
+    :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     sun/nio/cs/ISO8859x.java
