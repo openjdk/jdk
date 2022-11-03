@@ -38,9 +38,7 @@ import com.sun.hotspot.igv.view.actions.CustomizablePanAction;
 import com.sun.hotspot.igv.view.actions.MouseZoomAction;
 import com.sun.hotspot.igv.view.widgets.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelListener;
+import java.awt.event.*;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
@@ -51,7 +49,6 @@ import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import org.netbeans.api.visual.action.*;
-import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.model.*;
 import org.netbeans.api.visual.widget.LayerWidget;
@@ -84,6 +81,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final LayerWidget connectionLayer;
     private final DiagramViewModel model;
     private ModelState modelState;
+
+    private boolean initialized;
     private boolean rebuilding;
 
     /**
@@ -261,6 +260,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     public DiagramScene(Action[] actions, Action[] actionsWithSelection, DiagramViewModel model) {
+        initialized = false;
+
         this.actions = actions;
         this.actionsWithSelection = actionsWithSelection;
 
@@ -466,10 +467,23 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         addObjectSceneListener(selectionChangedListener, ObjectSceneEventType.OBJECT_SELECTION_CHANGED, ObjectSceneEventType.OBJECT_HIGHLIGHTING_CHANGED, ObjectSceneEventType.OBJECT_HOVER_CHANGED);
 
         this.model = model;
-        this.modelState = new ModelState(model);
-        this.model.getDiagramChangedEvent().addListener(m -> update());
-        this.model.getGraphChangedEvent().addListener(m -> addUndo());
-        this.model.getHiddenNodesChangedEvent().addListener(m -> hiddenNodesChanged());
+        modelState = new ModelState(model);
+
+        model.getDiagramChangedEvent().addListener(m -> update());
+        model.getGraphChangedEvent().addListener(m -> addUndo());
+        model.getHiddenNodesChangedEvent().addListener(m -> hiddenNodesChanged());
+        scrollPane.addHierarchyBoundsListener(new HierarchyBoundsListener() {
+            @Override
+            public void ancestorMoved(HierarchyEvent e) {}
+
+            @Override
+            public void ancestorResized(HierarchyEvent e) {
+                if (scrollPane.getBounds().width > 0) {
+                    centerFigures(model.getSelectedFigures(), false);
+                    scrollPane.removeHierarchyBoundsListener(this);
+                }
+            }
+        });
         update();
     }
 
@@ -595,17 +609,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    private void updateSelectedFigures() {
-        Set<Figure> selectedFigures = new HashSet<>();
-        for (Figure figure : getModel().getDiagram().getFigures()) {
-            if (getModel().getSelectedNodes().contains(figure.getInputNode().getId())) {
-                selectedFigures.add(figure);
-            }
-        }
-        setFigureSelection(selectedFigures);
-        centerFigures(selectedFigures, false);
-    }
-
     private void update() {
         rebuilding = true;
         clearObjects();
@@ -613,7 +616,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildMainLayer();
         rebuildBlockLayer();
         relayout();
-        updateSelectedFigures();
+        setFigureSelection(model.getSelectedFigures());
+        centerFigures(model.getSelectedFigures(), false);
         rebuilding = false;
     }
 
@@ -835,16 +839,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
-        Set<Integer> ids = new HashSet<>(model.getSelectedNodes());
-        for (InputNode n : nodes) {
-            ids.add(n.getId());
-        }
-        Set<Figure> selectedFigures = new HashSet<>();
-        for (Figure f : model.getDiagram().getFigures()) {
-            if (ids.contains(f.getInputNode().getId())) {
-                selectedFigures.add(f);
-            }
-        }
+        Set<Figure> selectedFigures = model.getSelectedFigures();
         setFigureSelection(selectedFigures);
         if (centerSelection) {
             centerFigures(selectedFigures, true);
@@ -1125,6 +1120,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateBlockWidgetBounds(oldVisibleBlockWidgets);
 
         validateAll();
+        if (model.getSelectedFigures().size() == 1) {
+            centerFigures(model.getSelectedFigures(), false);
+        }
         rebuilding = false;
     }
 
