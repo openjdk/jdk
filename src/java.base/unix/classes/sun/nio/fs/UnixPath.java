@@ -25,17 +25,25 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.charset.*;
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.nio.charset.CharacterCodingException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.ProviderMismatchException;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
-import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Linux/Mac implementation of java.nio.file.Path
@@ -811,7 +819,6 @@ class UnixPath implements Path {
     }
 
     @Override
-    @SuppressWarnings("removal")
     public Path toRealPath(LinkOption... options) throws IOException {
         checkRead();
 
@@ -873,8 +880,6 @@ class UnixPath implements Path {
 
         UnixPath path = fs.rootDirectory();
 
-        SecurityManager sm = System.getSecurityManager();
-
         // Traverse the result obtained above from the root downward, leaving
         // any '..' elements intact, and replacing other elements with the
         // entry in the same directory which has an equal key
@@ -890,7 +895,7 @@ class UnixPath implements Path {
             // Derive full path to element and check readability
             UnixPath elementPath = path.resolve(element);
 
-            // Derive element key
+            // Obtain the file key of elementPath
             UnixFileAttributes attrs = null;
             try {
                 attrs = UnixFileAttributes.get(elementPath, false);
@@ -902,9 +907,10 @@ class UnixPath implements Path {
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
+            FileSystemProvider fsProvider = getFileSystem().provider();
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
             try (DirectoryStream<Path> entries =
-                getFileSystem().provider().newDirectoryStream(path, filter)) {
+                    fsProvider.newDirectoryStream(path, filter)) {
                 boolean found = false;
                 for (Path entry : entries) {
                     UnixPath p = path.resolve(entry.getFileName());
