@@ -353,6 +353,16 @@ static bool rule_major_warmup(ZDirectorStats& stats) {
   return used >= used_threshold;
 }
 
+static double gc_time(ZDirectorGenerationStats generation_stats) {
+  // Calculate max serial/parallel times of a generation GC cycle. The times are
+  // moving averages, we add ~3.3 sigma to account for the variance.
+  const double serial_gc_time = generation_stats._cycle._avg_serial_time + (generation_stats._cycle._sd_serial_time * one_in_1000);
+  const double parallelizable_gc_time = generation_stats._cycle._avg_parallelizable_time + (generation_stats._cycle._sd_parallelizable_time * one_in_1000);
+
+  // Calculate young GC time and duration given number of GC workers needed.
+  return serial_gc_time + parallelizable_gc_time;
+}
+
 static double calculate_extra_young_gc_time(ZDirectorStats& stats) {
   if (!stats._old_stats._cycle._is_time_trustable) {
     return 0.0;
@@ -364,13 +374,7 @@ static double calculate_extra_young_gc_time(ZDirectorStats& stats) {
   const size_t old_live = stats._old_stats._stat_heap._live_at_mark_end;
   const size_t old_garbage = old_used - old_live;
 
-  // Calculate max serial/parallel times of a young GC cycle. The times are
-  // moving averages, we add ~3.3 sigma to account for the variance.
-  const double young_serial_gc_time = stats._young_stats._cycle._avg_serial_time + (stats._young_stats._cycle._sd_serial_time * one_in_1000);
-  const double young_parallelizable_gc_time = stats._young_stats._cycle._avg_parallelizable_time + (stats._young_stats._cycle._sd_parallelizable_time * one_in_1000);
-
-  // Calculate young GC time and duration given number of GC workers needed.
-  const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
+  const double young_gc_time = gc_time(stats._young_stats);
 
   // Calculate how much memory young collections are predicted to free.
   const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
@@ -393,13 +397,17 @@ static bool rule_major_allocation_rate(ZDirectorStats& stats) {
     return false;
   }
 
-  // Calculate max serial/parallel times of an old GC cycle. The times are
-  // moving averages, we add ~3.3 sigma to account for the variance.
-  const double old_serial_gc_time = stats._old_stats._cycle._avg_serial_time + (stats._old_stats._cycle._sd_serial_time * one_in_1000);
-  const double old_parallelizable_gc_time = stats._old_stats._cycle._avg_parallelizable_time + (stats._old_stats._cycle._sd_parallelizable_time * one_in_1000);
+  // Calculate GC time.
+  const double old_gc_time = gc_time(stats._old_stats);
+  const double young_gc_time = gc_time(stats._young_stats);
 
-  // Calculate old GC time.
-  const double old_gc_time = old_serial_gc_time + old_parallelizable_gc_time;
+  // Calculate how much memory collections are predicted to free.
+  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
+
+  // Calculate the GC cost for each reclaimed byte
+  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
+  const double current_old_gc_time_per_bytes_freed = double(old_gc_time) / double(reclaimed_per_old_gc);
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -425,7 +433,13 @@ static bool rule_major_allocation_rate(ZDirectorStats& stats) {
   // In other words, the cost for minor collections of not doing a major collection
   // will seemingly be greater than the cost of doing a major collection and getting
   // cheaper minor collections for a time to come.
-  return extra_young_gc_time_for_lookahead > old_gc_time;
+  bool can_amortize_time_cost = extra_young_gc_time_for_lookahead > old_gc_time;
+
+  // If the garbage is cheaper to reap in the old generation, then it makes sense
+  // to upgrade minor collections to major collections.
+  bool old_garbage_is_cheaper = current_old_gc_time_per_bytes_freed < current_young_gc_time_per_bytes_freed;
+
+  return can_amortize_time_cost || old_garbage_is_cheaper;
 }
 
 static uint calculate_old_workers(ZDirectorStats& stats) {
