@@ -85,7 +85,7 @@ handleClassUnload(JNIEnv *env, EventInfo *evinfo,
   /*
    * CLASS_UNLOAD events are synthesized by the class tracking code, so
    * we should never have this handler called.
-   */ 
+   */
     JDI_ASSERT_MSG(JNI_FALSE, "Should never call handleClassUnload");
 }
 
