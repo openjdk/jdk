@@ -76,8 +76,8 @@ tier3 = \
     :jdk_vector \
     :jdk_rmi \
     :jdk_svc \
-   -:jdk_vector_sanity \
    -:jdk_svc_sanity \
+   -:jdk_vector_sanity \
    -:svc_tools
 
 # Everything not in other tiers
