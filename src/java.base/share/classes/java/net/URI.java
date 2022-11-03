@@ -1133,7 +1133,7 @@ public final class URI
      *          or if some other error occurred while constructing the URL
      */
     public URL toURL() throws MalformedURLException {
-        return URL.fromURI(this);
+        return URL.of(this, null);
     }
 
     // -- Component access methods --

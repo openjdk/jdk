@@ -37,6 +37,7 @@ import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
 import java.awt.Color;
 import java.util.*;
+import java.util.function.Consumer;
 import org.openide.util.Lookup;
 
 /**
@@ -45,7 +46,6 @@ import org.openide.util.Lookup;
  */
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
-    // Warning: Update setData method if fields are added
     private final Group group;
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
@@ -58,6 +58,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private final ChangedEvent<DiagramViewModel> graphChangedEvent;
     private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent;
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
+    private ChangedListener<InputGraph> titleChangedListener = g -> {};
     private boolean showSea;
     private boolean showBlocks;
     private boolean showCFG;
@@ -390,6 +391,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     @Override
     public void changed(RangeSliderModel source) {
+        if (cachedInputGraph != null) {
+            cachedInputGraph.getDisplayNameChangedEvent().removeListener(titleChangedListener);
+        }
         if (getFirstGraph() != getSecondGraph()) {
             cachedInputGraph = Difference.createDiffGraph(getFirstGraph(), getSecondGraph());
         } else {
@@ -397,6 +401,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         rebuildDiagram();
         graphChangedEvent.fire();
+        assert titleChangedListener != null;
+        cachedInputGraph.getDisplayNameChangedEvent().addListener(titleChangedListener);
+    }
+
+    void addTitleCallback(Consumer<InputGraph> titleCallback) {
+        titleChangedListener = titleCallback::accept;
     }
 
     void close() {

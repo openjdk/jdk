@@ -97,7 +97,7 @@ typedef struct CDSFileMapHeaderBase {
   // We cannot inherit from GenericCDSFileMapHeader as this type may be used
   // by both C and C++ code.
   GenericCDSFileMapHeader _generic_header;
-  CDSFileMapRegion _space[NUM_CDS_REGIONS];
+  CDSFileMapRegion _regions[NUM_CDS_REGIONS];
 } CDSFileMapHeaderBase;
 
 #endif // SHARE_INCLUDE_CDS_H
