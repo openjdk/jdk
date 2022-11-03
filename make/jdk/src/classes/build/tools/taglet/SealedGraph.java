@@ -99,9 +99,9 @@ public final class SealedGraph implements Taglet {
 
         String dotContent = Renderer.graph(typeElement, exports);
 
-        try (PrintWriter pw = new PrintWriter(dotFile.toFile())) {
-            pw.println(dotContent);
-        } catch (FileNotFoundException e) {
+        try  {
+            Files.writeString(dotFile, dotContent, WRITE, CREATE, TRUNCATE_EXISTING);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -257,4 +257,3 @@ public final class SealedGraph implements Taglet {
         }
     }
 }
-
