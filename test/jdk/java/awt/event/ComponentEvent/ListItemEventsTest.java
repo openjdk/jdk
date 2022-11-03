@@ -60,11 +60,11 @@ public class ListItemEventsTest {
         list.add("Four");
         list.add("Five");
         list.addItemListener((event) -> {
-            System.out.println("Got an ItemEvent:" + event);
+            System.out.println("Got an ItemEvent: " + event);
             itemStateChanged = true;
         });
         list.addActionListener((event) -> {
-            System.out.println("Got an ActionEvent:" + event);
+            System.out.println("Got an ActionEvent: " + event);
             actionPerformed = true;
         });
 
