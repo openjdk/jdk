@@ -36,30 +36,16 @@ using idx_t = BitMap::idx_t;
 
 STATIC_ASSERT(sizeof(bm_word_t) == BytesPerWord); // "Implementation assumption."
 
-bm_word_t* CHeapBitMapAllocator::allocate(size_t size_in_words) const {
-  return ArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
-}
-void CHeapBitMapAllocator::free(bm_word_t* map, idx_t size_in_words) const {
-  ArrayAllocator<bm_word_t>::free(map, size_in_words);
-}
-
-bm_word_t* ArenaBitMapAllocator::allocate(idx_t size_in_words) const {
-  if (_arena == nullptr) {
-    return NEW_RESOURCE_ARRAY(bm_word_t, size_in_words);
-  } else {
-    return (bm_word_t*)_arena->Amalloc(size_in_words * BytesPerWord);
-  }
-}
-
-template <class Allocator>
-bm_word_t* GrowableBitMap<Allocator>::reallocate(const Allocator& allocator, bm_word_t* old_map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear) {
+template <class BitMapWithAllocator>
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::reallocate(bm_word_t* old_map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear) {
   size_t old_size_in_words = calc_size_in_words(old_size_in_bits);
   size_t new_size_in_words = calc_size_in_words(new_size_in_bits);
 
   bm_word_t* map = NULL;
+  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
 
   if (new_size_in_words > 0) {
-    map = allocator.allocate(new_size_in_words);
+    map = derived->allocate(new_size_in_words);
 
     if (old_map != NULL) {
       Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) map,
@@ -78,39 +64,35 @@ bm_word_t* GrowableBitMap<Allocator>::reallocate(const Allocator& allocator, bm_
   }
 
   if (old_map != NULL) {
-    allocator.free(old_map, old_size_in_words);
+    derived->free(old_map, old_size_in_words);
   }
 
   return map;
 }
 
-template <class Allocator>
-bm_word_t* GrowableBitMap<Allocator>::allocate(const Allocator& allocator, idx_t size_in_bits, bool clear) {
+ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear) : GrowableBitMap<ArenaBitMap>(), _arena(arena) {
   // Reuse reallocate to ensure that the new memory is cleared.
-  return reallocate(allocator, NULL, 0, size_in_bits, clear);
+  bm_word_t* map = reallocate(nullptr, 0, size_in_bits, clear);
+  update(map, size_in_bits);
 }
 
-template <class Allocator>
-void GrowableBitMap<Allocator>::free(const Allocator& allocator, bm_word_t* map, idx_t  size_in_bits) {
-  bm_word_t* ret = reallocate(allocator, map, size_in_bits, 0);
-  assert(ret == NULL, "Reallocate shouldn't have allocated");
-}
-
-
-ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)
-  : GrowableBitMap<ArenaBitMapAllocator>(ArenaBitMapAllocator(arena), size_in_bits, clear) {
+bm_word_t* ArenaBitMap::allocate(idx_t size_in_words) const {
+  return (bm_word_t*)_arena->Amalloc(size_in_words * BytesPerWord);
 }
 
 ResourceBitMap::ResourceBitMap(idx_t size_in_bits, bool clear)
-  : ArenaBitMap(nullptr, size_in_bits, clear) {
+  : GrowableBitMap<ResourceBitMap>(size_in_bits, clear) {
 }
 
 CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
-  : GrowableBitMap<CHeapBitMapAllocator>(CHeapBitMapAllocator(flags), size_in_bits, clear) {
+  : GrowableBitMap<CHeapBitMap>(), _flags(flags) {
+  // Reuse reallocate to ensure that the new memory is cleared.
+  bm_word_t* map = reallocate(nullptr, 0, size_in_bits, clear);
+  update(map, size_in_bits);
 }
 
 CHeapBitMap::~CHeapBitMap() {
-  free(_allocator, map(), size());
+  free(map(), size());
 }
 
 #ifdef ASSERT
@@ -640,5 +622,6 @@ void BitMap::print_on(outputStream* st) const {
 
 #endif
 
-template class GrowableBitMap<CHeapBitMapAllocator>;
-template class GrowableBitMap<ArenaBitMapAllocator>;
+template class GrowableBitMap<ArenaBitMap>;
+template class GrowableBitMap<ResourceBitMap>;
+template class GrowableBitMap<CHeapBitMap>;

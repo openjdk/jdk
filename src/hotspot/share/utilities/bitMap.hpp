@@ -315,23 +315,19 @@ class BitMap {
 #endif
 };
 
-template <class Allocator>
+// CRTP: BitmapWithAllocator exposes to the following Allocator interfaces upward to GrowableBitMap.
+//
+//  bm_word_t* allocate(idx_t size_in_words) const;
+//  void free(bm_word_t* map, idx_t size_in_words) const
+//
+template <class BitMapWithAllocator>
 class GrowableBitMap : public BitMap {
  protected:
-  const Allocator _allocator;
+  bm_word_t* reallocate(bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
 
-  // Allocates and clears the bitmap memory.
-  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits, bool clear = true);
-
-  // Reallocates and clears the new bitmap memory.
-  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
-
-  // Free the bitmap memory.
-  static void free(const Allocator&, bm_word_t* map, idx_t size_in_bits);
-
-  GrowableBitMap(const Allocator& allocator, idx_t size_in_bits, bool clear) : BitMap(nullptr, 0), _allocator(allocator) {
-    update(allocate(_allocator, size_in_bits, clear), size_in_bits);
+  GrowableBitMap(idx_t size_in_bits, bool clear) : BitMap(reallocate(nullptr, 0, size_in_bits, clear), size_in_bits) {
   }
+  GrowableBitMap() : BitMap(nullptr, 0) {}
 
  public:
   // Set up and clear the bitmap memory.
@@ -362,7 +358,7 @@ class GrowableBitMap : public BitMap {
   // Old bits are transferred to the new memory
   // and the extended memory is cleared.
   void resize(idx_t new_size_in_bits, bool clear = true) {
-    bm_word_t* new_map = reallocate(_allocator, map(), size(), new_size_in_bits, clear);
+    bm_word_t* new_map = reallocate(map(), size(), new_size_in_bits, clear);
     update(new_map, new_size_in_bits);
   }
 };
@@ -376,64 +372,58 @@ class BitMapView : public BitMap {
   BitMapView(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
 };
 
-class CHeapBitMapAllocator : StackObj {
-  MEMFLAGS _flags;
-
- public:
-  CHeapBitMapAllocator(MEMFLAGS flags) : _flags(flags) {}
-  BitMap::bm_word_t* allocate(size_t size_in_words) const;
-
-  void free(BitMap::bm_word_t* map, BitMap::idx_t size_in_words) const;
-};
-
-class ArenaBitMapAllocator : StackObj {
+// A BitMap with storage in a specific Arena.
+class ArenaBitMap : public GrowableBitMap<ArenaBitMap> {
   Arena* const _arena;
+  NONCOPYABLE(ArenaBitMap);
 
  public:
-  ArenaBitMapAllocator(Arena* arena) : _arena(arena) {}
-  BitMap::bm_word_t* allocate(BitMap::idx_t size_in_words) const;
-  void free(BitMap::bm_word_t* map, BitMap::idx_t size_in_words) const {
+  // Clears the bitmap memory.
+  ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear = true);
+
+  bm_word_t* allocate(idx_t size_in_words) const;
+
+  void free(bm_word_t* map, idx_t size_in_words) const {
     // ArenaBitMaps currently don't free memory.
   }
 };
 
-// A BitMap with storage in a specific Arena.
-class ArenaBitMap : public GrowableBitMap<ArenaBitMapAllocator> {
- public:
-  // Clears the bitmap memory.
-  ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clean = true);
+class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 
- protected:
-  ArenaBitMap(const ArenaBitMap& rhs) = default;
-  ArenaBitMap& operator=(const ArenaBitMap& rhs) = delete;
-};
-
-// A BitMap with storage in a ResourceArea. It is an ArenaBitMap but _arena is nullptr;
-class ResourceBitMap : public ArenaBitMap {
  public:
   ResourceBitMap() : ResourceBitMap(0) {}
-
-  // Conditionally clears the bitmap memory.
   ResourceBitMap(idx_t size_in_bits, bool clear = true);
-  ResourceBitMap(const ResourceBitMap& rhs) = default;
-  ResourceBitMap& operator=(const ResourceBitMap& rhs) {
-    update(rhs._map, rhs._size);
-    return *this;
+
+  bm_word_t* allocate(idx_t size_in_words) const {
+    return (bm_word_t*)NEW_RESOURCE_ARRAY(bm_word_t, size_in_words);
+  }
+
+  void free(bm_word_t* map, idx_t size_in_words) const {
+    // ArenaBitMaps currently don't free memory.
   }
 };
 
 // A BitMap with storage in the CHeap.
-class CHeapBitMap : public GrowableBitMap<CHeapBitMapAllocator> {
+class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
+  MEMFLAGS _flags;
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  CHeapBitMap() : CHeapBitMap(0, mtInternal, true) {}
-  explicit CHeapBitMap(MEMFLAGS flags) : CHeapBitMap(0, flags, true) {}
+  CHeapBitMap() : CHeapBitMap(mtInternal) {}
+  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
   // Clears the bitmap memory.
   CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal, bool clear = true);
   ~CHeapBitMap();
+
+  bm_word_t* allocate(idx_t size_in_words) const {
+    return ArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
+  }
+
+  void free(bm_word_t* map, idx_t size_in_words) const {
+    ArrayAllocator<bm_word_t>::free(map, size_in_words);
+  }
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.
