@@ -29,7 +29,6 @@ import sun.security.util.DerOutputStream;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
-import java.util.Enumeration;
 
 /**
  * This interface defines the methods required of a certificate attribute.
@@ -47,13 +46,6 @@ import java.util.Enumeration;
  * @see CertificateException
  */
 public interface CertAttrSet<T> {
-    /**
-     * Returns a short string describing this certificate attribute.
-     *
-     * @return value of this certificate attribute in
-     *         printable form.
-     */
-    String toString();
 
     /**
      * Encodes the attribute to the output stream in a format
@@ -89,30 +81,4 @@ public interface CertAttrSet<T> {
      */
     Object get(String name)
         throws CertificateException, IOException;
-
-    /**
-     * Deletes an attribute value from this CertAttrSet.
-     *
-     * @param name the name of the attribute to delete.
-     *
-     * @exception CertificateException on attribute handling errors.
-     * @exception IOException on other errors.
-     */
-    void delete(String name)
-        throws CertificateException, IOException;
-
-    /**
-     * Returns an enumeration of the names of the attributes existing within
-     * this attribute.
-     *
-     * @return an enumeration of the attribute names.
-     */
-    Enumeration<T> getElements();
-
-    /**
-     * Returns the name (identifier) of this CertAttrSet.
-     *
-     * @return the name of this CertAttrSet.
-     */
-    String getName();
 }

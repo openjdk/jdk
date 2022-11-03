@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -150,18 +149,6 @@ public class InvalidityDateExtension extends Extension
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DATE)) {
-            date = null;
-        } else {
-            throw new IOException
-                ("Name not supported by InvalidityDateExtension");
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the Invalidity Date.
@@ -186,20 +173,11 @@ public class InvalidityDateExtension extends Extension
         super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DATE);
-
-        return elements.elements();
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return NAME;
     }

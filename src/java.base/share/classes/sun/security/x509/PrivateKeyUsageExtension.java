@@ -31,7 +31,6 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.Objects;
 
 import sun.security.util.*;
@@ -284,37 +283,12 @@ implements CertAttrSet<String> {
       }
   }
 
-    /**
-     * Delete the attribute value.
-     * @exception CertificateException on attribute handling errors.
-     */
-    public void delete(String name) throws CertificateException, IOException {
-        if (name.equalsIgnoreCase(NOT_BEFORE)) {
-            notBefore = null;
-        } else if (name.equalsIgnoreCase(NOT_AFTER)) {
-            notAfter = null;
-        } else {
-          throw new CertificateException("Attribute name not recognized by"
-                           + " CertAttrSet:PrivateKeyUsage.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NOT_BEFORE);
-        elements.addElement(NOT_AFTER);
-
-        return(elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
       return(NAME);
     }
