@@ -82,7 +82,6 @@ class G1YoungCollector {
   G1YoungGCEvacFailureInjector* evac_failure_injector() const;
 
   GCCause::Cause _gc_cause;
-  double _target_pause_time_ms;
 
   bool _concurrent_operation_is_full_mark;
 
@@ -137,8 +136,7 @@ class G1YoungCollector {
   bool evacuation_failed() const;
 
 public:
-  G1YoungCollector(GCCause::Cause gc_cause,
-                   double target_pause_time_ms);
+  G1YoungCollector(GCCause::Cause gc_cause);
   void collect();
 
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }
