@@ -25,7 +25,11 @@
 
 package java.util.zip;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
