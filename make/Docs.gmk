@@ -509,6 +509,7 @@ $(eval $(call SetupExecute, CLASSFILE_API_TARGET, \
     COMMAND := $(BUILD_JAVA) -Djava.awt.headless=true \
       $(NEW_JAVADOC) -d $(CLASSFILE_TARGET) \
       -XDignorePreview=true -notimestamp -public \
+      --add-exports java.base/jdk.internal.access=ALL-UNNAMED \
       -encoding ISO-8859-1 -docencoding UTF-8 -Xdoclint:none \
       --snippet-path $(CLASSFILE_SRC) -locale en_US \
       $(call FindFiles, $(CLASSFILE_SRC)/jdk/classfile/), \
