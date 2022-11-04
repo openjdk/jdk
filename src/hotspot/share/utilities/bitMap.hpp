@@ -60,10 +60,11 @@ class BitMap {
     unknown_range, small_range, large_range
   } RangeSizeHint;
 
- protected:
+ private:
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
 
+ protected:
   // The maximum allowable size of a bitmap, in words or bits.
   // Limit max_size_in_bits so aligning up to a word boundary never overflows.
   static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
@@ -167,7 +168,9 @@ class BitMap {
   }
 
   // Protected constructor and destructor.
-  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {}
+  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {
+    verify_size(size_in_bits);
+  }
   ~BitMap() {}
 
  public:
@@ -401,6 +404,7 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
+  // NMT memory type
   const MEMFLAGS _flags;
 
   // Don't allow copy or assignment, to prevent the
