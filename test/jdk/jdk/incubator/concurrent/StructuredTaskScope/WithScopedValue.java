@@ -33,20 +33,32 @@ import jdk.incubator.concurrent.ScopedValue;
 import jdk.incubator.concurrent.StructuredTaskScope;
 import jdk.incubator.concurrent.StructureViolationException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 @Test
 public class WithScopedValue {
 
+    @DataProvider
+    public Object[][] factories() {
+        return new Object[][] {
+                { Thread.ofPlatform().factory() },
+                { Thread.ofVirtual().factory() },
+        };
+    }
+
     /**
      * Test that fork inherits a scoped value into a child thread.
      */
-    public void testForkInheritsScopedValue1() throws Exception {
+    @Test(dataProvider = "factories")
+    public void testForkInheritsScopedValue1(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         String value = ScopedValue.where(name, "x", () -> {
-            try (var scope = new StructuredTaskScope<String>()) {
+            try (var scope = new StructuredTaskScope<String>(null, factory)) {
                 Future<String> future = scope.fork(() -> {
                     return name.get(); // child should read "x"
                 });
@@ -60,12 +72,13 @@ public class WithScopedValue {
     /**
      * Test that fork inherits a scoped value into a grandchild thread.
      */
-    public void testForkInheritsScopedValue2() throws Exception {
+    @Test(dataProvider = "factories")
+    public void testForkInheritsScopedValue2(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         String value = ScopedValue.where(name, "x", () -> {
-            try (var scope1 = new StructuredTaskScope<String>()) {
+            try (var scope1 = new StructuredTaskScope<String>(null, factory)) {
                 Future<String> future1 = scope1.fork(() -> {
-                    try (var scope2 = new StructuredTaskScope<String>()) {
+                    try (var scope2 = new StructuredTaskScope<String>(null, factory)) {
                         Future<String> future2 = scope2.fork(() -> {
                             return name.get(); // grandchild should read "x"
                         });
@@ -83,16 +96,17 @@ public class WithScopedValue {
     /**
      * Test that fork inherits a rebound scoped value into a grandchild thread.
      */
-    public void testForkInheritsScopedValue3() throws Exception {
+    @Test(dataProvider = "factories")
+    public void testForkInheritsScopedValue3(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         String value = ScopedValue.where(name, "x", () -> {
-            try (var scope1 = new StructuredTaskScope<String>()) {
+            try (var scope1 = new StructuredTaskScope<String>(null, factory)) {
                 Future<String> future1 = scope1.fork(() -> {
                     assertEquals(name.get(), "x");  // child should read "x"
 
                     // rebind name to "y"
                     String grandchildValue = ScopedValue.where(name, "y", () -> {
-                        try (var scope2 = new StructuredTaskScope<String>()) {
+                        try (var scope2 = new StructuredTaskScope<String>(null, factory)) {
                             Future<String> future2 = scope2.fork(() -> {
                                 return name.get(); // grandchild should read "y"
                             });

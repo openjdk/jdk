@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test ScopedValue API
+ * @enablePreview
  * @modules jdk.incubator.concurrent
  * @run testng ScopeValueAPI
  */
@@ -31,314 +32,365 @@
 import jdk.incubator.concurrent.ScopedValue;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 @Test
 public class ScopeValueAPI {
 
+    @DataProvider
+    public Object[][] factories() {
+        return new Object[][] {
+                { Thread.ofPlatform().factory() },
+                { Thread.ofVirtual().factory() },
+        };
+    }
+
     /**
      * Test that the run method is invoked.
      */
-    public void testRun() {
-        var executed = new AtomicBoolean();
-        ScopedValue<String> name = ScopedValue.newInstance();
-        ScopedValue.where(name, "duke", () -> executed.set(true));
-        assertTrue(executed.get());
+    @Test(dataProvider = "factories")
+    public void testRun(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            class Box { static boolean executed; }
+            ScopedValue<String> name = ScopedValue.newInstance();
+            ScopedValue.where(name, "duke", () -> { Box.executed = true; });
+            assertTrue(Box.executed);
+        });
     }
 
     /**
      * Test the run method throwing an exception.
      */
-    public void testRunThrows() {
-        class FooException extends RuntimeException { }
-        ScopedValue<String> name = ScopedValue.newInstance();
-        Runnable op = () -> { throw new FooException(); };
-        assertThrows(FooException.class, () -> ScopedValue.where(name, "duke", op));
-        assertFalse(name.isBound());
+    @Test(dataProvider = "factories")
+    public void testRunThrows(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            class FooException extends RuntimeException {  }
+            ScopedValue<String> name = ScopedValue.newInstance();
+            Runnable op = () -> { throw new FooException(); };
+            assertThrows(FooException.class, () -> ScopedValue.where(name, "duke", op));
+            assertFalse(name.isBound());
+        });
     }
 
     /**
      * Test that the call method is invoked.
      */
-    public void testCall() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
-        String result = ScopedValue.where(name, "duke", name::get);
-        assertEquals(result, "duke");
+    @Test(dataProvider = "factories")
+    public void testCall(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
+            String result = ScopedValue.where(name, "duke", name::get);
+            assertEquals(result, "duke");
+        });
     }
 
     /**
      * Test the call method throwing an exception.
      */
-    public void testCallThrows() {
-        class FooException extends RuntimeException { }
-        ScopedValue<String> name = ScopedValue.newInstance();
-        Callable<Void> op = () -> { throw new FooException(); };
-        assertThrows(FooException.class, () -> ScopedValue.where(name, "duke", op));
-        assertFalse(name.isBound());
+    @Test(dataProvider = "factories")
+    public void testCallThrows(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            class FooException extends RuntimeException {  }
+            ScopedValue<String> name = ScopedValue.newInstance();
+            Callable<Void> op = () -> { throw new FooException(); };
+            assertThrows(FooException.class, () -> ScopedValue.where(name, "duke", op));
+            assertFalse(name.isBound());
+        });
     }
 
     /**
      * Test get method.
      */
-    public void testGet() throws Exception {
-        ScopedValue<String> name1 = ScopedValue.newInstance();
-        ScopedValue<String> name2 = ScopedValue.newInstance();
-        assertThrows(NoSuchElementException.class, name1::get);
-        assertThrows(NoSuchElementException.class, name2::get);
-
-        // run
-        ScopedValue.where(name1, "duke", () -> {
-            assertEquals(name1.get(), "duke");
+    @Test(dataProvider = "factories")
+    public void testGet(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name1 = ScopedValue.newInstance();
+            ScopedValue<String> name2 = ScopedValue.newInstance();
+            assertThrows(NoSuchElementException.class, name1::get);
             assertThrows(NoSuchElementException.class, name2::get);
 
-        });
-        assertThrows(NoSuchElementException.class, name1::get);
-        assertThrows(NoSuchElementException.class, name2::get);
+            // run
+            ScopedValue.where(name1, "duke", () -> {
+                assertEquals(name1.get(), "duke");
+                assertThrows(NoSuchElementException.class, name2::get);
 
-        // call
-        ScopedValue.where(name1, "duke", () -> {
-            assertEquals(name1.get(), "duke");
+            });
+            assertThrows(NoSuchElementException.class, name1::get);
             assertThrows(NoSuchElementException.class, name2::get);
-            return null;
+
+            // call
+            ScopedValue.where(name1, "duke", () -> {
+                assertEquals(name1.get(), "duke");
+                assertThrows(NoSuchElementException.class, name2::get);
+                return null;
+            });
+            assertThrows(NoSuchElementException.class, name1::get);
+            assertThrows(NoSuchElementException.class, name2::get);
         });
-        assertThrows(NoSuchElementException.class, name1::get);
-        assertThrows(NoSuchElementException.class, name2::get);
     }
 
     /**
      * Test isBound method.
      */
-    public void testIsBound() throws Exception {
-        ScopedValue<String> name1 = ScopedValue.newInstance();
-        ScopedValue<String> name2 = ScopedValue.newInstance();
-        assertFalse(name1.isBound());
-        assertFalse(name2.isBound());
+    @Test(dataProvider = "factories")
+    public void testIsBound(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name1 = ScopedValue.newInstance();
+            ScopedValue<String> name2 = ScopedValue.newInstance();
+            assertFalse(name1.isBound());
+            assertFalse(name2.isBound());
 
-        // run
-        ScopedValue.where(name1, "duke", () -> {
-            assertTrue(name1.isBound());
+            // run
+            ScopedValue.where(name1, "duke", () -> {
+                assertTrue(name1.isBound());
+                assertFalse(name2.isBound());
+            });
+            assertFalse(name1.isBound());
+            assertFalse(name2.isBound());
+
+            // call
+            ScopedValue.where(name1, "duke", () -> {
+                assertTrue(name1.isBound());
+                assertFalse(name2.isBound());
+                return null;
+            });
+            assertFalse(name1.isBound());
             assertFalse(name2.isBound());
         });
-        assertFalse(name1.isBound());
-        assertFalse(name2.isBound());
-
-        // call
-        ScopedValue.where(name1, "duke", () -> {
-            assertTrue(name1.isBound());
-            assertFalse(name2.isBound());
-            return null;
-        });
-        assertFalse(name1.isBound());
-        assertFalse(name2.isBound());
     }
 
     /**
      * Test orElse method.
      */
-    public void testOrElse() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
-        assertTrue(name.orElse(null) == null);
-        assertEquals(name.orElse("default"), "default");
+    @Test(dataProvider = "factories")
+    public void testOrElse(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
+            assertTrue(name.orElse(null) == null);
+            assertEquals(name.orElse("default"), "default");
 
-        // run
-        ScopedValue.where(name, "duke", () -> {
-            assertEquals(name.orElse(null), "duke");
-            assertEquals(name.orElse("default"), "duke");
-        });
+            // run
+            ScopedValue.where(name, "duke", () -> {
+                assertEquals(name.orElse(null), "duke");
+                assertEquals(name.orElse("default"), "duke");
+            });
 
-        // call
-        var ignore = ScopedValue.where(name, "duke", () -> {
-            assertEquals(name.orElse(null), "duke");
-            assertEquals(name.orElse("default"), "duke");
-            return null;
+            // call
+            ScopedValue.where(name, "duke", () -> {
+                assertEquals(name.orElse(null), "duke");
+                assertEquals(name.orElse("default"), "duke");
+                return null;
+            });
         });
     }
 
     /**
      * Test orElseThrow method.
      */
-    public void testOrElseThrow() throws Exception {
-        class FooException extends RuntimeException { }
-        ScopedValue<String> name = ScopedValue.newInstance();
-        assertThrows(FooException.class, () -> name.orElseThrow(FooException::new));
+    @Test(dataProvider = "factories")
+    public void testOrElseThrow(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            class FooException extends RuntimeException { }
+            ScopedValue<String> name = ScopedValue.newInstance();
+            assertThrows(FooException.class, () -> name.orElseThrow(FooException::new));
 
-        // run
-        ScopedValue.where(name, "duke", () -> {
-            assertEquals(name.orElseThrow(FooException::new), "duke");
-        });
+            // run
+            ScopedValue.where(name, "duke", () -> {
+                assertEquals(name.orElseThrow(FooException::new), "duke");
+            });
 
-        // call
-        var ignore = ScopedValue.where(name, "duke", () -> {
-            assertEquals(name.orElseThrow(FooException::new), "duke");
-            return null;
+            // call
+            ScopedValue.where(name, "duke", () -> {
+                assertEquals(name.orElseThrow(FooException::new), "duke");
+                return null;
+            });
         });
     }
 
     /**
      * Test two bindings.
      */
-    public void testTwoBindings() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
-        ScopedValue<Integer> age = ScopedValue.newInstance();
+    @Test(dataProvider = "factories")
+    public void testTwoBindings(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
+            ScopedValue<Integer> age = ScopedValue.newInstance();
 
-        // run
-        ScopedValue.where(name, "duke").where(age, 100).run(() -> {
-            assertTrue(name.isBound());
-            assertTrue(age.isBound());
-            assertEquals(name.get(), "duke");
-            assertEquals((int) age.get(), 100);
-        });
-        assertFalse(name.isBound());
-        assertFalse(age.isBound());
+            // run
+            ScopedValue.where(name, "duke").where(age, 100).run(() -> {
+                assertTrue(name.isBound());
+                assertTrue(age.isBound());
+                assertEquals(name.get(), "duke");
+                assertEquals((int) age.get(), 100);
+            });
+            assertFalse(name.isBound());
+            assertFalse(age.isBound());
 
-        // call
-        var ignore = ScopedValue.where(name, "duke").where(age, 100).call(() -> {
-            assertTrue(name.isBound());
-            assertTrue(age.isBound());
-            assertEquals(name.get(), "duke");
-            assertEquals((int) age.get(), 100);
-            return null;
+            // call
+            ScopedValue.where(name, "duke").where(age, 100).call(() -> {
+                assertTrue(name.isBound());
+                assertTrue(age.isBound());
+                assertEquals(name.get(), "duke");
+                assertEquals((int) age.get(), 100);
+                return null;
+            });
+            assertFalse(name.isBound());
+            assertFalse(age.isBound());
+
         });
-        assertFalse(name.isBound());
-        assertFalse(age.isBound());
     }
 
     /**
      * Test rebinding.
      */
-    public void testRebinding() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
+    @Test(dataProvider = "factories")
+    public void testRebinding(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
 
-        // run
-        ScopedValue.where(name, "duke", () -> {
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-
-            ScopedValue.where(name, "duchess", () -> {
+            // run
+            ScopedValue.where(name, "duke", () -> {
                 assertTrue(name.isBound());
-                assertTrue("duchess".equals(name.get()));
+                assertEquals(name.get(), "duke");
+
+                ScopedValue.where(name, "duchess", () -> {
+                    assertTrue(name.isBound());
+                    assertTrue("duchess".equals(name.get()));
+                });
+
+                assertTrue(name.isBound());
+                assertEquals(name.get(), "duke");
             });
+            assertFalse(name.isBound());
 
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-        });
-        assertFalse(name.isBound());
-
-        // call
-        var ignore1 = ScopedValue.where(name, "duke", () -> {
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-
-            var ignore2 = ScopedValue.where(name, "duchess", () -> {
+            // call
+            ScopedValue.where(name, "duke", () -> {
                 assertTrue(name.isBound());
-                assertTrue("duchess".equals(name.get()));
+                assertEquals(name.get(), "duke");
+
+                ScopedValue.where(name, "duchess", () -> {
+                    assertTrue(name.isBound());
+                    assertTrue("duchess".equals(name.get()));
+                    return null;
+                });
+
+                assertTrue(name.isBound());
+                assertEquals(name.get(), "duke");
                 return null;
             });
-
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-            return null;
+            assertFalse(name.isBound());
         });
-        assertFalse(name.isBound());
     }
 
     /**
      * Test rebinding from null vaue to another value.
      */
-    public void testRebindingFromNull() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
+    @Test(dataProvider = "factories")
+    public void testRebindingFromNull(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
 
-        // run
-        ScopedValue.where(name, null, () -> {
-            assertTrue(name.isBound());
-            assertEquals(name.get(), null);
-
-            ScopedValue.where(name, "duchess", () -> {
+            // run
+            ScopedValue.where(name, null, () -> {
                 assertTrue(name.isBound());
-                assertTrue("duchess".equals(name.get()));
+                assertEquals(name.get(), null);
+
+                ScopedValue.where(name, "duchess", () -> {
+                    assertTrue(name.isBound());
+                    assertTrue("duchess".equals(name.get()));
+                });
+
+                assertTrue(name.isBound());
+                assertTrue(name.get() == null);
             });
+            assertFalse(name.isBound());
 
-            assertTrue(name.isBound());
-            assertTrue(name.get() == null);
-        });
-        assertFalse(name.isBound());
-
-        // call
-        var ignore1 = ScopedValue.where(name, null, () -> {
-            assertTrue(name.isBound());
-            assertEquals(name.get(), null);
-
-            var ignore2 = ScopedValue.where(name, "duchess", () -> {
+            // call
+            ScopedValue.where(name, null, () -> {
                 assertTrue(name.isBound());
-                assertTrue("duchess".equals(name.get()));
+                assertEquals(name.get(), null);
+
+                ScopedValue.where(name, "duchess", () -> {
+                    assertTrue(name.isBound());
+                    assertTrue("duchess".equals(name.get()));
+                    return null;
+                });
+
+                assertTrue(name.isBound());
+                assertTrue(name.get() == null);
                 return null;
             });
-
-            assertTrue(name.isBound());
-            assertTrue(name.get() == null);
-            return null;
+            assertFalse(name.isBound());
         });
-        assertFalse(name.isBound());
     }
 
     /**
      * Test rebinding to null value.
      */
-    public void testRebindingToNull() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
+    @Test(dataProvider = "factories")
+    public void testRebindingToNull(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
 
-        // run
-        ScopedValue.where(name, "duke", () -> {
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-
-            ScopedValue.where(name, null, () -> {
+            // run
+            ScopedValue.where(name, "duke", () -> {
                 assertTrue(name.isBound());
-                assertTrue(name.get() == null);
+                assertEquals(name.get(), "duke");
+
+                ScopedValue.where(name, null, () -> {
+                    assertTrue(name.isBound());
+                    assertTrue(name.get() == null);
+                });
+
+                assertTrue(name.isBound());
+                assertEquals(name.get(), "duke");
             });
+            assertFalse(name.isBound());
 
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-        });
-        assertFalse(name.isBound());
-
-        // call
-        var ignore1 = ScopedValue.where(name, "duke", () -> {
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-
-            var ignore2 = ScopedValue.where(name, null, () -> {
+            // call
+            ScopedValue.where(name, "duke", () -> {
                 assertTrue(name.isBound());
-                assertTrue(name.get() == null);
+                assertEquals(name.get(), "duke");
+
+                ScopedValue.where(name, null, () -> {
+                    assertTrue(name.isBound());
+                    assertTrue(name.get() == null);
+                    return null;
+                });
+
+                assertTrue(name.isBound());
+                assertEquals(name.get(), "duke");
                 return null;
             });
-
-            assertTrue(name.isBound());
-            assertEquals(name.get(), "duke");
-            return null;
+            assertFalse(name.isBound());
         });
-        assertFalse(name.isBound());
     }
 
     /**
      * Test Carrier.get.
      */
-    public void testCarrierGet() throws Exception {
-        ScopedValue<String> name = ScopedValue.newInstance();
-        ScopedValue<Integer> age = ScopedValue.newInstance();
+    @Test(dataProvider = "factories")
+    public void testCarrierGet(ThreadFactory factory) throws Exception {
+        test(factory, () -> {
+            ScopedValue<String> name = ScopedValue.newInstance();
+            ScopedValue<Integer> age = ScopedValue.newInstance();
 
-        // one scoped value
-        var carrier1 = ScopedValue.where(name, "duke");
-        assertEquals(carrier1.get(name), "duke");
-        assertThrows(NoSuchElementException.class, () -> carrier1.get(age));
+            // one scoped value
+            var carrier1 = ScopedValue.where(name, "duke");
+            assertEquals(carrier1.get(name), "duke");
+            assertThrows(NoSuchElementException.class, () -> carrier1.get(age));
 
-        // two scoped values
-        var carrier2 = carrier1.where(age, 20);
-        assertEquals(carrier2.get(name), "duke");
-        assertEquals((int) carrier2.get(age), 20);
+            // two scoped values
+            var carrier2 = carrier1.where(age, 20);
+            assertEquals(carrier2.get(name), "duke");
+            assertEquals((int) carrier2.get(age), 20);
+        });
     }
 
     /**
@@ -358,5 +410,33 @@ public class ScopeValueAPI {
         assertThrows(NullPointerException.class, () -> carrier.get(null));
         assertThrows(NullPointerException.class, () -> carrier.run(null));
         assertThrows(NullPointerException.class, () -> carrier.call(null));
+    }
+
+    @FunctionalInterface
+    private interface ThrowingRunnable {
+        void run() throws Exception;
+    }
+
+    /**
+     * Run the given task in a thread created with the given thread factory.
+     * @throws Exception if the task throws an exception
+     */
+    private static void test(ThreadFactory factory, ThrowingRunnable task) throws Exception {
+        try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+            var future = executor.submit(() -> {
+                task.run();
+                return null;
+            });
+            try {
+                future.get();
+            } catch (ExecutionException ee) {
+                Throwable cause = ee.getCause();
+                if (cause instanceof Exception e)
+                    throw e;
+                if (cause instanceof Error e)
+                    throw e;
+                throw new RuntimeException(cause);
+            }
+        }
     }
 }
