@@ -529,16 +529,31 @@ void VMError::clear_step_start_time() {
 // segment.
 void VMError::report(outputStream* st, bool _verbose) {
 
-# define BEGIN if (_current_step == 0) { _current_step = __LINE__;
-# define STEP_IF(s,cond) } if (_current_step < __LINE__ && (cond)) { _current_step = __LINE__; _current_step_info = s; \
-  record_step_start_time(); _step_did_timeout = false;
+# define BEGIN                                             \
+  if (_current_step == 0) {                                \
+    _current_step = __LINE__;                              \
+    {
+      // [Begin logic]
+# define STEP_IF(s,cond)                                   \
+    }                                                      \
+  }                                                        \
+  if (_current_step < __LINE__) {                          \
+    _current_step = __LINE__;                              \
+    _current_step_info = s;                                \
+    record_step_start_time();                              \
+    _step_did_timeout = false;                             \
+    if ((cond)) {
+      // [Step logic]
 # define STEP(s) STEP_IF(s, true)
 # define REENTRANT_ITERATION_STEP (_reentrant_iteration_step-1)
 # define REENTRANT_STEP_IF(s,cond) } if (_current_step < __LINE__ && (cond)) { _current_step_info = s; \
   record_step_start_time(); _step_did_timeout = false; if (_reentrant_iteration_step++ == -1) {
 # define REENTRANT_LOOP_START(limit) _reentrant_iteration_step++; } while (REENTRANT_ITERATION_STEP  < (limit)) {
 # define REENTRANT_LOOP_END _reentrant_iteration_step++; } _current_step = __LINE__; _reentrant_iteration_step = -1;
-# define END clear_step_start_time(); }
+# define END                                               \
+    }                                                      \
+    clear_step_start_time();                               \
+  }
 
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
@@ -573,6 +588,15 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
       TestCrashInErrorHandler);
     controlled_crash(TestCrashInErrorHandler);
+
+  STEP_IF("test secondary crash in step condition",
+    _verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH &&
+    [&](){
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
+        TestCrashInErrorHandler);
+      controlled_crash(TestCrashInErrorHandler);
+      return true;
+    }())
 
   STEP_IF("test missing ResourceMark does not crash", _verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH)
     stringStream message;
