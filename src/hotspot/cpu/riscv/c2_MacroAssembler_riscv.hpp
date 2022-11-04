@@ -191,5 +191,9 @@
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
                          bool is_double, bool is_min);
+ 
+ void reduce_operation(Register dst, VectorRegister temp, 
+                       Register src1, VectorRegister src2, 
+                       BasicType bt, REDUCTION_OP op);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

@@ -1678,3 +1678,30 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
   bind(L_done);
   vfmv_f_s(dst, tmp1);
 }
+
+void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister temp, 
+                                         Register src1, VectorRegister src2, 
+                                         BasicType bt, REDUCTION_OP op) {
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  vsetvli(t0, x0, sew);
+
+  vmv_s_x(temp, src1);
+
+  switch (op) {
+    case REDUCTION_OP::ADD:
+      vredsum_vs(temp, src2, temp);
+      break;
+    case REDUCTION_OP::AND:
+      vredand_vs(temp, src2, temp);
+      break;
+    case REDUCTION_OP::OR:
+      vredor_vs(temp, src2, temp);
+      break;
+    case REDUCTION_OP::XOR:
+      vredxor_vs(temp, src2, temp);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+  vmv_x_s(dst, temp);
+}
