@@ -20,8 +20,8 @@ DeconstructionPatternErrors.java:28:13: compiler.err.instanceof.reifiable.not.sa
 DeconstructionPatternErrors.java:29:40: compiler.err.match.binding.exists
 DeconstructionPatternErrors.java:29:43: compiler.err.match.binding.exists
 DeconstructionPatternErrors.java:30:48: compiler.err.match.binding.exists
-DeconstructionPatternErrors.java:30:59: compiler.err.already.defined: kindname.variable, v1, kindname.method, main(java.lang.String...)
-DeconstructionPatternErrors.java:30:67: compiler.err.already.defined: kindname.variable, v2, kindname.method, main(java.lang.String...)
+DeconstructionPatternErrors.java:30:59: compiler.err.already.defined: kindname.variable, v1, kindname.method, meth()
+DeconstructionPatternErrors.java:30:67: compiler.err.already.defined: kindname.variable, v2, kindname.method, meth()
 DeconstructionPatternErrors.java:30:71: compiler.err.match.binding.exists
 DeconstructionPatternErrors.java:30:75: compiler.err.match.binding.exists
 DeconstructionPatternErrors.java:31:29: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, byte)

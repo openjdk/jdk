@@ -8,7 +8,7 @@
  */
 
 public class SwitchScope {
-    public static void main(String[] args) {
+    public static void meth(String[] args) {
         switch (args.length) {
         case 0:
             final int k;

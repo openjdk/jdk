@@ -24,8 +24,4 @@ public class AnonymousInSuperCallNegTest {
                 }
             }); }
     }
-
-    public static void main(String[] args) {
-        new JavacBug();
-    }
 }

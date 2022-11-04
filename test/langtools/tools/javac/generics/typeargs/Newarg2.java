@@ -15,7 +15,7 @@ class T {
         <B> U(B b) {}
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         new T().new <Integer>U<Integer>("");
     }
 }

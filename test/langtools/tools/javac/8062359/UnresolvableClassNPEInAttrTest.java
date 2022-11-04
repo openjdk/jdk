@@ -7,7 +7,7 @@
  */
 
 public class UnresolvableClassNPEInAttrTest {
-    public static void main(String[] args) {
+    public static void meth() {
         new Undefined() {
             void test() {
                 new Object() {};

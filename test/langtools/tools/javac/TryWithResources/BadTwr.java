@@ -7,7 +7,7 @@
  */
 
 public class BadTwr implements AutoCloseable {
-    public static void main(String... args) {
+    public static void meth(String... args) {
         // illegal repeated name
         try(BadTwr r1 = new BadTwr(); BadTwr r1 = new BadTwr()) {
             System.out.println(r1.toString());

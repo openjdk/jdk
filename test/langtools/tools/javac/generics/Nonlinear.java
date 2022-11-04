@@ -21,7 +21,7 @@ public class Nonlinear {
     // when executed, even though there are no explicit casts in
     // the program.
 
-    public static void main (String [] args) {
+    public static void meth() {
         Integer x = Integer.valueOf(5);
         String y = castit (x);
         System.out.println (y);

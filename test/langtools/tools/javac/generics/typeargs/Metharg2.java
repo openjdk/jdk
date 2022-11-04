@@ -33,7 +33,7 @@ class T<X> {
         this.<Object>f("");
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         T<Integer> x = new <Object>T<Integer>();
         T<Integer>.U<Float> y = x.new <Object>U<Float>();
         x.<Integer>f("");

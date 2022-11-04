@@ -9,7 +9,7 @@
 import java.io.IOException;
 
 class ImplicitFinal implements AutoCloseable {
-    public static void main(String... args) {
+    public static void meth() {
         try(ImplicitFinal r = new ImplicitFinal()) {
             r = null; //disallowed
         } catch (IOException ioe) { // Not reachable
