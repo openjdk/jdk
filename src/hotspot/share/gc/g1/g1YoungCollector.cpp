@@ -467,16 +467,14 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
-void G1YoungCollector::concatenate_dirty_card_logs_and_stats() {
+void G1YoungCollector::flush_dirty_card_queues() {
   Ticks start = Ticks::now();
   G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
   size_t old_cards = qset.num_cards();
-  qset.concatenate_logs_and_stats();
-  size_t pending_cards = qset.num_cards();
-  size_t thread_buffer_cards = pending_cards - old_cards;
-  policy()->record_concurrent_refinement_stats(pending_cards, thread_buffer_cards);
-  double concat_time = (Ticks::now() - start).seconds() * MILLIUNITS;
-  phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time);
+  qset.concatenate_logs();
+  size_t added_cards = qset.num_cards() - old_cards;
+  Tickspan concat_time = Ticks::now() - start;
+  policy()->record_concatenate_dirty_card_logs(concat_time, added_cards);
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
@@ -494,6 +492,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
     _g1h->retire_tlabs();
     phase_times()->record_prepare_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
+
+  // Flush dirty card queues to qset, so later phases don't need to account
+  // for partially filled per-thread queues and such.
+  flush_dirty_card_queues();
 
   hot_card_cache()->reset_hot_cache_claimed_index();
 
@@ -1070,9 +1072,6 @@ void G1YoungCollector::collect() {
     // policy for the collection deliberately elides verification (and some
     // other trivial setup above).
     policy()->record_young_collection_start();
-
-    // Flush early, so later phases don't need to account for per-thread stuff.
-    concatenate_dirty_card_logs_and_stats();
 
     calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
 
