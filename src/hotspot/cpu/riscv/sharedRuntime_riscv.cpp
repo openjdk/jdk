@@ -1414,9 +1414,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ verify_oop(receiver);
   assert_different_registers(ic_reg, receiver, t0, tmp_reg);
   __ cmp_klass(receiver, ic_reg, t0, tmp_reg, hit);
-#ifdef ASSERT
-  __ mv(t2, 0);  // Kill the t2 to verify we can use it as a tmp reg: see SharedRuntime::generate_i2c2i_adapters
-#endif
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 

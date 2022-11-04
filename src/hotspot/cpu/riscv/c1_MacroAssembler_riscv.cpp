@@ -303,9 +303,6 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache, L
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
   assert_different_registers(receiver, iCache, t0, t2);
   cmp_klass(receiver, iCache, t0, t2, L);
-#ifdef ASSERT
-  mv(t2, 0);  // Kill the t2 to verify we can use it as a tmp reg: see SharedRuntime::generate_i2c2i_adapters
-#endif
 }
 
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {

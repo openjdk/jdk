@@ -1739,9 +1739,6 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
   Label skip;
   __ cmp_klass(j_rarg0, t1, t0, t2 /* as a tmp */, skip);
-#ifdef ASSERT
-  __ mv(t2, 0);  // Kill the t2 to verify we can use it as a tmp reg: see SharedRuntime::generate_i2c2i_adapters
-#endif
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   __ bind(skip);
 
