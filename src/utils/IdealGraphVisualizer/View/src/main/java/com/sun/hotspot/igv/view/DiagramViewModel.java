@@ -419,7 +419,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private void selectRootNode() {
         Figure figure = diagram.getRootFigure();
         if (figure != null) {
-            setSelectedNodes(Collections.singleton(figure.getInputNode().getId()));
+            int rootId = figure.getInputNode().getId();
+            if (!hiddenNodes.contains(rootId)) {
+                setSelectedNodes(Collections.singleton(rootId));
+            }
         }
     }
 
