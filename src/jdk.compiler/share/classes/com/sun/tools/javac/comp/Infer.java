@@ -674,44 +674,59 @@ public class Infer {
 
         capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
 
-        //step 2:
-        Set<Symbol> patternTypeSuperTypes = new HashSet<>();
-        types.closure(patternTypeSymbol.type).stream().map(s -> s.tsym).forEach(patternTypeSuperTypes::add);
-        Set<Symbol> expressionTypeSuperTypes = new HashSet<>();
-        types.closure(expressionType).stream().map(s -> s.tsym).forEach(expressionTypeSuperTypes::add);
-        patternTypeSuperTypes.retainAll(expressionTypeSuperTypes);
-
-        for (Symbol common : patternTypeSuperTypes) {
-            Type fromPatternType = types.asSuper(patternType, common);
-            Type fromExprType = types.asSuper(exprType, common);
-            if (!types.isSameType(fromPatternType, fromExprType) && !fromExprType.isRaw()) {
+        try {
+            //step 2:
+            if (commonSuperWithDiffParameterization(patternType, exprType)) {
                 return null;
             }
-        }
 
-        List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
+            List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
 
-        try {
-            doIncorporation(c, types.noWarnings);
+            solvePatternTypes(varsToSolve, c);
 
-            while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
-                doIncorporation(c, types.noWarnings);
-            }
+            //step 3:
+            List<Type> freshVars = instantiatePatternVars(patternType.allparams(), c);
+
+            Type substituted = c.asInstType(patternTypeSymbol.type);
+
+            //step 4:
+            return types.upward(substituted, freshVars);
         } catch (Infer.InferenceException ex) {
             return null;
         }
+    }
 
-        //step 3:
+    protected void solvePatternTypes(List<Type> varsToSolve, InferenceContext c)
+            throws InferenceException {
+        doIncorporation(c, types.noWarnings);
+
+        while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
+            doIncorporation(c, types.noWarnings);
+        }
+    }
+
+    private List<Type> instantiatePatternVars(List<Type> undetVars, InferenceContext c) {
         ListBuffer<Type> freshVars = new ListBuffer<>();
+        ListBuffer<UndetVar> todo = new ListBuffer<>();
 
-        for (Type param : patternType.allparams()) {
+        //step 1 - create fresh tvars
+        for (Type param : undetVars) {
             UndetVar undet = (UndetVar) param;
             List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
             if (bounds.nonEmpty()) {
                 undet.setInst(bounds.head);
             } else {
                 List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
-                Type bound = upperBounds.isEmpty() ? syms.objectType : types.glb(upperBounds);
+                Type bound;
+                boolean recursive = Type.containsAny(upperBounds, undetVars);
+                if (recursive) {
+                    bound = types.makeIntersectionType(upperBounds);
+                    todo.append(undet);
+                } else if (upperBounds.nonEmpty()) {
+                    bound = types.glb(upperBounds);
+                } else {
+                    bound = syms.objectType;
+                }
                 List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
                 Type lower = lowerBounds.isEmpty() ? syms.botType
                                                    : lowerBounds.tail.isEmpty() ? lowerBounds.head
@@ -722,10 +737,17 @@ public class Infer {
             }
         }
 
-        Type substituted = c.asInstType(patternTypeSymbol.type);
+        //step 2 - replace fresh tvars in their bounds
+        for (UndetVar uv : todo) {
+            TypeVar ct = (TypeVar)uv.getInst();
+            ct.setUpperBound( types.glb(c.asInstTypes(types.getBounds(ct))) );
+            if (ct.getUpperBound().isErroneous()) {
+                //report inference error if glb fails
+                reportBoundError(uv, InferenceBound.UPPER);
+            }
+        }
 
-        //step 4:
-        return types.upward(substituted, freshVars.toList());
+        return freshVars.toList();
     }
     // </editor-fold>
 
