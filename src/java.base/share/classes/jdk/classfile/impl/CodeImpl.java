@@ -163,9 +163,7 @@ public final class CodeImpl
     @Override
     public List<Attribute<?>> attributes() {
         if (attributes == null) {
-            @SuppressWarnings("unchecked")
-            List<Attribute<?>> l = (List<Attribute<?>>) BoundAttribute.readAttributes(this, classReader, attributePos, classReader.customAttributes());
-            attributes = l;
+            attributes = BoundAttribute.readAttributes(this, classReader, attributePos, classReader.customAttributes());
         }
         return attributes;
     }

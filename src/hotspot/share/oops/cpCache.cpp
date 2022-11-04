@@ -446,7 +446,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   NOT_PRODUCT(verify(tty));
 
   if (log_stream != NULL) {
-    this->print(log_stream, 0);
+    this->print(log_stream, 0, cpool->cache());
   }
 
   assert(has_appendix == this->has_appendix(), "proper storage of appendix flag");
@@ -480,7 +480,7 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   return true;
 }
 
-Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) {
+Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) const {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
@@ -527,7 +527,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
 }
 
 
-oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) {
+oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) const {
   if (!has_appendix())
     return NULL;
   const int ref_index = f2_as_index();
@@ -620,7 +620,7 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
 }
 #endif // INCLUDE_JVMTI
 
-void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
+void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPoolCache* cache) const {
   // print separator
   if (index == 0) st->print_cr("                 -------------");
   // print entry
@@ -630,6 +630,25 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
   st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f1);
   st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f2);
   st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_flags);
+
+  if ((bytecode_1() == Bytecodes::_invokehandle ||
+       bytecode_1() == Bytecodes::_invokedynamic)) {
+    constantPoolHandle cph(Thread::current(), cache->constant_pool());
+    Method* m = method_if_resolved(cph);
+    oop appendix = appendix_if_resolved(cph);
+    ResourceMark rm;
+    if (m != NULL) {
+      st->print_cr("  Method%s: " INTPTR_FORMAT " %s.%s%s",
+                   m->is_native() ? " (native)" : "",
+                   p2i(m),
+                   m->method_holder()->name()->as_C_string(),
+                   m->name()->as_C_string(), m->signature()->as_C_string());
+    }
+    if (appendix != NULL) {
+      st->print("  appendix: ");
+      appendix->print_on(st);
+    }
+  }
   st->print_cr("                 -------------");
 }
 
@@ -784,7 +803,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
     if (entry_at(i)->get_interesting_method_entry() != NULL) {
-      entry_at(i)->print(tty, i);
+      entry_at(i)->print(tty, i, this);
     }
   }
 }
@@ -801,7 +820,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
-  for (int i = 0; i < length(); i++) entry_at(i)->print(st, i);
+  for (int i = 0; i < length(); i++) entry_at(i)->print(st, i, this);
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {

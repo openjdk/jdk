@@ -1335,7 +1335,7 @@ mlib_status  __mlib_ImageCopySubimage(mlib_image *dst,
                                       mlib_s32 w,
                                       mlib_s32 h);
 
-/* Data Fomat Conversion ( format ) */
+/* Data Format Conversion ( format ) */
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )

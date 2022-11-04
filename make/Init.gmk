@@ -277,15 +277,20 @@ else # HAS_SPEC=true
 	  $(ECHO) $(CONFIGURE_COMMAND_LINE)
 
   reconfigure:
-        ifneq ($(CONFIGURE_COMMAND_LINE), )
+        ifneq ($(REAL_CONFIGURE_COMMAND_EXEC_FULL), )
+	  $(ECHO) "Re-running configure using original command line '$(REAL_CONFIGURE_COMMAND_EXEC_SHORT) $(REAL_CONFIGURE_COMMAND_LINE)'"
+	  $(eval RECONFIGURE_COMMAND := $(REAL_CONFIGURE_COMMAND_EXEC_FULL) $(REAL_CONFIGURE_COMMAND_LINE))
+        else ifneq ($(CONFIGURE_COMMAND_LINE), )
 	  $(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
+	  $(eval RECONFIGURE_COMMAND := $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE))
         else
 	  $(ECHO) "Re-running configure using default settings"
+	  $(eval RECONFIGURE_COMMAND := $(BASH) $(TOPDIR)/configure)
         endif
 	( cd $(CONFIGURE_START_DIR) && PATH="$(ORIGINAL_PATH)" AUTOCONF="$(AUTOCONF)" \
 	    CUSTOM_ROOT="$(CUSTOM_ROOT)" \
 	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
-	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
+	    $(RECONFIGURE_COMMAND) )
 
   ##############################################################################
   # The main target, for delegating into Main.gmk

@@ -38,6 +38,7 @@ import jdk.classfile.constantpool.ClassEntry;
 import java.lang.reflect.AccessFlag;
 
 import static jdk.classfile.Classfile.ACC_STATIC;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -182,12 +183,11 @@ public class Util {
     }
 
     public static List<ClassEntry> entryList(List<? extends ClassDesc> list) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
-        ClassEntry[] result = new ClassEntry[list.size()]; // null check
+        var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(toInternalName(list.get(i))));
         }
-        return List.of(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
     }
 
     public static void checkKind(Opcode op, Opcode.Kind k) {

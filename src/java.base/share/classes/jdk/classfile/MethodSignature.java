@@ -28,11 +28,10 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import jdk.classfile.impl.SignaturesImpl;
 import static java.util.Objects.requireNonNull;
-import static jdk.classfile.impl.SignaturesImpl.null2Empty;
 import jdk.classfile.impl.Util;
 
 /**
- * Models the generic signature of a class, as defined by JVMS 4.7.9.
+ * Models the generic signature of a method, as defined by JVMS 4.7.9.
  */
 public sealed interface MethodSignature
         permits SignaturesImpl.MethodSignatureImpl {
@@ -53,75 +52,59 @@ public sealed interface MethodSignature
     String signatureString();
 
     /**
-     * {@return a signature for a raw (no generic information) method descriptor}
-     * @param descriptor the method descriptor
+     * @return method signature for a raw (no generic information) method descriptor
+     * @param methodDescriptor the method descriptor
      */
-    public static MethodSignature of(MethodTypeDesc descriptor) {
-        requireNonNull(descriptor);
-        // @@@ MethodReference Signature::of
-        // @@@ Input to Util.mappedList is immutable therefore so is result
+    public static MethodSignature of(MethodTypeDesc methodDescriptor) {
+
+        requireNonNull(methodDescriptor);
+        return new SignaturesImpl.MethodSignatureImpl(
+                List.of(),
+                List.of(),
+                Signature.of(methodDescriptor.returnType()),
+                Util.mappedList(methodDescriptor.parameterList(), Signature::of));
+    }
+
+    /**
+     * @return method signature
+     * @param result signature for the return type
+     * @param arguments signatures for the method arguments
+     */
+    public static MethodSignature of(Signature result,
+                                     Signature... arguments) {
+
         return new SignaturesImpl.MethodSignatureImpl(List.of(),
-                                                      Util.mappedList(descriptor.parameterList(), Signature::of),
-                                                      Signature.of(descriptor.returnType()),
-                                                      List.of());
+                                                      List.of(),
+                                                      requireNonNull(result),
+                                                      List.of(arguments));
     }
 
     /**
-     * {@return a signature}
-     * @param arguments signatures for the method arguments
-     * @param result signature for the return type
-     */
-    public static MethodSignature of(List<Signature> arguments, Signature result) {
-        return of(null, arguments, result, null);
-    }
-
-    /**
-     * {@return a signature}
-     * @param arguments signatures for the method arguments
-     * @param result signature for the return type
-     * @param exceptions sigantures for the exceptions
-     */
-    public static MethodSignature of(List<Signature> arguments,
-                                     Signature result,
-                                     List<Signature.ThrowableSig> exceptions) {
-        return of(null, arguments, result, exceptions);
-    }
-
-    /**
-     * {@return a signature}
+     * @return method signature
      * @param typeParameters signatures for the type parameters
-     * @param arguments signatures for the method arguments
+     * @param exceptions sigantures for the exceptions
      * @param result signature for the return type
+     * @param arguments signatures for the method arguments
      */
     public static MethodSignature of(List<Signature.TypeParam> typeParameters,
-                                     List<Signature> arguments,
-                                     Signature result) {
-        return of(typeParameters, arguments, result, null);
-    }
-
-    /**
-     * {@return a signature}
-     * @param typeParameters signatures for the type parameters
-     * @param arguments signatures for the method arguments
-     * @param result signature for the return type
-     * @param exceptions sigantures for the exceptions
-     */
-    public static MethodSignature of(List<Signature.TypeParam> typeParameters,
-                                     List<Signature> arguments,
+                                     List<Signature.ThrowableSig> exceptions,
                                      Signature result,
-                                     List<Signature.ThrowableSig> exceptions) {
-        requireNonNull(result);
-        return new SignaturesImpl.MethodSignatureImpl(null2Empty(typeParameters),
-                                                      null2Empty(arguments), result, null2Empty(exceptions));
+                                     Signature... arguments) {
+
+        return new SignaturesImpl.MethodSignatureImpl(
+                List.copyOf(requireNonNull(typeParameters)),
+                List.copyOf(requireNonNull(exceptions)),
+                requireNonNull(result),
+                List.of(arguments));
     }
 
     /**
-     * Parses a raw method signature string into a {@linkplain Signature}
-     * @param signature the raw signature string
-     * @return the signature
+     * Parses a raw method signature string into a {@linkplain MethodSignature}
+     * @param methodSignature the raw method signature string
+     * @return method signature
      */
-    public static MethodSignature parseFrom(String signature) {
-        requireNonNull(signature);
-        return new SignaturesImpl().parseMethodSignature(signature);
+    public static MethodSignature parseFrom(String methodSignature) {
+
+        return new SignaturesImpl().parseMethodSignature(requireNonNull(methodSignature));
     }
 }

@@ -189,18 +189,29 @@ public final class DirectCodeBuilder
     private Attribute<CodeAttribute> content = null;
 
     private void writeExceptionHandlers(BufWriter buf) {
-        buf.writeU2(handlers.size());
+        int pos = buf.size();
+        int handlersSize = handlers.size();
+        buf.writeU2(handlersSize);
         for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
-            if (startPc == -1 || endPc == -1 || handlerPc == -1)
-                throw new IllegalStateException("Unbound label in exception handler");
-            buf.writeU2(startPc);
-            buf.writeU2(endPc);
-            buf.writeU2(handlerPc);
-            buf.writeIndexOrZero(h.catchTypeEntry());
+            if (startPc == -1 || endPc == -1 || handlerPc == -1) {
+                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                    handlersSize--;
+                } else {
+                    throw new IllegalStateException("Unbound label in exception handler");
+                }
+            } else {
+                buf.writeU2(startPc);
+                buf.writeU2(endPc);
+                buf.writeU2(handlerPc);
+                buf.writeIndexOrZero(h.catchTypeEntry());
+                handlersSize++;
+            }
         }
+        if (handlersSize < handlers.size())
+            buf.patchInt(pos, 2, handlersSize);
     }
 
     private void buildContent() {
@@ -216,16 +227,28 @@ public final class DirectCodeBuilder
 
                     @Override
                     public void writeBody(BufWriter b) {
-                        // @@@ Filter out CRs whose boundary labels are not defined?
-                        b.writeU2(characterRanges.size());
+                        int pos = b.size();
+                        int crSize = characterRanges.size();
+                        b.writeU2(crSize);
                         for (CharacterRange cr : characterRanges) {
-                            b.writeU2(labelToBci(cr.startScope()));
-                            b.writeU2(labelToBci(cr.endScope()) - 1);
-                            b.writeInt(cr.characterRangeStart());
-                            b.writeInt(cr.characterRangeEnd());
-                            b.writeU2(cr.flags());
+                            var start = labelToBci(cr.startScope());
+                            var end = labelToBci(cr.endScope());
+                            if (start == -1 || end == -1) {
+                                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                                    crSize--;
+                                } else {
+                                    throw new IllegalStateException("Unbound label in character range");
+                                }
+                            } else {
+                                b.writeU2(start);
+                                b.writeU2(end - 1);
+                                b.writeInt(cr.characterRangeStart());
+                                b.writeInt(cr.characterRangeEnd());
+                                b.writeU2(cr.flags());
+                            }
                         }
-                        // @@@ If we're filtering, then also have to patch count
+                        if (crSize < characterRanges.size())
+                            b.patchInt(pos, 2, crSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -235,15 +258,22 @@ public final class DirectCodeBuilder
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TABLE) {
                     @Override
                     public void writeBody(BufWriter b) {
-                        // @@@ Filter out LVs whose boundary labels are not defined?
-                        b.writeU2(localVariables.size());
+                        int pos = b.size();
+                        int lvSize = localVariables.size();
+                        b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
-                            l.writeTo(b);
+                            if (!l.writeTo(b)) {
+                                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                                    lvSize--;
+                                } else {
+                                    throw new IllegalStateException("Unbound label in local variable type");
+                                }
+                            }
                         }
-                        // @@@ If we're filtering, then also have to patch count
+                        if (lvSize < localVariables.size())
+                            b.patchInt(pos, 2, lvSize);
                     }
                 };
-
                 attributes.withAttribute(a);
             }
 
@@ -251,15 +281,22 @@ public final class DirectCodeBuilder
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
                     @Override
                     public void writeBody(BufWriter b) {
-                        // @@@ Filter out LVs whose boundary labels are not defined?
+                        int pos = b.size();
+                        int lvtSize = localVariableTypes.size();
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
-                            l.writeTo(b);
+                            if (!l.writeTo(b)) {
+                                if (constantPool.optionValue(Classfile.Option.Key.FILTER_DEAD_LABELS)) {
+                                    lvtSize--;
+                                } else {
+                                    throw new IllegalStateException("Unbound label in local variable type");
+                                }
+                            }
                         }
-                        // @@@ If we're filtering, then also have to patch count
+                        if (lvtSize < localVariableTypes.size())
+                            b.patchInt(pos, 2, lvtSize);
                     }
                 };
-
                 attributes.withAttribute(a);
             }
         }

@@ -27,10 +27,9 @@ package jdk.classfile;
 import java.util.List;
 import jdk.classfile.impl.SignaturesImpl;
 import static java.util.Objects.requireNonNull;
-import static jdk.classfile.impl.SignaturesImpl.null2Empty;
 
 /**
- * Models the generic signature of a class, as defined by JVMS 4.7.9.
+ * Models the generic signature of a class file, as defined by JVMS 4.7.9.
  */
 public sealed interface ClassSignature
         permits SignaturesImpl.ClassSignatureImpl {
@@ -48,17 +47,17 @@ public sealed interface ClassSignature
     String signatureString();
 
     /**
-     * {@return a signature}
+     * @return class signature
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
      */
     public static ClassSignature of(Signature.RefTypeSig superclassSignature,
                                     Signature.RefTypeSig... superinterfaceSignatures) {
-        return of(null, superclassSignature, superinterfaceSignatures);
+        return of(List.of(), superclassSignature, superinterfaceSignatures);
     }
 
     /**
-     * {@return a signature}
+     * @return class signature
      * @param typeParameters the type parameters
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
@@ -66,18 +65,18 @@ public sealed interface ClassSignature
     public static ClassSignature of(List<Signature.TypeParam> typeParameters,
                                     Signature.RefTypeSig superclassSignature,
                                     Signature.RefTypeSig... superinterfaceSignatures) {
-        requireNonNull(superclassSignature);
-        return new SignaturesImpl.ClassSignatureImpl(null2Empty(typeParameters),
-                                                     superclassSignature, List.of(superinterfaceSignatures));
+        return new SignaturesImpl.ClassSignatureImpl(
+                requireNonNull(typeParameters),
+                requireNonNull(superclassSignature),
+                List.of(superinterfaceSignatures));
     }
 
     /**
      * Parses a raw class signature string into a {@linkplain Signature}
-     * @param signature the raw signature string
-     * @return the signature
+     * @param classSignature the raw class signature string
+     * @return class signature
      */
-    public static ClassSignature parseFrom(String signature) {
-        requireNonNull(signature);
-        return new SignaturesImpl().parseClassSignature(signature);
+    public static ClassSignature parseFrom(String classSignature) {
+        return new SignaturesImpl().parseClassSignature(requireNonNull(classSignature));
     }
 }

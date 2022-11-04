@@ -24,9 +24,6 @@
  */
 package helpers;
 
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.LocalVariableTable_attribute;
-import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
 import jdk.classfile.impl.LabelContext;
 import jdk.classfile.impl.LabelImpl;
 import jdk.classfile.instruction.LocalVariable;
@@ -58,15 +55,13 @@ public class TestUtil {
         String name;
         int start;
         int length;
-        ConstantPool cp;
 
-        ExpectedLvRecord(int slot, String name, String desc, int start, int length, ConstantPool cp) {
+        ExpectedLvRecord(int slot, String name, String desc, int start, int length) {
             this.slot = slot;
             this.name = name;
             this.desc = desc;
             this.start = start;
             this.length = length;
-            this.cp = cp;
         }
 
         @Override
@@ -85,23 +80,6 @@ public class TestUtil {
                         ctx.labelToBci(l.endScope()) - start == length;
             }
 
-            if (other instanceof LocalVariableTable_attribute.Entry e) {
-                try {
-                    if (!(slot == e.index &&
-                            name.equals(cp.getUTF8Value(e.name_index)) &&
-                            desc.equals(cp.getUTF8Value(e.descriptor_index)) &&
-                            start == e.start_pc &&
-                            length == e.length)) throw new RuntimeException();
-                    return slot == e.index &&
-                            name.equals(cp.getUTF8Value(e.name_index)) &&
-                            desc.equals(cp.getUTF8Value(e.descriptor_index)) &&
-                            start == e.start_pc &&
-                            length == e.length;
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-
     throw new RuntimeException(other.toString());
 //            return false;
         }
@@ -112,11 +90,7 @@ public class TestUtil {
         }
 
         public static ExpectedLvRecord of(int slot, String name, String desc, int start, int length) {
-            return new ExpectedLvRecord(slot, name, desc, start, length, null);
-        }
-
-        public static ExpectedLvRecord of(int slot, String name, String desc, int start, int length, ConstantPool cp) {
-            return new ExpectedLvRecord(slot, name, desc, start, length, cp);
+            return new ExpectedLvRecord(slot, name, desc, start, length);
         }
     }
 
@@ -126,15 +100,13 @@ public class TestUtil {
         String name;
         int start;
         int length;
-        ConstantPool cp;
 
-        ExpectedLvtRecord(int slot, String name, String signature, int start, int length, ConstantPool cp) {
+        ExpectedLvtRecord(int slot, String name, String signature, int start, int length) {
             this.slot = slot;
             this.name = name;
             this.signature = signature;
             this.start = start;
             this.length = length;
-            this.cp = cp;
         }
 
         @Override
@@ -148,18 +120,6 @@ public class TestUtil {
                         ctx.labelToBci(l.endScope()) - start == length;
             }
 
-            if (other instanceof LocalVariableTypeTable_attribute.Entry e) {
-                try {
-                    return slot == e.index &&
-                            name.equals(cp.getUTF8Value(e.name_index)) &&
-                            signature.equals(cp.getUTF8Value(e.signature_index)) &&
-                            start == e.start_pc &&
-                            length == e.length;
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-
             return false;
         }
 
@@ -169,11 +129,7 @@ public class TestUtil {
         }
 
         public static ExpectedLvtRecord of(int slot, String name, String signature, int start, int length) {
-            return new ExpectedLvtRecord(slot, name, signature, start, length, null);
-        }
-
-        public static ExpectedLvtRecord of(int slot, String name, String signature, int start, int length, ConstantPool cp) {
-            return new ExpectedLvtRecord(slot, name, signature, start, length, cp);
+            return new ExpectedLvtRecord(slot, name, signature, start, length);
         }
 
         public String toString() {

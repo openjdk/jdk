@@ -192,16 +192,20 @@ public abstract sealed class AbstractPseudoInstruction
             return endScope;
         }
 
-        public void writeTo(BufWriter b) {
+        public boolean writeTo(BufWriter b) {
             var lc = ((BufWriterImpl)b).labelContext();
             int startBci = lc.labelToBci(startScope());
             int endBci = lc.labelToBci(endScope());
+            if (startBci == -1 || endBci == -1) {
+                return false;
+            }
             int length = endBci - startBci;
             b.writeU2(startBci);
             b.writeU2(length);
             b.writeIndex(name);
             b.writeIndex(descriptor);
             b.writeU2(slot());
+            return true;
         }
     }
 

@@ -95,7 +95,7 @@ class StackMapsTest {
 
     @Test
     void testDeadCodePatternFail() throws Exception {
-        var error = assertThrows(VerifyError.class, () -> testTransformedStackMaps(buildDeadCode(), Classfile.Option.patchDeadCode(false)));
+        var error = assertThrows(IllegalStateException.class, () -> testTransformedStackMaps(buildDeadCode(), Classfile.Option.patchDeadCode(false)));
         assertLinesMatch(
             """
             Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns()
@@ -170,7 +170,7 @@ class StackMapsTest {
 
     @Test
     void testFrameOutOfBytecodeRange() {
-        var error = assertThrows(VerifyError.class, () ->
+        var error = assertThrows(IllegalStateException.class, () ->
         Classfile.parse(
                 Classfile.build(ClassDesc.of("TestClass"), clb ->
                         clb.withMethodBody("frameOutOfRangeMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {

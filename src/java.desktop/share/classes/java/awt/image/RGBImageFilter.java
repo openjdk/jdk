@@ -36,7 +36,7 @@ import java.awt.image.ColorModel;
  * provides the calls needed to channel all of the pixel data through a
  * single method which converts pixels one at a time in the default RGB
  * ColorModel regardless of the ColorModel being used by the ImageProducer.
- * The only method which needs to be defined to create a useable image
+ * The only method which needs to be defined to create a usable image
  * filter is the filterRGB method.  Here is an example of a definition
  * of a filter which swaps the red and blue components of an image:
  * <pre>{@code

@@ -63,9 +63,11 @@ import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * the transform is created with {@link ClassTransform#ofStateful(Supplier)} (or
  * corresponding methods for other classfile locations.)
  *
- * @@@ Add stateful transform snippet
+ * <p>Class transformation sample where code transformation is stateful:
+ * <p>{@snippet class="jdk.classfile.snippets.PackageSnippets" region="codeRelabeling"}
  *
- * @@@ Add examples of chaining
+ * <p>Complex class instrumentation sample chaining multiple transformations:
+ * <p>{@snippet class="jdk.classfile.snippets.PackageSnippets" region="classInstrumentation"}
  */
 sealed public interface ClassfileTransform<
         C extends ClassfileTransform<C, E, B>,

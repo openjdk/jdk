@@ -310,9 +310,9 @@ public sealed interface ClassRemapper extends ClassTransform {
 
         MethodSignature mapMethodSignature(MethodSignature signature) {
             return MethodSignature.of(signature.typeParameters(),
-                    signature.arguments().stream().map(this::mapSignature).toList(),
+                    signature.throwableSignatures().stream().map(this::mapSignature).toList(),
                     mapSignature(signature.result()),
-                    signature.throwableSignatures().stream().map(this::mapSignature).toList());
+                    signature.arguments().stream().map(this::mapSignature).toArray(Signature[]::new));
         }
 
         RecordComponentInfo mapRecordComponent(RecordComponentInfo component) {

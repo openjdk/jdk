@@ -303,24 +303,29 @@ public:
 class PrePost {
   int _offset;
   Register _r;
-public:
+protected:
   PrePost(Register reg, int o) : _offset(o), _r(reg) { }
-  int offset() { return _offset; }
-  Register reg() { return _r; }
+  ~PrePost() = default;
+  PrePost(const PrePost&) = default;
+  PrePost& operator=(const PrePost&) = default;
+public:
+  int offset() const { return _offset; }
+  Register reg() const { return _r; }
 };
 
 class Pre : public PrePost {
 public:
   Pre(Register reg, int o) : PrePost(reg, o) { }
 };
+
 class Post : public PrePost {
   Register _idx;
   bool _is_postreg;
 public:
-  Post(Register reg, int o) : PrePost(reg, o) { _idx = noreg; _is_postreg = false; }
-  Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; _is_postreg = true; }
-  Register idx_reg() { return _idx; }
-  bool is_postreg() {return _is_postreg; }
+  Post(Register reg, int o) : PrePost(reg, o), _idx(noreg), _is_postreg(false) {}
+  Post(Register reg, Register idx) : PrePost(reg, 0), _idx(idx), _is_postreg(true) {}
+  Register idx_reg() const { return _idx; }
+  bool is_postreg() const { return _is_postreg; }
 };
 
 namespace ext
@@ -332,7 +337,7 @@ namespace ext
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
+  enum mode { no_mode, base_plus_offset, pre, post, post_reg,
               base_plus_offset_reg, literal };
 
   // Shift and extend for base reg + reg offset addressing
@@ -372,11 +377,6 @@ class Address {
 
   RelocationHolder _rspec;
 
-  // Typically we use AddressLiterals we want to use their rval
-  // However in some situations we want the lval (effect address) of
-  // the item.  We provide a special factory for making those lvals.
-  bool _is_lval;
-
   // If the target is far we'll need to load the ea of this to a
   // register to reach it. Otherwise if near we can do PC-relative
   // addressing.
@@ -405,7 +405,6 @@ class Address {
   Address(address target, RelocationHolder const& rspec)
     : _mode(literal),
       _rspec(rspec),
-      _is_lval(false),
       _target(target)  { }
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
   Address(Register base, RegisterOrConstant index, extend ext = lsl())

@@ -41,6 +41,7 @@ import jdk.classfile.constantpool.ModuleEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
 import jdk.classfile.constantpool.PackageEntry;
 import jdk.classfile.constantpool.Utf8Entry;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * BoundAttribute
@@ -117,44 +118,34 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     <E> List<E> readEntryList(int p) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int cnt = classReader.readU2(p);
         p += 2;
-        @SuppressWarnings("unchecked")
-        E[] entries = (E[]) new Object[cnt];
+        var entries = new Object[cnt];
         int end = p + (cnt * 2);
         for (int i = 0; p < end; i++, p += 2) {
-            @SuppressWarnings("unchecked")
-            var entry = (E) classReader.readEntry(p);
-            entries[i] = entry;
+            entries[i] = classReader.readEntry(p);
         }
-        return List.of(entries);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(entries);
     }
 
-    public static <A extends Attribute<A>> List<A> readAttributes(AttributedElement enclosing, ClassReader reader, int pos,
+    public static List<Attribute<?>> readAttributes(AttributedElement enclosing, ClassReader reader, int pos,
                                                                   Function<Utf8Entry, AttributeMapper<?>> customAttributes) {
         int size = reader.readU2(pos);
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        A[] filled = (A[])new Attribute[size];
+        var filled = new Object[size];
         int p = pos + 2;
         for (int i = 0; i < size; ++i) {
             Utf8Entry name = reader.readUtf8Entry(p);
             int len = reader.readInt(p + 2);
             p += 6;
 
-            @SuppressWarnings("unchecked")
-            AttributeMapper<A> mapper = (AttributeMapper<A>) Attributes.standardAttribute(name);
+            var mapper = Attributes.standardAttribute(name);
             if (mapper == null) {
-                @SuppressWarnings("unchecked")
-                AttributeMapper<A> m = (AttributeMapper<A>) customAttributes.apply(name);
-                mapper = m;
+                mapper = customAttributes.apply(name);
             }
             if (mapper != null && (enclosing == null || mapper.whereApplicable().contains(enclosing.attributedElementKind()))) {
                 filled[i] = mapper.readAttribute(enclosing, reader, p);
-            }
-            else if (reader.optionValue(Classfile.Option.Key.PROCESS_UNKNOWN_ATTRIBUTES)) {
-                AttributeMapper<UnknownAttribute> fakeMapper
-                        = new AttributeMapper<>() {
+            } else if (reader.optionValue(Classfile.Option.Key.PROCESS_UNKNOWN_ATTRIBUTES)) {
+                AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
                     public Set<AttributedElement.Kind> whereApplicable() {
                         return AttributedElement.Kind.EVERYWHERE;
@@ -173,7 +164,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
                     @Override
                     public void writeAttribute(BufWriter buf, UnknownAttribute attr) {
-                        // Do nothing
+                        throw new UnsupportedOperationException("Write of unknown attribute " + name() + " not supported");
                     }
 
                     @Override
@@ -181,16 +172,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                         return true;
                     }
                 };
-
-                // @@@ Needs a writer / need to thread policy regarding unknown attrs
-                @SuppressWarnings("unchecked")
-                A a = (A)new BoundUnknownAttribute(reader, fakeMapper, p);
-                filled[i] = a;
+                filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);
             }
             p += len;
         }
-
-        return List.of(filled);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(filled);
     }
 
     public static final class BoundUnknownAttribute extends BoundAttribute<UnknownAttribute>
@@ -201,32 +187,31 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            // @@@ Use option toggle to throw?
-            if (builder.canWriteDirect(classReader))
-                super.writeTo(builder);
+            checkWriteSupported(builder::canWriteDirect);
+            super.writeTo(builder);
         }
 
         @Override
         public void writeTo(DirectMethodBuilder builder) {
-            // @@@ Use option toggle to throw?
-            if (builder.canWriteDirect(classReader))
-                super.writeTo(builder);
+            checkWriteSupported(builder::canWriteDirect);
+            super.writeTo(builder);
         }
 
         @Override
         public void writeTo(DirectFieldBuilder builder) {
-            // @@@ Use option toggle to throw?
-            if (builder.canWriteDirect(classReader))
-                super.writeTo(builder);
+            checkWriteSupported(builder::canWriteDirect);
+            super.writeTo(builder);
         }
 
         @Override
         public void writeTo(BufWriter buf) {
-            if (!buf.canWriteDirect(classReader))
-                // @@@ Toggle exception / blind ignore based on configuration
+            checkWriteSupported(buf::canWriteDirect);
+            super.writeTo(buf);
+        }
+
+        private void checkWriteSupported(Function<ConstantPool, Boolean> condition) {
+            if (!condition.apply(classReader))
                 throw new UnsupportedOperationException("Write of unknown attribute " + attributeName() + " not supported to alien constant pool");
-            else
-                super.writeTo(buf);
         }
     }
 

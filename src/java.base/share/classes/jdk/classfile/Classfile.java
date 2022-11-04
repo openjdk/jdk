@@ -46,6 +46,10 @@ import jdk.classfile.impl.DirectClassBuilder;
 import jdk.classfile.impl.Options;
 import jdk.classfile.impl.UnboundAttribute;
 import java.lang.reflect.AccessFlag;
+import jdk.classfile.attribute.CharacterRangeInfo;
+import jdk.classfile.attribute.LocalVariableInfo;
+import jdk.classfile.attribute.LocalVariableTypeInfo;
+import jdk.classfile.instruction.ExceptionCatch;
 import jdk.classfile.jdktypes.PackageDesc;
 
 /**
@@ -71,7 +75,8 @@ public class Classfile {
          */
         enum Key {
             GENERATE_STACK_MAPS, PROCESS_DEBUG, PROCESS_LINE_NUMBERS, PROCESS_UNKNOWN_ATTRIBUTES,
-            CP_SHARING, FIX_SHORT_JUMPS, PATCH_DEAD_CODE, HIERARCHY_RESOLVER, ATTRIBUTE_MAPPER;
+            CP_SHARING, FIX_SHORT_JUMPS, PATCH_DEAD_CODE, HIERARCHY_RESOLVER, ATTRIBUTE_MAPPER,
+            FILTER_DEAD_LABELS;
         }
 
         /**
@@ -148,6 +153,16 @@ public class Classfile {
          * @param r a function mapping attribute names to attribute mappers
          */
         static Option<Function<Utf8Entry, AttributeMapper<?>>> attributeMapper(Function<Utf8Entry, AttributeMapper<?>> r) { return new Options.OptionValue<>(Key.ATTRIBUTE_MAPPER, r); }
+
+        /**
+         * {@return an option describing whether or not to filter unresolved labels}
+         * Default is to throw IllegalStateException when any {@link ExceptionCatch},
+         * {@link LocalVariableInfo}, {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
+         * reference to unresolved {@link Label} during bytecode serialization.
+         * Setting this option to true filters the above elements instead.
+         * @param b whether or not to automatically patch out unreachable code
+         */
+        static Option<Boolean> filterDeadLabels(boolean b) { return new Options.OptionValue<>(Key.FILTER_DEAD_LABELS, b); }
     }
 
     /**

@@ -37,21 +37,21 @@ import static jdk.classfile.TypeAnnotation.TargetInfo.*;
 import java.util.List;
 import jdk.classfile.Label;
 import jdk.classfile.constantpool.Utf8Entry;
+import jdk.internal.access.SharedSecrets;
 
 class AnnotationReader {
     private AnnotationReader() { }
 
     public static List<Annotation> readAnnotations(ClassReader classReader, int p) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int pos = p;
         int numAnnotations = classReader.readU2(pos);
-        Annotation[] annos = new Annotation[numAnnotations];
+        var annos = new Object[numAnnotations];
         pos += 2;
         for (int i = 0; i < numAnnotations; ++i) {
             annos[i] = readAnnotation(classReader, pos);
             pos = skipAnnotation(classReader, pos);
         }
-        return List.of(annos);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(annos);
     }
 
     public static AnnotationValue readElementValue(ClassReader classReader, int p) {
@@ -71,15 +71,14 @@ class AnnotationReader {
             case 'c' -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));
             case '@' -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));
             case '[' -> {
-                // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
                 int numValues = classReader.readU2(p);
                 p += 2;
-                AnnotationValue[] values = new AnnotationValue[numValues];
+                var values = new Object[numValues];
                 for (int i = 0; i < numValues; ++i) {
                     values[i] = readElementValue(classReader, p);
                     p = skipElementValue(classReader, p);
                 }
-                yield new AnnotationImpl.OfArrayImpl(List.of(values));
+                yield new AnnotationImpl.OfArrayImpl(SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(values));
             }
             default -> throw new IllegalArgumentException(
                     "Unexpected tag '%s' in AnnotationValue, pos = %d".formatted(tag, p - 1));
@@ -87,27 +86,24 @@ class AnnotationReader {
     }
 
     public static List<TypeAnnotation> readTypeAnnotations(ClassReader classReader, int p, LabelContext lc) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int numTypeAnnotations = classReader.readU2(p);
         p += 2;
-        TypeAnnotation[] annotations = new TypeAnnotation[numTypeAnnotations];
+        var annotations = new Object[numTypeAnnotations];
         for (int i = 0; i < numTypeAnnotations; ++i) {
             annotations[i] = readTypeAnnotation(classReader, p, lc);
             p = skipTypeAnnotation(classReader, p);
         }
-        return List.of(annotations);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(annotations);
     }
 
     public static List<List<Annotation>> readParameterAnnotations(ClassReader classReader, int p, boolean isVisible) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int cnt = classReader.readU1(p++);
-        @SuppressWarnings("unchecked")
-        List<Annotation>[] pas = (List<Annotation>[]) new List<?>[cnt];
+        var pas = new Object[cnt];
         for (int i = 0; i < cnt; ++i) {
             pas[i] = readAnnotations(classReader, p);
             p = skipAnnotations(classReader, p);
         }
-        return List.of(pas);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(pas);
     }
 
     private static int skipElementValue(ClassReader classReader, int p) {
@@ -150,10 +146,9 @@ class AnnotationReader {
     }
 
     private static List<AnnotationElement> readAnnotationElementValuePairs(ClassReader classReader, int p) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int numElementValuePairs = classReader.readU2(p);
         p += 2;
-        AnnotationElement[] annotationElements = new AnnotationElement[numElementValuePairs];
+        var annotationElements = new Object[numElementValuePairs];
         for (int i = 0; i < numElementValuePairs; ++i) {
             Utf8Entry elementName = classReader.readUtf8Entry(p);
             p += 2;
@@ -161,7 +156,7 @@ class AnnotationReader {
             annotationElements[i] = new AnnotationImpl.AnnotationElementImpl(elementName, value);
             p = skipElementValue(classReader, p);
         }
-        return List.of(annotationElements);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(annotationElements);
     }
 
     private static int skipElementValuePairs(ClassReader classReader, int p) {
@@ -243,10 +238,9 @@ class AnnotationReader {
     }
 
     private static List<TypeAnnotation.LocalVarTargetInfo> readLocalVarEntries(ClassReader classReader, int p, LabelContext lc, int targetType) {
-        // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int tableLength = classReader.readU2(p);
         p += 2;
-        TypeAnnotation.LocalVarTargetInfo[] entries = new TypeAnnotation.LocalVarTargetInfo[tableLength];
+        var entries = new Object[tableLength];
         for (int i = 0; i < tableLength; ++i) {
             int startPc = classReader.readU2(p);
             entries[i] = TypeAnnotation.LocalVarTargetInfo.of(
@@ -255,7 +249,7 @@ class AnnotationReader {
                     classReader.readU2(p + 4));
             p += 6;
         }
-        return List.of(entries);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(entries);
     }
 
     private static int skipTypeAnnotation(ClassReader classReader, int p) {

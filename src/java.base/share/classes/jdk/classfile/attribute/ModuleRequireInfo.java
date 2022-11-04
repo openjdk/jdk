@@ -48,7 +48,11 @@ public sealed interface ModuleRequireInfo
     ModuleEntry requires();
 
     /**
-     * @@@
+     * {@return the flags associated with this require declaration, as a bit mask}
+     * Valid flags include {@link jdk.classfile.Classfile#ACC_TRANSITIVE},
+     * {@link jdk.classfile.Classfile#ACC_STATIC_PHASE},
+     * {@link jdk.classfile.Classfile#ACC_SYNTHETIC} and
+     * {@link jdk.classfile.Classfile#ACC_MANDATED}
      */
     int requiresFlagsMask();
 

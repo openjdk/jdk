@@ -62,22 +62,4 @@ sealed public interface LocalVariableTypeInfo
      * which holds this local variable}
      */
     int slot();
-
-    /**
-     * {@return a local variable type description}
-     * @param startPc the starting index into the code array (inclusive) for the
-     *                scope of this variable
-     * @param length the ending index into the code array (exclusive) for the scope
-     *               of this variable
-     * @param name the name of the variable
-     * @param signature the generic signature of the variable
-     * @param slot the local variable slot for this variable
-     */
-    static LocalVariableTypeInfo of(int startPc,
-                                    int length,
-                                    Utf8Entry name,
-                                    Utf8Entry signature,
-                                    int slot) {
-        return new UnboundAttribute.UnboundLocalVariableTypeInfo(startPc, length, name, signature, slot);
-    }
 }

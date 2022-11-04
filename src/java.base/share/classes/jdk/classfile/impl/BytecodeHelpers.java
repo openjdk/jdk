@@ -324,7 +324,7 @@ public class BytecodeHelpers {
 
     public static LoadableConstantEntry constantEntry(ConstantPoolBuilder constantPool,
                                                       ConstantDesc constantValue) {
-        // @@@ Pattern switch
+        // this method is invoked during JVM bootstrap - cannot use pattern switch
         if (constantValue instanceof Integer value) {
             return constantPool.intEntry(value);
         }
