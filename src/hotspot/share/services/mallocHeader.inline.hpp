@@ -46,25 +46,10 @@ inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_mark
 }
 
 inline void MallocHeader::mark_block_as_dead() {
-  // Note: the header may be revived later (see MallocHeader::revive_bloc()). Only
-  // touch the canaries here, leave the other fields alone!
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
   set_footer(_footer_canary_dead_mark);
 }
-
-inline void MallocHeader::revive_block() {
-  // We expect the header to be marked as dead. All other fields shall still be valid,
-  // see MallocHeader::mark_block_as_dead().
-  assert(_canary == _header_canary_dead_mark, "Expected dead header canary");
-  assert(get_footer() == _footer_canary_dead_mark, "Expected dead footer canary");
-  NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "Expected the alt canary to be dead"));
-
-  _canary = _header_canary_life_mark;
-  set_footer(_footer_canary_life_mark);
-  NOT_LP64(_alt_canary = _header_alt_canary_life_mark;)
-}
-
 
 inline void MallocHeader::assert_block_integrity() const {
   char msg[256];

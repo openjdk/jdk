@@ -726,10 +726,11 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
 
     if (new_outer_ptr == NULL) {
-      // If realloc(3) failed, the old block still exists. We must revive the old
+      // If realloc(3) failed, the old block still exists. We must re-instantiate the old
       // NMT header then, since we marked it dead already. Otherwise subsequent os::realloc()
       // or os::free() calls would trigger block integrity asserts.
-      MallocTracker::revert_record_free(memblock);
+      void* p = MemTracker::record_malloc(old_outer_ptr, old_size, memflags, stack);
+      assert(p == memblock, "sanity");
       return NULL;
     }
 

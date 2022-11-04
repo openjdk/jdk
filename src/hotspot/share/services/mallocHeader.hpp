@@ -125,10 +125,6 @@ class MallocHeader {
 
   inline void mark_block_as_dead();
 
-  // Given a memory block that has been marked as dead (via MallocHeader::mark_block_as_dead())
-  // but has otherwise not been touched, revive it by reconstructing the canaries.
-  inline void revive_block();
-
   // If block is broken, fill in a short descriptive text in out,
   // an option pointer to the corruption in p_corruption, and return false.
   // Return true if block is fine.
