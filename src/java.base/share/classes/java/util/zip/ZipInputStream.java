@@ -268,7 +268,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      *  @throws OutOfMemoryError {@inheritDoc}
      *
      * @since 11
-     */@Override
+     */
+    @Override
     public byte[] readNBytes(int len) throws IOException {
         return super.readNBytes(len);
     }
@@ -302,7 +303,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      *
      * <p> If an I/O error occurs reading from the input stream, then it may do
      * so after some, but not all, bytes of {@code b} have been updated with
-     * data from the input stream. Consequently the input stream and {@code b}
+     * data from the input stream. Consequently, the input stream and {@code b}
      * may be in an inconsistent state. It is strongly recommended that the
      * stream be promptly closed if an I/O error occurs.
      *
@@ -368,7 +369,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * <p>
      * If an I/O error occurs reading from the input stream or writing to the
      * output stream, then it may do so after some bytes have been read or
-     * written. Consequently the input stream may not be at end of stream and
+     * written. Consequently, the input stream may not be at end of stream and
      * one, or both, streams may be in an inconsistent state. It is strongly
      * recommended that both streams be promptly closed if an I/O error occurs.
      *
