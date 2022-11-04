@@ -1221,8 +1221,8 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
                                         GrowableArray<MemRegion>* closed_heap_regions,
                                         GrowableArray<MemRegion>* open_heap_regions) {
   // Print statistics of all the regions
-  const size_t bitmap_used = mapinfo->space_at(MetaspaceShared::bm)->used();
-  const size_t bitmap_reserved = mapinfo->space_at(MetaspaceShared::bm)->used_aligned();
+  const size_t bitmap_used = mapinfo->region_at(MetaspaceShared::bm)->used();
+  const size_t bitmap_reserved = mapinfo->region_at(MetaspaceShared::bm)->used_aligned();
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
                                 bitmap_reserved +
                                 _total_closed_heap_region_size +

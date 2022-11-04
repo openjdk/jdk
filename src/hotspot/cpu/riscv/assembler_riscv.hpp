@@ -1136,7 +1136,7 @@ enum VectorMask {
   }
 
   // Vector Mask
-  INSN(vpopc_m,  0b1010111, 0b010, 0b10000, 0b010000);
+  INSN(vcpop_m,  0b1010111, 0b010, 0b10000, 0b010000);
   INSN(vfirst_m, 0b1010111, 0b010, 0b10001, 0b010000);
 #undef INSN
 
@@ -1282,7 +1282,7 @@ enum VectorMask {
   }
 
   // Vector Single-Width Floating-Point Reduction Instructions
-  INSN(vfredsum_vs,   0b1010111, 0b001, 0b000001);
+  INSN(vfredusum_vs,  0b1010111, 0b001, 0b000001);
   INSN(vfredosum_vs,  0b1010111, 0b001, 0b000011);
   INSN(vfredmin_vs,   0b1010111, 0b001, 0b000101);
   INSN(vfredmax_vs,   0b1010111, 0b001, 0b000111);
@@ -1492,11 +1492,11 @@ enum VectorMask {
 
   // Vector Mask-Register Logical Instructions
   INSN(vmxnor_mm,   0b1010111, 0b010, 0b1, 0b011111);
-  INSN(vmornot_mm,  0b1010111, 0b010, 0b1, 0b011100);
+  INSN(vmorn_mm,    0b1010111, 0b010, 0b1, 0b011100);
   INSN(vmnor_mm,    0b1010111, 0b010, 0b1, 0b011110);
   INSN(vmor_mm,     0b1010111, 0b010, 0b1, 0b011010);
   INSN(vmxor_mm,    0b1010111, 0b010, 0b1, 0b011011);
-  INSN(vmandnot_mm, 0b1010111, 0b010, 0b1, 0b011000);
+  INSN(vmandn_mm,   0b1010111, 0b010, 0b1, 0b011000);
   INSN(vmnand_mm,   0b1010111, 0b010, 0b1, 0b011101);
   INSN(vmand_mm,    0b1010111, 0b010, 0b1, 0b011001);
 
@@ -1596,7 +1596,7 @@ enum Nf {
   }
 
   // Vector Load/Store Instructions
-  INSN(vl1r_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
+  INSN(vl1re8_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
 
 #undef INSN
 
@@ -1617,8 +1617,8 @@ enum Nf {
   }
 
   // Vector Unit-Stride Instructions
-  INSN(vle1_v, 0b0000111, 0b000, 0b01011, 0b00, 0b0);
-  INSN(vse1_v, 0b0100111, 0b000, 0b01011, 0b00, 0b0);
+  INSN(vlm_v, 0b0000111, 0b000, 0b01011, 0b00, 0b0);
+  INSN(vsm_v, 0b0100111, 0b000, 0b01011, 0b00, 0b0);
 
 #undef INSN
 
@@ -2709,6 +2709,44 @@ public:
   }
 
   INSN(lui);
+
+#undef INSN
+
+// Cache Management Operations
+#define INSN(NAME, funct)                                                                    \
+  void NAME(Register Rs1) {                                                                  \
+    unsigned insn = 0;                                                                       \
+    patch((address)&insn, 6,  0, 0b0001111);                                                 \
+    patch((address)&insn, 14, 12, 0b010);                                                    \
+    patch_reg((address)&insn, 15, Rs1);                                                      \
+    patch((address)&insn, 31, 20, funct);                                                    \
+    emit(insn);                                                                              \
+  }
+
+  INSN(cbo_inval, 0b0000000000000);
+  INSN(cbo_clean, 0b0000000000001);
+  INSN(cbo_flush, 0b0000000000010);
+  INSN(cbo_zero,  0b0000000000100);
+
+#undef INSN
+
+#define INSN(NAME, funct)                                                                    \
+  void NAME(Register Rs1, int32_t offset) {                                                  \
+    guarantee((offset & 0x1f) == 0, "offset lowest 5 bits must be zero");                    \
+    int32_t upperOffset = offset >> 5;                                                       \
+    unsigned insn = 0;                                                                       \
+    patch((address)&insn, 6,  0, 0b0010011);                                                 \
+    patch((address)&insn, 14, 12, 0b110);                                                    \
+    patch_reg((address)&insn, 15, Rs1);                                                      \
+    patch((address)&insn, 24, 20, funct);                                                    \
+    upperOffset &= 0x7f;                                                                     \
+    patch((address)&insn, 31, 25, upperOffset);                                              \
+    emit(insn);                                                                              \
+  }
+
+  INSN(prefetch_i, 0b0000000000000);
+  INSN(prefetch_r, 0b0000000000001);
+  INSN(prefetch_w, 0b0000000000011);
 
 #undef INSN
 

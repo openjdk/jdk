@@ -1673,7 +1673,7 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 
   bind(L_NaN);
   vfmv_s_f(tmp2, src1);
-  vfredsum_vs(tmp1, src2, tmp2);
+  vfredusum_vs(tmp1, src2, tmp2);
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);

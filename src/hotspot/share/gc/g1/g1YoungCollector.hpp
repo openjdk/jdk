@@ -82,7 +82,6 @@ class G1YoungCollector {
   G1YoungGCEvacFailureInjector* evac_failure_injector() const;
 
   GCCause::Cause _gc_cause;
-  double _target_pause_time_ms;
 
   bool _concurrent_operation_is_full_mark;
 
@@ -99,7 +98,7 @@ class G1YoungCollector {
 
   void set_young_collection_default_active_worker_threads();
 
-  void flush_dirty_card_queues();
+  void concatenate_dirty_card_logs_and_stats();
 
   void pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* pss);
   // Actually do the work of evacuating the parts of the collection set.
@@ -137,8 +136,7 @@ class G1YoungCollector {
   bool evacuation_failed() const;
 
 public:
-  G1YoungCollector(GCCause::Cause gc_cause,
-                   double target_pause_time_ms);
+  G1YoungCollector(GCCause::Cause gc_cause);
   void collect();
 
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }
