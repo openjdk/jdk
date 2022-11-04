@@ -23,19 +23,22 @@
 
 package jdk.test.lib.security;
 
-import sun.security.tools.keytool.CertAndKeyGen;
-import sun.security.x509.X500Name;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.SequenceInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
+
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 // Certificates taken from old ValWithAnchorByName testcase ***
 public enum TestCertificate {
@@ -191,6 +194,37 @@ public enum TestCertificate {
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException("Unexpected failure", e);
         }
+    }
+
+    public static void keyToolTest() throws Exception {
+        String config = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <configuration version="2.0" description="test">
+                    <event name="jdk.X509Certificate">
+                       <setting name="enabled">true</setting>
+                       <setting name="stackTrace">true</setting>
+                    </event>
+                </configuration>""";
+        Files.writeString(Path.of("config.jfc"), config);
+
+        SecurityTools.keytool("-J-XX:StartFlightRecording=filename=keytool.jfr,settings=config.jfc",
+            "-genkeypair", "-alias", "testkey", "-keyalg", "RSA", "-keysize", "2048", "-dname",
+            "CN=8292033.oracle.com,OU=JPG,C=US", "-keypass", "changeit",
+            "-validity", "365", "-storetype", "PKCS12", "-keystore", "keystore.pkcs12", "-storepass", "changeit")
+            .shouldHaveExitValue(0);
+        jfrTool("keytool.jfr")
+            .shouldContain("8292033.oracle.com")
+            .shouldContain("SHA384withRSA")
+            .shouldNotContain("algorithm = N/A") // shouldn't record cert under construction
+            .shouldHaveExitValue(0);
+
+    }
+
+    private static OutputAnalyzer jfrTool(String jfrFile) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder();
+        pb.command(new String[] { JDKToolFinder.getJDKTool("jfr"), "print", "--events",
+                "jdk.X509Certificate", jfrFile});
+        return new OutputAnalyzer(pb.start());
     }
 
     public static void generateChain(boolean selfSignedTest, boolean trustAnchorCert) throws Exception {

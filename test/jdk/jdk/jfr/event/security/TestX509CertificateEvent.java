@@ -65,8 +65,16 @@ public class TestX509CertificateEvent {
         }, 4, true);
 
         testCall(() -> {
+            // test keytool cert generation with JFR enabled
+            // most interested in just detecting this cert being recorded
+            // Root CA certs get loaded by keytool - difficult to determine exact
+            // number of certificate events for this test (cacerts factor)
+            TestCertificate.keyToolTest();
+        }, -1, false);
+
+        testCall(() -> {
             // test CertAndKeyGen functionality
-            // most interesting in just detecting this cert being created
+            // most interested in just detecting this cert being created
             TestCertificate.certAndGenTest();
         }, 1, false);
     }
@@ -78,7 +86,9 @@ public class TestX509CertificateEvent {
             f.run();
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
-            Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
+            if (expected >= 0) {
+                Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
+            }
             if (runAsserts) {
                 assertEvent(events, TestCertificate.ONE);
                 assertEvent(events, TestCertificate.TWO);

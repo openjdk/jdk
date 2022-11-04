@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+import sun.security.jca.JCAUtil;
 import sun.security.pkcs10.PKCS10;
 import sun.security.util.SignatureUtil;
 import sun.security.x509.*;
@@ -344,7 +345,7 @@ public final class CertAndKeyGen {
             } else {
                 cert.sign(privateKey, sigAlg);
             }
-
+            JCAUtil.tryCommitCertEvent(cert);
             return cert;
 
         } catch (IOException e) {
