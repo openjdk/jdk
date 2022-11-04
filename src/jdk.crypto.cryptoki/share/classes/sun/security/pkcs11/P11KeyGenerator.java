@@ -335,7 +335,7 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         try {
             newSignificantKeySize = checkKeySize(mechanism, keySize, range);
         } catch (InvalidAlgorithmParameterException iape) {
-            throw new InvalidParameterException("Invalid algorithm parameter", iape);
+            throw new InvalidParameterException(iape);
         }
         if ((mechanism == CKM_DES2_KEY_GEN) ||
             (mechanism == CKM_DES3_KEY_GEN))  {
