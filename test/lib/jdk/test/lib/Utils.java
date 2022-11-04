@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -63,6 +64,8 @@ import java.util.regex.Pattern;
 import static jdk.test.lib.Asserts.assertTrue;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import javax.swing.*;
 
 /**
  * Common library for various test helper functions.
@@ -817,5 +820,56 @@ public final class Utils {
     public static Path createTempDirectory(String prefix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
         return Files.createTempDirectory(dir, prefix, attrs);
+    }
+
+    /**
+     * Display instruction message with GUI and prompt user input into a text field.
+     *
+     * @param title title string
+     * @param instruction instruction string
+     * @param message prompt message string
+     * @param waitTimeMs GUI alive time in milliseconds
+     *
+     * @return user input string
+     */
+    public static String readHostInput(String title, String instruction,
+            String message, int waitTimeMs) {
+        String host = "";
+        Thread currentThread = Thread.currentThread();
+        AtomicBoolean abort = new AtomicBoolean(false);
+        UIBuilder.DialogBuilder db = new UIBuilder.DialogBuilder()
+                .setTitle(title)
+                .setInstruction(instruction)
+                .setMessage(message)
+                .setSubmitAction(e -> currentThread.interrupt())
+                .setCloseAction(() -> {
+                    abort.set(true);
+                    currentThread.interrupt();
+                });
+        JTextArea input = db.getMessageText();
+        JDialog dialog = db.build();
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                dialog.setVisible(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(waitTimeMs);
+            //Timed out, so fail the test
+            throw new RuntimeException(
+                    "Timed out after " + waitTimeMs / 1000 + " seconds");
+        } catch (InterruptedException e) {
+        } finally {
+            if (abort.get()) {
+                throw new RuntimeException("TEST ABORTED");
+            }
+            host = input.getText().replaceAll(message, "").strip().trim();
+            dialog.dispose();
+        }
+        return host;
     }
 }

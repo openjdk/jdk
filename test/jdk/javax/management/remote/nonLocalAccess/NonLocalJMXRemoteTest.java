@@ -21,9 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.UIBuilder;
+import jdk.test.lib.Utils;
 
-import javax.swing.*;
 import java.net.InetAddress;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
@@ -94,7 +93,7 @@ public class NonLocalJMXRemoteTest {
 
     static final String[] instructions = new String[]{
             "This is a manual test that requires rmiregistry run on a different host"
-                    + ". Login or ssh to a different host, install the latest JDK "
+                    + ". Login or ssh to a different host, install the JDK under test, "
                     + "build and invoke:\n\n"
                     + "$JDK_HOME/bin/rmiregistry \\\n"
                     + "-J-Dcom.sun.management.jmxremote.port=8888 \\\n"
@@ -106,7 +105,7 @@ public class NonLocalJMXRemoteTest {
                     + "host and the port separated by a semicolon below and continue "
                     + "the test.",
             "This is a manual test that requires rmiregistry run on a different host"
-                    + ". Login or ssh to a different host, install the latest JDK "
+                    + ". Login or ssh to a different host, install the JDK under test, "
                     + "build and invoke :\n"
                     + "(Stop the current running rmi server by typing Ctrl-C)\n\n"
                     + "$JDK_HOME/bin/rmiregistry \\\n"
@@ -136,7 +135,12 @@ public class NonLocalJMXRemoteTest {
             if (args.length > 0) {
                 testId = Integer.valueOf(args[0]);
             }
-            String input = test.readHostInput(testId);
+            String input = Utils.readHostInput(
+                    "NonLocalJMXRemoteTest",
+                    instructions[testId],
+                    message,
+                    TIMEOUT_MS
+            );
             String[] hostAndPort = input.split(":");
 
             if (hostAndPort.length >= 1) {
@@ -221,44 +225,5 @@ public class NonLocalJMXRemoteTest {
         } else {
             throw new RuntimeException("AccessException did not occur when expected", ex);
         }
-    }
-
-    private String readHostInput(int index) {
-        String host = "";
-        Thread currentThread = Thread.currentThread();
-        UIBuilder.DialogBuilder db = new UIBuilder.DialogBuilder()
-                .setTitle("NonLocalRegistrTest")
-                .setInstruction(instructions[index])
-                .setMessage(message)
-                .setSubmitAction(e -> currentThread.interrupt())
-                .setCloseAction(() -> {
-                    abort = true;
-                    currentThread.interrupt();
-                });
-        JTextArea input = db.getMessageText();
-        JDialog dialog = db.build();
-
-        SwingUtilities.invokeLater(() -> {
-            try {
-                dialog.setVisible(true);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        try {
-            Thread.sleep(TIMEOUT_MS);
-            //Timed out, so fail the test
-            throw new RuntimeException(
-                    "Timed out after " + TIMEOUT_MS / 1000 + " seconds");
-        } catch (InterruptedException e) {
-        } finally {
-            if (abort) {
-                throw new RuntimeException("TEST ABORTED");
-            }
-            host = input.getText().replaceAll(message, "").strip().trim();
-            dialog.dispose();
-        }
-        return host;
     }
 }

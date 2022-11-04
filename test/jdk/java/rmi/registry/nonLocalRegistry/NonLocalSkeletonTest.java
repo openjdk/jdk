@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import jdk.test.lib.Utils;
 
 import sun.rmi.server.UnicastRef;
 import sun.rmi.transport.LiveRef;
@@ -48,7 +49,7 @@ import java.util.Set;
  *      java.rmi/sun.rmi.transport:+open java.rmi/sun.rmi.transport.tcp:+open
  * @summary Verify that Registry rejects non-local access for bind, unbind, rebind.
  *    The test is manual because the (non-local) host running rmiregistry must be supplied as a property.
- *
+ * @library /test/lib
  * @run main/othervm -Dregistry.host=localhost NonLocalSkeletonTest
  */
 
@@ -59,7 +60,7 @@ import java.util.Set;
  *      java.rmi/sun.rmi.transport:+open java.rmi/sun.rmi.transport.tcp:+open
  * @summary Verify that Registry rejects non-local access for bind, unbind, rebind.
  *    The test is manual because the (non-local) host running rmiregistry must be supplied as a property.
- *
+ * @library /test/lib
  * @run main/othervm/manual NonLocalSkeletonTest
  */
 
@@ -84,7 +85,12 @@ public class NonLocalSkeletonTest extends NonLocalRegistryBase {
         String host = System.getProperty("registry.host");
         if (host == null || host.isEmpty()) {
             NonLocalRegistryBase test = new NonLocalSkeletonTest();
-            host = test.readHostInput();
+            host = Utils.readHostInput(
+                    "NonLocalSkeletonTest",
+                    instructions,
+                    message,
+                    TIMEOUT_MS
+            );
             if (host == null || host.isEmpty()) {
                 throw new RuntimeException(
                         "supply a remote host with -Dregistry.host=hostname");
@@ -148,32 +154,5 @@ public class NonLocalSkeletonTest extends NonLocalRegistryBase {
         PrivilegedAction<Registry> action = () -> (Registry) Proxy.newProxyInstance(loader,
                 interfaces, handler);
         return AccessController.doPrivileged(action);
-    }
-
-    /**
-     * Check the exception chain for the expected AccessException and message.
-     * @param ex the exception from the remote invocation.
-     */
-    private static void assertIsAccessException(Throwable ex) {
-        Throwable t = ex;
-        while (!(t instanceof AccessException) && t.getCause() != null) {
-            t = t.getCause();
-        }
-        if (t instanceof AccessException) {
-            String msg = t.getMessage();
-            int asIndex = msg.indexOf("Registry");
-            int rrIndex = msg.indexOf("Registry.Registry");     // Obsolete error text
-            int disallowIndex = msg.indexOf("disallowed");
-            int nonLocalHostIndex = msg.indexOf("non-local host");
-            if (asIndex < 0 ||
-                    rrIndex != -1 ||
-                    disallowIndex < 0 ||
-                    nonLocalHostIndex < 0 ) {
-                throw new RuntimeException("exception message is malformed", t);
-            }
-            System.out.printf("Found expected AccessException: %s%n%n", t);
-        } else {
-            throw new RuntimeException("AccessException did not occur when expected", ex);
-        }
     }
 }

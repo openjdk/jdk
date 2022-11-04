@@ -21,14 +21,12 @@
  * questions.
  */
 
-import jdk.test.lib.UIBuilder;
-
-import javax.swing.*;
+import java.rmi.AccessException;
 
 public class NonLocalRegistryBase {
     static final String instructions =
             "This is a manual test that requires rmiregistry run on a different host"
-                    + ". Login or ssh to a different host, install the latest JDK "
+                    + ". Login or ssh to a different host, install the JDK under test, "
                     + "build and invoke:\n\n"
                     + "$JDK_HOME/bin/rmiregistry"
                     + "\n\nRegistry service is run in the background without any "
@@ -36,44 +34,31 @@ public class NonLocalRegistryBase {
                     + "host below and continue the test.";
     static final String message = "Enter the hostname or IP address here and submit:";
     static final int TIMEOUT_MS = 3600000;
-    private volatile boolean abort = false;
 
-    protected String readHostInput() {
-        String host = "";
-        Thread currentThread = Thread.currentThread();
-        UIBuilder.DialogBuilder db = new UIBuilder.DialogBuilder()
-                .setTitle("NonLocalRegistrTest")
-                .setInstruction(instructions)
-                .setMessage(message)
-                .setSubmitAction(e -> currentThread.interrupt())
-                .setCloseAction(() -> {
-                    abort = true;
-                    currentThread.interrupt();
-                });
-        JTextArea input = db.getMessageText();
-        JDialog dialog = db.build();
-
-        SwingUtilities.invokeLater(() -> {
-            try {
-                dialog.setVisible(true);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        try {
-            Thread.sleep(TIMEOUT_MS);
-            //Timed out, so fail the test
-            throw new RuntimeException(
-                    "Timed out after " + TIMEOUT_MS / 1000 + " seconds");
-        } catch (InterruptedException e) {
-        } finally {
-            if (abort) {
-                throw new RuntimeException("TEST ABORTED");
-            }
-            host = input.getText().replaceAll(message, "").strip().trim();
-            dialog.dispose();
+    /**
+     * Check the exception chain for the expected AccessException and message.
+     * @param ex the exception from the remote invocation.
+     */
+     static void assertIsAccessException(Throwable ex) {
+        Throwable t = ex;
+        while (!(t instanceof AccessException) && t.getCause() != null) {
+            t = t.getCause();
         }
-        return host;
+        if (t instanceof AccessException) {
+            String msg = t.getMessage();
+            int asIndex = msg.indexOf("Registry");
+            int rrIndex = msg.indexOf("Registry.Registry");     // Obsolete error text
+            int disallowIndex = msg.indexOf("disallowed");
+            int nonLocalHostIndex = msg.indexOf("non-local host");
+            if (asIndex < 0 ||
+                    rrIndex != -1 ||
+                    disallowIndex < 0 ||
+                    nonLocalHostIndex < 0 ) {
+                throw new RuntimeException("exception message is malformed", t);
+            }
+            System.out.printf("Found expected AccessException: %s%n%n", t);
+        } else {
+            throw new RuntimeException("AccessException did not occur when expected", ex);
+        }
     }
 }
