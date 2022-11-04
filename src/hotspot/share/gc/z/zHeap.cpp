@@ -436,9 +436,6 @@ void ZHeap::relocate_start() {
 
   // Update statistics
   ZStatHeap::set_at_relocate_start(_page_allocator.stats());
-
-  // Notify JVMTI
-  JvmtiTagMap::set_needs_rehashing();
 }
 
 void ZHeap::relocate() {

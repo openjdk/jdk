@@ -119,6 +119,10 @@ abstract class UnixFileSystem
         return needToResolveAgainstDefaultDirectory;
     }
 
+    boolean isCaseInsensitiveAndPreserving() {
+        return false;
+    }
+
     UnixPath rootDirectory() {
         return rootDirectory;
     }
