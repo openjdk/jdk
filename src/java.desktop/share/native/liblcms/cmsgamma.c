@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -97,7 +97,7 @@ static _cmsParametricCurvesCollection DefaultCurves = {
 
 // Duplicates the zone of memory used by the plug-in in the new context
 static
-void DupPluginCurvesList(struct _cmsContext_struct* ctx,
+void DupPluginCurvesList(struct _cmsContext_struct* ctx, 
                                                const struct _cmsContext_struct* src)
 {
    _cmsCurvesPluginChunkType newHead = { NULL };
@@ -113,15 +113,15 @@ void DupPluginCurvesList(struct _cmsContext_struct* ctx,
         entry = entry ->Next) {
 
             _cmsParametricCurvesCollection *newEntry = ( _cmsParametricCurvesCollection *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(_cmsParametricCurvesCollection));
-
-            if (newEntry == NULL)
+   
+            if (newEntry == NULL) 
                 return;
 
             // We want to keep the linked list order, so this is a little bit tricky
             newEntry -> Next = NULL;
             if (Anterior)
                 Anterior -> Next = newEntry;
-
+     
             Anterior = newEntry;
 
             if (newHead.ParametricCurves == NULL)
@@ -132,7 +132,7 @@ void DupPluginCurvesList(struct _cmsContext_struct* ctx,
 }
 
 // The allocator have to follow the chain
-void _cmsAllocCurvesPluginChunk(struct _cmsContext_struct* ctx,
+void _cmsAllocCurvesPluginChunk(struct _cmsContext_struct* ctx, 
                                 const struct _cmsContext_struct* src)
 {
     _cmsAssert(ctx != NULL);
@@ -236,7 +236,7 @@ _cmsParametricCurvesCollection *GetParametricCurveByType(cmsContext ContextID, i
 }
 
 // Low level allocate, which takes care of memory details. nEntries may be zero, and in this case
-// no optimation curve is computed. nSegments may also be zero in the inverse case, where only the
+// no optimization curve is computed. nSegments may also be zero in the inverse case, where only the
 // optimization curve is given. Both features simultaneously is an error
 static
 cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsUInt32Number nEntries,
@@ -451,13 +451,13 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
              if (Val < 0)
                  Val = 0;
          }
-     }
+     }         
      break;
 
 
     // IEC 61966-3
-    // Y = (aX + b)^Gamma | X <= -b/a
-    // Y = c              | else
+    // Y = (aX + b)^Gamma + c | X <= -b/a
+    // Y = c                  | else
     case 3:
     {
         if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
@@ -491,7 +491,8 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // X=-b/a                   | (Y<c)
     case -3:
     {
-        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[1]) < MATRIX_DET_TOLERANCE)
         {
             Val = 0;
         }
@@ -536,28 +537,31 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // X=Y/c              | Y< (ad+b)^g
     case -4:
     {
-        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
-            fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
-            fabs(Params[3]) < MATRIX_DET_TOLERANCE)
-        {
-            Val = 0;
-        }
+
+        e = Params[1] * Params[4] + Params[2];
+        if (e < 0)
+            disc = 0;
         else
-        {
-            e = Params[1] * Params[4] + Params[2];
-            if (e < 0)
-                disc = 0;
+            disc = pow(e, Params[0]);
+
+        if (R >= disc) {
+
+            if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+                fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+
+                Val = 0;
+
             else
-                disc = pow(e, Params[0]);
-
-            if (R >= disc) {
-
                 Val = (pow(R, 1.0 / Params[0]) - Params[2]) / Params[1];
-            }
-            else {
-                Val = R / Params[3];
-            }
         }
+        else {
+
+            if (fabs(Params[3]) < MATRIX_DET_TOLERANCE)
+                Val = 0;
+            else
+                Val = R / Params[3];
+        }
+
     }
     break;
 
@@ -584,26 +588,29 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // X=(Y-f)/c          | else
     case -5:
     {
-        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
-            fabs(Params[3]) < MATRIX_DET_TOLERANCE)
-        {
-            Val = 0;
-        }
-        else
-        {
-            disc = Params[3] * Params[4] + Params[6];
-            if (R >= disc) {
+        disc = Params[3] * Params[4] + Params[6];
+        if (R >= disc) {
 
-                e = R - Params[5];
-                if (e < 0)
+            e = R - Params[5];
+            if (e < 0)
+                Val = 0;
+            else
+            {
+                if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+                    fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+
                     Val = 0;
                 else
                     Val = (pow(e, 1.0 / Params[0]) - Params[2]) / Params[1];
             }
-            else {
-                Val = (R - Params[6]) / Params[3];
-            }
         }
+        else {
+            if (fabs(Params[3]) < MATRIX_DET_TOLERANCE)
+                Val = 0;
+            else
+                Val = (R - Params[6]) / Params[3];
+        }
+
     }
     break;
 
@@ -624,7 +631,8 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // ((Y - c) ^1/Gamma - b) / a
     case -6:
     {
-        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[1]) < MATRIX_DET_TOLERANCE)
         {
             Val = 0;
         }
@@ -868,13 +876,13 @@ cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cm
     Seg[2].x0 = 1.0;
     Seg[2].x1 = PLUS_INF;
     Seg[2].Type = 6;
-
+    
     Seg[2].Params[0] = 1;
     Seg[2].Params[1] = 0;
     Seg[2].Params[2] = 0;
     Seg[2].Params[3] = values[nEntries-1];
     Seg[2].Params[4] = 0;
-
+    
 
     return cmsBuildSegmentedToneCurve(ContextID, 3, Seg);
 }
@@ -1084,9 +1092,9 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsUInt32Number nResultSamples, co
     _cmsAssert(InCurve != NULL);
 
     // Try to reverse it analytically whatever possible
-
-    if (InCurve ->nSegments == 1 && InCurve ->Segments[0].Type > 0 &&
-        /* InCurve -> Segments[0].Type <= 5 */
+ 
+    if (InCurve ->nSegments == 1 && InCurve ->Segments[0].Type > 0 && 
+        /* InCurve -> Segments[0].Type <= 5 */ 
         GetParametricCurveByType(InCurve ->InterpParams->ContextID, InCurve ->Segments[0].Type, NULL) != NULL) {
 
         return cmsBuildParametricToneCurve(InCurve ->InterpParams->ContextID,
@@ -1158,7 +1166,7 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurve(const cmsToneCurve* InGamma)
 //   Output: smoothed vector (z): vector from 1 to m.
 
 static
-cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[],
+cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[], 
                 cmsFloat32Number z[], cmsFloat32Number lambda, int m)
 {
     int i, i1, i2;
@@ -1495,6 +1503,9 @@ cmsFloat64Number CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Num
             n++;
         }
     }
+
+    // We need enough valid samples
+    if (n <= 1) return -1.0;
 
     // Take a look on SD to see if gamma isn't exponential at all
     Std = sqrt((n * sum2 - sum * sum) / (n*(n-1)));

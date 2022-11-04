@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -55,7 +55,7 @@
 //
 #include "lcms2_internal.h"
 
-#ifndef CMS_NO_HALF_SUPPORT
+#ifndef CMS_NO_HALF_SUPPORT 
 
 // This code is inspired in the paper "Fast Half Float Conversions"
 // by Jeroen van der Zijp
@@ -406,7 +406,7 @@ static const cmsUInt32Number Mantissa[2048] = {
 0x387fc000, 0x387fe000
 };
 
-static cmsUInt16Number Offset[64] = {
+static const cmsUInt16Number Offset[64] = {
 0x0000, 0x0400, 0x0400, 0x0400, 0x0400, 0x0400,
 0x0400, 0x0400, 0x0400, 0x0400, 0x0400, 0x0400,
 0x0400, 0x0400, 0x0400, 0x0400, 0x0400, 0x0400,

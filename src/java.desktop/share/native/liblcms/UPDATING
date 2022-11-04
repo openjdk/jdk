@@ -1,0 +1,16 @@
+### Updating Files ###
+Download and unzip latest release from https://sourceforge.net/projects/lcms/files/
+Replace files in src/java.desktop/share/native/liblcms with files from unzipped src and include folders
+Update lcms.md in src/java.desktop/share/legal
+Include AUTHORS file at bottom of md license and COPYING file for license body from latest lcms release
+Add
+
+README.1ST file information
+
+    LittleCMS core is released under MIT License
+
+    ---------------------------------
+
+in the header of the license
+
+Run tests!

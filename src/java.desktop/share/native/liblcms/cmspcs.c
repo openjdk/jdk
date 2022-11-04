@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -136,11 +136,11 @@ void CMSEXPORT cmsxyY2XYZ(cmsCIEXYZ* Dest, const cmsCIExyY* Source)
 }
 
 /*
-       The break point (24/116)^3 = (6/29)^3 is a very small amount of tristimulus
-       primary (0.008856).  Generally, this only happens for
-       nearly ideal blacks and for some orange / amber colors in transmission mode.
-       For example, the Z value of the orange turn indicator lamp lens on an
-       automobile will often be below this value.  But the Z does not
+       The break point (24/116)^3 = (6/29)^3 is a very small amount of tristimulus 
+       primary (0.008856).  Generally, this only happens for 
+       nearly ideal blacks and for some orange / amber colors in transmission mode.  
+       For example, the Z value of the orange turn indicator lamp lens on an 
+       automobile will often be below this value.  But the Z does not 
        contribute to the perceived color directly.
 */
 
@@ -903,7 +903,7 @@ int CMSEXPORT _cmsLCMScolorSpace(cmsColorSpaceSignature ProfileSpace)
 }
 
 
-cmsUInt32Number CMSEXPORT cmsChannelsOf(cmsColorSpaceSignature ColorSpace)
+cmsInt32Number CMSEXPORT cmsChannelsOfColorSpace(cmsColorSpaceSignature ColorSpace)
 {
     switch (ColorSpace) {
 
@@ -964,6 +964,16 @@ cmsUInt32Number CMSEXPORT cmsChannelsOf(cmsColorSpaceSignature ColorSpace)
     case cmsSigMCHFData:
     case cmsSig15colorData: return 15;
 
-    default: return 3;
+    default: return -1;
     }
+}
+
+/**
+* DEPRECATED: Provided for compatibility only
+*/
+cmsUInt32Number CMSEXPORT cmsChannelsOf(cmsColorSpaceSignature ColorSpace)
+{
+    int n = cmsChannelsOfColorSpace(ColorSpace);
+    if (n < 0) return 3;
+    return (cmsUInt32Number)n;
 }

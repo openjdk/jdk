@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -110,7 +110,7 @@ void from8to16(void* dst, const void* src)
 static
 void from8to16SE(void* dst, const void* src)
 {
-    cmsUInt8Number n = *(cmsUInt8Number*)src;
+    cmsUInt8Number n = *(cmsUInt8Number*)src;    
     *(cmsUInt16Number*)dst = CHANGE_ENDIAN(FROM_8_TO_16(n));
 }
 
@@ -220,21 +220,21 @@ static
 void fromFLTto8(void* dst, const void* src)
 {
     cmsFloat32Number n = *(cmsFloat32Number*)src;
-    *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0f);
+    *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0);
 }
 
 static
 void fromFLTto16(void* dst, const void* src)
 {
     cmsFloat32Number n = *(cmsFloat32Number*)src;
-    *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0f);
+    *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0);
 }
 
 static
 void fromFLTto16SE(void* dst, const void* src)
 {
     cmsFloat32Number n = *(cmsFloat32Number*)src;
-    cmsUInt16Number i = _cmsQuickSaturateWord(n * 65535.0f);
+    cmsUInt16Number i = _cmsQuickSaturateWord(n * 65535.0);
 
     *(cmsUInt16Number*)dst = CHANGE_ENDIAN(i);
 }
@@ -272,7 +272,7 @@ void fromHLFto8(void* dst, const void* src)
 {
 #ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
-       *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0f);
+       *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0);
 #else
     cmsUNUSED_PARAMETER(dst);
     cmsUNUSED_PARAMETER(src);
@@ -285,7 +285,7 @@ void fromHLFto16(void* dst, const void* src)
 {
 #ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
-       *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0f);
+       *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0);
 #else
     cmsUNUSED_PARAMETER(dst);
     cmsUNUSED_PARAMETER(src);
@@ -297,7 +297,7 @@ void fromHLFto16SE(void* dst, const void* src)
 {
 #ifndef CMS_NO_HALF_SUPPORT
     cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
-    cmsUInt16Number i = _cmsQuickSaturateWord(n * 65535.0f);
+    cmsUInt16Number i = _cmsQuickSaturateWord(n * 65535.0);
     *(cmsUInt16Number*)dst = CHANGE_ENDIAN(i);
 #else
     cmsUNUSED_PARAMETER(dst);
@@ -429,10 +429,10 @@ static cmsFormatterAlphaFn FormattersAlpha[6][6] = {
 
 
 
-// This function computes the distance from each component to the next one in bytes.
+// This function computes the distance from each component to the next one in bytes. 
 static
-void ComputeIncrementsForChunky(cmsUInt32Number Format,
-                                cmsUInt32Number ComponentStartingOrder[],
+void ComputeIncrementsForChunky(cmsUInt32Number Format,                                 
+                                cmsUInt32Number ComponentStartingOrder[], 
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
        cmsUInt32Number channels[cmsMAXCHANNELS];
@@ -442,10 +442,10 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
        cmsUInt32Number i;
        cmsUInt32Number channelSize = trueBytesSize(Format);
        cmsUInt32Number pixelSize = channelSize * total_chans;
-
-           // Sanity check
-           if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)
-                   return;
+       
+       // Sanity check
+       if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)
+           return;
 
         memset(channels, 0, sizeof(channels));
 
@@ -466,7 +466,7 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
 
        // Handle swap first (ROL of positions), example CMYK -> KCMY | 0123 -> 3012
        if (T_SWAPFIRST(Format) && total_chans > 1) {
-
+              
               cmsUInt32Number tmp = channels[0];
               for (i = 0; i < total_chans-1; i++)
                      channels[i] = channels[i + 1];
@@ -488,18 +488,18 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
 
 //  On planar configurations, the distance is the stride added to any non-negative
 static
-void ComputeIncrementsForPlanar(cmsUInt32Number Format,
+void ComputeIncrementsForPlanar(cmsUInt32Number Format, 
                                 cmsUInt32Number BytesPerPlane,
-                                cmsUInt32Number ComponentStartingOrder[],
+                                cmsUInt32Number ComponentStartingOrder[], 
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
-       cmsUInt32Number channels[cmsMAXCHANNELS];
+       cmsUInt32Number channels[cmsMAXCHANNELS];       
        cmsUInt32Number extra = T_EXTRA(Format);
        cmsUInt32Number nchannels = T_CHANNELS(Format);
        cmsUInt32Number total_chans = nchannels + extra;
        cmsUInt32Number i;
        cmsUInt32Number channelSize = trueBytesSize(Format);
-
+      
        // Sanity check
        if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)
            return;
@@ -546,7 +546,7 @@ void ComputeIncrementsForPlanar(cmsUInt32Number Format,
 static
 void  ComputeComponentIncrements(cmsUInt32Number Format,
                                  cmsUInt32Number BytesPerPlane,
-                                 cmsUInt32Number ComponentStartingOrder[],
+                                 cmsUInt32Number ComponentStartingOrder[], 
                                  cmsUInt32Number ComponentPointerIncrements[])
 {
        if (T_PLANAR(Format)) {
@@ -594,13 +594,13 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
     if (nExtra == 0)
         return;
 
-    // Compute the increments
+    // Compute the increments 
     ComputeComponentIncrements(p->InputFormat, Stride->BytesPerPlaneIn, SourceStartingOrder, SourceIncrements);
     ComputeComponentIncrements(p->OutputFormat, Stride->BytesPerPlaneOut, DestStartingOrder, DestIncrements);
 
     // Check for conversions 8, 16, half, float, dbl
     copyValueFn = _cmsGetFormatterAlpha(p->ContextID, p->InputFormat, p->OutputFormat);
-    if (copyValueFn == NULL)
+    if (copyValueFn == NULL) 
         return;
 
     if (nExtra == 1) { // Optimized routine for copying a single extra channel quickly
@@ -642,7 +642,7 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         memset(SourceStrideIncrements, 0, sizeof(SourceStrideIncrements));
         memset(DestStrideIncrements, 0, sizeof(DestStrideIncrements));
 
-        // The loop itself
+        // The loop itself       
         for (i = 0; i < LineCount; i++) {
 
             // Prepare pointers for the loop

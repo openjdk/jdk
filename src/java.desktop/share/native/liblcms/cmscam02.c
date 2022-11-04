@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -466,7 +466,7 @@ void CMSEXPORT cmsCIECAM02Forward(cmsHANDLE hModel, const cmsCIEXYZ* pIn, cmsJCh
 {
     CAM02COLOR clr;
     cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
-
+  
     _cmsAssert(lpMod != NULL);
     _cmsAssert(pIn != NULL);
     _cmsAssert(pOut != NULL);
@@ -492,7 +492,7 @@ void CMSEXPORT cmsCIECAM02Reverse(cmsHANDLE hModel, const cmsJCh* pIn, cmsCIEXYZ
 {
     CAM02COLOR clr;
     cmsCIECAM02* lpMod = (cmsCIECAM02*) hModel;
-
+    
     _cmsAssert(lpMod != NULL);
     _cmsAssert(pIn != NULL);
     _cmsAssert(pOut != NULL);
