@@ -42,7 +42,6 @@ final class SocketOutputStreamInstrumentor {
     private SocketOutputStreamInstrumentor() {
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[], int off, int len) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.SOCKET_WRITE;

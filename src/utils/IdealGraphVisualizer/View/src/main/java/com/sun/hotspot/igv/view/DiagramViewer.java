@@ -31,7 +31,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Collection;
-import java.util.List;
+import java.util.Set;
 import javax.swing.JComponent;
 import org.openide.awt.UndoRedo;
 import org.openide.util.Lookup;
@@ -77,9 +77,9 @@ public interface DiagramViewer {
 
     void componentShowing();
 
-    void setSelection(Collection<Figure> list);
+    void setFigureSelection(Set<Figure> list);
 
-    void centerFigures(List<Figure> list);
+    void centerFigures(Collection<Figure> list);
 
     void setInteractionMode(InteractionMode mode);
 

@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.*;
 
 import sun.security.util.*;
@@ -216,13 +215,6 @@ implements CertAttrSet<String> {
         return Boolean.valueOf(isSet(getPosition(name)));
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        set(getPosition(name), false);
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the NetscapeCertType.
@@ -264,29 +256,21 @@ implements CertAttrSet<String> {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream  tmp = new DerOutputStream();
-
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = NetscapeCertType_Id;
             this.critical = true;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        return mAttributeNames.elements();
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }

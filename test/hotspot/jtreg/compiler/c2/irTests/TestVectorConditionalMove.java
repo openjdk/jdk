@@ -95,7 +95,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VF, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVFGT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? a[i] : b[i];
@@ -103,7 +103,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VF, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVFGTSwap(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] > a[i]) ? a[i] : b[i];
@@ -111,7 +111,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VF, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVFLT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? a[i] : b[i];
@@ -119,7 +119,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VF, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVFLTSwap(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] < a[i]) ? a[i] : b[i];
@@ -127,7 +127,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VF, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVFEQ(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? a[i] : b[i];
@@ -135,7 +135,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDLE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? a[i] : b[i];
@@ -143,7 +143,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDLESwap(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] <= a[i]) ? a[i] : b[i];
@@ -151,7 +151,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDGE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? a[i] : b[i];
@@ -159,7 +159,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDGESwap(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] >= a[i]) ? a[i] : b[i];
@@ -167,7 +167,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVE_VD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDNE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? a[i] : b[i];
@@ -175,7 +175,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.CMOVEVD})
+    @IR(failOn = {IRNode.CMOVE_VD})
     private static void testCMoveVDUnsupported() {
         int seed = 1001;
         for (int i = 0; i < doublec.length; i++) {

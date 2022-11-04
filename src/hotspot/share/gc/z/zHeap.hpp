@@ -90,7 +90,6 @@ public:
   size_t unsafe_max_tlab_alloc() const;
 
   bool is_in(uintptr_t addr) const;
-  uint32_t hash_oop(uintptr_t addr) const;
 
   // Threads
   uint active_workers() const;

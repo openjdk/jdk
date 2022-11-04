@@ -140,22 +140,27 @@ public class Extension implements java.security.cert.Extension {
         return ext;
     }
 
-    public void encode(OutputStream out) throws IOException {
+    /**
+     * Implementing {@link java.security.cert.Extension#encode(OutputStream)}.
+     * This implementation is made final to make sure all {@code encode()}
+     * methods in child classes are actually implementations of
+     * {@link #encode(DerOutputStream)} below.
+     *
+     * @param out the output stream
+     * @throws IOException
+     */
+    @Override
+    public final void encode(OutputStream out) throws IOException {
         if (out == null) {
             throw new NullPointerException();
         }
-
-        DerOutputStream dos1 = new DerOutputStream();
-        DerOutputStream dos2 = new DerOutputStream();
-
-        dos1.putOID(extensionId);
-        if (critical) {
-            dos1.putBoolean(true);
+        if (out instanceof DerOutputStream dos) {
+            encode(dos);
+        } else {
+            DerOutputStream dos = new DerOutputStream();
+            encode(dos);
+            out.write(dos.toByteArray());
         }
-        dos1.putOctetString(extensionValue);
-
-        dos2.write(DerValue.tag_Sequence, dos1);
-        out.write(dos2.toByteArray());
     }
 
     /**
@@ -208,6 +213,15 @@ public class Extension implements java.security.cert.Extension {
      */
     public byte[] getExtensionValue() {
         return extensionValue;
+    }
+
+    /**
+     * Returns the extension name. The default implementation returns the
+     * string form of the extensionId. Known extensions should override this
+     * method to return a human readable name.
+     */
+    public String getName() {
+        return getId();
     }
 
     public String getId() {

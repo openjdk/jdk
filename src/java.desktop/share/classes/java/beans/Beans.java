@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.StreamCorruptedException;
 
 import java.lang.reflect.Modifier;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.util.Enumeration;
@@ -304,13 +305,13 @@ public class Beans {
 
                         if (s.endsWith(resourceName)) {
                             int ix   = s.length() - resourceName.length();
-                            codeBase = new URL(s.substring(0,ix));
+                            codeBase = newURL(s.substring(0,ix));
                             docBase  = codeBase;
 
                             ix = s.lastIndexOf('/');
 
                             if (ix >= 0) {
-                                docBase = new URL(s.substring(0,ix+1));
+                                docBase = newURL(s.substring(0,ix+1));
                             }
                         }
                     }
@@ -354,6 +355,11 @@ public class Beans {
     @SuppressWarnings("unchecked")
     private static void unsafeBeanContextAdd(BeanContext beanContext, Object res) {
         beanContext.add(res);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 
     /**
