@@ -2755,7 +2755,7 @@ void TemplateTable::load_invokedynamic_entry(Register method,
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
   __ get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
-  const int array_offset = in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCache::invokedynamic_entries_offset());
+  const int array_offset = in_bytes(ConstantPoolCache::invokedynamic_entries_offset());
   __ movptr(cache, Address(cache, array_offset));
   __ movptr(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
   __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
