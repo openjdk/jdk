@@ -586,12 +586,14 @@ static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats
             stats.dirtied_cards());
 }
 
-void G1Policy::record_concurrent_refinement_stats() {
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  _pending_cards_at_gc_start = dcqs.num_cards();
+void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
+                                                  size_t thread_buffer_cards) {
+  _pending_cards_at_gc_start = pending_cards;
+  _analytics->report_dirtied_cards_in_thread_buffers(thread_buffer_cards);
 
   // Collect per-thread stats, mostly from mutator activity.
-  G1ConcurrentRefineStats mut_stats = dcqs.get_and_reset_refinement_stats();
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  G1ConcurrentRefineStats mut_stats = dcqs.concatenated_refinement_stats();
 
   // Collect specialized concurrent refinement thread stats.
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
@@ -628,11 +630,6 @@ void G1Policy::record_concurrent_refinement_stats() {
   }
 }
 
-void G1Policy::record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards) {
-  _analytics->report_dirtied_cards_in_thread_buffers(num_cards);
-  phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time.seconds() * MILLIUNITS);
-}
-
 void G1Policy::record_young_collection_start() {
   Ticks now = Ticks::now();
   // We only need to do this here as the policy will only be applied
@@ -646,8 +643,6 @@ void G1Policy::record_young_collection_start() {
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
-
-  record_concurrent_refinement_stats();
 
   _collection_set->reset_bytes_used_before();
 
