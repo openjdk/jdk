@@ -26,7 +26,6 @@
 package sun.security.pkcs;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.cert.CertificateException;
 import java.util.Date;
 
@@ -525,7 +524,7 @@ public class PKCS9Attribute implements DerEncoder {
      * should be encoded as <code>T61String</code>s.
      */
     @Override
-    public void derEncode(OutputStream out) throws IOException {
+    public void derEncode(DerOutputStream out) throws IOException {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
         switch (index) {
@@ -643,11 +642,7 @@ public class PKCS9Attribute implements DerEncoder {
         default: // can't happen
         }
 
-        DerOutputStream derOut = new DerOutputStream();
-        derOut.write(DerValue.tag_Sequence, temp.toByteArray());
-
-        out.write(derOut.toByteArray());
-
+        out.write(DerValue.tag_Sequence, temp.toByteArray());
     }
 
     /**

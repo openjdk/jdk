@@ -3846,7 +3846,9 @@ oop java_lang_boxing_object::initialize_and_allocate(BasicType type, TRAPS) {
   Klass* k = vmClasses::box_klass(type);
   if (k == NULL)  return NULL;
   InstanceKlass* ik = InstanceKlass::cast(k);
-  if (!ik->is_initialized())  ik->initialize(CHECK_NULL);
+  if (!ik->is_initialized()) {
+    ik->initialize(CHECK_NULL);
+  }
   return ik->allocate_instance(THREAD);
 }
 

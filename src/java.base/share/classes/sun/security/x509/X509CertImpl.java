@@ -330,7 +330,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
-    public void derEncode(OutputStream out) throws IOException {
+    public void derEncode(DerOutputStream out) throws IOException {
         if (signedCert == null)
             throw new IOException("Null certificate to encode");
         out.write(signedCert.clone());
@@ -711,69 +711,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             throw new CertificateException("Attribute name not recognized or " +
                               "set() not allowed for the same: " + id);
         }
-    }
-
-    /**
-     * Delete the requested attribute from the certificate.
-     *
-     * @param name the name of the attribute.
-     * @exception CertificateException on invalid attribute identifier.
-     * @exception IOException on other errors.
-     */
-    public void delete(String name)
-    throws CertificateException, IOException {
-        // check if immutable
-        if (readOnly)
-            throw new CertificateException("cannot over-write existing"
-                                           + " certificate");
-
-        X509AttributeName attr = new X509AttributeName(name);
-        String id = attr.getPrefix();
-        if (!(id.equalsIgnoreCase(NAME))) {
-            throw new CertificateException("Invalid root of attribute name,"
-                                   + " expected ["
-                                   + NAME + "], received " + id);
-        }
-        attr = new X509AttributeName(attr.getSuffix());
-        id = attr.getPrefix();
-
-        if (id.equalsIgnoreCase(INFO)) {
-            if (attr.getSuffix() == null) {
-                info = null;
-            } else {
-                info.delete(attr.getSuffix());
-            }
-        } else if (id.equalsIgnoreCase(ALG_ID)) {
-            algId = null;
-        } else if (id.equalsIgnoreCase(SIGNATURE)) {
-            signature = null;
-        } else if (id.equalsIgnoreCase(SIGNED_CERT)) {
-            signedCert = null;
-        } else {
-            throw new CertificateException("Attribute name not recognized or " +
-                              "delete() not allowed for the same: " + id);
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NAME + DOT + INFO);
-        elements.addElement(NAME + DOT + ALG_ID);
-        elements.addElement(NAME + DOT + SIGNATURE);
-        elements.addElement(NAME + DOT + SIGNED_CERT);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  *          java.base/sun.security.x509
  * @run main SignerOrder
  */
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -115,7 +114,7 @@ public class SignerOrder {
     }
 
     static void printSignerInfos(SignerInfo signerInfo) throws IOException {
-        ByteArrayOutputStream strm = new ByteArrayOutputStream();
+        DerOutputStream strm = new DerOutputStream();
         signerInfo.derEncode(strm);
         System.out.println("SignerInfo, length: "
                 + strm.toByteArray().length);
@@ -125,7 +124,7 @@ public class SignerOrder {
     }
 
     static void printSignerInfos(SignerInfo[] signerInfos) throws IOException {
-        ByteArrayOutputStream strm = new ByteArrayOutputStream();
+        DerOutputStream strm = new DerOutputStream();
         for (int i = 0; i < signerInfos.length; i++) {
             signerInfos[i].derEncode(strm);
             System.out.println("SignerInfo[" + i + "], length: "
