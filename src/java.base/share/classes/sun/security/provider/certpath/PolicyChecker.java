@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
@@ -578,7 +577,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                                                 anyNode.getPolicyQualifiers();
             for (String policy : initial) {
                 Set<String> expectedPolicies = Collections.singleton(policy);
-                PolicyNodeImpl node = new PolicyNodeImpl(parentNode, policy,
+                new PolicyNodeImpl(parentNode, policy,
                     anyQualifiers, anyCritical, expectedPolicies, false);
             }
         }
@@ -632,7 +631,6 @@ class PolicyChecker extends PKIXCertPathChecker {
 
             foundMatch = true;
 
-            PolicyNodeImpl curNode = null;
             Set<String> curExpPols;
 
             if (curPolicy.equals(ANY_POLICY)) {
@@ -658,7 +656,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                     Set<String> expPols = new HashSet<>();
                     expPols.add(curParExpPol);
 
-                    curNode = new PolicyNodeImpl
+                    new PolicyNodeImpl
                         (curParent, curParExpPol, pQuals,
                          policiesCritical, expPols, false);
                 }
@@ -666,7 +664,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                 curExpPols = new HashSet<>();
                 curExpPols.add(curPolicy);
 
-                curNode = new PolicyNodeImpl
+                new PolicyNodeImpl
                     (curParent, curPolicy, pQuals,
                      policiesCritical, curExpPols, false);
             }
@@ -766,7 +764,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                         Set<String> expPols = new HashSet<>();
                         expPols.add(subjectDomain);
 
-                        PolicyNodeImpl curNode = new PolicyNodeImpl
+                        new PolicyNodeImpl
                             (curAnyNodeParent, issuerDomain, anyQuals,
                              policiesCritical, expPols, true);
                     }
