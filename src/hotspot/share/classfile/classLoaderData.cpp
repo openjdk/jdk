@@ -975,8 +975,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_other:                      out->print_cr("other"); break;
     case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
-    case _claim_strong_g1_fullgc_mark:             out->print_cr("g1 full gc mark phase"); break;
-    case _claim_strong_g1_fullgc_adjust:           out->print_cr("g1 full gc adjust phase"); break;
+    case _claim_strong_g1_fullgc_mark:      out->print_cr("g1 full gc mark phase"); break;
+    case _claim_strong_g1_fullgc_adjust:    out->print_cr("g1 full gc adjust phase"); break;
     default:                                ShouldNotReachHere();
   }
   out->print_cr(" - handles             %d", _handles.count());
