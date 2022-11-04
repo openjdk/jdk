@@ -2394,12 +2394,12 @@ public class X509CertSelector implements CertSelector {
             GeneralSubtrees permitted = ext.getPermittedSubtrees();
             GeneralSubtrees excluded = ext.getExcludedSubtrees();
             if (excluded != null) {
-                if (matchExcluded(excluded) == false) {
+                if (!matchExcluded(excluded)) {
                     return false;
                 }
             }
             if (permitted != null) {
-                if (matchPermitted(permitted) == false) {
+                if (!matchPermitted(permitted)) {
                     return false;
                 }
             }

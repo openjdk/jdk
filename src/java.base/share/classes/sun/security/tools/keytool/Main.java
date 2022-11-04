@@ -2057,7 +2057,7 @@ public final class Main {
      * Clones an entry
      * @param orig original alias
      * @param dest destination alias
-     * @changePassword if the password can be changed
+     * @param changePassword if the password can be changed
      */
     private void doCloneEntry(String orig, String dest, boolean changePassword)
         throws Exception
@@ -3489,7 +3489,7 @@ public final class Main {
 
     /**
      * Prompts user for an input string from the command line (System.in)
-     * @prompt the prompt string printed
+     * @param prompt the prompt string printed
      * @return the string entered by the user, without the \n at the end
      */
     private String inputStringFromStdin(String prompt) throws Exception {

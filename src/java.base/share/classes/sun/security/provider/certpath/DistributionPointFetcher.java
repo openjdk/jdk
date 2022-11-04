@@ -333,9 +333,7 @@ public class DistributionPointFetcher {
         GeneralNames pointCrlIssuers = point.getCRLIssuer();
         X500Name pointCrlIssuer = null;
         if (pointCrlIssuers != null) {
-            if (idpExt == null ||
-                    idpExt.isIndirectCRL()
-                    == Boolean.FALSE) {
+            if (idpExt == null || !idpExt.isIndirectCRL()) {
                 return false;
             }
             boolean match = false;
