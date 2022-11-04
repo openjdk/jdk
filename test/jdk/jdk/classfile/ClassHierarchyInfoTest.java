@@ -65,7 +65,7 @@ class ClassHierarchyInfoTest {
 
     @Test
     void testBreakDefaulClassHierarchy() throws Exception {
-        assertThrows(VerifyError.class, () -> 
+        assertThrows(VerifyError.class, () ->
         transformAndVerify(ClassHierarchyResolver.of(
                 Set.of(),
                 Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER))
