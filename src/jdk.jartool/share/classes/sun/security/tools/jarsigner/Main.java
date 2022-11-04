@@ -2253,7 +2253,8 @@ public class Main {
                     keyStoreName = keyStoreName.replace(File.separatorChar, '/');
                     URL url = null;
                     try {
-                        url = new URL(keyStoreName);
+                        @SuppressWarnings("deprecation")
+                        var _unused = url = new URL(keyStoreName);
                     } catch (java.net.MalformedURLException e) {
                         // try as file
                         url = new File(keyStoreName).toURI().toURL();
