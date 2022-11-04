@@ -866,10 +866,7 @@ public class Thread implements Runnable {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public sealed interface Builder
-            permits Builder.OfPlatform,
-                    Builder.OfVirtual,
-                    ThreadBuilders.BaseThreadBuilder {
-
+            permits Builder.OfPlatform, Builder.OfVirtual {
 
         /**
          * Sets the thread name.
