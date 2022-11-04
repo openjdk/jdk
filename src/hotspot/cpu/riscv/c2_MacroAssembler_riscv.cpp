@@ -1679,8 +1679,8 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
   vfmv_f_s(dst, tmp1);
 }
 
-void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister temp, 
-                                         Register src1, VectorRegister src2, 
+void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister temp,
+                                         Register src1, VectorRegister src2,
                                          BasicType bt, REDUCTION_OP op) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   vsetvli(t0, x0, sew);
