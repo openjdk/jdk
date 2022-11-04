@@ -57,8 +57,8 @@ public class SelectWhenRefused {
             dc.configureBlocking(false);
             dc.register(sel, SelectionKey.OP_READ);
 
+            /* Test 1: not connected so ICMP port unreachable should not be received */
             for (int i = 0; i < MAX_TRIES; i++) {
-                /* Test 1: not connected so ICMP port unreachable should not be received */
                 sendDatagram(dc, refuser);
                 int n = sel.select(2000);
                 if (n > 0) {
@@ -74,6 +74,7 @@ public class SelectWhenRefused {
                 }
                 break;
             }
+
             /* Test 2: connected so ICMP port unreachable may be received */
             dc.connect(refuser);
             try {
@@ -85,14 +86,16 @@ public class SelectWhenRefused {
                         try {
                             ByteBuffer buf = ByteBuffer.allocate(100);
                             SocketAddress sa = dc.receive(buf);
-                            buf.flip();
-                            byte[] bytes = new byte[buf.remaining()];
-                            buf.get(bytes);
-                            String message = new String(bytes);
-                            System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
-                            //If any received data contains the message from sendDatagram then return true
-                            if (message.contains(GREETINGS_MESSAGE)) {
-                                throw new RuntimeException("Unexpected datagram received");
+                            if (sa != null) {
+                                buf.flip();
+                                byte[] bytes = new byte[buf.remaining()];
+                                buf.get(bytes);
+                                String message = new String(bytes);
+                                System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
+                                // If any received data contains the message from sendDatagram then throw exception
+                                if (message.contains(GREETINGS_MESSAGE)) {
+                                    throw new RuntimeException("Unexpected datagram received");
+                                }
                             }
                             // BindException will be thrown if another service is using
                             // our expected refuser port, cannot run just exit.
@@ -108,8 +111,9 @@ public class SelectWhenRefused {
             } finally {
                 dc.disconnect();
             }
+
+            /* Test 3: not connected so ICMP port unreachable should not be received */
             for (int i = 0; i < MAX_TRIES; i++) {
-                /* Test 3: not connected so ICMP port unreachable should not be received */
                 sendDatagram(dc, refuser);
                 int n = sel.select(2000);
                 if (n > 0) {
@@ -148,16 +152,16 @@ public class SelectWhenRefused {
                 DatagramChannel datagramChannel = (DatagramChannel) key.channel();
                 ByteBuffer buf = ByteBuffer.allocate(100);
                 SocketAddress sa = datagramChannel.receive(buf);
-                buf.flip();
-                byte[] bytes = new byte[buf.remaining()];
-                buf.get(bytes);
-                String message = new String(bytes);
                 if (sa != null) {
+                    buf.flip();
+                    byte[] bytes = new byte[buf.remaining()];
+                    buf.get(bytes);
+                    String message = new String(bytes);
                     System.out.format("received %s at %s from %s%n", message, datagramChannel.getLocalAddress(), sa);
-                }
-                //If any received data contains the message from sendDatagram then return false
-                if (message.contains(GREETINGS_MESSAGE)) {
-                    return false;
+                    // If any received data contains the message from sendDatagram then return false
+                    if (message.contains(GREETINGS_MESSAGE)) {
+                        return false;
+                    }
                 }
             } catch (IOException io) {
                 System.out.println("Unable to read from datagram " + io);
