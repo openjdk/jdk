@@ -3058,6 +3058,4 @@ public:
   virtual ~Assembler() {}
 };
 
- enum REDUCTION_OP {ADD, AND, OR, XOR};
-
 #endif // CPU_RISCV_ASSEMBLER_RISCV_HPP
