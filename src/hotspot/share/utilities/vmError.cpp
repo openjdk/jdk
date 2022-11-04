@@ -529,6 +529,9 @@ void VMError::clear_step_start_time() {
 // segment.
 void VMError::report(outputStream* st, bool _verbose) {
 
+// Used for  REENTRANT_STEP bookkeeping
+int reentry_step = _current_step;
+# define REENTRANT_ITERATION_STEP (_reentrant_iteration_step-1)
 # define BEGIN                                             \
   if (_current_step == 0) {                                \
     _current_step = __LINE__;                              \
@@ -545,11 +548,30 @@ void VMError::report(outputStream* st, bool _verbose) {
     if ((cond)) {
       // [Step logic]
 # define STEP(s) STEP_IF(s, true)
-# define REENTRANT_ITERATION_STEP (_reentrant_iteration_step-1)
-# define REENTRANT_STEP_IF(s,cond) } if (_current_step < __LINE__ && (cond)) { _current_step_info = s; \
-  record_step_start_time(); _step_did_timeout = false; if (_reentrant_iteration_step++ == -1) {
-# define REENTRANT_LOOP_START(limit) _reentrant_iteration_step++; } while (REENTRANT_ITERATION_STEP  < (limit)) {
-# define REENTRANT_LOOP_END _reentrant_iteration_step++; } _current_step = __LINE__; _reentrant_iteration_step = -1;
+# define REENTRANT_STEP_IF(s,cond)                         \
+    }                                                      \
+  }                                                        \
+  if (_current_step < __LINE__) {                          \
+    reentry_step = _current_step;                          \
+    _current_step = __LINE__;                              \
+    _current_step_info = s;                                \
+    record_step_start_time();                              \
+    _step_did_timeout = false;                             \
+    if (cond) {                                            \
+      _current_step = reentry_step;                        \
+      if (_reentrant_iteration_step++ == -1) {
+        // [Renterant step pre loop logic]
+# define REENTRANT_LOOP_START(limit)                       \
+        _reentrant_iteration_step++;                       \
+      }                                                    \
+      while (REENTRANT_ITERATION_STEP  < (limit)) {
+        // [Renterant step loop logic]
+# define REENTRANT_LOOP_END                                \
+        _reentrant_iteration_step++;                       \
+      }                                                    \
+      _current_step = __LINE__;                            \
+      _reentrant_iteration_step = -1;
+      // [Renterant step post loop logic]
 # define END                                               \
     }                                                      \
     clear_step_start_time();                               \
@@ -650,6 +672,18 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print_cr("TestReentrantErrorHandler Step: After %d", REENTRANT_ITERATION_STEP);
     REENTRANT_LOOP_END
     st->print_cr("TestReentrantErrorHandler Step: After End");
+
+  REENTRANT_STEP_IF("TestReentrantErrorHandler Step: Condition",
+    _verbose && TestReentrantErrorHandler && [](){
+      controlled_crash(TEST_SECONDARY_CRASH);
+      return true;
+    }())
+
+    st->print_cr("TestReentrantErrorHandler: BAD LINE.");
+    REENTRANT_LOOP_START(1)
+      st->print_cr("TestReentrantErrorHandler: BAD LINE.");
+    REENTRANT_LOOP_END
+    st->print_cr("TestReentrantErrorHandler: BAD LINE.");
 
   STEP_IF("test safefetch in error handler", _verbose && TestSafeFetchInErrorHandler)
     // test whether it is safe to use SafeFetch32 in Crash Handler. Test twice

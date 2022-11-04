@@ -114,10 +114,13 @@ public class TestReentrantErrorHandler {
             Pattern.compile(".*TestReentrantErrorHandler Step: After 1.*"),
             Pattern.compile(".*TestReentrantErrorHandler Step: After 2.*"),
             Pattern.compile(".*TestReentrantErrorHandler Step: After 3.*"),
-            Pattern.compile(".*TestReentrantErrorHandler Step: After End.*")
+            Pattern.compile(".*TestReentrantErrorHandler Step: After End.*"),
+            Pattern.compile(".*error occurred during error reporting \\(TestReentrantErrorHandler Step: Condition\\).*")
         };
+        Pattern badPattern = Pattern.compile(".*TestReentrantErrorHandler: BAD LINE.*");
         int currentPattern = 0;
 
+        boolean badPatternFound = false;
         String lastLine = null;
         StringBuilder saved_hs_err = new StringBuilder();
         while ((line = br.readLine()) != null) {
@@ -127,6 +130,9 @@ public class TestReentrantErrorHandler {
                     System.out.println("Found: " + line + ".");
                     currentPattern ++;
                 }
+            }
+            if (badPattern.matcher(line).matches()) {
+                badPatternFound = true;
             }
             lastLine = line;
         }
@@ -138,6 +144,15 @@ public class TestReentrantErrorHandler {
             System.err.println("<end hs_err contents>");
         }
 
+        if (badPatternFound) {
+            if (!verbose) {
+                System.err.println("<begin hs_err contents>");
+                System.err.print(saved_hs_err);
+                System.err.println("<end hs_err contents>");
+            }
+            throw new RuntimeException("hs-err file contained a bad print statement");
+        }
+
         if (currentPattern < pattern.length) {
             if (!verbose) {
                 System.err.println("<begin hs_err contents>");
@@ -145,6 +160,12 @@ public class TestReentrantErrorHandler {
                 System.err.println("<end hs_err contents>");
             }
             throw new RuntimeException("hs-err file incomplete (first missing pattern: \"" +  pattern[currentPattern].pattern() + "\")");
+        }
+
+        if (!lastLine.equals("END.")) {
+          throw new RuntimeException("hs-err file incomplete (missing END marker.)");
+        } else {
+          System.out.println("End marker found.");
         }
 
         System.out.println("OK.");
