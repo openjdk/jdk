@@ -136,7 +136,7 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
 #if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
-  HeapWord* start = (HeapWord*)start_address() + sp() - frame::sender_sp_offset RISCV64_ONLY(- frame::metadata_words);
+  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words;
 #else
   Unimplemented();
   HeapWord* start = NULL;
