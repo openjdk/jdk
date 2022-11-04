@@ -26,6 +26,7 @@
 WIN_AWT_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt/awt.lib
 
 LIBAWT_DEFAULT_HEADER_DIRS := \
+    common/awt/utility \
     libawt/awt/image \
     libawt/awt/image/cvutils \
     libawt/java2d \
@@ -368,7 +369,6 @@ ifeq ($(call isTargetOs, windows macosx), false)
       common/awt/debug \
       common/font \
       common/java2d/opengl \
-      include \
       #
 
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
@@ -474,11 +474,11 @@ endif
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libharfbuzz \
     common/awt \
+    common/awt/utility \
     common/font \
     libawt/java2d \
     libawt/java2d/pipe \
     libawt/java2d/loops \
-    include \
     #
 
 LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
@@ -563,6 +563,7 @@ ifeq ($(call isTargetOs, windows), true)
   LIBJAWT_EXTRA_HEADER_DIRS := \
       include \
       common/awt/debug \
+      common/awt/utility \
       libawt/awt/image/cvutils \
       libawt/java2d \
       libawt/java2d/windows \
@@ -658,7 +659,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       common/awt/systemscale \
       #
 
-  LIBSPLASHSCREEN_HEADER_DIRS += include
+  LIBSPLASHSCREEN_HEADER_DIRS += common/awt/utility
 
   ifeq ($(USE_EXTERNAL_LIBGIF), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/giflib
