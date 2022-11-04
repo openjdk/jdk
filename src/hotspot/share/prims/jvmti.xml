@@ -5831,6 +5831,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5873,6 +5875,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5884,6 +5889,8 @@ class C2 extends C1 implements I2 {
         frames.  This function can retrieve the "<code>this</code>" object from
         native method frames, whereas <code>GetLocalObject()</code> would
         return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -5913,6 +5920,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_INVALID_SLOT">
           If the specified frame is a static method frame.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
     <function id="GetLocalInt" num="22">
@@ -5922,6 +5932,8 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>int</code>,
         <code>short</code>, <code>char</code>, <code>byte</code>, or
         <code>boolean</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5966,6 +5978,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5974,6 +5989,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6015,6 +6032,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6023,6 +6043,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>float</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6064,6 +6086,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6072,6 +6097,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6113,6 +6140,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6121,6 +6151,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6172,6 +6204,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6182,6 +6217,8 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>int</code>,
         <code>short</code>, <code>char</code>, <code>byte</code>, or
         <code>boolean</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6231,6 +6268,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6239,6 +6279,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6285,6 +6327,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6293,6 +6338,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>float</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6339,6 +6386,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6347,6 +6397,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>double</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6392,6 +6444,9 @@ class C2 extends C1 implements I2 {
           The thread is a virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
         </error>
       </errors>
     </function>

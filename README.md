@@ -6,8 +6,9 @@ See [JEP](https://bugs.openjdk.java.net/browse/JDK-8280389)
 or [online API documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/openjdk/jdk-sandbox/classfile-api-javadoc-branch/doc/classfile-api/javadoc/jdk/classfile/package-summary.html)
 for more information about Classfile Processing API.
 
-See <https://openjdk.org/> for more information about
-the OpenJDK Community and the JDK.
+See <https://openjdk.org/> for more information about the OpenJDK
+Community and the JDK and see <https://bugs.openjdk.org> for JDK issue
+tracking.
 
 ### Sources
 

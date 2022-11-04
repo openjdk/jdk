@@ -39,6 +39,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="am">阿姆哈拉文</language>
 			<language type="an">阿拉贡文</language>
 			<language type="ang">古英文</language>
+			<language type="ann">奥博洛文</language>
 			<language type="anp">昂加文</language>
 			<language type="ar">阿拉伯文</language>
 			<language type="ar_001">现代标准阿拉伯文</language>
@@ -47,6 +48,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="aro">阿拉奥纳文</language>
 			<language type="arp">阿拉帕霍文</language>
 			<language type="arq">阿尔及利亚阿拉伯文</language>
+			<language type="ars">纳吉迪阿拉伯文</language>
 			<language type="arw">阿拉瓦克文</language>
 			<language type="ary">摩洛哥阿拉伯文</language>
 			<language type="arz">埃及阿拉伯文</language>
@@ -54,6 +56,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="asa">阿苏文</language>
 			<language type="ase">美国手语</language>
 			<language type="ast">阿斯图里亚文</language>
+			<language type="atj">阿提卡米克文</language>
 			<language type="av">阿瓦尔文</language>
 			<language type="avk">科塔瓦文</language>
 			<language type="awa">阿瓦文</language>
@@ -119,14 +122,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chr">柴罗基文</language>
 			<language type="chy">沙伊安文</language>
 			<language type="ckb">索拉尼库尔德文</language>
+			<language type="clc">奇尔科延文</language>
 			<language type="co">科西嘉文</language>
 			<language type="cop">科普特文</language>
 			<language type="cps">卡皮兹文</language>
 			<language type="cr">克里文</language>
+			<language type="crg">米奇夫文</language>
 			<language type="crh">克里米亚半岛的土耳其文；克里米亚半岛的塔塔尔文</language>
+			<language type="crj">东南克里文</language>
+			<language type="crk">平原克里文</language>
+			<language type="crl">东北克里文</language>
+			<language type="crm">驼鹿克里文</language>
+			<language type="crr">卡罗来纳州阿尔冈昆语</language>
 			<language type="crs">法语克里奥尔混合语</language>
 			<language type="cs">捷克文</language>
 			<language type="csb">卡舒布文</language>
+			<language type="csw">沼泽克里文</language>
 			<language type="cu">宗教斯拉夫文</language>
 			<language type="cv">楚瓦什文</language>
 			<language type="cy">威尔斯文</language>
@@ -220,6 +231,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hai">海达文</language>
 			<language type="hak">客家话</language>
 			<language type="haw">夏威夷文</language>
+			<language type="hax">南海达文</language>
 			<language type="he">希伯来文</language>
 			<language type="hi">北印度文</language>
 			<language type="hif">斐济印地文</language>
@@ -233,6 +245,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ht">海地文</language>
 			<language type="hu">匈牙利文</language>
 			<language type="hup">胡帕文</language>
+			<language type="hur">哈尔科梅勒姆文</language>
 			<language type="hy">亚美尼亚文</language>
 			<language type="hz">赫雷罗文</language>
 			<language type="ia">国际文</language>
@@ -243,6 +256,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ig">伊布文</language>
 			<language type="ii">四川彝文</language>
 			<language type="ik">依奴皮维克文</language>
+			<language type="ikt">加拿大西部因纽特文</language>
 			<language type="ilo">伊洛阔文</language>
 			<language type="inh">印古什文</language>
 			<language type="io">伊多文</language>
@@ -309,6 +323,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kut">库特奈文</language>
 			<language type="kv">科米文</language>
 			<language type="kw">康瓦耳文</language>
+			<language type="kwk">夸夸瓦拉文</language>
 			<language type="ky">吉尔吉斯文</language>
 			<language type="la">拉丁文</language>
 			<language type="lad">拉迪诺文</language>
@@ -321,14 +336,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lg">干达文</language>
 			<language type="li">林堡文</language>
 			<language type="lij">利古里亚文</language>
+			<language type="lil">利卢埃特文</language>
 			<language type="liv">利伏尼亚文</language>
 			<language type="lkt">拉科塔文</language>
 			<language type="lmo">伦巴底文</language>
 			<language type="ln">林加拉文</language>
 			<language type="lo">寮文</language>
 			<language type="lol">芒戈文</language>
+			<language type="lou">路易斯安那克里奥尔文</language>
 			<language type="loz">洛齐文</language>
 			<language type="lrc">北卢尔文</language>
+			<language type="lsm">萨米亚文</language>
 			<language type="lt">立陶宛文</language>
 			<language type="ltg">拉特加莱文</language>
 			<language type="lu">鲁巴加丹加文</language>
@@ -367,6 +385,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mn">蒙古文</language>
 			<language type="mnc">满族文</language>
 			<language type="mni">曼尼普里文</language>
+			<language type="moe">因努埃蒙文</language>
 			<language type="moh">莫霍克文</language>
 			<language type="mos">莫西文</language>
 			<language type="mr">马拉地文</language>
@@ -419,6 +438,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nzi">尼兹马文</language>
 			<language type="oc">奥克西坦文</language>
 			<language type="oj">奥杰布瓦文</language>
+			<language type="ojb">西北奥吉布瓦文</language>
+			<language type="ojc">中奥吉布瓦文</language>
+			<language type="ojs">王子克里文</language>
+			<language type="ojw">西奥吉布瓦文</language>
+			<language type="oka">奥卡纳根文</language>
 			<language type="om">奥罗莫文</language>
 			<language type="or">欧利亚文</language>
 			<language type="os">奥塞提文</language>
@@ -438,10 +462,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pfl">普法尔茨德文</language>
 			<language type="phn">腓尼基文</language>
 			<language type="pi">巴利文</language>
+			<language type="pis">皮京文</language>
 			<language type="pl">波兰文</language>
 			<language type="pms">皮埃蒙特文</language>
 			<language type="pnt">旁狄希腊文</language>
 			<language type="pon">波那贝文</language>
+			<language type="pqm">马里塞-帕萨马夸迪文</language>
 			<language type="prg">普鲁士文</language>
 			<language type="pro">古普罗旺斯文</language>
 			<language type="ps">普什图文</language>
@@ -501,6 +527,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sid">希达摩文</language>
 			<language type="sk">斯洛伐克文</language>
 			<language type="sl">斯洛维尼亚文</language>
+			<language type="slh">南卢绍锡德文</language>
 			<language type="sli">下西利西亚文</language>
 			<language type="sly">塞拉亚文</language>
 			<language type="sm">萨摩亚文</language>
@@ -520,6 +547,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ssy">萨霍文</language>
 			<language type="st">塞索托文</language>
 			<language type="stq">沙特菲士兰文</language>
+			<language type="str">海峡萨利希文</language>
 			<language type="su">巽他文</language>
 			<language type="suk">苏库马文</language>
 			<language type="sus">苏苏文</language>
@@ -532,6 +560,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="syr">叙利亚文</language>
 			<language type="szl">西利西亚文</language>
 			<language type="ta">坦米尔文</language>
+			<language type="tce">南塔穹文</language>
 			<language type="tcy">图卢文</language>
 			<language type="te">泰卢固文</language>
 			<language type="tem">提姆文</language>
@@ -539,7 +568,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ter">泰雷诺文</language>
 			<language type="tet">泰顿文</language>
 			<language type="tg">塔吉克文</language>
+			<language type="tgx">塔吉什文</language>
 			<language type="th">泰文</language>
+			<language type="tht">塔尔坦文</language>
 			<language type="ti">提格利尼亚文</language>
 			<language type="tig">蒂格雷文</language>
 			<language type="tiv">提夫文</language>
@@ -554,6 +585,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tn">突尼西亚文</language>
 			<language type="to">东加文</language>
 			<language type="tog">东加文（尼亚萨）</language>
+			<language type="tok">托基波纳文</language>
 			<language type="tpi">托比辛文</language>
 			<language type="tr">土耳其文</language>
 			<language type="tru">图罗尤文</language>
@@ -562,6 +594,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tsd">特萨克尼恩文</language>
 			<language type="tsi">钦西安文</language>
 			<language type="tt">鞑靼文</language>
+			<language type="ttm">北塔奇讷文</language>
 			<language type="ttt">穆斯林塔特文</language>
 			<language type="tum">图姆布卡文</language>
 			<language type="tvl">吐瓦鲁文</language>
@@ -628,10 +661,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zza">扎扎文</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">阿德拉姆文</script>
 			<script type="Afak" draft="contributed">阿法卡文字</script>
 			<script type="Aghb" draft="contributed">高加索阿尔巴尼亚文</script>
 			<script type="Arab">阿拉伯文</script>
 			<script type="Arab" alt="variant">波斯阿拉伯文字</script>
+			<script type="Aran">纳斯塔利克文</script>
 			<script type="Armi">皇室亚美尼亚文</script>
 			<script type="Armn">亚美尼亚文</script>
 			<script type="Avst" draft="contributed">阿维斯陀文</script>
@@ -746,6 +781,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Plrd">柏格理拼音符</script>
 			<script type="Prti" draft="contributed">帕提亚文（碑铭体）</script>
 			<script type="Rjng">拉让文</script>
+			<script type="Rohg">哈尼菲文</script>
 			<script type="Roro">朗格朗格象形文</script>
 			<script type="Runr">古北欧文字</script>
 			<script type="Samr" draft="contributed">撒马利亚文</script>
@@ -759,7 +795,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Sind" draft="contributed">信德文</script>
 			<script type="Sinh">锡兰文</script>
 			<script type="Sora" draft="contributed">索朗桑朋文字</script>
-			<script type="Sund" draft="contributed">巽他文</script>
+			<script type="Sund">巽他文</script>
 			<script type="Sylo">希洛弟纳格里文</script>
 			<script type="Syrc">敍利亚文</script>
 			<script type="Syre">叙利亚文（福音体文字变体）</script>
@@ -781,7 +817,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Tibt">西藏文</script>
 			<script type="Tirh" draft="contributed">迈蒂利文</script>
 			<script type="Ugar">乌加列文</script>
-			<script type="Vaii" draft="contributed">瓦依文</script>
+			<script type="Vaii">瓦依文</script>
 			<script type="Visp" draft="contributed">视觉语音文字</script>
 			<script type="Wara" draft="contributed">瓦郎奇蒂文字</script>
 			<script type="Wole" draft="contributed">沃雷艾文</script>
@@ -1193,7 +1229,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil">伊斯兰民用历</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">伊斯兰新月历</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">伊斯兰天文历</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">乌姆库拉历</type>
+			<type key="calendar" type="islamic-umalqura">乌姆库拉历</type>
 			<type key="calendar" type="iso8601">国际标准 ISO 8601</type>
 			<type key="calendar" type="japanese">日本历</type>
 			<type key="calendar" type="persian">波斯历</type>
@@ -1256,7 +1292,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="bali" draft="contributed">峇里文数字</type>
 			<type key="numbers" type="beng">孟加拉数字</type>
 			<type key="numbers" type="brah" draft="contributed">婆罗米数字</type>
-			<type key="numbers" type="cakm" draft="contributed">查克马数字</type>
+			<type key="numbers" type="cakm">查克马数字</type>
 			<type key="numbers" type="cham" draft="contributed">占文数字</type>
 			<type key="numbers" type="deva">梵文数字</type>
 			<type key="numbers" type="ethi">衣索比亚数字</type>
@@ -1273,7 +1309,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">小写繁体中文数字</type>
 			<type key="numbers" type="hantfin">大写繁体中文数字</type>
 			<type key="numbers" type="hebr">希伯来数字</type>
-			<type key="numbers" type="java" draft="contributed">爪哇文数字</type>
+			<type key="numbers" type="java">爪哇文数字</type>
 			<type key="numbers" type="jpan">小写日文数字</type>
 			<type key="numbers" type="jpanfin">大写日文数字</type>
 			<type key="numbers" type="kali" draft="contributed">克耶数字</type>
@@ -1287,12 +1323,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="limb" draft="contributed">林布文数字</type>
 			<type key="numbers" type="mlym">马来亚拉姆数字</type>
 			<type key="numbers" type="mong">蒙古数字</type>
-			<type key="numbers" type="mtei" draft="contributed">曼尼普尔数字</type>
+			<type key="numbers" type="mtei">曼尼普尔数字</type>
 			<type key="numbers" type="mymr">缅甸数字</type>
 			<type key="numbers" type="mymrshan" draft="contributed">缅甸掸文数字</type>
-			<type key="numbers" type="native" draft="contributed">原始数字</type>
+			<type key="numbers" type="native">原始数字</type>
 			<type key="numbers" type="nkoo" draft="contributed">曼德数字</type>
-			<type key="numbers" type="olck" draft="contributed">桑塔利文数字</type>
+			<type key="numbers" type="olck">桑塔利文数字</type>
 			<type key="numbers" type="orya">欧利亚数字</type>
 			<type key="numbers" type="osma" draft="contributed">奥斯曼亚数字</type>
 			<type key="numbers" type="roman">罗马数字</type>
@@ -1309,7 +1345,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="thai">泰文数字</type>
 			<type key="numbers" type="tibt">西藏数字</type>
 			<type key="numbers" type="traditional" draft="contributed">传统数字</type>
-			<type key="numbers" type="vaii" draft="contributed">瓦伊文数字</type>
+			<type key="numbers" type="vaii">瓦伊文数字</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">公制</measurementSystemName>
@@ -2252,10 +2288,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
@@ -2813,15 +2855,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
@@ -5087,6 +5138,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>恩得伯理岛</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>坎顿</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>基里地马地岛</exemplarCity>
 			</zone>
@@ -6827,6 +6881,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -6834,9 +6890,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -8752,6 +8812,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 年</unitPattern>
 				<perUnitPattern>每年 {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>季</displayName>
+				<unitPattern count="other">{0} 季</unitPattern>
+				<perUnitPattern>每季 {0}</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 个月</unitPattern>
@@ -9015,7 +9080,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0} 太阳光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公吨</displayName>
 				<unitPattern count="other">{0} 公吨</unitPattern>
 			</unit>
@@ -9606,6 +9671,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 年</unitPattern>
 				<perUnitPattern>每年{0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>季</displayName>
+				<unitPattern count="other">{0} 季</unitPattern>
+				<perUnitPattern>每季{0}</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 个月</unitPattern>
@@ -9869,7 +9939,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0} 太阳光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公吨</displayName>
 				<unitPattern count="other">{0} 公吨</unitPattern>
 			</unit>
@@ -10300,6 +10370,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>年</displayName>
 				<unitPattern count="other">{0} 年</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>季</displayName>
+				<unitPattern count="other">{0} 季</unitPattern>
+				<perUnitPattern>每季{0}</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 个月</unitPattern>
@@ -10632,4 +10707,112 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="tnum">表格编号</featureName>
 		<featureName type="zero">有斜线嘅零</featureName>
 	</typographicNames>
+	<personNames>
+		<initialPattern type="initial">{0}</initialPattern>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}{given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}{given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}{given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">大文</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">大文</nameField>
+			<nameField type="surname">陈</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">大文</nameField>
+			<nameField type="given2">John</nameField>
+			<nameField type="surname">陈</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">先生</nameField>
+			<nameField type="given">大文</nameField>
+			<nameField type="given-informal">小二</nameField>
+			<nameField type="suffix">博士</nameField>
+		</sampleName>
+	</personNames>
 </ldml>
