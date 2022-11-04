@@ -49,7 +49,7 @@ import java.io.*;
  * <a href=http://www.w3.org/TR/REC-CSS1>http://www.w3.org/TR/REC-CSS1</a>.
  * If an error results in parsing, a RuntimeException will be thrown.
  * <p>
- * This will preserve case. If the callback wishes to treat certain poritions
+ * This will preserve case. If the callback wishes to treat certain portions
  * case insensitively (such as selectors), it should use toLowerCase, or
  * something similar.
  *
