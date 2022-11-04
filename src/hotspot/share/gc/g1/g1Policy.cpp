@@ -508,14 +508,14 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
 }
 
 double G1Policy::predict_survivor_regions_evac_time() const {
-  double survivor_regions_evac_time = 0.0;
   const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
+  double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->length());
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();
        ++it) {
-    survivor_regions_evac_time += predict_region_non_copy_time_ms(*it, false /* include_remset */, collector_state()->in_young_only_phase()) +
-                                  predict_region_copy_time_ms(*it);
+    survivor_regions_evac_time += predict_region_copy_time_ms(*it);
   }
+
   return survivor_regions_evac_time;
 }
 
@@ -1047,7 +1047,7 @@ size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
   return bytes_to_copy;
 }
 
-double G1Policy::predict_eden_other_time_ms(uint count) const {
+double G1Policy::predict_young_region_other_time_ms(uint count) const {
   return _analytics->predict_young_other_time_ms(count);
 }
 
@@ -1077,10 +1077,9 @@ double G1Policy::predict_region_merge_scan_time(HeapRegion* hr, bool for_young_o
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
-                                                 bool include_remset,
                                                  bool for_young_only_phase) const {
 
-  double region_elapsed_time_ms = include_remset ? predict_region_merge_scan_time(hr, for_young_only_phase) : 0.0;
+  double region_elapsed_time_ms = predict_region_merge_scan_time(hr, for_young_only_phase);
   // The prediction of the "other" time for this region is based
   // upon the region type and NOT the GC type.
   if (hr->is_young()) {
@@ -1092,7 +1091,7 @@ double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
 }
 
 double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const {
-  return predict_region_non_copy_time_ms(hr, true /* include_remset */, for_young_only_phase) + predict_region_copy_time_ms(hr);
+  return predict_region_non_copy_time_ms(hr, for_young_only_phase) + predict_region_copy_time_ms(hr);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
