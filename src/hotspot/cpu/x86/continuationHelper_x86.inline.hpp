@@ -137,4 +137,8 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   return f.unextended_sp() + (callee_interpreted ? callee_argsize : 0);
 }
 
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp() + frame::metadata_words;
+}
+
 #endif // CPU_X86_CONTINUATIONHELPER_X86_INLINE_HPP

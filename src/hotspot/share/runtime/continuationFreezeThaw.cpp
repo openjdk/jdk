@@ -1055,8 +1055,9 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
 
   // The frame's top never includes the stack arguments to the callee
   intptr_t* const stack_frame_top = ContinuationHelper::InterpretedFrame::frame_top(f, callee_argsize, callee_interpreted);
+  intptr_t* const callers_sp      = ContinuationHelper::InterpretedFrame::callers_sp(f);
   const int locals = f.interpreter_frame_method()->max_locals();
-  const int fsize = f.fp() + frame::metadata_words + locals - stack_frame_top;
+  const int fsize = callers_sp + frame::metadata_words_at_top + locals - stack_frame_top;
 
   intptr_t* const stack_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(f);
   assert(stack_frame_bottom - stack_frame_top >= fsize, ""); // == on x86

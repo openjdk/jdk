@@ -120,4 +120,8 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   return NULL;
 }
 
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp();
+}
+
 #endif // CPU_RISCV_CONTINUATIONFRAMEHELPERS_RISCV_INLINE_HPP

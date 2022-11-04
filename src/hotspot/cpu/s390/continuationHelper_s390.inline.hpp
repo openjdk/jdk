@@ -122,4 +122,9 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   return NULL;
 }
 
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  Unimplemented();
+  return NULL;
+}
+
 #endif // CPU_S390_CONTINUATIONHELPER_S390_INLINE_HPP

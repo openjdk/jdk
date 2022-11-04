@@ -178,4 +178,8 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   return pseudo_unextended_sp + (callee_interpreted ? callee_argsize_incl_metadata : 0);
 }
 
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp();
+}
+
 #endif // CPU_PPC_CONTINUATIONFRAMEHELPERS_PPC_INLINE_HPP

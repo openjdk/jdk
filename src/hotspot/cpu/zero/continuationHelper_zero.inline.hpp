@@ -120,4 +120,9 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   return NULL;
 }
 
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  Unimplemented();
+  return NULL;
+}
+
 #endif // CPU_ZERO_CONTINUATIONHELPER_ZERO_INLINE_HPP
