@@ -156,6 +156,9 @@ public abstract class OutputStream implements Closeable, Flushable {
      * @throws     IOException  if an I/O error occurs. In particular,
      *             an {@code IOException} is thrown if the output
      *             stream is closed.
+     * @throws     IndexOutOfBoundsException If {@code off} is negative,
+     *             {@code len} is negative, or {@code len} is greater than
+     *             {@code b.length - off}
      */
     public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);

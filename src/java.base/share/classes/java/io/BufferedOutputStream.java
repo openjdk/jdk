@@ -190,6 +190,7 @@ public class BufferedOutputStream extends FilterOutputStream {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {

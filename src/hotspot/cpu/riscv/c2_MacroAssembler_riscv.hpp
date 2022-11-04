@@ -134,7 +134,7 @@
 
   void unspill(VectorRegister v, int offset) {
     add(t0, sp, offset);
-    vl1r_v(v, t0);
+    vl1re8_v(v, t0);
   }
 
   void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vec_reg_size_in_bytes) {

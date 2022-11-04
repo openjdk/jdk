@@ -1192,6 +1192,7 @@ public:
   // vext
   void vmnot_m(VectorRegister vd, VectorRegister vs);
   void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked);
+  void vneg_v(VectorRegister vd, VectorRegister vs);
   void vfneg_v(VectorRegister vd, VectorRegister vs);
 
 

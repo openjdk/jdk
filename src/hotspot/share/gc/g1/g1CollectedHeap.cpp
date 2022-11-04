@@ -1063,7 +1063,7 @@ void G1CollectedHeap::abort_refinement() {
   }
 
   // Discard all remembered set updates and reset refinement statistics.
-  G1BarrierSet::dirty_card_queue_set().abandon_logs();
+  G1BarrierSet::dirty_card_queue_set().abandon_logs_and_stats();
   assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
          "DCQS should be empty");
   concurrent_refine()->get_and_reset_refinement_stats();
@@ -2023,9 +2023,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
     // Try to schedule concurrent start evacuation pause that will
     // start a concurrent cycle.
     LOG_COLLECT_CONCURRENTLY(cause, "attempt %u", i);
-    VM_G1TryInitiateConcMark op(gc_counter,
-                                cause,
-                                policy()->max_pause_time_ms());
+    VM_G1TryInitiateConcMark op(gc_counter, cause);
     VMThread::execute(&op);
 
     // Request is trivially finished.
@@ -2199,8 +2197,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
     // to 0 which means that we are not requesting a post-GC allocation.
     VM_G1CollectForAllocation op(0,     /* word_size */
                                  counters_before.total_collections(),
-                                 cause,
-                                 policy()->max_pause_time_ms());
+                                 cause);
     VMThread::execute(&op);
     return op.gc_succeeded();
   } else {
@@ -2220,8 +2217,7 @@ void G1CollectedHeap::start_concurrent_gc_for_metadata_allocation(GCCause::Cause
   // will do so if one is not already in progress.
   bool should_start = policy()->force_concurrent_start_if_outside_cycle(gc_cause);
   if (should_start) {
-    double pause_target = policy()->max_pause_time_ms();
-    do_collection_pause_at_safepoint(pause_target);
+    do_collection_pause_at_safepoint();
   }
 }
 
@@ -2650,10 +2646,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                bool* succeeded,
                                                GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
-  VM_G1CollectForAllocation op(word_size,
-                               gc_count_before,
-                               gc_cause,
-                               policy()->max_pause_time_ms());
+  VM_G1CollectForAllocation op(word_size, gc_count_before, gc_cause);
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
@@ -2789,7 +2782,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   }
 }
 
-bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
+bool G1CollectedHeap::do_collection_pause_at_safepoint() {
   assert_at_safepoint_on_vm_thread();
   guarantee(!is_gc_active(), "collection is not reentrant");
 
@@ -2797,7 +2790,7 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
     return false;
   }
 
-  do_collection_pause_at_safepoint_helper(target_pause_time_ms);
+  do_collection_pause_at_safepoint_helper();
   return true;
 }
 
@@ -2858,7 +2851,7 @@ void G1CollectedHeap::retire_tlabs() {
   ensure_parsability(true);
 }
 
-void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
+void G1CollectedHeap::do_collection_pause_at_safepoint_helper() {
   ResourceMark rm;
 
   IsGCActiveMark active_gc_mark;
@@ -2876,7 +2869,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
 
   // Perform the collection.
-  G1YoungCollector collector(gc_cause(), target_pause_time_ms);
+  G1YoungCollector collector(gc_cause());
   collector.collect();
 
   // It should now be safe to tell the concurrent mark thread to start
