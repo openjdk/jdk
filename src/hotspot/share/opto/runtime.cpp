@@ -1268,12 +1268,11 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
 
 // Poly1305 processMultipleBlocks function
 const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
-  int argcnt = 5;
+  int argcnt = 4;
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;    // input array
-  fields[argp++] = TypeInt::INT;        // input offset
   fields[argp++] = TypeInt::INT;        // input length
   fields[argp++] = TypePtr::NOTNULL;    // accumulator array
   fields[argp++] = TypePtr::NOTNULL;    // r array

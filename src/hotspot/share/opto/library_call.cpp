@@ -6973,32 +6973,70 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
   address stubAddr;
   const char *stubName;
   assert(UsePolyIntrinsics, "need Poly intrinsics support");
-  assert(callee()->signature()->size() == 5, "poly1305_processBlocks has 5 parameters");
+  assert(callee()->signature()->size() == 3, "poly1305_processBlocks has %d parameters", callee()->signature()->size());
   stubAddr = StubRoutines::poly1305_processBlocks();
   stubName = "poly1305_processBlocks";
 
   if (!stubAddr) return false;
-  Node* input = argument(0);
-  Node* input_offset = argument(1);
-  Node* len = argument(2);
-  Node* acc = argument(3);
-  Node* r = argument(4);
+  Node* polyObj = argument(0);
+  Node* input = argument(1);
+  Node* input_offset = argument(2);
+  Node* len = argument(3);
+
+  Node* accFace = load_field_from_object(polyObj, "a", "Lsun/security/util/math/MutableIntegerModuloP;");
+  assert(accFace != NULL, "Accumulator field is null");
+  const TypeInstPtr* ainst = _gvn.type(accFace)->isa_instptr();
+  assert(ainst != NULL, "Accumulator obj is null");
+  assert(ainst->is_loaded(), "MutableIntegerModuloP obj is not loaded");
+  ciKlass* klass_MutableElement = ainst->instance_klass()->find_klass(ciSymbol::make("sun/security/util/math/intpoly/IntegerPolynomial$MutableElement"));
+  assert(klass_MutableElement != NULL, "IntegerPolynomial$MutableElement class is null");
+  assert(klass_MutableElement->is_loaded(), "IntegerPolynomial$MutableElement class is not loaded");
+  ciInstanceKlass* instklass_MutableElement = klass_MutableElement->as_instance_klass();
+
+  const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_MutableElement);
+  const TypeOopPtr* atype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  Node* accObj = new CheckCastPPNode(control(), accFace, atype);
+  accObj = _gvn.transform(accObj);
+  Node* alimbs = load_field_from_object(accObj, "limbs", "[J");
+
+  Node* rFace = load_field_from_object(polyObj, "r", "Lsun/security/util/math/IntegerModuloP;"); //this.r.limbs
+  assert(rFace != NULL, "R field is null");
+  const TypeInstPtr* rinst = _gvn.type(rFace)->isa_instptr();
+  assert(rinst != NULL, "R obj is null");
+  assert(rinst->is_loaded(), "IntegerModuloP obj is not loaded");
+  ciKlass* klass_ImmutableElement = rinst->instance_klass()->find_klass(ciSymbol::make("sun/security/util/math/intpoly/IntegerPolynomial$ImmutableElement"));
+  assert(klass_ImmutableElement != NULL, "IntegerPolynomial$ImmutableElement class is null");
+  assert(klass_ImmutableElement->is_loaded(), "IntegerPolynomial$ImmutableElement class is not loaded");
+  ciInstanceKlass* instklass_ImmutableElement = klass_ImmutableElement->as_instance_klass();
+
+  const TypeKlassPtr* rklass = TypeKlassPtr::make(instklass_ImmutableElement);
+  const TypeOopPtr* rtype = rklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  Node* rObj = new CheckCastPPNode(control(), rFace, rtype);
+  rObj = _gvn.transform(rObj);
+  Node* rlimbs = load_field_from_object(rObj, "limbs", "[J");
 
   input = must_be_not_null(input, true);
-  acc = must_be_not_null(acc, true);
-  r = must_be_not_null(r, true);
+  alimbs = must_be_not_null(alimbs, true);
+  rlimbs = must_be_not_null(rlimbs, true);
 
-  Node* input_start = array_element_address(input, intcon(0), T_BYTE);
+  // Intrinsic assumes there are exactly 5 limbs! Currently enforced by IntegerModuloP.checkLimbsForIntrinsic
+  // FIXME: where to branch to if limbs array length != 5? Could be an 'assert'/RuntimeException
+  // FIXME: repeat for rlimbs
+  // Node* cmp = _gvn.transform(new CmpINode(load_array_length(alimbs), intcon(5)));
+  // Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+  // Node* if_eq = generate_slow_guard(bol, slow_region);
+
+  Node* input_start = array_element_address(input, input_offset, T_BYTE);
   assert(input_start, "input array is NULL");
-  Node* acc_start = array_element_address(acc, intcon(0), T_BYTE);
+  Node* acc_start = array_element_address(alimbs, intcon(0), T_LONG);
   assert(acc_start, "acc array is NULL");
-  Node* r_start = array_element_address(r, intcon(0), T_BYTE);
+  Node* r_start = array_element_address(rlimbs, intcon(0), T_LONG);
   assert(r_start, "r array is NULL");
 
   Node* call = make_runtime_call(RC_LEAF,
                                  OptoRuntime::poly1305_processBlocks_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
-                                 input_start, input_offset, len, acc_start, r_start);
+                                 input_start, len, acc_start, r_start);
   return true;
 }
 

@@ -208,5 +208,10 @@ public interface IntegerModuloP {
         return y.fixed();
     }
 
+    /**
+     * Enforce java to IntrinsicCandidate 'contract'
+     * @throws IndexOutOfBoundsException if the check fails
+     */
+    void checkLimbsForIntrinsic();
 }
 

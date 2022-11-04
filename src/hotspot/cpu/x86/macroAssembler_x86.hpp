@@ -977,6 +977,8 @@ public:
                          const Register R0, const Register R1, const Register C1, bool only128);
   void poly1305_multiply8_avx512(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
                                  const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P, const Register polyCP);
+  void poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, bool only128);
+  void poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs);
 
  public:
   void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,

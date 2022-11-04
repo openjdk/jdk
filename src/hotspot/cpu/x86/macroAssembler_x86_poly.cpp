@@ -347,6 +347,107 @@ void MacroAssembler::poly1305_limbs_avx512(
   evpandq(L0, L0, Address(polyCP, mask_44), Assembler::AVX_512bit);
 }
 
+/**
+ * Copy 5×26-bit (unreduced) limbs stored at Register limbs into  a2:a1:a0 (3×64-bit limbs)
+ *
+ * a2 is optional. When only128 is set, limbs are expected to fit into 128-bits (i.e. a1:a0 such as clamped R)
+ */
+void MacroAssembler::poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, bool only128)
+{
+  const Register t1 = r13;
+  const Register t2 = r14;
+
+  movq(a0, Address(limbs, 0));
+  movq(t1, Address(limbs, 8));
+  shlq(t1, 26);
+  addq(a0, t1);
+  movq(t1, Address(limbs, 16));
+  movq(t2, Address(limbs, 24));
+  movq(a1, t1);
+  shlq(t1, 52);
+  shrq(a1, 12);
+  shlq(t2, 14);
+  addq(a0, t1);
+  adcq(a1, t2);
+  movq(t1, Address(limbs, 32));
+  if (!only128) {
+    movq(a2, t1);
+    shrq(a2, 24);
+  }
+  shlq(t1, 40);
+  addq(a1, t1);
+  if (only128) {
+    return;
+  }
+  adcq(a2, 0);
+
+  // One round of reduction
+  // Take bits above 130 in a2, multiply by 5 and add to a2:a1:a0
+  movq(t1, a2);
+  andq(t1, ~3);
+  andq(a2, 3);
+  movq(t2, t1);
+  shrq(t2, 2);
+  addq(t1, t2);
+
+  addq(a0, t1);
+  adcq(a1, 0);
+  adcq(a2, 0);
+}
+
+
+/**
+ * Break 3×64-bit a2:a1:a0 limbs into 5×26-bit limbs and store out into 5 quadwords at address `limbs`
+ */
+void MacroAssembler::poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs)
+{
+  const Register t1 = r13;
+  const Register t2 = r14;
+
+  // Extra round of reduction
+  // Take bits above 130 in a2, multiply by 5 and add to a2:a1:a0
+  movq(t1, a2);
+  andq(t1, ~3);
+  andq(a2, 3);
+  movq(t2, t1);
+  shrq(t2, 2);
+  addq(t1, t2);
+
+  addq(a0, t1);
+  adcq(a1, 0);
+  adcq(a2, 0);
+
+  // Chop a2:a1:a0 into 26-bit limbs
+  movl(t1, a0);
+  andl(t1, 0x3ffffff);
+  movq(Address(limbs, 0), t1);
+
+  shrq(a0, 26);
+  movl(t1, a0);
+  andl(t1, 0x3ffffff);
+  movq(Address(limbs, 8), t1);
+
+  shrq(a0, 26); // 12 bits left in a0, concatenate 14 from a1
+  movl(t1, a1);
+  shll(t1, 12);
+  addl(t1, a0);
+  andl(t1, 0x3ffffff);
+  movq(Address(limbs, 16), t1);
+
+  shrq(a1, 14); // already used up 14 bits
+  shlq(a2, 50); // a2 contains 2 bits when reduced, but $Element.limbs dont have to be fully reduced
+  addq(a1, a2); // put remaining bits into a1
+
+  movl(t1, a1);
+  andl(t1, 0x3ffffff);
+  movq(Address(limbs, 24), t1);
+
+  shrq(a1, 26);
+  movl(t1, a1);
+  //andl(t1, 0x3ffffff); doesnt have to be fully reduced, leave remaining bit(s)
+  movq(Address(limbs, 32), t1);
+}
+
 // This function consumes as many whole 16*16-byte blocks as available in input
 // After execution, input and length will point at remaining (unprocessed) data
 // and [a2 a1 a0] will contain the current accumulator value
@@ -828,19 +929,16 @@ void MacroAssembler::poly1305_process_blocks(Register input, Register length, Re
 
   Label L_process16Loop, L_process16LoopDone;
 
-  // Load R
-  movq(r0, Address(R, 0));
-  movq(r1, Address(R, 8));
+  // Load R into r1:r0
+  poly1305_limbs(R, r0, r1, r1, true);
 
   // Compute 5*R (Upper limb only)
   movq(c1, r1);
   shrq(c1, 2);
   addq(c1, r1); // c1 = r1 + (r1 >> 2)
 
-  // Load accumulator
-  movq(a0, Address(accumulator, 0));
-  movq(a1, Address(accumulator, 8));
-  movzbq(a2, Address(accumulator, 16));
+  // Load accumulator into a2:a1:a0
+  poly1305_limbs(accumulator, a0, a1, a2, false);
 
   // VECTOR LOOP: Minimum of 256 bytes to run vectorized code
   cmpl(length, 16*16);
@@ -866,9 +964,7 @@ void MacroAssembler::poly1305_process_blocks(Register input, Register length, Re
   bind(L_process16LoopDone);
 
   // Write output
-  movq(Address(accumulator, 0), a0);
-  movq(Address(accumulator, 8), a1);
-  movb(Address(accumulator, 16), a2);
+  poly1305_limbs_out(a0, a1, a2, accumulator);
 }
 
 #endif // _LP64

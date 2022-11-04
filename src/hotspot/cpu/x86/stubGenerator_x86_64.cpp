@@ -2053,18 +2053,21 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ push(r14);
   __ push(r15);
 
-  // Normalize input
-  // JAVA: void processBlocks(byte[] input, int offset, int len, byte[] a, byte[] r)
+  // void processBlocks(byte[] input, int len, int[5] a, int[5] r)
   const Register input        = rdi; //input+offset
   const Register length       = rbx;
   const Register accumulator  = rcx;
   const Register R            = r8;
 
-  __ lea(input, Address(c_rarg0, c_rarg1));
-  __ mov(length, c_rarg2);
-  #ifdef _WIN64 // R and acc already in correct position for linux
-  __ mov(accumulator, r9);  // arg#3 - acc
-  __ movptr(R, Address(rbp, 6 * wordSize)); // arg#4 - R
+  #ifdef _WIN64
+  __ mov(input, c_rarg0);
+  __ mov(length, c_rarg1);
+  __ mov(accumulator, c_rarg2);
+  __ mov(R, c_rarg3);
+  #else  // input already in correct position for linux; dont clobber R, args copied out-of-order
+  __ mov(length, c_rarg1);
+  __ mov(R, c_rarg3);
+  __ mov(accumulator, c_rarg2);
   #endif
 
   __ poly1305_process_blocks(input, length, accumulator, R);

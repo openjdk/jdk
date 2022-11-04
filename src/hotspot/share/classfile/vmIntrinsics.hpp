@@ -523,9 +523,8 @@ class methodHandle;
                                                                                                                         \
   /* support for com.sun.crypto.provider.Poly1305 */                                                                    \
   do_class(com_sun_crypto_provider_Poly1305, "com/sun/crypto/provider/Poly1305")                                        \
-  do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, polyBlock_signature, F_S) \
+  do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, putCharStringU_signature, F_R) \
    do_name(processMultipleBlocks_name, "processMultipleBlocks")                                                         \
-   do_signature(polyBlock_signature, "([BII[B[B)V")                                                                     \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
