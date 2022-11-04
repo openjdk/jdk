@@ -5187,6 +5187,7 @@ instruct storeNKlass(iRegN src, memory mem)
 // Must be safe to execute with invalid address (cannot fault).
 
 instruct prefetchalloc( memory mem ) %{
+  predicate(UseZicbop)
   match(PrefetchAllocation mem);
 
   ins_cost(ALU_COST * 3);

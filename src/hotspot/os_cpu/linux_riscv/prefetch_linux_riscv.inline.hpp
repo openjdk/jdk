@@ -28,7 +28,7 @@
 
 #include "runtime/prefetch.hpp"
 
-inline void Prefetch::read(const void *loc, intx interval) {
+inline void Prefetch::read (const void *loc, intx interval) {
     if (interval >= 0 && UseZicbop) {
         // encoding for prefetch.r
         asm("ori zero, %0, 1" : : "r"(intptr_t(loc)+interval));
