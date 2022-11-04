@@ -1092,7 +1092,7 @@ void LIR_Assembler::typecheck_helper_slowcheck(ciKlass *k, Register obj, Registe
                                                Label *failure_target, Label *success_target) {
   // get object class
   // not a safepoint as obj null check happens earlier
-  __ load_klass(klass_RInfo, obj, t0);
+  __ load_klass(klass_RInfo, obj);
   if (k->is_loaded()) {
     // See if we get an immediate positive hit
     __ ld(t0, Address(klass_RInfo, int64_t(k->super_check_offset())));
@@ -1532,7 +1532,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 
   if (UseCompressedClassPointers) {
     __ lwu(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result, t0);
+    __ decode_klass_not_null(result);
   } else {
     __ ld(result, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
@@ -1592,7 +1592,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         }
       }
     } else {
-      __ load_klass(recv, recv, t0);
+      __ load_klass(recv, recv);
       Label update_done;
       type_profile_helper(mdo, md, data, recv, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
@@ -1622,7 +1622,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     if (exact_klass != NULL) {
       __ mov_metadata(tmp, exact_klass->constant_encoding());
     } else {
-      __ load_klass(tmp, tmp, t0);
+      __ load_klass(tmp, tmp);
     }
 
     __ ld(t1, mdo_addr);
@@ -2065,7 +2065,7 @@ void LIR_Assembler::deoptimize_trap(CodeEmitInfo *info) {
 
 void LIR_Assembler::check_exact_klass(Register tmp, ciKlass* exact_klass) {
   Label ok;
-  __ load_klass(tmp, tmp, t0);
+  __ load_klass(tmp, tmp);
   __ mov_metadata(t0, exact_klass->constant_encoding());
   __ beq(tmp, t0, ok);
   __ stop("exact klass and actual klass differ");
@@ -2125,8 +2125,8 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
   }
 
   add_debug_info_for_null_check_here(op->info_for_exception());
-  __ load_klass(k_RInfo, array, t0);
-  __ load_klass(klass_RInfo, value, t0);
+  __ load_klass(k_RInfo, array);
+  __ load_klass(klass_RInfo, value);
 
   lir_store_slowcheck(k_RInfo, klass_RInfo, Rtmp1, success_target, failure_target);
 
@@ -2136,7 +2136,7 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
     Register recv = k_RInfo;
     __ bind(profile_cast_success);
     __ mov_metadata(mdo, md->constant_encoding());
-    __ load_klass(recv, value, t0);
+    __ load_klass(recv, value);
     type_profile_helper(mdo, md, data, recv, &done);
     __ j(done);
 
@@ -2159,7 +2159,7 @@ void LIR_Assembler::type_profile(Register obj, ciMethodData* md, Register klass_
   Register recv = k_RInfo;
   __ bind(profile_cast_success);
   __ mov_metadata(mdo, md->constant_encoding());
-  __ load_klass(recv, obj, t0);
+  __ load_klass(recv, obj);
   Label update_done;
   type_profile_helper(mdo, md, data, recv, success);
   __ j(*success);

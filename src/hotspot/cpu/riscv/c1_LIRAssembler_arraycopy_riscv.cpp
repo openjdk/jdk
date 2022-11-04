@@ -93,14 +93,14 @@ void LIR_Assembler::arraycopy_simple_check(Register src, Register src_pos, Regis
   // an instance type.
   if (flags & LIR_OpArrayCopy::type_check) {
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
-      __ load_klass(tmp, dst, t0);
+      __ load_klass(tmp, dst);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
       __ mv(t1, Klass::_lh_neutral_value);
       __ bge(t0, t1, *stub->entry(), /* is_far */ true);
     }
 
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
-      __ load_klass(tmp, src, t0);
+      __ load_klass(tmp, src);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
       __ mv(t1, Klass::_lh_neutral_value);
       __ bge(t0, t1, *stub->entry(), /* is_far */ true);
@@ -142,9 +142,9 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
     assert(flags & mask, "one of the two should be known to be an object array");
 
     if (!(flags & LIR_OpArrayCopy::src_objarray)) {
-      __ load_klass(tmp, src, t0);
+      __ load_klass(tmp, src);
     } else if (!(flags & LIR_OpArrayCopy::dst_objarray)) {
-      __ load_klass(tmp, dst, t0);
+      __ load_klass(tmp, dst);
     }
     int lh_offset = in_bytes(Klass::layout_helper_offset());
     Address klass_lh_addr(tmp, lh_offset);
@@ -219,8 +219,8 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     __ addi(sp, sp, 2 * wordSize);
 
     PUSH(src, dst);
-    __ load_klass(src, src, t0);
-    __ load_klass(dst, dst, t0);
+    __ load_klass(src, src);
+    __ load_klass(dst, dst);
     __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, NULL);
 
     PUSH(src, dst);
@@ -258,8 +258,7 @@ void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, c
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
     if (UseCompressedClassPointers) {
-      assert_different_registers(tmp, t0);
-      __ encode_klass_not_null(tmp, t0);
+      __ encode_klass_not_null(tmp);
     }
 
     if (basic_type != T_OBJECT) {
@@ -363,7 +362,7 @@ void LIR_Assembler::arraycopy_prepare_params(Register src, Register src_pos, Reg
 void LIR_Assembler::arraycopy_checkcast_prepare_params(Register src, Register src_pos, Register length,
                                                        Register dst, Register dst_pos, BasicType basic_type) {
   arraycopy_prepare_params(src, src_pos, length, dst, dst_pos, basic_type);
-  __ load_klass(c_rarg4, dst, t0);
+  __ load_klass(c_rarg4, dst);
   __ ld(c_rarg4, Address(c_rarg4, ObjArrayKlass::element_klass_offset()));
   __ lwu(c_rarg3, Address(c_rarg4, Klass::super_check_offset_offset()));
 }

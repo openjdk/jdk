@@ -633,7 +633,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bne(c_rarg2, c_rarg3, error);
 
     // make sure klass is 'reasonable', which is not zero.
-    __ load_klass(x10, x10, t0);  // get klass
+    __ load_klass(x10, x10);  // get klass
     __ beqz(x10, error);      // if klass is NULL it is broken
 
     // return if everything seems ok
@@ -1581,7 +1581,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(from, from, UseCompressedOops ? 4 : 8);
     __ beqz(copied_oop, L_store_element);
 
-    __ load_klass(r9_klass, copied_oop, t0);// query the object klass
+    __ load_klass(r9_klass, copied_oop);// query the object klass
     generate_type_check(r9_klass, ckoff, ckval, L_store_element);
     // ======== end loop ========
 
@@ -1781,7 +1781,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andi(t0, scratch_length, 1UL << 31);
     __ bnez(t0, L_failed);
 
-    __ load_klass(scratch_src_klass, src, t0);
+    __ load_klass(scratch_src_klass, src);
 #ifdef ASSERT
     {
       BLOCK_COMMENT("assert klasses not null {");
@@ -1813,7 +1813,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beq(lh, t0, L_objArray);
 
     // if [src->klass() != dst->klass()] then return -1
-    __ load_klass(t1, dst, t0);
+    __ load_klass(t1, dst);
     __ bne(t1, scratch_src_klass, L_failed);
 
     // if [src->is_Array() != NULL] then return -1
@@ -1917,7 +1917,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_plain_copy, L_checkcast_copy;
     // test array classes for subtyping
-    __ load_klass(t2, dst, t0);
+    __ load_klass(t2, dst);
     __ bne(scratch_src_klass, t2, L_checkcast_copy); // usual case is exact equality
 
     // Identically typed arrays can be copied without element-wise checks.
@@ -1944,7 +1944,7 @@ class StubGenerator: public StubCodeGenerator {
       arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
                              t2, L_failed);
 
-      __ load_klass(dst_klass, dst, t0); // reload
+      __ load_klass(dst_klass, dst); // reload
 
       // Marshal the base address arguments now, freeing registers.
       __ shadd(from, src_pos, src, t0, LogBytesPerHeapOop);

@@ -307,7 +307,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       } else {
         // load receiver klass itself
         __ null_check(receiver_reg, oopDesc::klass_offset_in_bytes());
-        __ load_klass(temp1_recv_klass, receiver_reg, t0);
+        __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -315,7 +315,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // Check the receiver against the MemberName.clazz
       if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
         // Did not load it above...
-        __ load_klass(temp1_recv_klass, receiver_reg, t0);
+        __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {

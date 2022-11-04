@@ -2383,7 +2383,7 @@ encode %{
     __ ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
-      __ load_klass(flag, oop, t0);
+      __ load_klass(flag, oop);
       __ lwu(flag, Address(flag, Klass::access_flags_offset()));
       __ andi(flag, flag, JVM_ACC_IS_VALUE_BASED_CLASS, tmp /* tmp */);
       __ bnez(flag, cont, true /* is_far */);

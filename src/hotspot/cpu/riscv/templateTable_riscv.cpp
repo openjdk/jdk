@@ -1056,9 +1056,9 @@ void TemplateTable::aastore() {
   __ beqz(x10, is_null);
 
   // Move subklass into x11
-  __ load_klass(x11, x10, t0);
+  __ load_klass(x11, x10);
   // Move superklass into x10
-  __ load_klass(x10, x13, t0);
+  __ load_klass(x10, x13);
   __ ld(x10, Address(x10,
                      ObjArrayKlass::element_klass_offset()));
   // Compress array + index * oopSize + 12 into a single register.  Frees x12.
@@ -1103,7 +1103,7 @@ void TemplateTable::bastore() {
 
   // Need to check whether array is boolean or byte
   // since both types share the bastore bytecode.
-  __ load_klass(x12, x13, t0);
+  __ load_klass(x12, x13);
   __ lwu(x12, Address(x12, Klass::layout_helper_offset()));
   Label L_skip;
   __ andi(t0, x12, Klass::layout_helper_boolean_diffbit());
@@ -2085,7 +2085,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
 
     __ ld(c_rarg1, aaddress(0));
-    __ load_klass(x13, c_rarg1, t0);
+    __ load_klass(x13, c_rarg1);
     __ lwu(x13, Address(x13, Klass::access_flags_offset()));
     Label skip_register_finalizer;
     __ andi(t0, x13, JVM_ACC_HAS_FINALIZER);
@@ -3151,7 +3151,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   // get receiver klass
   __ null_check(recv, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x10, recv, t0);
+  __ load_klass(x10, recv);
 
   // profile this call
   __ profile_virtual_call(x10, xlocals, x13);
@@ -3237,7 +3237,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Check receiver klass into x13 - also a null check
   __ null_check(x12, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x13, x12, t0);
+  __ load_klass(x13, x12);
 
   Label subtype;
   __ check_klass_subtype(x13, x10, x14, subtype);
@@ -3254,7 +3254,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Get receiver klass into x13 - also a null check
   __ restore_locals();
   __ null_check(x12, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x13, x12, t0);
+  __ load_klass(x13, x12);
 
   Label no_such_method;
 
@@ -3443,7 +3443,7 @@ void TemplateTable::_new() {
     __ mv(t0, (intptr_t)markWord::prototype().value());
     __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
     __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
-    __ store_klass(x10, x14, t0);  // store klass last
+    __ store_klass(x10, x14);      // store klass last
 
     {
       SkipIfEqual skip(_masm, &DTraceAllocProbes, false);
@@ -3525,7 +3525,7 @@ void TemplateTable::checkcast() {
   __ load_resolved_klass_at_offset(x12, x9, x10, t0); // x10 = klass
 
   __ bind(resolved);
-  __ load_klass(x9, x13, t0);
+  __ load_klass(x9, x13);
 
   // Generate subtype check.  Blows x12, x15.  Object in x13.
   // Superklass in x10.  Subklass in x9.
@@ -3574,12 +3574,12 @@ void TemplateTable::instanceof() {
   __ get_vm_result_2(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ verify_oop(x13);
-  __ load_klass(x13, x13, t0);
+  __ load_klass(x13, x13);
   __ j(resolved);
 
   // Get superklass in x10 and subklass in x13
   __ bind(quicked);
-  __ load_klass(x13, x10, t0);
+  __ load_klass(x13, x10);
   __ load_resolved_klass_at_offset(x12, x9, x10, t0);
 
   __ bind(resolved);
