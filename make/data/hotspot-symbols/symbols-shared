@@ -30,9 +30,5 @@ jio_vsnprintf
 JNI_CreateJavaVM
 JNI_GetCreatedJavaVMs
 JNI_GetDefaultJavaVMInitArgs
-JVM_EnsureMaterializedForStackWalk_func
 JVM_FindClassFromBootLoader
-JVM_FindScopedValueBindings
 JVM_InitAgentProperties
-JVM_ScopedValueCache
-JVM_SetScopedValueCache
