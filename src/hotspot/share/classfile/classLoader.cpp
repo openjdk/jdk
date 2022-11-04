@@ -237,6 +237,10 @@ const char* ClassPathEntry::copy_path(const char* path) {
   return copy;
 }
 
+ClassPathDirEntry::~ClassPathDirEntry() {
+  FREE_C_HEAP_ARRAY(char, _dir);
+}
+
 ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char* name) {
   // construct full path name
   assert((_dir != NULL) && (name != NULL), "sanity");
