@@ -1159,6 +1159,26 @@ JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
 JNIEXPORT jint JNICALL
 JVM_GetClassFileVersion(JNIEnv *env, jclass current);
 
+/**** External access to JVM C-Heap allocation functions. */
+typedef enum {
+  MT_JUZI = 0, /* Buffers used by java.util.zip inflaters */
+  MT_JUZD,     /* Buffers used by java.util.zip deflaters */
+  MT_ZLIB,     /* Buffers used by other users of zlib */
+  MT_OTHER
+} allocation_category_t;
+
+JNIEXPORT void* JNICALL
+JVM_MemoryAlloc(size_t size, allocation_category_t category);
+
+JNIEXPORT void* JNICALL
+JVM_MemoryRealloc(void* p, size_t size, allocation_category_t category);
+
+JNIEXPORT void* JNICALL
+JVM_MemoryCalloc(size_t numelems, size_t elemsize, allocation_category_t category);
+
+JNIEXPORT void JNICALL
+JVM_MemoryFree(void* p);
+
 /*
  * This structure is used by the launcher to get the default thread
  * stack size from the VM using JNI_GetDefaultJavaVMInitArgs() with a

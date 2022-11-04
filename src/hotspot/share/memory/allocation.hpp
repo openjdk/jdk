@@ -100,6 +100,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 //
 
 #define MEMORY_TYPES_DO(f)                                                           \
+  /* Intra-VM categories */                                                          \
   /* Memory type by sub systems. It occupies lower byte. */                          \
   f(mtJavaHeap,       "Java Heap")   /* Java heap                                 */ \
   f(mtClass,          "Class")       /* Java classes                              */ \
@@ -113,7 +114,6 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
   f(mtInternal,       "Internal")    /* memory used by VM, but does not belong to */ \
                                      /* any of above categories, and not used by  */ \
                                      /* NMT                                       */ \
-  f(mtOther,          "Other")       /* memory not used by VM                     */ \
   f(mtSymbol,         "Symbol")                                                      \
   f(mtNMT,            "Native Memory Tracking")  /* memory used by NMT            */ \
   f(mtClassShared,    "Shared class space")      /* class data sharing            */ \
@@ -130,6 +130,14 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
+  /* Non-VM categories used by allocation from outside hotspot.          */          \
+  /* These must appear in the same order as their counterparts in jvm.h  */          \
+  /* (see allocation_category_t). */                                                 \
+  f(mtJuzD,           "j.u.zip (deflate)") /* Used by j.u.zip Deflaters. */          \
+  f(mtJuzI,           "j.u.zip (inflate)") /* Used by j.u.zip Inflaters. */          \
+  f(mtZip,            "Zip (other)")       /* Used by zlib (none-j.u.zip usage). */  \
+  f(mtOther,          "Other")             /* Outside memory, unspecified. */        \
+  /* Let this be the last */                                                         \
   f(mtNone,           "Unknown")                                                     \
   //end
 
@@ -140,9 +148,12 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
  * Memory types
  */
 enum class MEMFLAGS : uint8_t  {
+  mt_first,
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
-  mt_number_of_types   // number of memory types (mtDontTrack
+  mt_number_of_types,  // number of memory types (mtDontTrack
                        // is not included as validate type)
+  mt_outside_range_first = mtJuzD,
+  mt_outside_range_last = mtOther
 };
 // Extra insurance that MEMFLAGS truly has the same size as uint8_t.
 STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));

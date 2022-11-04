@@ -43,6 +43,7 @@
 #include "jvm.h"
 #include "io_util.h"
 #include "io_util_md.h"
+#include "zip_allocation.h"
 #include "zip_util.h"
 #include <zlib.h>
 
@@ -1423,6 +1424,7 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
     }
 
     memset(&strm, 0, sizeof(z_stream));
+    ZIP_InitializeStreamAllocationHooks(&strm, MT_ZLIB);
     if (inflateInit2(&strm, -MAX_WBITS) != Z_OK) {
         *msg = strm.msg;
         return JNI_FALSE;
@@ -1553,6 +1555,7 @@ ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pm
 {
     z_stream strm;
     memset(&strm, 0, sizeof(z_stream));
+    ZIP_InitializeStreamAllocationHooks(&strm, MT_ZLIB);
 
     *pmsg = 0; /* Reset error message */
 
@@ -1595,6 +1598,10 @@ ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pm
     inflateEnd(&strm);
     return JNI_TRUE;
 }
+
+/* Below are utility functions needed for heap dump compression. These are not used by
+ * j.u.zip.
+ */
 
 static voidpf tracking_zlib_alloc(voidpf opaque, uInt items, uInt size) {
   size_t* needed = (size_t*) opaque;

@@ -49,6 +49,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/resourceArea.hpp"
@@ -4019,3 +4020,40 @@ JVM_ENTRY(jint, JVM_GetClassFileVersion(JNIEnv* env, jclass current))
   InstanceKlass* ik = InstanceKlass::cast(c);
   return (ik->minor_version() << 16) | ik->major_version();
 JVM_END
+
+static MEMFLAGS translate_allocation_category(allocation_category_t cat) {
+  int translated = (int)cat + (int)MEMFLAGS::mt_outside_range_first;
+  assert(translated >= (int)MEMFLAGS::mt_outside_range_first &&
+         translated <= (int)MEMFLAGS::mt_outside_range_last,
+         "Invalid category %d", translated);
+  if (translated < (int)MEMFLAGS::mt_outside_range_first ||
+      translated > (int)MEMFLAGS::mt_outside_range_last) {
+    return mtOther;
+  }
+  return (MEMFLAGS)translated;
+}
+
+JNIEXPORT void* JNICALL
+JVM_MemoryAlloc(size_t size, allocation_category_t category) {
+  return os::malloc(size, translate_allocation_category(category));
+}
+
+JNIEXPORT void* JNICALL
+JVM_MemoryRealloc(void* p, size_t size, allocation_category_t category) {
+  return os::realloc(p, size, translate_allocation_category(category));
+}
+
+JNIEXPORT void* JNICALL
+JVM_MemoryCalloc(size_t numelems, size_t elemsize, allocation_category_t category) {
+  const size_t size = numelems * elemsize;
+  void* p = os::malloc(size, translate_allocation_category(category));
+  if (p != nullptr) {
+    ::memset(p, 0, size);
+  }
+  return p;
+}
+
+JNIEXPORT void JNICALL
+JVM_MemoryFree(void* p) {
+  os::free(p);
+}

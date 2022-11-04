@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,20 +35,24 @@
 #include <zlib.h>
 
 #include "java_util_zip_Deflater.h"
+#include "zip_allocation.h"
 
 #define DEF_MEM_LEVEL 8
+
+#define NMT_CATEGORY ((allocation_category_t) MT_JUZD)
 
 JNIEXPORT jlong JNICALL
 Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
                                  jint strategy, jboolean nowrap)
 {
-    z_stream *strm = calloc(1, sizeof(z_stream));
+    z_stream *strm = JVM_MemoryCalloc(1, sizeof(z_stream), NMT_CATEGORY);
 
     if (strm == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return jlong_zero;
     } else {
         const char *msg;
+        ZIP_InitializeStreamAllocationHooks(strm, MT_JUZD);
         int ret = deflateInit2(strm, level, Z_DEFLATED,
                                nowrap ? -MAX_WBITS : MAX_WBITS,
                                DEF_MEM_LEVEL, strategy);
@@ -56,11 +60,11 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
           case Z_OK:
             return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
-            free(strm);
+            JVM_MemoryFree(strm);
             JNU_ThrowOutOfMemoryError(env, 0);
             return jlong_zero;
           case Z_STREAM_ERROR:
-            free(strm);
+            JVM_MemoryFree(strm);
             JNU_ThrowIllegalArgumentException(env, 0);
             return jlong_zero;
           default:
@@ -69,7 +73,7 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
                    "zlib returned Z_VERSION_ERROR: "
                    "compile time and runtime zlib implementations differ" :
                    "unknown error initializing zlib library");
-            free(strm);
+            JVM_MemoryFree(strm);
             JNU_ThrowInternalError(env, msg);
             return jlong_zero;
         }
@@ -306,6 +310,6 @@ Java_java_util_zip_Deflater_end(JNIEnv *env, jclass cls, jlong addr)
     if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
         JNU_ThrowInternalError(env, "deflateEnd failed");
     } else {
-        free((z_stream *)jlong_to_ptr(addr));
+        JVM_MemoryFree((z_stream *)jlong_to_ptr(addr));
     }
 }
