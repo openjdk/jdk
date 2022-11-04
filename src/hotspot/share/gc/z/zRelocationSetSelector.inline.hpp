@@ -49,6 +49,18 @@ inline size_t ZRelocationSetSelectorGroupStats::relocate() const {
   return _relocate;
 }
 
+inline size_t ZRelocationSetSelectorStats::small_selected() const {
+  return _small_selected;
+}
+
+inline size_t ZRelocationSetSelectorStats::medium_selected() const {
+  return _medium_selected;
+}
+
+inline bool ZRelocationSetSelectorStats::has_relocatable_pages() const {
+  return _total_pages > 0;
+}
+
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::small(ZPageAge age) const {
   return _small[static_cast<uint>(age)];
 }

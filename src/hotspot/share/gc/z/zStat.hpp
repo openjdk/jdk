@@ -522,7 +522,9 @@ class ZStatRelocation {
 private:
   ZRelocationSetSelectorStats _selector_stats;
   size_t                      _forwarding_usage;
+  size_t                      _small_selected;
   size_t                      _small_in_place_count;
+  size_t                      _medium_selected;
   size_t                      _medium_in_place_count;
 
   void print(const char* name,
@@ -536,7 +538,8 @@ public:
   void at_install_relocation_set(size_t forwarding_usage);
   void at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
 
-  void print();
+  void print_page_summary();
+  void print_age_table();
 };
 
 //

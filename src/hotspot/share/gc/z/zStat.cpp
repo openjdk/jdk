@@ -718,7 +718,12 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
   if (generation->is_old()) {
     ZStatReferences::print();
   }
-  generation->stat_relocation()->print();
+
+  generation->stat_relocation()->print_page_summary();
+  if (generation->is_young()) {
+    generation->stat_relocation()->print_age_table();
+  }
+
   generation->stat_heap()->print(generation);
 
   log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT " %.3fs",
@@ -1437,7 +1442,9 @@ void ZStatMark::print() {
 ZStatRelocation::ZStatRelocation() :
     _selector_stats(),
     _forwarding_usage(),
+    _small_selected(),
     _small_in_place_count(),
+    _medium_selected(),
     _medium_in_place_count() {
 }
 
@@ -1454,11 +1461,11 @@ void ZStatRelocation::at_relocate_end(size_t small_in_place_count, size_t medium
   _medium_in_place_count = medium_in_place_count;
 }
 
-void ZStatRelocation::print() {
+void ZStatRelocation::print_page_summary() {
   LogTarget(Info, gc, reloc) lt;
 
-  if (!lt.is_enabled()) {
-    // Nothing to log
+  if (!_selector_stats.has_relocatable_pages() || !lt.is_enabled()) {
+    // Nothing to log or logging not enabled.
     return;
   }
 
@@ -1466,6 +1473,58 @@ void ZStatRelocation::print() {
   ZStatRelocationSummary small_summary{};
   ZStatRelocationSummary medium_summary{};
   ZStatRelocationSummary large_summary{};
+
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    const ZPageAge age = static_cast<ZPageAge>(i);
+    auto account_page_size = [&](ZStatRelocationSummary& summary, const ZRelocationSetSelectorGroupStats& stats) {
+      summary.npages += stats.npages();
+      summary.total += stats.total();
+      summary.empty += stats.empty();
+      summary.relocate += stats.relocate();
+    };
+
+    account_page_size(small_summary, _selector_stats.small(age));
+    account_page_size(medium_summary, _selector_stats.medium(age));
+    account_page_size(large_summary, _selector_stats.large(age));
+  }
+
+  ZStatTablePrinter pages(20, 12);
+  lt.print("%s", pages()
+           .fill()
+           .right("Selected")
+           .right("In-Place")
+           .right("Total")
+           .right("Size")
+           .right("Empty")
+           .right("Relocated")
+           .end());
+
+  auto print_summary = [&](const char* name, ZStatRelocationSummary& summary, size_t selected, size_t in_place_count, bool skip) {
+    if (skip) { return; }
+    lt.print("%s", pages()
+             .left("%s Pages:", name)
+             .right("%zu", selected)
+             .right("%zu", in_place_count)
+             .right("%zu", summary.npages)
+             .right("%zuM", summary.total / M)
+             .right("%zuM", summary.empty / M)
+             .right("%zuM", summary.relocate /M)
+             .end());
+  };
+
+  print_summary("Small", small_summary, _selector_stats.small_selected(), _small_in_place_count, false /* skip */);
+  print_summary("Medium", medium_summary, _selector_stats.medium_selected(), _medium_in_place_count, ZPageSizeMedium == 0);
+  print_summary("Large", large_summary, 0 /* selected */,  0 /* in_place_count */, false /* skip */);
+
+  lt.print("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
+}
+
+void ZStatRelocation::print_age_table() {
+  LogTarget(Info, gc, reloc) lt;
+  if (!_selector_stats.has_relocatable_pages() || !lt.is_enabled()) {
+    // Nothing to log or logging not enabled.
+    return;
+  }
 
   ZStatTablePrinter age_table(10, 18);
   lt.print("Age Table:");
@@ -1476,59 +1535,33 @@ void ZStatRelocation::print() {
            .end());
 
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
     size_t live = 0;
-    size_t bytes = 0;
-    const ZPageAge age = static_cast<ZPageAge>(i);
-
-    auto account_page_size = [&](ZStatRelocationSummary& summary, const ZRelocationSetSelectorGroupStats& stats) {
-      summary.npages += stats.npages();
-      summary.total += stats.total();
-      summary.empty += stats.empty();
-      summary.relocate += stats.relocate();
+    size_t total = 0;
+    auto summarize_pages = [&](const ZRelocationSetSelectorGroupStats& stats) {
       live += stats.live();
-      bytes += stats.total();
+      total += stats.total();
     };
 
-    account_page_size(small_summary, _selector_stats.small(age));
-    account_page_size(medium_summary, _selector_stats.medium(age));
-    account_page_size(large_summary, _selector_stats.large(age));
+    summarize_pages(_selector_stats.small(age));
+    summarize_pages(_selector_stats.medium(age));
+    summarize_pages(_selector_stats.large(age));
 
-    if (bytes != 0) {
+    if (total != 0) {
       FormatBuffer<> age_str("");
       if (age == ZPageAge::eden) {
         age_str.append("Eden");
-      } else if (age == ZPageAge::old) {
-        age_str.append("Old");
-      } else {
+      } else if (age != ZPageAge::old) {
         age_str.append("Survivor %d", i);
       }
 
       lt.print("%s", age_table()
                .left("%s", age_str.buffer())
                .left(ZTABLE_ARGS(live))
-               .left(ZTABLE_ARGS(bytes - live))
+               .left(ZTABLE_ARGS(total - live))
                .end());
     }
   }
-
-  auto print_summary = [&](const char* name, ZStatRelocationSummary& summary, size_t in_place_count) {
-    lt.print("%s Pages: " SIZE_FORMAT " / " SIZE_FORMAT "M, Empty: " SIZE_FORMAT "M, "
-             "Relocated: " SIZE_FORMAT "M, In-Place: " SIZE_FORMAT,
-             name,
-             summary.npages,
-             summary.total / M,
-             summary.empty / M,
-             summary.relocate / M,
-             in_place_count);
-  };
-
-  print_summary("Small", small_summary, _small_in_place_count);
-  if (ZPageSizeMedium != 0) {
-    print_summary("Medium", medium_summary, _medium_in_place_count);
-  }
-  print_summary("Large", large_summary, 0 /* in_place_count */);
-
-  lt.print("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
 }
 
 //

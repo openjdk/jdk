@@ -171,7 +171,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     _stats[i]._relocate = selected_live_bytes[i];
   }
 
-  log_trace(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
+  log_debug(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
                        _name, selected_from, selected_to, npages - selected_from, selected_forwarding_entries);
 }
 
@@ -239,5 +239,8 @@ ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
     stats._medium[i] = _medium.stats(age);
     stats._large[i] = _large.stats(age);
   }
+  stats._small_selected = _small.selected_pages()->length();
+  stats._medium_selected = _medium.selected_pages()->length();
+  stats._total_pages = total();
   return stats;
 }

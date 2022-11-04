@@ -56,11 +56,17 @@ class ZRelocationSetSelectorStats {
   friend class ZRelocationSetSelector;
 
 private:
+  size_t _small_selected;
+  size_t _medium_selected;
+  size_t _total_pages;
   ZRelocationSetSelectorGroupStats _small[ZPageAgeMax + 1];
   ZRelocationSetSelectorGroupStats _medium[ZPageAgeMax + 1];
   ZRelocationSetSelectorGroupStats _large[ZPageAgeMax + 1];
 
 public:
+  size_t small_selected() const;
+  size_t medium_selected() const;
+  bool has_relocatable_pages() const;
   const ZRelocationSetSelectorGroupStats& small(ZPageAge age) const;
   const ZRelocationSetSelectorGroupStats& medium(ZPageAge age) const;
   const ZRelocationSetSelectorGroupStats& large(ZPageAge age) const;
