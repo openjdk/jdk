@@ -50,35 +50,35 @@ public class CheckCipherSuites {
         // Not suite B, but we want it to position the suite early
         "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
 
-        // AES_256(GCM) - ECDHE - forward screcy
+        // AES_256(GCM) - ECDHE - forward secrecy
         "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
         "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
 
-        // AES_128(GCM) - ECDHE - forward screcy
+        // AES_128(GCM) - ECDHE - forward secrecy
         "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
 
-        // AES_256(GCM) - DHE - forward screcy
+        // AES_256(GCM) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
         "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
         "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
 
-        // AES_128(GCM) - DHE - forward screcy
+        // AES_128(GCM) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
         "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
 
-        // AES_256(CBC) - ECDHE - forward screcy
+        // AES_256(CBC) - ECDHE - forward secrecy
         "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
         "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
 
-        // AES_256(CBC) - ECDHE - forward screcy
+        // AES_256(CBC) - ECDHE - forward secrecy
         "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
 
-        // AES_256(CBC) - DHE - forward screcy
+        // AES_256(CBC) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
         "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
 
-        // AES_128(CBC) - DHE - forward screcy
+        // AES_128(CBC) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
 
@@ -145,35 +145,35 @@ public class CheckCipherSuites {
         // Not suite B, but we want it to position the suite early
         "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
 
-        // AES_256(GCM) - ECDHE - forward screcy
+        // AES_256(GCM) - ECDHE - forward secrecy
         "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
         "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
 
-        // AES_128(GCM) - ECDHE - forward screcy
+        // AES_128(GCM) - ECDHE - forward secrecy
         "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
 
-        // AES_256(GCM) - DHE - forward screcy
+        // AES_256(GCM) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
         "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
         "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
 
-        // AES_128(GCM) - DHE - forward screcy
+        // AES_128(GCM) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
         "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
 
-        // AES_256(CBC) - ECDHE - forward screcy
+        // AES_256(CBC) - ECDHE - forward secrecy
         "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
         "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
 
-        // AES_256(CBC) - ECDHE - forward screcy
+        // AES_256(CBC) - ECDHE - forward secrecy
         "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
 
-        // AES_256(CBC) - DHE - forward screcy
+        // AES_256(CBC) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
         "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
 
-        // AES_128(CBC) - DHE - forward screcy
+        // AES_128(CBC) - DHE - forward secrecy
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
 
