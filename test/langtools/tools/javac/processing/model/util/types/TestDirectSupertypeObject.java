@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8296287
- * @summary Test Types methods on module and package TypeMirrors
+ * @summary Test direct supertypes of java.lang.Object
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestDirectSupertypeObject
  * @compile -processor TestDirectSupertypeObject -proc:only TestDirectSupertypeObject.java
@@ -44,10 +44,10 @@ public class TestDirectSupertypeObject extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
-            TypeMirror objectType  = requireNonNull(eltUtils.getTypeElement("java.lang.Object")).asType();
-            var ojectSupertypes = typeUtils.directSupertypes(objectType);
-            if (!ojectSupertypes.isEmpty()) {
-                messager.printError("Direct supertypes: " + ojectSupertypes);
+            TypeMirror objectType = requireNonNull(eltUtils.getTypeElement("java.lang.Object")).asType();
+            var objectSupertypes = typeUtils.directSupertypes(objectType);
+            if (!objectSupertypes.isEmpty()) {
+                messager.printError("Direct supertypes: " + objectSupertypes);
             }
         }
         return true;
