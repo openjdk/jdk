@@ -90,6 +90,8 @@ public class SecondaryErrorTest {
         Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"),
         Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
         Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 2\\).*\\]"),
+        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
+        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash in step condition\\).*\\]"),
     };
     int currentPattern = 0;
 
