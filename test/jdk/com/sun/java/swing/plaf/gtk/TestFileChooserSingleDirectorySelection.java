@@ -101,16 +101,7 @@ public class TestFileChooserSingleDirectorySelection {
             robot.waitForIdle();
             robot.delay(1000);
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            Point frameLocation = fileChooser.getLocationOnScreen();
-            int frameWidth = frame.getWidth();
-            int frameHeight = frame.getHeight();
-
-            Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
-            int btnWidth = getSelectedFilesButton.getWidth();
-            int btnHeight = getSelectedFilesButton.getHeight();
-            clickMouse(frameLocation, 0, frameHeight, 230);
-            clickMouse(btnLocation, btnWidth, btnHeight, 0);
-            checkResult(laf);
+            doTesting(laf, 230);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -130,16 +121,7 @@ public class TestFileChooserSingleDirectorySelection {
             robot.waitForIdle();
             robot.delay(1000);
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            Point frameLocation = fileChooser.getLocationOnScreen();
-            int frameWidth = frame.getWidth();
-            int frameHeight = frame.getHeight();
-
-            Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
-            int btnWidth = getSelectedFilesButton.getWidth();
-            int btnHeight = getSelectedFilesButton.getHeight();
-            clickMouse(frameLocation, 0, frameHeight, 50);
-            clickMouse(btnLocation, btnWidth, btnHeight, 0);
-            checkResult(laf);
+            doTesting(laf, 50);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -159,16 +141,7 @@ public class TestFileChooserSingleDirectorySelection {
             robot.waitForIdle();
             robot.delay(1000);
             fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            Point frameLocation = fileChooser.getLocationOnScreen();
-            int frameWidth = frame.getWidth();
-            int frameHeight = frame.getHeight();
-
-            Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
-            int btnWidth = getSelectedFilesButton.getWidth();
-            int btnHeight = getSelectedFilesButton.getHeight();
-            clickMouse(frameLocation, 0, frameHeight, 50);
-            clickMouse(btnLocation, btnWidth, btnHeight, 0);
-            checkResult(laf);
+            doTesting(laf, 50);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -214,6 +187,19 @@ public class TestFileChooserSingleDirectorySelection {
                  | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void doTesting(UIManager.LookAndFeelInfo laf, int xOffset) {
+        Point frameLocation = fileChooser.getLocationOnScreen();
+        int frameWidth = frame.getWidth();
+        int frameHeight = frame.getHeight();
+
+        Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
+        int btnWidth = getSelectedFilesButton.getWidth();
+        int btnHeight = getSelectedFilesButton.getHeight();
+        clickMouse(frameLocation, 0, frameHeight, xOffset);
+        clickMouse(btnLocation, btnWidth, btnHeight, 0);
+        checkResult(laf);
     }
 
     private static void clickMouse(Point point, int width, int height,
