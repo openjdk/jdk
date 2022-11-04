@@ -475,7 +475,9 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
       offsets.set_value(CodeOffsets::Exceptions, exception_handler);
     }
 
-    nm = new (native_nmethod_size, method->is_method_handle_intrinsic())
+    // MH intrinsics are dispatch stubs which are compatible with NonNMethod space.
+    bool allow_NonNMethod_space = method->is_method_handle_intrinsic();
+    nm = new (native_nmethod_size, allow_NonNMethod_space)
     nmethod(method(), compiler_none, native_nmethod_size,
             compile_id, &offsets,
             code_buffer, frame_size,
@@ -483,9 +485,10 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
             basic_lock_sp_offset,
             oop_maps);
 #ifdef ASSERT
-    // Method handle instrinsics may get allocated in NonNMethod space.
+    // Allocating in NonNMethod space is only for special nmethods which don't
+    // need to be findable by nmethod iterators.
     // GC may not look for Oops, there.
-    if (method->is_method_handle_intrinsic()) {
+    if (allow_NonNMethod_space) {
       assert(oop_maps == nullptr, "expectation");
       assert(!nm->contains_oops(), "no oops allowed");
       assert(nm->metadata_size() == 0, "metadata usage not expected");
