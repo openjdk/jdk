@@ -434,6 +434,18 @@ static double calculate_extra_young_gc_time(ZDirectorStats& stats) {
   return extra_young_gc_time;
 }
 
+static bool is_major_urgent(ZDirectorStats& stats) {
+  // Boost old GC if the amount of freeeable young memory is 5% or less.
+  // and the usage is high; now freeing old memory is "urgent".
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t used = stats._heap._used;
+  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
+  const double free_percent = percent_of(free, soft_max_capacity);
+
+  return is_young_small(stats) && free_percent <= 5.0;
+}
+
 static bool rule_major_allocation_rate(ZDirectorStats& stats) {
   if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
@@ -482,7 +494,7 @@ static bool rule_major_allocation_rate(ZDirectorStats& stats) {
   // to upgrade minor collections to major collections.
   bool old_garbage_is_cheaper = current_old_gc_time_per_bytes_freed < current_young_gc_time_per_bytes_freed;
 
-  return can_amortize_time_cost || old_garbage_is_cheaper;
+  return can_amortize_time_cost || old_garbage_is_cheaper || is_major_urgent(stats);
 }
 
 static uint calculate_old_workers(ZDirectorStats& stats) {
@@ -659,7 +671,7 @@ static ZWorkerResizeInfo wanted_young_nworkers(ZDirectorStats& stats) {
     return {
       resize_stats._is_active,        // _is_active
       resize_stats._nworkers_current, // _current_nworkers
-      0                               // _desired_nworkers
+      resize_stats._nworkers_current  // _desired_nworkers
     };
   }
 
@@ -669,14 +681,14 @@ static ZWorkerResizeInfo wanted_young_nworkers(ZDirectorStats& stats) {
     return {
       resize_stats._is_active,        // _is_active
       resize_stats._nworkers_current, // _current_nworkers
-      0                               // _desired_nworkers
+      resize_stats._nworkers_current  // _desired_nworkers
     };
   }
 
   return {
-    resize_stats._is_active,        // _is_active
-    resize_stats._nworkers_current, // _current_nworkers
-    request.young_nworkers()        // _desired_nworkers
+    resize_stats._is_active,                                       // _is_active
+    resize_stats._nworkers_current,                                // _current_nworkers
+    MAX2(resize_stats._nworkers_current, request.young_nworkers()) // _desired_nworkers
   };
 }
 
@@ -688,7 +700,7 @@ static ZWorkerResizeInfo wanted_old_nworkers(ZDirectorStats& stats) {
     return {
        resize_stats._is_active,        // _is_active
        resize_stats._nworkers_current, // _current_nworkers
-       0                               // _desired_nworkers
+       resize_stats._nworkers_current  // _desired_nworkers
     };
   }
 
@@ -697,44 +709,43 @@ static ZWorkerResizeInfo wanted_old_nworkers(ZDirectorStats& stats) {
     return {
       resize_stats._is_active,        // _is_active
       resize_stats._nworkers_current, // _current_nworkers
-      0                               // _desired_nworkers
+      resize_stats._nworkers_current  // _desired_nworkers
     };
   }
 
   return {
-    resize_stats._is_active,        // _is_active
-    resize_stats._nworkers_current, // _current_nworkers
-    calculate_old_workers(stats)    // _desired_nworkers
+    resize_stats._is_active,                                           // _is_active
+    resize_stats._nworkers_current,                                    // _current_nworkers
+    MAX2(resize_stats._nworkers_current, calculate_old_workers(stats)) // _desired_nworkers
   };
 }
 
-static void adjust_gc(ZWorkerResizeInfo young_info, ZWorkerResizeInfo old_info) {
+static void adjust_gc(ZDirectorStats& stats, ZWorkerResizeInfo young_info, ZWorkerResizeInfo old_info) {
+  uint young_workers = young_info._desired_nworkers;
+  uint old_workers = old_info._desired_nworkers;
+
   if (young_info._is_active && old_info._is_active) {
-    // Need at least 1 thread for old generation
-    const uint max_young_threads = MAX2(ConcGCThreads - 1, 1u);
-    young_info._desired_nworkers = clamp(young_info._desired_nworkers, 0u, max_young_threads);
-    // Adjust old threads so we don't have more than ConcGCThreads in total
-    const uint max_old_threads = MAX2(ConcGCThreads - MAX2(young_info._current_nworkers, young_info._desired_nworkers), 1u);
-    old_info._desired_nworkers = clamp(old_info._desired_nworkers, 0u, max_old_threads);
+    // Both generations being collected at the same time - need to prioritize one
+    // and adjust the number of threads accordingly
+    if (is_major_urgent(stats)) {
+      // If the major GC is urgent, we give the old generation all the resources
+      old_workers = MAX2(ConcGCThreads - 1u, 1u);
+      young_workers = 1u;
+    } else {
+      // In the normal case, the minor GC is urgent, so give it what it wants
+      const uint max_young_threads = MAX2(ConcGCThreads - 1, 1u);
+      young_workers = MIN2(young_info._desired_nworkers, max_young_threads);
+      // Adjust old threads so we don't have more than ConcGCThreads in total
+      const uint max_old_threads = MAX2(ConcGCThreads - young_info._desired_nworkers, 1u);
+      old_workers = MIN2(old_info._desired_nworkers, max_old_threads);
+    }
   }
 
-  // At least one thread for each generation
-  const uint max_total_threads = MAX2(ConcGCThreads, 2u);
-
-  const bool need_more_young_workers = young_info._current_nworkers < young_info._desired_nworkers;
-  const bool need_more_old_workers = old_info._current_nworkers < old_info._desired_nworkers;
-  const bool too_many_total_threads = MAX2(young_info._current_nworkers, young_info._desired_nworkers) + old_info._current_nworkers > max_total_threads;
-
-  if ((old_info._desired_nworkers != 0 && need_more_old_workers) || too_many_total_threads) {
-    // Need to change major workers
-    // FIXME: Workaround for problematic size
-    const uint old_workers = MAX2(old_info._desired_nworkers, 1u);
+  if (old_info._current_nworkers != old_workers) {
     ZGeneration::old()->workers()->request_resize_workers(old_workers);
   }
-
-  if (young_info._desired_nworkers != 0 && need_more_young_workers) {
-    // We need more workers than we currently use; trigger worker resize
-    ZGeneration::young()->workers()->request_resize_workers(young_info._desired_nworkers);
+  if (young_info._current_nworkers != young_workers) {
+    ZGeneration::young()->workers()->request_resize_workers(young_workers);
   }
 }
 
@@ -743,7 +754,7 @@ static void adjust_gc(ZDirectorStats& stats) {
     return;
   }
 
-  adjust_gc(wanted_young_nworkers(stats), wanted_old_nworkers(stats));
+  adjust_gc(stats, wanted_young_nworkers(stats), wanted_old_nworkers(stats));
 }
 
 static uint initial_old_workers(ZDirectorStats& stats) {
@@ -771,7 +782,7 @@ static uint initial_young_workers(ZDirectorStats& stats) {
     request.young_nworkers()  // _desired_nworkers
   };
 
-  adjust_gc(young_info, wanted_old_nworkers(stats));
+  adjust_gc(stats, young_info, wanted_old_nworkers(stats));
 
   return request.young_nworkers();
 }
