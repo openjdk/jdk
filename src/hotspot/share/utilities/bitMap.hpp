@@ -315,7 +315,7 @@ class BitMap {
 #endif
 };
 
-// CRTP: BitmapWithAllocator exposes to the following Allocator interfaces upward to GrowableBitMap.
+// CRTP: BitmapWithAllocator exposes the following Allocator interfaces upward to GrowableBitMap.
 //
 //  bm_word_t* allocate(idx_t size_in_words) const;
 //  void free(bm_word_t* map, idx_t size_in_words) const
@@ -323,11 +323,10 @@ class BitMap {
 template <class BitMapWithAllocator>
 class GrowableBitMap : public BitMap {
  protected:
-  bm_word_t* reallocate(bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
+  bm_word_t* reallocate(bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear);
 
-  GrowableBitMap(idx_t size_in_bits, bool clear) : BitMap(reallocate(nullptr, 0, size_in_bits, clear), size_in_bits) {
-  }
-  GrowableBitMap() : BitMap(nullptr, 0) {}
+  GrowableBitMap() : GrowableBitMap(nullptr, 0) {}
+  GrowableBitMap(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
 
  public:
   // Set up and clear the bitmap memory.
@@ -375,6 +374,7 @@ class BitMapView : public BitMap {
 // A BitMap with storage in a specific Arena.
 class ArenaBitMap : public GrowableBitMap<ArenaBitMap> {
   Arena* const _arena;
+
   NONCOPYABLE(ArenaBitMap);
 
  public:
@@ -382,22 +382,18 @@ class ArenaBitMap : public GrowableBitMap<ArenaBitMap> {
   ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear = true);
 
   bm_word_t* allocate(idx_t size_in_words) const;
-
   void free(bm_word_t* map, idx_t size_in_words) const {
     // ArenaBitMaps currently don't free memory.
   }
 };
 
+// A BitMap with storage in the current threads resource area.
 class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
-
  public:
   ResourceBitMap() : ResourceBitMap(0) {}
   ResourceBitMap(idx_t size_in_bits, bool clear = true);
 
-  bm_word_t* allocate(idx_t size_in_words) const {
-    return (bm_word_t*)NEW_RESOURCE_ARRAY(bm_word_t, size_in_words);
-  }
-
+  bm_word_t* allocate(idx_t size_in_words) const;
   void free(bm_word_t* map, idx_t size_in_words) const {
     // ArenaBitMaps currently don't free memory.
   }
@@ -405,7 +401,8 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
-  MEMFLAGS _flags;
+  const MEMFLAGS _flags;
+
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
@@ -417,13 +414,8 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal, bool clear = true);
   ~CHeapBitMap();
 
-  bm_word_t* allocate(idx_t size_in_words) const {
-    return ArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
-  }
-
-  void free(bm_word_t* map, idx_t size_in_words) const {
-    ArrayAllocator<bm_word_t>::free(map, size_in_words);
-  }
+  bm_word_t* allocate(idx_t size_in_words) const;
+  void free(bm_word_t* map, idx_t size_in_words) const;
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.
