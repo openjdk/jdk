@@ -508,8 +508,11 @@ public class Infer {
             }
         }
         //step 2 - replace fresh tvars in their bounds
-        List<Type> formals = vars;
-        for (Type t : todo) {
+        replaceTypeVarsInBounds(todo.toList(), inferenceContext);
+    }
+
+    private void replaceTypeVarsInBounds(List<Type> vars, InferenceContext inferenceContext) {
+        for (Type t : vars) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.getInst();
             ct.setUpperBound( types.glb(inferenceContext.asInstTypes(types.getBounds(ct))) );
@@ -517,7 +520,6 @@ public class Infer {
                 //report inference error if glb fails
                 reportBoundError(uv, InferenceBound.UPPER);
             }
-            formals = formals.tail;
         }
     }
 
@@ -682,10 +684,14 @@ public class Infer {
 
             List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
 
-            solvePatternTypes(varsToSolve, c);
+            doIncorporation(c, types.noWarnings);
+
+            while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
+                doIncorporation(c, types.noWarnings);
+            }
 
             //step 3:
-            List<Type> freshVars = instantiatePatternVars(patternType.allparams(), c);
+            List<Type> freshVars = instantiatePatternVars(params, c);
 
             Type substituted = c.asInstType(patternTypeSymbol.type);
 
@@ -696,29 +702,20 @@ public class Infer {
         }
     }
 
-    protected void solvePatternTypes(List<Type> varsToSolve, InferenceContext c)
-            throws InferenceException {
-        doIncorporation(c, types.noWarnings);
-
-        while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
-            doIncorporation(c, types.noWarnings);
-        }
-    }
-
-    private List<Type> instantiatePatternVars(List<Type> undetVars, InferenceContext c) {
+    private List<Type> instantiatePatternVars(List<Type> vars, InferenceContext c) {
         ListBuffer<Type> freshVars = new ListBuffer<>();
-        ListBuffer<UndetVar> todo = new ListBuffer<>();
+        ListBuffer<Type> todo = new ListBuffer<>();
 
         //step 1 - create fresh tvars
-        for (Type param : undetVars) {
-            UndetVar undet = (UndetVar) param;
+        for (Type t : vars) {
+            UndetVar undet = (UndetVar) c.asUndetVar(t);
             List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
             if (bounds.nonEmpty()) {
                 undet.setInst(bounds.head);
             } else {
                 List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
                 Type bound;
-                boolean recursive = Type.containsAny(upperBounds, undetVars);
+                boolean recursive = Type.containsAny(upperBounds, vars);
                 if (recursive) {
                     bound = types.makeIntersectionType(upperBounds);
                     todo.append(undet);
@@ -738,14 +735,7 @@ public class Infer {
         }
 
         //step 2 - replace fresh tvars in their bounds
-        for (UndetVar uv : todo) {
-            TypeVar ct = (TypeVar)uv.getInst();
-            ct.setUpperBound( types.glb(c.asInstTypes(types.getBounds(ct))) );
-            if (ct.getUpperBound().isErroneous()) {
-                //report inference error if glb fails
-                reportBoundError(uv, InferenceBound.UPPER);
-            }
-        }
+        replaceTypeVarsInBounds(todo.toList(), c);
 
         return freshVars.toList();
     }

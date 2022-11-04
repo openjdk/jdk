@@ -36,35 +36,31 @@
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.UndetVar;
-import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Infer;
-import com.sun.tools.javac.comp.InferenceContext;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.List;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
-import java.util.function.BiConsumer;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
 
 public class InferenceUnitTest {
 
     Context context;
-    TestInfer infer;
+    Infer infer;
     Types types;
 
     public static void main(String... args) throws Exception {
@@ -72,9 +68,8 @@ public class InferenceUnitTest {
     }
 
     void runAll() throws URISyntaxException {
-        context = new Context();
-        TestInfer.preRegister(context);
-        JavacTaskImpl task = (JavacTaskImpl) JavacTool.create().getTask(null, null, null, null, null, List.of(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, null, null, List.of(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
             @Override
             public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
                 return """
@@ -89,11 +84,16 @@ public class InferenceUnitTest {
                        interface I<T> extends H {}
                        class Test<T1 extends CharSequence&Runnable, T2 extends Number> {
                        }
+                       interface RecursiveTest1Interface<IB extends RecursiveTest1Interface<IB>> { }
+                       interface RecursiveTest1Use<BB extends RecursiveTest1Use<BB>> extends RecursiveTest1Interface<BB> { }
+                       interface RecursiveTest2Interface<X> { }
+                       interface RecursiveTest2Use<X extends RecursiveTest2Use<X, Y>, Y> extends RecursiveTest2Interface<Y> { }
                        """;
             }
-        }), context);
+        }));
         task.enter();
-        infer = (TestInfer) Infer.instance(context);
+        context = task.getContext();
+        infer = Infer.instance(context);
         types = Types.instance(context);
 
         checkInferedType("A<String>", "B", "B<java.lang.String>");
@@ -166,22 +166,8 @@ public class InferenceUnitTest {
         checkInferedType("B<String>", "C", "C<java.lang.String,?>"); // no sideways casts
 
         checkInferedType("A<T1>", "B", "B<T1>");
-
-        infer.solveOverride = (varsToSolve, c) -> {
-            UndetVar v1 = (UndetVar) varsToSolve.tail.head;
-            v1.setBounds(InferenceBound.UPPER, List.of(v1));
-        };
-
-        checkInferedType("A<? extends T1>", "B", "B<?>");
-
-        infer.solveOverride = (varsToSolve, c) -> {
-            UndetVar v1 = (UndetVar) varsToSolve.tail.head;
-            UndetVar v2 = (UndetVar) varsToSolve.tail.tail.head;
-            v1.setBounds(InferenceBound.UPPER, List.of(v2));
-            v2.setBounds(InferenceBound.UPPER, List.of(v1));
-        };
-
-        checkInferedType("A<? extends T1>", "C", "C<?,?>");
+        checkInferedType("RecursiveTest1Interface<?>", "RecursiveTest1Use", "RecursiveTest1Use<? extends java.lang.Object&RecursiveTest1Use<?>&RecursiveTest1Interface<? extends RecursiveTest1Use<?>>>");
+        checkInferedType("RecursiveTest2Interface<?>", "RecursiveTest2Use", "RecursiveTest2Use<? extends RecursiveTest2Use<?,?>,?>");
     }
 
     private void checkInferedType(String base, String test, String expected) {
@@ -221,25 +207,4 @@ public class InferenceUnitTest {
         throw new AssertionError("Unexpected result: " + msg);
     }
 
-    private static final class TestInfer extends Infer {
-        public static void preRegister(Context context) {
-            context.put(inferKey, (Factory<Infer>) c -> new TestInfer(c));
-        }
-
-        private BiConsumer<List<Type>, InferenceContext> solveOverride;
-
-        public TestInfer(Context c) {
-            super(c);
-        }
-
-        @Override
-        protected void solvePatternTypes(List<Type> varsToSolve, InferenceContext c) throws InferenceException {
-            if (solveOverride != null) {
-                solveOverride.accept(varsToSolve, c);
-            } else {
-                super.solvePatternTypes(varsToSolve, c);
-            }
-        }
-
-    }
 }
