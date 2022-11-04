@@ -96,7 +96,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             },
             (s, p) -> s);
 
-    static String getInstallDir(
+     // Returns full path to installation directory
+     static String getInstallDir(
             Map<String, ? super Object>  params, boolean defaultOnly) {
         String returnValue = INSTALL_DIR.fetchFrom(params);
         if (defaultOnly && returnValue != null) {
@@ -108,6 +109,27 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 returnValue = "/Library/Java/JavaVirtualMachines";
             } else {
                returnValue = "/Applications";
+            }
+        }
+        return returnValue;
+    }
+
+    // Returns display name of installation directory. Display name is used to
+    // show user installation location and for well known (default only) we will
+    // use "Applications" or "JavaVirtualMachines". For user provided installation
+    // directory we will use full path as display name.
+    static String getInstallDirDisplayName(
+            Map<String, ? super Object>  params, boolean defaultOnly) {
+        String returnValue = INSTALL_DIR.fetchFrom(params);
+        if (defaultOnly && returnValue != null) {
+            Log.info(I18N.getString("message.install-dir-ignored"));
+            returnValue = null;
+        }
+        if (returnValue == null) {
+            if (StandardBundlerParam.isRuntimeInstaller(params)) {
+                returnValue = "JavaVirtualMachines";
+            } else {
+               returnValue = "Applications";
             }
         }
         return returnValue;
