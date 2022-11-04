@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
