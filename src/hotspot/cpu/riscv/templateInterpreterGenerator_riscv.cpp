@@ -519,7 +519,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   assert_cond(runtime_entry != NULL);
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath(xthread);
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath(xthread);
   __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;

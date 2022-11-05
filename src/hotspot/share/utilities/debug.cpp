@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -637,8 +638,29 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
   os::print_location(tty, x, true);
 }
 
+// For findmethod() and findclass():
+// - The patterns are matched by StringUtils::is_star_match()
+// - class_name_pattern matches Klass::external_name(). E.g., "java/lang/Object" or "*ang/Object"
+// - method_pattern may optionally the signature. E.g., "wait", "wait:()V" or "*ai*t:(*)V"
+// - flags must be OR'ed from ClassPrinter::Mode for findclass/findmethod
+// Examples (in gdb):
+//   call findclass("java/lang/Object", 0x3)             -> find j.l.Object and disasm all of its methods
+//   call findmethod("*ang/Object*", "wait", 0xff)       -> detailed disasm of all "wait" methods in j.l.Object
+//   call findmethod("*ang/Object*", "wait:(*J*)V", 0x1) -> list all "wait" methods in j.l.Object that have a long parameter
+extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
+  Command c("findclass");
+  ClassPrinter::print_flags_help(tty);
+  ClassPrinter::print_classes(class_name_pattern, flags, tty);
+}
 
-// Need method pointer to find bcp, when not in permgen.
+extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
+                                     const char* method_pattern, int flags) {
+  Command c("findmethod");
+  ClassPrinter::print_flags_help(tty);
+  ClassPrinter::print_methods(class_name_pattern, method_pattern, flags, tty);
+}
+
+// Need method pointer to find bcp
 extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
@@ -702,6 +724,9 @@ void help() {
   tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
+  tty->print_cr("class metadata.");
+  tty->print_cr("  findclass(name_pattern, flags)");
+  tty->print_cr("  findmethod(class_name_pattern, method_pattern, flags)");
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");

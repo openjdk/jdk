@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -193,19 +194,30 @@ void G1Policy::update_young_length_bounds() {
 }
 
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
-  uint old_young_list_target_length = _young_list_target_length;
+  uint old_young_list_target_length = young_list_target_length();
 
-  _young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
-  _young_list_target_length = calculate_young_target_length(_young_list_desired_length);
-  _young_list_max_length = calculate_young_max_length(_young_list_target_length);
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
+  uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
+  uint new_young_list_max_length = calculate_young_max_length(new_young_list_target_length);
 
   log_trace(gc, ergo, heap)("Young list length update: pending cards %zu rs_length %zu old target %u desired: %u target: %u max: %u",
                             pending_cards,
                             rs_length,
                             old_young_list_target_length,
-                            _young_list_desired_length,
-                            _young_list_target_length,
-                            _young_list_max_length);
+                            new_young_list_desired_length,
+                            new_young_list_target_length,
+                            new_young_list_max_length);
+
+  // Write back. This is not an attempt to control visibility order to other threads
+  // here; all the revising of the young gen length are best effort to keep pause time.
+  // E.g. we could be "too late" revising young gen upwards to avoid GC because
+  // there is some time left, or some threads could get different values for stopping
+  // allocation.
+  // That is "fine" - at most this will schedule a GC (hopefully only a little) too
+  // early or too late.
+  Atomic::store(&_young_list_desired_length, new_young_list_desired_length);
+  Atomic::store(&_young_list_target_length, new_young_list_target_length);
+  Atomic::store(&_young_list_max_length, new_young_list_max_length);
 }
 
 // Calculates desired young gen length. It is calculated from:
@@ -518,10 +530,10 @@ G1GCPhaseTimes* G1Policy::phase_times() const {
 void G1Policy::revise_young_list_target_length(size_t rs_length) {
   guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
+  size_t thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  // We have no measure of the number of cards in the thread buffers, assume
-  // these are very few compared to the ones in the DCQS.
-  update_young_length_bounds(dcqs.num_cards(), rs_length);
+  size_t pending_cards = dcqs.num_cards() + thread_buffer_cards;
+  update_young_length_bounds(pending_cards, rs_length);
 }
 
 void G1Policy::record_full_collection_start() {
@@ -613,6 +625,11 @@ void G1Policy::record_concurrent_refinement_stats() {
     _analytics->report_dirtied_cards_rate_ms(dirtied_rate);
     log_debug(gc, refine, stats)("Generate dirty cards rate: %.2f cards/ms", dirtied_rate);
   }
+}
+
+void G1Policy::record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards) {
+  _analytics->report_dirtied_cards_in_thread_buffers(num_cards);
+  phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time.seconds() * MILLIUNITS);
 }
 
 void G1Policy::record_young_collection_start() {
@@ -845,7 +862,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
     if (copied_bytes > 0) {
       double cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / copied_bytes;
-      _analytics->report_cost_per_byte_ms(cost_per_byte_ms, collector_state()->mark_or_rebuild_in_progress());
+      _analytics->report_cost_per_byte_ms(cost_per_byte_ms, is_young_only_pause);
     }
 
     if (_collection_set->young_region_length() > 0) {
@@ -898,26 +915,44 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   }
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
-  double scan_logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
+  double logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (scan_logged_cards_time_goal_ms < merge_hcc_time_ms) {
+  if (logged_cards_time_goal_ms < merge_hcc_time_ms) {
     log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
                                 "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                scan_logged_cards_time_goal_ms, merge_hcc_time_ms);
+                                logged_cards_time_goal_ms, merge_hcc_time_ms);
 
-    scan_logged_cards_time_goal_ms = 0;
+    logged_cards_time_goal_ms = 0;
   } else {
-    scan_logged_cards_time_goal_ms -= merge_hcc_time_ms;
+    logged_cards_time_goal_ms -= merge_hcc_time_ms;
   }
 
-  double const logged_cards_time = logged_cards_processing_time();
+  double const logged_cards_time_ms = logged_cards_processing_time();
+  size_t logged_cards =
+    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB,
+                                         G1GCPhaseTimes::MergeLBDirtyCards);
+  size_t hcc_cards =
+    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeHCC,
+                                         G1GCPhaseTimes::MergeHCCDirtyCards);
+  bool exceeded_goal = logged_cards_time_goal_ms < logged_cards_time_ms;
+  size_t predicted_thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
+  G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
-  log_debug(gc, ergo, refine)("Concurrent refinement times: Logged Cards Scan time goal: %1.2fms Logged Cards Scan time: %1.2fms HCC time: %1.2fms",
-                              scan_logged_cards_time_goal_ms, logged_cards_time, merge_hcc_time_ms);
+  log_debug(gc, ergo, refine)
+           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, HCC: %zu / %1.2fms%s",
+            cr->pending_cards_target(),
+            predicted_thread_buffer_cards,
+            logged_cards_time_goal_ms,
+            logged_cards,
+            logged_cards_time_ms,
+            hcc_cards,
+            merge_hcc_time_ms,
+            (exceeded_goal ? " (exceeded goal)" : ""));
 
-  _g1h->concurrent_refine()->adjust(logged_cards_time,
-                                    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards),
-                                    scan_logged_cards_time_goal_ms);
+  cr->adjust_after_gc(logged_cards_time_ms,
+                      logged_cards,
+                      predicted_thread_buffer_cards,
+                      logged_cards_time_goal_ms);
 }
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
@@ -1031,12 +1066,12 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
   if (bytes_to_copy != NULL) {
     *bytes_to_copy = expected_bytes;
   }
-  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->mark_or_rebuild_in_progress());
+  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());
 }
 
 double G1Policy::predict_region_copy_time_ms(HeapRegion* hr) const {
   size_t const bytes_to_copy = predict_bytes_to_copy(hr);
-  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->mark_or_rebuild_in_progress());
+  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->in_young_only_phase());
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
@@ -1064,18 +1099,26 @@ double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_onl
 
 bool G1Policy::should_allocate_mutator_region() const {
   uint young_list_length = _g1h->young_regions_count();
-  uint young_list_target_length = _young_list_target_length;
-  return young_list_length < young_list_target_length;
+  return young_list_length < young_list_target_length();
 }
 
 bool G1Policy::can_expand_young_list() const {
   uint young_list_length = _g1h->young_regions_count();
-  uint young_list_max_length = _young_list_max_length;
-  return young_list_length < young_list_max_length;
+  return young_list_length < young_list_max_length();
 }
 
 bool G1Policy::use_adaptive_young_list_length() const {
   return _young_gen_sizer.use_adaptive_young_list_length();
+}
+
+size_t G1Policy::estimate_used_young_bytes_locked() const {
+  assert_lock_strong(Heap_lock);
+  G1Allocator* allocator = _g1h->allocator();
+  uint used = _g1h->young_regions_count();
+  uint alloc = allocator->num_nodes();
+  uint full = used - MIN2(used, alloc);
+  size_t bytes_used = full * HeapRegion::GrainBytes;
+  return bytes_used + allocator->used_in_alloc_regions();
 }
 
 size_t G1Policy::desired_survivor_size(uint max_regions) const {
@@ -1090,8 +1133,8 @@ void G1Policy::print_age_table() {
 uint G1Policy::calculate_young_max_length(uint target_young_length) const {
   uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
-    double perc = (double) GCLockerEdenExpansionPercent / 100.0;
-    double expansion_region_num_d = perc * (double) _young_list_target_length;
+    double perc = GCLockerEdenExpansionPercent / 100.0;
+    double expansion_region_num_d = perc * young_list_target_length();
     // We use ceiling so that if expansion_region_num_d is > 0.0 (but
     // less than 1.0) we'll get 1.
     expansion_region_num = (uint) ceil(expansion_region_num_d);
@@ -1104,7 +1147,7 @@ uint G1Policy::calculate_young_max_length(uint target_young_length) const {
 // Calculates survivor space parameters.
 void G1Policy::update_survivors_policy() {
   double max_survivor_regions_d =
-                 (double) _young_list_target_length / (double) SurvivorRatio;
+                 (double)young_list_target_length() / (double) SurvivorRatio;
 
   // Calculate desired survivor size based on desired max survivor regions (unconstrained
   // by remaining heap). Otherwise we may cause undesired promotions as we are

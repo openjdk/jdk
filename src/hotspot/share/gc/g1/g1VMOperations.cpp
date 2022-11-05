@@ -57,10 +57,8 @@ void VM_G1CollectFull::doit() {
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
-                                                   GCCause::Cause gc_cause,
-                                                   double target_pause_time_ms) :
+                                                   GCCause::Cause gc_cause) :
   VM_GC_Operation(gc_count_before, gc_cause),
-  _target_pause_time_ms(target_pause_time_ms),
   _transient_failure(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
@@ -106,7 +104,7 @@ void VM_G1TryInitiateConcMark::doit() {
     // request will be remembered for a later partial collection, even though
     // we've rejected this request.
     _whitebox_attached = true;
-  } else if (!g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
+  } else if (!g1h->do_collection_pause_at_safepoint()) {
     // Failure to perform the collection at all occurs because GCLocker is
     // active, and we have the bad luck to be the collection request that
     // makes a later _gc_locker collection needed.  (Else we would have hit
@@ -121,17 +119,9 @@ void VM_G1TryInitiateConcMark::doit() {
 
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
-                                                     GCCause::Cause gc_cause,
-                                                     double         target_pause_time_ms) :
+                                                     GCCause::Cause gc_cause) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _gc_succeeded(false),
-  _target_pause_time_ms(target_pause_time_ms) {
-
-  guarantee(target_pause_time_ms > 0.0,
-            "target_pause_time_ms = %1.6lf should be positive",
-            target_pause_time_ms);
-  _gc_cause = gc_cause;
-}
+  _gc_succeeded(false) {}
 
 bool VM_G1CollectForAllocation::should_try_allocation_before_gc() {
   // Don't allocate before a preventive GC.
@@ -155,7 +145,7 @@ void VM_G1CollectForAllocation::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  _gc_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+  _gc_succeeded = g1h->do_collection_pause_at_safepoint();
 
   if (_gc_succeeded) {
     if (_word_size > 0) {
