@@ -132,7 +132,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_TARGET", targetItem);
         data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
         data.put("DEPLOY_INSTALL_LOCATION_DISPLAY_NAME",
-                getInstallDirDisplayName(params, true));
+                getInstallDirDisplayName(params));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
