@@ -162,7 +162,7 @@ typedef struct _FileContext {
         FILE*          Stream;                   // File stream or NULL if holded in memory
     } FILECTX;
 
-//Very simple string 
+//Very simple string
 typedef struct {
 
         struct struct_it8* it8;
@@ -295,7 +295,7 @@ static PROPERTY PredefinedProperties[] = {
 
         {"SAMPLE_BACKING",   WRITE_STRINGIFY},     // Identifies the backing material used behind the sample during
                                                    // measurement. Allowed values are "black", "white", or {"na".
-                                                  
+
         {"CHISQ_DOF",        WRITE_STRINGIFY},     // Degrees of freedom associated with the Chi squared statistic
                                                    // below properties are new in recent specs:
 
@@ -307,7 +307,7 @@ static PROPERTY PredefinedProperties[] = {
 
        {"FILTER",            WRITE_STRINGIFY},     // Identifies the use of physical filter(s) during measurement. Typically used to
                                                    // denote the use of filters such as none, D65, Red, Green or Blue.
-                                                  
+
        {"POLARIZATION",      WRITE_STRINGIFY},     // Identifies the use of a physical polarization filter during measurement. Allowed
                                                    // values are {"yes", "white", "none" or "na".
 
@@ -325,13 +325,13 @@ static PROPERTY PredefinedProperties[] = {
        {"COMPUTATIONAL_PARAMETER", WRITE_PAIR},    // Parameter that is used in computing a value from measured data. Name is the name
                                                    // of the calculation, parameter is the name of the parameter used in the calculation
                                                    // and value is the value of the parameter.
-                                                   
+
        {"TARGET_TYPE",        WRITE_STRINGIFY},    // The type of target being measured, e.g. IT8.7/1, IT8.7/3, user defined, etc.
-                                                  
+
        {"COLORANT",           WRITE_STRINGIFY},    // Identifies the colorant(s) used in creating the target.
-                                                  
+
        {"TABLE_DESCRIPTOR",   WRITE_STRINGIFY},    // Describes the purpose or contents of a data table.
-                                                  
+
        {"TABLE_NAME",         WRITE_STRINGIFY}     // Provides a short name for a data table.
 };
 
@@ -455,7 +455,7 @@ void StringCat(string* s, const char* c)
 static
 cmsBool isseparator(int c)
 {
-    return (c == ' ') || (c == '\t') ; 
+    return (c == ' ') || (c == '\t') ;
 }
 
 // Checks whatever c is a valid identifier char
@@ -802,7 +802,7 @@ void InStringSymbol(cmsIT8* it8)
         }
 
         it8->sy = SSTRING;
-        NextCh(it8);        
+        NextCh(it8);
     }
     else
         SynError(it8, "String expected");
@@ -814,7 +814,7 @@ static
 void InSymbol(cmsIT8* it8)
 {
     SYMBOL key;
-    
+
     do {
 
         while (isseparator(it8->ch))
@@ -959,7 +959,7 @@ void InSymbol(cmsIT8* it8)
             }
             else
                 switch ((int) it8->ch) {
-        
+
         // Eof stream markers
         case '\x1a':
         case 0:
@@ -971,7 +971,7 @@ void InSymbol(cmsIT8* it8)
         // Next line
         case '\r':
             NextCh(it8);
-            if (it8 ->ch == '\n') 
+            if (it8 ->ch == '\n')
                 NextCh(it8);
             it8->sy = SEOLN;
             it8->lineno++;
@@ -1211,7 +1211,7 @@ void* AllocChunk(cmsIT8* it8, cmsUInt32Number size)
                 it8 ->Allocator.BlockSize = size;
 
         it8 ->Allocator.Used = 0;
-        it8 ->Allocator.Block = (cmsUInt8Number*) AllocBigBlock(it8, it8 ->Allocator.BlockSize);       
+        it8 ->Allocator.Block = (cmsUInt8Number*) AllocBigBlock(it8, it8 ->Allocator.BlockSize);
     }
 
     if (it8->Allocator.Block == NULL)
@@ -1585,7 +1585,7 @@ cmsBool AllocateDataFormat(cmsIT8* it8)
     if (t -> nSamples <= 0) {
 
         SynError(it8, "AllocateDataFormat: Unknown NUMBER_OF_FIELDS");
-        return FALSE;        
+        return FALSE;
         }
 
     t -> DataFormat = (char**) AllocChunk (it8, ((cmsUInt32Number) t->nSamples + 1) * sizeof(char *));
@@ -1647,14 +1647,14 @@ const char* satob(const char* v)
     cmsUInt32Number x;
     static char buf[33];
     char *s = buf + 33;
-    
+
     if (v == NULL) return "0";
-    
+
     x = atoi(v);
     *--s = 0;
     if (!x) *--s = '0';
     for (; x; x /= 2) *--s = '0' + x%2;
-    
+
     return s;
 }
 
@@ -2069,7 +2069,7 @@ cmsBool DataSection (cmsIT8* it8)
             {
 
             // To keep very long data
-            case SIDENT:  
+            case SIDENT:
                 if (!SetData(it8, iSet, iField, StringPtr(it8->id)))
                     return FALSE;
                 break;
@@ -2231,7 +2231,7 @@ void ReadType(cmsIT8* it8, char* SheetTypePtr)
 
     while (it8->ch != '\r' && it8 ->ch != '\n' && it8->ch != '\t' && it8 -> ch != 0) {
 
-        if (cnt++ < MAXSTR) 
+        if (cnt++ < MAXSTR)
             *SheetTypePtr++= (char) it8 ->ch;
         NextCh(it8);
     }
@@ -2351,7 +2351,7 @@ void CookPointers(cmsIT8* it8)
 
         if (cmsstrcasecmp(Fld, "SAMPLE_ID") == 0) {
 
-            t -> SampleID = idField;            
+            t -> SampleID = idField;
         }
 
         // "LABEL" is an extension. It keeps references to forward tables
@@ -2386,19 +2386,19 @@ void CookPointers(cmsIT8* it8)
                             snprintf(Buffer, 255, "%s %d %s", Label, nTable, Type);
 
                             SetData(it8, i, idField, Buffer);
-						}
-					}
+                                                }
+                                        }
 
 
-				}
+                                }
 
-			}
+                        }
 
 
-		}
+                }
 
-	}
-	}
+        }
+        }
 
     it8 ->nTable = nOldTable;
 }
@@ -2600,17 +2600,17 @@ cmsUInt32Number CMSEXPORT cmsIT8EnumProperties(cmsHANDLE hIT8, char ***PropertyN
     }
 
 
-	Props = (char**)AllocChunk(it8, sizeof(char*) * n);
-	if (Props != NULL) {
+        Props = (char**)AllocChunk(it8, sizeof(char*) * n);
+        if (Props != NULL) {
 
-		// Pass#2 - Fill pointers
-		n = 0;
-		for (p = t->HeaderList; p != NULL; p = p->Next) {
-			Props[n++] = p->Keyword;
-		}
+                // Pass#2 - Fill pointers
+                n = 0;
+                for (p = t->HeaderList; p != NULL; p = p->Next) {
+                        Props[n++] = p->Keyword;
+                }
 
-	}
-	*PropertyNames = Props;
+        }
+        *PropertyNames = Props;
 
     return n;
 }
