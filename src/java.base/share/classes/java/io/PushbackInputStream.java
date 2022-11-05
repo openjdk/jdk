@@ -55,7 +55,7 @@ import jdk.internal.misc.InternalLock;
  */
 public class PushbackInputStream extends FilterInputStream {
 
-    // initialized to null when BufferedInputStream is sub-classed
+    // initialized to null when PushbackInputStream is sub-classed
     private final InternalLock closeLock;
 
     /**
