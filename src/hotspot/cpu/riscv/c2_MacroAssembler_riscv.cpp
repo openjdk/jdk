@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
@@ -1677,4 +1678,14 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);
+}
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != NULL) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
 }
