@@ -56,7 +56,7 @@ import jdk.internal.misc.InternalLock;
 public class PushbackInputStream extends FilterInputStream {
 
     // initialized to null when BufferedInputStream is sub-classed
-    private final InternalLock lock;
+    private final InternalLock closeLock;
 
     /**
      * The pushback buffer.
@@ -104,9 +104,9 @@ public class PushbackInputStream extends FilterInputStream {
 
         // use monitors when PushbackInputStream is sub-classed
         if (getClass() == PushbackInputStream.class) {
-            lock = InternalLock.newLockOrNull();
+            closeLock = InternalLock.newLockOrNull();
         } else {
-            lock = null;
+            closeLock = null;
         }
     }
 
@@ -387,12 +387,12 @@ public class PushbackInputStream extends FilterInputStream {
      * @throws     IOException  if an I/O error occurs.
      */
     public void close() throws IOException {
-        if (lock != null) {
-            lock.lock();
+        if (closeLock != null) {
+            closeLock.lock();
             try {
                 implClose();
             } finally {
-                lock.unlock();
+                closeLock.unlock();
             }
         } else {
             synchronized (this) {
@@ -413,12 +413,12 @@ public class PushbackInputStream extends FilterInputStream {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         ensureOpen();
-        if (lock != null) {
-            lock.lock();
+        if (closeLock != null) {
+            closeLock.lock();
             try {
                 return implTransferTo(out);
             } finally {
-                lock.unlock();
+                closeLock.unlock();
             }
         } else {
             synchronized (this) {
