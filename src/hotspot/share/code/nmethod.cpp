@@ -460,8 +460,10 @@ class CheckForOopsClosure : public OopClosure {
 };
 class CheckForMetadataClosure : public MetadataClosure {
   bool _found_metadata = false;
+  Metadata* _ignore = nullptr;
  public:
-  virtual void do_metadata(Metadata* md) { _found_metadata = true; }
+  CheckForMetadataClosure(Metadata* ignore) : _ignore(ignore) {}
+  virtual void do_metadata(Metadata* md) { if (md != _ignore) _found_metadata = true; }
   bool found_metadata() { return _found_metadata; }
 };
 
@@ -507,7 +509,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
       CheckForOopsClosure cfo;
       nm->oops_do(&cfo);
       assert(!cfo.found_oop(), "no oops allowed");
-      CheckForMetadataClosure cfm;
+      CheckForMetadataClosure cfm(/* ignore reference to own Method */ nm->method());
       nm->metadata_do(&cfm);
       assert(!cfm.found_metadata(), "no metadata allowed");
     }
