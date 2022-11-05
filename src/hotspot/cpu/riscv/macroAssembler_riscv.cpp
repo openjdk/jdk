@@ -3302,7 +3302,7 @@ void MacroAssembler::incrementw(const Address dst, int32_t value, Register tmp1,
   assert(!adr.uses(tmp1), "invalid dst for address increment");
   lwu(tmp1, adr);
   addw(tmp1, tmp1, value, tmp2);
-  sw(tmp2, adr);
+  sw(tmp1, adr);
 }
 
 void MacroAssembler::decrement(const Address dst, int64_t value, Register tmp1, Register tmp2) {
