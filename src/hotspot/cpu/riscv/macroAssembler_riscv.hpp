@@ -1054,11 +1054,11 @@ public:
   // to use a 2nd scratch register to hold the constant. so, an address
   // increment/decrement may trash both t0 and t1.
 
-  void increment(const Address dst, int64_t value = 1);
-  void incrementw(const Address dst, int32_t value = 1);
+  void increment(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
+  void incrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void decrement(const Address dst, int64_t value = 1);
-  void decrementw(const Address dst, int32_t value = 1);
+  void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
+  void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
   void cmpptr(Register src1, Address src2, Label& equal);
 
@@ -1272,7 +1272,7 @@ private:
   }
 
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
-  Address add_memory_helper(const Address dst);
+  Address add_memory_helper(const Address dst, Register tmp);
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
