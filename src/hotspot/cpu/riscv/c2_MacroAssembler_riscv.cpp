@@ -1690,29 +1690,30 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister temp,
+void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister tmp,
                                          Register src1, VectorRegister src2,
                                          BasicType bt, REDUCTION_OP op) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   vsetvli(t0, x0, sew);
 
-  vmv_s_x(temp, src1);
+  vmv_s_x(tmp, src1);
 
   switch (op) {
     case REDUCTION_OP::ADD:
-      vredsum_vs(temp, src2, temp);
+      vredsum_vs(tmp, src2, tmp);
       break;
     case REDUCTION_OP::AND:
-      vredand_vs(temp, src2, temp);
+      vredand_vs(tmp, src2, tmp);
       break;
     case REDUCTION_OP::OR:
-      vredor_vs(temp, src2, temp);
+      vredor_vs(tmp, src2, tmp);
       break;
     case REDUCTION_OP::XOR:
-      vredxor_vs(temp, src2, temp);
+      vredxor_vs(tmp, src2, tmp);
       break;
     default:
       ShouldNotReachHere();
   }
-  vmv_x_s(dst, temp);
+
+  vmv_x_s(dst, tmp);
 }

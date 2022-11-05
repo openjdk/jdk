@@ -815,7 +815,7 @@ instruct reduce_andI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_cost(VEC_COST);
   format %{ "vmv.s.x $tmp, $src1\t#@reduce_andI\n\t"
             "vredand.vs $tmp, $src2, $tmp\n\t"
-            "vmv.x.s  $dst, $tmp" %}
+            "vmv.x.s $dst, $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ reduce_operation($dst$$Register, as_VectorRegister($tmp$$reg),
@@ -831,7 +831,7 @@ instruct reduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_cost(VEC_COST);
   format %{ "vmv.s.x $tmp, $src1\t#@reduce_andL\n\t"
             "vredand.vs $tmp, $src2, $tmp\n\t"
-            "vmv.x.s  $dst, $tmp" %}
+            "vmv.x.s $dst, $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ reduce_operation($dst$$Register, as_VectorRegister($tmp$$reg),
@@ -849,7 +849,7 @@ instruct reduce_orI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_cost(VEC_COST);
   format %{ "vmv.s.x $tmp, $src1\t#@reduce_orI\n\t"
             "vredor.vs $tmp, $src2, $tmp\n\t"
-            "vmv.x.s  $dst, $tmp" %}
+            "vmv.x.s $dst, $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ reduce_operation($dst$$Register, as_VectorRegister($tmp$$reg),
@@ -865,7 +865,7 @@ instruct reduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_cost(VEC_COST);
   format %{ "vmv.s.x $tmp, $src1\t#@reduce_orL\n\t"
             "vredor.vs $tmp, $src2, $tmp\n\t"
-            "vmv.x.s  $dst, $tmp" %}
+            "vmv.x.s $dst, $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ reduce_operation($dst$$Register, as_VectorRegister($tmp$$reg),
@@ -883,7 +883,7 @@ instruct reduce_xorI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_cost(VEC_COST);
   format %{ "vmv.s.x $tmp, $src1\t#@reduce_xorI\n\t"
             "vredxor.vs $tmp, $src2, $tmp\n\t"
-            "vmv.x.s  $dst, $tmp" %}
+            "vmv.x.s $dst, $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ reduce_operation($dst$$Register, as_VectorRegister($tmp$$reg),
@@ -899,7 +899,7 @@ instruct reduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_cost(VEC_COST);
   format %{ "vmv.s.x $tmp, $src1\t#@reduce_xorL\n\t"
             "vredxor.vs $tmp, $src2, $tmp\n\t"
-            "vmv.x.s  $dst, $tmp" %}
+            "vmv.x.s $dst, $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ reduce_operation($dst$$Register, as_VectorRegister($tmp$$reg),
