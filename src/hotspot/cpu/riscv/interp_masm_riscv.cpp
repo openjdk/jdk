@@ -182,9 +182,12 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  int32_t offset = 0;
-  la_patchable(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
-  addi(xdispatch, xdispatch, offset);
+  ExternalAddress target((address)Interpreter::dispatch_table());
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(xdispatch, target, offset);
+    addi(xdispatch, xdispatch, offset);
+  });
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
@@ -284,7 +287,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
-  load_heap_oop(result, Address(result, 0));
+  load_heap_oop(result, Address(result, 0), tmp, t1);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
@@ -368,12 +371,12 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
-  flw(r, esp, 0);
+  flw(r, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
-  fld(r, esp, 0);
+  fld(r, Address(esp, 0));
   addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
@@ -783,7 +786,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg = x10;
     const Register tmp = c_rarg2;
@@ -816,7 +819,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     assert(lock_offset == 0,
            "displached header must be first word in BasicObjectLock");
 
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
     //  1) (mark & 7) == 0, and
@@ -833,7 +836,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     // Save the test result, for recursive case, the result is zero
     sd(swap_reg, Address(lock_reg, mark_offset));
-    beqz(swap_reg, done);
+    beqz(swap_reg, count);
 
     bind(slow_case);
 
@@ -841,6 +844,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
+
+    j(done);
+
+    bind(count);
+    increment(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -865,7 +873,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg   = x10;
     const Register header_reg = c_rarg2;  // Will contain the old oopMark
@@ -888,14 +896,19 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
                            BasicLock::displaced_header_offset_in_bytes()));
 
     // Test for recursion
-    beqz(header_reg, done);
+    beqz(header_reg, count);
 
     // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+
+    j(done);
+
+    bind(count);
+    decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
 

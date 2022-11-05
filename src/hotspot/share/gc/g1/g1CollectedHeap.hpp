@@ -756,11 +756,11 @@ private:
   // active, true otherwise.
   // precondition: at safepoint on VM thread
   // precondition: !is_gc_active()
-  bool do_collection_pause_at_safepoint(double target_pause_time_ms);
+  bool do_collection_pause_at_safepoint();
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
+  void do_collection_pause_at_safepoint_helper();
 
   G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);

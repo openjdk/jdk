@@ -2519,11 +2519,11 @@ private:
   void pmuludq(XMMRegister dst, XMMRegister src);
   void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void vpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulhuw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Minimum of packed integers

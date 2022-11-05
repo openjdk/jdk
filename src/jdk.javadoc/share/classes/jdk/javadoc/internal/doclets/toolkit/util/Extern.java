@@ -578,7 +578,8 @@ public class Extern {
 
     public boolean isUrl (String urlCandidate) {
         try {
-            new URL(urlCandidate);
+            @SuppressWarnings("deprecation")
+            var _unused = new URL(urlCandidate);
             //No exception was thrown, so this must really be a URL.
             return true;
         } catch (MalformedURLException e) {
@@ -587,6 +588,7 @@ public class Extern {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private URL toURL(String url) throws Fault {
         try {
             return new URL(url);
@@ -632,7 +634,8 @@ public class Extern {
                         String loc = http.getHeaderField("Location");
                         URL target = null;
                         if (loc != null) {
-                            target = new URL(base, loc);
+                            @SuppressWarnings("deprecation")
+                            var _unused = target = new URL(base, loc);
                         }
                         http.disconnect();
                         if (target == null || redirects >= 5) {

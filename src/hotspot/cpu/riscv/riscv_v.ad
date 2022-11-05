@@ -758,6 +758,30 @@ instruct vmulD(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector neg
+
+instruct vnegI(vReg dst, vReg src) %{
+  match(Set dst (NegVI src));
+  ins_cost(VEC_COST);
+  format %{ "vrsub.vx $dst, $src, $src\t#@vnegI" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e32);
+    __ vneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnegL(vReg dst, vReg src) %{
+  match(Set dst (NegVL src));
+  ins_cost(VEC_COST);
+  format %{ "vrsub.vx $dst, $src, $src\t#@vnegL" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e64);
+    __ vneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector fneg
 
 instruct vnegF(vReg dst, vReg src) %{
@@ -2141,7 +2165,7 @@ instruct vstringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
                              vReg_V1 vReg1, vReg_V2 vReg2, vReg_V3 vReg3)
 %{
-  predicate(UseRVV);
+  predicate(!UseBlockZeroing && UseRVV);
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP vReg1, TEMP vReg2, TEMP vReg3);
 

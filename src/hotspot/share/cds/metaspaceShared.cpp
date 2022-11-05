@@ -30,6 +30,7 @@
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/classListParser.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/filemap.hpp"
@@ -438,13 +439,15 @@ private:
   GrowableArray<MemRegion> *_closed_heap_regions;
   GrowableArray<MemRegion> *_open_heap_regions;
 
-  GrowableArray<ArchiveHeapOopmapInfo> *_closed_heap_oopmaps;
-  GrowableArray<ArchiveHeapOopmapInfo> *_open_heap_oopmaps;
+  GrowableArray<ArchiveHeapBitmapInfo> *_closed_heap_bitmaps;
+  GrowableArray<ArchiveHeapBitmapInfo> *_open_heap_bitmaps;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_heap_oopmaps(GrowableArray<MemRegion>* regions,
-                                 GrowableArray<ArchiveHeapOopmapInfo>* oopmaps);
+  void dump_heap_bitmaps() NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
+                         GrowableArray<ArchiveHeapBitmapInfo>* bitmaps);
+  void dump_one_heap_bitmap(MemRegion region, GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
+                            ResourceBitMap bitmap, bool is_oopmap);
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
@@ -457,8 +460,8 @@ public:
     VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
     _closed_heap_regions(NULL),
     _open_heap_regions(NULL),
-    _closed_heap_oopmaps(NULL),
-    _open_heap_oopmaps(NULL) {}
+    _closed_heap_bitmaps(NULL),
+    _open_heap_bitmaps(NULL) {}
 
   bool skip_operation() const { return false; }
 
@@ -504,7 +507,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   MetaspaceShared::serialize(&wc);
 
   // Write the bitmaps for patching the archive heap regions
-  dump_heap_oopmaps();
+  dump_heap_bitmaps();
 
   return start;
 }
@@ -566,8 +569,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.write_archive(mapinfo,
                         _closed_heap_regions,
                         _open_heap_regions,
-                        _closed_heap_oopmaps,
-                        _open_heap_oopmaps);
+                        _closed_heap_bitmaps,
+                        _open_heap_bitmaps);
 
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();
@@ -632,17 +635,13 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   // cpcache to be created. Class verification is done according
   // to -Xverify setting.
   bool res = MetaspaceShared::try_link_class(THREAD, ik);
-
-  if (DumpSharedSpaces) {
-    // The following function is used to resolve all Strings in the statically
-    // dumped classes to archive all the Strings. The archive heap is not supported
-    // for the dynamic archive.
-    ik->constants()->resolve_class_constants(CHECK_(false)); // may throw OOM when interning strings.
-  }
+  ClassPrelinker::dumptime_resolve_constants(ik, CHECK_(false));
   return res;
 }
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
+  ClassPrelinker::initialize();
+
   if (!jcmd_request) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
   }
@@ -899,35 +898,54 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
   HeapShared::write_subgraph_info_table();
 }
 
-void VM_PopulateDumpSharedSpace::dump_heap_oopmaps() {
+void VM_PopulateDumpSharedSpace::dump_heap_bitmaps() {
   if (HeapShared::can_write()) {
-    _closed_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
-    dump_heap_oopmaps(_closed_heap_regions, _closed_heap_oopmaps);
+    _closed_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
+    dump_heap_bitmaps(_closed_heap_regions, _closed_heap_bitmaps);
 
-    _open_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
-    dump_heap_oopmaps(_open_heap_regions, _open_heap_oopmaps);
+    _open_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
+    dump_heap_bitmaps(_open_heap_regions, _open_heap_bitmaps);
   }
 }
 
-void VM_PopulateDumpSharedSpace::dump_heap_oopmaps(GrowableArray<MemRegion>* regions,
-                                                   GrowableArray<ArchiveHeapOopmapInfo>* oopmaps) {
-  for (int i=0; i<regions->length(); i++) {
-    ResourceBitMap oopmap = HeapShared::calculate_oopmap(regions->at(i));
-    size_t size_in_bits = oopmap.size();
-    size_t size_in_bytes = oopmap.size_in_bytes();
-    uintptr_t* buffer = (uintptr_t*)NEW_C_HEAP_ARRAY(char, size_in_bytes, mtInternal);
-    oopmap.write_to(buffer, size_in_bytes);
-    log_info(cds, heap)("Oopmap = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
-                        INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
-                        p2i(buffer), size_in_bytes,
-                        p2i(regions->at(i).start()), regions->at(i).byte_size());
-
-    ArchiveHeapOopmapInfo info;
-    info._oopmap = (address)buffer;
-    info._oopmap_size_in_bits = size_in_bits;
-    info._oopmap_size_in_bytes = size_in_bytes;
-    oopmaps->append(info);
+void VM_PopulateDumpSharedSpace::dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
+                                                   GrowableArray<ArchiveHeapBitmapInfo>* bitmaps) {
+  for (int i = 0; i < regions->length(); i++) {
+    MemRegion region = regions->at(i);
+    ResourceBitMap oopmap = HeapShared::calculate_oopmap(region);
+    ResourceBitMap ptrmap = HeapShared::calculate_ptrmap(region);
+    dump_one_heap_bitmap(region, bitmaps, oopmap, true);
+    dump_one_heap_bitmap(region, bitmaps, ptrmap, false);
   }
+}
+
+void VM_PopulateDumpSharedSpace::dump_one_heap_bitmap(MemRegion region,
+                                                      GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
+                                                      ResourceBitMap bitmap, bool is_oopmap) {
+  size_t size_in_bits = bitmap.size();
+  size_t size_in_bytes;
+  uintptr_t* buffer;
+
+  if (size_in_bits > 0) {
+    size_in_bytes = bitmap.size_in_bytes();
+    buffer = (uintptr_t*)NEW_C_HEAP_ARRAY(char, size_in_bytes, mtInternal);
+    bitmap.write_to(buffer, size_in_bytes);
+  } else {
+    size_in_bytes = 0;
+    buffer = NULL;
+  }
+
+  log_info(cds, heap)("%s = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
+                      INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
+                      is_oopmap ? "Oopmap" : "Ptrmap",
+                      p2i(buffer), size_in_bytes,
+                      p2i(region.start()), region.byte_size());
+
+  ArchiveHeapBitmapInfo info;
+  info._map = (address)buffer;
+  info._size_in_bits = size_in_bits;
+  info._size_in_bytes = size_in_bytes;
+  bitmaps->append(info);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
