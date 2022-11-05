@@ -311,7 +311,10 @@ Build Wiki page for details about which versions of AIX are supported.
 Large portions of the JDK consists of native code, that needs to be compiled to
 be able to run on the target platform. In theory, toolchain and operating
 system should be independent factors, but in practice there's more or less a
-one-to-one correlation between target operating system and toolchain.
+one-to-one correlation between target operating system and toolchain. There are
+ongoing efforts to loosen this strict coupling between compiler and operating
+system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
+will likely be a very long time before this goal can be realized.
 
  Operating system   Supported toolchain
  ------------------ -------------------------
@@ -399,6 +402,15 @@ be because of [spaces in path](#spaces-in-path).
 Please consult the AIX section of the [Supported Build Platforms](
 https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
+
+### Support for checking standards conforming code
+
+The make system has a strict mode that enforces conforming code based on the
+standard that is used by the build, which can be useful to ensure that native code
+behaves strictly according to said standard. This option can by enabled by passing
+`--enable-conforming-compilation` during configure, but is off by default.
+If you just want to compile a working JDK it is not recommended that you set this
+flag, as it is mainly meant to aid developers that are working with native code.
 
 
 ## Boot JDK Requirements

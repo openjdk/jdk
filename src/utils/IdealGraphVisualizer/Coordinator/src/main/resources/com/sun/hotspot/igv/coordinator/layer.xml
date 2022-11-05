@@ -14,11 +14,14 @@
         <file name="D-BACK_SPACE.shadow">
             <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
         </file>
-        <file name="D-DELETE.shadow">
+        <file name="DELETE.shadow">
             <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
         </file>
         <file name="DS-W.shadow">
             <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
+        </file>
+        <file name="AD-R.shadow">
+            <attr name="originalFile" stringvalue="Actions/System/org-openide-actions-RenameAction.instance"/>
         </file>
     </folder>
     <folder name="Actions">
@@ -58,27 +61,35 @@
             </file>
             <file name="SeparatorSave.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
-                <attr name="position" intvalue="150"/>
+                <attr name="position" intvalue="200"/>
+            </file>
+            <file name="org-openide-actions-RenameAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/System/org-openide-actions-RenameAction.instance"/>
+                <attr name="position" intvalue="300"/>
+            </file>
+            <file name="SeparatorRename.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="400"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-SaveAsAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-SaveAsAction.instance"/>
-                <attr name="position" intvalue="200"/>
+                <attr name="position" intvalue="500"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-SaveAllAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-SaveAllAction.instance"/>
-                <attr name="position" intvalue="300"/>
+                <attr name="position" intvalue="600"/>
             </file>
             <file name="SeparatorRemove.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
-                <attr name="position" intvalue="350"/>
+                <attr name="position" intvalue="700"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
-                <attr name="position" intvalue="400"/>
+                <attr name="position" intvalue="800"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
-                <attr name="position" intvalue="500"/>
+                <attr name="position" intvalue="900"/>
             </file>
             <!-- Hidden menu entries from other modules -->
             <file name="org-netbeans-modules-editor-ExportHtmlAction.shadow_hidden"/>
