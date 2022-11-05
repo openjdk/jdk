@@ -25,6 +25,7 @@
 
 package java.security;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
@@ -135,10 +136,10 @@ public final class Security {
                 File propFile = new File(extraPropFile);
                 URL propURL;
                 if (propFile.exists()) {
-                    propURL = new URL
+                    propURL = newURL
                             ("file:" + propFile.getCanonicalPath());
                 } else {
-                    propURL = new URL(extraPropFile);
+                    propURL = newURL(extraPropFile);
                 }
 
                 is = propURL.openStream();
@@ -992,5 +993,10 @@ public final class Security {
             }
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

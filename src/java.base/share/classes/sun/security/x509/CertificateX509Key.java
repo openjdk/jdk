@@ -28,7 +28,6 @@ package sun.security.x509;
 import java.security.PublicKey;
 import java.io.InputStream;
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -128,33 +127,4 @@ public class CertificateX509Key implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-      if (name.equalsIgnoreCase(KEY)) {
-        key = null;
-      } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet: CertificateX509Key.");
-      }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(KEY);
-
-        return(elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
-    }
 }
