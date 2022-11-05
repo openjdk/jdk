@@ -1,0 +1,2 @@
+EffectivelyFinalLoopIncrement.java:10:51: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
+1 error

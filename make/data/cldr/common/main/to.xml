@@ -38,6 +38,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="am">lea fakaʻameliki</language>
 			<language type="an">lea fakaʻalakoni</language>
 			<language type="ang">lea fakapālangi-motuʻa</language>
+			<language type="ann">lea fakaʻopolo</language>
 			<language type="anp">lea fakaʻangika</language>
 			<language type="ar">lea fakaʻalepea</language>
 			<language type="ar_001">lea fakaʻalepea (māmani)</language>
@@ -46,6 +47,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="aro">lea fakaʻalaona</language>
 			<language type="arp">lea fakaʻalapaho</language>
 			<language type="arq">lea fakaʻalepea-ʻaisilia</language>
+			<language type="ars">lea fakaʻalepea-nāsiti</language>
 			<language type="arw">lea fakaʻalauaki</language>
 			<language type="ary">lea fakaʻalepea-moloko</language>
 			<language type="arz">lea fakaʻalepea-ʻisipite</language>
@@ -53,6 +55,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="asa">lea fakaʻasu</language>
 			<language type="ase">lea fakaʻilonga-ʻamelika</language>
 			<language type="ast">lea fakaʻasitūlia</language>
+			<language type="atj">lea fakaʻatikameku</language>
 			<language type="av">lea fakaʻavaliki</language>
 			<language type="avk">lea fakakotava</language>
 			<language type="awa">lea fakaʻauati</language>
@@ -119,14 +122,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chy">lea fakaseiene</language>
 			<language type="ckb">lea fakakūtisi-loloto</language>
 			<language type="ckb" alt="variant">lea fakakūtisi-solani</language>
+			<language type="clc">lea fakatisilikōtini</language>
 			<language type="co">lea fakakōsika</language>
 			<language type="cop">lea fakakopitika</language>
 			<language type="cps">lea fakakapiseno</language>
 			<language type="cr">lea fakakelī</language>
+			<language type="crg">lea fakametisifi</language>
 			<language type="crh">lea fakatoake-kilimea</language>
+			<language type="crj">lea fakakilī-tongahahake</language>
+			<language type="crk">lea fakakilī-toafa</language>
+			<language type="crl">lea fakakilī-tokelauhahake</language>
+			<language type="crm">lea fakamose-kilī</language>
+			<language type="crr">lea fakaʻalakonikuia-kalolina</language>
 			<language type="crs">lea fakaseselua-falanisē</language>
 			<language type="cs">lea fakaseki</language>
 			<language type="csb">lea fakakasiupia</language>
+			<language type="csw">lea fakakilī-ano</language>
 			<language type="cu">lea fakasilavia-fakasiasi</language>
 			<language type="cv">lea fakasuvasa</language>
 			<language type="cy">lea fakauēlesi</language>
@@ -164,7 +175,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">lea fakapālangi-ʻaositelēlia</language>
 			<language type="en_CA">lea fakapālangi-kānata</language>
 			<language type="en_GB">lea fakapilitānia</language>
-			<language type="en_GB" alt="short">lea fakapilitānia</language>
 			<language type="en_US">lea fakapālangi-ʻamelika</language>
 			<language type="en_US" alt="short">lea fakapālangi-ʻAmelika</language>
 			<language type="enm">lea fakapālangi-lotoloto</language>
@@ -231,6 +241,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hai">lea fakahaita</language>
 			<language type="hak">lea fakasiaina-haka</language>
 			<language type="haw">lea fakahauaiʻi</language>
+			<language type="hax">lea fakahaita-tonga</language>
 			<language type="he">lea fakahepelū</language>
 			<language type="hi">lea fakahinitī</language>
 			<language type="hif">lea fakahinitī-fisi</language>
@@ -244,6 +255,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ht">lea fakahaiti</language>
 			<language type="hu">lea fakahungakalia</language>
 			<language type="hup">lea fakahupa</language>
+			<language type="hur">lea fakahalikomele</language>
 			<language type="hy">lea fakaʻāmenia</language>
 			<language type="hz">lea fakahelelo</language>
 			<language type="ia">lea fakavahaʻalea</language>
@@ -254,12 +266,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ig">lea fakaʻikipō</language>
 			<language type="ii">lea fakasisiuani-ī</language>
 			<language type="ik">lea fakaʻinupiaki</language>
+			<language type="ikt">lea fakaʻinuketītuti-kānata-hihifo</language>
 			<language type="ilo">lea fakaʻiloko</language>
 			<language type="inh">lea fakaʻingusi</language>
 			<language type="io">lea fakaʻito</language>
 			<language type="is">lea fakaʻaisilani</language>
 			<language type="it">lea fakaʻītali</language>
-			<language type="iu">lea fakaʻinuketituti</language>
+			<language type="iu">lea fakaʻinuketītuti</language>
 			<language type="izh">lea fakaʻingiliani</language>
 			<language type="ja">lea fakasiapani</language>
 			<language type="jam">lea fakapālangi-samaika</language>
@@ -320,6 +333,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kut">lea fakakutenai</language>
 			<language type="kv">lea fakakomi</language>
 			<language type="kw">lea fakakoniuali</language>
+			<language type="kwk">lea fakakuakuala</language>
 			<language type="ky">lea fakakīsisi</language>
 			<language type="la">lea fakalatina</language>
 			<language type="lad">lea fakalatino</language>
@@ -332,15 +346,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lg">lea fakakanita</language>
 			<language type="li">lea fakalimipūliki</language>
 			<language type="lij">lea fakalikulia</language>
+			<language type="lil">lea fakalilōeti</language>
 			<language type="liv">lea fakalivonia</language>
 			<language type="lkt">lea fakalakota</language>
 			<language type="lmo">lea fakalomipāti</language>
 			<language type="ln">lea lingikala</language>
 			<language type="lo">lea fakalau</language>
 			<language type="lol">lea fakamongikō</language>
-			<language type="lou" draft="unconfirmed">lea fakaluisiana</language>
+			<language type="lou">lea fakaluisiana</language>
 			<language type="loz">lea fakalosi</language>
 			<language type="lrc">lea fakaluli-tokelau</language>
+			<language type="lsm">lea fakasāmia</language>
 			<language type="lt">lea fakalituania</language>
 			<language type="ltg">lea fakalatakale</language>
 			<language type="lu">lea fakalupa-katanga</language>
@@ -379,6 +395,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mn">lea fakamongokōlia</language>
 			<language type="mnc">lea fakamanisū</language>
 			<language type="mni">lea fakamanipuli</language>
+			<language type="moe">lea fakaʻinuʻaimuni</language>
 			<language type="moh">lea fakamohauki</language>
 			<language type="mos">lea fakamosi</language>
 			<language type="mr">lea fakamalati</language>
@@ -431,8 +448,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nzi">lea fakanesima</language>
 			<language type="oc">lea fakaʻokitane</language>
 			<language type="oj">lea fakaʻosipiuā</language>
+			<language type="ojb">lea fakaʻosipiuā-tokelauhihifo</language>
+			<language type="ojc">lea fakaʻosipiuā-loto</language>
+			<language type="ojs">lea fakakilī-osi</language>
+			<language type="ojw">lea fakaʻosipiuā-hihifo</language>
+			<language type="oka">lea faka-ʻokanākani</language>
 			<language type="om">lea fakaʻolomo</language>
-			<language type="or">lea faka-ʻotia</language>
+			<language type="or">lea fakaʻotia</language>
 			<language type="os">lea fakaʻosetiki</language>
 			<language type="osa">lea fakaʻosēse</language>
 			<language type="ota">lea fakatoake-ʻotomani</language>
@@ -450,16 +472,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pfl">lea fakasiamane-palatine</language>
 			<language type="phn">lea fakafoinikia</language>
 			<language type="pi">lea fakapāli</language>
+			<language type="pis">lea fakapisini</language>
 			<language type="pl">lea fakapolani</language>
 			<language type="pms">lea fakapiemonite</language>
 			<language type="pnt">lea fakaponitiki</language>
 			<language type="pon">lea fakaponapē</language>
+			<language type="pqm">lea fakamaliseti-pasamakuoti</language>
 			<language type="prg">lea fakapulūsia</language>
 			<language type="pro">lea fakapolovenisi-motuʻa</language>
 			<language type="ps">lea fakapasitō</language>
 			<language type="pt">lea fakapotukali</language>
-			<language type="pt_BR">lea fakapotukali-palāsili</language>
-			<language type="pt_PT">lea fakapotukali-ʻiulope</language>
 			<language type="qu">lea fakakuetisa</language>
 			<language type="quc">lea fakakīsē</language>
 			<language type="qug">lea fakakuitisa-simipolaso</language>
@@ -515,6 +537,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sid">lea fakasitamo</language>
 			<language type="sk">lea fakasolāvaki</language>
 			<language type="sl">lea fakasolovenia</language>
+			<language type="slh">lea fakalusūtisiti</language>
 			<language type="sli">lea fakasilesia-hifo</language>
 			<language type="sly">lea fakaselaiā</language>
 			<language type="sm">lea fakahaʻamoa</language>
@@ -534,6 +557,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ssy">lea fakasaho</language>
 			<language type="st">lea fakasoto-tonga</language>
 			<language type="stq">lea fakafilisia-satēlani</language>
+			<language type="str">lea fakasalisi-vahatokelau</language>
 			<language type="su">lea fakasunitā</language>
 			<language type="suk">lea fakasukuma</language>
 			<language type="sus">lea fakasusū</language>
@@ -546,6 +570,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="syr">lea fakasuliāiā</language>
 			<language type="szl">lea fakasilesia</language>
 			<language type="ta">lea fakatamili</language>
+			<language type="tce">lea fakatutisone-tonga</language>
 			<language type="tcy">lea fakatulu</language>
 			<language type="te">lea fakaʻinitia-teluku</language>
 			<language type="tem">lea fakatimenē</language>
@@ -553,7 +578,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ter">lea fakateleno</language>
 			<language type="tet">lea fakatetumu</language>
 			<language type="tg">lea fakatāsiki</language>
+			<language type="tgx">lea fakatākisi</language>
 			<language type="th">lea fakatailani</language>
+			<language type="tht">lea fakatālitāni</language>
 			<language type="ti">lea fakatikilinia</language>
 			<language type="tig">lea fakatikilē</language>
 			<language type="tiv">lea fakativi</language>
@@ -568,6 +595,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tn">lea fakatisuana</language>
 			<language type="to">lea fakatonga</language>
 			<language type="tog">lea fakaniasa-tonga</language>
+			<language type="tok">lea fakatoki-pona</language>
 			<language type="tpi">lea fakatoki-pisini</language>
 			<language type="tr">lea fakatoake</language>
 			<language type="tru">lea fakatuloio</language>
@@ -576,6 +604,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tsd">lea fakasakōnia</language>
 			<language type="tsi">lea fakatisīmisiani</language>
 			<language type="tt">lea fakatatale</language>
+			<language type="ttm">lea fakatutisone-tokelau</language>
 			<language type="ttt">lea fakatati-moselemi</language>
 			<language type="tum">lea fakatumepuka</language>
 			<language type="tvl">lea fakatūvalu</language>
@@ -642,12 +671,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zza">lea fakasāsā</language>
 		</languages>
 		<scripts>
-			<script type="Adlm" draft="unconfirmed">tohinima fakaʻatilami</script>
+			<script type="Adlm">tohinima fakaʻatilami</script>
 			<script type="Afak">tohinima fakaʻafaka</script>
 			<script type="Aghb">tohinima fakaʻalapēnia-kaukasia</script>
 			<script type="Ahom" draft="unconfirmed">tohinima fakaʻahomi</script>
 			<script type="Arab">tohinima fakaʻalepea</script>
-			<script type="Aran" draft="unconfirmed">tohinima fakanasatalīki</script>
+			<script type="Aran">tohinima fakanasatalīki</script>
 			<script type="Armi">tohinima fakaʻalāmiti-ʻemipaea</script>
 			<script type="Armn">tohinima fakaʻāmenia</script>
 			<script type="Avst">tohinima fakaʻavesitani</script>
@@ -718,6 +747,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Jurc">tohinima fakaiūkeni</script>
 			<script type="Kali">tohinima fakakaialī</script>
 			<script type="Kana">tohinima fakasiapani-katakana</script>
+			<script type="Kawi" draft="unconfirmed">tohinima fakakaui</script>
 			<script type="Khar">tohinima fakakalositī</script>
 			<script type="Khmr">tohinima fakakamipōtia</script>
 			<script type="Khoj">tohinima fakakosikī</script>
@@ -757,6 +787,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Mtei">tohinima fakametei-maieki</script>
 			<script type="Mult" draft="unconfirmed">tohinima fakamulitani</script>
 			<script type="Mymr">tohinima fakapema</script>
+			<script type="Nagm" draft="unconfirmed">tohinima fakamunitali-pani</script>
 			<script type="Nand" draft="unconfirmed">tohinima fakananitinakali</script>
 			<script type="Narb">tohinima fakaʻalepea-tokelau-motuʻa</script>
 			<script type="Nbat">tohinima fakanapatea</script>
@@ -783,7 +814,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Prti">tohinima fakapātia-tongi</script>
 			<script type="Qaag" draft="unconfirmed">tohinima fakakāki</script>
 			<script type="Rjng">tohinima fakalesiangi</script>
-			<script type="Rohg" draft="unconfirmed">tohinima fakahanifi-lohingia</script>
+			<script type="Rohg">tohinima fakahanifi-lohingia</script>
 			<script type="Roro">tohinima fakalongolongo</script>
 			<script type="Runr">tohinima fakaluniki</script>
 			<script type="Samr">tohinima fakasamalitane</script>
@@ -1059,6 +1090,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NR">Naulu</territory>
 			<territory type="NU">Niuē</territory>
 			<territory type="NZ">Nuʻusila</territory>
+			<territory type="NZ" alt="variant" draft="unconfirmed">ʻAotealoa</territory>
 			<territory type="OM">ʻOmani</territory>
 			<territory type="PA">Panamā</territory>
 			<territory type="PE">Pelū</territory>
@@ -1188,6 +1220,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="FONNAPA" draft="unconfirmed">fonētiki fakaʻamelika-tokelau</variant>
 			<variant type="FONUPA" draft="unconfirmed">fonētiki UPA</variant>
 			<variant type="FONXSAMP" draft="unconfirmed">fonētiki fakakomipiuta fakalahi</variant>
+			<variant type="GALLO" draft="unconfirmed">lea fakafeituʻu fakakalo</variant>
 			<variant type="GASCON" draft="unconfirmed">lea fakafeituʻu fakakasikō</variant>
 			<variant type="GRCLASS" draft="unconfirmed">lea fakafeituʻu fakaʻokisitania-motuʻa</variant>
 			<variant type="GRITAL" draft="unconfirmed">lea fakafeituʻu fakaʻokisitania-ʻĪtali</variant>
@@ -1243,6 +1276,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="SURMIRAN" draft="unconfirmed">lea fakafeituʻu fakasulimila</variant>
 			<variant type="SURSILV" draft="unconfirmed">lea fakafeituʻu fakasulisiliva</variant>
 			<variant type="SUTSILV" draft="unconfirmed">lea fakafeituʻu fakasutisiliva</variant>
+			<variant type="SYNNEJYL" draft="unconfirmed">lea fakafeituʻu fakafonuasuti</variant>
 			<variant type="TARASK" draft="unconfirmed">sipelatotunu fakatalasikievika</variant>
 			<variant type="TONGYONG" draft="unconfirmed">lea fakafeituʻu fakasiaina-tōngiongi</variant>
 			<variant type="TUNUMIIT" draft="unconfirmed">lea fakafeituʻu fakatunimīti</variant>
@@ -1271,10 +1305,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">fakaputa</type>
 			<type key="calendar" type="chinese">fakasiaina</type>
-			<type key="calendar" type="coptic" draft="unconfirmed">fakakopitika</type>
+			<type key="calendar" type="coptic">fakakopitika</type>
 			<type key="calendar" type="dangi">fakataniki</type>
 			<type key="calendar" type="ethiopic">fakaʻītiōpia</type>
-			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">fakaʻītiōpia-ʻamete-ʻalemi</type>
+			<type key="calendar" type="ethiopic-amete-alem">fakaʻītiōpia-ʻamete-ʻalemi</type>
 			<type key="calendar" type="gregorian">fakakelekolia</type>
 			<type key="calendar" type="hebrew">fakahepelū</type>
 			<type key="calendar" type="indian">fakaʻinitia</type>
@@ -1282,7 +1316,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil">fakamohameti-sivile</type>
 			<type key="calendar" type="islamic-rgsa" draft="unconfirmed">fakamohameti-ʻasimāhina</type>
 			<type key="calendar" type="islamic-tbla" draft="unconfirmed">fakamohameti -fakatēpile</type>
-			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">fakamohameti-ʻumalakula</type>
+			<type key="calendar" type="islamic-umalqura">fakamohameti-ʻumalakula</type>
 			<type key="calendar" type="iso8601">faka-iso8601</type>
 			<type key="calendar" type="japanese">fakasiapani</type>
 			<type key="calendar" type="persian">fakapēsia</type>
@@ -1324,7 +1358,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="bali" draft="unconfirmed">fika fakapali</type>
 			<type key="numbers" type="beng">faka fakapāngilā</type>
 			<type key="numbers" type="brah" draft="unconfirmed">fika fakapalami</type>
-			<type key="numbers" type="cakm" draft="unconfirmed">fika fakakakema</type>
+			<type key="numbers" type="cakm">fika fakakakema</type>
 			<type key="numbers" type="cham" draft="unconfirmed">fika fakakami</type>
 			<type key="numbers" type="cyrl" draft="unconfirmed">fika fakalūsia</type>
 			<type key="numbers" type="deva">fika fakatevanākalī</type>
@@ -1346,10 +1380,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hebr">fika fakahepelū</type>
 			<type key="numbers" type="hmng" draft="unconfirmed">fika fakamōngi-pahau</type>
 			<type key="numbers" type="hmnp" draft="unconfirmed">fika fakamōngi-niakengi</type>
-			<type key="numbers" type="java" draft="unconfirmed">fika fakasava</type>
+			<type key="numbers" type="java">fika fakasava</type>
 			<type key="numbers" type="jpan">fika fakasiapani</type>
 			<type key="numbers" type="jpanfin">fika fakasiapani fakapaʻanga</type>
 			<type key="numbers" type="kali" draft="unconfirmed">fika fakakaialī</type>
+			<type key="numbers" type="kawi" draft="unconfirmed">fika fakakaui</type>
 			<type key="numbers" type="khmr">fika fakakamipōtia</type>
 			<type key="numbers" type="knda">fika fakakanata</type>
 			<type key="numbers" type="lana" draft="unconfirmed">fika fakatai-tami-hola</type>
@@ -1367,12 +1402,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="modi" draft="unconfirmed">fika fakamotī</type>
 			<type key="numbers" type="mong" draft="unconfirmed">fika fakamongokōlia</type>
 			<type key="numbers" type="mroo" draft="unconfirmed">fika fakamolō</type>
-			<type key="numbers" type="mtei" draft="unconfirmed">fika fakametei-maieki</type>
+			<type key="numbers" type="mtei">fika fakametei-maieki</type>
 			<type key="numbers" type="mymr">fika fakapema</type>
 			<type key="numbers" type="mymrshan" draft="unconfirmed">fika fakapema-siani</type>
 			<type key="numbers" type="mymrtlng" draft="unconfirmed">fika fakapema-tai</type>
+			<type key="numbers" type="nagm" draft="unconfirmed">fika fakamunitali-naki</type>
 			<type key="numbers" type="nkoo">fika fakanikō</type>
-			<type key="numbers" type="olck" draft="unconfirmed">fika fakaʻolisiki</type>
+			<type key="numbers" type="olck">fika fakaʻolisiki</type>
 			<type key="numbers" type="orya">fika fakaʻotia</type>
 			<type key="numbers" type="osma" draft="unconfirmed">fika fakaʻosimania</type>
 			<type key="numbers" type="rohg" draft="unconfirmed">fika fakalohingia-hanifi</type>
@@ -1392,7 +1428,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="thai">fika fakatailani</type>
 			<type key="numbers" type="tibt">fika fakatipeti</type>
 			<type key="numbers" type="tirh" draft="unconfirmed">fika fakatīhuta</type>
-			<type key="numbers" type="vaii" draft="unconfirmed">fika fakavai</type>
+			<type key="numbers" type="tnsa" draft="unconfirmed">fika fakatangisā</type>
+			<type key="numbers" type="vaii">fika fakavai</type>
 			<type key="numbers" type="wara" draft="unconfirmed">fika fakavalangi</type>
 			<type key="numbers" type="wcho" draft="unconfirmed">fika fakauāniko</type>
 		</types>
@@ -1608,20 +1645,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">dd MM y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -1655,136 +1692,136 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">y QQQQ G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
+							<greatestDifference id="M">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
-							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">LLL – LLL</greatestDifference>
+							<greatestDifference id="M">LLL – LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1810,13 +1847,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="1">S</month>
 							<month type="2">F</month>
 							<month type="3">M</month>
-							<month type="4">E</month>
+							<month type="4">ʻE</month>
 							<month type="5">M</month>
 							<month type="6">S</month>
 							<month type="7">S</month>
-							<month type="8">A</month>
+							<month type="8">ʻA</month>
 							<month type="9">S</month>
-							<month type="10">O</month>
+							<month type="10">ʻO</month>
 							<month type="11">N</month>
 							<month type="12">T</month>
 						</monthWidth>
@@ -2077,25 +2114,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -2130,24 +2167,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">dd MM y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -2176,136 +2213,136 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="y">E d/M/y– E d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
+							<greatestDifference id="M">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
-							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">LLL – LLL</greatestDifference>
+							<greatestDifference id="M">LLL – LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
+							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
-							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -7033,9 +7070,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -7711,6 +7750,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimole he lita</displayName>
 				<unitPattern count="other">milimole ʻe {0} he lita</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>kongokonga</displayName>
+				<unitPattern count="other">kongokonga ʻe {0}</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>konga he miliona</displayName>
 				<unitPattern count="other">konga ʻe {0} he miliona</unitPattern>
@@ -7803,6 +7846,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>taʻu</displayName>
 				<unitPattern count="other">taʻu ʻe {0}</unitPattern>
 				<perUnitPattern>{0} he taʻu</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>kuata</displayName>
+				<unitPattern count="other">kuata ʻe {0}</unitPattern>
+				<perUnitPattern>{0} he kuata</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>māhina</displayName>
@@ -7905,6 +7953,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="force-newton">
 				<displayName>Niutoni</displayName>
 				<unitPattern count="other">Niutoni ʻe {0}</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kilouate-houa he kilomita ʻe 100</displayName>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>kikahēti</displayName>
@@ -8063,7 +8114,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>huhulu fakalaʻā</displayName>
 				<unitPattern count="other">huhulu fakalaʻā ʻe {0}</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>toni</displayName>
 				<unitPattern count="other">toni ʻe {0}</unitPattern>
 			</unit>
@@ -8484,6 +8535,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>mmol/l</displayName>
 				<unitPattern count="other">mmol ʻe {0}/l</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>kkonga</displayName>
+				<unitPattern count="other">kkonga ʻe {0}</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>khm</displayName>
 				<unitPattern count="other">khm ʻe {0}</unitPattern>
@@ -8575,6 +8630,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>taʻu</displayName>
 				<unitPattern count="other">taʻu ʻe {0}</unitPattern>
 				<perUnitPattern>{0} /t</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>kuata</displayName>
+				<unitPattern count="other">kuata ʻe {0}</unitPattern>
+				<perUnitPattern>{0} /kt</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mā</displayName>
@@ -8833,7 +8893,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>H☉</displayName>
 				<unitPattern count="other">H☉ ʻe {0}</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>to</displayName>
 				<unitPattern count="other">to ʻe {0}</unitPattern>
 			</unit>
@@ -9205,7 +9265,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-meter">
 				<displayName>m²</displayName>
 				<unitPattern count="other">{0} m²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>sm²</displayName>
@@ -9249,6 +9309,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/l</displayName>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>kk</displayName>
+				<unitPattern count="other">kk ʻe {0}</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>khm</displayName>
@@ -9341,6 +9405,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 				<perUnitPattern>{0}/t</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>kt</displayName>
+				<unitPattern count="other">{0} kt</unitPattern>
+				<perUnitPattern>{0}/kt</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>m</displayName>
@@ -9539,7 +9608,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-foot">
 				<displayName>ft</displayName>
 				<unitPattern count="other">{0} ft</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/ft</perUnitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>in</displayName>
@@ -9594,7 +9663,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>H☉</displayName>
 				<unitPattern count="other">{0} H☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>to</displayName>
 				<unitPattern count="other">{0} to</unitPattern>
 			</unit>
@@ -10130,4 +10199,154 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="tnum">mataʻifika tepile</featureName>
 		<featureName type="zero">noa matafa</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und to</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}, {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}, {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Tēvita</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Mele</nameField>
+			<nameField type="surname">Moala</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">ʻAna</nameField>
+			<nameField type="given2">Lātū</nameField>
+			<nameField type="surname">Tupou</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Tōketā</nameField>
+			<nameField type="given">Pua</nameField>
+			<nameField type="given-informal">Siana</nameField>
+			<nameField type="given2">Lātū</nameField>
+			<nameField type="surname-core">Fīnau</nameField>
+			<nameField type="suffix">O.T.K.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

@@ -157,7 +157,6 @@ table.centered td {
   font-size: 80%;
   padding: 6px;
   margin: -2.5em -2.5em 2.5em -2.5em;
-  background-color: #CBDAE4;
 }
 
 .legal-footer {
@@ -182,4 +181,56 @@ nav#TOC ul ul li {
 
 nav#TOC ul ul li::before {
     content: " \2022  "
+}
+
+header#title-block-header {
+    margin-top:-2em;
+}
+
+header#title-block-header div.navbar {
+    margin: 0 -2.5em 2.5em -2.5em;
+    padding: 0 2.5em;
+    background-color:#4D7A97;
+    color:#FFFFFF;
+    float:left;
+    width:100%;
+    clear:right;
+    min-height:2.8em;
+    padding-top:10px;
+    overflow:hidden;
+    font-size:12px;
+}
+
+header#title-block-header div.navbar div {
+    float:right;
+    font-size:11px;
+    height:2.9em;
+    margin: auto 0;
+}
+
+header#title-block-header ul {
+    display:block;
+    margin:0 25px 0 0;
+    padding:0;
+}
+header#title-block-header ul li {
+    list-style:none;
+    float:left;
+    padding: 5px 6px;
+    text-transform:uppercase;
+}
+
+header#title-block-header li.no-link {
+    background-color:#F8981D;
+    color:#253441;
+    margin: auto 5px;
+}
+
+header#title-block-header a:link, header#title-block-header a:active, header#title-block-header a:visited {
+    color:#ffffff;
+    text-decoration:none;
+    text-transform:uppercase;
+}
+header#title-block-header a:hover {
+    color:#bb7a2a;
 }
