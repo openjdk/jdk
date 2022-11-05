@@ -725,6 +725,10 @@ void MacroAssembler::vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMas
   vnsrl_wx(vd, vs, x0, vm);
 }
 
+void MacroAssembler::vneg_v(VectorRegister vd, VectorRegister vs) {
+  vrsub_vx(vd, x0, vs);
+}
+
 void MacroAssembler::vfneg_v(VectorRegister vd, VectorRegister vs) {
   vfsgnjn_vv(vd, vs, vs);
 }
@@ -1310,7 +1314,7 @@ int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
   int count = bitset_to_regs(bitset, regs);
 
   for (int i = count - 1; i >= 0; i--) {
-    vl1r_v(as_VectorRegister(regs[i]), stack);
+    vl1re8_v(as_VectorRegister(regs[i]), stack);
     add(stack, stack, vector_size_in_bytes);
   }
 

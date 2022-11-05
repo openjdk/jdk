@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * Represent the OCSP NoCheck Extension from RFC2560.
@@ -104,25 +103,12 @@ public class OCSPNoCheckExtension extends Extension
                         "CertAttrSet:OCSPNoCheckExtension.");
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        return (new AttributeNameEnumeration()).elements();
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return NAME;
     }

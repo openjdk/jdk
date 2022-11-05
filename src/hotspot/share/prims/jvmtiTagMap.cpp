@@ -76,7 +76,6 @@ bool JvmtiTagMap::_has_object_free_events = false;
 JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
   _lock(Mutex::nosafepoint, "JvmtiTagMap_lock"),
-  _needs_rehashing(false),
   _needs_cleaning(false),
   _posting_events(false) {
 
@@ -136,7 +135,7 @@ bool JvmtiTagMap::is_empty() {
   return hashmap()->is_empty();
 }
 
-// This checks for posting and rehashing before operations that
+// This checks for posting before operations that use
 // this tagmap table.
 void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
   assert(is_locked(), "checking");
@@ -148,14 +147,9 @@ void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     remove_dead_entries_locked(objects);
   }
-  if (_needs_rehashing) {
-    log_info(jvmti, table)("TagMap table needs rehashing");
-    hashmap()->rehash();
-    _needs_rehashing = false;
-  }
 }
 
-// This checks for posting and rehashing and is called from the heap walks.
+// This checks for posting and is called from the heap walks.
 void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
   assert(SafepointSynchronize::is_at_safepoint(), "called from safepoints");
 
@@ -2930,21 +2924,6 @@ void JvmtiTagMap::follow_references(jint heap_filter,
   }
   // Post events outside of Heap_lock
   post_dead_objects(&dead_objects);
-}
-
-// Concurrent GC needs to call this in relocation pause, so after the objects are moved
-// and have their new addresses, the table can be rehashed.
-void JvmtiTagMap::set_needs_rehashing() {
-  assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
-  assert(Thread::current()->is_VM_thread(), "should be the VM thread");
-
-  JvmtiEnvIterator it;
-  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
-    JvmtiTagMap* tag_map = env->tag_map_acquire();
-    if (tag_map != NULL) {
-      tag_map->_needs_rehashing = true;
-    }
-  }
 }
 
 // Verify gc_notification follows set_needs_cleaning.
