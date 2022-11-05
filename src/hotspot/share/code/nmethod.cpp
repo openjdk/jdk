@@ -451,6 +451,20 @@ void nmethod::init_defaults() {
 #endif
 }
 
+class CheckForOopsClosure : public OopClosure {
+  bool _found_oop = false;
+ public:
+  virtual void do_oop(oop* o) { _found_oop = true; }
+  virtual void do_oop(narrowOop* o) { _found_oop = true; }
+  bool found_oop() { return _found_oop; }
+};
+class CheckForMetadataClosure : public MetadataClosure {
+  bool _found_metadata = false;
+ public:
+  virtual void do_metadata(Metadata* md) { _found_metadata = true; }
+  bool found_metadata() { return _found_metadata; }
+};
+
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int compile_id,
   CodeBuffer *code_buffer,
@@ -490,8 +504,12 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     // GC may not look for Oops, there.
     if (allow_NonNMethod_space) {
       assert(oop_maps == nullptr, "expectation");
-      assert(!nm->contains_oops(), "no oops allowed");
-      assert(nm->metadata_size() == 0, "metadata usage not expected");
+      CheckForOopsClosure cfo;
+      nm->oops_do(&cfo);
+      assert(!cfo.found_oop(), "no oops allowed");
+      CheckForMetadataClosure cfm;
+      nm->metadata_do(&cfm);
+      assert(!cfm.found_metadata(), "no metadata allowed");
     }
 #endif
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
@@ -1732,19 +1750,6 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
     if (*p == Universe::non_oop_word())  continue;  // skip non-oops
     f->do_oop(p);
   }
-}
-
-bool nmethod::contains_oops() {
-  if (oops_size() > 0) return true;
-
-  if (relocInfo::mustIterateImmediateOopsInCode()) {
-    RelocIterator iter(this, oops_reloc_begin());
-    while (iter.next()) {
-      if (iter.type() == relocInfo::oop_type) return true;
-    }
-  }
-
-  return false;
 }
 
 void nmethod::follow_nmethod(OopIterateClosure* cl) {

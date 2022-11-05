@@ -548,8 +548,6 @@ public:
   void oops_do(OopClosure* f) { oops_do(f, false); }
   void oops_do(OopClosure* f, bool allow_dead);
 
-  bool contains_oops();
-
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.
   bool oops_do_try_claim();
