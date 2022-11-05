@@ -413,21 +413,6 @@ public class PushbackInputStream extends FilterInputStream {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         ensureOpen();
-        if (closeLock != null) {
-            closeLock.lock();
-            try {
-                return implTransferTo(out);
-            } finally {
-                closeLock.unlock();
-            }
-        } else {
-            synchronized (this) {
-                return implTransferTo(out);
-            }
-        }
-    }
-
-    private long implTransferTo(OutputStream out) throws IOException {
         if (getClass() == PushbackInputStream.class) {
             int avail = buf.length - pos;
             if (avail > 0) {
