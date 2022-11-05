@@ -129,15 +129,15 @@ public class AArch64Architecture implements Architecture {
     }
 
     private static VMStorage integerRegister(int index) {
-        return VMStorage.regStorage(StorageClasses.INTEGER, REG64_MASK, index, "r" + index);
+        return new VMStorage(StorageClasses.INTEGER, REG64_MASK, index, "r" + index);
     }
 
     private static VMStorage vectorRegister(int index) {
-        return VMStorage.regStorage(StorageClasses.VECTOR, V128_MASK, index, "v" + index);
+        return new VMStorage(StorageClasses.VECTOR, V128_MASK, index, "v" + index);
     }
 
     public static VMStorage stackStorage(short size, int byteOffset) {
-        return VMStorage.stackStorage(StorageClasses.STACK, size, byteOffset);
+        return new VMStorage(StorageClasses.STACK, size, byteOffset);
     }
 
     public static ABIDescriptor abiFor(VMStorage[] inputIntRegs,

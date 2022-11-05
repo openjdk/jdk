@@ -24,82 +24,23 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.util.Objects;
+/**
+ *
+ * @param type              the type of storage. e.g. stack, or which register type (GP, FP, vector)
+ * @param segmentMaskOrSize the (on stack) size in bytes when type = stack, a register mask otherwise,
+ *                          the register mask indicates which segments of a register are used.
+ * @param indexOrOffset     the index is either a register number within a type, or
+ *                          a stack offset in bytes if type = stack.
+ *                          (a particular platform might add a bias to this in generate code)
+ * @param debugName         the debug name
+ */
+public record VMStorage(byte type,
+                        short segmentMaskOrSize,
+                        int indexOrOffset,
+                        String debugName) {
 
-public class VMStorage {
-    /**
-     * Type of storage. e.g. stack, or which register type (GP, FP, vector)
-     */
-    private final byte type;
-
-    /**
-     * The (on stack) size in bytes when type = stack, a register mask otherwise.
-     * The register mask indicates which segments of a register are used.
-     */
-    private final short segmentMaskOrSize;
-
-    /**
-     * The index is either a register number within a type, or
-     * a stack offset in bytes if type = stack.
-     * (a particular platform might add a bias to this in generate code)
-     */
-    private final int indexOrOffset;
-
-    private final String debugName;
-
-    private VMStorage(byte type, short segmentMaskOrSize, int indexOrOffset, String debugName) {
-        this.type = type;
-        this.segmentMaskOrSize = segmentMaskOrSize;
-        this.indexOrOffset = indexOrOffset;
-        this.debugName = debugName;
+    public VMStorage(byte type, short segmentMaskOrSize, int indexOrOffset) {
+        this(type, segmentMaskOrSize, indexOrOffset, "Stack@" + indexOrOffset);
     }
 
-    public static VMStorage stackStorage(byte type, short size, int byteOffset) {
-        return new VMStorage(type, size, byteOffset, "Stack@" + byteOffset);
-    }
-
-    public static VMStorage regStorage(byte type, short segmentMask, int index, String debugName) {
-        return new VMStorage(type, segmentMask, index, debugName);
-    }
-
-    public byte type() {
-        return type;
-    }
-
-    public short segmentMaskOrSize() {
-        return segmentMaskOrSize;
-    }
-
-    public int indexOrOffset() {
-        return indexOrOffset;
-    }
-
-    public String name() {
-        return debugName;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        return (o instanceof VMStorage vmStorage)
-            && type == vmStorage.type
-            && segmentMaskOrSize == vmStorage.segmentMaskOrSize
-            && indexOrOffset == vmStorage.indexOrOffset
-            && Objects.equals(debugName, vmStorage.debugName);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type, segmentMaskOrSize, indexOrOffset, debugName);
-    }
-
-    @Override
-    public String toString() {
-        return "VMStorage{" +
-                "type=" + type +
-                ", segmentMaskOrSize=" + segmentMaskOrSize +
-                ", indexOrOffset=" + indexOrOffset +
-                ", debugName='" + debugName + '\'' +
-                '}';
-    }
 }

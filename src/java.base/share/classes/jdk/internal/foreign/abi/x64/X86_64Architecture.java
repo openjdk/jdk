@@ -125,19 +125,19 @@ public class X86_64Architecture implements Architecture {
     }
 
     private static VMStorage integerRegister(int index, String debugName) {
-        return VMStorage.regStorage(StorageClasses.INTEGER, REG64_MASK, index, debugName);
+        return new VMStorage(StorageClasses.INTEGER, REG64_MASK, index, debugName);
     }
 
     private static VMStorage vectorRegister(int index, String debugName) {
-        return VMStorage.regStorage(StorageClasses.VECTOR, XMM_MASK, index, debugName);
+        return new VMStorage(StorageClasses.VECTOR, XMM_MASK, index, debugName);
     }
 
     public static VMStorage stackStorage(short size, int byteOffset) {
-        return VMStorage.stackStorage(StorageClasses.STACK, size, byteOffset);
+        return new VMStorage(StorageClasses.STACK, size, byteOffset);
     }
 
     public static VMStorage x87Storage(int index) {
-        return VMStorage.regStorage(StorageClasses.X87, STP_MASK, index, "X87(" + index + ")");
+        return new VMStorage(StorageClasses.X87, STP_MASK, index, "X87(" + index + ")");
     }
 
     public static ABIDescriptor abiFor(VMStorage[] inputIntRegs, VMStorage[] inputVectorRegs, VMStorage[] outputIntRegs,
