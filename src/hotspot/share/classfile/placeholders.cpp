@@ -132,6 +132,9 @@ void PlaceholderEntry::add_seen_thread(JavaThread* thread, PlaceholderTable::cla
   SeenThread* threadEntry = new SeenThread(thread);
   SeenThread* seen = actionToQueue(action);
 
+  assert(action != PlaceholderTable::LOAD_INSTANCE || EnableWaitForParallelLoad || seen == NULL,
+         "Only one LOAD_INSTANCE allowed at a time");
+
   if (seen == NULL) {
     set_threadQ(threadEntry, action);
     return;
