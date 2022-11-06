@@ -97,7 +97,7 @@ public class CertificateSerialNumber implements CertAttrSet {
      */
     public String toString() {
         if (serial == null) return "";
-        return (serial.toString());
+        return serial.toString();
     }
 
     /**

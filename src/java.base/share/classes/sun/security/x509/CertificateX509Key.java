@@ -81,7 +81,7 @@ public class CertificateX509Key implements CertAttrSet {
      */
     public String toString() {
         if (key == null) return "";
-        return(key.toString());
+        return key.toString();
     }
 
     /**
@@ -99,7 +99,7 @@ public class CertificateX509Key implements CertAttrSet {
      * Get the PublicKey value.
      */
     public PublicKey getKey() {
-        return(key);
+        return key;
     }
 
 }

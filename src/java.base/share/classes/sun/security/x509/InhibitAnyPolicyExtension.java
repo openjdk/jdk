@@ -166,6 +166,6 @@ public class InhibitAnyPolicyExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

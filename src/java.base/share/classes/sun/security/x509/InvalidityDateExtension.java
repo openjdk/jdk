@@ -123,7 +123,7 @@ public class InvalidityDateExtension extends Extension
         if (date == null) {
             return null;
         } else {
-            return (new Date(date.getTime()));    // clone
+            return new Date(date.getTime());    // clone
         }
     }
 

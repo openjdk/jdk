@@ -84,7 +84,7 @@ public class CertificateSubjectName implements CertAttrSet {
      */
     public String toString() {
         if (dnName == null) return "";
-        return(dnName.toString());
+        return dnName.toString();
     }
 
     /**

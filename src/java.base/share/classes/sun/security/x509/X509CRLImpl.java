@@ -682,7 +682,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * @return the thisUpdate date from the CRL.
      */
     public Date getThisUpdate() {
-        return (new Date(thisUpdate.getTime()));
+        return new Date(thisUpdate.getTime());
     }
 
     /**
@@ -694,7 +694,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public Date getNextUpdate() {
         if (nextUpdate == null)
             return null;
-        return (new Date(nextUpdate.getTime()));
+        return new Date(nextUpdate.getTime());
     }
 
     /**

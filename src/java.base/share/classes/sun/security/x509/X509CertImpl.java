@@ -775,7 +775,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public String getSigAlgName() {
         if (algId == null)
             return null;
-        return (algId.getName());
+        return algId.getName();
     }
 
     /**
@@ -788,7 +788,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (algId == null)
             return null;
         ObjectIdentifier oid = algId.getOID();
-        return (oid.toString());
+        return oid.toString();
     }
 
     public AlgorithmId getSigAlg() {
@@ -818,7 +818,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (id == null)
             return null;
         else
-            return (id.getId());
+            return id.getId();
     }
 
     /**
@@ -833,7 +833,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (id == null)
             return null;
         else
-            return (id.getId());
+            return id.getId();
     }
 
     public KeyIdentifier getAuthKeyId() {

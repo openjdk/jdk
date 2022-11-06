@@ -200,18 +200,18 @@ public class X509CertInfo {
      */
     public boolean equals(X509CertInfo other) {
         if (this == other) {
-            return(true);
+            return true;
         } else if (rawCertInfo == null || other.rawCertInfo == null) {
-            return(false);
+            return false;
         } else if (rawCertInfo.length != other.rawCertInfo.length) {
-            return(false);
+            return false;
         }
         for (int i = 0; i < rawCertInfo.length; i++) {
             if (rawCertInfo[i] != other.rawCertInfo[i]) {
-                return(false);
+                return false;
             }
         }
-        return(true);
+        return true;
     }
 
     /**
@@ -224,7 +224,7 @@ public class X509CertInfo {
         for (int i = 1; i < rawCertInfo.length; i++) {
             retval += rawCertInfo[i] * i;
         }
-        return(retval);
+        return retval;
     }
 
     /**

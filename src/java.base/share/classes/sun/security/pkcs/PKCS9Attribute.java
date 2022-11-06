@@ -683,7 +683,7 @@ public class PKCS9Attribute implements DerEncoder {
     public String getName() {
         String n = oid.toString();
         KnownOIDs os = KnownOIDs.findMatch(n);
-        return (os == null? n : os.stdName());
+        return os == null? n : os.stdName();
     }
 
     /**

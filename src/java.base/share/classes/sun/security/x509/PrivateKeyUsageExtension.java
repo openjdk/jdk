@@ -240,11 +240,11 @@ public class PrivateKeyUsageExtension extends Extension
     }
 
     public Date getNotBefore() {
-        return (new Date(notBefore.getTime()));
+        return new Date(notBefore.getTime());
     }
 
     public Date getNotAfter() {
-        return (new Date(notAfter.getTime()));
+        return new Date(notAfter.getTime());
     }
 
     /**
@@ -252,6 +252,6 @@ public class PrivateKeyUsageExtension extends Extension
      */
     @Override
     public String getName() {
-      return(NAME);
+      return NAME;
     }
 }

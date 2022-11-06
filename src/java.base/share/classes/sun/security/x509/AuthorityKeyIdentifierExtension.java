@@ -216,15 +216,15 @@ public class AuthorityKeyIdentifierExtension extends Extension
     }
 
     public KeyIdentifier getKeyIdentifier() {
-        return (id);
+        return id;
     }
 
     public GeneralNames getAuthName() {
-        return (names);
+        return names;
     }
 
     public SerialNumber getSerialNumber() {
-        return (serialNum);
+        return serialNum;
     }
 
 
@@ -233,7 +233,7 @@ public class AuthorityKeyIdentifierExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     /**

@@ -213,6 +213,6 @@ public class PolicyConstraintsExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

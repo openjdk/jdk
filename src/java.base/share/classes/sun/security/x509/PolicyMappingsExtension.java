@@ -158,6 +158,6 @@ public class PolicyMappingsExtension extends Extension
      */
     @Override
     public String getName () {
-        return (NAME);
+        return NAME;
     }
 }

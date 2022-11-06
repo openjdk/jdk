@@ -185,6 +185,6 @@ public class CRLNumberExtension extends Extension
      */
     @Override
     public String getName() {
-        return (extensionName);
+        return extensionName;
     }
 }

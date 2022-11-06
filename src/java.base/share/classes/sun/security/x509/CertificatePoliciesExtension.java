@@ -193,6 +193,6 @@ public class CertificatePoliciesExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

@@ -96,6 +96,6 @@ public class CertificateAlgorithmId implements CertAttrSet {
      * Get the AlgorithmId value.
      */
     public AlgorithmId getAlgId() throws IOException {
-        return (algId);
+        return algId;
     }
 }

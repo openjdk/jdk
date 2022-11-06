@@ -258,7 +258,7 @@ public class NetscapeCertTypeExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     /**

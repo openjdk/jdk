@@ -167,7 +167,7 @@ public class SubjectAlternativeNameExtension extends Extension
      * Get the GeneralNames value.
      */
     public GeneralNames getNames() {
-        return (names);
+        return names;
     }
 
 
@@ -177,6 +177,6 @@ public class SubjectAlternativeNameExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

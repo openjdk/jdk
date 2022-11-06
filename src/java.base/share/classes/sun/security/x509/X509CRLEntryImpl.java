@@ -144,7 +144,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
      * false.
      */
     public boolean hasExtensions() {
-        return (extensions != null);
+        return extensions != null;
     }
 
     /**

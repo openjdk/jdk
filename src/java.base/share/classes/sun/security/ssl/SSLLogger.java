@@ -230,7 +230,7 @@ public final class SSLLogger {
 
         @Override
         public boolean isLoggable(Level level) {
-            return (level != Level.OFF);
+            return level != Level.OFF;
         }
 
         @Override

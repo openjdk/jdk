@@ -323,7 +323,7 @@ public class X509CRLSelector implements CRLSelector {
             else
                 namesCopy.add(nameObject);
         }
-        return(namesCopy);
+        return namesCopy;
     }
 
     /**

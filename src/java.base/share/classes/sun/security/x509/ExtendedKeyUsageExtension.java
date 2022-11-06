@@ -211,7 +211,7 @@ public class ExtendedKeyUsageExtension extends Extension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     public List<String> getExtendedKeyUsage() {

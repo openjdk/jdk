@@ -1288,7 +1288,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getIssuerAsString() {
-        return (issuer == null ? null : issuer.getName());
+        return issuer == null ? null : issuer.getName();
     }
 
     /**
@@ -1310,7 +1310,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getIssuerAsBytes() throws IOException {
-        return (issuer == null ? null: issuer.getEncoded());
+        return issuer == null ? null: issuer.getEncoded();
     }
 
     /**
@@ -1347,7 +1347,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getSubjectAsString() {
-        return (subject == null ? null : subject.getName());
+        return subject == null ? null : subject.getName();
     }
 
     /**
@@ -1369,7 +1369,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getSubjectAsBytes() throws IOException {
-        return (subject == null ? null : subject.getEncoded());
+        return subject == null ? null : subject.getEncoded();
     }
 
     /**
@@ -1868,7 +1868,7 @@ public class X509CertSelector implements CertSelector {
 
         s += "]\n";
 
-        return (s);
+        return s;
     }
 
     /**

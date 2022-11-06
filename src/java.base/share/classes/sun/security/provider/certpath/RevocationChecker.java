@@ -1181,7 +1181,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         @Override
         public boolean match(Certificate cert) {
             if (!super.match(cert))
-                return(false);
+                return false;
 
             if (badKeySet.contains(cert.getPublicKey())) {
                 if (debug != null)

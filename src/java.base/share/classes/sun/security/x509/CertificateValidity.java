@@ -51,12 +51,12 @@ public class CertificateValidity implements CertAttrSet {
 
     // Returns the first time the certificate is valid.
     public Date getNotBefore() {
-        return (new Date(notBefore.getTime()));
+        return new Date(notBefore.getTime());
     }
 
     // Returns the last time the certificate is valid.
     public Date getNotAfter() {
-       return (new Date(notAfter.getTime()));
+       return new Date(notAfter.getTime());
     }
 
     // Construct the class from the DerValue

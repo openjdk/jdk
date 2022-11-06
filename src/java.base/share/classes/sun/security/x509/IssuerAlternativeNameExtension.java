@@ -170,6 +170,6 @@ public class IssuerAlternativeNameExtension
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

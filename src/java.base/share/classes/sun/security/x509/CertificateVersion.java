@@ -58,7 +58,7 @@ public class CertificateVersion implements CertAttrSet {
 
     // Returns the version number.
     public int getVersion() {
-        return(version);
+        return version;
     }
 
     // Construct the class from the passed DerValue
@@ -139,7 +139,7 @@ public class CertificateVersion implements CertAttrSet {
      * Return the version number of the certificate.
      */
     public String toString() {
-        return("Version: V" + (version+1));
+        return "Version: V" + (version+1);
     }
 
     /**
@@ -165,6 +165,6 @@ public class CertificateVersion implements CertAttrSet {
      * Compare versions.
      */
     public int compare(int vers) {
-        return(version - vers);
+        return version - vers;
     }
 }
