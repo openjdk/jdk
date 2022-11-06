@@ -193,6 +193,18 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
+     * Reads a byte of uncompressed data from the input stream for the current
+     * ZIP entry. This method will block until enough input is available for
+     * decompression.
+     * @return the byte read, or -1 if end of compressed input is reached
+     * @throws    IOException if an I/O error has occurred
+     */
+    @Override
+    public int read() throws IOException {
+        return super.read();
+    }
+
+    /**
      * Reads all remaining bytes from the input stream for the current ZIP entry.
      * This method blocks until all remaining bytes have been read and end of
      * stream is detected, or an exception is thrown. This method does not close
@@ -214,10 +226,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * stream may not be at end of stream and may be in an inconsistent state.
      * It is strongly recommended that the stream be promptly closed if an I/O
      * error occurs.
-     *
-     * @implSpec
-     * This method invokes {@link #readNBytes(int)} with a length of
-     * {@link Integer#MAX_VALUE}.
      *
      * @throws OutOfMemoryError {@inheritDoc}
      *
