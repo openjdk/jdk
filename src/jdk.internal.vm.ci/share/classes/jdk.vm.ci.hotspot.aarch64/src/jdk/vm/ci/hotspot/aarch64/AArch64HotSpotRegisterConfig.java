@@ -116,8 +116,6 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     private final RegisterArray nativeGeneralParameterRegisters = new RegisterArray(r0, r1, r2, r3, r4, r5, r6, r7);
     private final RegisterArray simdParameterRegisters = new RegisterArray(v0, v1, v2, v3, v4, v5, v6, v7);
 
-    private final boolean macOS;
-
     public static final Register inlineCacheRegister = rscratch2;
 
     /**
@@ -164,14 +162,13 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         return new RegisterArray(registers);
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean canUsePlatformRegister, boolean macOs) {
-        this(target, initAllocatable(target.arch, useCompressedOops, canUsePlatformRegister), macOs);
+    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean canUsePlatformRegister) {
+        this(target, initAllocatable(target.arch, useCompressedOops, canUsePlatformRegister));
         assert callerSaved.size() >= allocatable.size();
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean macOs) {
+    public AArch64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
         this.target = target;
-        this.macOS = macOs;
 
         this.allocatable = allocatable;
         Set<Register> callerSaveSet = new HashSet<>();
@@ -288,7 +285,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
             }
 
             if (locations[i] == null) {
-                if (macOS && type == HotSpotCallingConventionType.NativeCall) {
+                if (target.macOs && type == HotSpotCallingConventionType.NativeCall) {
                     currentStackOffset = parseDarwinNativeStackArg(valueKindFactory.getValueKind(kind), locations, i, currentStackOffset, type);
                 } else {
                     currentStackOffset = parseStackArg(valueKindFactory.getValueKind(kind), locations, i, currentStackOffset, type);

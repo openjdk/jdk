@@ -93,8 +93,8 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         // ARMv8 defines r18 as being available to the platform ABI. Windows
         // and Darwin use it for such. Linux doesn't assign it and thus r18 can
         // be used as an additional register.
-        boolean canUsePlatformRegister = config.linuxOs;
-        return new AArch64HotSpotRegisterConfig(target, config.useCompressedOops, canUsePlatformRegister, config.macOs);
+        boolean canUsePlatformRegister = target.linuxOs;
+        return new AArch64HotSpotRegisterConfig(target, config.useCompressedOops, canUsePlatformRegister);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {
