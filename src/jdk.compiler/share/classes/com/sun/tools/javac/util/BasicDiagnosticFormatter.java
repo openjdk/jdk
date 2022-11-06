@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
 import com.sun.tools.javac.util.BasicDiagnosticFormatter.BasicConfiguration;
 
@@ -92,6 +93,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < format.length(); i++) {
             char c = format.charAt(i);
+
             boolean meta = false;
             if (c == '%' && i < format.length() - 1) {
                 meta = true;
@@ -129,11 +131,6 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                     buf.append("\n" + indent(sub, currentIndentation));
             }
         }
-        d.getHint().ifPresent(hint->{
-            buf.append("\n");
-            buf.append("hint: ");
-            buf.append(hint);
-        });
         return buf.toString();
     }
 
@@ -195,6 +192,17 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 return " ";
             case '%':
                 return "%";
+            case 'h':
+                var buf = new StringBuilder();
+                d.getHelp().ifPresent(help -> {
+                    buf.append("\n");
+                    buf.append("help: ");
+                    var message = help.message();
+                    buf.append(localize(l, message.key(), message.getArgs()));
+                });
+                return buf.toString();
+            case 'i':
+                return "";//"INFO GOES HERE";
             default:
                 return String.valueOf(c);
         }
@@ -232,7 +240,12 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                             DiagnosticPart.DETAILS,
                             DiagnosticPart.SUBDIAGNOSTICS,
                             DiagnosticPart.SOURCE));
-            initFormat();
+            if (options.isSet(Option.PREVIEW)) {
+                initFormatWithHelpAndInfo();
+            }
+            else {
+                initFormat();
+            }
             initIndentation();
             if (options.isSet("diags.legacy"))
                 initOldFormat();
@@ -288,6 +301,10 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
         private void initFormat() {
             initFormats("%f:%l:%_%p%L%m", "%p%L%m", "%f:%_%p%L%m");
+        }
+
+        private void initFormatWithHelpAndInfo() {
+            initFormats("%f:%l:%_%p%L%m%h%i", "%p%L%m%h%i", "%f:%_%p%L%m%h%i");
         }
 
         private void initOldFormat() {

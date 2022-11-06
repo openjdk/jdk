@@ -117,6 +117,15 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return diag;
         }
 
+        public JCDiagnostic error(
+                DiagnosticFlag flag, DiagnosticSource source, DiagnosticPosition pos, Error errorKey, Help help) {
+            JCDiagnostic diag = create(null, EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey, help);
+            if (flag != null) {
+                diag.setFlag(flag);
+            }
+            return diag;
+        }
+
         /**
          * Create a warning diagnostic that will not be hidden by the -nowarn or -Xlint:none options.
          *  @param lc     The lint category for the diagnostic
@@ -301,6 +310,11 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
 
         public JCDiagnostic create(
+                LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, Help help) {
+            return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos, null, null, help);
+        }
+
+        public JCDiagnostic create(
                 LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, UnaryOperator<JCDiagnostic> rewriter) {
             return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos, rewriter);
         }
@@ -465,17 +479,23 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     private final Set<DiagnosticFlag> flags;
     private final LintCategory lintCategory;
 
-    private String hint;
+    private final Help help;
+    private final Note note;
+
     /** source line position (set lazily) */
     private SourcePosition sourcePosition;
 
     private final UnaryOperator<JCDiagnostic> rewriter;
 
-    public Optional<String> getHint() {
-        return Optional.ofNullable(this.hint);
+    public Optional<Help> getHelp() {
+        return Optional.ofNullable(this.help);
     }
 
-    public JCDiagnostic withHint(String newHint){
+    public Optional<Note> getNote() {
+        return Optional.ofNullable(this.note);
+    }
+
+    public JCDiagnostic withHelp(Help help){
 
         return new JCDiagnostic(
                 this.defaultFormatter,
@@ -485,7 +505,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                 this.source,
                 this.position,
                 this.rewriter,
-                newHint
+                this.note,
+                help
         );
     }
 
@@ -658,7 +679,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                            DiagnosticSource source,
                            DiagnosticPosition pos,
                            UnaryOperator<JCDiagnostic> rewriter) {
-        this(formatter, diagnosticInfo, lc,flags, source, pos, rewriter, null);
+        this(formatter, diagnosticInfo, lc,flags, source, pos, rewriter, null, null);
     }
 
     protected JCDiagnostic(DiagnosticFormatter<JCDiagnostic> formatter,
@@ -668,7 +689,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                            DiagnosticSource source,
                            DiagnosticPosition pos,
                            UnaryOperator<JCDiagnostic> rewriter,
-                           String hint) {
+                           Note note,
+                           Help help) {
         if (source == null && pos != null && pos.getPreferredPosition() != Position.NOPOS)
             throw new IllegalArgumentException();
 
@@ -679,7 +701,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         this.source = source;
         this.position = pos;
         this.rewriter = rewriter;
-        this.hint = hint;
+        this.note = note;
+        this.help = help;
     }
 
     /**

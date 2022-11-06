@@ -155,8 +155,8 @@ public abstract class AbstractLog {
         report(diags.error(flag, source, wrap(pos), errorKey));
     }
 
-    public void error(DiagnosticFlag flag, int pos, Error errorKey, String hint) {
-        report(diags.error(flag, source, wrap(pos), errorKey).withHint(hint));
+    public void error(DiagnosticFlag flag, int pos, Error errorKey, Help help) {
+        report(diags.error(flag, source, wrap(pos), errorKey, help));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
