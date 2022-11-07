@@ -78,7 +78,7 @@ public class strace013 {
     static Object lockedObject = new Object();
     static int waitingCount = 0; // accessed while holding lockedObject
 
-    // Must synchronized on the lockedObject so thh right count guarantees
+    // Must synchronize on the lockedObject so the right count guarantees
     // the wait() call has been entered.
     static int waitingCount() {
         synchronized(strace013.lockedObject) {
@@ -172,7 +172,7 @@ public class strace013 {
         for (int i = 1; i < THRD_COUNT; i++) {
             all = (StackTraceElement[]) traces.get(threads[i]);
             int k = all.length;
-            if (count - k > 2) {
+            if (count != k) {
                 complain("wrong lengths of stack traces:\n\t"
                         + threads[0].getName() + ": " + count
                         + "\t"
@@ -282,6 +282,8 @@ class strace013Thread extends Thread {
             synchronized (strace013.lockedObject) {
                 strace013.waitingCount++;
                 try {
+                    // If we get a spurious wakeup then the test may break,
+                    // but there is nothing we can do to prevent that.
                     strace013.lockedObject.wait();
                 } catch (InterruptedException e) {
                     strace013.complain("" + e);
