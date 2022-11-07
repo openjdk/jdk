@@ -63,19 +63,31 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 // Return true if either action is taken, else false.
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
-  ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
-  if (!cpce->is_f1_null()) {
-    methodHandle method(     THREAD, cpce->f1_as_method());
-    Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
-    result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
-    Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
-    return true;
-  } else if (cpce->indy_resolution_failed()) {
-    int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
-    ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false);
-    return true;
-  } else {
+  if (UseNewCode) {
+    // Check if method is not null
+    if ( _pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).method() != nullptr) {
+      methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).method());
+      Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).cpool_index()));
+      result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
+      Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
+      return true;
+    }
     return false;
+  } else {
+    ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
+    if (!cpce->is_f1_null()) {
+      methodHandle method(     THREAD, cpce->f1_as_method());
+      Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
+      result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
+      Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
+      return true;
+    } else if (cpce->indy_resolution_failed()) {
+      int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
+      ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false);
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 

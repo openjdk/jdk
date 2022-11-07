@@ -45,6 +45,7 @@ class Rewriter: public StackObj {
   GrowableArray<int>  _invokedynamic_references_map; // for invokedynamic resolved refs
   GrowableArray<int>  _method_handle_invokers;
   int                 _resolved_reference_limit;
+  int                 _invokedynamic_index;
 
   // For mapping invokedynamic bytecodes, which are discovered during method
   // scanning.  The invokedynamic entries are added at the end of the cpCache.
