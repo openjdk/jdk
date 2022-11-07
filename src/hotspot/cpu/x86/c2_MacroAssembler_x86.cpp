@@ -3429,7 +3429,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   for (int idx = 0; idx < 4; idx++) {
     reduceI(Op_AddReductionVI, 256/(sizeof(jint) * 8), result, result, vresult[idx], vtmp[(idx * 2 + 0) % 4], vtmp[(idx * 2 + 1) % 4]);
   }
-  }
+
+  } // generate_vectorized_loop
 
   // cnt1 < 32
 
@@ -3442,7 +3443,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   shll(result, 5);
   subl(result, tmp1);
   // h += ary1[i];
-  arrays_hashcode_elload(tmp2, Address(ary1, 0, Address::times(elsize)), eltype, is_string_hashcode);
+  arrays_hashcode_elload(tmp2, Address(ary1, index, Address::times(elsize)), eltype, is_string_hashcode);
   addl(result, tmp2);
   // i += 1;
   addl(index, 1);
