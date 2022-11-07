@@ -1255,8 +1255,6 @@ enum VectorMask {
   INSN(vnmsac_vx, 0b1010111, 0b110, 0b101111);
   INSN(vmacc_vx,  0b1010111, 0b110, 0b101101);
 
-  INSN(vrsub_vx,  0b1010111, 0b100, 0b000011);
-
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -1414,8 +1412,9 @@ enum VectorMask {
   INSN(vand_vx, 0b1010111, 0b100, 0b001001);
 
   // Vector Single-Width Integer Add and Subtract
-  INSN(vsub_vx, 0b1010111, 0b100, 0b000010);
-  INSN(vadd_vx, 0b1010111, 0b100, 0b000000);
+  INSN(vsub_vx,  0b1010111, 0b100, 0b000010);
+  INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
+  INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
 #undef INSN
 
@@ -1473,7 +1472,7 @@ enum VectorMask {
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
-  void NAME(VectorRegister Vd, int32_t imm, VectorRegister Vs2, VectorMask vm = unmasked) {        \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {        \
     guarantee(is_imm_in_range(imm, 5, 0), "imm is invalid");                                       \
     patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
