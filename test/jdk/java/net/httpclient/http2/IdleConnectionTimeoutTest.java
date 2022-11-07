@@ -32,12 +32,26 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=2 IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=1 IdleConnectionTimeoutTest
+ *
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout=1
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout=2
+ *                                                             IdleConnectionTimeoutTest
+ *
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=1
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=2
+ *                                                             IdleConnectionTimeoutTest
+ *
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=1
+ *                                                            -Djdk.httpclient.keepalive.timeout=2
+ *                                                             IdleConnectionTimeoutTest
+ *
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=abc IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=-1 IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=1 -Djdk.httpclient.keepalive.timeout=2 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout.h2=-1
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors,trace -Djdk.httpclient.keepalive.timeout.h2=abc
+ *                                                                   IdleConnectionTimeoutTest
  */
 
 import org.testng.annotations.BeforeTest;

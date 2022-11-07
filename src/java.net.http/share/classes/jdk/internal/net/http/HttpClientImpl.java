@@ -1705,10 +1705,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         try {
             if (s != null) {
                 long timeoutVal = Long.parseLong(s);
-                System.err.println(timeoutVal);
                 if (timeoutVal >= 0) return timeoutVal;
             }
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+            Log.logTrace("Invalid value set for " + prop + " property: " + ignored.toString());
+        }
         return def;
     }
 
