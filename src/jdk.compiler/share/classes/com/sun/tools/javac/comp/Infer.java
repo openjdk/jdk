@@ -714,21 +714,21 @@ public class Infer {
                 undet.setInst(bounds.head);
             } else {
                 List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
-                Type bound;
+                Type upper;
                 boolean recursive = Type.containsAny(upperBounds, vars);
                 if (recursive) {
-                    bound = types.makeIntersectionType(upperBounds);
+                    upper = types.makeIntersectionType(upperBounds);
                     todo.append(undet);
                 } else if (upperBounds.nonEmpty()) {
-                    bound = types.glb(upperBounds);
+                    upper = types.glb(upperBounds);
                 } else {
-                    bound = syms.objectType;
+                    upper = syms.objectType;
                 }
                 List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
                 Type lower = lowerBounds.isEmpty() ? syms.botType
                                                    : lowerBounds.tail.isEmpty() ? lowerBounds.head
                                                                                 : types.lub(lowerBounds);
-                TypeVar vt = new TypeVar(syms.noSymbol, bound, lower);
+                TypeVar vt = new TypeVar(syms.noSymbol, upper, lower);
                 freshVars.add(vt);
                 undet.setInst(vt);
             }
