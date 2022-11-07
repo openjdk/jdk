@@ -63,7 +63,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
         }
     }
 
-    // special JKS that uses case sensitive aliases
+    // special JKS that uses case-sensitive aliases
     public static final class CaseExactJKS extends JavaKeyStore {
         String convertAlias(String alias) {
             return alias;
@@ -103,13 +103,13 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
         Date date; // the creation date of this entry
         byte[] protectedPrivKey;
         Certificate[] chain;
-    };
+    }
 
     // Trusted certificates
     private static class TrustedCertEntry {
         Date date; // the creation date of this entry
         Certificate cert;
-    };
+    }
 
     /**
      * Private keys and certificates are stored in a hashtable.
@@ -118,7 +118,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
     private final Hashtable<String, Object> entries;
 
     JavaKeyStore() {
-        entries = new Hashtable<String, Object>();
+        entries = new Hashtable<>();
     }
 
     // convert an alias to internal form, overridden in subclasses:
@@ -483,9 +483,9 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
     public String engineGetCertificateAlias(Certificate cert) {
         Certificate certElem;
 
-        for (Enumeration<String> e = entries.keys(); e.hasMoreElements(); ) {
-            String alias = e.nextElement();
-            Object entry = entries.get(alias);
+        for (Map.Entry<String, Object> e : entries.entrySet()) {
+            String alias = e.getKey();
+            Object entry = e.getValue();
             if (entry instanceof TrustedCertEntry) {
                 certElem = ((TrustedCertEntry)entry).cert;
             } else if (((KeyEntry)entry).chain != null) {
@@ -566,10 +566,9 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
             dos.writeInt(entries.size());
 
-            for (Enumeration<String> e = entries.keys(); e.hasMoreElements();) {
-
-                String alias = e.nextElement();
-                Object entry = entries.get(alias);
+            for (Map.Entry<String, Object> e : entries.entrySet()) {
+                String alias = e.getKey();
+                Object entry = e.getValue();
 
                 if (entry instanceof KeyEntry) {
 
@@ -656,8 +655,8 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             MessageDigest md = null;
             CertificateFactory cf = null;
             Hashtable<String, CertificateFactory> cfs = null;
-            ByteArrayInputStream bais = null;
-            byte[] encoded = null;
+            ByteArrayInputStream bais;
+            byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0;
 
             if (stream == null)
@@ -684,7 +683,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                 cf = CertificateFactory.getInstance("X509");
             } else {
                 // version 2
-                cfs = new Hashtable<String, CertificateFactory>(3);
+                cfs = new Hashtable<>(3);
             }
 
             entries.clear();
@@ -714,7 +713,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                     int numOfCerts = dis.readInt();
                     if (numOfCerts > 0) {
                         List<Certificate> certs = new ArrayList<>(
-                                numOfCerts > 10 ? 10 : numOfCerts);
+                                Math.min(numOfCerts, 10));
                         for (int j = 0; j < numOfCerts; j++) {
                             if (xVersion == 2) {
                                 // read the certificate type, and instantiate a

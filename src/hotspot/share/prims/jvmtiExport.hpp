@@ -47,8 +47,8 @@ class JvmtiEventControllerPrivate;
 class JvmtiManageCapabilities;
 class JvmtiEnv;
 class JvmtiThreadState;
-
 class OopStorage;
+class ThreadsList;
 
 #define JVMTI_SUPPORT_FLAG(key)                                           \
   private:                                                                \

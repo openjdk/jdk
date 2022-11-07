@@ -30,12 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -112,12 +107,14 @@ final class KeyShareExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\n'{'\n" +
-                "  \"named group\": {0}\n" +
-                "  \"key_exchange\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}',", Locale.ENGLISH);
+                    """
+
+                            '{'
+                              "named group": {0}
+                              "key_exchange": '{'
+                            {1}
+                              '}'
+                            '}',""", Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
@@ -471,12 +468,13 @@ final class KeyShareExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"server_share\": '{'\n" +
-                "  \"named group\": {0}\n" +
-                "  \"key_exchange\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}',", Locale.ENGLISH);
+                    """
+                            "server_share": '{'
+                              "named group": {0}
+                              "key_exchange": '{'
+                            {1}
+                              '}'
+                            '}',""", Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
@@ -554,8 +552,7 @@ final class KeyShareExtension {
             KeyShareEntry keyShare = null;
             for (SSLCredentials cd : shc.handshakeCredentials) {
                 NamedGroup ng = null;
-                if (cd instanceof NamedGroupCredentials) {
-                    NamedGroupCredentials creds = (NamedGroupCredentials)cd;
+                if (cd instanceof NamedGroupCredentials creds) {
                     ng = creds.getNamedGroup();
                 }
 
@@ -710,7 +707,7 @@ final class KeyShareExtension {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
-            // Cannot use the previous requested key shares any more.
+            // Cannot use the previous requested key shares anymore.
             if (SSLLogger.isOn && SSLLogger.isOn("handshake")) {
                 SSLLogger.fine(
                         "No key_share extension in ServerHello, " +

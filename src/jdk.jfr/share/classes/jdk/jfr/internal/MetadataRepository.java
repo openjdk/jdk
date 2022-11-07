@@ -46,8 +46,6 @@ import jdk.jfr.Period;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.SettingControl;
-import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.RequestEngine.RequestHook;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
@@ -57,8 +55,8 @@ public final class MetadataRepository {
     private static final JVM jvm = JVM.getJVM();
     private static final MetadataRepository instance = new MetadataRepository();
 
-    private final List<EventType> nativeEventTypes = new ArrayList<>(100);
-    private final List<EventControl> nativeControls = new ArrayList<EventControl>(100);
+    private final List<EventType> nativeEventTypes = new ArrayList<>(150);
+    private final List<EventControl> nativeControls = new ArrayList<EventControl>(nativeEventTypes.size());
     private final TypeLibrary typeLibrary = TypeLibrary.getInstance();
     private final SettingsManager settingsManager = new SettingsManager();
     private final Map<String, Class<? extends Event>> mirrors = new HashMap<>();
@@ -188,15 +186,15 @@ public final class MetadataRepository {
         return Utils.getConfiguration(eventClass);
     }
 
-    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec, SettingControl[] settings) {
+    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec) {
         try {
             if (cachedEventConfigurationConstructor == null) {
-                var argClasses = new Class<?>[] { EventType.class, EventControl.class, SettingControl[].class };
+                var argClasses = new Class<?>[] { EventType.class, EventControl.class};
                 Constructor<EventConfiguration> c = EventConfiguration.class.getDeclaredConstructor(argClasses);
                 SecuritySupport.setAccessible(c);
                 cachedEventConfigurationConstructor = c;
             }
-            return cachedEventConfigurationConstructor.newInstance(eventType, ec, settings);
+            return cachedEventConfigurationConstructor.newInstance(eventType, ec);
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             throw new InternalError(e);
         }
@@ -209,13 +207,7 @@ public final class MetadataRepository {
         }
         EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
         EventControl ec = new EventControl(pEventType, eventClass);
-        List<SettingInfo> settingInfos = ec.getSettingInfos();
-        SettingControl[] settings = new SettingControl[settingInfos.size()];
-        int index = 0;
-        for (var settingInfo : settingInfos) {
-            settings[index++] = settingInfo.settingControl();
-        }
-        EventConfiguration configuration = newEventConfiguration(eventType, ec, settings);
+        EventConfiguration configuration = newEventConfiguration(eventType, ec);
         PlatformEventType pe = configuration.getPlatformEventType();
         pe.setRegistered(true);
         // If class is instrumented or should not be instrumented, mark as instrumented.

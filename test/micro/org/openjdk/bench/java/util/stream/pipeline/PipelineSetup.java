@@ -24,11 +24,14 @@ package org.openjdk.bench.java.util.stream.pipeline;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
@@ -39,6 +42,9 @@ import java.util.stream.LongStream;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class PipelineSetup {
 
     /**

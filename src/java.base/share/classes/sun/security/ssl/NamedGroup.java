@@ -24,16 +24,22 @@
  */
 package sun.security.ssl;
 
-import javax.crypto.spec.DHParameterSpec;
 import java.io.IOException;
 import java.security.*;
-import java.security.spec.*;
-import java.util.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.NamedParameterSpec;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
 import javax.crypto.KeyAgreement;
-
-import sun.security.action.GetPropertyAction;
+import javax.crypto.spec.DHParameterSpec;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
+import sun.security.action.GetPropertyAction;
 
 /**
  * An enum containing all known named groups for use in TLS.

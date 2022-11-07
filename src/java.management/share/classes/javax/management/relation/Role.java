@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class Role implements Serializable {
     /**
      * @serial {@link List} of {@link ObjectName}s of referenced MBeans
      */
-    private List<ObjectName> objectNameList = new ArrayList<ObjectName>();
+    private List<ObjectName> objectNameList = new ArrayList<>();
 
     //
     // Constructors
@@ -217,7 +217,7 @@ public class Role implements Serializable {
             throw new IllegalArgumentException(excMsg);
         }
 
-        objectNameList = new ArrayList<ObjectName>(roleValue);
+        objectNameList = new ArrayList<>(roleValue);
         return;
     }
 

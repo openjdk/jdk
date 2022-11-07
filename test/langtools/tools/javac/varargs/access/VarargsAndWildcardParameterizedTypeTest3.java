@@ -27,7 +27,6 @@
  * @summary Varargs access check mishandles capture variables
  * @compile             VarargsAndWildcardParameterizedTypeTest3.java
  * @compile --release 8 VarargsAndWildcardParameterizedTypeTest3.java
- * @compile --release 7 VarargsAndWildcardParameterizedTypeTest3.java
  */
 
 class VarargsAndWildcardParameterizedTypeTest2 {

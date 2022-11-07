@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,14 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
-import sun.security.util.*;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.KnownOIDs;
+import sun.security.util.ObjectIdentifier;
 
 /**
  * This class defines the Extended Key Usage Extension, which
@@ -158,7 +157,7 @@ implements CertAttrSet<String> {
             throw new IOException("Invalid encoding for " +
                                    "ExtendedKeyUsageExtension.");
         }
-        keyUsages = new Vector<ObjectIdentifier>();
+        keyUsages = new Vector<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             ObjectIdentifier usage = seq.getOID();
@@ -197,15 +196,14 @@ implements CertAttrSet<String> {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.ExtendedKeyUsage_Id;
           critical = false;
           encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**
@@ -240,40 +238,18 @@ implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(USAGES)) {
-            keyUsages = null;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:ExtendedKeyUsageExtension.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(USAGES);
-
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }
 
     public List<String> getExtendedKeyUsage() {
-        List<String> al = new ArrayList<String>(keyUsages.size());
+        List<String> al = new ArrayList<>(keyUsages.size());
         for (ObjectIdentifier oid : keyUsages) {
             al.add(oid.toString());
         }

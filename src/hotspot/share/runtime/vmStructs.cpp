@@ -107,7 +107,6 @@
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
@@ -237,7 +236,6 @@
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
-  nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
   nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
@@ -288,7 +286,6 @@
   nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
   nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
   nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
-  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
@@ -489,7 +486,7 @@
   /*******************/                                                                                                              \
                                                                                                                                      \
   nonstatic_field(GrowableArrayBase,           _len,                                          int)                                   \
-  nonstatic_field(GrowableArrayBase,           _max,                                          int)                                   \
+  nonstatic_field(GrowableArrayBase,           _capacity,                                     int)                                   \
   nonstatic_field(GrowableArray<int>,          _data,                                         int*)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
@@ -662,8 +659,6 @@
   nonstatic_field(nmethod,                     _entry_point,                                  address)                               \
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
-  volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
-  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         int64_t)                               \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
@@ -1051,7 +1046,7 @@
                                                                                                                                      \
   CDS_ONLY(nonstatic_field(FileMapInfo,        _header,                   FileMapHeader*))                                           \
   CDS_ONLY(   static_field(FileMapInfo,        _current_info,             FileMapInfo*))                                             \
-  CDS_ONLY(nonstatic_field(FileMapHeader,      _space[0],                 CDSFileMapRegion))                                         \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _regions[0],               CDSFileMapRegion))                                         \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _cloned_vtables_offset,    size_t))                                                   \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _mapped_base_address,      char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _mapped_base,              char*))                                                    \
@@ -1318,7 +1313,6 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
-        declare_type(CodeCacheSweeperThread, JavaThread)                  \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
@@ -1848,6 +1842,8 @@
   declare_c2_type(SignumFNode, Node)                                      \
   declare_c2_type(IsInfiniteFNode, Node)                                  \
   declare_c2_type(IsInfiniteDNode, Node)                                  \
+  declare_c2_type(IsFiniteFNode, Node)                                    \
+  declare_c2_type(IsFiniteDNode, Node)                                    \
   declare_c2_type(LoadVectorGatherNode, LoadVectorNode)                   \
   declare_c2_type(StoreVectorScatterNode, StoreVectorNode)                \
   declare_c2_type(VectorLoadMaskNode, VectorNode)                         \
@@ -2287,22 +2283,6 @@
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
                                                                           \
-  /***************************************/                               \
-  /* InstanceKlass enums for _misc_flags */                               \
-  /***************************************/                               \
-                                                                          \
-  declare_constant(InstanceKlass::_misc_rewritten)                        \
-  declare_constant(InstanceKlass::_misc_has_nonstatic_fields)             \
-  declare_constant(InstanceKlass::_misc_should_verify_class)              \
-  declare_constant(InstanceKlass::_misc_is_contended)                     \
-  declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
-  declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods)\
-  declare_constant(InstanceKlass::_misc_has_been_redefined)               \
-  declare_constant(InstanceKlass::_misc_is_scratch_class)                 \
-  declare_constant(InstanceKlass::_misc_is_shared_boot_class)             \
-  declare_constant(InstanceKlass::_misc_is_shared_platform_class)         \
-  declare_constant(InstanceKlass::_misc_is_shared_app_class)              \
-                                                                          \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
   /*********************************/                                     \
@@ -2552,9 +2532,8 @@
   /* Calling convention constants */                                      \
   /********************************/                                      \
                                                                           \
-  declare_constant(RegisterImpl::number_of_registers)                     \
   declare_constant(ConcreteRegisterImpl::number_of_registers)             \
-  declare_preprocessor_constant("REG_COUNT", REG_COUNT)                \
+  declare_preprocessor_constant("REG_COUNT", REG_COUNT)                   \
   declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
   declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
                                                                           \

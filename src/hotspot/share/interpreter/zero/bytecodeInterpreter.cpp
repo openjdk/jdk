@@ -48,6 +48,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -588,8 +589,8 @@ void BytecodeInterpreter::run(interpreterState istate) {
 /* 0xE0 */ &&opc_fast_iload,    &&opc_fast_iload2,      &&opc_fast_icaload,   &&opc_fast_invokevfinal,
 /* 0xE4 */ &&opc_default,       &&opc_default,          &&opc_fast_aldc,      &&opc_fast_aldc_w,
 /* 0xE8 */ &&opc_return_register_finalizer,
-                                &&opc_invokehandle,     &&opc_default,        &&opc_default,
-/* 0xEC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+                                &&opc_invokehandle,     &&opc_nofast_getfield,&&opc_nofast_putfield,
+/* 0xEC */ &&opc_nofast_aload_0,&&opc_nofast_iload,     &&opc_default,        &&opc_default,
 
 /* 0xF0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 /* 0xF4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
@@ -862,6 +863,13 @@ run:
         UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
       }
 
+      CASE(_nofast_iload):
+      {
+        // Normal, non-rewritable iload handling.
+        SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
+      }
+
       CASE(_fast_iload):
       CASE(_fload):
           SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
@@ -922,8 +930,9 @@ run:
             case Bytecodes::_fast_igetfield:
               REWRITE_AT_PC(Bytecodes::_fast_iaccess_0);
               break;
-            case Bytecodes::_getfield: {
-              /* Otherwise, do nothing here, wait until it gets rewritten to _fast_Xgetfield.
+            case Bytecodes::_getfield:
+            case Bytecodes::_nofast_getfield: {
+              /* Otherwise, do nothing here, wait until/if it gets rewritten to _fast_Xgetfield.
                * Unfortunately, this punishes volatile field access, because it never gets
                * rewritten. */
               break;
@@ -933,6 +942,15 @@ run:
               break;
           }
         }
+        // Normal aload_0 handling.
+        VERIFY_OOP(LOCALS_OBJECT(0));
+        SET_STACK_OBJECT(LOCALS_OBJECT(0), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
+      }
+
+      CASE(_nofast_aload_0):
+      {
+        // Normal, non-rewritable aload_0 handling.
         VERIFY_OOP(LOCALS_OBJECT(0));
         SET_STACK_OBJECT(LOCALS_OBJECT(0), 0);
         UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
@@ -1701,6 +1719,7 @@ run:
        *  constant pool index in the instruction.
        */
       CASE(_getfield):
+      CASE(_nofast_getfield):
       CASE(_getstatic):
         {
           u2 index;
@@ -1711,9 +1730,16 @@ run:
           // split all the bytecode cases out so c++ compiler has a chance
           // for constant prop to fold everything possible away.
 
+          // Interpreter runtime does not expect "nofast" opcodes,
+          // prepare the vanilla opcode for it.
+          Bytecodes::Code code = (Bytecodes::Code)opcode;
+          if (code == Bytecodes::_nofast_getfield) {
+            code = Bytecodes::_getfield;
+          }
+
           cache = cp->entry_at(index);
-          if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
+          if (!cache->is_resolved(code)) {
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -1727,7 +1753,8 @@ run:
             obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
             // Check if we can rewrite non-volatile _getfield to one of the _fast_Xgetfield.
-            if (REWRITE_BYTECODES && !cache->is_volatile()) {
+            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+                  ((Bytecodes::Code)opcode != Bytecodes::_nofast_getfield)) {
               // Rewrite current BC to _fast_Xgetfield.
               REWRITE_AT_PC(fast_get_type(cache->flag_state()));
             }
@@ -1819,12 +1846,21 @@ run:
          }
 
       CASE(_putfield):
+      CASE(_nofast_putfield):
       CASE(_putstatic):
         {
           u2 index = Bytes::get_native_u2(pc+1);
           ConstantPoolCacheEntry* cache = cp->entry_at(index);
-          if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
+
+          // Interpreter runtime does not expect "nofast" opcodes,
+          // prepare the vanilla opcode for it.
+          Bytecodes::Code code = (Bytecodes::Code)opcode;
+          if (code == Bytecodes::_nofast_putfield) {
+            code = Bytecodes::_putfield;
+          }
+
+          if (!cache->is_resolved(code)) {
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -1849,7 +1885,8 @@ run:
             CHECK_NULL(obj);
 
             // Check if we can rewrite non-volatile _putfield to one of the _fast_Xputfield.
-            if (REWRITE_BYTECODES && !cache->is_volatile()) {
+            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+                  ((Bytecodes::Code)opcode != Bytecodes::_nofast_putfield)) {
               // Rewrite current BC to _fast_Xputfield.
               REWRITE_AT_PC(fast_put_type(cache->flag_state()));
             }
@@ -2415,7 +2452,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
-              if (REWRITE_BYTECODES) {
+              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }

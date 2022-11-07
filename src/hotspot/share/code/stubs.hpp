@@ -28,6 +28,8 @@
 #include "asm/codeBuffer.hpp"
 #include "memory/allocation.hpp"
 
+class Mutex;
+
 // The classes in this file provide a simple framework for the
 // management of little pieces of machine code - or stubs -
 // created on the fly and frequently discarded. In this frame-

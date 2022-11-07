@@ -651,7 +651,6 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     JVMCIObject compiled_code,
     objArrayHandle object_pool,
     CodeBlob*& cb,
-    nmethodLocker& nmethod_handle,
     JVMCIObject installed_code,
     FailedSpeculation** failed_speculations,
     char* speculations,
@@ -688,7 +687,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   _instructions = buffer.insts();
   _constants = buffer.consts();
 
-  initialize_fields(stream, code_flags, method, JVMCI_CHECK_OK);
+  initialize_fields(stream, code_flags, method, buffer, JVMCI_CHECK_OK);
   JVMCI::CodeInstallResult result = initialize_buffer(compiled_code, buffer, stream, code_flags, JVMCI_CHECK_OK);
 
   u4 available = stream->available();
@@ -729,9 +728,10 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     }
 
     JVMCIObject mirror = installed_code;
+    nmethod* nm = NULL; // nm is an out parameter of register_method
     result = runtime()->register_method(jvmci_env(),
                                         method,
-                                        nmethod_handle,
+                                        nm,
                                         entry_bci,
                                         &_offsets,
                                         _orig_pc_offset,
@@ -753,7 +753,6 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         speculations,
                                         speculations_len);
     if (result == JVMCI::ok) {
-      nmethod* nm = nmethod_handle.code()->as_nmethod_or_null();
       cb = nm;
       if (compile_state == NULL) {
         // This compile didn't come through the CompileBroker so perform the printing here
@@ -771,7 +770,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   return result;
 }
 
-void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, JVMCI_TRAPS) {
+void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, CodeBuffer& buffer, JVMCI_TRAPS) {
   if (!method.is_null()) {
     _parameter_count = method->size_of_parameters();
     JVMCI_event_2("installing code for %s", method->name_and_sig_as_C_string());
@@ -798,6 +797,7 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   // Pre-calculate the constants section size.  This is required for PC-relative addressing.
   u4 data_section_size = stream->read_u4("dataSectionSize");
   u1 data_section_alignment = stream->read_u1("dataSectionAlignment");
+  buffer.set_const_section_alignment(data_section_alignment);
   if ((_constants->alignment() % data_section_alignment) != 0) {
     JVMCI_ERROR("invalid data section alignment: %d [constants alignment: %d]%s",
         data_section_alignment, _constants->alignment(), stream->context());
@@ -852,8 +852,8 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(JVMCIObject compiled_c
   assert((CodeBuffer::SECT_INSTS == CodeBuffer::SECT_STUBS - 1) &&
          (CodeBuffer::SECT_CONSTS == CodeBuffer::SECT_INSTS - 1), "sections order: consts, insts, stubs");
   // buffer content: [constants + code_align] + [code + stubs_align] + [stubs]
-  int total_size = align_up(_constants_size, CodeSection::alignment(CodeBuffer::SECT_INSTS)) +
-                   align_up(_code_size, CodeSection::alignment(CodeBuffer::SECT_STUBS)) +
+  int total_size = align_up(_constants_size, buffer.insts()->alignment()) +
+                   align_up(_code_size, buffer.stubs()->alignment()) +
                    stubs_size;
 
   if (total_size > JVMCINMethodSizeLimit) {
@@ -1213,6 +1213,9 @@ void CodeInstaller::site_DataPatch(CodeBuffer& buffer, jint pc_offset, HotSpotCo
     case PATCH_DATA_SECTION_REFERENCE: {
       int data_offset = stream->read_u4("data:offset");
       if (0 <= data_offset && data_offset < _constants_size) {
+        if (!is_aligned(data_offset, CompilerToVM::Data::get_data_section_item_alignment())) {
+          JVMCI_ERROR("data offset 0x%x is not %d-byte aligned%s", data_offset, relocInfo::addr_unit(), stream->context());
+        }
         pd_patch_DataSectionReference(pc_offset, data_offset, JVMCI_CHECK);
       } else {
         JVMCI_ERROR("data offset 0x%x points outside data section (size 0x%x)%s", data_offset, _constants_size, stream->context());

@@ -7,7 +7,7 @@ the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `git clone https://git.openjdk.java.net/jdk/`
+    `git clone https://git.openjdk.org/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -40,14 +40,14 @@ reasonably powerful hardware.
 
 If you just want to use the JDK and not build it yourself, this document is not
 for you. See for instance [OpenJDK installation](
-http://openjdk.java.net/install) for some methods of installing a prebuilt
+http://openjdk.org/install) for some methods of installing a prebuilt
 JDK.
 
 ## Getting the Source Code
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.org/) you
 can see a list of all available repositories. If you want to build an older version,
 e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
 incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
@@ -96,7 +96,7 @@ on where and how to check out the source code.
           Cygwin paths (which are used throughout the JDK build system).
           However, it does not currently work well with the Skara CLI tooling.
           Please see the [Skara wiki on Git clients](
-          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          https://wiki.openjdk.org/display/SKARA/Skara#Skara-Git) for
           up-to-date information about the Skara git client support.
 
         * The [Git for Windows](https://gitforwindows.org) client has issues
@@ -173,7 +173,7 @@ used at Oracle, where header files and external libraries from an older version
 are used when building on a more modern version of the OS.
 
 The Build Group has a wiki page with [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms). From
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms). From
 time to time, this is updated by contributors to list successes or failures of
 building on different platforms.
 
@@ -303,7 +303,7 @@ sudo apk add build-base bash grep zip
 ### AIX
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of AIX are supported.
 
 ## Native Compiler (Toolchain) Requirements
@@ -311,7 +311,10 @@ Build Wiki page for details about which versions of AIX are supported.
 Large portions of the JDK consists of native code, that needs to be compiled to
 be able to run on the target platform. In theory, toolchain and operating
 system should be independent factors, but in practice there's more or less a
-one-to-one correlation between target operating system and toolchain.
+one-to-one correlation between target operating system and toolchain. There are
+ongoing efforts to loosen this strict coupling between compiler and operating
+system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
+will likely be a very long time before this goal can be realized.
 
  Operating system   Supported toolchain
  ------------------ -------------------------
@@ -382,14 +385,14 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
-(16.8 or higher). For all other platforms the minimum accepted version of
-Visual Studio is 2017. Older versions will not be accepted by `configure` and will
-not work. For all platforms the maximum accepted version of Visual Studio is 2022.
+The minimum accepted version is Visual Studio 2019 version 16.8. (Note that this
+version is often presented as "MSVC 14.28", and reported by cl.exe as 19.28.)
+Older versions will not be accepted by `configure` and will not work. The
+maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2022`.
 
 If you have Visual Studio installed but `configure` fails to detect it, it may
 be because of [spaces in path](#spaces-in-path).
@@ -397,8 +400,17 @@ be because of [spaces in path](#spaces-in-path).
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
+
+### Support for checking standards conforming code
+
+The make system has a strict mode that enforces conforming code based on the
+standard that is used by the build, which can be useful to ensure that native code
+behaves strictly according to said standard. This option can by enabled by passing
+`--enable-conforming-compilation` during configure, but is off by default.
+If you just want to compile a working JDK it is not recommended that you set this
+flag, as it is mainly meant to aid developers that are working with native code.
 
 
 ## Boot JDK Requirements
@@ -848,14 +860,14 @@ Suggestions for Advanced Users](#hints-and-suggestions-for-advanced-users) and
 
 ## Running Tests
 
-Most of the JDK tests are using the [JTReg](http://openjdk.java.net/jtreg)
+Most of the JDK tests are using the [JTReg](http://openjdk.org/jtreg)
 test framework. Make sure that your configuration knows where to find your
 installation of JTReg. If this is not picked up automatically, use the
 `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
 Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc.
 
-The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
+The [Adoption Group](https://wiki.openjdk.org/display/Adoption) provides
 recent builds of jtreg [here](
 https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
@@ -876,6 +888,42 @@ make run-test-tier1
 
 For more details on how to run tests, please see **Testing the JDK**
 ([html](testing.html), [markdown](testing.md)).
+
+## Signing
+
+### macOS
+
+Modern versions of macOS require applications to be signed and notarizied before
+distribution. See Apple's documentation for more background on what this means
+and how it works. To help support this, the JDK build can be configured to
+automatically sign all native binaries, and the JDK bundle, with all the options
+needed for successful notarization, as well as all the entitlements required by
+the JDK. To enable `hardened` signing, use configure parameter
+`--with-macosx-codesign=hardened` and configure the signing identity you wish to
+use with `--with-macosx-codesign-identity=<identity>`. The identity refers to a
+signing identity from Apple that needs to be preinstalled on the build host.
+
+When not signing for distribution with the hardened option, the JDK build will
+still attempt to perform `adhoc` signing to add the special entitlement
+`com.apple.security.get-task-allow` to each binary. This entitlement is required
+to be able to dump core files from a process. Note that adding this entitlement
+makes the build invalid for notarization, so it is only added when signing in
+`debug` mode. To explicitly enable this kind of adhoc signing, use configure
+parameter `--with-macosx-codesign=debug`. It will be enabled by default in most
+cases.
+
+It's also possible to completely disable any explicit codesign operations done
+by the JDK build using the configure parameter `--without-macosx-codesign`.
+The exact behavior then depends on the architecture. For macOS on x64, it (at
+least at the time of this writing) results in completely unsigned binaries that
+should still work fine for development and debugging purposes. On aarch64, the
+Xcode linker will apply a default "adhoc" signing, without any entitlements.
+Such a build does not allow dumping core files.
+
+The default mode "auto" will try for `hardened` signing if the debug level is
+`release` and either the default identity or the specified identity is valid.
+If hardened isn't possible, then `debug` signing is chosen if it works. If
+nothing works, the codesign build step is disabled.
 
 ## Cross-compiling
 
@@ -1512,7 +1560,7 @@ You can run `fsutil file setshortname` in `cmd` on certain directories, such as
 
 If none of the suggestions in this document helps you, or if you find what you
 believe is a bug in the build system, please contact the Build Group by sending
-a mail to [build-dev@openjdk.java.net](mailto:build-dev@openjdk.java.net).
+a mail to [build-dev@openjdk.org](mailto:build-dev@openjdk.org).
 Please include the relevant parts of the configure and/or build log.
 
 If you need general help or advice about developing for the JDK, you can also
@@ -1922,7 +1970,7 @@ To analyze build performance, run with `LOG=trace` and check `$BUILD/build-trace
 Use `JOBS=1` to avoid parallelism.
 
 Please check that you adhere to the [Code Conventions for the Build System](
-http://openjdk.java.net/groups/build/doc/code-conventions.html) before
+http://openjdk.org/groups/build/doc/code-conventions.html) before
 submitting patches.
 
 ## Contributing to the JDK
@@ -1935,19 +1983,25 @@ However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
 The official place to start is the ['How to contribute' page](
-http://openjdk.java.net/contribute/). There is also an official (but somewhat
+http://openjdk.org/contribute/). There is also an official (but somewhat
 outdated and skimpy on details) [Developer's Guide](
-http://openjdk.java.net/guide/).
+http://openjdk.org/guide/).
 
 If this seems overwhelming to you, the Adoption Group is there to help you! A
 good place to start is their ['New Contributor' page](
-https://wiki.openjdk.java.net/display/Adoption/New+Contributor), or start
+https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
 reading the comprehensive [Getting Started Kit](
 https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
 Adoption Group will also happily answer any questions you have about
 contributing. Contact them by [mail](
-http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.java.net/irc/).
+http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
+http://openjdk.org/irc/).
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/building.md` and
+then run `make update-build-docs` to generate the same changes in
+`doc/building.html`.
 
 ---
 # Override styles from the base CSS file that are not ideal for this document.

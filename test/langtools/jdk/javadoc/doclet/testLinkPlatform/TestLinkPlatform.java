@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class TestLinkPlatform extends JavadocTester {
     final static String NON_MODULAR_CUSTOM_PLATFORM_URL = "https://example.com/%d/api/java/lang/Object.html";
     final static String MODULAR_CUSTOM_PLATFORM_URL = "https://example.com/%d/api/java.base/java/lang/Object.html";
 
-    final static int EARLIEST_VERSION = 7;
+    final static int EARLIEST_VERSION = 8;
     final static int LATEST_VERSION = Integer.parseInt(SourceVersion.latest().name().substring(8));
 
     /**

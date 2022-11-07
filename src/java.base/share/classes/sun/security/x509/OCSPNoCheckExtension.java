@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
-
-import sun.security.util.*;
 
 /**
  * Represent the OCSP NoCheck Extension from RFC2560.
@@ -107,25 +103,12 @@ public class OCSPNoCheckExtension extends Extension
                         "CertAttrSet:OCSPNoCheckExtension.");
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        return (new AttributeNameEnumeration()).elements();
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return NAME;
     }

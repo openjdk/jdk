@@ -24,7 +24,6 @@ package jdk.vm.ci.code;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaValue;
-import jdk.vm.ci.meta.Value;
 
 /**
  * Represents lock information in the debug information.

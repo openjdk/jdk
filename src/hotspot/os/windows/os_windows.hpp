@@ -32,13 +32,13 @@
 class outputStream;
 class Thread;
 
+typedef void (*signal_handler_t)(int);
+
 class os::win32 {
   friend class os;
   friend unsigned __stdcall thread_native_entry(Thread*);
 
  protected:
-  static int    _vm_page_size;
-  static int    _vm_allocation_granularity;
   static int    _processor_type;
   static int    _processor_level;
   static julong _physical_memory;
@@ -85,12 +85,6 @@ class os::win32 {
   // Tells whether there can be the race bug during process exit on this platform
   static bool has_exit_bug() { return _has_exit_bug; }
 
-  // Returns the byte size of a virtual memory page
-  static int vm_page_size() { return _vm_page_size; }
-
-  // Returns the size in bytes of memory blocks which can be allocated.
-  static int vm_allocation_granularity() { return _vm_allocation_granularity; }
-
   // Read the headers for the executable that started the current process into
   // the structure passed in (see winnt.h).
   static void read_executable_headers(PIMAGE_NT_HEADERS);
@@ -128,6 +122,10 @@ public:
     _thread_ptr_offset = offset;
   }
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
+
+  // signal support
+  static void* install_signal_handler(int sig, signal_handler_t handler);
+  static void* user_handler();
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

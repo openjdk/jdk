@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -126,7 +124,7 @@ implements CertAttrSet<String> {
         if (!critical.booleanValue())
             throw new IOException("Criticality cannot be false for " +
                                   "InhibitAnyPolicy");
-        this.critical = critical.booleanValue();
+        this.critical = true;
 
         this.extensionValue = (byte[]) value;
         DerValue val = new DerValue(this.extensionValue);
@@ -151,8 +149,7 @@ implements CertAttrSet<String> {
       * Return user readable form of extension.
       */
      public String toString() {
-         String s = super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
-         return s;
+         return super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
      }
 
      /**
@@ -160,16 +157,14 @@ implements CertAttrSet<String> {
       *
       * @param out the DerOutputStream to encode the extension to.
       */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
+     @Override
+     public void encode(DerOutputStream out) throws IOException {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.InhibitAnyPolicy_Id;
              critical = true;
              encodeThis();
          }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
+         super.encode(out);
      }
 
     /**
@@ -214,40 +209,14 @@ implements CertAttrSet<String> {
                                   "CertAttrSet:InhibitAnyPolicy.");
     }
 
-    /**
-     * Delete the attribute value.
-     *
-     * @param name name of attribute to delete. Must be SKIP_CERTS.
-     * @throws IOException on error.  In this case, IOException will always be
-     *                     thrown, because the only attribute, SKIP_CERTS, is
-     *                     required.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(SKIP_CERTS))
-            throw new IOException("Attribute " + SKIP_CERTS +
-                                  " may not be deleted.");
-        else
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:InhibitAnyPolicy.");
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     *
-     * @return enumeration of elements
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(SKIP_CERTS);
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      *
      * @return name of attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }

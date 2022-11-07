@@ -281,7 +281,9 @@ bool ConnectionGraph::compute_escape() {
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
   //    scalar replaceable allocations on alloc_worklist for processing
   //    in split_unique_types().
+  GrowableArray<JavaObjectNode*> jobj_worklist;
   int non_escaped_length = non_escaped_allocs_worklist.length();
+  bool found_nsr_alloc = false;
   for (int next = 0; next < non_escaped_length; next++) {
     JavaObjectNode* ptn = non_escaped_allocs_worklist.at(next);
     bool noescape = (ptn->escape_state() == PointsToNode::NoEscape);
@@ -292,8 +294,22 @@ bool ConnectionGraph::compute_escape() {
     if (noescape && ptn->scalar_replaceable()) {
       adjust_scalar_replaceable_state(ptn);
       if (ptn->scalar_replaceable()) {
-        alloc_worklist.append(ptn->ideal_node());
+        jobj_worklist.push(ptn);
+      } else {
+        found_nsr_alloc = true;
       }
+    }
+  }
+
+  // Propagate NSR (Not Scalar Replaceable) state.
+  if (found_nsr_alloc) {
+    find_scalar_replaceable_allocs(jobj_worklist);
+  }
+
+  for (int next = 0; next < jobj_worklist.length(); ++next) {
+    JavaObjectNode* jobj = jobj_worklist.at(next);
+    if (jobj->scalar_replaceable()) {
+      alloc_worklist.append(jobj->ideal_node());
     }
   }
 
@@ -1861,15 +1877,19 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
         set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored at unknown offset"));
         return;
       }
-      // 2. An object is not scalar replaceable if the field into which it is
-      // stored has multiple bases one of which is null.
-      if (field->base_count() > 1) {
-        for (BaseIterator i(field); i.has_next(); i.next()) {
-          PointsToNode* base = i.get();
-          if (base == null_obj) {
-            set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with potentially null base"));
-            return;
-          }
+      for (BaseIterator i(field); i.has_next(); i.next()) {
+        PointsToNode* base = i.get();
+        // 2. An object is not scalar replaceable if the field into which it is
+        // stored has multiple bases one of which is null.
+        if ((base == null_obj) && (field->base_count() > 1)) {
+          set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with potentially null base"));
+          return;
+        }
+        // 2.5. An object is not scalar replaceable if the field into which it is
+        // stored has NSR base.
+        if (!base->scalar_replaceable()) {
+          set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with NSR base"));
+          return;
         }
       }
     }
@@ -1953,6 +1973,36 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
           // Mark all bases.
           set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "may point to more than one object"));
           set_not_scalar_replaceable(base NOT_PRODUCT(COMMA "may point to more than one object"));
+        }
+      }
+    }
+  }
+}
+
+// Propagate NSR (Not scalar replaceable) state.
+void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist) {
+  int jobj_length = jobj_worklist.length();
+  bool found_nsr_alloc = true;
+  while (found_nsr_alloc) {
+    found_nsr_alloc = false;
+    for (int next = 0; next < jobj_length; ++next) {
+      JavaObjectNode* jobj = jobj_worklist.at(next);
+      for (UseIterator i(jobj); (jobj->scalar_replaceable() && i.has_next()); i.next()) {
+        PointsToNode* use = i.get();
+        if (use->is_Field()) {
+          FieldNode* field = use->as_Field();
+          assert(field->is_oop() && field->scalar_replaceable(), "sanity");
+          assert(field->offset() != Type::OffsetBot, "sanity");
+          for (BaseIterator i(field); i.has_next(); i.next()) {
+            PointsToNode* base = i.get();
+            // An object is not scalar replaceable if the field into which
+            // it is stored has NSR base.
+            if ((base != null_obj) && !base->scalar_replaceable()) {
+              set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with NSR base"));
+              found_nsr_alloc = true;
+              break;
+            }
+          }
         }
       }
     }

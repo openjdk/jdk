@@ -90,6 +90,8 @@ public class AquaKeyBindings {
         "alt KP_LEFT", DefaultEditorKit.previousWordAction,
         "alt RIGHT", DefaultEditorKit.nextWordAction,
         "alt KP_RIGHT", DefaultEditorKit.nextWordAction,
+        "alt UP", DefaultEditorKit.beginLineUpAction,
+        "alt DOWN", DefaultEditorKit.endLineDownAction,
         "shift alt LEFT", DefaultEditorKit.selectionPreviousWordAction,
         "shift alt KP_LEFT", DefaultEditorKit.selectionPreviousWordAction,
         "shift alt RIGHT", DefaultEditorKit.selectionNextWordAction,
@@ -220,6 +222,10 @@ public class AquaKeyBindings {
             "KP_UP", "aquaSelectPrevious",
             "DOWN", "aquaSelectNext",
             "KP_DOWN", "aquaSelectNext",
+            "alt DOWN", "aquaOpenPopupOrhighlightLast",
+            "alt KP_DOWN", "aquaOpenPopupOrhighlightLast",
+            "alt UP", "aquaOpenPopupOrhighlightFirst",
+            "alt KP_UP", "aquaOpenPopupOrhighlightFirst",
             "SPACE", "aquaSpacePressed" // "spacePopup"
         }));
     }

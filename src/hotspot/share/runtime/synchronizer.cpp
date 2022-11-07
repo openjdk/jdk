@@ -57,7 +57,13 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
+
+class ObjectMonitorsHashtable::PtrList :
+  public LinkedListImpl<ObjectMonitor*,
+                        ResourceObj::C_HEAP, mtThread,
+                        AllocFailStrategy::RETURN_NULL> {};
 
 class CleanupObjectMonitorsHashtable: StackObj {
  public:
@@ -78,7 +84,7 @@ void ObjectMonitorsHashtable::add_entry(void* key, ObjectMonitor* om) {
   ObjectMonitorsHashtable::PtrList* list = get_entry(key);
   if (list == nullptr) {
     // Create new list and add it to the hash table:
-    list = new (ResourceObj::C_HEAP, mtThread) ObjectMonitorsHashtable::PtrList();
+    list = new (ResourceObj::C_HEAP, mtThread) ObjectMonitorsHashtable::PtrList;
     add_entry(key, list);
   }
   list->add(om);  // Add the ObjectMonitor to the list.
@@ -234,7 +240,7 @@ ObjectMonitor* MonitorList::Iterator::next() {
 #endif // ndef DTRACE_ENABLED
 
 // This exists only as a workaround of dtrace bug 6254741
-int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
+int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   DTRACE_MONITOR_PROBE(waited, monitor, obj(), thr);
   return 0;
 }
@@ -972,13 +978,6 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
   }
 }
 
-// Deprecated -- use FastHashCode() instead.
-
-intptr_t ObjectSynchronizer::identity_hash_value_for(Handle obj) {
-  return FastHashCode(Thread::current(), obj());
-}
-
-
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {
   assert(current == JavaThread::current(), "Can only be called on current thread");
@@ -1002,7 +1001,6 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   return false;
 }
 
-// FIXME: jvmti should call this
 JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   oop obj = h_obj();
   address owner = NULL;
@@ -1194,7 +1192,6 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   event->set_monitorClass(obj->klass());
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);

@@ -69,7 +69,7 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
         Asserts.assertLT(-1, 0, "message");
 
         checkNotCompiled();
-        guaranteedSweep();
+        WHITE_BOX.fullGC();
         int usage = getTotalUsage();
 
         compile();
@@ -78,13 +78,13 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
         Asserts.assertGT(afterCompilation, usage,
                 "compilation should increase usage");
 
-        guaranteedSweep();
+        WHITE_BOX.fullGC();
         int afterSweep = getTotalUsage();
         Asserts.assertLTE(afterSweep, afterCompilation,
                 "sweep shouldn't increase usage");
 
         deoptimize();
-        guaranteedSweep();
+        WHITE_BOX.fullGC();
         int afterDeoptAndSweep = getTotalUsage();
         Asserts.assertLT(afterDeoptAndSweep, afterSweep,
                 "sweep after deoptimization should decrease usage");
@@ -96,12 +96,5 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
            usage += type.getMemoryPool().getUsage().getUsed();
         }
         return usage;
-    }
-    private void guaranteedSweep() {
-        // not entrant -> ++stack_traversal_mark -> zombie -> flushed
-        for (int i = 0; i < 5; ++i) {
-            WHITE_BOX.fullGC();
-            WHITE_BOX.forceNMethodSweep();
-        }
     }
 }

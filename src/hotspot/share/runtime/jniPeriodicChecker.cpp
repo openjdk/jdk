@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 class JniPeriodicCheckerTask : public PeriodicTask {
   public:
      JniPeriodicCheckerTask(int interval_time) : PeriodicTask(interval_time) {}
-     void task() { os::run_periodic_checks(); }
+     void task() { os::run_periodic_checks(tty); }
      static void engage();
      static void disengage();
 };

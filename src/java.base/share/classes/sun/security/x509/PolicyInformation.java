@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.PolicyQualifierInfo;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -87,7 +86,7 @@ public class PolicyInformation {
             throw new NullPointerException("policyQualifiers is null");
         }
         this.policyQualifiers =
-            new LinkedHashSet<PolicyQualifierInfo>(policyQualifiers);
+                new LinkedHashSet<>(policyQualifiers);
         this.policyIdentifier = policyIdentifier;
     }
 
@@ -104,7 +103,7 @@ public class PolicyInformation {
         }
         policyIdentifier = new CertificatePolicyId(val.data.getDerValue());
         if (val.data.available() != 0) {
-            policyQualifiers = new LinkedHashSet<PolicyQualifierInfo>();
+            policyQualifiers = new LinkedHashSet<>();
             DerValue opt = val.data.getDerValue();
             if (opt.tag != DerValue.tag_Sequence)
                 throw new IOException("Invalid encoding of PolicyInformation");
@@ -125,9 +124,8 @@ public class PolicyInformation {
      * @return true iff the PolicyInformation objects match
      */
     public boolean equals(Object other) {
-        if (!(other instanceof PolicyInformation))
+        if (!(other instanceof PolicyInformation piOther))
             return false;
-        PolicyInformation piOther = (PolicyInformation)other;
 
         if (!policyIdentifier.equals(piOther.getPolicyIdentifier()))
             return false;
@@ -214,41 +212,6 @@ public class PolicyInformation {
             throw new IOException("Attribute name [" + name +
                 "] not recognized by PolicyInformation");
         }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(QUALIFIERS)) {
-            policyQualifiers = Collections.emptySet();
-        } else if (name.equalsIgnoreCase(ID)) {
-            throw new IOException("Attribute ID may not be deleted from " +
-                "PolicyInformation.");
-        } else {
-            //ID may not be deleted
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(ID);
-        elements.addElement(QUALIFIERS);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return NAME;
     }
 
     /**

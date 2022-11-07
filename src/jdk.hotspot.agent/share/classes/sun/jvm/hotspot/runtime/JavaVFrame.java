@@ -61,7 +61,12 @@ public abstract class JavaVFrame extends VFrame {
                  lockState, hobj.asLongValue());
 
       Klass klass = Oop.getKlassForOopHandle(hobj);
-      String klassName = klass.getName().asString();
+      String klassName;
+      if (klass != null) {
+        klassName = klass.getName().asString();
+      } else {
+        klassName = "<unknown class>";
+      }
       tty.print("(a ");
       if (klassName.equals("java/lang/Class")) {
         Oop obj = VM.getVM().getObjectHeap().newOop(hobj);

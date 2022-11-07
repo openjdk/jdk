@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import java.security.cert.*;
 import java.util.*;
@@ -114,7 +113,7 @@ public class X509CertInfo implements CertAttrSet<String> {
     private byte[]      rawCertInfo = null;
 
     // The certificate attribute name to integer mapping stored here
-    private static final Map<String,Integer> map = new HashMap<String,Integer>();
+    private static final Map<String,Integer> map = new HashMap<>();
     static {
         map.put(VERSION, Integer.valueOf(ATTR_VERSION));
         map.put(SERIAL_NUMBER, Integer.valueOf(ATTR_SERIAL));
@@ -179,41 +178,15 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @exception CertificateException on encoding errors.
      * @exception IOException on other errors.
      */
-    public void encode(OutputStream out)
-    throws CertificateException, IOException {
+    @Override
+    public void encode(DerOutputStream out)
+            throws CertificateException, IOException {
         if (rawCertInfo == null) {
-            DerOutputStream tmp = new DerOutputStream();
-            emit(tmp);
-            rawCertInfo = tmp.toByteArray();
+            emit(out);
+            rawCertInfo = out.toByteArray();
+        } else {
+            out.write(rawCertInfo.clone());
         }
-        out.write(rawCertInfo.clone());
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(VERSION);
-        elements.addElement(SERIAL_NUMBER);
-        elements.addElement(ALGORITHM_ID);
-        elements.addElement(ISSUER);
-        elements.addElement(VALIDITY);
-        elements.addElement(SUBJECT);
-        elements.addElement(KEY);
-        elements.addElement(ISSUER_ID);
-        elements.addElement(SUBJECT_ID);
-        elements.addElement(EXTENSIONS);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
     }
 
     /**
@@ -342,7 +315,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 }
             }
             Map<String,Extension> invalid = extensions.getUnparseableExtensions();
-            if (invalid.isEmpty() == false) {
+            if (!invalid.isEmpty()) {
                 sb.append("\nUnparseable certificate extensions: ")
                     .append(invalid.size());
                 int i = 1;
@@ -448,84 +421,6 @@ public class X509CertInfo implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the certificate attribute.
-     *
-     * @param name the name of the Certificate attribute.
-     * @exception CertificateException on invalid attributes.
-     * @exception IOException on other errors.
-     */
-    public void delete(String name)
-    throws CertificateException, IOException {
-        X509AttributeName attrName = new X509AttributeName(name);
-
-        int attr = attributeMap(attrName.getPrefix());
-        if (attr == 0) {
-            throw new CertificateException("Attribute name not recognized: "
-                                           + name);
-        }
-        // set rawCertInfo to null, so that we are forced to re-encode
-        rawCertInfo = null;
-        String suffix = attrName.getSuffix();
-
-        switch (attr) {
-        case ATTR_VERSION:
-            if (suffix == null) {
-                version = null;
-            } else {
-                version.delete(suffix);
-            }
-            break;
-        case (ATTR_SERIAL):
-            if (suffix == null) {
-                serialNum = null;
-            } else {
-                serialNum.delete(suffix);
-            }
-            break;
-        case (ATTR_ALGORITHM):
-            if (suffix == null) {
-                algId = null;
-            } else {
-                algId.delete(suffix);
-            }
-            break;
-        case (ATTR_ISSUER):
-            issuer = null;
-            break;
-        case (ATTR_VALIDITY):
-            if (suffix == null) {
-                interval = null;
-            } else {
-                interval.delete(suffix);
-            }
-            break;
-        case (ATTR_SUBJECT):
-            subject = null;
-            break;
-        case (ATTR_KEY):
-            if (suffix == null) {
-                pubKey = null;
-            } else {
-                pubKey.delete(suffix);
-            }
-            break;
-        case (ATTR_ISSUER_ID):
-            issuerUniqueId = null;
-            break;
-        case (ATTR_SUBJECT_ID):
-            subjectUniqueId = null;
-            break;
-        case (ATTR_EXTENSIONS):
-            if (suffix == null) {
-                extensions = null;
-            } else {
-                if (extensions != null)
-                   extensions.delete(suffix);
-            }
-            break;
-        }
-    }
 
     /**
      * Get the certificate attribute.
@@ -717,7 +612,7 @@ public class X509CertInfo implements CertAttrSet<String> {
      */
     private void verifyCert(X500Name subject,
         CertificateExtensions extensions)
-        throws CertificateParsingException, IOException {
+        throws CertificateParsingException {
 
         // if SubjectName is empty, check for SubjectAlternativeNameExtension
         if (subject.isEmpty()) {
@@ -726,8 +621,8 @@ public class X509CertInfo implements CertAttrSet<String> {
                         "incomplete: subject field is empty, and certificate " +
                         "has no extensions");
             }
-            SubjectAlternativeNameExtension subjectAltNameExt = null;
-            GeneralNames names = null;
+            SubjectAlternativeNameExtension subjectAltNameExt;
+            GeneralNames names;
             try {
                 subjectAltNameExt = (SubjectAlternativeNameExtension)
                         extensions.get(SubjectAlternativeNameExtension.NAME);
@@ -744,7 +639,7 @@ public class X509CertInfo implements CertAttrSet<String> {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: subject field is empty, and " +
                         "SubjectAlternativeName extension is empty");
-            } else if (subjectAltNameExt.isCritical() == false) {
+            } else if (!subjectAltNameExt.isCritical()) {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: SubjectAlternativeName extension MUST " +
                         "be marked critical when subject field is empty");

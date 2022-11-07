@@ -137,11 +137,10 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
             }
             CertPathParameters params =
                 ((CertPathTrustManagerParameters)spec).getParameters();
-            if (!(params instanceof PKIXBuilderParameters)) {
+            if (!(params instanceof PKIXBuilderParameters pkixParams)) {
                 throw new InvalidAlgorithmParameterException
                     ("Encapsulated parameters must be PKIXBuilderParameters");
             }
-            PKIXBuilderParameters pkixParams = (PKIXBuilderParameters)params;
             return new X509TrustManagerImpl(Validator.TYPE_PKIX, pkixParams);
         }
     }

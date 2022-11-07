@@ -173,8 +173,6 @@ address StubRoutines::_dtan = NULL;
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 
-RuntimeStub* StubRoutines::_cont_doYield_stub = NULL;
-address StubRoutines::_cont_doYield       = NULL;
 address StubRoutines::_cont_thaw          = NULL;
 address StubRoutines::_cont_returnBarrier = NULL;
 address StubRoutines::_cont_returnBarrierExc = NULL;

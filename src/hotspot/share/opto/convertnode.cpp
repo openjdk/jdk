@@ -163,6 +163,21 @@ const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
+const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return Type::TOP;
+  if( t == Type::FLOAT ) return TypeInt::SHORT;
+  const TypeF *tf = t->is_float_constant();
+  return TypeInt::make( SharedRuntime::f2hf( tf->getf() ) );
+}
+
+//------------------------------Identity---------------------------------------
+Node* ConvF2HFNode::Identity(PhaseGVN* phase) {
+  return (in(1)->Opcode() == Op_ConvHF2F) ? in(1)->in(1) : this;
+}
+
+//=============================================================================
+//------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
@@ -217,6 +232,18 @@ Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
   return NULL;
+}
+
+//=============================================================================
+//------------------------------Value------------------------------------------
+const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return Type::TOP;
+  if( t == TypeInt::SHORT ) return Type::FLOAT;
+  const TypeInt *ti = t->is_int();
+  if ( ti->is_con() ) return TypeF::make( SharedRuntime::hf2f( ti->get_con() ) );
+
+  return bottom_type();
 }
 
 //=============================================================================

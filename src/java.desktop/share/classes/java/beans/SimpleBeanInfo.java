@@ -37,7 +37,7 @@ import java.security.PrivilegedAction;
  * BeanInfo classes.
  * <p>
  * It defaults to providing "noop" information, and can be selectively
- * overriden to provide more explicit information on chosen topics.
+ * overridden to provide more explicit information on chosen topics.
  * When the introspector sees the "noop" values, it will apply low
  * level introspection and design patterns to automatically analyze
  * the target bean.

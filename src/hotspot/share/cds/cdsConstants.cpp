@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,10 @@ CDSConst CDSConstants::offsets[] = {
   { "GenericCDSFileMapHeader::_crc",                       offset_of(GenericCDSFileMapHeader, _crc)            },
   { "GenericCDSFileMapHeader::_version",                   offset_of(GenericCDSFileMapHeader, _version)        },
   { "GenericCDSFileMapHeader::_header_size",               offset_of(GenericCDSFileMapHeader, _header_size)    },
+  { "GenericCDSFileMapHeader::_common_app_classpath_prefix_size", offset_of(GenericCDSFileMapHeader, _common_app_classpath_prefix_size) },
   { "GenericCDSFileMapHeader::_base_archive_name_offset",  offset_of(GenericCDSFileMapHeader, _base_archive_name_offset) },
   { "GenericCDSFileMapHeader::_base_archive_name_size",    offset_of(GenericCDSFileMapHeader, _base_archive_name_size)   },
-  { "CDSFileMapHeaderBase::_space[0]",                     offset_of(CDSFileMapHeaderBase, _space)             },
+  { "CDSFileMapHeaderBase::_regions[0]",                   offset_of(CDSFileMapHeaderBase, _regions)           },
   { "FileMapHeader::_jvm_ident",                           offset_of(FileMapHeader, _jvm_ident)                },
   { "CDSFileMapRegion::_crc",                              offset_of(CDSFileMapRegion, _crc)                   },
   { "CDSFileMapRegion::_used",                             offset_of(CDSFileMapRegion, _used)                  },

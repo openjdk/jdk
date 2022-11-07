@@ -149,7 +149,7 @@ template <class T> class EventLogBase : public EventLog {
   void print(outputStream* out, EventRecord<T>& e) {
     out->print("Event: %.3f ", e.timestamp);
     if (e.thread != NULL) {
-      out->print("Thread " INTPTR_FORMAT " ", p2i(e.thread));
+      out->print("Thread " PTR_FORMAT " ", p2i(e.thread));
     }
     print(out, e.data);
   }

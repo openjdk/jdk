@@ -29,6 +29,10 @@
 
 IsUnloadingBehaviour* IsUnloadingBehaviour::_current = NULL;
 
+bool IsUnloadingBehaviour::is_unloading(CompiledMethod* cm) {
+  return _current->has_dead_oop(cm) || cm->as_nmethod()->is_cold();
+}
+
 class IsCompiledMethodUnloadingOopClosure: public OopClosure {
   BoolObjectClosure *_cl;
   bool _is_unloading;
@@ -61,7 +65,7 @@ public:
   }
 };
 
-bool ClosureIsUnloadingBehaviour::is_unloading(CompiledMethod* cm) const {
+bool ClosureIsUnloadingBehaviour::has_dead_oop(CompiledMethod* cm) const {
   if (cm->is_nmethod()) {
     IsCompiledMethodUnloadingOopClosure cl(_cl);
     static_cast<nmethod*>(cm)->oops_do(&cl, true /* allow_dead */);

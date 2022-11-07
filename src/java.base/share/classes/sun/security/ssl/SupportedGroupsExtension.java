@@ -28,11 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLProtocolException;
 
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
@@ -90,7 +86,7 @@ final class SupportedGroupsExtension {
                     "Invalid supported_groups extension: unknown extra data"));
             }
 
-            if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
+            if (ngs.length == 0 || ngs.length % 2 != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_groups extension: incomplete data"));

@@ -71,6 +71,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -728,37 +729,6 @@ const TypeFunc* OptoRuntime::void_void_Type() {
    const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
    return TypeFunc::make(domain, range);
  }
-
- const TypeFunc* OptoRuntime::continuation_doYield_Type() {
-   // create input type (domain)
-   const Type **fields = TypeTuple::fields(0);
-   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-   // create result type (range)
-   fields = TypeTuple::fields(1);
-   fields[TypeFunc::Parms+0] = TypeInt::INT;
-   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-   return TypeFunc::make(domain, range);
- }
-
- const TypeFunc* OptoRuntime::continuation_jump_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(6);
-  fields[TypeFunc::Parms+0] = TypeLong::LONG;
-  fields[TypeFunc::Parms+1] = Type::HALF;
-  fields[TypeFunc::Parms+2] = TypeLong::LONG;
-  fields[TypeFunc::Parms+3] = Type::HALF;
-  fields[TypeFunc::Parms+4] = TypeLong::LONG;
-  fields[TypeFunc::Parms+5] = Type::HALF;
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+6, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-  return TypeFunc::make(domain, range);
- }
-
 
  const TypeFunc* OptoRuntime::jfr_write_checkpoint_Type() {
    // create input type (domain)
@@ -1750,9 +1720,9 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   }
   NamedCounter* c;
   if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(st.as_string());
+    c = new RTMLockingNamedCounter(st.freeze());
   } else {
-    c = new NamedCounter(st.as_string(), tag);
+    c = new NamedCounter(st.freeze(), tag);
   }
 
   // atomically add the new counter to the head of the list.  We only
@@ -1786,5 +1756,5 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   tempst.print(" at " INTPTR_FORMAT,  p2i(exception_pc));
   tempst.print("]");
 
-  st->print_raw_cr(tempst.as_string());
+  st->print_raw_cr(tempst.freeze());
 }

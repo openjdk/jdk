@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package sun.security.x509;
 
+import sun.security.util.DerOutputStream;
+
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.cert.CertificateException;
-import java.util.Enumeration;
 
 /**
  * This interface defines the methods required of a certificate attribute.
@@ -46,24 +46,17 @@ import java.util.Enumeration;
  * @see CertificateException
  */
 public interface CertAttrSet<T> {
-    /**
-     * Returns a short string describing this certificate attribute.
-     *
-     * @return value of this certificate attribute in
-     *         printable form.
-     */
-    String toString();
 
     /**
      * Encodes the attribute to the output stream in a format
      * that can be parsed by the <code>decode</code> method.
      *
-     * @param out the OutputStream to encode the attribute to.
+     * @param out the DerOutputStream to encode the attribute to.
      *
      * @exception CertificateException on encoding or validity errors.
      * @exception IOException on other errors.
      */
-    void encode(OutputStream out)
+    void encode(DerOutputStream out)
         throws CertificateException, IOException;
 
     /**
@@ -88,30 +81,4 @@ public interface CertAttrSet<T> {
      */
     Object get(String name)
         throws CertificateException, IOException;
-
-    /**
-     * Deletes an attribute value from this CertAttrSet.
-     *
-     * @param name the name of the attribute to delete.
-     *
-     * @exception CertificateException on attribute handling errors.
-     * @exception IOException on other errors.
-     */
-    void delete(String name)
-        throws CertificateException, IOException;
-
-    /**
-     * Returns an enumeration of the names of the attributes existing within
-     * this attribute.
-     *
-     * @return an enumeration of the attribute names.
-     */
-    Enumeration<T> getElements();
-
-    /**
-     * Returns the name (identifier) of this CertAttrSet.
-     *
-     * @return the name of this CertAttrSet.
-     */
-    String getName();
 }

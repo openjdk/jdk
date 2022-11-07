@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import java.util.*;
-import java.util.Collections;
 
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
@@ -57,7 +55,7 @@ import sun.security.util.ObjectIdentifier;
  * the scheme-specific-part may be case-sensitive. When comparing
  * URIs, conforming implementations MUST compare the scheme and host
  * without regard to case, but assume the remainder of the
- * scheme-specific-part is case sensitive.  Processing rules for other
+ * scheme-specific-part is case-sensitive.  Processing rules for other
  * values are not defined by this specification.  If the
  * distributionPoint omits reasons, the CRL MUST include revocations
  * for all reasons. If the distributionPoint omits cRLIssuer, the CRL
@@ -101,7 +99,7 @@ public class CRLDistributionPointsExtension extends Extension
      */
     private List<DistributionPoint> distributionPoints;
 
-    private String extensionName;
+    private final String extensionName;
 
     /**
      * Create a CRLDistributionPointsExtension from a List of
@@ -177,7 +175,7 @@ public class CRLDistributionPointsExtension extends Extension
             throw new IOException("Invalid encoding for " + extensionName +
                                   " extension.");
         }
-        distributionPoints = new ArrayList<DistributionPoint>();
+        distributionPoints = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             DistributionPoint point = new DistributionPoint(seq);
@@ -189,6 +187,7 @@ public class CRLDistributionPointsExtension extends Extension
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return extensionName;
     }
@@ -199,7 +198,8 @@ public class CRLDistributionPointsExtension extends Extension
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         encode(out, PKIXExtensions.CRLDistributionPoints_Id, false);
     }
 
@@ -207,17 +207,15 @@ public class CRLDistributionPointsExtension extends Extension
      * Write the extension to the DerOutputStream.
      * (Also called by the subclass)
      */
-    protected void encode(OutputStream out, ObjectIdentifier extensionId,
-        boolean isCritical) throws IOException {
+    protected void encode(DerOutputStream out, ObjectIdentifier extensionId,
+            boolean isCritical) throws IOException {
 
-        DerOutputStream tmp = new DerOutputStream();
         if (this.extensionValue == null) {
             this.extensionId = extensionId;
             this.critical = isCritical;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**
@@ -251,30 +249,7 @@ public class CRLDistributionPointsExtension extends Extension
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            distributionPoints =
-                    Collections.<DistributionPoint>emptyList();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(POINTS);
-        return elements.elements();
-    }
 
      // Encode this extension value
     private void encodeThis() throws IOException {

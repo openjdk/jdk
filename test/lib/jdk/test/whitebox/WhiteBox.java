@@ -401,7 +401,6 @@ public class WhiteBox {
       return allocateCodeBlob( intSize, type);
   }
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   private native long getMethodData0(Executable method);

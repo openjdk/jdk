@@ -67,11 +67,11 @@ G1EvacStats* G1CollectedHeap::alloc_buffer_stats(G1HeapRegionAttr dest) {
 
 size_t G1CollectedHeap::desired_plab_sz(G1HeapRegionAttr dest) {
   size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_size(workers()->active_workers());
-  // Prevent humongous PLAB sizes for two reasons:
-  // * PLABs are allocated using a similar paths as oops, but should
-  //   never be in a humongous region
-  // * Allowing humongous PLABs needlessly churns the region free lists
-  return MIN2(_humongous_object_threshold_in_words, gclab_word_size);
+  return clamp_plab_size(gclab_word_size);
+}
+
+inline size_t G1CollectedHeap::clamp_plab_size(size_t value) const {
+  return clamp(value, PLAB::min_size(), _humongous_object_threshold_in_words);
 }
 
 // Inline functions for G1CollectedHeap
@@ -168,8 +168,8 @@ bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) const {
   return _region_attr.is_in_cset(hr);
 }
 
-bool G1CollectedHeap::is_in_cset_or_humongous(const oop obj) {
-  return _region_attr.is_in_cset_or_humongous(cast_from_oop<HeapWord*>(obj));
+bool G1CollectedHeap::is_in_cset_or_humongous_candidate(const oop obj) {
+  return _region_attr.is_in_cset_or_humongous_candidate(cast_from_oop<HeapWord*>(obj));
 }
 
 G1HeapRegionAttr G1CollectedHeap::region_attr(const void* addr) const {
@@ -180,8 +180,8 @@ G1HeapRegionAttr G1CollectedHeap::region_attr(uint idx) const {
   return _region_attr.get_by_index(idx);
 }
 
-void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
-  _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
+void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint index) {
+  _region_attr.set_humongous_candidate(index, region_at(index)->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
@@ -213,6 +213,11 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
   return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
 }
 
+inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
+  Klass* k = obj->klass();
+  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
   return hr->is_obj_dead(obj, hr->parsable_bottom());
 }
@@ -233,8 +238,7 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
-  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
-  return _region_attr.is_humongous(region);
+  return _region_attr.is_humongous_candidate(region);
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
@@ -245,8 +249,8 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   // but this is benign because the transition is unidirectional, from
   // humongous-candidate to not, and the write, in evacuation, is
   // separated from the read, in post-evacuation.
-  if (_region_attr.is_humongous(region)) {
-    _region_attr.clear_humongous(region);
+  if (_region_attr.is_humongous_candidate(region)) {
+    _region_attr.clear_humongous_candidate(region);
   }
 }
 

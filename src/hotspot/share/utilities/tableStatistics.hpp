@@ -30,7 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
-class TableRateStatistics : CHeapObj<mtStatistics> {
+class TableRateStatistics : public CHeapObj<mtStatistics> {
 
   friend class TableStatistics;
 

@@ -110,7 +110,6 @@ class ClassPathZipEntry: public ClassPathEntry {
   virtual ~ClassPathZipEntry();
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
-  void contents_do(void f(const char* name, void* context), void* context);
 };
 
 
