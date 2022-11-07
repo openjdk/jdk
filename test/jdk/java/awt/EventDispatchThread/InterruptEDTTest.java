@@ -83,12 +83,6 @@ public class InterruptEDTTest {
         edt.interrupt();
         ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
         try {
-            EventQueue.invokeAndWait(() -> {
-                xLocation = frame.getX();
-                yLocation = frame.getY();
-                width = frame.getWidth();
-                height = frame.getHeight();
-            });
             robot.mouseMove(xLocation + width / 3, yLocation + height / 3);
         } catch (Exception exx) {
             exx.printStackTrace();
