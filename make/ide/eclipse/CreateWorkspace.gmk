@@ -119,8 +119,7 @@ EmitMatchingAntTarget = \
     $(call EmitEmptyLine, $(ANT_BUILDFILE))
 
 ################################################################################
-# Define a native toolchain configuration that can be used by
-# SetupNativeCompilation calls
+# Create an Eclipse Workspace with the specified nature
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
@@ -139,8 +138,13 @@ define SetupEclipseWorkspaceBody
     $$(error Unrecognised nature $$($1_NATURE) specified for Eclipse Workspace)
   endif
 
-  # Create both unconditionally and kill 2 birds with one stone
-  $$(shell mkdir -p $(IDE_OUTPUTDIR)/.settings)
+  # ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
+  #   ifeq ($(TOOLCHAIN_TYPE), microsoft)
+  #     $$(error Visual C++ is not yet supported as an indexer for native workspaces!)
+  #   endif
+  # endif
+
+  $$(shell mkdir -p $(IDE_OUTPUTDIR))
 
   # Start with the Workspace file first
   $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(WORKSPACE_FILE))
@@ -239,7 +243,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" moduleId="org.eclipse.cdt.core.settings" name="Java SE">, $(NATIVE_FILE))
     $$(call AppendFile,                <externalSettings/>, $(NATIVE_FILE))
 
-    # For some strange reason Eclipse requires the binary parsers be listed for the workspace to be recognised as a C/C++ one
+    # For some strange reason Eclipse requires that the binary parsers be listed for the workspace to be recognised as a C/C++ one
     $$(call AppendFile,                <extensions>, $(NATIVE_FILE))
     $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>, $(NATIVE_FILE))
     $$(call AppendFile,                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>, $(NATIVE_FILE))
@@ -253,6 +257,8 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,            <storageModule moduleId="cdtBuildSystem" version="4.0.0">, $(NATIVE_FILE))
     $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java SE" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
     $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
+    # $$(call AppendFile,                        <toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.$(call RandomDigits, 9)" name="C/C++ Compiler" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">, $(NATIVE_FILE))
+    # $$(call AppendFile,                            <targetPlatform id="org.eclipse.cdt.build.core.prefbase.toolchain.$(call RandomDigits, 9).$(WORKSPACE_ID)" name=""/>, $(NATIVE_FILE))
     $$(call AppendFile,                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">, $(NATIVE_FILE))
     $$(call AppendFile,                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>, $(NATIVE_FILE))
     $$(call AppendFile,                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.$(WORKSPACE_ID)" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>, $(NATIVE_FILE))
@@ -306,6 +312,8 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
     $$(call AppendFile,</cproject>, $(NATIVE_FILE))
 
+    $$(shell mkdir -p $(IDE_OUTPUTDIR)/.settings)
+
     $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,<project>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java SE">, $(LANGUAGE_SETTINGS))
@@ -328,7 +336,10 @@ define SetupEclipseWorkspaceBody
 
     # Eclipse seems to work without this, but I'll leave this here in case we suddenly
     # need it if the way Language Settings Providers work suddenly change in the future.
-    # This would also be helpful for when we eventually make this system more flexible and able to work with Visual C++ too.
+    # This would also be a helpful reference for when we eventually make this system more
+    # flexible and able to work with Visual C++ too. (I say we, but I'm likely to be the
+    # only one insane enough to be willing to go through the pain that such an overhaul
+    # would put anyone through...)
     # $$(call AppendFile,            <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT GCC Built-in Compiler Settings" parameter="$$(DOLLAR){COMMAND} $$(DOLLAR){FLAGS} -E -P -v -dD &quot;$$(DOLLAR){INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.gcc"/>, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,                <language-scope id="org.eclipse.cdt.core.g++"/>, $(LANGUAGE_SETTINGS))
@@ -337,12 +348,23 @@ define SetupEclipseWorkspaceBody
 
     # Now for the tricky part: Setting up the proper environment and macros that were defined during configure...
     $$(call AppendFile,            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
-    #                <language id="org.eclipse.cdt.core.g++">
-    #                    <resource project-relative-path="">
-    #                        <entry kind="macro" name="PRODUCT" value=""/>
-    #                        <entry kind="macro" name="_WINDOWS" value=""/>
-    #                    </resource>
-    #                </language>
+    $$(call AppendFile,                <language id="org.eclipse.cdt.core.gcc">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                   <resource project-relative-path="">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                       <entry kind="macro" name="PRODUCT" value=""/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                       <entry kind="macro" name="_WINDOWS" value=""/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                   </resource>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    $$(call AppendFile,            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                <language id="org.eclipse.cdt.core.g++">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                    <resource project-relative-path="">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                        <entry kind="macro" name="PRODUCT" value=""/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                        <entry kind="macro" name="_WINDOWS" value=""/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
 
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
@@ -369,10 +391,9 @@ define SetupEclipseWorkspaceBody
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )
 
-    # If CDT support was indicated there's no harm in including make, the cost of
-    # indexing the make system is virtually non-existent
+    # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
+    # including the make sources as well, since the cost of indexing them is miniscule
     $$(call EmitLinkedDirectory, make,$(TOPDIR)/make)
-
     $$(call EmitLinkedDirectory, src/hotspot,$(TOPDIR)/src/hotspot)
 
   endif
