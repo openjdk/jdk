@@ -4099,7 +4099,7 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_int64(0x0E0D0C0F0A09080BUL);
 
     __ align(CodeEntryAlignment);
-     StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
     address start = __ pc();
     __ enter();
 
@@ -4134,8 +4134,8 @@ class StubGenerator: public StubCodeGenerator {
     //      Addr(4) -> All lanes workSt[i + 1], etc.
     __ mov(tmpAddr, state);
     for (i = 0; i < 16; i += 4) {
-        __ ld4r(workSt[i], workSt[i + 1], workSt[i + 2], workSt[i + 3],
-                __ T4S, __ post(tmpAddr, 16));
+      __ ld4r(workSt[i], workSt[i + 1], workSt[i + 2], workSt[i + 3], __ T4S,
+          __ post(tmpAddr, 16));
     }
 
     // Pull in constant data.  The first 16 bytes are the add overlay
@@ -4151,22 +4151,22 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_twoRounds);
 
     __ cc20_quarter_round(workSt[0], workSt[4], workSt[8], workSt[12],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
     __ cc20_quarter_round(workSt[1], workSt[5], workSt[9], workSt[13],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
     __ cc20_quarter_round(workSt[2], workSt[6], workSt[10], workSt[14],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
     __ cc20_quarter_round(workSt[3], workSt[7], workSt[11], workSt[15],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
 
     __ cc20_quarter_round(workSt[0], workSt[5], workSt[10], workSt[15],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
     __ cc20_quarter_round(workSt[1], workSt[6], workSt[11], workSt[12],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
     __ cc20_quarter_round(workSt[2], workSt[7], workSt[8], workSt[13],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
     __ cc20_quarter_round(workSt[3], workSt[4], workSt[9], workSt[14],
-            scratch, lrot8Tbl);
+        scratch, lrot8Tbl);
 
     // Decrement and iterate
     __ sub(loopCtr, loopCtr, 1);
@@ -4179,12 +4179,12 @@ class StubGenerator: public StubCodeGenerator {
     // 4 registers similar to what we did in the beginning.  Then
     // add the counter overlay onto workSt[12] at the end.
     for (i = 0; i < 16; i += 4) {
-        __ ld4r(stateFirst, stateSecond, stateThird, stateFourth,
-                __ T4S, __ post(tmpAddr, 16));
-        __ addv(workSt[i], __ T4S, workSt[i], stateFirst);
-        __ addv(workSt[i + 1], __ T4S, workSt[i + 1], stateSecond);
-        __ addv(workSt[i + 2], __ T4S, workSt[i + 2], stateThird);
-        __ addv(workSt[i + 3], __ T4S, workSt[i + 3], stateFourth);
+      __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S,
+          __ post(tmpAddr, 16));
+      __ addv(workSt[i], __ T4S, workSt[i], stateFirst);
+      __ addv(workSt[i + 1], __ T4S, workSt[i + 1], stateSecond);
+      __ addv(workSt[i + 2], __ T4S, workSt[i + 2], stateThird);
+      __ addv(workSt[i + 3], __ T4S, workSt[i + 3], stateFourth);
     }
     __ addv(workSt[12], __ T4S, workSt[12], origCtrState);    // Add ctr mask
 
@@ -4192,10 +4192,10 @@ class StubGenerator: public StubCodeGenerator {
     // to consecutive 4-byte offsets in the key stream buffer, then repeating
     // for the next element position.
     for (i = 0; i < 4; i++) {
-        for (j = 0; j < 16; j += 4) {
-            __ st4(workSt[j], workSt[j + 1], workSt[j + 2], workSt[j + 3],
-                    __ S, i, __ post(keystream, 16));
-        }
+      for (j = 0; j < 16; j += 4) {
+        __ st4(workSt[j], workSt[j + 1], workSt[j + 2], workSt[j + 3], __ S, i,
+            __ post(keystream, 16));
+      }
     }
 
     __ mov(r0, 256);             // Return length of output keystream
@@ -8044,7 +8044,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
-        StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+      StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
     }
 
     if (UseBASE64Intrinsics) {
