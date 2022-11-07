@@ -1643,8 +1643,15 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     requested_base = NULL;
   } else if (HeapShared::is_heap_region(region)) {
     assert(!DynamicDumpSharedSpaces, "must be");
-    requested_base = base;
-    dumptime_base = base; // This is the runtime address of the base (lower end) of this heap region.
+    // For UseCompressedOops == false:
+    //     For deterministic archive contents, we pretend that the dumptime heap
+    //     always starts at 0x10000000 (see HeapShared::to_requested_address()), so
+    //     requested_base and dumptime_base are NOT the actual address used at
+    //     dumptime for this region. However, the contents of this region are
+    //     patched as if the it started there.
+    // For UseCompressedOops == false, HeapShared::to_requested_address does nothing.
+    requested_base = (char*)HeapShared::to_requested_address((address)base);
+    dumptime_base = requested_base;
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
     requested_base = ArchiveBuilder::current()->to_requested(base);
@@ -2141,19 +2148,28 @@ bool FileMapInfo::can_use_heap_regions() {
 
   log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
                 max_heap_size()/M);
-  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(narrow_klass_base()), narrow_klass_shift());
-  log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
-                narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
-  log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+  if (header()->compressed_class_pointers()) {
+    log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
+                  p2i(narrow_klass_base()), narrow_klass_shift());
+  }
+  if (header()->compressed_oops()) {
+    log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
+                  narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+  }
+  log_info(cds)("    heap range %s= [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                header()->compressed_oops() ? "" : "(effective) ",
                 p2i(header()->heap_begin()), p2i(header()->heap_end()));
 
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
                 MaxHeapSize/M, HeapRegion::GrainBytes);
-  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
-  log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
-                CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+  if (UseCompressedClassPointers) {
+    log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
+                  p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
+  }
+  if (UseCompressedOops) {
+    log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
+                  CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+  }
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                 UseCompressedOops ? p2i(CompressedOops::begin()) :
                                     UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
