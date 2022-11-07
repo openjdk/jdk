@@ -42,30 +42,30 @@
  * @param table the SIMD register used as a table for 8 bit left rotations
  */
 void MacroAssembler::cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
-        FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
-        FloatRegister table) {
+    FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
+     FloatRegister table) {
 
-    // a += b, d ^= a, d <<<= 16
-    addv(aVec, T4S, aVec, bVec);
-    eor(dVec, T16B, dVec, aVec);
-    rev32(dVec, T8H, dVec);
+  // a += b, d ^= a, d <<<= 16
+  addv(aVec, T4S, aVec, bVec);
+  eor(dVec, T16B, dVec, aVec);
+  rev32(dVec, T8H, dVec);
 
-    // c += d, b ^= c, b <<<= 12
-    addv(cVec, T4S, cVec, dVec);
-    eor(scratch, T16B, bVec, cVec);
-    ushr(bVec, T4S, scratch, 20);
-    sli(bVec, T4S, scratch, 12);
+  // c += d, b ^= c, b <<<= 12
+  addv(cVec, T4S, cVec, dVec);
+  eor(scratch, T16B, bVec, cVec);
+  ushr(bVec, T4S, scratch, 20);
+  sli(bVec, T4S, scratch, 12);
 
-    // a += b, d ^= a, d <<<= 8
-    addv(aVec, T4S, aVec, bVec);
-    eor(dVec, T16B, dVec, aVec);
-    tbl(dVec, T16B, dVec,  1, table);
+  // a += b, d ^= a, d <<<= 8
+  addv(aVec, T4S, aVec, bVec);
+  eor(dVec, T16B, dVec, aVec);
+  tbl(dVec, T16B, dVec,  1, table);
 
-    // c += d, b ^= c, b <<<= 7
-    addv(cVec, T4S, cVec, dVec);
-    eor(scratch, T16B, bVec, cVec);
-    ushr(bVec, T4S, scratch, 25);
-    sli(bVec, T4S, scratch, 7);
+  // c += d, b ^= c, b <<<= 7
+  addv(cVec, T4S, cVec, dVec);
+  eor(scratch, T16B, bVec, cVec);
+  ushr(bVec, T4S, scratch, 25);
+  sli(bVec, T4S, scratch, 7);
 }
 
 /**
@@ -79,12 +79,12 @@ void MacroAssembler::cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
  *                  moving diagonal back to columnar.
  */
 void MacroAssembler::cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
-        FloatRegister dVec, bool colToDiag) {
-    int bShift = colToDiag ? 4 : 12;
-    int cShift = 8;
-    int dShift = colToDiag ? 12 : 4;
+    FloatRegister dVec, bool colToDiag) {
+  int bShift = colToDiag ? 4 : 12;
+  int cShift = 8;
+  int dShift = colToDiag ? 12 : 4;
 
-    ext(bVec, T16B, bVec, bVec, bShift);
-    ext(cVec, T16B, cVec, cVec, cShift);
-    ext(dVec, T16B, dVec, dVec, dShift);
+  ext(bVec, T16B, bVec, bVec, bShift);
+  ext(cVec, T16B, cVec, cVec, cShift);
+  ext(dVec, T16B, dVec, dVec, dShift);
 }
