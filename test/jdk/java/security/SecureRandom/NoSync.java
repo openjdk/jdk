@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /*
  * @test
  * @bug 7004967
- * @run main/othervm NoSync
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom NoSync
  * @summary SecureRandom should be more explicit about threading
  */
 public class NoSync {
