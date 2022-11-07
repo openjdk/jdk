@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
+#include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -531,7 +532,8 @@ private:
   ShenandoahPacer*           _pacer;
   ShenandoahVerifier*        _verifier;
 
-  ShenandoahPhaseTimings*    _phase_timings;
+  ShenandoahPhaseTimings*       _phase_timings;
+  ShenandoahEvacuationTracker*  _evac_tracker;
 
   ShenandoahControlThread*   control_thread()          { return _control_thread;    }
   ShenandoahRegulatorThread* regulator_thread()        { return _regulator_thread;  }
@@ -547,7 +549,8 @@ public:
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
-  ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
+  ShenandoahPhaseTimings*      phase_timings()   const { return _phase_timings;     }
+  ShenandoahEvacuationTracker* evac_tracker()    const { return  _evac_tracker;     }
 
   ShenandoahVerifier*        verifier();
 
@@ -827,6 +830,7 @@ public:
   size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
 
   static inline void increase_object_age(oop obj, uint additional_age);
+  static inline uint get_object_age(oop obj);
 
   void transfer_old_pointers_from_satb();
 private:
@@ -839,6 +843,8 @@ private:
 
   void try_inject_alloc_failure();
   bool should_inject_alloc_failure();
+
+  void report_promotion_failure(Thread* thread, size_t size);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP

@@ -469,7 +469,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, Shena
     size_t young_promoted = collection_set->get_young_bytes_to_be_promoted();
     size_t young_promoted_reserve_used = (size_t) (ShenandoahEvacWaste * young_promoted);
 
-    size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation() - young_promoted;
+    size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
     size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * young_evacuated);
 
     // We'll invoke heap->set_young_evac_reserve() further below, after we make additional adjustments to its value

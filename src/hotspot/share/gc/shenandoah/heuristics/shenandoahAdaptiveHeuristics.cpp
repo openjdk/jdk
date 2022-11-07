@@ -112,8 +112,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_young_cset;
       size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-      log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Cset: " SIZE_FORMAT
-                         "%s, Max Old CSet: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+      log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Evacuation: " SIZE_FORMAT
+                         "%s, Max Old Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
                          byte_size_in_proper_unit(max_young_cset),    proper_unit_for_byte_size(max_young_cset),
                          byte_size_in_proper_unit(max_old_cset),    proper_unit_for_byte_size(max_old_cset),
                          byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
@@ -164,15 +164,12 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
       size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-      log_info(gc, ergo)("Adaptive CSet Selection for YOUNG. Max CSet: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+      log_info(gc, ergo)("Adaptive CSet Selection for YOUNG. Max Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
                          byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
                          byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
       for (size_t idx = 0; idx < size; idx++) {
         ShenandoahHeapRegion* r = data[idx]._region;
-        size_t new_cset;
-        size_t region_garbage = r->garbage();
-        size_t new_garbage = cur_young_garbage + region_garbage;
         bool add_region = false;
 
         if (!r->is_old()) {
@@ -181,14 +178,13 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
             // Entire region will be promoted, This region does not impact young-gen evacuation reserve.  Memory has already
             // been set aside to hold evacuation results as advance_promotion_reserve.
             add_region = true;
-            new_cset = cur_cset;
             // Since all live data in this region is being evacuated from young-gen, it is as if this memory
             // is garbage insofar as young-gen is concerned.  Counting this as garbage reduces the need to
             // reclaim highly utilized young-gen regions just for the sake of finding min_garbage to reclaim
             // within youn-gen memory
             cur_young_garbage += r->get_live_data_bytes();
           } else if  (r->age() < InitialTenuringThreshold) {
-            new_cset = cur_cset + r->get_live_data_bytes();
+            size_t new_cset = cur_cset + r->get_live_data_bytes();
             size_t region_garbage = r->garbage();
             size_t new_garbage = cur_young_garbage + region_garbage;
             bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
@@ -214,7 +210,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
     size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
     size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-    log_info(gc, ergo)("Adaptive CSet Selection. Max CSet: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+    log_info(gc, ergo)("Adaptive CSet Selection. Max Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
                          byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
                          byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
@@ -363,8 +359,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (allocation_headroom < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),
-                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                 byte_size_in_proper_unit(min_threshold),       proper_unit_for_byte_size(min_threshold));
     return true;
   }
 
@@ -375,8 +371,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     if (allocation_headroom < init_threshold) {
       log_info(gc)("Trigger (%s): Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
                    _generation->name(), _gc_times_learned + 1, max_learn,
-                   byte_size_in_proper_unit(available),      proper_unit_for_byte_size(available),
-                   byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
+                   byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                   byte_size_in_proper_unit(init_threshold),      proper_unit_for_byte_size(init_threshold));
       return true;
     }
   }

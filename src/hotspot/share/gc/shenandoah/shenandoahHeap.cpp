@@ -528,6 +528,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _pacer(NULL),
   _verifier(NULL),
   _phase_timings(NULL),
+  _evac_tracker(new ShenandoahEvacuationTracker()),
   _monitoring_support(NULL),
   _memory_pool(NULL),
   _young_gen_memory_pool(NULL),
@@ -849,6 +850,43 @@ void ShenandoahHeap::handle_old_evacuation_failure() {
 
 void ShenandoahHeap::handle_promotion_failure() {
   old_heuristics()->handle_promotion_failure();
+}
+
+void ShenandoahHeap::report_promotion_failure(Thread* thread, size_t size) {
+  // We squelch excessive reports to reduce noise in logs.  Squelch enforcement is not "perfect" because
+  // this same code can be in-lined in multiple contexts, and each context will have its own copy of the static
+  // last_report_epoch and this_epoch_report_count variables.
+  const uint MaxReportsPerEpoch = 4;
+  static uint last_report_epoch = 0;
+  static uint epoch_report_count = 0;
+
+  size_t promotion_reserve;
+  size_t promotion_expended;
+
+  size_t gc_id = control_thread()->get_gc_id();
+
+  if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
+    {
+      // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
+      ShenandoahHeapLocker locker(lock());
+      promotion_reserve = get_promoted_reserve();
+      promotion_expended = get_promoted_expended();
+    }
+    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+    size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
+    const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
+
+    log_info(gc, ergo)("Promotion failed, size " SIZE_FORMAT ", has plab? %s, PLAB remaining: " SIZE_FORMAT
+                       ", plab promotions %s, promotion reserve: " SIZE_FORMAT ", promotion expended: " SIZE_FORMAT,
+                       size, plab == nullptr? "no": "yes",
+                       words_remaining, promote_enabled, promotion_reserve, promotion_expended);
+    if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
+      log_info(gc, ergo)("Squelching additional promotion failure reports for epoch %d", last_report_epoch);
+    } else if (gc_id != last_report_epoch) {
+      last_report_epoch = gc_id;;
+      epoch_report_count = 1;
+    }
+  }
 }
 
 HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) {
@@ -1730,6 +1768,10 @@ void ShenandoahHeap::print_tracing_info() const {
     ls.cr();
 
     shenandoah_policy()->print_gc_stats(&ls);
+
+    ls.cr();
+
+    evac_tracker()->print_global_on(&ls);
 
     ls.cr();
     ls.cr();

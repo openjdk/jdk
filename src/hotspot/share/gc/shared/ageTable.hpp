@@ -63,14 +63,15 @@ class AgeTable {
 
   // Merge another age table with the current one.  Used
   // for parallel young generation gc.
-  void merge(AgeTable* subTable);
+  void merge(const AgeTable* subTable);
 
   // Calculate new tenuring threshold based on age information.
   uint compute_tenuring_threshold(size_t desired_survivor_size);
   void print_age_table(uint tenuring_threshold);
+  void print_on(outputStream* st, uint tenuring_threshold);
 
  private:
-
+  bool _use_perf_data;
   PerfVariable* _perf_sizes[table_size];
 };
 

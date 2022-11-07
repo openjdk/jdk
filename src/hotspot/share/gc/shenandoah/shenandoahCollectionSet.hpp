@@ -48,9 +48,7 @@ private:
   size_t                _used;
   size_t                _region_count;
   size_t                _immediate_trash;
-  size_t                _evacuation_reserve; // How many bytes reserved in generation for evacuation replicas.  This does
-                                             // not include bytes reserved for old-generation replicas.  The value is
-                                             // conservative in that memory may be reserved for objects that will be promoted.
+
   size_t                _young_bytes_to_evacuate;
   size_t                _young_bytes_to_promote;
   size_t                _old_bytes_to_evacuate;
@@ -104,10 +102,8 @@ public:
 
   // It is not known how many of these bytes will be promoted.
   inline size_t get_young_bytes_reserved_for_evacuation();
-  inline void reserve_young_bytes_for_evacuation(size_t byte_count);
 
   inline size_t get_old_bytes_reserved_for_evacuation();
-  inline void reserve_old_bytes_for_evacuation(size_t byte_count);
 
   inline size_t get_young_bytes_to_be_promoted();
 

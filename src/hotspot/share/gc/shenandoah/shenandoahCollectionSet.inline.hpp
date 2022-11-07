@@ -66,7 +66,7 @@ size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {
 }
 
 size_t ShenandoahCollectionSet::get_young_bytes_reserved_for_evacuation() {
-  return _young_bytes_to_evacuate;
+  return _young_bytes_to_evacuate - _young_bytes_to_promote;
 }
 
 size_t ShenandoahCollectionSet::get_young_bytes_to_be_promoted() {

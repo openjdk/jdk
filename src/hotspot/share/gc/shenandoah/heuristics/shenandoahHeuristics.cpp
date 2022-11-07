@@ -232,9 +232,20 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
                      proper_unit_for_byte_size(collection_set->garbage()),
                      cset_percent);
 
-  size_t bytes_evacuated = collection_set->get_bytes_reserved_for_evacuation();
-  log_info(gc, ergo)("Total Evacuation: " SIZE_FORMAT "%s",
-                     byte_size_in_proper_unit(bytes_evacuated), proper_unit_for_byte_size(bytes_evacuated));
+  if (collection_set->garbage() > 0) {
+    size_t young_evac_bytes = collection_set->get_young_bytes_reserved_for_evacuation();
+    size_t promote_evac_bytes = collection_set->get_young_bytes_to_be_promoted();
+    size_t old_evac_bytes = collection_set->get_old_bytes_reserved_for_evacuation();
+    size_t total_evac_bytes = young_evac_bytes + promote_evac_bytes + old_evac_bytes;
+    log_info(gc, ergo)("Evacuation Targets: YOUNG: " SIZE_FORMAT "%s, "
+                       "PROMOTE: " SIZE_FORMAT "%s, "
+                       "OLD: " SIZE_FORMAT "%s, "
+                       "TOTAL: " SIZE_FORMAT "%s",
+                       byte_size_in_proper_unit(young_evac_bytes), proper_unit_for_byte_size(young_evac_bytes),
+                       byte_size_in_proper_unit(promote_evac_bytes), proper_unit_for_byte_size(promote_evac_bytes),
+                       byte_size_in_proper_unit(old_evac_bytes), proper_unit_for_byte_size(old_evac_bytes),
+                       byte_size_in_proper_unit(total_evac_bytes), proper_unit_for_byte_size(total_evac_bytes));
+  }
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
