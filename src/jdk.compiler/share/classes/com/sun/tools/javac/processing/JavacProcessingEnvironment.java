@@ -383,8 +383,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             handleException(key, e);
         }
 
-        java.util.List<Processor> pl = Collections.emptyList();
-        return pl.iterator();
+        return Collections.emptyIterator();
     }
 
     /**
