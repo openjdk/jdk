@@ -210,23 +210,7 @@ void DowncallStubGenerator::generate() {
   __ blr(_abi._target_addr_reg);
   // this call is assumed not to have killed rthread
 
-  if (!_needs_return_buffer) {
-    // Unpack native results.
-    switch (_ret_bt) {
-      case T_BOOLEAN: __ c2bool(r0);                     break;
-      case T_CHAR   : __ ubfx(r0, r0, 0, 16);            break;
-      case T_BYTE   : __ sbfx(r0, r0, 0, 8);             break;
-      case T_SHORT  : __ sbfx(r0, r0, 0, 16);            break;
-      case T_INT    : __ sbfx(r0, r0, 0, 32);            break;
-      case T_DOUBLE :
-      case T_FLOAT  :
-        // Result is in v0 we'll save as needed
-        break;
-      case T_VOID: break;
-      case T_LONG: break;
-      default       : ShouldNotReachHere();
-    }
-  } else {
+  if (_needs_return_buffer) {
     assert(ret_buf_addr_sp_offset != -1, "no return buffer addr spill");
     __ ldr(tmp1, Address(sp, ret_buf_addr_sp_offset));
     int offset = 0;
