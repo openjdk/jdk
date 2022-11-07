@@ -469,8 +469,11 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     public static AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
         Objects.requireNonNull(bb);
-        long bbAddress = NIO_ACCESS.getBufferAddress(bb);
         Object base = NIO_ACCESS.getBufferBase(bb);
+        if (!bb.isDirect() && base == null) {
+            throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
+        }
+        long bbAddress = NIO_ACCESS.getBufferAddress(bb);
         UnmapperProxy unmapper = NIO_ACCESS.unmapper(bb);
 
         int pos = bb.position();
