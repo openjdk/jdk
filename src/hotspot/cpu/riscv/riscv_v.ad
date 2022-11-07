@@ -761,6 +761,30 @@ instruct vmulD(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector neg
+
+instruct vnegI(vReg dst, vReg src) %{
+  match(Set dst (NegVI src));
+  ins_cost(VEC_COST);
+  format %{ "vrsub.vx $dst, $src, $src\t#@vnegI" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e32);
+    __ vneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnegL(vReg dst, vReg src) %{
+  match(Set dst (NegVL src));
+  ins_cost(VEC_COST);
+  format %{ "vrsub.vx $dst, $src, $src\t#@vnegL" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e64);
+    __ vneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector fneg
 
 instruct vnegF(vReg dst, vReg src) %{
