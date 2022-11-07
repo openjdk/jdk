@@ -1971,20 +1971,20 @@ void MacroAssembler::orptr(Address adr, RegisterOrConstant src, Register tmp1, R
   sd(tmp1, adr);
 }
 
-void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp, Register tmp2, Label &L) {
-  assert_different_registers(oop, trial_klass, tmp, tmp2);
+void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L) {
+  assert_different_registers(oop, trial_klass, tmp1, tmp2);
   if (UseCompressedClassPointers) {
-    lwu(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    lwu(tmp1, Address(oop, oopDesc::klass_offset_in_bytes()));
     if (CompressedKlassPointers::base() == NULL) {
-      slli(tmp, tmp, CompressedKlassPointers::shift());
-      beq(trial_klass, tmp, L);
+      slli(tmp1, tmp1, CompressedKlassPointers::shift());
+      beq(trial_klass, tmp1, L);
       return;
     }
-    decode_klass_not_null(tmp, tmp2);
+    decode_klass_not_null(tmp1, tmp2);
   } else {
-    ld(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    ld(tmp1, Address(oop, oopDesc::klass_offset_in_bytes()));
   }
-  beq(trial_klass, tmp, L);
+  beq(trial_klass, tmp1, L);
 }
 
 // Move an oop into a register.
