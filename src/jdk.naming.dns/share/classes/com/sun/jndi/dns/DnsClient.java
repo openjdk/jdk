@@ -33,6 +33,7 @@ import java.net.PortUnreachableException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -238,23 +239,9 @@ public class DnsClient {
                             dprint("SEND ID (" + (retry + 1) + "): " + xid);
                         }
 
-                        byte[] msg = null;
-                        msg = doUdpQuery(pkt, servers[i], serverPorts[i],
-                                            retry, xid);
-                        //
-                        // If the matching response is not got within the
-                        // given timeout, check if the response was enqueued
-                        // by some other thread, if not proceed with the next
-                        // server or retry.
-                        //
-                        if (msg == null) {
-                            if (resps.size() > 0) {
-                                msg = lookupResponse(xid);
-                            }
-                            if (msg == null) { // try next server or retry
-                                continue;
-                            }
-                        }
+                        byte[] msg = doUdpQuery(pkt, servers[i], serverPorts[i],
+                                                retry, xid);
+                        assert msg != null;
                         Header hdr = new Header(msg, msg.length);
 
                         if (auth && !hdr.authoritative) {
@@ -320,6 +307,13 @@ public class DnsClient {
                         if (caughtException == null) {
                             caughtException = e;
                         }
+                    } catch (ClosedSelectorException e) {
+                        // ClosedSelectorException is thrown by blockingReceive if
+                        // the datagram channel selector associated with DNS client
+                        // is unexpectedly closed
+                        var ce = new CommunicationException("DNS client closed");
+                        ce.setRootCause(e);
+                        throw ce;
                     } catch (NameNotFoundException e) {
                         // This is authoritative, so return immediately
                         throw e;
@@ -438,9 +432,9 @@ public class DnsClient {
                 InetSocketAddress target = new InetSocketAddress(server, port);
                 udpChannel.connect(target);
                 int pktTimeout = (timeout * (1 << retry));
-                udpChannel.send(opkt, target);
+                udpChannel.write(opkt);
 
-                // timeout remaining after successive 'receive()'
+                // timeout remaining after successive 'blockingReceive()'
                 int timeoutLeft = pktTimeout;
                 int cnt = 0;
                 boolean gotData = false;
@@ -463,10 +457,18 @@ public class DnsClient {
                     assert gotData || ipkt.position() == 0;
                     if (gotData && isMatchResponse(data, xid)) {
                         return data;
+                    } else if (resps.size() > 0) {
+                        // If the matching response is not found, check if
+                        // the response was enqueued by some other thread,
+                        // if not continue
+                        byte[] cachedMsg = lookupResponse(xid);
+                        if (cachedMsg != null) { // found in cache
+                            return cachedMsg;
+                        }
                     }
                     timeoutLeft = pktTimeout - ((int) (end - start));
                 } while (timeoutLeft > MIN_TIMEOUT);
-                // no matching packet received within the timeout
+                // no matching packets received within the timeout
                 throw new SocketTimeoutException();
             }
         } finally {

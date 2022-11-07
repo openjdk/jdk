@@ -67,25 +67,26 @@ public class Timeout extends DNSTestBase {
     public void runTest() throws Exception {
         // Create a DatagramSocket and bind it to the loopback address to simulate
         // UDP DNS server that doesn't respond
-        DatagramSocket ds = new DatagramSocket(
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        String allQuietUrl = URIBuilder.newBuilder()
-                .scheme("dns")
-                .loopback()
-                .port(ds.getLocalPort())
-                .build()
-                .toString();
-        env().put(Context.PROVIDER_URL, allQuietUrl);
-        env().put("com.sun.jndi.dns.timeout.initial", String.valueOf(TIMEOUT));
-        env().put("com.sun.jndi.dns.timeout.retries", String.valueOf(RETRIES));
-        setContext(new InitialDirContext(env()));
+        try (DatagramSocket ds = new DatagramSocket(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))) {
+            String allQuietUrl = URIBuilder.newBuilder()
+                    .scheme("dns")
+                    .loopback()
+                    .port(ds.getLocalPort())
+                    .build()
+                    .toString();
+            env().put(Context.PROVIDER_URL, allQuietUrl);
+            env().put("com.sun.jndi.dns.timeout.initial", String.valueOf(TIMEOUT));
+            env().put("com.sun.jndi.dns.timeout.retries", String.valueOf(RETRIES));
+            setContext(new InitialDirContext(env()));
 
-        // Any request should fail after timeouts have expired.
-        startTime = Instant.now();
-        context().getAttributes("");
+            // Any request should fail after timeouts have expired.
+            startTime = Instant.now();
+            context().getAttributes("");
 
-        throw new RuntimeException(
-                "Failed: getAttributes succeeded unexpectedly");
+            throw new RuntimeException(
+                    "Failed: getAttributes succeeded unexpectedly");
+        }
     }
 
     @Override
