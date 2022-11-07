@@ -2331,62 +2331,38 @@ public:
     }
   }
 
-  // Single-structure load/store with no offset
-  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Register Xn,
-             int op1, int op2) {
-    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
-    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
-    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
-    starti;
-    f(0,31), f((index >> (3 - T)), 30);
-    f(op1, 29, 21), f(0, 20, 16), f(op2 | opcode | sVal, 15, 12);
-    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
-  }
-
-  // Single-structure load/store with immediate offset
-  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Register Xn,
-             int imm, int op1, int op2, int regs) {
-    bool replicate = op2 >> 2 == 3;
-    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
-    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
-    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
-    int expectedImmediate = (regVariant_to_elemBits(T) >> 3) * regs;
-    guarantee(imm == expectedImmediate, "bad offset");
-    starti;
-    f(0,31), f((index >> (3 - T)), 30);
-    f(op1 | 0b100, 29, 21), f(0b11111, 20, 16), f(op2 | opcode | sVal, 15, 12);
-    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
-  }
-
-  // Single-structure load/store with register offset
-  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Register Xn,
-             Register Xm, int op1, int op2) {
-    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
-    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
-    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
-    int expectedImmediate = regVariant_to_elemBits(T) / 2;
-    starti;
-    f(0,31), f((index >> (3 - T)), 30);
-    f(op1 | 0b100, 29, 21), rf(Xm, 16), f(op2 | opcode | sVal, 15, 12);
-    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
-  }
-
+  // Single-structure load/store method (all addressing variants)
   void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Address a,
              int op1, int op2, int regs) {
+    int expectedImmediate = (regVariant_to_elemBits(T) >> 3) * regs;
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    Register Xn = a.base();
+    int Rm;
+
     switch (a.getMode()) {
     case Address::base_plus_offset:
       guarantee(a.offset() == 0, "no offset allowed here");
-      ld_st(Vt, T, index, a.base(), op1, op2);
+      Rm = 0;
       break;
     case Address::post:
-      ld_st(Vt, T, index, a.base(), a.offset(), op1, op2, regs);
+      guarantee(a.offset() == expectedImmediate, "bad offset");
+      op1 |= 0b100;
+      Rm = 0b11111;
       break;
     case Address::post_reg:
-      ld_st(Vt, T, index, a.base(), a.index(), op1, op2);
+      op1 |= 0b100;
+      Rm = a.index()->encoding();
       break;
     default:
       ShouldNotReachHere();
     }
+
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1, 29, 21), f(Rm, 20, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
 
  public:
