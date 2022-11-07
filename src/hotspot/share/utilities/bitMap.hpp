@@ -394,7 +394,7 @@ class ArenaBitMap : public GrowableBitMap<ArenaBitMap> {
 class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
  public:
   ResourceBitMap() : ResourceBitMap(0) {}
-  ResourceBitMap(idx_t size_in_bits, bool clear = true);
+  explicit ResourceBitMap(idx_t size_in_bits, bool clear = true);
 
   bm_word_t* allocate(idx_t size_in_words) const;
   void free(bm_word_t* map, idx_t size_in_words) const {
@@ -412,10 +412,9 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  CHeapBitMap() : CHeapBitMap(mtInternal) {}
   explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
   // Clears the bitmap memory.
-  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal, bool clear = true);
+  CHeapBitMap(MEMFLAGS flags, idx_t size_in_bits, bool clear = true);
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;

@@ -32,7 +32,7 @@
 
 template<MEMFLAGS F>
 ObjectBitSet<F>::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
-        _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, F, true /* clear */),
+        _bits(F, _bitmap_granularity_size >> LogMinObjAlignmentInBytes, true /* clear */),
         _next(next) {
 }
 

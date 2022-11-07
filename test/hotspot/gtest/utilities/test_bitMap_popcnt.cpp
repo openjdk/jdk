@@ -102,7 +102,7 @@ static void set_or_clear_random_range(BitMap& bm, SimpleFakeBitmap& fbm, int beg
 }
 
 static void test_bitmap_popcnt(int bitsize) {
-  CHeapBitMap bm(bitsize, mtTest);
+  CHeapBitMap bm(mtTest, bitsize);
   SimpleFakeBitmap fbm(bitsize);
 
   ASSERT_POPCNT_ALL(bm, 0);
@@ -148,7 +148,7 @@ TEST_VM(BitMap, popcnt_300) { test_bitmap_popcnt(300); }
 
 TEST_VM(BitMap, popcnt_large) {
 
-  CHeapBitMap bm(64 * K, mtTest);
+  CHeapBitMap bm(mtTest, 64 * K);
 
   ASSERT_POPCNT_ALL(bm, 0);
   ASSERT_POPCNT_RANGE(bm, 0, 64 * K, 0);

@@ -125,7 +125,7 @@ class TestArenaBitMap : private Arena, public ArenaBitMap {
 
 class TestCHeapBitMap : public CHeapBitMap {
 public:
-  TestCHeapBitMap(size_t size = 0) : CHeapBitMap(size, mtTest) {}
+  TestCHeapBitMap(size_t size = 0) : CHeapBitMap(mtTest, size) {}
 
 };
 

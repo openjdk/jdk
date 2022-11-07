@@ -31,7 +31,7 @@
 #include "utilities/debug.hpp"
 
 inline ZBitMap::ZBitMap(idx_t size_in_bits) :
-    CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
+    CHeapBitMap(mtGC, size_in_bits, false /* clear */) {}
 
 inline BitMap::bm_word_t ZBitMap::bit_mask_pair(idx_t bit) {
   assert(bit_in_word(bit) < BitsPerWord - 1, "Invalid bit index");

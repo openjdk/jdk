@@ -44,7 +44,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
   _listener(NULL),
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
-  _region_commit_map(rs.size() * commit_factor / region_granularity, mtGC),
+  _region_commit_map(mtGC, rs.size() * commit_factor / region_granularity),
   _memory_type(type) {
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");

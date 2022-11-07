@@ -34,8 +34,8 @@
 
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
-  _mutator_free_bitmap(max_regions, mtGC),
-  _collector_free_bitmap(max_regions, mtGC),
+  _mutator_free_bitmap(mtGC, max_regions),
+  _collector_free_bitmap(mtGC, max_regions),
   _max(max_regions)
 {
   clear_internal();

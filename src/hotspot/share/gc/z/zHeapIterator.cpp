@@ -43,7 +43,7 @@ private:
 
 public:
   ZHeapIteratorBitMap(size_t size_in_bits) :
-      _bitmap(size_in_bits, mtGC) {}
+      _bitmap(mtGC, size_in_bits) {}
 
   bool try_set_bit(size_t index) {
     return _bitmap.par_set_bit(index);

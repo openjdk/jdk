@@ -58,7 +58,7 @@ ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   ArchiveBuilder::alloc_stats()->record_other_type(int(newtop - _oldtop), true);
 }
 
-ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(16 * K, mtClassShared) {
+ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(mtClassShared, 16 * K) {
   _total_bytes = 0;
   _objs = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<SourceObjInfo*>(128 * K, mtClassShared);
 }
