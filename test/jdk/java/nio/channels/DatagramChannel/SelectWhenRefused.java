@@ -151,10 +151,9 @@ public class SelectWhenRefused {
                     }
                 }
 
-                // BindException will be thrown if another service is using
-                // our expected refuser port, cannot run just exit.
-                DatagramChannel.open().bind(refuser).close();
-                if (retryCount < MAX_TRIES - 1) return true;
+                if (retryCount < MAX_TRIES - 1) {
+                    return true;
+                }
                 throw new RuntimeException("PortUnreachableException not raised");
             } catch (PortUnreachableException pue) {
                 System.out.println("Got expected PortUnreachableException " + pue);
