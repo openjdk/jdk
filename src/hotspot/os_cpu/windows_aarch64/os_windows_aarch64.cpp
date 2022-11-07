@@ -225,6 +225,13 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_register_info_header(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+}
+
 void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
     return;
@@ -269,53 +276,6 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
 
 int os::print_nth_register_info_max_index() {
   return 29 /* X0-X28 */;
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
- if (context == NULL) return;
-
-  const CONTEXT* uc = (const CONTEXT*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-  // this is only for the "general purpose" registers
-  st->print(" X0="); print_location(st, uc->X0);
-  st->print(" X1="); print_location(st, uc->X1);
-  st->print(" X2="); print_location(st, uc->X2);
-  st->print(" X3="); print_location(st, uc->X3);
-  st->cr();
-  st->print(" X4="); print_location(st, uc->X4);
-  st->print(" X5="); print_location(st, uc->X5);
-  st->print(" X6="); print_location(st, uc->X6);
-  st->print(" X7="); print_location(st, uc->X7);
-  st->cr();
-  st->print(" X8="); print_location(st, uc->X8);
-  st->print(" X9="); print_location(st, uc->X9);
-  st->print("X10="); print_location(st, uc->X10);
-  st->print("X11="); print_location(st, uc->X11);
-  st->cr();
-  st->print("X12="); print_location(st, uc->X12);
-  st->print("X13="); print_location(st, uc->X13);
-  st->print("X14="); print_location(st, uc->X14);
-  st->print("X15="); print_location(st, uc->X15);
-  st->cr();
-  st->print("X16="); print_location(st, uc->X16);
-  st->print("X17="); print_location(st, uc->X17);
-  st->print("X18="); print_location(st, uc->X18);
-  st->print("X19="); print_location(st, uc->X19);
-  st->cr();
-  st->print("X20="); print_location(st, uc->X20);
-  st->print("X21="); print_location(st, uc->X21);
-  st->print("X22="); print_location(st, uc->X22);
-  st->print("X23="); print_location(st, uc->X23);
-  st->cr();
-  st->print("X24="); print_location(st, uc->X24);
-  st->print("X25="); print_location(st, uc->X25);
-  st->print("X26="); print_location(st, uc->X26);
-  st->print("X27="); print_location(st, uc->X27);
-  st->print("X28="); print_location(st, uc->X28);
-
-  st->cr();
 }
 
 void os::setup_fpu() {

@@ -467,6 +467,13 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_register_info_header(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+}
+
 void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
     return;
@@ -508,49 +515,6 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
 
 int os::print_nth_register_info_max_index() {
   return AMD64_ONLY(16) NOT_AMD64(8);
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
-
-  const CONTEXT* uc = (const CONTEXT*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-#ifdef AMD64
-  st->print("RIP="); print_location(st, uc->Rip);
-  st->print("RAX="); print_location(st, uc->Rax);
-  st->print("RBX="); print_location(st, uc->Rbx);
-  st->print("RCX="); print_location(st, uc->Rcx);
-  st->print("RDX="); print_location(st, uc->Rdx);
-  st->print("RSP="); print_location(st, uc->Rsp);
-  st->print("RBP="); print_location(st, uc->Rbp);
-  st->print("RSI="); print_location(st, uc->Rsi);
-  st->print("RDI="); print_location(st, uc->Rdi);
-  st->print("R8 ="); print_location(st, uc->R8);
-  st->print("R9 ="); print_location(st, uc->R9);
-  st->print("R10="); print_location(st, uc->R10);
-  st->print("R11="); print_location(st, uc->R11);
-  st->print("R12="); print_location(st, uc->R12);
-  st->print("R13="); print_location(st, uc->R13);
-  st->print("R14="); print_location(st, uc->R14);
-  st->print("R15="); print_location(st, uc->R15);
-#else
-  st->print("EIP="); print_location(st, uc->Eip);
-  st->print("EAX="); print_location(st, uc->Eax);
-  st->print("EBX="); print_location(st, uc->Ebx);
-  st->print("ECX="); print_location(st, uc->Ecx);
-  st->print("EDX="); print_location(st, uc->Edx);
-  st->print("ESP="); print_location(st, uc->Esp);
-  st->print("EBP="); print_location(st, uc->Ebp);
-  st->print("ESI="); print_location(st, uc->Esi);
-  st->print("EDI="); print_location(st, uc->Edi);
-#endif
-
-  st->cr();
 }
 
 extern "C" int SpinPause () {

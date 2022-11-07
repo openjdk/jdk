@@ -989,7 +989,7 @@ int reentry_step = _current_step;
      }
 
   REENTRANT_STEP_IF("printing register info", _verbose && _context && _thread && Universe::is_fully_initialized())
-    st->print_cr("Register to memory mapping:");
+    os::print_register_info_header(st, _context);
 
     REENTRANT_LOOP_START(os::print_nth_register_info_max_index())
       // decode register contents if possible

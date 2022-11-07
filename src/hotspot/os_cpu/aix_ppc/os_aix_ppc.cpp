@@ -473,6 +473,13 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_register_info_header(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+}
+
 void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
     return;
@@ -498,25 +505,6 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
 
 int os::print_nth_register_info_max_index() {
   return 32 /* r0-r32 */ + 3 /* pc, lr, sp */;
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
-
-  ucontext_t *uc = (ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
-  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
-  st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
-  for (int i = 0; i < 32; i++) {
-    st->print("r%-2d=", i);
-    print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[i]);
-  }
-
-  st->cr();
 }
 
 extern "C" {

@@ -865,6 +865,13 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_register_info_header(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+}
+
 void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
     return;
@@ -906,51 +913,6 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
 
 int os::print_nth_register_info_max_index() {
   return AMD64_ONLY(16) NOT_AMD64(8);
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
-
-  const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
-#ifdef AMD64
-  st->print("RAX="); print_location(st, uc->context_rax);
-  st->print("RBX="); print_location(st, uc->context_rbx);
-  st->print("RCX="); print_location(st, uc->context_rcx);
-  st->print("RDX="); print_location(st, uc->context_rdx);
-  st->print("RSP="); print_location(st, uc->context_rsp);
-  st->print("RBP="); print_location(st, uc->context_rbp);
-  st->print("RSI="); print_location(st, uc->context_rsi);
-  st->print("RDI="); print_location(st, uc->context_rdi);
-  st->print("R8 ="); print_location(st, uc->context_r8);
-  st->print("R9 ="); print_location(st, uc->context_r9);
-  st->print("R10="); print_location(st, uc->context_r10);
-  st->print("R11="); print_location(st, uc->context_r11);
-  st->print("R12="); print_location(st, uc->context_r12);
-  st->print("R13="); print_location(st, uc->context_r13);
-  st->print("R14="); print_location(st, uc->context_r14);
-  st->print("R15="); print_location(st, uc->context_r15);
-#else
-  st->print("EAX="); print_location(st, uc->context_eax);
-  st->print("EBX="); print_location(st, uc->context_ebx);
-  st->print("ECX="); print_location(st, uc->context_ecx);
-  st->print("EDX="); print_location(st, uc->context_edx);
-  st->print("ESP="); print_location(st, uc->context_esp);
-  st->print("EBP="); print_location(st, uc->context_ebp);
-  st->print("ESI="); print_location(st, uc->context_esi);
-  st->print("EDI="); print_location(st, uc->context_edi);
-#endif // AMD64
-
-  st->cr();
 }
 
 void os::setup_fpu() {

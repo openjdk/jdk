@@ -253,6 +253,11 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 
+void os::print_register_info_header(outputStream *st, const void *context) {
+  st->print_cr("No register info.");
+  st->cr();
+}
+
 void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   ShouldNotCallThis();
 }

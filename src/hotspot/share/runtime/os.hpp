@@ -757,7 +757,7 @@ class os: AllStatic {
   static void print_tos_pc(outputStream* st, const void* context);
   static void print_tos(outputStream* st, address sp);
   static void print_instructions(outputStream* st, address pc, int unitsize);
-  static void print_register_info(outputStream* st, const void* context);
+  static void print_register_info_header(outputStream* st, const void* context);
   static void print_nth_register_info(outputStream* st, int n, const void* context);
   static int  print_nth_register_info_max_index();
   static bool signal_sent_by_kill(const void* siginfo);

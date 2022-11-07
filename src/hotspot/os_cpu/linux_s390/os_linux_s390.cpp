@@ -453,6 +453,13 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_register_info_header(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+}
+
 void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
     return;
@@ -470,22 +477,6 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
 
 int os::print_nth_register_info_max_index() {
   return 16 /* r0-r15 */ + 1 /* pc */;
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
-
-  const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
-  for (int i = 0; i < 16; i++) {
-    st->print("r%-2d=", i);
-    print_location(st, uc->uc_mcontext.gregs[i]);
-  }
-  st->cr();
 }
 
 #ifndef PRODUCT
