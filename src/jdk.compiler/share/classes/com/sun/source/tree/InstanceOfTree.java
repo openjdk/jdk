@@ -94,9 +94,9 @@ public interface InstanceOfTree extends ExpressionTree {
     PatternTree getPattern();
 
     /**
-     * Returns the type of this instanceof expression.
+     * Returns the kind of this instanceof expression.
      *
-     * @return the type of this instanceof expression
+     * @return the kind of this instanceof expression
      * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
