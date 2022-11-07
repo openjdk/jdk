@@ -32,14 +32,9 @@
  * DESCRIPTION
  *     The test runs many threads, that recursively invoke a pure java method.
  *     After arriving at defined depth of recursion, each thread is switched to
- *     waits for a monitor. Then the test calls java.lang.Thread.getStackTrace()
+ *     wait on a monitor. Then the test calls java.lang.Thread.getStackTrace()
  *     and java.lang.Thread.getAllStackTraces() methods and checks their results.
- *     The test fails if:
- *     - amount of stack trace elements and stack trace elements themselves are
- *       the same for both methods;
- *     - there is at least one element corresponding to invocation of unexpected
- *       method. Expected methods are Thread.sleep(), Thread.run() and the
- *       recursive method.
+ *     The test fails if the stacks for each thread do not match.
  *
  * @library /vmTestbase
  *          /test/lib
@@ -55,14 +50,14 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * The test runs <code>THRD_COUNT</code> instances of <code>strace010Thread</code>,
+ * The test runs <code>THRD_COUNT</code> instances of <code>strace013Thread</code>,
  * that recursively invoke a pure java method. After arriving at defined depth
- * <code>DEPTH</code> of recursion, each thread is switched to wait a monitor.
+ * <code>DEPTH</code> of recursion, each thread is switched to wait on a monitor.
  * Then the test calls <code>java.lang.Thread.getStackTrace()</code> and
  * <code>java.lang.Thread.getAllStackTraces()</code> methods and checks their results.
  * <p>
  * <p>It is expected that these methods return the same stack traces. Each stack frame
- * for both stack traces must be corresponded to invocation of one of the methods
+ * for both stack traces correspond to invocation of one of the methods
  * defined by the <code>EXPECTED_METHODS</code> array.</p>
  */
 public class strace013 {
@@ -81,8 +76,15 @@ public class strace013 {
     static long waitTime = 2;
 
     static Object lockedObject = new Object();
+    static int waitingCount = 0; // accessed while holding lockedObject
 
-    volatile int achivedCount = 0;
+    // Must synchronized on the lockedObject so thh right count guarantees
+    // the wait() call has been entered.
+    static int waitingCount() {
+        synchronized(strace013.lockedObject) {
+            return waitingCount;
+        }
+    }
     strace013Thread[] threads;
     static Log log;
 
@@ -117,13 +119,12 @@ public class strace013 {
 
     void startThreads() {
         threads = new strace013Thread[THRD_COUNT];
-        achivedCount = 0;
 
         String tmp_name;
         display("starting threads...");
         for (int i = 0; i < THRD_COUNT; i++) {
             tmp_name = "strace013Thread" + Integer.toString(i);
-            threads[i] = new strace013Thread(this, tmp_name);
+            threads[i] = new strace013Thread(tmp_name);
             threads[i].start();
         }
 
@@ -134,14 +135,13 @@ public class strace013 {
         if (msg.length() > 0)
             display("waiting for " + msg);
 
-        while (achivedCount < THRD_COUNT) {
+        while (strace013.waitingCount() < THRD_COUNT) {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 complain("" + e);
             }
         }
-        achivedCount = 0;
     }
 
     boolean makeSnapshot() {
@@ -254,10 +254,8 @@ class strace013Thread extends Thread {
     private int currentDepth = 0;
 
     static int[] arr = new int[1000];
-    strace013 test;
 
-    strace013Thread(strace013 test, String name) {
-        this.test = test;
+    strace013Thread(String name) {
         setName(name);
     }
 
@@ -281,11 +279,8 @@ class strace013Thread extends Thread {
 
             strace013.display(getName() + ">waiting on a monitor");
 
-            synchronized (test) {
-                test.achivedCount++;
-            }
-
             synchronized (strace013.lockedObject) {
+                strace013.waitingCount++;
                 try {
                     strace013.lockedObject.wait();
                 } catch (InterruptedException e) {
