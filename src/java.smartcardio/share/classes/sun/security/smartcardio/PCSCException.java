@@ -35,7 +35,7 @@ import static sun.security.smartcardio.PCSC.*;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
-final class PCSCException extends Exception {
+public final class PCSCException extends Exception {
 
     private static final long serialVersionUID = 4181137171979130432L;
 
