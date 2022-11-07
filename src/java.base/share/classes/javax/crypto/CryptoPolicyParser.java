@@ -471,9 +471,7 @@ final class CryptoPolicyParser {
     CryptoPermission[] getPermissions() {
         ArrayList<CryptoPermission> result = new ArrayList<>();
 
-        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
-        while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = grantEnum.nextElement();
+        for (GrantEntry ge : grantEntries) {
             Enumeration<CryptoPermissionEntry> permEnum =
                     ge.permissionElements();
             while (permEnum.hasMoreElements()) {
