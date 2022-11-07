@@ -197,7 +197,6 @@ public class ClassLoaders {
 
         /**
          * Called by the VM to support dynamic additions to the class path
-         * Locks the System ClassLoader to prevent concurrent changes.
          *
          * @see java.lang.instrument.Instrumentation#appendToSystemClassLoaderSearch
          */
