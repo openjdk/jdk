@@ -32,9 +32,9 @@
  *   TestUpcallScope
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
+
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
@@ -53,10 +53,9 @@ public class TestUpcallScope extends TestUpcallBase {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object[]>> argChecks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow(fName);
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
-            MethodHandle mh = downcallHandle(ABI, addr, allocator, function(ret, paramTypes, fields));
-            Object[] args = makeArgs(session, ret, paramTypes, fields, returnChecks, argChecks);
+        try (Arena arena = Arena.openConfined()) {
+            MethodHandle mh = downcallHandle(ABI, addr, arena, function(ret, paramTypes, fields));
+            Object[] args = makeArgs(arena.session(), ret, paramTypes, fields, returnChecks, argChecks);
             Object[] callArgs = args;
             Object res = mh.invokeWithArguments(callArgs);
             argChecks.forEach(c -> c.accept(args));

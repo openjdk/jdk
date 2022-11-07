@@ -22,7 +22,7 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 
@@ -72,11 +72,11 @@ public class VaList extends CLayouts {
 
     @Benchmark
     public void vaList() throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena arena = Arena.openConfined()) {
             java.lang.foreign.VaList vaList = java.lang.foreign.VaList.make(b ->
                     b.addVarg(C_INT, 1)
                             .addVarg(C_DOUBLE, 2D)
-                            .addVarg(C_LONG_LONG, 3L), session);
+                            .addVarg(C_LONG_LONG, 3L), arena.session());
             MH_vaList.invokeExact(3,
                     vaList.segment());
         }

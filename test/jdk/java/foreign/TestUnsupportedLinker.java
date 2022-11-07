@@ -49,11 +49,11 @@ public class TestUnsupportedLinker {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testNonEmptyVaList() {
-        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), MemorySession.openImplicit());
+        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), MemorySession.implicit());
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testUnsafeVaList() {
-        VaList.ofAddress(0L, MemorySession.openImplicit());
+        VaList.ofAddress(0L, MemorySession.implicit());
     }
 }

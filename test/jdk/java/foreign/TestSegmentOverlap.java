@@ -61,10 +61,10 @@ public class TestSegmentOverlap {
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
-                () -> MemorySession.openConfined().allocate(16),
+                () -> MemorySegment.allocateNative(16, MemorySession.implicit()),
                 () -> {
                     try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                        return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 16L, MemorySession.openConfined());
+                        return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 16L, MemorySession.implicit());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -131,7 +131,7 @@ public class TestSegmentOverlap {
     }
 
     enum OtherSegmentFactory {
-        NATIVE(() -> MemorySession.openConfined().allocate(16)),
+        NATIVE(() -> MemorySegment.allocateNative(16, MemorySession.implicit())),
         HEAP(() -> MemorySegment.ofArray(new byte[]{16}));
 
         final Supplier<MemorySegment> factory;

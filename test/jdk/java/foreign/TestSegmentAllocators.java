@@ -46,8 +46,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 import static org.testng.Assert.*;
 
@@ -69,13 +67,13 @@ public class TestSegmentAllocators {
         for (L alignedLayout : layouts) {
             List<MemorySegment> addressList = new ArrayList<>();
             int elems = ELEMS / ((int)alignedLayout.byteAlignment() / (int)layout.byteAlignment());
-            MemorySession[] sessions = {
-                    MemorySession.openConfined(),
-                    MemorySession.openShared()
+            Arena[] arenas = {
+                    Arena.openConfined(),
+                    Arena.openShared()
             };
-            for (MemorySession session : sessions) {
-                try (session) {
-                    SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, session);
+            for (Arena arena : arenas) {
+                try (arena) {
+                    SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, arena);
                     for (int i = 0; i < elems; i++) {
                         MemorySegment address = allocationFunction.allocate(allocator, alignedLayout, value);
                         assertEquals(address.byteSize(), alignedLayout.byteSize());
@@ -87,16 +85,14 @@ public class TestSegmentAllocators {
                     try {
                         allocationFunction.allocate(allocator, alignedLayout, value);
                         assertFalse(isBound);
-                    } catch (OutOfMemoryError ex) {
+                    } catch (IndexOutOfBoundsException ex) {
                         //failure is expected if bound
                         assertTrue(isBound);
                     }
                 }
-                if (allocationFactory != AllocationFactory.IMPLICIT_ALLOCATOR) {
-                    // addresses should be invalid now
-                    for (MemorySegment address : addressList) {
-                        assertFalse(address.session().isAlive());
-                    }
+                // addresses should be invalid now
+                for (MemorySegment address : addressList) {
+                    assertFalse(address.session().isAlive());
                 }
             }
         }
@@ -106,9 +102,9 @@ public class TestSegmentAllocators {
 
     @Test
     public void testBigAllocationInUnboundedSession() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
+        try (Arena arena = Arena.openConfined()) {
             for (int i = 8 ; i < SIZE_256M ; i *= 8) {
+                SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(i * 2 + 1));
                 MemorySegment address = allocator.allocate(i, i);
                 //check size
                 assertEquals(address.byteSize(), i);
@@ -120,24 +116,11 @@ public class TestSegmentAllocators {
 
     @Test
     public void testTooBigForBoundedArena() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(10, session);
-            assertThrows(OutOfMemoryError.class, () -> allocator.allocate(12));
-            allocator.allocate(5); // ok
+        try (Arena arena = Arena.openConfined()) {
+            SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(10));
+            assertThrows(IndexOutOfBoundsException.class, () -> allocator.allocate(12));
+            allocator.allocate(5);
         }
-    }
-
-    @Test
-    public void testBiggerThanBlockForBoundedArena() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(4 * 1024 * 2, session);
-            allocator.allocate(4 * 1024 + 1); // should be ok
-        }
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadUnboundedArenaSize() {
-        SegmentAllocator.newNativeArena( -1, MemorySession.global());
     }
 
     @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
@@ -167,8 +150,9 @@ public class TestSegmentAllocators {
 
     @Test(expectedExceptions = OutOfMemoryError.class)
     public void testBadArenaNullReturn() {
-        SegmentAllocator segmentAllocator = SegmentAllocator.newNativeArena(MemorySession.openImplicit());
-        segmentAllocator.allocate(Long.MAX_VALUE, 2);
+        try (Arena arena = Arena.openConfined()) {
+            arena.allocate(Long.MAX_VALUE, 2);
+        }
     }
 
     @Test
@@ -203,7 +187,7 @@ public class TestSegmentAllocators {
             @Override
 
             public MemorySegment allocate(long byteSize, long byteAlignment) {
-                return MemorySegment.allocateNative(byteSize, byteAlignment, MemorySession.openImplicit());
+                return MemorySegment.allocateNative(byteSize, byteAlignment, MemorySession.implicit());
             }
 
             @Override
@@ -220,13 +204,13 @@ public class TestSegmentAllocators {
     @Test(dataProvider = "arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
-        MemorySession[] sessions = {
-                MemorySession.openConfined(),
-                MemorySession.openShared()
+        Arena[] arenas = {
+                Arena.openConfined(),
+                Arena.openShared()
         };
-        for (MemorySession session : sessions) {
-            try (session) {
-                SegmentAllocator allocator = allocationFactory.allocator(100, session);
+        for (Arena arena : arenas) {
+            try (arena) {
+                SegmentAllocator allocator = allocationFactory.allocator(100, arena);
                 MemorySegment address = allocationFunction.allocate(allocator, layout, arr);
                 Z found = arrayHelper.toArray(address, layout);
                 assertEquals(found, arr);
@@ -363,21 +347,19 @@ public class TestSegmentAllocators {
     }
 
     enum AllocationFactory {
-        ARENA_BOUNDED(true, SegmentAllocator::newNativeArena),
-        ARENA_UNBOUNDED(false, (size, session) -> SegmentAllocator.newNativeArena(session)),
-        NATIVE_ALLOCATOR(false, (size, session) -> session),
-        IMPLICIT_ALLOCATOR(false, (size, session) -> SegmentAllocator.implicitAllocator());
+        SLICING(true, (size, drop) -> SegmentAllocator.slicingAllocator(MemorySegment.allocateNative(size, drop.session()))),
+        NATIVE_ALLOCATOR(false, (size, drop) -> SegmentAllocator.nativeAllocator(drop.session()));
 
         private final boolean isBound;
-        private final BiFunction<Long, MemorySession, SegmentAllocator> factory;
+        private final BiFunction<Long, Arena, SegmentAllocator> factory;
 
-        AllocationFactory(boolean isBound, BiFunction<Long, MemorySession, SegmentAllocator> factory) {
+        AllocationFactory(boolean isBound, BiFunction<Long, Arena, SegmentAllocator> factory) {
             this.isBound = isBound;
             this.factory = factory;
         }
 
-        SegmentAllocator allocator(long size, MemorySession session) {
-            return factory.apply(size, session);
+        SegmentAllocator allocator(long size, Arena arena) {
+            return factory.apply(size, arena);
         }
 
         public boolean isBound() {
@@ -498,9 +480,8 @@ public class TestSegmentAllocators {
     @DataProvider(name = "allocators")
     static Object[][] allocators() {
         return new Object[][] {
-                { SegmentAllocator.implicitAllocator() },
-                { SegmentAllocator.newNativeArena(MemorySession.global()) },
-                { SegmentAllocator.prefixAllocator(MemorySession.global().allocate(10)) },
+                { SegmentAllocator.nativeAllocator(MemorySession.global()) },
+                { SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(10, MemorySession.global())) },
         };
     }
 }

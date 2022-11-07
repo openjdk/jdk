@@ -167,6 +167,7 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
+ * @sealedGraph
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)

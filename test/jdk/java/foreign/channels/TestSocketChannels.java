@@ -30,6 +30,7 @@
  * @run testng/othervm TestSocketChannels
  */
 
+import java.lang.foreign.Arena;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -56,16 +57,16 @@ public class TestSocketChannels extends AbstractChannelsTest {
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
     static final Class<WrongThreadException> WTE = WrongThreadException.class;
 
-    @Test(dataProvider = "closeableSessions")
-    public void testBasicIOWithClosedSegment(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testBasicIOWithClosedSegment(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         try (var channel = SocketChannel.open();
              var server = ServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
-            MemorySession session = sessionSupplier.get();
-            ByteBuffer bb = segmentBufferOfSize(session, 16);
-            ((MemorySession)session).close();
+            Arena drop = arenaSupplier.get();
+            ByteBuffer bb = segmentBufferOfSize(drop.session(), 16);
+            drop.close();
             assertMessage(expectThrows(ISE, () -> channel.read(bb)),                           "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb})),        "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb}, 0, 1)),  "Already closed");
@@ -75,16 +76,16 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "closeableSessions")
-    public void testScatterGatherWithClosedSegment(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testScatterGatherWithClosedSegment(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         try (var channel = SocketChannel.open();
              var server = ServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
-            MemorySession session = (MemorySession)sessionSupplier.get();
-            ByteBuffer[] buffers = segmentBuffersOfSize(8, session, 16);
-            session.close();
+            Arena drop = arenaSupplier.get();
+            ByteBuffer[] buffers = segmentBuffersOfSize(8, drop.session(), 16);
+            drop.close();
             assertMessage(expectThrows(ISE, () -> channel.write(buffers)),       "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(buffers)),        "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.write(buffers, 0 ,8)), "Already closed");
@@ -92,17 +93,17 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "allSessions")
-    public void testBasicIO(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testBasicIO(Supplier<Arena> arenaSupplier)
         throws Exception
     {
-        MemorySession session;
+        Arena drop;
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
-             var scp = closeableSessionOrNull(session = sessionSupplier.get())) {
-            MemorySegment segment1 = session.allocate(10, 1);
-            MemorySegment segment2 = session.allocate(10, 1);
+             var scp = drop = arenaSupplier.get()) {
+            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, drop.session());
+            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, drop.session());
             for (int i = 0; i < 10; i++) {
                 segment1.set(JAVA_BYTE, i, (byte) i);
             }
@@ -132,15 +133,15 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "confinedSessions")
-    public void testIOOnConfinedFromAnotherThread(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "confinedArenas")
+    public void testIOOnConfinedFromAnotherThread(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         try (var channel = SocketChannel.open();
              var server = ServerSocketChannel.open();
              var connected = connectChannels(server, channel);
-             var session = closeableSessionOrNull(sessionSupplier.get())) {
-            var segment = session.allocate(10, 1);
+             var drop = arenaSupplier.get()) {
+            var segment = MemorySegment.allocateNative(10, 1, drop.session());
             ByteBuffer bb = segment.asByteBuffer();
             List<ThrowingRunnable> ioOps = List.of(
                     () -> channel.write(bb),
@@ -161,17 +162,17 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "allSessions")
-    public void testScatterGatherIO(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testScatterGatherIO(Supplier<Arena> arenaSupplier)
         throws Exception
     {
-        MemorySession session;
+        Arena drop;
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
-             var scp = closeableSessionOrNull(session = sessionSupplier.get())) {
-            var writeBuffers = mixedBuffersOfSize(32, session, 64);
-            var readBuffers = mixedBuffersOfSize(32, session, 64);
+             var scp = drop = arenaSupplier.get()) {
+            var writeBuffers = mixedBuffersOfSize(32, drop.session(), 64);
+            var readBuffers = mixedBuffersOfSize(32, drop.session(), 64);
             long expectedCount = remaining(writeBuffers);
             assertEquals(writeNBytes(sc1, writeBuffers, 0, 32, expectedCount), expectedCount);
             assertEquals(readNBytes(sc2, readBuffers, 0, 32, expectedCount), expectedCount);
@@ -179,19 +180,19 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "closeableSessions")
-    public void testBasicIOWithDifferentSessions(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "closeableArenas")
+    public void testBasicIOWithDifferentSessions(Supplier<Arena> arenaSupplier)
          throws Exception
     {
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
-             var session1 = closeableSessionOrNull(sessionSupplier.get());
-             var session2 = closeableSessionOrNull(sessionSupplier.get())) {
-            var writeBuffers = Stream.of(mixedBuffersOfSize(16, session1, 64), mixedBuffersOfSize(16, session2, 64))
+             var drop1 = arenaSupplier.get();
+             var drop2 = arenaSupplier.get()) {
+            var writeBuffers = Stream.of(mixedBuffersOfSize(16, drop1.session(), 64), mixedBuffersOfSize(16, drop2.session(), 64))
                                      .flatMap(Arrays::stream)
                                      .toArray(ByteBuffer[]::new);
-            var readBuffers = Stream.of(mixedBuffersOfSize(16, session1, 64), mixedBuffersOfSize(16, session2, 64))
+            var readBuffers = Stream.of(mixedBuffersOfSize(16, drop1.session(), 64), mixedBuffersOfSize(16, drop2.session(), 64))
                                     .flatMap(Arrays::stream)
                                     .toArray(ByteBuffer[]::new);
 

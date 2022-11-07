@@ -55,8 +55,8 @@ import jdk.internal.reflect.Reflection;
  * a variable argument list, as follows:
  * {@snippet lang = java:
  * void upcall(int n, MemorySegment vaListSegment) {
- *    try (MemorySession session = MemorySession.openConfined()) {
- *        VaList vaList = VaList.ofAddress(vaListSegment.address(), session);
+ *    try (Arena arena = Arena.openConfined()) {
+ *        VaList vaList = VaList.ofAddress(vaListSegment.address(), arena.session());
  *        VaList copy = vaList.copy();
  *        int i = vaList.nextVarg(C_INT);
  *        double d = vaList.nextVarg(C_DOUBLE);
@@ -225,7 +225,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
     /**
      * Creates a variable argument list from the give address value and memory session. The address is typically obtained
      * by calling {@link MemorySegment#address()} on a foreign memory segment instance. The provided session determines
-     * the lifecycle of the returned variable argument list: when the session is {@linkplain MemorySession#close() closed},
+     * the lifecycle of the returned variable argument list: when the session is closed,
      * the returned variable argument list will no longer be accessible.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
@@ -238,7 +238,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return a new variable argument list backed by an off-heap region of memory starting at the given address value.
      * @throws IllegalStateException         if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException          if this method is called from a thread other than the thread
-     *                                       {@linkplain MemorySession#ownerThread() owning} {@code session}.
+     *                                       {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
@@ -256,7 +256,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * memory session.
      * <p>
      * If this method needs to allocate memory, such memory will be managed by the given
-     * session, and will be released when the session is {@linkplain MemorySession#close closed}.
+     * session, and will be released when the session is closed.
      * <p>
      * Note that when there are no elements added to the created va list,
      * this method will return the same as {@link #empty()}.
@@ -270,7 +270,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
+     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
      */
     static VaList make(Consumer<Builder> actions, MemorySession session) {
         Objects.requireNonNull(actions);

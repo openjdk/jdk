@@ -65,7 +65,7 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
 
     @BeforeClass
     void setup() {
-        DUMMY_STUB = ABI.upcallStub(DUMMY, FunctionDescriptor.ofVoid(), MemorySession.openImplicit());
+        DUMMY_STUB = ABI.upcallStub(DUMMY, FunctionDescriptor.ofVoid(), MemorySession.implicit());
     }
 
     static FunctionDescriptor function(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
@@ -152,7 +152,7 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
         for (int i = 0; i < o.length; i++) {
             if (layouts.get(i) instanceof GroupLayout) {
                 MemorySegment ms = (MemorySegment) o[i];
-                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), MemorySession.openImplicit());
+                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), MemorySession.implicit());
                 copy.copyFrom(ms);
                 o[i] = copy;
             }

@@ -52,8 +52,8 @@ public class TestLayouts {
     @Test
     public void testIndexedSequencePath() {
         MemoryLayout seq = MemoryLayout.sequenceLayout(10, ValueLayout.JAVA_INT);
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = session.allocate(seq);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(seq, arena.session());;
             VarHandle indexHandle = seq.varHandle(MemoryLayout.PathElement.sequenceElement());
             // init segment
             for (int i = 0 ; i < 10 ; i++) {

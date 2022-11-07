@@ -1061,7 +1061,7 @@ public abstract class FileChannel
      *
      * @throws  WrongThreadException
      *          If this method is called from a thread other than the thread
-     *          {@linkplain MemorySession#ownerThread() owning} the
+     *          {@linkplain MemorySession#isOwnedBy(Thread) owning} the
      *          {@code session}.
      *
      * @throws  NonReadableChannelException

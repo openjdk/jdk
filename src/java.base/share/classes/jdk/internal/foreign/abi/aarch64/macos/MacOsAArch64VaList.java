@@ -224,7 +224,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
             }
 
             long allocationSize = args.stream().reduce(0L, (acc, e) -> acc + sizeOf(e.layout), Long::sum);
-            MemorySegment segment = session.allocate(allocationSize);
+            MemorySegment segment = MemorySegment.allocateNative(allocationSize, session);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
@@ -233,7 +233,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
                     TypeClass typeClass = TypeClass.classifyLayout(arg.layout);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
-                            MemorySegment copy = session.allocate(arg.layout);
+                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, session);
                             copy.copyFrom(msArg); // by-value
                             VH_address.set(cursor, copy);
                             cursor = cursor.asSlice(VA_SLOT_SIZE_BYTES);

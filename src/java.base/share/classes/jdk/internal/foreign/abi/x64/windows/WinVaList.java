@@ -215,7 +215,7 @@ public non-sealed class WinVaList implements VaList {
                 return EMPTY;
             }
 
-            MemorySegment segment = session.allocate(VA_SLOT_SIZE_BYTES * args.size());
+            MemorySegment segment = MemorySegment.allocateNative(VA_SLOT_SIZE_BYTES * args.size(), session);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
@@ -224,7 +224,7 @@ public non-sealed class WinVaList implements VaList {
                     TypeClass typeClass = TypeClass.typeClassFor(arg.layout, false);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
-                            MemorySegment copy = session.allocate(arg.layout);
+                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, session);
                             copy.copyFrom(msArg); // by-value
                             VH_address.set(cursor, copy);
                         }

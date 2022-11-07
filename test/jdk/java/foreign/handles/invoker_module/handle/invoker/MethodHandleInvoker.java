@@ -72,7 +72,7 @@ public class MethodHandleInvoker {
         addDefaultMapping(MemorySegment.class, MemorySegment.NULL);
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
-        addDefaultMapping(MemorySession.class, MemorySession.openShared());
+        addDefaultMapping(MemorySession.class, MemorySession.implicit());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(ValueLayout.OfByte.class, ValueLayout.JAVA_BYTE);
         addDefaultMapping(ValueLayout.OfBoolean.class, ValueLayout.JAVA_BOOLEAN);

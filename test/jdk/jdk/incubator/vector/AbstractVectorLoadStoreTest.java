@@ -43,7 +43,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
                     ByteBuffer.allocateDirect(s)
                         .order(ByteOrder.nativeOrder())),
             withToString("MS:RW:NE", (int s) ->
-                    MemorySession.openImplicit().allocate(s)
+                    MemorySegment.allocateNative(s, MemorySession.implicit())
                         .asByteBuffer()
                         .order(ByteOrder.nativeOrder())
             )
@@ -51,7 +51,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
 
     static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
             withToString("HMS", (int s) ->
-                    MemorySession.openImplicit().allocate(s)
+                    MemorySegment.allocateNative(s, MemorySession.implicit())
             ),
             withToString("DMS", (int s) -> {
                 byte[] b = new byte[s];
@@ -60,4 +60,3 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
     );
 
 }
-

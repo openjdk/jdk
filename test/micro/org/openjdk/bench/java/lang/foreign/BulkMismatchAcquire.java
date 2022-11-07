@@ -37,6 +37,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
@@ -52,18 +53,17 @@ import java.util.function.Supplier;
 public class BulkMismatchAcquire {
 
     public enum SessionKind {
-        CONFINED(MemorySession::openConfined),
-        SHARED(MemorySession::openShared),
-        IMPLICIT(MemorySession::openImplicit);
+        CONFINED(Arena::openConfined),
+        SHARED(Arena::openShared);
 
-        final Supplier<MemorySession> sessionFactory;
+        final Supplier<Arena> arenaFactory;
 
-        SessionKind(Supplier<MemorySession> sessionFactory) {
-            this.sessionFactory = sessionFactory;
+        SessionKind(Supplier<Arena> arenaFactory) {
+            this.arenaFactory = arenaFactory;
         }
 
-        MemorySession makeSession() {
-            return sessionFactory.get();
+        Arena makeArena() {
+            return arenaFactory.get();
         }
     }
 
@@ -73,7 +73,7 @@ public class BulkMismatchAcquire {
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
 
-    MemorySession session;
+    Arena arena;
     MemorySegment mismatchSegmentLarge1;
     MemorySegment mismatchSegmentLarge2;
     ByteBuffer mismatchBufferLarge1;
@@ -85,15 +85,15 @@ public class BulkMismatchAcquire {
 
     @Setup
     public void setup() {
-        session = sessionKind.makeSession();
-        mismatchSegmentLarge1 = session.allocate(SIZE_WITH_TAIL);
-        mismatchSegmentLarge2 = session.allocate(SIZE_WITH_TAIL);
+        arena = sessionKind.makeArena();
+        mismatchSegmentLarge1 = arena.allocate(SIZE_WITH_TAIL);
+        mismatchSegmentLarge2 = arena.allocate(SIZE_WITH_TAIL);
         mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
         mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
 
         // mismatch at first byte
-        mismatchSegmentSmall1 = session.allocate(7);
-        mismatchSegmentSmall2 = session.allocate(7);
+        mismatchSegmentSmall1 = arena.allocate(7);
+        mismatchSegmentSmall2 = arena.allocate(7);
         mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
         mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
         {
@@ -117,9 +117,7 @@ public class BulkMismatchAcquire {
 
     @TearDown
     public void tearDown() {
-        if (session.isCloseable()) {
-            session.close();
-        }
+        arena.close();
     }
 
     @Benchmark

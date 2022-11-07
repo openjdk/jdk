@@ -100,7 +100,7 @@ public class TestHeapAlignment {
         HEAP_FLOAT(MemorySegment.ofArray(new float[2]), 4),
         HEAP_LONG(MemorySegment.ofArray(new long[1]), 8),
         HEAP_DOUBLE(MemorySegment.ofArray(new double[1]), 8),
-        NATIVE(MemorySegment.allocateNative(8, MemorySession.openImplicit()), -1);
+        NATIVE(MemorySegment.allocateNative(8, MemorySession.implicit()), -1);
 
         final MemorySegment segment;
         final int align;

@@ -28,6 +28,7 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestArrays
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
@@ -107,7 +108,7 @@ public class TestArrays {
 
     @Test(dataProvider = "arrays")
     public void testArrays(Consumer<MemorySegment> init, Consumer<MemorySegment> checker, MemoryLayout layout) {
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
         init.accept(segment);
         assertFalse(segment.isReadOnly());
         checker.accept(segment);
@@ -126,8 +127,8 @@ public class TestArrays {
             expectedExceptions = IllegalStateException.class)
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = session.allocate(layout.byteSize() + 1, layout.byteSize());
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1, layout.byteSize(), arena.session());
             arrayFactory.apply(segment);
         }
     }
@@ -135,8 +136,9 @@ public class TestArrays {
     @Test(dataProvider = "elemLayouts",
             expectedExceptions = IllegalStateException.class)
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        MemorySegment segment = MemorySession.openConfined().allocate(layout);
-        segment.session().close();
+        Arena arena = Arena.openConfined();
+        MemorySegment segment = MemorySegment.allocateNative(layout, arena.session());
+        arena.close();
         arrayFactory.apply(segment);
     }
 

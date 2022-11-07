@@ -138,6 +138,17 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     // associated with MemorySegment::ofAddress.
 
     @ForceInline
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySession session, Runnable action) {
+        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
+        if (action == null) {
+            sessionImpl.checkValidState();
+        } else {
+            sessionImpl.addCloseAction(action);
+        }
+        return new NativeMemorySegmentImpl(min, byteSize, false, session);
+    }
+
+    @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySession session) {
         MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
         sessionImpl.checkValidState();

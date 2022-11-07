@@ -41,19 +41,20 @@
  * For example, to allocate an off-heap region of memory big enough to hold 10 values of the primitive type {@code int},
  * and fill it with values ranging from {@code 0} to {@code 9}, we can use the following code:
  *
- * {@snippet lang=java :
- * MemorySegment segment = MemorySegment.allocateNative(10 * 4, MemorySession.openImplicit());
+ * {@snippet lang = java:
+ * MemorySegment segment = MemorySegment.allocateNative(10 * 4, MemorySession.implicit());
  * for (int i = 0 ; i < 10 ; i++) {
  *     segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
  * }
- * }
+ *}
  *
  * This code creates a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
- * The off-heap memory backing the native segment will be released when the segment becomes
- * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>; this is similar to what happens
- * with direct buffers created via {@link java.nio.ByteBuffer#allocateDirect(int)}. It is also possible to manage
- * the lifecycle of allocated native segments more directly, as shown in a later section.
+ * The segment is associated with a memory session that is {@linkplain java.lang.foreign.MemorySession#implicit() implicitly} closed,
+ * by the garbage collector. As such, the off-heap memory backing the native segment will be released at some unspecified
+ * point <em>after</em> the segment becomes <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+ * This is similar to what happens with direct buffers created via {@link java.nio.ByteBuffer#allocateDirect(int)}.
+ * It is also possible to manage the lifecycle of allocated native segments more directly, as shown in a later section.
  * <p>
  * Inside a loop, we then initialize the contents of the memory segment; note how the
  * {@linkplain java.lang.foreign.MemorySegment#setAtIndex(ValueLayout.OfInt, long, int) access method}
@@ -70,21 +71,23 @@
  * and in a timely fashion. For this reason, there might be cases where waiting for the garbage collector to determine that a segment
  * is <a href="../../../java/lang/ref/package.html#reachability">unreachable</a> is not optimal.
  * Clients that operate under these assumptions might want to programmatically release the memory backing a memory segment.
- * This can be done, using the {@link java.lang.foreign.MemorySession} abstraction, as shown below:
+ * This can be done, using the {@link java.lang.foreign.Arena} abstraction, as shown below:
  *
- * {@snippet lang=java :
- * try (MemorySession session = MemorySession.openConfined()) {
- *     MemorySegment segment = session.allocate(10 * 4);
+ * {@snippet lang = java:
+ * try (Arena arena = Arena.openConfined()) {
+ *     MemorySegment segment = arena.allocate(10 * 4);
  *     for (int i = 0 ; i < 10 ; i++) {
  *         segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
  *     }
  * }
- * }
+ *}
  *
- * This example is almost identical to the prior one; this time we first create a so called <em>memory session</em>,
- * which is used to <em>bind</em> the life-cycle of the segment created immediately afterwards. Note the use of the
- * <em>try-with-resources</em> construct: this idiom ensures that all the memory resources associated with the segment will be released
- * at the end of the block, according to the semantics described in Section {@jls 14.20.3} of <cite>The Java Language Specification</cite>.
+ * This example is almost identical to the prior one; this time we first create an arena
+ * which is used to allocate multiple native segments which share the same life-cycle. That is, all the segments
+ * allocated by the arena will be associated with the same {@linkplain java.lang.foreign.MemorySession memory session}.
+ * Note the use of the <em>try-with-resources</em> construct: this idiom ensures that the off-heap region of memory backing the
+ * native segment will be released at the end of the block, according to the semantics described in Section {@jls 14.20.3}
+ * of <cite>The Java Language Specification</cite>.
  *
  * <h3 id="safety">Safety</h3>
  *
@@ -118,9 +121,8 @@
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *
- * try (MemorySession session = MemorySession.openConfined()) {
- *     MemorySegment cString = session.allocate(5 + 1);
- *     cString.setUtf8String(0, "Hello");
+ * try (Arena arena = Arena.openConfined()) {
+ *     MemorySegment cString = arena.allocateUtf8String("Hello");
  *     long len = (long)strlen.invoke(cString); // 5
  * }
  *}
@@ -134,10 +136,10 @@
  * From this information, the linker will uniquely determine the sequence of steps which will turn
  * the method handle invocation (here performed using {@link java.lang.invoke.MethodHandle#invoke(java.lang.Object...)})
  * into a foreign function call, according to the rules specified by the ABI of the underlying platform.
- * The {@link java.lang.foreign.MemorySegment} class also provides many useful methods for
- * interacting with foreign code, such as converting Java strings
- * {@linkplain java.lang.foreign.MemorySegment#setUtf8String(long, java.lang.String) into} zero-terminated, UTF-8 strings and
- * {@linkplain java.lang.foreign.MemorySegment#getUtf8String(long) back}, as demonstrated in the above example.
+ * The {@link java.lang.foreign.Arena} class also provides many useful methods for
+ * interacting with foreign code, such as
+ * {@linkplain java.lang.foreign.SegmentAllocator#allocateUtf8String(java.lang.String) converting} Java strings into
+ * zero-terminated, UTF-8 strings, as demonstrated in the above example.
  *
  * <h3 id="upcalls">Upcalls</h3>
  * The {@link java.lang.foreign.Linker} interface also allows clients to turn an existing method handle (which might point

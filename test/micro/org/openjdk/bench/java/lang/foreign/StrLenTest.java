@@ -25,6 +25,7 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
@@ -56,10 +57,10 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class StrLenTest extends CLayouts {
 
-    MemorySession session = MemorySession.openConfined();
+    Arena arena = Arena.openConfined();
 
     SegmentAllocator segmentAllocator;
-    SegmentAllocator arenaAllocator = SegmentAllocator.newNativeArena(session);
+    SegmentAllocator arenaAllocator = new RingAllocator(arena.session());
 
     @Param({"5", "20", "100"})
     public int size;
@@ -80,12 +81,12 @@ public class StrLenTest extends CLayouts {
     @Setup
     public void setup() {
         str = makeString(size);
-        segmentAllocator = SegmentAllocator.prefixAllocator(MemorySession.openConfined().allocate(size + 1));
+        segmentAllocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(size + 1, arena.session()));
     }
 
     @TearDown
     public void tearDown() {
-        session.close();
+        arena.close();
     }
 
     @Benchmark
@@ -95,15 +96,14 @@ public class StrLenTest extends CLayouts {
 
     @Benchmark
     public int panama_strlen() throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = session.allocate(str.length() + 1);
-            segment.setUtf8String(0, str);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = arena.allocateUtf8String(str);
             return (int)STRLEN.invokeExact(segment);
         }
     }
 
     @Benchmark
-    public int panama_strlen_arena() throws Throwable {
+    public int panama_strlen_ring() throws Throwable {
         return (int)STRLEN.invokeExact(arenaAllocator.allocateUtf8String(str));
     }
 
@@ -141,5 +141,31 @@ public class StrLenTest extends CLayouts {
                  mollit anim id est laborum.
                 """;
         return lorem.substring(0, size);
+    }
+
+    static class RingAllocator implements SegmentAllocator {
+        final MemorySegment segment;
+        SegmentAllocator current;
+        long rem;
+
+        public RingAllocator(MemorySession session) {
+            this.segment = MemorySegment.allocateNative(1024, session);
+            reset();
+        }
+
+        @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            if (rem < byteSize) {
+                reset();
+            }
+            MemorySegment res = current.allocate(byteSize, byteAlignment);
+            rem = segment.byteSize() - segment.segmentOffset(res);
+            return res;
+        }
+
+        void reset() {
+            current = SegmentAllocator.slicingAllocator(segment);
+            rem = segment.byteSize();
+        }
     }
 }

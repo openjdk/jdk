@@ -26,6 +26,7 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -217,15 +218,20 @@ public interface Binding {
 
         @Override
         public void close() {
-            session().close();
+            throw new UnsupportedOperationException();
         }
 
         /**
          * Create a binding context from given native scope.
          */
         public static Context ofBoundedAllocator(long size) {
-            MemorySession scope = MemorySession.openConfined();
-            return new Context(SegmentAllocator.newNativeArena(size, scope), scope);
+            Arena arena = Arena.openConfined();
+            return new Context(SegmentAllocator.slicingAllocator(MemorySegment.allocateNative(size, arena.session())), arena.session()) {
+                @Override
+                public void close() {
+                    arena.close();
+                }
+            };
         }
 
         /**
@@ -246,10 +252,15 @@ public interface Binding {
          * the context's allocator is accessed.
          */
         public static Context ofSession() {
-            MemorySession scope = MemorySession.openConfined();
-            return new Context(null, scope) {
+            Arena arena = Arena.openConfined();
+            return new Context(null, arena.session()) {
                 @Override
                 public SegmentAllocator allocator() { throw new UnsupportedOperationException(); }
+
+                @Override
+                public void close() {
+                    arena.close();
+                }
             };
         }
 

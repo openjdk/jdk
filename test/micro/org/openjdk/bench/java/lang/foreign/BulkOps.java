@@ -37,8 +37,8 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.TimeUnit;
@@ -60,10 +60,10 @@ public class BulkOps {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
-    final MemorySession session = MemorySession.openConfined();
+    final Arena arena = Arena.openConfined();
 
     final long unsafe_addr = unsafe.allocateMemory(ALLOC_SIZE);
-    final MemorySegment segment = MemorySession.openConfined().allocate(ALLOC_SIZE);
+    final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, arena.session());
     final IntBuffer buffer = IntBuffer.allocate(ELEM_SIZE);
 
     final int[] ints = new int[ELEM_SIZE];
@@ -72,14 +72,14 @@ public class BulkOps {
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
-    final MemorySegment mismatchSegmentLarge1 = session.allocate(SIZE_WITH_TAIL);
-    final MemorySegment mismatchSegmentLarge2 = session.allocate(SIZE_WITH_TAIL);
+    final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, arena.session());
+    final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, arena.session());;
     final ByteBuffer mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
     final ByteBuffer mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
 
     // mismatch at first byte
-    final MemorySegment mismatchSegmentSmall1 = session.allocate(7);
-    final MemorySegment mismatchSegmentSmall2 = session.allocate(7);
+    final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7, arena.session());;
+    final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7, arena.session());;
     final ByteBuffer mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
     final ByteBuffer mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
 
@@ -108,7 +108,7 @@ public class BulkOps {
 
     @TearDown
     public void tearDown() {
-        session.close();
+        arena.close();
     }
 
     @Benchmark

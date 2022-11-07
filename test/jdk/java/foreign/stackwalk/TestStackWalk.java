@@ -78,10 +78,10 @@
  *   TestStackWalk
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -114,8 +114,8 @@ public class TestStackWalk extends NativeTestHelper {
     static boolean armed;
 
     public static void main(String[] args) throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena.session());
             armed = false;
             for (int i = 0; i < 20_000; i++) {
                 payload(stub); // warmup

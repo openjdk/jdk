@@ -22,8 +22,8 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -79,6 +79,7 @@ public class LoopOverNonConstantMapped extends JavaLayouts {
     }
 
     FileChannel fileChannel;
+    Arena arena;
     MemorySegment segment;
     long unsafe_addr;
 
@@ -94,14 +95,15 @@ public class LoopOverNonConstantMapped extends JavaLayouts {
             ((MappedByteBuffer)byteBuffer).force();
         }
         fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE);
-        segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, ALLOC_SIZE, MemorySession.openConfined());
+        arena = Arena.openConfined();
+        segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, ALLOC_SIZE, arena.session());
         unsafe_addr = segment.address();
     }
 
     @TearDown
     public void tearDown() throws IOException {
         fileChannel.close();
-        segment.session().close();
+        arena.close();
         unsafe.invokeCleaner(byteBuffer);
     }
 

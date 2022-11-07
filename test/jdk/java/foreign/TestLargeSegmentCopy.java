@@ -29,14 +29,12 @@
  * @run testng/othervm -Xmx4G TestLargeSegmentCopy
  */
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static org.testng.Assert.*;
 
 public class TestLargeSegmentCopy {
 
@@ -46,8 +44,8 @@ public class TestLargeSegmentCopy {
         final int longArrayLength = Integer.MAX_VALUE / Long.BYTES + 100;
         final long[] array = new long[longArrayLength];
 
-        try (var session = MemorySession.openConfined()) {
-            var segment = session.allocate((long) longArrayLength * Long.BYTES, Long.SIZE);
+        try (var arena = Arena.openConfined()) {
+            var segment = MemorySegment.allocateNative((long) longArrayLength * Long.BYTES, Long.SIZE, arena.session());
             // Should not throw an exception or error
             MemorySegment.copy(segment, JAVA_LONG, 0, array, 0, longArrayLength);
             // Should not throw an exception or error

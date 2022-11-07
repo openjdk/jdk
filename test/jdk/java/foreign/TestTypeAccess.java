@@ -28,8 +28,8 @@
  * @run testng TestTypeAccess
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.ValueLayout;
 import org.testng.annotations.*;
 
@@ -53,32 +53,32 @@ public class TestTypeAccess {
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueGetAsString() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = session.allocate(8, 8);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.session());;
             String address = (String)ADDR_HANDLE.get(s);
         }
     }
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueSetAsString() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = session.allocate(8, 8);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.session());;
             ADDR_HANDLE.set(s, "string");
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueGetAsPrimitive() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = session.allocate(8, 8);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.session());;
             int address = (int)ADDR_HANDLE.get(s);
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueSetAsPrimitive() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = session.allocate(8, 8);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.session());;
             ADDR_HANDLE.set(s, 1);
         }
     }

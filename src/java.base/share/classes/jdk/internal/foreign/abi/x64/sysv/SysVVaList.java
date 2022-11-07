@@ -141,8 +141,8 @@ public non-sealed class SysVVaList implements VaList {
 
     private static MemorySegment emptyListAddress() {
         long ptr = U.allocateMemory(LAYOUT.byteSize());
-        MemorySegment base = MemorySegment.ofAddress(ptr, LAYOUT.byteSize(), MemorySession.openImplicit());
-        base.session().addCloseAction(() -> U.freeMemory(ptr));
+        MemorySegment base = MemorySegment.ofAddress(ptr, LAYOUT.byteSize(),
+                MemorySession.implicit(), () -> U.freeMemory(ptr));
         VH_gp_offset.set(base, MAX_GP_OFFSET);
         VH_fp_offset.set(base, MAX_FP_OFFSET);
         VH_overflow_arg_area.set(base, MemorySegment.NULL);
@@ -336,7 +336,7 @@ public non-sealed class SysVVaList implements VaList {
 
     @Override
     public VaList copy() {
-        MemorySegment copy = segment.session().allocate(LAYOUT);
+        MemorySegment copy = MemorySegment.allocateNative(LAYOUT, segment.session());
         copy.copyFrom(segment);
         return new SysVVaList(copy, overflowArgArea, regSaveArea, gpLimit, fpLimit);
     }
@@ -370,7 +370,7 @@ public non-sealed class SysVVaList implements VaList {
 
         public Builder(MemorySession session) {
             this.session = session;
-            this.reg_save_area = session.allocate(LAYOUT_REG_SAVE_AREA);
+            this.reg_save_area = MemorySegment.allocateNative(LAYOUT_REG_SAVE_AREA, session);
         }
 
         @Override
@@ -449,12 +449,12 @@ public non-sealed class SysVVaList implements VaList {
                 return EMPTY;
             }
 
-            MemorySegment vaListSegment = session.allocate(LAYOUT);
+            MemorySegment vaListSegment = MemorySegment.allocateNative(LAYOUT, session);
             MemorySegment stackArgsSegment;
             if (!stackArgs.isEmpty()) {
                 long stackArgsSize = stackArgs.stream().reduce(0L,
                         (acc, e) -> acc + Utils.alignUp(e.layout.byteSize(), STACK_SLOT_SIZE), Long::sum);
-                stackArgsSegment = session.allocate(stackArgsSize, 16);
+                stackArgsSegment = MemorySegment.allocateNative(stackArgsSize, 16, session);
                 MemorySegment writeCursor = stackArgsSegment;
                 for (SimpleVaArg arg : stackArgs) {
                     if (arg.layout.byteSize() > 8) {
@@ -475,7 +475,7 @@ public non-sealed class SysVVaList implements VaList {
             VH_fp_offset.set(vaListSegment, (int) FP_OFFSET);
             VH_overflow_arg_area.set(vaListSegment, stackArgsSegment);
             VH_reg_save_area.set(vaListSegment, reg_save_area);
-            assert reg_save_area.session().ownerThread() == vaListSegment.session().ownerThread();
+            assert MemorySessionImpl.sameOwnerThread(reg_save_area.session(), vaListSegment.session());
             return new SysVVaList(vaListSegment, stackArgsSegment, reg_save_area, currentGPOffset, currentFPOffset);
         }
     }

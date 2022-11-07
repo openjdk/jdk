@@ -479,8 +479,8 @@ public class Long256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.implicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.implicit());
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -508,8 +508,8 @@ public class Long256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.implicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.implicit());
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -572,8 +572,8 @@ public class Long256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.implicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.implicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Long> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -603,8 +603,8 @@ public class Long256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, MemorySession.implicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, MemorySession.implicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Long> vmask = VectorMask.fromValues(SPECIES, mask);
 

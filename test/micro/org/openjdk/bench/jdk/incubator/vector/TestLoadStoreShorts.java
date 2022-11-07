@@ -23,6 +23,7 @@
  */
 package org.openjdk.bench.jdk.incubator.vector;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySession;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -89,8 +90,8 @@ public class TestLoadStoreShorts {
     srcSegmentHeap = MemorySegment.ofArray(new byte[size]);
     dstSegmentHeap = MemorySegment.ofArray(new byte[size]);
 
-    srcSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), MemorySession.openImplicit());
-    dstSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), MemorySession.openImplicit());
+    srcSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), MemorySession.implicit());
+    dstSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), MemorySession.implicit());
 
     this.longSize = longSize;
 
@@ -160,9 +161,9 @@ public class TestLoadStoreShorts {
 
   @Benchmark
   public void segmentNativeConfined() {
-    try (final var session = MemorySession.openConfined()) {
-      final var srcSegmentConfined = MemorySegment.ofAddress(srcSegment.address(), size, session);
-      final var dstSegmentConfined = MemorySegment.ofAddress(dstSegment.address(), size, session);
+    try (final var arena = Arena.openConfined()) {
+      final var srcSegmentConfined = MemorySegment.ofAddress(srcSegment.address(), size, arena.session());
+      final var dstSegmentConfined = MemorySegment.ofAddress(dstSegment.address(), size, arena.session());
 
       for (long i = 0; i < SPECIES.loopBound(srcArray.length); i += SPECIES.length()) {
         var v = ShortVector.fromMemorySegment(SPECIES, srcSegmentConfined, i, ByteOrder.nativeOrder());

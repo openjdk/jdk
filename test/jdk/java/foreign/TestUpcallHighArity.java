@@ -33,6 +33,7 @@
  *   TestUpcallHighArity
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
@@ -86,7 +87,7 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         for (int i = 0; i < o.length; i++) {
             if (layouts.get(i) instanceof GroupLayout) {
                 MemorySegment ms = (MemorySegment) o[i];
-                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), MemorySession.openImplicit());
+                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), MemorySession.implicit());
                 copy.copyFrom(ms);
                 o[i] = copy;
             }
@@ -101,8 +102,8 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         MethodHandle target = MethodHandles.insertArguments(MH_passAndSave, 1, capturedArgs, upcallDescriptor.argumentLayouts())
                                          .asCollector(Object[].class, upcallType.parameterCount())
                                          .asType(upcallType);
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment upcallStub = LINKER.upcallStub(target, upcallDescriptor, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment upcallStub = LINKER.upcallStub(target, upcallDescriptor, arena.session());
             Object[] args = new Object[upcallType.parameterCount() + 1];
             args[0] = upcallStub;
             List<MemoryLayout> argLayouts = upcallDescriptor.argumentLayouts();

@@ -22,6 +22,7 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.SequenceLayout;
@@ -65,8 +66,8 @@ public class SpliteratorTest {
 
     @Test(dataProvider = "SegmentSpliterator", dataProviderClass = SegmentTestDataProvider.class )
     public void testSegmentSpliterator(String name, SequenceLayout layout, SpliteratorTestHelper.ContentAsserter<MemorySegment> contentAsserter) {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = session.allocate(layout);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = arena.allocate(layout);
             SegmentTestDataProvider.initSegment(segment);
             SpliteratorTestHelper.testSpliterator(() -> segment.spliterator(layout),
                     SegmentTestDataProvider::segmentCopier, contentAsserter);

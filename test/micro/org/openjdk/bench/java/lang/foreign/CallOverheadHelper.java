@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Linker;
@@ -80,12 +81,12 @@ public class CallOverheadHelper extends CLayouts {
             C_INT, C_INT
     );
 
-    static final MemorySegment sharedPoint = MemorySession.openShared().allocate(POINT_LAYOUT);
-    static final MemorySegment confinedPoint = MemorySession.openConfined().allocate(POINT_LAYOUT);
+    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openShared().session());
+    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openConfined().session());
 
-    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.openImplicit());
+    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.implicit());
 
-    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.openImplicit()));
+    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.implicit()));
 
     static {
         System.loadLibrary("CallOverheadJNI");

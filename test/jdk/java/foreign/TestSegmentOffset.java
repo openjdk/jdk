@@ -79,7 +79,7 @@ public class TestSegmentOffset {
     static class SegmentSlice {
 
         enum Kind {
-            NATIVE(i -> MemorySession.openConfined().allocate(i)),
+            NATIVE(i -> MemorySegment.allocateNative(i, MemorySession.implicit())),
             ARRAY(i -> MemorySegment.ofArray(new byte[i]));
 
             final IntFunction<MemorySegment> segmentFactory;

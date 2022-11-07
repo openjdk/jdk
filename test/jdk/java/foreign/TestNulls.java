@@ -32,6 +32,7 @@
  */
 
 import java.lang.foreign.*;
+
 import jdk.internal.ref.CleanerFactory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.NoInjection;
@@ -79,6 +80,7 @@ import static org.testng.Assert.fail;
 public class TestNulls {
 
     static final Class<?>[] CLASSES = new Class<?>[] {
+            Arena.class,
             MemorySegment.class,
             MemoryLayout.class,
             MemoryLayout.PathElement.class,
@@ -104,6 +106,7 @@ public class TestNulls {
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
+            "java.lang.foreign.MemorySegment/ofAddress(long,long,java.lang.foreign.MemorySession,java.lang.Runnable)/3/0",
             "java.lang.foreign.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
             "java.lang.foreign.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
             "java.lang.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
@@ -179,7 +182,8 @@ public class TestNulls {
         addDefaultMapping(Linker.class, Linker.nativeLinker());
         addDefaultMapping(VaList.class, VaListHelper.vaList);
         addDefaultMapping(VaList.Builder.class, VaListHelper.vaListBuilder);
-        addDefaultMapping(MemorySession.class, MemorySession.openShared());
+        addDefaultMapping(Arena.class, Arena.openConfined());
+        addDefaultMapping(MemorySession.class, MemorySession.implicit());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
@@ -194,7 +198,7 @@ public class TestNulls {
             vaList = VaList.make(b -> {
                 builderRef.set(b);
                 b.addVarg(JAVA_LONG, 42L);
-            }, MemorySession.openImplicit());
+            }, MemorySession.implicit());
             vaListBuilder = builderRef.get();
         }
     }

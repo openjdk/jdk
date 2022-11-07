@@ -32,8 +32,8 @@
  * @run testng/othervm -XX:-TieredCompilation TestHandshake
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -67,8 +67,8 @@ public class TestHandshake {
     @Test(dataProvider = "accessors")
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
-            MemorySession session = MemorySession.openShared();
-            MemorySegment segment = session.allocate(SEGMENT_SIZE, 1);
+            Arena arena = Arena.openShared();
+            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE, 1, arena.session());
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
@@ -79,7 +79,7 @@ public class TestHandshake {
             int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
             System.out.println("Starting handshaker with delay set to " + delay + " millis");
             Thread.sleep(delay);
-            accessExecutor.execute(new Handshaker(session));
+            accessExecutor.execute(new Handshaker(arena));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
             assertTrue(!segment.session().isAlive());
@@ -193,7 +193,7 @@ public class TestHandshake {
 
         SegmentMismatchAccessor(int id, MemorySegment segment) {
             super(id, segment);
-            this.copy = segment.session().allocate(SEGMENT_SIZE, 1);
+            this.copy = MemorySegment.allocateNative(SEGMENT_SIZE, 1, segment.session());
             copy.copyFrom(segment);
             copy.set(JAVA_BYTE, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
         }
@@ -238,10 +238,10 @@ public class TestHandshake {
 
     static class Handshaker implements Runnable {
 
-        final MemorySession session;
+        final Arena arena;
 
-        Handshaker(MemorySession session) {
-            this.session = session;
+        Handshaker(Arena arena) {
+            this.arena = arena;
         }
 
         @Override
@@ -249,7 +249,7 @@ public class TestHandshake {
             start("Handshaker");
             while (true) {
                 try {
-                    session.close();
+                    arena.close();
                     break;
                 } catch (IllegalStateException ex) {
                     Thread.onSpinWait();

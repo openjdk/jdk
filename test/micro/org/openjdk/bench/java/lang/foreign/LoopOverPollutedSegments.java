@@ -22,8 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -55,7 +56,7 @@ public class LoopOverPollutedSegments extends JavaLayouts {
     static final Unsafe unsafe = Utils.unsafe;
 
 
-    MemorySession session;
+    Arena confinedArena, sharedArena;
     MemorySegment nativeSegment, nativeSharedSegment, heapSegmentBytes, heapSegmentFloats;
     byte[] arr;
     long addr;
@@ -67,9 +68,10 @@ public class LoopOverPollutedSegments extends JavaLayouts {
             unsafe.putInt(addr + (i * 4), i);
         }
         arr = new byte[ALLOC_SIZE];
-        session = MemorySession.openConfined();
-        nativeSegment = session.allocate(ALLOC_SIZE, 4);
-        nativeSharedSegment = session.allocate(ALLOC_SIZE, 4); // <- This segment is not shared!
+        confinedArena = Arena.openConfined();
+        sharedArena = Arena.openShared();
+        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, confinedArena.session());
+        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, sharedArena.session());
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 
@@ -93,7 +95,8 @@ public class LoopOverPollutedSegments extends JavaLayouts {
 
     @TearDown
     public void tearDown() {
-        session.close();
+        confinedArena.close();
+        sharedArena.close();
         heapSegmentBytes = null;
         heapSegmentFloats = null;
         arr = null;
