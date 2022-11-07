@@ -26,8 +26,8 @@
  * @bug 8245654
  * @summary Interoperability tests with Certigna Root CA from Dhimyotis
  * @build ValidatePathWithParams
- * @run main/othervm -Djava.security.debug=certpath CertignaCA CRL
  * @run main/othervm -Djava.security.debug=certpath CertignaCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath CertignaCA CRL
  */
 
 /*
@@ -197,22 +197,32 @@ public class CertignaCA {
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
+        ValidatePathWithParams pathValidator;
+        String[] validChainToValidate;
+        String[] revChainToValidate;
 
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+            pathValidator = new ValidatePathWithParams(null);
             pathValidator.enableCRLCheck();
+
+            validChainToValidate = new String[]{VALID, INT};
+            revChainToValidate = new String[]{REVOKED, INT};
         } else {
             // OCSP check by default
-            pathValidator.setOCSPResponderURL("http://servicesca.ocsp.dhimyotis.com");
+            // int certificate doesn't specify OCSP responder
+            pathValidator = new ValidatePathWithParams(new String[]{INT});
             pathValidator.enableOCSPCheck();
+
+            validChainToValidate = new String[]{VALID};
+            revChainToValidate = new String[]{REVOKED};
         }
 
         // Validate valid
-        pathValidator.validate(new String[]{VALID, INT},
+        pathValidator.validate(validChainToValidate,
                 ValidatePathWithParams.Status.GOOD, null, System.out);
 
         // Validate Revoked
-        pathValidator.validate(new String[]{REVOKED, INT},
+        pathValidator.validate(revChainToValidate,
                 ValidatePathWithParams.Status.REVOKED,
                 "Mon Mar 14 03:00:16 PDT 2022", System.out);
     }
