@@ -131,18 +131,22 @@ public class FileExtensionAndMap {
 
         long totalDiskSpaceNeeded = FILESIZE * PARALLELISM;
 
-        if (Files.getFileStore(tmpDir).name().equals(Files.getFileStore(destinationPath).name())) {
+        if (Files.getFileStore(tmpDir).equals(Files.getFileStore(destinationPath))) {
             totalDiskSpaceNeeded *= 2; // writing and copying to same FS
             long usableDiskSpace = Files.getFileStore(tmpDir).getUsableSpace();
             if (usableDiskSpace < totalDiskSpaceNeeded) {
-                throw new SkippedException("Insufficient disk space on " + TMPDIR + ". Test requires: " + totalDiskSpaceNeeded + ". Available on disk: " + usableDiskSpace);
+                throw new SkippedException("Insufficient disk space on " + TMPDIR
+                        + ". Test requires: " + totalDiskSpaceNeeded
+                        + ". Available on disk: " + usableDiskSpace);
             }
 
         } else {
             for (Path p : List.of(destinationPath, tmpDir)) {
                 long usableDiskSpace = Files.getFileStore(p).getUsableSpace();
                 if(usableDiskSpace < totalDiskSpaceNeeded) {
-                    throw new SkippedException("Insufficient disk space on " + p + ". Test requires: " + totalDiskSpaceNeeded + ". Available on disk: " + usableDiskSpace);
+                    throw new SkippedException("Insufficient disk space on " + p
+                            + ". Test requires: " + totalDiskSpaceNeeded
+                            + ". Available on disk: " + usableDiskSpace);
                 }
             }
         }
