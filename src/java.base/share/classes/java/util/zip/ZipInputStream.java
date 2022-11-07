@@ -238,10 +238,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     /**
      * Reads up to a specified number of bytes from the input stream
-     * for the current ZIP entry. This
-     * method blocks until the requested number of bytes has been read, end
-     * of stream is detected, or an exception is thrown. This method does not
-     * close the input stream.
+     * for the current ZIP entry. This method blocks until the requested number
+     * of bytes has been read, end of stream is detected, or an exception
+     * is thrown. This method does not close the input stream.
      *
      * <p> The length of the returned array equals the number of bytes read
      * from the stream. If {@code len} is zero, then no bytes are read and
@@ -364,10 +363,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     /**
      * Reads all bytes from this input stream for the current ZIP entry
-     * and writes the bytes to the
-     * given output stream in the order that they are read. On return, this
-     * input stream will be at end of stream. This method does not close either
-     * stream.
+     * and writes the bytes to the given output stream in the order that they
+     * are read. On return, this input stream will be at end of stream.
+     * This method does not close either stream.
      * <p>
      * This method may block indefinitely reading from the input stream, or
      * writing to the output stream. The behavior for the case where the input
