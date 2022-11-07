@@ -280,7 +280,14 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index));
+    if (UseNewCode) {
+      Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
+      int i = ConstantPool::encode_invokedynamic_index(_invokedynamic_index);
+      tty->print_cr("Invokedynamic Index is %d\nEncoded Index is %d", _invokedynamic_index, i);
+      _invokedynamic_index++;
+    } else {
+      Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index));
+    }
     // add the bcp in case we need to patch this bytecode if we also find a
     // invokespecial/InterfaceMethodref in the bytecode stream
     _patch_invokedynamic_bcps->push(p);
@@ -600,6 +607,7 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _resolved_references_map(cpool->length() / 2),
     _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
+    _invokedynamic_index(0),
     _invokedynamic_cp_cache_map(cpool->length() / 4)
 {
 

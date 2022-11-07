@@ -240,7 +240,7 @@ class ConstantPoolCacheEntry {
   );
 
  public:
-  int get_invokedynamic_index() { return _invokedynamic_index; }
+  int invokedynamic_index() { return _invokedynamic_index; }
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method to call
@@ -554,6 +554,8 @@ class ConstantPoolCache: public MetaspaceObj {
   bool is_klass() const { return false; }
   void record_gc_epoch();
   uint64_t gc_epoch() { return _gc_epoch; }
+
+  void set_dynamic_call(const CallInfo &call_info, int index);
 
   // Printing
   void print_on(outputStream* st) const;

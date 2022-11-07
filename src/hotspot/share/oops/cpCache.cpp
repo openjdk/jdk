@@ -444,9 +444,11 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // that's set in the constant pool cache here.
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
-  if (UseNewCode && cpCache->resolved_invokedynamic_info_array()) {
+
+  // MOVE THIS SOMEWHERE ELSE
+  /*if (UseNewCode && cpCache->resolved_invokedynamic_info_array()) {
     cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-  }
+  }*/
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
 
@@ -651,14 +653,16 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                  is_forced_virtual(), is_final(), is_vfinal(),
                  indy_resolution_failed(), parameter_size());
     st->print_cr(" - tos: %s\n - local signature: %01x\n"
-                 " - has appendix: %01x\n - forced virtual: %01x\n"
-                 " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
-                 " - num parameters: %02x",
-                 type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
-                 is_forced_virtual(), is_final(), is_vfinal(),
-                 indy_resolution_failed(), parameter_size());
-    if (bytecode_1() == Bytecodes::_invokehandle ||
-        bytecode_1() == Bytecodes::_invokedynamic) {
+          " - has appendix: %01x\n - forced virtual: %01x\n"
+          " - final: %01x\n - virtual Final: %01x\n - resolution Failed: %01x\n"
+          " - num Parameters: %02x",
+               type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
+               is_forced_virtual(), is_final(), is_vfinal(),
+               indy_resolution_failed(), parameter_size());
+    if ((bytecode_1() == Bytecodes::_invokehandle ||
+       bytecode_1() == Bytecodes::_invokedynamic)) {
+      constantPoolHandle cph(Thread::current(), cache->constant_pool());
+      Method* m = method_if_resolved(cph);
       oop appendix = appendix_if_resolved(cph);
       if (appendix != nullptr) {
         st->print("  appendix: ");
@@ -882,6 +886,88 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
       resolved_invokedynamic_info_element(i)->metaspace_pointers_do(it); // Maybe we need this?
     }
   }
+}
+
+void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
+  MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
+
+  // Come back to this
+  /*if (indy_resolution_failed()) {
+    // Before we got here, another thread got a LinkageError exception during
+    // resolution.  Ignore our success and throw their exception.
+    //ConstantPoolCache* cpCache = cpool->cache();
+    int index = -1;
+    for (int i = 0; i < cpCache->length(); i++) {
+      if (cpCache->entry_at(i) == this) {
+        index = i;
+        break;
+      }
+    }
+    guarantee(index >= 0, "Didn't find cpCache entry!");
+    int encoded_index = ResolutionErrorTable::encode_cpcache_index(
+                          ConstantPool::encode_invokedynamic_index(index));
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
+    ConstantPool::throw_resolution_error(cpool, encoded_index, THREAD);
+    return;
+  }*/
+
+  Method* adapter            = call_info.resolved_method();
+  const Handle appendix      = call_info.resolved_appendix();
+  const bool has_appendix    = appendix.not_null();
+
+  // Write the flags.
+  // MHs and indy are always sig-poly and have a local signature.
+  // I don't think I need this...
+  /*set_method_flags(as_TosState(adapter->result_type()),
+                   ((has_appendix    ? 1 : 0) << has_appendix_shift        ) |
+                   (                   1      << has_local_signature_shift ) |
+                   (                   1      << is_final_shift            ),
+                   adapter->size_of_parameters());
+
+  LogStream* log_stream = NULL;
+  LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
+  if (lsh_indy.is_enabled()) {
+    ResourceMark rm;
+    log_stream = &lsh_indy;
+    log_stream->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method=" PTR_FORMAT " (local signature) ",
+                         invoke_code,
+                         p2i(appendix()),
+                         (has_appendix ? "" : " (unused)"),
+                         p2i(adapter));
+    adapter->print_on(log_stream);
+    if (has_appendix)  appendix()->print_on(log_stream);
+  }*/
+
+  if (has_appendix) {
+    //const int appendix_index = f2_as_index();
+    const int appendix_index = resolved_invokedynamic_info_array()->at(index).resolved_references_index();
+    objArrayOop resolved_references = constant_pool()->resolved_references();
+    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
+    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
+    resolved_references->obj_at_put(appendix_index, appendix());
+  }
+
+  // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info
+  // that's set in the constant pool cache here.
+  // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
+  // out of the ConstantPoolCacheEntry.
+
+  // MOVE THIS SOMEWHERE ELSE
+  if (UseNewCode && resolved_invokedynamic_info_array()) {
+    resolved_invokedynamic_info_element(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+  }
+
+  // The interpreter assembly code does not check byte_2,
+  // but it is used by is_resolved, method_if_resolved, etc.
+  /*set_bytecode_1(invoke_code);
+  NOT_PRODUCT(verify(tty));
+
+  if (log_stream != NULL) {
+    this->print(log_stream, 0, cpool->cache());
+  }
+
+  assert(has_appendix == this->has_appendix(), "proper storage of appendix flag");
+  assert(this->has_local_signature(), "proper storage of signature flag");*/
 }
 
 // Printing

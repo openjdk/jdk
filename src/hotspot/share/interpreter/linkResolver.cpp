@@ -1764,8 +1764,15 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
-  int pool_index = cpce->constant_pool_index();
+  int pool_index;
+  if (UseNewCode) {
+    indy_index = pool->decode_invokedynamic_index(indy_index);
+    pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
+    tty->print_cr("CPool index is %d", pool_index);
+  } else {
+    ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
+    pool_index = cpce->constant_pool_index();
+  }
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
   BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
@@ -1823,6 +1830,8 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       // nor do we memorize a LE for posterity.
       return;
     }
+    if (UseNewCode)
+      ShouldNotReachHere();
     // JVMS 5.4.3 says: If an attempt by the Java Virtual Machine to resolve
     // a symbolic reference fails because an error is thrown that is an
     // instance of LinkageError (or a subclass), then subsequent attempts to
