@@ -3324,14 +3324,14 @@ void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltyp
 }
 
 void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register result,
-                                        Register index, Register coef, Register tmp, XMMRegister vnext,
+                                        Register index, Register tmp1, Register tmp2, XMMRegister vnext,
                                         XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
                                         XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
                                         XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
                                         int mode) {
   ShortBranchVerifier sbv(this);
   assert(UseAVX >= 2, "AVX2 intrinsics are required");
-  assert_different_registers(ary1, cnt1, result, index, coef, tmp);
+  assert_different_registers(ary1, cnt1, result, index, tmp1, tmp2);
   assert_different_registers(vnext, vcoef0, vcoef1, vcoef2, vcoef3, vresult0, vresult1, vresult2, vresult3, vtmp0, vtmp1, vtmp2, vtmp3);
 
   Label SHORT_UNROLLED_BEGIN, SHORT_UNROLLED_LOOP_BEGIN, SHORT_UNROLLED_LOOP_EXIT,
@@ -3341,7 +3341,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
         END;
 
   // For "renaming" for readibility of the code
-  Register bound;
+  Register bound, next;
   XMMRegister vcoef[] = { vcoef0, vcoef1, vcoef2, vcoef3 },
               vresult[] = { vresult0, vresult1, vresult2, vresult3 },
               vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
@@ -3356,214 +3356,97 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
 
   // int result = 0|1;
   movl(result, is_string_hashcode ? 0 : 1);
+  // int i = 0;
+  xorq(index, index);
 
   /*
-     if (cnt1 >= 4) {
-       if (cnt1 >= 16) {
-           UNROLLED VECTOR LOOP
-           SINGLE VECTOR LOOP
-       }
-       UNROLLED SCALAR LOOP
-   }
-   SINGLE SCALAR LOOP
-   */
+    if (cnt1 >= 32) {
+      UNROLLED VECTOR LOOP
+    }
+    SINGLE SCALAR LOOP
+  */
 
   if (hashMode == VectorizedHashCodeNode::UTF16) {
     shrl(cnt1, 1);
   }
-  cmpl(cnt1, 2);
+
+  if (generate_vectorized_loop) {
+
+  cmpl(cnt1, 32);
   jcc(Assembler::less, SHORT_SCALAR_BEGIN);
 
-  if (generate_vectorized_loop) {
-    cmpl(cnt1, 32);
-    jcc(Assembler::greaterEqual, LONG);
-  }
-  jmp(SHORT_UNROLLED_BEGIN);
-
-  address power_of_31_backwards = pc();
-  emit_int32( 2111290369);
-  emit_int32(-2010103841);
-  emit_int32(  350799937);
-  emit_int32(   11316127);
-  emit_int32(  693101697);
-  emit_int32( -254736545);
-  emit_int32(  961614017);
-  emit_int32(   31019807);
-  emit_int32(-2077209343);
-  emit_int32(  -67006753);
-  emit_int32( 1244764481);
-  emit_int32(-2038056289);
-  emit_int32(  211350913);
-  emit_int32( -408824225);
-  emit_int32( -844471871);
-  emit_int32( -997072353);
-  emit_int32( 1353309697);
-  emit_int32( -510534177);
-  emit_int32( 1507551809);
-  emit_int32( -505558625);
-  emit_int32( -293403007);
-  emit_int32(  129082719);
-  emit_int32(-1796951359);
-  emit_int32( -196513505);
-  emit_int32(-1807454463);
-  emit_int32( 1742810335);
-  emit_int32(  887503681);
-  emit_int32(   28629151);
-  emit_int32(     923521);
-  emit_int32(      29791);
-  emit_int32(        961);
-  emit_int32(         31);
-  emit_int32(          1);
-
-  if (generate_vectorized_loop) {
-  // if (cnt1 >= 32) {
-  bind(LONG);
-
-  // int coef = 1;
-  movl(coef, 1);
-  // int i = cnt1 - 1;
-  movl(index, cnt1);
-  decrementl(index);
-  // bound = cnt1 & ~(32-1);
-  bound = cnt1;
-  movl(bound, cnt1);
-  andl(bound, ~(32-1));
-
-  // result = 0;
-  if (!is_string_hashcode) {
-    movl(result, 0);
-  }
-
-  // for (; i >= bound; i -= 1) {
-  bind(LONG_SCALAR_LOOP_BEGIN);
-  // i >= bound;
-  cmpl(index, bound);
-  jccb(Assembler::less, LONG_SCALAR_LOOP_END);
-  // result += coef * ary1[i];
-  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize)), eltype, is_string_hashcode);
-  imull(tmp, coef);
-  addl(result, tmp);
-  // coef *= 31;
-  movl(tmp, 31);
-  imull(coef, tmp);
-  // i -= 1;
-  decrementl(index);
-  jmpb(LONG_SCALAR_LOOP_BEGIN);
-  bind(LONG_SCALAR_LOOP_END);
-  // }
-
+  // vresult = IntVector.zero(I256);
   for (int idx = 0; idx < 4; idx++) {
-    // vresult = IntVector.zero(I256);
     vpxor(vresult[idx], vresult[idx]);
   }
   // vnext = IntVector.broadcast(I256, power_of_31_backwards[0]);
-  movdl(vnext, InternalAddress(power_of_31_backwards + (0 * sizeof(jint))));
+  next = tmp1;
+  movl(next, as_Address(ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint)))));
+  movdl(vnext, next);
   vpbroadcastd(vnext, vnext, Assembler::AVX_256bit);
-  // vcoef = IntVector.fromArray(I256, power_of_31_backwards, 1);
-  for (int idx = 0; idx < 4; idx++) {
-    arrays_hashcode_elvload(vcoef[idx], InternalAddress(power_of_31_backwards + ((8 * idx + 1) * sizeof(jint))), T_INT);
-  }
-  // vcoef *= coef
-  movdl(vtmp0, coef);
-  vpbroadcastd(vtmp0, vtmp0, Assembler::AVX_256bit);
-  for (int idx = 0; idx < 4; idx++) {
-    vpmulld(vcoef[idx], vcoef[idx], vtmp0, Assembler::AVX_256bit);
-  }
 
-  // for (i &= ~(31); i >= 0; i -= 8*4) {
-  // i &= ~(31);
-  andl(index, ~(31));
+  // i = 0;
+  // bound = cnt1 & ~(32 - 1);
+  bound = tmp2;
+  movl(bound, cnt1);
+  andl(bound, ~(32 - 1));
+  // for (; i < bound; i += 32) {
   bind(LONG_VECTOR_LOOP_BEGIN);
   // loop fission to upfront the cost of fetching from memory, OOO execution
   // can then hopefully do a better job of prefetching
   for (int idx = 0; idx < 4; idx++) {
     arrays_hashcode_elvload(vtmp[idx], Address(ary1, index, Address::times(elsize), 8 * idx * elsize), eltype);
   }
-  // vresult += vcoef * ary1[i+8*idx:i+8*idx+7]; vcoef *= vnext;
+  // vresult = vresult * vnext + ary1[i+8*idx:i+8*idx+7];
   for (int idx = 0; idx < 4; idx++) {
+    vpmulld(vresult[idx], vresult[idx], vnext, Assembler::AVX_256bit);
     arrays_hashcode_elvcast(vtmp[idx], eltype);
-    vpmulld(vtmp[idx], vtmp[idx], vcoef[idx], Assembler::AVX_256bit);
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
   }
-  // i -= 32;
-  subl(index, 32);
-  // i >= 0;
-  jccb(Assembler::less, LONG_VECTOR_LOOP_END);
-  for (int idx = 0; idx < 4; idx++) {
-    vpmulld(vcoef[idx], vcoef[idx], vnext, Assembler::AVX_256bit);
+  // result *= next;
+  if (!is_string_hashcode) {
+    imull(result, next);
   }
+  // i += 32;
+  addl(index, 32);
+  // i < bound;
+  jccb(Assembler::greaterEqual, LONG_VECTOR_LOOP_END);
   jmp(LONG_VECTOR_LOOP_BEGIN);
   // }
-
   bind(LONG_VECTOR_LOOP_END);
-  // }
 
-  // result += vcoef0[0]; -- for the non-String cases that have a starting point of constant 1
+  // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
+  for (int idx = 0; idx < 4; idx++) {
+    arrays_hashcode_elvload(vcoef[idx], as_Address(ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint)))), T_INT);
+    vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
+  }
+  // result *= next;
   if (!is_string_hashcode) {
-    movdl(coef, vcoef0);
-    movl(tmp, 31);
-    imull(coef, tmp);
-    addl(result, coef);
+    imull(result, next);
   }
 
   // result += vresult.reduceLanes(ADD);
   for (int idx = 0; idx < 4; idx++) {
     reduceI(Op_AddReductionVI, 256/(sizeof(jint) * 8), result, result, vresult[idx], vtmp[(idx * 2 + 0) % 4], vtmp[(idx * 2 + 1) % 4]);
   }
-  jmp(END);
   }
 
-  // } else if (cnt1 < 32) {
-
-  bind(SHORT_UNROLLED_BEGIN);
-  // int i = 1;
-  movl(index, 1);
-  if (!is_string_hashcode) {
-    movl(coef, 961);
-    imull(result, coef);
-  }
-  // for (; i < cnt1 ; i += 2) {
-  bind(SHORT_UNROLLED_LOOP_BEGIN);
-  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
-  movl(coef, 31);
-  imull(tmp, coef);
-  addl(result, tmp);
-  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize)), eltype, is_string_hashcode);
-  addl(result, tmp);
-  addl(index, 2);
-  cmpl(index, cnt1);
-  jccb(Assembler::greaterEqual, SHORT_UNROLLED_LOOP_EXIT);
-  movl(coef, 961);
-  imull(result, coef);
-  jmpb(SHORT_UNROLLED_LOOP_BEGIN);
-
-  // }
-  // if (i == cnt1) {
-  bind(SHORT_UNROLLED_LOOP_EXIT);
-  cmpl(index, cnt1);
-  jccb(Assembler::greater, END);
-  movl(coef, result);
-  shll(result, 5);
-  subl(result, coef);
-  arrays_hashcode_elload(tmp, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
-  addl(result, tmp);
-  jmpb(END);
-
-  // }
+  // cnt1 < 32
 
   bind(SHORT_SCALAR_BEGIN);
-  cmpl(cnt1, 0);
-  jccb(Assembler::equal, END);
+  // for (; i < cnt1; i += 1) {
+  cmpl(index, cnt1);
+  jccb(Assembler::greaterEqual, END);
   // h = (31 * h) or (h << 5 - h);
-  if (!is_string_hashcode) {
-    movl(tmp, result);
-    shll(result, 5);
-    subl(result, tmp);
-  }
+  movl(tmp1, result);
+  shll(result, 5);
+  subl(result, tmp1);
   // h += ary1[i];
-  arrays_hashcode_elload(tmp, Address(ary1, 0, Address::times(elsize)), eltype, is_string_hashcode);
-  addl(result, tmp);
+  arrays_hashcode_elload(tmp2, Address(ary1, 0, Address::times(elsize)), eltype, is_string_hashcode);
+  addl(result, tmp2);
   // i += 1;
+  addl(index, 1);
+  jmpb(SHORT_SCALAR_BEGIN);
   // }
 
   // }
