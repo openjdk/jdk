@@ -238,6 +238,7 @@ const char* ClassPathEntry::copy_path(const char* path) {
 }
 
 ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char* name) {
+  assert(current == Thread::current(), "current is not equal to Thread::current()");
   // construct full path name
   assert((_dir != NULL) && (name != NULL), "sanity");
   size_t path_len = strlen(_dir) + strlen(name) + strlen(os::file_separator()) + 1;
@@ -251,7 +252,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
     int file_handle = os::open(path, 0, 0);
     if (file_handle != -1) {
       // read contents into resource array
-      u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
+      u1* buffer = NEW_RESOURCE_ARRAY_IN_THREAD(current, u1, st.st_size);
       size_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
       // close file
       ::close(file_handle);
@@ -260,7 +261,6 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
-        FREE_RESOURCE_ARRAY(char, path, path_len);
         // Resource allocated
         return new ClassFileStream(buffer,
                                    st.st_size,
