@@ -38,10 +38,15 @@ void VM_Version::initialize() {
 
   // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
   if (UseRVA20U64) {
-    // do nothing for now.
+    if (FLAG_IS_DEFAULT(UseRVC)) {
+      FLAG_SET_DEFAULT(UseRVC, true);
+    }
   }
   // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
   if (UseRVA22U64) {
+    if (FLAG_IS_DEFAULT(UseRVC)) {
+      FLAG_SET_DEFAULT(UseRVC, true);
+    }
     if (FLAG_IS_DEFAULT(UseZba)) {
       FLAG_SET_DEFAULT(UseZba, true);
     }
