@@ -515,8 +515,9 @@ public class BindingSpecializer {
         // 1 scope to acquire on the stack
         emitDup(Object.class);
         int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
-        emitStore(Object.class, nextScopeLocal); // store off one to release later
+        // call acquire first here. So that if it fails, we don't call release
         emitInvokeVirtual(MemorySessionImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
+        emitStore(Object.class, nextScopeLocal); // store off one to release later
 
         if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
             mv.visitJumpInsn(GOTO, end);
