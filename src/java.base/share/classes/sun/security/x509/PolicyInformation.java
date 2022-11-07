@@ -28,7 +28,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.PolicyQualifierInfo;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -213,41 +212,6 @@ public class PolicyInformation {
             throw new IOException("Attribute name [" + name +
                 "] not recognized by PolicyInformation");
         }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(QUALIFIERS)) {
-            policyQualifiers = Collections.emptySet();
-        } else if (name.equalsIgnoreCase(ID)) {
-            throw new IOException("Attribute ID may not be deleted from " +
-                "PolicyInformation.");
-        } else {
-            //ID may not be deleted
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(ID);
-        elements.addElement(QUALIFIERS);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return NAME;
     }
 
     /**

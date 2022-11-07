@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -136,32 +135,4 @@ public class CertificateAlgorithmId implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(ALGORITHM)) {
-            algId = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                               "CertAttrSet:CertificateAlgorithmId.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(ALGORITHM);
-        return (elements.elements());
-    }
-
-   /**
-    * Return the name of this attribute.
-    */
-   public String getName() {
-      return (NAME);
-   }
 }

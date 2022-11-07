@@ -880,10 +880,37 @@ void VM_Version::get_processor_features() {
     UseAVX = 0;
   }
 
+  // UseSSE is set to the smaller of what hardware supports and what
+  // the command line requires.  I.e., you cannot set UseSSE to 2 on
+  // older Pentiums which do not support it.
+  int use_sse_limit = 0;
+  if (UseSSE > 0) {
+    if (UseSSE > 3 && supports_sse4_1()) {
+      use_sse_limit = 4;
+    } else if (UseSSE > 2 && supports_sse3()) {
+      use_sse_limit = 3;
+    } else if (UseSSE > 1 && supports_sse2()) {
+      use_sse_limit = 2;
+    } else if (UseSSE > 0 && supports_sse()) {
+      use_sse_limit = 1;
+    } else {
+      use_sse_limit = 0;
+    }
+  }
+  if (FLAG_IS_DEFAULT(UseSSE)) {
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  } else if (UseSSE > use_sse_limit) {
+    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", (int) UseSSE, use_sse_limit);
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  }
+
   // first try initial setting and detect what we can support
   int use_avx_limit = 0;
   if (UseAVX > 0) {
-    if (UseAVX > 2 && supports_evex()) {
+    if (UseSSE < 4) {
+      // Don't use AVX if SSE is unavailable or has been disabled.
+      use_avx_limit = 0;
+    } else if (UseAVX > 2 && supports_evex()) {
       use_avx_limit = 3;
     } else if (UseAVX > 1 && supports_avx2()) {
       use_avx_limit = 2;
@@ -902,11 +929,12 @@ void VM_Version::get_processor_features() {
     }
   }
   if (UseAVX > use_avx_limit) {
-    warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
+    if (UseSSE < 4) {
+      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", (int) UseAVX);
+    } else {
+      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
+    }
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
-  } else if (UseAVX < 0) {
-    warning("UseAVX=%d is not valid, setting it to UseAVX=0", (int) UseAVX);
-    FLAG_SET_DEFAULT(UseAVX, 0);
   }
 
   if (UseAVX < 3) {
@@ -972,33 +1000,6 @@ void VM_Version::get_processor_features() {
   insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
-
-  // UseSSE is set to the smaller of what hardware supports and what
-  // the command line requires.  I.e., you cannot set UseSSE to 2 on
-  // older Pentiums which do not support it.
-  int use_sse_limit = 0;
-  if (UseSSE > 0) {
-    if (UseSSE > 3 && supports_sse4_1()) {
-      use_sse_limit = 4;
-    } else if (UseSSE > 2 && supports_sse3()) {
-      use_sse_limit = 3;
-    } else if (UseSSE > 1 && supports_sse2()) {
-      use_sse_limit = 2;
-    } else if (UseSSE > 0 && supports_sse()) {
-      use_sse_limit = 1;
-    } else {
-      use_sse_limit = 0;
-    }
-  }
-  if (FLAG_IS_DEFAULT(UseSSE)) {
-    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  } else if (UseSSE > use_sse_limit) {
-    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", (int) UseSSE, use_sse_limit);
-    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  } else if (UseSSE < 0) {
-    warning("UseSSE=%d is not valid, setting it to UseSSE=0", (int) UseSSE);
-    FLAG_SET_DEFAULT(UseSSE, 0);
-  }
 
   // Use AES instructions if available.
   if (supports_aes()) {

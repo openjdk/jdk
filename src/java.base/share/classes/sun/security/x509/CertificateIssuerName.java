@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -53,7 +52,7 @@ public class CertificateIssuerName implements CertAttrSet<String> {
     public static final String DN_NAME = "dname";
 
     // accessor name for cached X500Principal only
-    // do not allow a set() of this value, do not advertise with getElements()
+    // do not allow a set() of this value
     public static final String DN_PRINCIPAL = "x500principal";
 
     // Private data member
@@ -144,34 +143,4 @@ public class CertificateIssuerName implements CertAttrSet<String> {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DN_NAME)) {
-            dnName = null;
-            dnPrincipal = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:CertificateIssuerName.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DN_NAME);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
-    }
 }
