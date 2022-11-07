@@ -25,7 +25,7 @@
  * @bug 8051408 8157308 8130181
  * @modules java.base/sun.security.provider
  * @build java.base/sun.security.provider.S
- * @run main SpecTest
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom SpecTest
  * @summary check the AbstractDrbg API etc
  */
 
