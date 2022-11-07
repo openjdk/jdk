@@ -1604,12 +1604,12 @@ eventHandler_onConnect() {
         error = threadControl_setEventMode(JVMTI_ENABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
         if (error != JVMTI_ERROR_NONE) {
-            EXIT_ERROR(error,"Can't disable vthread start events");
+            EXIT_ERROR(error,"Can't enable vthread start events");
         }
         error = threadControl_setEventMode(JVMTI_ENABLE,
                                            EI_VIRTUAL_THREAD_END, NULL);
         if (error != JVMTI_ERROR_NONE) {
-            EXIT_ERROR(error,"Can't disable vthread end events");
+            EXIT_ERROR(error,"Can't enable vthread end events");
         }
     }
 
