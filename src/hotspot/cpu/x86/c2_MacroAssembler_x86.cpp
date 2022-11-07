@@ -3334,11 +3334,17 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   assert_different_registers(ary1, cnt1, result, index, tmp1, tmp2);
   assert_different_registers(vnext, vcoef0, vcoef1, vcoef2, vcoef3, vresult0, vresult1, vresult2, vresult3, vtmp0, vtmp1, vtmp2, vtmp3);
 
-  Label SHORT_UNROLLED_BEGIN, SHORT_UNROLLED_LOOP_BEGIN, SHORT_UNROLLED_LOOP_EXIT,
-        SHORT_SCALAR_BEGIN, SHORT_SCALAR_LOOP_BEGIN,
-        LONG, LONG_INIT, LONG_SCALAR_LOOP_BEGIN, LONG_SCALAR_LOOP_END,
-        LONG_VECTOR_LOOP_BEGIN, LONG_VECTOR_LOOP_END,
-        END;
+  Label SHORT_SCALAR_BEGIN, LONG_VECTOR_LOOP_BEGIN, END;
+
+  switch (mode) {
+  case VectorizedHashCodeNode::LATIN1: BLOCK_COMMENT("arrays_hashcode(LATIN1) {"); break;
+  case VectorizedHashCodeNode::UTF16:  BLOCK_COMMENT("arrays_hashcode(UTF16) {");  break;
+  case VectorizedHashCodeNode::BYTE:   BLOCK_COMMENT("arrays_hashcode(BYTE) {");   break;
+  case VectorizedHashCodeNode::CHAR:   BLOCK_COMMENT("arrays_hashcode(CHAR) {");   break;
+  case VectorizedHashCodeNode::SHORT:  BLOCK_COMMENT("arrays_hashcode(SHORT) {");  break;
+  case VectorizedHashCodeNode::INT:    BLOCK_COMMENT("arrays_hashcode(INT) {");    break;
+  default:                             BLOCK_COMMENT("arrays_hashcode {");    break;
+  }
 
   // For "renaming" for readibility of the code
   Register bound, next;
@@ -3392,6 +3398,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   andl(bound, ~(32 - 1));
   // for (; i < bound; i += 32) {
   bind(LONG_VECTOR_LOOP_BEGIN);
+  // result *= next;
+  if (!is_string_hashcode) {
+    imull(result, next);
+  }
   // loop fission to upfront the cost of fetching from memory, OOO execution
   // can then hopefully do a better job of prefetching
   for (int idx = 0; idx < 4; idx++) {
@@ -3403,28 +3413,18 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
     arrays_hashcode_elvcast(vtmp[idx], eltype);
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
   }
-  // result *= next;
-  if (!is_string_hashcode) {
-    imull(result, next);
-  }
   // i += 32;
   addl(index, 32);
   // i < bound;
-  jccb(Assembler::greaterEqual, LONG_VECTOR_LOOP_END);
-  jmp(LONG_VECTOR_LOOP_BEGIN);
+  cmpl(index, bound);
+  jcc(Assembler::less, LONG_VECTOR_LOOP_BEGIN);
   // }
-  bind(LONG_VECTOR_LOOP_END);
 
   // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
   for (int idx = 0; idx < 4; idx++) {
     arrays_hashcode_elvload(vcoef[idx], as_Address(ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint)))), T_INT);
     vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
   }
-  // result *= next;
-  if (!is_string_hashcode) {
-    imull(result, next);
-  }
-
   // result += vresult.reduceLanes(ADD);
   for (int idx = 0; idx < 4; idx++) {
     reduceI(Op_AddReductionVI, 256/(sizeof(jint) * 8), result, result, vresult[idx], vtmp[(idx * 2 + 0) % 4], vtmp[(idx * 2 + 1) % 4]);
@@ -3452,6 +3452,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
 
   // }
   bind(END);
+
+  BLOCK_COMMENT("} // arrays_hashcode");
 
 } // arrays_hashcode
 

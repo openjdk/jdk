@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Basic array hashCode functionality
- * @run main/othervm HashCode
+ * @run main/othervm -Xcomp -Xbatch HashCode
  */
 
 import java.util.Arrays;
