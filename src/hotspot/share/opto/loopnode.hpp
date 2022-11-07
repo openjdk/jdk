@@ -1657,8 +1657,8 @@ private:
 
   bool _created_loop_node;
 #ifdef ASSERT
-  void dump_real_LCA(Node* early, Node* wrong_lca);
-  bool check_idom_chains_intersection(const Node* n, uint& idom_idx_new, uint& idom_idx_other, const Node_List* nodes_seen) const;
+  void dump_idoms(Node* early, Node* wrong_lca);
+  void dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const;
 #endif
 
 public:
@@ -1668,11 +1668,13 @@ public:
 
 #ifdef ASSERT
   void dump_bad_graph(const char* msg, Node* n, Node* early, Node* LCA);
+  void get_idoms(Node* n, uint count, Unique_Node_List& idoms) const;
 #endif
 
 #ifndef PRODUCT
   void dump() const;
-  void dump_idom(Node* n) const;
+  void dump_idom(Node* n) const { dump_idom(n, 1000); } // For debugging
+  void dump_idom(Node* n, uint count) const;
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   void verify() const;          // Major slow  :-)
   void verify_compare(Node* n, const PhaseIdealLoop* loop_verify, VectorSet &visited) const;
