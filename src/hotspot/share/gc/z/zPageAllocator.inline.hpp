@@ -36,7 +36,8 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
                                                 size_t used_generation,
                                                 size_t freed,
                                                 size_t promoted,
-                                                size_t compacted) :
+                                                size_t compacted,
+                                                size_t allocation_stalls) :
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _soft_max_capacity(soft_max_capacity),
@@ -47,7 +48,8 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
     _used_generation(used_generation),
     _freed(freed),
     _promoted(promoted),
-    _compacted(compacted) {}
+    _compacted(compacted),
+    _allocation_stalls(allocation_stalls) {}
 
 inline size_t ZPageAllocatorStats::min_capacity() const {
   return _min_capacity;
@@ -91,6 +93,10 @@ inline size_t ZPageAllocatorStats::promoted() const {
 
 inline size_t ZPageAllocatorStats::compacted() const {
   return _compacted;
+}
+
+inline size_t ZPageAllocatorStats::allocation_stalls() const {
+  return _allocation_stalls;
 }
 
 #endif // SHARE_GC_Z_ZPAGEALLOCATOR_INLINE_HPP

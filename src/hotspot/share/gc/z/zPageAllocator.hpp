@@ -179,6 +179,7 @@ private:
   size_t _freed;
   size_t _promoted;
   size_t _compacted;
+  size_t _allocation_stalls;
 
 public:
   ZPageAllocatorStats(size_t min_capacity,
@@ -191,7 +192,8 @@ public:
                       size_t used_generation,
                       size_t freed,
                       size_t promoted,
-                      size_t compacted);
+                      size_t compacted,
+                      size_t allocation_stalls);
 
   size_t min_capacity() const;
   size_t max_capacity() const;
@@ -204,6 +206,7 @@ public:
   size_t freed() const;
   size_t promoted() const;
   size_t compacted() const;
+  size_t allocation_stalls() const;
 };
 
 #endif // SHARE_GC_Z_ZPAGEALLOCATOR_HPP

@@ -329,7 +329,8 @@ ZPageAllocatorStats ZPageAllocator::stats(ZGeneration* generation) const {
                              used_generation(generation->id()),
                              generation->freed(),
                              generation->promoted(),
-                             generation->compacted());
+                             generation->compacted(),
+                             _stalled.size());
 }
 
 void ZPageAllocator::reset_statistics(ZGenerationId id) {

@@ -613,6 +613,7 @@ private:
     size_t free;
     size_t used;
     size_t used_generation;
+    size_t allocation_stalls;
   } _at_mark_start;
 
   struct ZAtMarkEnd {
@@ -623,6 +624,7 @@ private:
     size_t live;
     size_t garbage;
     size_t mutator_allocated;
+    size_t allocation_stalls;
   } _at_mark_end;
 
   struct ZAtRelocateStart {
@@ -636,6 +638,7 @@ private:
     size_t reclaimed;
     size_t promoted;
     size_t compacted;
+    size_t allocation_stalls;
   } _at_relocate_start;
 
   struct ZAtRelocateEnd {
@@ -655,6 +658,7 @@ private:
     size_t reclaimed;
     size_t promoted;
     size_t compacted;
+    size_t allocation_stalls;
   } _at_relocate_end;
 
   NumberSeq _reclaimed_bytes;
@@ -683,12 +687,17 @@ public:
   size_t live_at_mark_end() const;
   size_t used_at_relocate_end() const;
   size_t used_at_collection_end() const;
+  size_t stalls_at_mark_start() const;
+  size_t stalls_at_mark_end() const;
+  size_t stalls_at_relocate_start() const;
+  size_t stalls_at_relocate_end() const;
 
   size_t reclaimed_avg();
 
   ZStatHeapStats stats();
 
   void print(const ZGeneration* generation) const;
+  void print_stalls() const;
 };
 
 #endif // SHARE_GC_Z_ZSTAT_HPP

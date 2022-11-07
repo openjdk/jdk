@@ -710,6 +710,7 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
   ZGeneration* const generation = ZGeneration::generation(_id);
 
+  generation->stat_heap()->print_stalls();
   ZStatLoad::print();
   ZStatMMU::print();
   generation->stat_mark()->print();
@@ -1725,6 +1726,7 @@ void ZStatHeap::at_mark_start(const ZPageAllocatorStats& stats) {
   _at_mark_start.free = free(stats.used());
   _at_mark_start.used = stats.used();
   _at_mark_start.used_generation = stats.used_generation();
+  _at_mark_start.allocation_stalls = stats.allocation_stalls();
 }
 
 void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
@@ -1735,6 +1737,7 @@ void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
   _at_mark_end.used = stats.used();
   _at_mark_end.used_generation = stats.used_generation();
   _at_mark_end.mutator_allocated = mutator_allocated(stats.used_generation(), 0 /* reclaimed */, 0 /* relocated */);
+  _at_mark_end.allocation_stalls = stats.allocation_stalls();
 }
 
 void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
@@ -1764,6 +1767,7 @@ void ZStatHeap::at_relocate_start(const ZPageAllocatorStats& stats) {
   _at_relocate_start.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
   _at_relocate_start.promoted = stats.promoted();
   _at_relocate_start.compacted = stats.compacted();
+  _at_relocate_start.allocation_stalls = stats.allocation_stalls();
 }
 
 void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_stats) {
@@ -1785,6 +1789,7 @@ void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_st
   _at_relocate_end.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
   _at_relocate_end.promoted = stats.promoted();
   _at_relocate_end.compacted = stats.compacted();
+  _at_relocate_end.allocation_stalls = stats.allocation_stalls();
 
   if (record_stats) {
     _reclaimed_bytes.add(_at_relocate_end.reclaimed);
@@ -1817,6 +1822,22 @@ size_t ZStatHeap::used_at_relocate_end() const {
 
 size_t ZStatHeap::used_at_collection_end() const {
   return used_at_relocate_end();
+}
+
+size_t ZStatHeap::stalls_at_mark_start() const {
+  return _at_mark_start.allocation_stalls;
+}
+
+size_t ZStatHeap::stalls_at_mark_end() const {
+  return _at_mark_end.allocation_stalls;
+}
+
+size_t ZStatHeap::stalls_at_relocate_start() const {
+  return _at_relocate_start.allocation_stalls;
+}
+
+size_t ZStatHeap::stalls_at_relocate_end() const {
+  return _at_relocate_end.allocation_stalls;
 }
 
 ZStatHeapStats ZStatHeap::stats() {
@@ -1935,5 +1956,23 @@ void ZStatHeap::print(const ZGeneration* generation) const {
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_relocate_end.compacted))
+                     .end());
+}
+
+void ZStatHeap::print_stalls() const {
+  ZStatTablePrinter stall_table(20, 16);
+  log_info(gc, alloc)("%s", stall_table()
+                     .fill()
+                     .center("Mark Start")
+                     .center("Mark End")
+                     .center("Relocate Start")
+                     .center("Relocate End")
+                     .end());
+  log_info(gc, alloc)("%s", stall_table()
+                     .left("%s", "Allocation Stalls:")
+                     .center("%zu", _at_mark_start.allocation_stalls)
+                     .center("%zu", _at_mark_end.allocation_stalls)
+                     .center("%zu", _at_relocate_start.allocation_stalls)
+                     .center("%zu", _at_relocate_end.allocation_stalls)
                      .end());
 }
