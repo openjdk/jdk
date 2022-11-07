@@ -44,7 +44,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 public interface EnhancedForLoopTree extends StatementTree {
     /**
-     * Enhanced for declarations come in two forms:
+     * "Enhanced" {@code for} declarations come in two forms:
      * <ul>
      * <li> local variable declarations and
      * <li> record patterns
@@ -62,7 +62,7 @@ public interface EnhancedForLoopTree extends StatementTree {
 
     /**
      * Returns the control variable for the loop.
-     * @return the control variable, or {@code null} if this enhanced for uses a pattern
+     * @return the control variable, or {@code null} if this "enhanced" {@code for} uses a pattern
      */
     VariableTree getVariable();
 
@@ -87,7 +87,7 @@ public interface EnhancedForLoopTree extends StatementTree {
     StatementTree getStatement();
 
     /**
-     * Returns the kind of the declaration of the enhanced for.
+     * Returns the kind of the declaration of the "enhanced" {@code for}.
      * @return the kind of the declaration
      * @since 20
      */

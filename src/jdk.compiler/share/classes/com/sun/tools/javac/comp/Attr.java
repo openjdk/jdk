@@ -1556,8 +1556,10 @@ public class Attr extends JCTree.Visitor {
 
                 loopEnv.tree = tree; // before, we were not in loop!
                 attribStat(tree.body, loopEnv);
-            }
-            else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+            } else {
+                Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN);
+                JCRecordPattern jcRecordPattern = (JCRecordPattern) tree.varOrRecordPattern;
+
                 attribExpr(jcRecordPattern, loopEnv, tree.elementType);
 
                 // for(<pattern> x : xs) { y }
