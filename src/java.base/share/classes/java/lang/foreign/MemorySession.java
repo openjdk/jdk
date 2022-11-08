@@ -64,7 +64,7 @@ import jdk.internal.ref.CleanerFactory;
  * is not critical, or in unstructured cases where the boundaries of the lifetime associated with a memory session
  * cannot be easily determined. As shown in the example above, a memory session that is managed implicitly cannot end
  * if a program references to one or more segments associated with that session. This means that memory segments associated
- * with implicitly managed can be safely {@linkplain #isAccessibleBy(Thread) accessed} from multiple threads.
+ * with implicitly managed sessions can be safely {@linkplain #isAccessibleBy(Thread) accessed} from multiple threads.
  *
  * @implSpec
  * Implementations of this interface are thread-safe.
