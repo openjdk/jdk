@@ -986,16 +986,6 @@ public:
                  Register buf, Register state, Register ofs, Register limit, Register rsp,
                  bool multi_block);
 
-  // ChaCha20-Poly1305 macroAssembler defs
-  void cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
-          XMMRegister cVec, XMMRegister dVec, XMMRegister scratch,
-          int vector_len);
-  void cc20_shift_lane_org(XMMRegister bVec, XMMRegister cVec,
-          XMMRegister dVec, int vector_len, bool colToDiag);
-  void cc20_keystream_collate_avx512(XMMRegister aVec, XMMRegister bVec,
-          XMMRegister cVec, XMMRegister dVec,
-          Register baseAddr, int baseOffset);
-
 #ifdef _LP64
   void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,

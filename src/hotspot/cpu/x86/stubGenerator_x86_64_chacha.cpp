@@ -185,13 +185,13 @@ address StubGenerator::generate_chacha20Block_avx() {
   //  Qround(state, 1, 5, 9,13)
   //  Qround(state, 2, 6,10,14)
   //  Qround(state, 3, 7,11,15)
-  __ cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, vector_len);
-  __ cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, vector_len);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, vector_len);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, vector_len);
 
   // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors
   // to diagonals.  The a1Vec does not need to change orientation.
-  __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, vector_len, true);
-  __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, vector_len, true);
+  cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, vector_len, true);
+  cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, vector_len, true);
 
   // The second set of operations on the vectors covers the second 4 quarter
   // round operations, now acting on the diagonals:
@@ -199,14 +199,14 @@ address StubGenerator::generate_chacha20Block_avx() {
   //  Qround(state, 1, 6,11,12)
   //  Qround(state, 2, 7, 8,13)
   //  Qround(state, 3, 4, 9,14)
-  __ cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, vector_len);
-  __ cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, vector_len);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, vector_len);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, vector_len);
 
   // Before we start the next iteration, we need to perform shuffles
   // on the b/c/d vectors to move them back to columnar organizations
   // from their current diagonal orientation.
-  __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, vector_len, false);
-  __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, vector_len, false);
+  cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, vector_len, false);
+  cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, vector_len, false);
 
   __ decrement(loopCounter);
   __ jcc(Assembler::notZero, L_twoRounds);
@@ -350,17 +350,17 @@ address StubGenerator::generate_chacha20Block_avx512() {
   //  Qround(state, 1, 5, 9,13)
   //  Qround(state, 2, 6,10,14)
   //  Qround(state, 3, 7,11,15)
-  __ cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, Assembler::AVX_512bit);
-  __ cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, Assembler::AVX_512bit);
-  __ cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch, Assembler::AVX_512bit);
-  __ cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch, Assembler::AVX_512bit);
 
   // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors
   // to diagonals.  The a1Vec does not need to change orientation.
-  __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, Assembler::AVX_512bit, true);
-  __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, Assembler::AVX_512bit, true);
-  __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, Assembler::AVX_512bit, true);
-  __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, Assembler::AVX_512bit, true);
+  cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, Assembler::AVX_512bit, true);
+  cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, Assembler::AVX_512bit, true);
+  cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, Assembler::AVX_512bit, true);
+  cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, Assembler::AVX_512bit, true);
 
   // The second set of operations on the vectors covers the second 4 quarter
   // round operations, now acting on the diagonals:
@@ -368,18 +368,18 @@ address StubGenerator::generate_chacha20Block_avx512() {
   //  Qround(state, 1, 6,11,12)
   //  Qround(state, 2, 7, 8,13)
   //  Qround(state, 3, 4, 9,14)
-  __ cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, Assembler::AVX_512bit);
-  __ cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, Assembler::AVX_512bit);
-  __ cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch, Assembler::AVX_512bit);
-  __ cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch, Assembler::AVX_512bit);
 
   // Before we start the next iteration, we need to perform shuffles
   // on the b/c/d vectors to move them back to columnar organizations
   // from their current diagonal orientation.
-  __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, Assembler::AVX_512bit, false);
-  __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, Assembler::AVX_512bit, false);
-  __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, Assembler::AVX_512bit, false);
-  __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, Assembler::AVX_512bit, false);
+  cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, Assembler::AVX_512bit, false);
+  cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, Assembler::AVX_512bit, false);
+  cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, Assembler::AVX_512bit, false);
+  cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, Assembler::AVX_512bit, false);
 
   __ decrement(loopCounter);
   __ jcc(Assembler::notZero, L_twoRounds);
@@ -412,10 +412,10 @@ address StubGenerator::generate_chacha20Block_avx512() {
   // is written to memory at 64-byte displacements from one
   // another.  The result is that all 4 blocks will be in their
   // proper order when serialized.
-  __ cc20_keystream_collate_avx512(a1Vec, b1Vec, c1Vec, d1Vec, result, 0);
-  __ cc20_keystream_collate_avx512(a2Vec, b2Vec, c2Vec, d2Vec, result, 256);
-  __ cc20_keystream_collate_avx512(a3Vec, b3Vec, c3Vec, d3Vec, result, 512);
-  __ cc20_keystream_collate_avx512(a4Vec, b4Vec, c4Vec, d4Vec, result, 768);
+  cc20_keystream_collate_avx512(a1Vec, b1Vec, c1Vec, d1Vec, result, 0);
+  cc20_keystream_collate_avx512(a2Vec, b2Vec, c2Vec, d2Vec, result, 256);
+  cc20_keystream_collate_avx512(a3Vec, b3Vec, c3Vec, d3Vec, result, 512);
+  cc20_keystream_collate_avx512(a4Vec, b4Vec, c4Vec, d4Vec, result, 768);
 
   // This function will always write 1024 bytes into the key stream buffer
   // and that length should be returned through %rax.
@@ -424,6 +424,121 @@ address StubGenerator::generate_chacha20Block_avx512() {
   __ leave();
   __ ret(0);
   return start;
+}
+
+/**
+ * Provide a macro for AVX and AVX2 implementations of the ChaCha20 quarter
+ * round function.
+ *
+ * @param aVec the SIMD register containing only the "a" values
+ * @param bVec the SIMD register containing only the "b" values
+ * @param cVec the SIMD register containing only the "c" values
+ * @param dVec the SIMD register containing only the "d" values
+ * @param scratch SIMD register used for left rotations other than 16-bit.
+ * @param vector_len the length of the vector (128 and 256 bit only)
+ */
+void StubGenerator::cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
+    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch, int vector_len) {
+
+  // a += b; d ^= a; d <<<= 16
+  __ vpaddd(aVec, aVec, bVec, vector_len);
+  __ vpxor(dVec, dVec, aVec, vector_len);
+  if (vector_len == Assembler::AVX_512bit) {
+    __ evprold(dVec, dVec, 16, vector_len);
+  } else {
+    __ vpshufhw(dVec, dVec, 0xB1, vector_len);
+    __ vpshuflw(dVec, dVec, 0xB1, vector_len);
+  }
+
+  // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+  __ vpaddd(cVec, cVec, dVec, vector_len);
+  __ vpxor(bVec, bVec, cVec, vector_len);
+  if (vector_len == Assembler::AVX_512bit) {
+    __ evprold(bVec, bVec, 12, vector_len);
+  } else {
+    __ vpsrld(scratch, bVec, 20, vector_len);
+    __ vpslld(bVec, bVec, 12, vector_len);
+    __ vpor(bVec, bVec, scratch, vector_len);
+  }
+
+  // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+  __ vpaddd(aVec, aVec, bVec, vector_len);
+  __ vpxor(dVec, dVec, aVec, vector_len);
+  if (vector_len == Assembler::AVX_512bit) {
+    __ evprold(dVec, dVec, 8, vector_len);
+  } else {
+    __ vpsrld(scratch, dVec, 24, vector_len);
+    __ vpslld(dVec, dVec, 8, vector_len);
+    __ vpor(dVec, dVec, scratch, vector_len);
+  }
+
+  // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+  __ vpaddd(cVec, cVec, dVec, vector_len);
+  __ vpxor(bVec, bVec, cVec, vector_len);
+  if (vector_len == Assembler::AVX_512bit) {
+    __ evprold(bVec, bVec, 7, vector_len);
+  } else {
+    __ vpsrld(scratch, bVec, 25, vector_len);
+    __ vpslld(bVec, bVec, 7, vector_len);
+    __ vpor(bVec, bVec, scratch, vector_len);
+  }
+}
+
+/**
+ * Shift the b, c, and d vectors between columnar and diagonal representations.
+ * Note that the "a" vector does not shift.
+ *
+ * @param bVec the SIMD register containing only the "b" values
+ * @param cVec the SIMD register containing only the "c" values
+ * @param dVec the SIMD register containing only the "d" values
+ * @param vector_len the size of the SIMD register to operate upon
+ * @param colToDiag true if moving columnar to diagonal, false if
+ *                  moving diagonal back to columnar.
+ */
+void StubGenerator::cc20_shift_lane_org(XMMRegister bVec, XMMRegister cVec,
+    XMMRegister dVec, int vector_len, bool colToDiag) {
+  int bShift = colToDiag ? 0x39 : 0x93;
+  int cShift = 0x4E;
+  int dShift = colToDiag ? 0x93 : 0x39;
+
+  __ vpshufd(bVec, bVec, bShift, vector_len);
+  __ vpshufd(cVec, cVec, cShift, vector_len);
+  __ vpshufd(dVec, dVec, dShift, vector_len);
+}
+
+/**
+ * Write 256 bytes of keystream output held in 4 AVX512 SIMD registers
+ * in a quarter round parallel organization.
+ *
+ * @param aVec the SIMD register containing only the "a" values
+ * @param bVec the SIMD register containing only the "b" values
+ * @param cVec the SIMD register containing only the "c" values
+ * @param dVec the SIMD register containing only the "d" values
+ * @param baseAddr the register holding the base output address
+ * @param baseOffset the offset from baseAddr for writes
+ */
+void StubGenerator::cc20_keystream_collate_avx512(XMMRegister aVec, XMMRegister
+bVec,
+    XMMRegister cVec, XMMRegister dVec, Register baseAddr, int baseOffset) {
+  __ vextracti32x4(Address(baseAddr, baseOffset + 0), aVec, 0);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 64), aVec, 1);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 128), aVec, 2);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 192), aVec, 3);
+
+  __ vextracti32x4(Address(baseAddr, baseOffset + 16), bVec, 0);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 80), bVec, 1);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 144), bVec, 2);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 208), bVec, 3);
+
+  __ vextracti32x4(Address(baseAddr, baseOffset + 32), cVec, 0);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 96), cVec, 1);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 160), cVec, 2);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 224), cVec, 3);
+
+  __ vextracti32x4(Address(baseAddr, baseOffset + 48), dVec, 0);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 112), dVec, 1);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 176), dVec, 2);
+  __ vextracti32x4(Address(baseAddr, baseOffset + 240), dVec, 3);
 }
 
 #undef __

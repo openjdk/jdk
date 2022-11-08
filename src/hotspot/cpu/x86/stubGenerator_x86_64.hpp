@@ -387,10 +387,17 @@ class StubGenerator: public StubCodeGenerator {
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
-  // ChaCha20 stubs
+  // ChaCha20 stubs and helper functions
   void generate_chacha_stubs();
   address generate_chacha20Block_avx();
   address generate_chacha20Block_avx512();
+  void cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
+    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch, int vector_len);
+  void cc20_shift_lane_org(XMMRegister bVec, XMMRegister cVec,
+    XMMRegister dVec, int vector_len, bool colToDiag);
+  void cc20_keystream_collate_avx512(XMMRegister aVec, XMMRegister bVec,
+    XMMRegister cVec, XMMRegister dVec, Register baseAddr, int baseOffset);
+
 
   // BASE64 stubs
 
