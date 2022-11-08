@@ -165,7 +165,7 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += 8;
   }
   if (_captured_state_mask != 0) {
-    locs.set_frame_data(StubLocations::CAPTURED_STATE_MASK, allocated_frame_size);
+    locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
     allocated_frame_size += 8;
   }
 
@@ -240,7 +240,7 @@ void DowncallStubGenerator::generate() {
       out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
     }
 
-    __ movptr(c_rarg0, Address(rsp, locs.data_offset(StubLocations::CAPTURED_STATE_MASK)));
+    __ movptr(c_rarg0, Address(rsp, locs.data_offset(StubLocations::CAPTURED_STATE_BUFFER)));
     __ movl(c_rarg1, _captured_state_mask);
     __ mov(r12, rsp); // remember sp
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows

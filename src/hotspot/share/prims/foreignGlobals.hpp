@@ -41,7 +41,7 @@ public:
   enum Location : uint32_t {
     TARGET_ADDRESS,
     RETURN_BUFFER,
-    CAPTURED_STATE_MASK,
+    CAPTURED_STATE_BUFFER,
     MAX
   };
 private:

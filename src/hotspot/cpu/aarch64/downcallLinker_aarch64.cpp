@@ -168,7 +168,7 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += 8; // for address spill
   }
   if (_captured_state_mask != 0) {
-    locs.set_frame_data(StubLocations::CAPTURED_STATE_MASK, allocated_frame_size);
+    locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
     allocated_frame_size += 8;
   }
 
@@ -240,7 +240,7 @@ void DowncallStubGenerator::generate() {
       out_reg_spiller.generate_spill(_masm, spill_offset);
     }
 
-    __ ldr(c_rarg0, Address(sp, locs.data_offset(StubLocations::CAPTURED_STATE_MASK)));
+    __ ldr(c_rarg0, Address(sp, locs.data_offset(StubLocations::CAPTURED_STATE_BUFFER)));
     __ movw(c_rarg1, _captured_state_mask);
     __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::capture_state), tmp1);
 

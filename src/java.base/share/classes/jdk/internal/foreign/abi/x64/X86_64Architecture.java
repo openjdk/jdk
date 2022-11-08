@@ -28,7 +28,6 @@ import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Architecture;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.aarch64.AArch64Architecture;
 
 import java.util.stream.IntStream;
 
@@ -167,7 +166,7 @@ public class X86_64Architecture implements Architecture {
             scratch1, scratch2,
             StubLocations.TARGET_ADDRESS.storage(StorageType.PLACEHOLDER),
             StubLocations.RETURN_BUFFER.storage(StorageType.PLACEHOLDER),
-            StubLocations.CAPTURED_STATE_MASK.storage(StorageType.PLACEHOLDER));
+            StubLocations.CAPTURED_STATE_BUFFER.storage(StorageType.PLACEHOLDER));
     }
 
 }
