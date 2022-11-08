@@ -100,7 +100,7 @@
  */
 #define IS_SAFE_STRUCT_SIZE(a, m, n) \
     ( \
-      IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_ADD((m) * (n), (a)) \
+      IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_ADD((size_t)(m) * (size_t)(n), (a)) \
     )
 
 /*
@@ -112,7 +112,7 @@
  *    // Use the allocated memory...
  */
 #define SAFE_SIZE_STRUCT_ALLOC(func, a, m, n) \
-    (IS_SAFE_STRUCT_SIZE((a), (m), (n)) ? ((func)((a) + (size_t)(m) * (size_t)(n))) : FAILURE_RESULT)
+    (IS_SAFE_STRUCT_SIZE((a), (m), (n)) ? ((func)((size_t)(a) + (size_t)(m) * (size_t)(n))) : FAILURE_RESULT)
 
 
 #endif /* SIZECALC_H */
