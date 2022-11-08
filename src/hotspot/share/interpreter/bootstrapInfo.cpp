@@ -55,7 +55,11 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 {
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
-  assert(indy_index == -1 || pool->invokedynamic_bootstrap_ref_index_at(indy_index) == bss_index, "invalid bootstrap specifier index");
+  if (UseNewCode) {
+    assert(indy_index == -1 || pool->cache()->resolved_invokedynamic_info_element(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
+  } else {
+    assert(indy_index == -1 || pool->invokedynamic_bootstrap_ref_index_at(indy_index) == bss_index, "invalid bootstrap specifier index");
+  }
 }
 
 // If there is evidence this call site was already linked, set the
@@ -64,6 +68,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
   if (UseNewCode) {
+    tty->print_cr("In resolve previously linked invokedynamic");
     // Check if method is not null
     if ( _pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).method() != nullptr) {
       methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).method());
