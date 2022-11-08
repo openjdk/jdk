@@ -48,17 +48,8 @@ import java.io.IOException;
  * @see CertAttrSet
  */
 public class OCSPNoCheckExtension extends Extension
-    implements CertAttrSet<String> {
+        implements CertAttrSet {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.OCSPNoCheck";
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "OCSPNoCheck";
 
     /**
@@ -88,25 +79,7 @@ public class OCSPNoCheckExtension extends Extension
     }
 
     /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
-
-
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
