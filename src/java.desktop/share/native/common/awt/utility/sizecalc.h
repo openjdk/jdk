@@ -92,7 +92,7 @@
 
 #define SAFE_SIZE_NEW_ARRAY2(type, n, m) \
     (IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_MUL(sizeof(type), (n) * (m)) ? \
-     (new type[(size_t)((n) * (m))]) : throw std::bad_alloc())
+     (new type[(size_t)(n) * (size_t)(m)]) : throw std::bad_alloc())
 
 /*
  * Checks if a data structure of size (a + m*n) can be safely allocated
