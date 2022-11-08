@@ -237,7 +237,7 @@ class DNSDatagramChannelFactory {
                 && Math.abs(port - lastport) > deviation;
     }
 
-    private DatagramChannel openRandom() {
+    private DatagramChannel openRandom() throws IOException {
         int maxtries = MAX_RANDOM_TRIES;
         while (maxtries-- > 0) {
             int port;
@@ -256,25 +256,16 @@ class DNSDatagramChannelFactory {
             // times - but that should be OK with MAX_RANDOM_TRIES = 5.
             if (!suitable) continue;
 
+            DatagramChannel dc = (family != null)
+                    ? DatagramChannel.open(family)
+                    : DatagramChannel.open();
             try {
-                if (family != null) {
-                    DatagramChannel c = DatagramChannel.open(family);
-                    try {
-                        c.bind(new InetSocketAddress(port));
-                        lastport = getLocalPort(c);
-                        if (!recycled) history.add(port);
-                        return c;
-                    } catch (Throwable x) {
-                        c.close();
-                        throw x;
-                    }
-                }
-                var dc = DatagramChannel.open();
                 dc.bind(new InetSocketAddress(port));
                 lastport = getLocalPort(dc);
                 if (!recycled) history.add(port);
                 return dc;
             } catch (IOException x) {
+                dc.close();
                 // try again until maxtries == 0;
             }
         }
