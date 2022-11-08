@@ -970,13 +970,8 @@ public final class Utils {
             throws IOException {
         Set<String> attr = file.getFileSystem().supportedFileAttributeViews();
         if (attr.contains("posix")) {
-            if (userOnly) {
-                Files.setPosixFilePermissions(file,
-                        PosixFilePermissions.fromString("rwx------"));
-            } else { /* Allow access to everyone */
-                Files.setPosixFilePermissions(file,
-                        PosixFilePermissions.fromString("rwxrwxrwx"));
-            }
+            String perms = userOnly ? "rwx------" : "rwxrwxrwx";
+            Files.setPosixFilePermissions(file, PosixFilePermissions.fromString(perms));
         } else if (attr.contains("acl")) {
             AclFileAttributeView view =
                     Files.getFileAttributeView(file, AclFileAttributeView.class);
@@ -985,21 +980,15 @@ public final class Utils {
                 if (userOnly) {
                     if (thisEntry.principal().getName()
                             .equals(view.getOwner().getName())) {
-                        acl.add(AclEntry.newBuilder(thisEntry)
-                                .setType(AclEntryType.ALLOW)
-                                .build());
+                        acl.add(allowAccess(thisEntry));
                     } else if (thisEntry.type() == AclEntryType.ALLOW) {
-                        acl.add(AclEntry.newBuilder(thisEntry)
-                                .setType(AclEntryType.DENY)
-                                .build());
+                        acl.add(revokeAccess(thisEntry));
                     } else {
                         acl.add(thisEntry);
                     }
                 } else {
                     if (thisEntry.type() != AclEntryType.ALLOW) {
-                        acl.add(AclEntry.newBuilder(thisEntry)
-                                .setType(AclEntryType.ALLOW)
-                                .build());
+                        acl.add(allowAccess(thisEntry));
                     } else {
                         acl.add(thisEntry);
                     }
@@ -1009,6 +998,37 @@ public final class Utils {
         } else {
             throw new RuntimeException("Unsupported file attributes: " + attr);
         }
+    }
+
+    /**
+     * Return an ACL entry that revokes owner access.
+     *
+     * @param acl   original ACL entry to build from
+     * @return      an ACL entry that revokes all access
+     */
+    public static AclEntry revokeAccess(AclEntry acl) {
+        return buildAclEntry(acl, AclEntryType.DENY);
+    }
+
+    /**
+     * Return an ACL entry that allow owner access.
+     * @param acl   original ACL entry to build from
+     * @return      an ACL entry that allows all access
+     */
+    public static AclEntry allowAccess(AclEntry acl) {
+        return buildAclEntry(acl, AclEntryType.ALLOW);
+    }
+
+    /**
+     * Build an ACL entry with a given ACL entry type.
+     *
+     * @param acl   original ACL entry to build from
+     * @return      an ACL entry with a given ACL entry type
+     */
+    public static AclEntry buildAclEntry(AclEntry acl, AclEntryType type) {
+        return AclEntry.newBuilder(acl)
+                .setType(type)
+                .build();
     }
 
     /**
