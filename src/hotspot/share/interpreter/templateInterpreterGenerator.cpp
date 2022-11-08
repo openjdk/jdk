@@ -356,10 +356,10 @@ void TemplateInterpreterGenerator::set_short_entry_points(Template* t, address& 
 //------------------------------------------------------------------------------------------------------------------------
 
 void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState tos_out) {
-  if (PrintBytecodeHistogram)                                    histogram_bytecode(t);
 #ifndef PRODUCT
   // debugging code
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt > 0) count_bytecode();
+  if (PrintBytecodeHistogram)                                    histogram_bytecode(t);
   if (PrintBytecodePairHistogram)                                histogram_bytecode_pair(t);
   if (TraceBytecodes)                                            trace_bytecode(t);
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();

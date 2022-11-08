@@ -1080,7 +1080,7 @@ public class JInternalFrame extends JComponent implements
            doesn't get set in some other way (as if a user clicked on
            a component that doesn't request focus).  If this call is
            happening because the user clicked on a component that will
-           want focus, then it will get transfered there later.
+           want focus, then it will get transferred there later.
 
            We test for parent.isShowing() above, because AWT throws a
            NPE if you try to request focus on a lightweight before its

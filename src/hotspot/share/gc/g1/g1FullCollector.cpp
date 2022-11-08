@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
@@ -180,6 +181,10 @@ void G1FullCollector::prepare_collection() {
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+    // Need cleared claim bits for the mark phase.
+    ClassLoaderDataGraph::clear_claimed_marks();
+  } else {
+    ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
   }
 
   _heap->gc_prologue(true);
@@ -221,6 +226,9 @@ void G1FullCollector::complete_collection() {
   // When the pointers have been adjusted and moved, we can
   // update the derived pointer table.
   update_derived_pointers();
+
+  // Need cleared claim bits for the next concurrent marking.
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());

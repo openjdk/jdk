@@ -319,6 +319,7 @@ removeNode(ThreadList *list, ThreadNode *node)
     ThreadNode *prev;
     ThreadNode *next;
 
+    JDI_ASSERT(list == node->list);
     prev = node->prev;
     next = node->next;
     if ( prev != NULL ) {
@@ -487,15 +488,11 @@ clearThread(JNIEnv *env, ThreadNode *node)
 }
 
 static void
-removeThread(JNIEnv *env, ThreadList *list, jthread thread)
+removeThread(JNIEnv *env, ThreadNode *node)
 {
-    ThreadNode *node;
-
-    node = findThread(list, thread);
-    if (node != NULL) {
-        removeNode(list, node);
-        clearThread(env, node);
-    }
+  JDI_ASSERT(node != NULL);
+  removeNode(node->list, node);
+  clearThread(env, node);
 }
 
 static void
@@ -507,8 +504,21 @@ removeResumed(JNIEnv *env, ThreadList *list)
     while (node != NULL) {
         ThreadNode *temp = node->next;
         if (node->suspendCount == 0) {
-            removeThread(env, list, node->thread);
+            removeThread(env, node);
         }
+        node = temp;
+    }
+}
+
+static void
+removeVThreads(JNIEnv *env)
+{
+    ThreadList *list = &runningVThreads;
+    ThreadNode *node = list->first;
+    while (node != NULL) {
+        ThreadNode *temp = node->next;
+        removeNode(list, node);
+        clearThread(env, node);
         node = temp;
     }
 }
@@ -2476,11 +2486,7 @@ threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
         env = getEnv();
         if (ei == EI_THREAD_END) {
             jboolean inResume = (node->resumeFrameDepth > 0);
-            if (isVThread(thread)) {
-                removeThread(env, &runningVThreads, thread);
-            } else {
-                removeThread(env, &runningThreads, thread);
-            }
+            removeThread(env, node);
             node = NULL;   /* has been freed */
 
             /*
@@ -2761,6 +2767,30 @@ threadControl_reset(void)
     debugMonitorNotifyAll(threadLock);
     debugMonitorExit(threadLock);
     eventHandler_unlock();
+
+    /*
+     * Unless we are remembering all vthreads when the debugger is not connected,
+     * we free them all up here.
+     */
+    if (!gdata->rememberVThreadsWhenDisconnected) {
+        /*
+         * First we need to wait for all active callbacks to complete. They were resumed
+         * above by the resetHelper. We can't remove the vthreads until after they complete,
+         * because the vthread ThreadNodes might be referenced as the callbacks unwind.
+         * We do this outside of any locking, because the callbacks may need to acquire locks
+         * in order to complete. It's ok if there are more callbacks after this point because
+         * the only callbacks enabled are the permanent ones, and they never involve vthreads.
+         */
+        eventHandler_waitForActiveCallbacks();
+        /*
+         * Now that event callbacks have exited, we can reacquire the threadLock, which
+         * is needed before before calling removeVThreads().
+         */
+        debugMonitorEnter(threadLock);
+        removeVThreads(env);
+        debugMonitorExit(threadLock);
+    }
+
 }
 
 jvmtiEventMode
@@ -2930,7 +2960,7 @@ dumpThread(ThreadNode *node) {
 #ifdef DEBUG_THREADNAME
     tty_message("\tname: %s", node->name);
 #endif
-    // More fields can be printed here when needed. The amount of output is intentionlly
+    // More fields can be printed here when needed. The amount of output is intentionally
     // kept small so it doesn't generate too much output.
     tty_message("\tsuspendCount: %d", node->suspendCount);
 }

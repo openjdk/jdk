@@ -35,8 +35,7 @@
 #include "Log.h"
 
 
-// Needed by FileUtils::isDirectoryNotEmpty
-#pragma comment(lib, "shlwapi")
+// Needed by FileUtils::isDirectoryNotEmpty - shlwapi
 
 
 namespace FileUtils {

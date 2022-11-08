@@ -26,6 +26,7 @@
 package sun.security.ec;
 
 import sun.security.ec.point.*;
+import sun.security.util.ArrayUtil;
 import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
 
@@ -33,6 +34,7 @@ import java.math.BigInteger;
 import java.security.ProviderException;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 import java.util.Map;
 import java.util.Optional;
@@ -469,6 +471,20 @@ public class ECOperations {
         t3.setProduct(t0);
         p.getZ().setSum(t3);
 
+    }
+
+    // The extra step in the Full Public key validation as described in
+    // NIST SP 800-186 Appendix D.1.1.2
+    public boolean checkOrder(ECPoint point) {
+        BigInteger x = point.getAffineX();
+        BigInteger y = point.getAffineY();
+
+        // Verify that n Q = INFINITY. Output REJECT if verification fails.
+        IntegerFieldModuloP field = this.getField();
+        AffinePoint ap = new AffinePoint(field.getElement(x), field.getElement(y));
+        byte[] scalar = this.orderField.getSize().toByteArray();
+        ArrayUtil.reverse(scalar);
+        return isNeutral(this.multiply(ap, scalar));
     }
 }
 

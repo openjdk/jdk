@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,9 @@ public final class VersionHelper {
         StringTokenizer parser = new StringTokenizer(codebase);
         List<URL> list = new ArrayList<>();
         while (parser.hasMoreTokens()) {
-            list.add(new URL(parser.nextToken()));
+            @SuppressWarnings("deprecation")
+            var u = new URL(parser.nextToken());
+            list.add(u);
         }
         return list.toArray(new URL[0]);
     }

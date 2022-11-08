@@ -2844,3 +2844,155 @@ bool LibraryCallKit::inline_vector_compress_expand() {
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
+
+// public static
+// <V extends Vector<E>,
+//  E,
+//  S extends VectorSpecies<E>>
+//  V indexVector(Class<? extends V> vClass, Class<E> eClass,
+//                int length,
+//                V v, int step, S s,
+//                IndexOperation<V, S> defaultImpl)
+bool LibraryCallKit::inline_index_vector() {
+  const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+
+  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
+      vector_klass->const_oop() == NULL || !vlen->is_con() ||
+      elem_klass->const_oop() == NULL) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()]);
+    }
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(vector_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not a primitive bt=%d", elem_type->basic_type());
+    }
+    return false; // should be primitive type
+  }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = elem_type->basic_type();
+
+  // Check whether the iota index generation op is supported by the current hardware
+  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+    }
+    return false; // not supported
+  }
+
+  int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, elem_bt);
+  int vmul_op = VectorNode::opcode(mul_op, elem_bt);
+  bool needs_mul = true;
+  Node* scale = argument(4);
+  const TypeInt* scale_type = gvn().type(scale)->isa_int();
+  // Multiply is not needed if the scale is a constant "1".
+  if (scale_type && scale_type->is_con() && scale_type->get_con() == 1) {
+    needs_mul = false;
+  } else {
+    // Check whether the vector multiply op is supported by the current hardware
+    if (!arch_supports_vector(vmul_op, num_elem, elem_bt, VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+
+    // Check whether the scalar cast op is supported by the current hardware
+    if (is_floating_point_type(elem_bt) || elem_bt == T_LONG) {
+      int cast_op = elem_bt == T_LONG ? Op_ConvI2L :
+                    elem_bt == T_FLOAT? Op_ConvI2F : Op_ConvI2D;
+      if (!Matcher::match_rule_supported(cast_op)) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** Rejected op (%s) because architecture does not support it",
+                        NodeClassNames[cast_op]);
+        }
+        return false; // not supported
+      }
+    }
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+  Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  if (opd == NULL) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** unbox failed vector=%s",
+                    NodeClassNames[argument(3)->Opcode()]);
+    }
+    return false;
+  }
+
+  int add_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_ADD, elem_bt);
+  int vadd_op = VectorNode::opcode(add_op, elem_bt);
+  bool needs_add = true;
+  // The addition is not needed if all the element values of "opd" are zero
+  if (VectorNode::is_all_zeros_vector(opd)) {
+    needs_add = false;
+  } else {
+    // Check whether the vector addition op is supported by the current hardware
+    if (!arch_supports_vector(vadd_op, num_elem, elem_bt, VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+  }
+
+  // Compute the iota indice vector
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  Node* index = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
+
+  // Broadcast the "scale" to a vector, and multiply the "scale" with iota indice vector.
+  if (needs_mul) {
+    switch (elem_bt) {
+      case T_BOOLEAN: // fall-through
+      case T_BYTE:    // fall-through
+      case T_SHORT:   // fall-through
+      case T_CHAR:    // fall-through
+      case T_INT: {
+        // no conversion needed
+        break;
+      }
+      case T_LONG: {
+        scale = gvn().transform(new ConvI2LNode(scale));
+        break;
+      }
+      case T_FLOAT: {
+        scale = gvn().transform(new ConvI2FNode(scale));
+        break;
+      }
+      case T_DOUBLE: {
+        scale = gvn().transform(new ConvI2DNode(scale));
+        break;
+      }
+      default: fatal("%s", type2name(elem_bt));
+    }
+    scale = gvn().transform(VectorNode::scalar2vector(scale, num_elem, Type::get_const_basic_type(elem_bt)));
+    index = gvn().transform(VectorNode::make(vmul_op, index, scale, vt));
+  }
+
+  // Add "opd" if addition is needed.
+  if (needs_add) {
+    index = gvn().transform(VectorNode::make(vadd_op, opd, index, vt));
+  }
+  Node* vbox = box_vector(index, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
