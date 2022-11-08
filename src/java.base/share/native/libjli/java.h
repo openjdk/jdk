@@ -168,7 +168,6 @@ void SetJavaCommandLineProp(char* what, int argc, char** argv);
  */
 jint ReadKnownVMs(const char *jvmcfg, jboolean speculative);
 char *CheckJvmType(int *argc, char ***argv, jboolean speculative);
-void AddOption(char *str, void *info);
 jboolean IsWhiteSpaceOption(const char* name);
 jlong CurrentTimeMicros();
 

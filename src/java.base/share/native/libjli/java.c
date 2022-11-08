@@ -98,8 +98,8 @@ static char* splash_jar_entry = NULL;
 /*
  * List of VM options to be specified when the VM is created.
  */
-static JavaVMOption *options;
-static int numOptions, maxOptions;
+static JavaVMOption *options = NULL;
+static int numOptions = 0, maxOptions = 0;
 
 /*
  * Prototypes for functions internal to launcher.
@@ -118,6 +118,8 @@ static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
 static jstring NewPlatformString(JNIEnv *env, char *s);
 static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
 static jclass GetApplicationClass(JNIEnv *env);
+static void AddOption(const char *str);
+static void FreeOptions();
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
@@ -265,7 +267,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         for (i = 0; i < argc ; i++) {
             printf("argv[%d] = %s\n", i, argv[i]);
         }
-        AddOption("-Dsun.java.launcher.diag=true", NULL);
+        AddOption("-Dsun.java.launcher.diag=true");
     }
 
     /*
@@ -837,7 +839,7 @@ parse_size(const char *s, jlong *result) {
  * Adds a new VM option with the given name and value.
  */
 void
-AddOption(char *str, void *info)
+AddOption(const char *str)
 {
     /*
      * Expand options array if needed to accommodate at least one more
@@ -856,8 +858,8 @@ AddOption(char *str, void *info)
             options = tmp;
         }
     }
-    options[numOptions].optionString = str;
-    options[numOptions++].extraInfo = info;
+    options[numOptions].optionString = JLI_StringDup(str);
+    options[numOptions++].extraInfo = NULL;
 
     /*
      * -Xss is used both by the JVM and here to establish the stack size of the thread
@@ -891,6 +893,17 @@ AddOption(char *str, void *info)
     }
 }
 
+void
+FreeOptions() {
+  for (int i = 0; i < numOptions; i++) {
+    JLI_MemFree(options[i].optionString);
+    options[i].optionString = NULL;
+  }
+  JLI_MemFree(options);
+  options = NULL;
+  numOptions = maxOptions = 0;
+}
+
 static void
 SetClassPath(const char *s)
 {
@@ -912,7 +925,8 @@ SetClassPath(const char *s)
                        - 2 /* strlen("%s") */
                        + JLI_StrLen(s));
     sprintf(def, format, s);
-    AddOption(def, NULL);
+    AddOption(def);
+    JLI_MemFree(def);
     if (s != orig)
         JLI_MemFree((char *) s);
     _have_classpath = JNI_TRUE;
@@ -928,7 +942,8 @@ AddLongFormOption(const char *option, const char *arg)
     def_len = JLI_StrLen(option) + 1 + JLI_StrLen(arg) + 1;
     def = JLI_MemAlloc(def_len);
     JLI_Snprintf(def, def_len, format, option, arg);
-    AddOption(def, NULL);
+    AddOption(def);
+    JLI_MemFree(def);
 }
 
 static void
@@ -950,7 +965,8 @@ SetMainModule(const char *s)
                + s_len;
     def = JLI_MemAlloc(def_len);
     JLI_Snprintf(def, def_len, format, s);
-    AddOption(def, NULL);
+    AddOption(def);
+    JLI_MemFree(def);
 }
 
 /*
@@ -1241,7 +1257,8 @@ ParseArguments(int *pargc, char ***pargv,
                 size_t size = JLI_StrLen(prop) + JLI_StrLen(value) + 1;
                 char *propValue = (char *)JLI_MemAlloc(size);
                 JLI_Snprintf(propValue, size, "%s%s", prop, value);
-                AddOption(propValue, NULL);
+                AddOption(propValue);
+                JLI_MemFree(propValue);
             }
         } else if (JLI_StrCmp(arg, "--class-path") == 0 ||
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
@@ -1257,7 +1274,7 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "--show-resolved-modules") == 0) {
             showResolvedModules = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--validate-modules") == 0) {
-            AddOption("-Djdk.module.validation=true", NULL);
+            AddOption("-Djdk.module.validation=true");
             validateModules = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--describe-module") == 0 ||
                    JLI_StrCCmp(arg, "--describe-module=") == 0 ||
@@ -1269,7 +1286,7 @@ ParseArguments(int *pargc, char ***pargv,
  */
         } else if (has_arg) {
             if (kind == VM_LONG_OPTION) {
-                AddOption(option, NULL);
+                AddOption(option);
             } else if (kind == VM_LONG_OPTION_WITH_ARGUMENT) {
                 AddLongFormOption(option, value);
             }
@@ -1324,9 +1341,9 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCCmp(arg, "-XshowSettings:") == 0) {
             showSettings = arg;
         } else if (JLI_StrCmp(arg, "-Xdiag") == 0) {
-            AddOption("-Dsun.java.launcher.diag=true", NULL);
+            AddOption("-Dsun.java.launcher.diag=true");
         } else if (JLI_StrCmp(arg, "--show-module-resolution") == 0) {
-            AddOption("-Djdk.module.showModuleResolution=true", NULL);
+            AddOption("-Djdk.module.showModuleResolution=true");
 /*
  * The following case provide backward compatibility with old-style
  * command line options.
@@ -1338,35 +1355,36 @@ ParseArguments(int *pargc, char ***pargv,
             JLI_ShowMessage("%s %s", _launcher_name, GetFullVersion());
             return JNI_FALSE;
         } else if (JLI_StrCmp(arg, "-verbosegc") == 0) {
-            AddOption("-verbose:gc", NULL);
+            AddOption("-verbose:gc");
         } else if (JLI_StrCmp(arg, "-t") == 0) {
-            AddOption("-Xt", NULL);
+            AddOption("-Xt");
         } else if (JLI_StrCmp(arg, "-tm") == 0) {
-            AddOption("-Xtm", NULL);
+            AddOption("-Xtm");
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
-            AddOption("-Xdebug", NULL);
+            AddOption("-Xdebug");
         } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
-            AddOption("-Xnoclassgc", NULL);
+            AddOption("-Xnoclassgc");
         } else if (JLI_StrCmp(arg, "-Xfuture") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-Xfuture");
-            AddOption("-Xverify:all", NULL);
+            AddOption("-Xverify:all");
         } else if (JLI_StrCmp(arg, "-verify") == 0) {
-            AddOption("-Xverify:all", NULL);
+            AddOption("-Xverify:all");
         } else if (JLI_StrCmp(arg, "-verifyremote") == 0) {
-            AddOption("-Xverify:remote", NULL);
+            AddOption("-Xverify:remote");
         } else if (JLI_StrCmp(arg, "-noverify") == 0) {
             /*
              * Note that no 'deprecated' message is needed here because the VM
              * issues 'deprecated' messages for -noverify and -Xverify:none.
              */
-            AddOption("-Xverify:none", NULL);
+            AddOption("-Xverify:none");
         } else if (JLI_StrCCmp(arg, "-ss") == 0 ||
                    JLI_StrCCmp(arg, "-oss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
                    JLI_StrCCmp(arg, "-mx") == 0) {
             char *tmp = JLI_MemAlloc(JLI_StrLen(arg) + 6);
             sprintf(tmp, "-X%s", arg + 1); /* skip '-' */
-            AddOption(tmp, NULL);
+            AddOption(tmp);
+            JLI_MemFree(tmp);
         } else if (JLI_StrCmp(arg, "-checksource") == 0 ||
                    JLI_StrCmp(arg, "-cs") == 0 ||
                    JLI_StrCmp(arg, "-noasyncgc") == 0) {
@@ -1383,7 +1401,7 @@ ParseArguments(int *pargc, char ***pargv,
             if (JLI_StrCCmp(arg, "-Djava.class.path=") == 0) {
                 _have_classpath = JNI_TRUE;
             }
-            AddOption(arg, NULL);
+            AddOption(arg);
         }
     }
 
@@ -1409,7 +1427,7 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (mode == LM_SOURCE) {
-        AddOption("--add-modules=ALL-DEFAULT", NULL);
+        AddOption("--add-modules=ALL-DEFAULT");
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file
         // is included in the args passed to the source launcher
@@ -1457,7 +1475,7 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
     }
 
     r = ifn->CreateJavaVM(pvm, (void **)penv, &args);
-    JLI_MemFree(options);
+    FreeOptions();
     return r == JNI_OK;
 }
 
@@ -1701,7 +1719,8 @@ AddApplicationOptions(int cpathc, const char **cpathv)
             if (JLI_StrLen(s) + 40 > JLI_StrLen(s)) { // Safeguard from overflow
                 envcp = (char *)JLI_MemAlloc(JLI_StrLen(s) + 40);
                 sprintf(envcp, "-Denv.class.path=%s", s);
-                AddOption(envcp, NULL);
+                AddOption(envcp);
+                JLI_MemFree(envcp);
             }
         }
     }
@@ -1714,7 +1733,8 @@ AddApplicationOptions(int cpathc, const char **cpathv)
     /* 40 for '-Dapplication.home=' */
     apphome = (char *)JLI_MemAlloc(JLI_StrLen(home) + 40);
     sprintf(apphome, "-Dapplication.home=%s", home);
-    AddOption(apphome, NULL);
+    AddOption(apphome);
+    JLI_MemFree(apphome);
 
     /* How big is the application's classpath? */
     if (cpathc > 0) {
@@ -1730,7 +1750,8 @@ AddApplicationOptions(int cpathc, const char **cpathv)
             JLI_StrCat(appcp, separator);           /* ;                      */
         }
         appcp[JLI_StrLen(appcp)-1] = '\0';  /* remove trailing path separator */
-        AddOption(appcp, NULL);
+        AddOption(appcp);
+        JLI_MemFree(appcp);
     }
     return JNI_TRUE;
 }
@@ -1787,7 +1808,8 @@ SetJavaCommandLineProp(char *what, int argc, char **argv)
         JLI_StrCat(javaCommand, argv[i]);
     }
 
-    AddOption(javaCommand, NULL);
+    AddOption(javaCommand);
+    JLI_MemFree(javaCommand);
 }
 
 /*
@@ -1795,7 +1817,7 @@ SetJavaCommandLineProp(char *what, int argc, char **argv)
  * user native application, the following property indicates the former.
  */
 static void SetJavaLauncherProp() {
-  AddOption("-Dsun.java.launcher=SUN_STANDARD", NULL);
+  AddOption("-Dsun.java.launcher=SUN_STANDARD");
 }
 
 /*
