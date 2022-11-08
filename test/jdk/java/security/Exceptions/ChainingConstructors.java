@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,16 @@ public class ChainingConstructors {
         cee = new CertificateEncodingException(MSG, cause);
         if (!cee.getMessage().equals(MSG) || !cee.getCause().equals(cause)) {
             throw new SecurityException("Test 16 failed");
+        }
+
+        InvalidParameterException ipe =
+                new InvalidParameterException(cause);
+        if (!ipe.getCause().equals(cause)) {
+            throw new SecurityException("Test 17 failed");
+        }
+        ipe = new InvalidParameterException(MSG, cause);
+        if (!ipe.getMessage().equals(MSG) || !ipe.getCause().equals(cause)) {
+            throw new SecurityException("Test 17 failed");
         }
 
 /*

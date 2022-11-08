@@ -3120,7 +3120,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {
-        buffer.initialize_stubs_size(128);
+        buffer.initialize_stubs_size(192);
       }
 
       struct { double data[20]; } locs_buf;

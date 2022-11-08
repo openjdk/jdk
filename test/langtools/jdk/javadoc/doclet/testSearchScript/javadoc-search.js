@@ -86,6 +86,9 @@ var $ = function(f) {
             click: function() {
                 return this;
             },
+            hover: function() {
+                return this;
+            },
             catcomplete: function(o) {
                 o.close = function() {};
                 search = function(term) {
