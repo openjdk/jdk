@@ -479,6 +479,21 @@ void G1YoungCollector::concatenate_dirty_card_logs_and_stats() {
   phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time);
 }
 
+#ifdef ASSERT
+void G1YoungCollector::verify_empty_dirty_card_logs() const {
+  struct Verifier : public ThreadClosure {
+    size_t _buffer_size;
+    Verifier() : _buffer_size(G1BarrierSet::dirty_card_queue_set().buffer_size()) {}
+    void do_thread(Thread* t) override {
+      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+      assert((queue.buffer() == nullptr) || (queue.index() == _buffer_size),
+             "non-empty dirty card queue for thread");
+    }
+  } verifier;
+  Threads::threads_do(&verifier);
+}
+#endif // ASSERT
+
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
@@ -518,6 +533,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
   per_thread_states->preserved_marks_set()->assert_empty();
+  verify_empty_dirty_card_logs();
 
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
