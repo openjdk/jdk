@@ -100,7 +100,7 @@
  * Since memory segments can be closed (see above), segments are also validated (upon access) to make sure that
  * the memory session associated with the segment being accessed has not been closed prematurely.
  * We call this guarantee <em>temporal safety</em>. Together, spatial and temporal safety ensure that each memory access
- * operation either succeeds - and accesses a valid location of the region of memory backing the memory segment - or fails.
+ * operation either succeeds - and accesses a valid location within the region of memory backing the memory segment - or fails.
  *
  * <h2 id="ffa">Foreign function access</h2>
  * The key abstractions introduced to support foreign function access are {@link java.lang.foreign.SymbolLookup},
