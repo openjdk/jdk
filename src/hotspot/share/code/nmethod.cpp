@@ -476,7 +476,7 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
   nm->oops_do(&cfo);
   assert(!cfo.found_oop(), "no oops allowed");
 
-  // We allow an exception for the own Method, but require it's class to be permanent.
+  // We allow an exception for the own Method, but require its class to be permanent.
   Method* own_method = nm->method();
   CheckForMetadataClosure cfm(/* ignore reference to own Method */ own_method);
   nm->metadata_do(&cfm);
