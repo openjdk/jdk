@@ -97,7 +97,7 @@
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
  * <p>
- * Since memory segments created with arena can become invalid (see above), segments are also validated (upon access) to make sure that
+ * Since memory segments created with an arena can become invalid (see above), segments are also validated (upon access) to make sure that
  * the memory session associated with the segment being accessed is still alive.
  * We call this guarantee <em>temporal safety</em>. Together, spatial and temporal safety ensure that each memory access
  * operation either succeeds - and accesses a valid location within the region of memory backing the memory segment - or fails.
