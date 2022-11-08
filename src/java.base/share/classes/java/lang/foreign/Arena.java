@@ -58,11 +58,11 @@ import jdk.internal.javac.PreviewFeature;
 public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**
-     * Creates a native memory segment with the given size (in bytes), alignment constraint (in bytes).
-     * The returned segment is associated with the same memory session associated with this arena.
-     * The {@link MemorySegment#address()} of the returned memory segment is the starting address of the
-     * allocated off-heap memory region backing the segment. Moreover, the {@linkplain MemorySegment#address() address}
-     * of the returned segment is aligned according the provided alignment constraint.
+     * Creates a native memory segment with the given size (in bytes) and alignment constraint (in bytes).
+     * The returned segment is associated with the arena's memory session.
+     * The segment's {@link MemorySegment#address() address} is the starting address of the
+     * allocated off-heap memory region backing the segment, and the address is 
+     * aligned according the provided alignment constraint.
      *
      * @implSpec
      * The default implementation of this method is equivalent to the following code:
