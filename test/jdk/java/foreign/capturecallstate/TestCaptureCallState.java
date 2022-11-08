@@ -32,6 +32,7 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
@@ -65,8 +66,8 @@ public class TestCaptureCallState extends NativeTestHelper {
 
         VarHandle errnoHandle = stl.layout().varHandle(groupElement(testCase.threadLocalName()));
 
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment saveSeg = session.allocate(stl.layout());
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment saveSeg = arena.allocate(stl.layout());
             int testValue = 42;
             handle.invoke(saveSeg, testValue);
             int savedErrno = (int) errnoHandle.get(saveSeg);
