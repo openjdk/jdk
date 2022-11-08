@@ -302,7 +302,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache, L
   // check against inline cache
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
   assert_different_registers(receiver, iCache, t0, t2);
-  cmp_klass(receiver, iCache, t0, t2, L);
+  cmp_klass(receiver, iCache, t0, t2 /* call-clobbered t2 as a tmp */, L);
 }
 
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {

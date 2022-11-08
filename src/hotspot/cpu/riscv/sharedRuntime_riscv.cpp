@@ -1406,14 +1406,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   const Register ic_reg = t1;
   const Register receiver = j_rarg0;
-  const Register tmp_reg = t2;
 
   Label hit;
   Label exception_pending;
 
   __ verify_oop(receiver);
-  assert_different_registers(ic_reg, receiver, t0, tmp_reg);
-  __ cmp_klass(receiver, ic_reg, t0, tmp_reg, hit);
+  assert_different_registers(ic_reg, receiver, t0, t2);
+  __ cmp_klass(receiver, ic_reg, t0, t2 /* call-clobbered t2 as a tmp */, hit);
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 
