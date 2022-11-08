@@ -63,7 +63,7 @@ public class TestAutoVecIntMinMax {
     // Test for auto-vectorization of Math.min operation on an array of integers
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.Min_V,        " >0 "})
+    @IR(counts = {IRNode.MIN_V, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntMin(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
@@ -74,7 +74,7 @@ public class TestAutoVecIntMinMax {
     // Test for auto-vectorization of StrictMath.min operation on an array of integers
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.Min_V,        " >0 "})
+    @IR(counts = {IRNode.MIN_V, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntStrictMin(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
@@ -85,7 +85,7 @@ public class TestAutoVecIntMinMax {
     // Test for auto-vectorization of Math.max operation on an array of integers
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.Max_V,        " >0 "})
+    @IR(counts = {IRNode.MAX_V, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntMax(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
@@ -96,7 +96,7 @@ public class TestAutoVecIntMinMax {
     // Test for auto-vectorization of StrictMath.max operation on an array of integers
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.Max_V,        " >0 "})
+    @IR(counts = {IRNode.MAX_V, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntStrictMax(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
