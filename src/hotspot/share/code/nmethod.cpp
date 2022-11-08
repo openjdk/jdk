@@ -451,6 +451,7 @@ void nmethod::init_defaults() {
 #endif
 }
 
+#ifdef ASSERT
 class CheckForOopsClosure : public OopClosure {
   bool _found_oop = false;
  public:
@@ -466,6 +467,25 @@ class CheckForMetadataClosure : public MetadataClosure {
   virtual void do_metadata(Metadata* md) { if (md != _ignore) _found_metadata = true; }
   bool found_metadata() { return _found_metadata; }
 };
+
+static void assert_no_oops_or_metadata(nmethod* nm) {
+  if (nm == nullptr) return;
+  assert(nm->oop_maps() == nullptr, "expectation");
+
+  CheckForOopsClosure cfo;
+  nm->oops_do(&cfo);
+  assert(!cfo.found_oop(), "no oops allowed");
+
+  // We allow an exception for the own Method, but require it's class to be permanent.
+  Method* own_method = nm->method();
+  CheckForMetadataClosure cfm(/* ignore reference to own Method */ own_method);
+  nm->metadata_do(&cfm);
+  assert(!cfm.found_metadata(), "no metadata allowed");
+
+  assert(own_method->method_holder()->class_loader_data()->is_permanent_class_loader_data(),
+         "Method's class needs to be permanent");
+}
+#endif
 
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int compile_id,
@@ -500,21 +520,8 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
             basic_lock_owner_sp_offset,
             basic_lock_sp_offset,
             oop_maps);
-#ifdef ASSERT
-    // Allocating in NonNMethod space is only for special nmethods which don't
-    // need to be findable by nmethod iterators.
-    // GC may not look for Oops, there.
-    if (allow_NonNMethod_space) {
-      assert(oop_maps == nullptr, "expectation");
-      CheckForOopsClosure cfo;
-      nm->oops_do(&cfo);
-      assert(!cfo.found_oop(), "no oops allowed");
-      CheckForMetadataClosure cfm(/* ignore reference to own Method */ nm->method());
-      nm->metadata_do(&cfm);
-      assert(!cfm.found_metadata(), "no metadata allowed");
-    }
-#endif
-    NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
+    DEBUG_ONLY( if (allow_NonNMethod_space) assert_no_oops_or_metadata(nm); )
+    NOT_PRODUCT(if (nm != NULL) native_nmethod_stats.note_native_nmethod(nm));
   }
 
   if (nm != NULL) {
