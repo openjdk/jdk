@@ -56,7 +56,10 @@ class StackValueCollection : public ResourceObj {
   void set_float_at(int slot, jfloat value);
   void set_double_at(int slot, jdouble value);
 
+#ifndef PRODUCT
   void print();
+  void print_on(outputStream* st) const override;
+#endif // !PRODUCT
 };
 
 #endif // SHARE_RUNTIME_STACKVALUECOLLECTION_HPP

@@ -132,18 +132,21 @@ void StackValueCollection::set_double_at(int slot, jdouble value) {
 
 #ifndef PRODUCT
 void StackValueCollection::print() {
+  print_on(tty);
+}
+void StackValueCollection::print_on(outputStream* st) const {
   for(int index = 0; index < size(); index++) {
-    tty->print("\t  %2d ", index);
-    at(index)->print_on(tty);
+    st->print("\t  %2d ", index);
+    at(index)->print_on(st);
     if( at(index  )->type() == T_INT &&
         index+1 < size() &&
         at(index+1)->type() == T_INT ) {
-      tty->print("  " INT64_FORMAT " (long)", (int64_t)long_at(index));
-      tty->cr();
-      tty->print("\t     %.15e (double)", double_at(index));
-      tty->print("  " INT64_FORMAT_X_0 " (longhex)", (int64_t)long_at(index));
+      st->print("  " INT64_FORMAT " (long)", (int64_t)long_at(index));
+      st->cr();
+      st->print("\t     %.15e (double)", double_at(index));
+      st->print("  " INT64_FORMAT_X_0 " (longhex)", (int64_t)long_at(index));
     }
-    tty->cr();
+    st->cr();
   }
 }
-#endif
+#endif // !PRODUCT
