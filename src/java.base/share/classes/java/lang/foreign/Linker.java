@@ -252,7 +252,8 @@ public sealed interface Linker permits AbstractLinker {
      * method handle.
      * <p>
      * The returned memory segment's address points to the newly allocated upcall stub, and is associated with
-     * the provided memory session. When such session is closed, the corresponding upcall stub will be deallocated.
+     * the provided memory session. As such, the corresponding upcall stub will be deallocated
+     * when the session becomes not {@linkplain MemorySession#isAlive() alive}.
      * <p>
      * The target method handle should not throw any exceptions. If the target method handle does throw an exception,
      * the VM will exit with a non-zero exit code. To avoid the VM aborting due to an uncaught exception, clients

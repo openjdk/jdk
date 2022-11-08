@@ -31,10 +31,10 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * An arena allocates and manages the lifecycle of native segments.
  * <p>
- * An arena is a {@linkplain AutoCloseable closeable} segment allocator that has a {@link #session() memory session}.
- * The arena's session is created when the arena is created, and is closed when the arena is {@linkplain #close() closed}.
- * All native segments {@linkplain #allocate(long, long) allocated} by the arena are associated
- * with its session.
+ * An arena is a {@linkplain AutoCloseable closeable} segment allocator that has a bounded {@link #session() memory session}.
+ * The arena's session is created when the arena is created, and ends when the arena is {@linkplain #close() closed}.
+ * All native segments {@linkplain #allocate(long, long) allocated} by the arena are associated with its session, and
+ * cannot be accessed after the arena is closed.
  * <p>
  * The <a href="MemorySession.html#thread-confinement">confinement properties</a> of the session associated with an
  * arena are determined by the factory used to create the arena. For instance, an arena created with {@link #openConfined()}
@@ -91,9 +91,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     MemorySession session();
 
     /**
-     * Closes this arena. This closes the {@linkplain #session() session} associated with this arena and invalidates
-     * all the memory segments associated with it. Any off-heap region of memory backing the segments associated with
-     * that memory session are also released.
+     * Closes this arena. If this method completes normally, the arena session becomes not {@linkplain MemorySession#isAlive() alive},
+     * and all the memory segments associated with it can no longer be accessed. Furthermore, any off-heap region of memory backing the
+     * segments associated with that memory session are also released.
      * @throws IllegalStateException if the session associated with this arena is not {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread other than the thread
      * {@linkplain MemorySession#isOwnedBy(Thread) owning} the session associated with this arena.

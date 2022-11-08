@@ -389,8 +389,9 @@ public interface SegmentAllocator {
      * Simple allocator used to allocate native segments. The returned allocator responds to an allocation request by
      * returning a native segment backed by a fresh off-heap region of memory, with given byte size and alignment constraint.
      * <p>
-     * Each native segment obtained by the returned allocator is associated with the provided session. As such, the
-     * off-heap region which backs the returned segment is freed when the session is closed.
+     * Each native segment obtained by the returned allocator is associated with the provided session. As such,
+     * the off-heap region which backs the returned segment is freed when the session becomes not
+     * {@linkplain MemorySession#isAlive() alive}.
      * <p>
      * The {@link MemorySegment#address()} of the native segments obtained by the returned allocator is the starting address of
      * the newly allocated off-heap memory region backing the segment. Moreover, the {@linkplain MemorySegment#address() address}

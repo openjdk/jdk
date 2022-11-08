@@ -225,8 +225,9 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
     /**
      * Creates a variable argument list from the give address value and memory session. The address is typically obtained
      * by calling {@link MemorySegment#address()} on a foreign memory segment instance. The provided session determines
-     * the lifecycle of the returned variable argument list: when the session is closed,
-     * the returned variable argument list will no longer be accessible.
+     * the lifecycle of the returned variable argument list: the returned variable argument list will no longer be accessible,
+     * and its associated off-heap memory region will be deallocated when the session becomes not
+     * {@linkplain MemorySession#isAlive() alive}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
@@ -253,10 +254,9 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
 
     /**
      * Creates a variable argument list using a builder (see {@link Builder}), with the given
-     * memory session.
-     * <p>
-     * If this method needs to allocate memory, such memory will be managed by the given
-     * session, and will be released when the session is closed.
+     * memory session. The provided session determines the lifecycle of the returned variable argument list: the
+     * returned variable argument list will no longer be accessible, and its associated off-heap memory region will be
+     * deallocated when the session becomes not {@linkplain MemorySession#isAlive() alive}.
      * <p>
      * Note that when there are no elements added to the created va list,
      * this method will return the same as {@link #empty()}.

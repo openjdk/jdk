@@ -928,7 +928,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     is {@code S'}, then {@code S = S'}; or</li>
      *     <li>if the buffer is a heap buffer, then {@code S} is the {@linkplain MemorySession#global() global session}; or
      *     <li>if the buffer is a direct buffer, then {@code S} is an
-     *     {@linkplain MemorySession#implicit() implicit session} that keeps the buffer reachable.
+     *     {@linkplain MemorySession#implicit() implicitly-managed} memory session that keeps the buffer reachable.
      *     Therefore, the off-heap region of memory backing the buffer instance will remain available as long as the
      *     returned segment is reachable.</li>
      * </ul>
@@ -1118,7 +1118,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * The returned segment is not read-only (see {@link MemorySegment#isReadOnly()}), and is associated with the
      * provided memory session.
      * <p>
-     * The provided cleanup action (if any) will be invoked <em>after</em> the provided session is closed.
+     * The provided cleanup action (if any) will be invoked when the session becomes not {@linkplain MemorySession#isAlive() alive}.
      * <p>
      * Clients should ensure that the address and bounds refer to a valid region of memory that is accessible for reading and,
      * if appropriate, writing; an attempt to access an invalid address from Java code will either return an arbitrary value,
@@ -1154,10 +1154,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Creates a native segment with the given layout and memory session.
      * <p>
-     * Clients are responsible for ensuring that the memory session associated with the returned segment is
-     * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
-     * alternative, an {@linkplain MemorySession#implicit() implicitly closed} session can be used, allowing
-     * the returned segment to be automatically released some unspecified time after the session is no longer referenced.
+     * The lifetime off-heap region of memory associated with the returned native segment is determined by the
+     * provided memory session. The off-heap memory region is deallocated when the session becomes not
+     * {@linkplain MemorySession#isAlive() alive}. If the session has been obtained using an {@link Arena},
+     * clients are responsible for ensuring that the arena is closed when the returned segment is no longer in use
+     * Failure to do so will result in off-heap memory leaks. As an alternative, an {@linkplain MemorySession#implicit() implicitly-managed}
+     * session can be used, allowing the off-heap memory region associated with the returned native segment to be
+     * automatically released some unspecified time after the session is no longer referenced.
      * <p>
      * The {@linkplain #address() address} of the returned memory segment is the starting address of
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
@@ -1186,10 +1189,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Creates a native segment with the given size (in bytes) and memory session.
      * <p>
-     * Clients are responsible for ensuring that the memory session associated with the returned segment is
-     * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
-     * alternative, an {@linkplain MemorySession#implicit() implicitly closed} session can be used, allowing
-     * the returned segment to be automatically released some unspecified time after the session is no longer referenced.
+     * The lifetime of the off-heap region of memory associated with the returned native segment is determined by the
+     * provided memory session. The off-heap memory region is deallocated when the session becomes not
+     * {@linkplain MemorySession#isAlive() alive}. If the session has been obtained using an {@link Arena},
+     * clients are responsible for ensuring that the arena is closed when the returned segment is no longer in use
+     * Failure to do so will result in off-heap memory leaks. As an alternative, an {@linkplain MemorySession#implicit() implicitly-managed}
+     * session can be used, allowing the off-heap memory region associated with the returned native segment to be
+     * automatically released some unspecified time after the session is no longer referenced.
      * <p>
      * The {@linkplain #address() address} of the returned memory segment is the starting address of
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
@@ -1217,10 +1223,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Creates a native segment with the given size (in bytes), alignment (in bytes) and session.
      * <p>
-     * Clients are responsible for ensuring that the memory session associated with the returned segment is
-     * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
-     * alternative, an {@linkplain MemorySession#implicit() implicitly closed} session can be used, allowing
-     * the returned segment to be automatically released some unspecified time after the session is no longer referenced.
+     * The lifetime of the off-heap region of memory associated with the returned native segment is determined by the
+     * provided memory session. The off-heap memory region is deallocated when the session becomes not
+     * {@linkplain MemorySession#isAlive() alive}. If the session has been obtained using an {@link Arena},
+     * clients are responsible for ensuring that the arena is closed when the returned segment is no longer in use
+     * Failure to do so will result in off-heap memory leaks. As an alternative, an {@linkplain MemorySession#implicit() implicitly-managed}
+     * session can be used, allowing the off-heap memory region associated with the returned native segment to be
+     * automatically released some unspecified time after the session is no longer referenced.
      * <p>
      * The {@linkplain #address() address} of the returned memory segment is the starting address of
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
