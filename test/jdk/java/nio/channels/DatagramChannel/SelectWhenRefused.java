@@ -25,6 +25,7 @@
  * @bug 6935563 7044870
  * @summary Test that Selector does not select an unconnected DatagramChannel when
  *    ICMP port unreachable received
+ * @library /test/lib
  * @run main/othervm SelectWhenRefused
  */
 
@@ -33,6 +34,8 @@ import java.nio.channels.*;
 import java.net.*;
 import java.io.IOException;
 import java.util.Set;
+
+import static jdk.test.lib.Asserts.assertNotEquals;
 
 public class SelectWhenRefused {
     static final int MAX_TRIES = 3;
@@ -54,29 +57,32 @@ public class SelectWhenRefused {
             dc.register(sel, SelectionKey.OP_READ);
 
             /* Test 1: not connected so ICMP port unreachable should not be received */
-            for (int i = 0; i < MAX_TRIES; i++) {
-                if (!testNoPUEBeforeConnection(dc, refuser, sel, i)) {
-                    break;
+            for (int i = 1; i <= MAX_TRIES; i++) {
+                if (testNoPUEBeforeConnection(dc, refuser, sel, i)) {
+                    break; // test succeeded
                 }
+                assertNotEquals(i, MAX_TRIES, "testNoPUEBeforeConnection: too many retries");
             }
 
             /* Test 2: connected so ICMP port unreachable may be received */
             dc.connect(refuser);
             try {
-                for (int i = 0; i < MAX_TRIES; i++) {
-                    if (!testPUEOnConnect(dc, refuser, sel, i)) {
-                        break;
+                for (int i = 1; i <= MAX_TRIES; i++) {
+                    if (testPUEOnConnect(dc, refuser, sel, i)) {
+                        break; // test passed
                     }
+                    assertNotEquals(i, MAX_TRIES, "testPUEOnConnect: too many retries");
                 }
             } finally {
                 dc.disconnect();
             }
 
             /* Test 3: not connected so ICMP port unreachable should not be received */
-            for (int i = 0; i < MAX_TRIES; i++) {
-                if (!testNoPUEAfterDisconnect(dc, refuser, sel, i)) {
-                    break;
+            for (int i = 1; i <= MAX_TRIES; i++) {
+                if (testNoPUEAfterDisconnect(dc, refuser, sel, i)) {
+                    break; // test passed
                 }
+                assertNotEquals(i, MAX_TRIES, "testNoPUEAfterDisconnect: too many retries");
             }
         } catch (BindException e) {
             // Do nothing, some other test has used this port
@@ -100,13 +106,12 @@ public class SelectWhenRefused {
         sendDatagram(dc, refuser);
         int n = sel.select(2000);
         if (n > 0) {
-            boolean ignoreStrayWakeup = checkUnexpectedWakeup(sel.selectedKeys());
+            boolean mayRetry = checkUnexpectedWakeup(sel.selectedKeys());
+            boolean tooManyRetries = retryCount >= MAX_TRIES;
             sel.selectedKeys().clear();
 
-            if (ignoreStrayWakeup) {
-                if (retryCount < MAX_TRIES - 1) {
-                    return true;
-                }
+            if (mayRetry && !tooManyRetries) {
+                return false; // will retry
             }
 
             // BindException will be thrown if another service is using
@@ -114,7 +119,7 @@ public class SelectWhenRefused {
             DatagramChannel.open().bind(refuser).close();
             throw new RuntimeException("Unexpected wakeup");
         }
-        return false;
+        return true; // test passed
     }
 
     /*
@@ -151,15 +156,16 @@ public class SelectWhenRefused {
                     }
                 }
 
-                if (retryCount < MAX_TRIES - 1) {
-                    return true;
+                boolean mayRetry = retryCount < MAX_TRIES;
+                if (mayRetry) {
+                    return false; // will retry
                 }
                 throw new RuntimeException("PortUnreachableException not raised");
             } catch (PortUnreachableException pue) {
                 System.out.println("Got expected PortUnreachableException " + pue);
             }
         }
-        return false;
+        return true; // test passed
     }
 
     /*
@@ -176,18 +182,17 @@ public class SelectWhenRefused {
         sendDatagram(dc, refuser);
         int n = sel.select(2000);
         if (n > 0) {
-            boolean ignoreStrayWakeup = checkUnexpectedWakeup(sel.selectedKeys());
+            boolean mayRetry = checkUnexpectedWakeup(sel.selectedKeys());
+            boolean tooManyRetries = retryCount >= MAX_TRIES;
             sel.selectedKeys().clear();
 
-            if (ignoreStrayWakeup) {
-                if (retryCount < MAX_TRIES - 1) {
-                    return true;
-                }
+            if (mayRetry && !tooManyRetries) {
+                return false; // will retry
             }
 
             throw new RuntimeException("Unexpected wakeup after disconnect");
         }
-        return false;
+        return true; // test passed
     }
 
     static void sendDatagram(DatagramChannel dc, SocketAddress remote)
