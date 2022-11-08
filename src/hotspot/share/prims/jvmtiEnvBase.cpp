@@ -823,8 +823,8 @@ JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *
   assert(result.get_type() == T_OBJECT, "just checking");
   objArrayOop groups = (objArrayOop)result.get_oop();
 
+  *count_ptr = groups == nullptr ? 0 : groups->length();
   *group_objs_p = objArrayHandle(current_thread, groups);
-  *count_ptr = groups->length();
 
   return JVMTI_ERROR_NONE;
 }
