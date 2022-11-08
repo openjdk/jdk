@@ -222,7 +222,8 @@ class externalVFrame: public vframe {
  public:
   // printing operations
   void print_value() const;
-  void print();
+  void print_on(outputStream* st) const override;
+  void print() override;
 #endif
   friend class vframe;
 };
@@ -245,7 +246,8 @@ class entryVFrame: public externalVFrame {
  public:
   // printing
   void print_value() const;
-  void print();
+  void print_on(outputStream* st) const override;
+  void print() override;
 #endif
   friend class vframe;
 };

@@ -51,6 +51,7 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/vframe.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -693,10 +694,14 @@ void entryVFrame::print_value() const {
   ((entryVFrame*)this)->print();
 }
 
+void entryVFrame::print_on(outputStream *st) const {
+  vframe::print_on(st);
+  st->print_cr("C Chunk in between Java");
+  st->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
+}
+
 void entryVFrame::print() {
-  vframe::print();
-  tty->print_cr("C Chunk in between Java");
-  tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
+  print_on(tty);
 }
 
 
@@ -842,8 +847,12 @@ void interpretedVFrame::verify() const {
 
 // ------------- externalVFrame --------------
 
+void externalVFrame::print_on(outputStream *st) const {
+  _fr.print_value_on(st,NULL);
+}
+
 void externalVFrame::print() {
-  _fr.print_value_on(tty,NULL);
+  print_on(tty);
 }
 
 
