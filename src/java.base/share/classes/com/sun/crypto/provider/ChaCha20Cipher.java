@@ -851,7 +851,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         // Set the counter value before sending into the underlying
         // private block method
         initState[12] = (int)counter;
-        return _chaCha20Block(initState, result);
+        return implChaCha20Block(initState, result);
     }
 
     /**
@@ -867,7 +867,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *      in a single call and therefore may be a larger multiple of 64.
      */
     @IntrinsicCandidate
-    private static int _chaCha20Block(int[] initState, byte[] result) {
+    private static int implChaCha20Block(int[] initState, byte[] result) {
         // Create an initial state and clone a working copy
         int ws00 = STATE_CONST_0;
         int ws01 = STATE_CONST_1;
