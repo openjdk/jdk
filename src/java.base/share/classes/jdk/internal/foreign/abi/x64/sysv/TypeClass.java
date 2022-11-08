@@ -175,10 +175,10 @@ class TypeClass {
 
     static TypeClass classifyLayout(MemoryLayout type) {
         try {
-            if (type instanceof ValueLayout) {
-                return ofValue((ValueLayout)type);
-            } else if (type instanceof GroupLayout) {
-                return ofStruct((GroupLayout)type);
+            if (type instanceof ValueLayout valueLayout) {
+                return ofValue(valueLayout);
+            } else if (type instanceof GroupLayout groupLayout) {
+                return ofStruct(groupLayout);
             } else {
                 throw new IllegalArgumentException("Unsupported layout: " + type);
             }
