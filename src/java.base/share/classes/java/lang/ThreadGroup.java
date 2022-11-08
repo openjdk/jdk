@@ -793,7 +793,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Returns an snapshot of the subgroups as an array, used by JVMTI.
+     * Returns a snapshot of the subgroups as an array, used by JVMTI.
      */
     private ThreadGroup[] subgroupsAsArray() {
         List<ThreadGroup> groups = synchronizedSubgroups();
