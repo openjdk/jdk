@@ -1208,7 +1208,6 @@ public class Collections {
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
-     * @since 20
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> unmodifiableSet(Set<? extends T> s) {
@@ -1245,6 +1244,7 @@ public class Collections {
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified sequenced set.
+     * @since 20
      */
     @SuppressWarnings("unchecked")
     public static <T> SequencedSet<T> unmodifiableSequencedSet(SequencedSet<? extends T> s) {
