@@ -88,8 +88,7 @@ import java.lang.invoke.MethodHandle;
  * which is {@linkplain FunctionDescriptor#toMethodType() derived} from the provided function descriptor.
  * <p>
  * Upcall stubs are modelled by instances of type {@link MemorySegment}; upcall stubs can be passed by reference to other
- * downcall method handles and, when no longer required, they can be closed, via their associated
- * {@linkplain MemorySession memory session}.
+ * downcall method handles and, they are released via their associated {@linkplain MemorySession memory session}.
  *
  * <h2 id="safety">Safety considerations</h2>
  *
@@ -105,7 +104,7 @@ import java.lang.invoke.MethodHandle;
  *     {@link IllegalStateException};</li>
  *     <li>The invocation occurs in a thread {@code T} such that {@code A.session().isAccessibleBy(T) == true}.
  *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
- *     <li>The memory session of {@code A} is <em>kept alive</em> (and cannot be closed) during the invocation.</li>
+ *     <li>The memory session of {@code A} is {@linkplain MemorySession#whileAlive(Runnable) kept alive} during the invocation.</li>
  *</ul>
  * A downcall method handle created from a function descriptor whose return layout is an
  * {@linkplain ValueLayout.OfAddress address layout} returns a native segment associated with

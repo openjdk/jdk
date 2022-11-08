@@ -50,7 +50,7 @@
  *
  * This code creates a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
- * The segment is associated with a memory session that is {@linkplain java.lang.foreign.MemorySession#implicit() implicitly} closed,
+ * The segment is associated with a memory session that is managed, {@linkplain java.lang.foreign.MemorySession#implicit() implicitly},
  * by the garbage collector. As such, the off-heap memory backing the native segment will be released at some unspecified
  * point <em>after</em> the segment becomes <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
  * This is similar to what happens with direct buffers created via {@link java.nio.ByteBuffer#allocateDirect(int)}.
@@ -97,8 +97,8 @@
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
  * <p>
- * Since memory segments can be closed (see above), segments are also validated (upon access) to make sure that
- * the memory session associated with the segment being accessed has not been closed prematurely.
+ * Since memory segments created with arena can become invalid (see above), segments are also validated (upon access) to make sure that
+ * the memory session associated with the segment being accessed is still alive.
  * We call this guarantee <em>temporal safety</em>. Together, spatial and temporal safety ensure that each memory access
  * operation either succeeds - and accesses a valid location within the region of memory backing the memory segment - or fails.
  *

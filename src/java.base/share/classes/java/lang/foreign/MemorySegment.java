@@ -161,18 +161,18 @@ import jdk.internal.vm.annotation.ForceInline;
  * the sliced segment is either derived implicitly (by subtracting the specified offset from the size of the original segment),
  * or provided explicitly. In other words, a sliced segment has <em>stricter</em> spatial bounds than those of the original segment:
  * {@snippet lang=java :
- * MemorySession session = ...
- * MemorySegment segment = MemorySegment.allocateNative(100, session);
+ * Arena arena = ...
+ * MemorySegment segment = arena.allocate(100);
  * MemorySegment slice = segment.asSlice(50, 10);
  * slice.get(ValueLayout.JAVA_INT, 20); // Out of bounds!
- * session.close();
+ * arena.close();
  * slice.get(ValueLayout.JAVA_INT, 0); // Already closed!
  * }
  * The above code creates a native segment that is 100 bytes long; then, it creates a slice that starts at offset 50
  * of {@code segment}, and is 10 bytes long. That is, the address of the {@code slice} is {@code segment.address() + 50},
  * and its size is 10. As a result, attempting to read an int value at offset 20 of the
  * {@code slice} segment will result in an exception. The {@linkplain MemorySession temporal bounds} of the original segment
- * are inherited by its slices; that is, when the memory session associated with {@code segment} is closed, {@code slice}
+ * are inherited by its slices; that is, when the memory session associated with {@code segment} ends, {@code slice}
  * will also be become inaccessible.
  * <p>
  * A client might obtain a {@link Stream} from a segment, which can then be used to slice the segment (according to a given
