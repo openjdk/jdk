@@ -354,7 +354,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     }
 
     /**
-     * Creates an access var handle that can be used to access a memory segment at the layout selected by the given layout path,
+     * Creates a var handle that can be used to access a memory segment at the layout selected by the given layout path,
      * where the path is considered rooted in this layout.
      * <p>
      * The final address accessed by the returned var handle can be computed as follows:
