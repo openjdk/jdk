@@ -58,14 +58,25 @@ private:
   address       _stack[NMT_TrackingStackDepth];
   static const NativeCallStack _empty_stack;
 public:
-  // Default ctor creates an empty stack.
-  // (it may make sense to remove this altogether but its used in a few places).
+
+  // JDK-8296437:
+  // Default ctor is left intentionally empty to not initialize its stack.
+  // This constructor is hot, since it gets used as part of CALLER_PC or CURRENT_PC
+  // when NMT is off. Leaving this ctor empty will cause the compiler to optimize
+  // it away. That the object remains uninitialized is fine, since it won't be used
+  // anyway.
   NativeCallStack() {
-    memset(_stack, 0, sizeof(_stack));
+#ifdef ASSERT
+    for (int i = 0; i < NMT_TrackingStackDepth; i ++) {
+      // we zap the object with a pattern in debug builds only
+      _stack[i] = (address)(LP64_ONLY(0x4E4D54535441434B) // "NMTSTACK"
+                            NOT_LP64(0x4E4D5453));        // "NMTS"
+    }
+#endif
   }
 
   explicit NativeCallStack(int toSkip);
-  NativeCallStack(address* pc, int frameCount);
+  explicit NativeCallStack(address* pc, int frameCount);
 
   static inline const NativeCallStack& empty_stack() { return _empty_stack; }
 

@@ -28,7 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-const NativeCallStack NativeCallStack::_empty_stack; // Uses default ctor
+const NativeCallStack NativeCallStack::_empty_stack (NULL, 0);
 
 NativeCallStack::NativeCallStack(int toSkip) {
 
