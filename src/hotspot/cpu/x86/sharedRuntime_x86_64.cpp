@@ -2138,7 +2138,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
-	// Load object header
+        // Load object header
         __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ fast_lock_impl(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
       } else {
@@ -2304,11 +2304,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
-	__ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+        __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
         __ fast_unlock_impl(obj_reg, swap_reg, lock_reg, slow_path_unlock);
       } else {
-	// get address of the stack lock
+        // get address of the stack lock
         __ lea(rax, Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size));
         //  get old displaced header
         __ movptr(old_hdr, Address(rax, 0));

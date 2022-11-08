@@ -1287,8 +1287,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
       if (UseFastLocking && inf->is_owner_anonymous() && current->lock_stack().contains(object)) {
-	inf->set_owner_from_anonymous(current);
-	current->lock_stack().remove(object);
+        inf->set_owner_from_anonymous(current);
+        current->lock_stack().remove(object);
       }
       return inf;
     }
