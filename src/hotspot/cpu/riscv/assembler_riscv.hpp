@@ -1455,7 +1455,7 @@ enum VectorMask {
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {        \
     guarantee(is_imm_in_range(imm, 5, 0), "imm is invalid");                                       \
-    patch_VArith(op, Vd, funct3, (uint32_t)imm & 0x1f, Vs2, vm, funct6);                           \
+    patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
 
   INSN(vmsgt_vi,  0b1010111, 0b011, 0b011111);
