@@ -7033,7 +7033,7 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
   Node* r_start = array_element_address(rlimbs, intcon(0), T_LONG);
   assert(r_start, "r array is NULL");
 
-  Node* call = make_runtime_call(RC_LEAF,
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
                                  OptoRuntime::poly1305_processBlocks_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  input_start, len, acc_start, r_start);

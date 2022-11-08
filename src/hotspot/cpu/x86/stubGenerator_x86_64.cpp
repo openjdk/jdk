@@ -1999,94 +1999,6 @@ address StubGenerator::generate_base64_encodeBlock()
   return start;
 }
 
-address StubGenerator::generate_poly1305_masksCP() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "generate_poly1305_masksCP");
-  address start = __ pc();
-  // OFFSET 0: high_bit
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-  __ emit_data64(0x0000010000000000, relocInfo::none);
-
-  // OFFSET 64: mask_44
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-  __ emit_data64(0xfffffffffff, relocInfo::none);
-
-  // OFFSET 128: mask_42
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-  __ emit_data64(0x3ffffffffff, relocInfo::none);
-
-  return start;
-}
-
-address StubGenerator::generate_poly1305_processBlocks() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
-  address start = __ pc();
-  __ enter();
-
-  // Save all 'SOE' registers
-  __ push(rbx);
-  #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
-  #endif
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-
-  // void processBlocks(byte[] input, int len, int[5] a, int[5] r)
-  const Register input        = rdi; //input+offset
-  const Register length       = rbx;
-  const Register accumulator  = rcx;
-  const Register R            = r8;
-
-  #ifdef _WIN64
-  __ mov(input, c_rarg0);
-  __ mov(length, c_rarg1);
-  __ mov(accumulator, c_rarg2);
-  __ mov(R, c_rarg3);
-  #else  // input already in correct position for linux; dont clobber R, args copied out-of-order
-  __ mov(length, c_rarg1);
-  __ mov(R, c_rarg3);
-  __ mov(accumulator, c_rarg2);
-  #endif
-
-  __ poly1305_process_blocks(input, length, accumulator, R);
-
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
-  #endif
-  __ pop(rbx);
-
-  __ leave();
-  __ ret(0);
-  return start;
-}
-
 // base64 AVX512vbmi tables
 address StubGenerator::base64_vbmi_lookup_lo_addr() {
   __ align64();
@@ -3798,7 +3710,6 @@ void StubGenerator::generate_initial() {
   }
 
   if (UsePolyIntrinsics) {
-    StubRoutines::x86::_poly1305_mask_addr = generate_poly1305_masksCP();
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
   }
 
