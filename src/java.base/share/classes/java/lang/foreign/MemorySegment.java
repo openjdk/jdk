@@ -309,7 +309,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * </tbody>
  * </table></blockquote>
  *
- * Heap segment can only be accessed using a layout whose alignment is smaller or equal to the
+ * Heap segments can only be accessed using a layout whose alignment is smaller or equal to the
  * maximum alignment associated with the heap segment. Attempting to access a heap segment using a layout
  * whose alignment is greater than the maximum alignment associated with the heap segment will fail,
  * as demonstrated in the following example:
