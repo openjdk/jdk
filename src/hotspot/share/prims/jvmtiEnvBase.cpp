@@ -536,8 +536,8 @@ void JvmtiEnvBase::destroy_jni_reference(JavaThread *thread, jobject jobj) {
 // Threads
 //
 
-jobject *
-JvmtiEnvBase::new_jobjectArray(int length, Handle *handles) {
+jthread *
+JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
   if (length == 0) {
     return NULL;
   }
@@ -551,14 +551,19 @@ JvmtiEnvBase::new_jobjectArray(int length, Handle *handles) {
   return objArray;
 }
 
-jthread *
-JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
-  return (jthread *) new_jobjectArray(length,handles);
-}
-
 jthreadGroup *
-JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
-  return (jthreadGroup *) new_jobjectArray(length,handles);
+JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
+  if (length == 0) {
+    return NULL;
+  }
+
+  jobject *objArray = (jobject *) jvmtiMalloc(sizeof(jobject) * length);
+  NULL_CHECK(objArray, NULL);
+
+  for (int i=0; i<length; i++) {
+    objArray[i] = JNIHandles::make_local(groups->obj_at(i));
+  }
+  return objArray;
 }
 
 // Return the vframe on the specified thread and depth, NULL if no such frame.
@@ -794,7 +799,7 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
 }
 
 jvmtiError
-JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **group_objs_p) {
+JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p) {
 
   // This call collects the strong and weak groups
   JavaThread* THREAD = current_thread;
@@ -818,23 +823,9 @@ JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *
   assert(result.get_type() == T_OBJECT, "just checking");
   objArrayOop groups = (objArrayOop)result.get_oop();
 
-  Handle* group_objs = nullptr;
-  int count = 0;
+  *group_objs_p = objArrayHandle(current_thread, groups);
+  *count_ptr = groups->length();
 
-  int length = groups->length();
-  if (length > 0) {
-    group_objs = NEW_RESOURCE_ARRAY_RETURN_NULL(Handle, length);
-    NULL_CHECK(group_objs, JVMTI_ERROR_OUT_OF_MEMORY);
-
-    for (int i = 0; i < length; i++) {
-      oop group_obj = groups->obj_at(i);
-      assert(group_obj != NULL, "group_obj != NULL");
-      group_objs[count++] = Handle(current_thread, group_obj);
-    }
-  }
-
-  *group_objs_p = group_objs;
-  *count_ptr = count;
   return JVMTI_ERROR_NONE;
 }
 
