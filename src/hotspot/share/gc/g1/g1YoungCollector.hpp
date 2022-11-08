@@ -98,6 +98,7 @@ class G1YoungCollector {
 
   void set_young_collection_default_active_worker_threads();
 
+  void retire_tlabs();
   void concatenate_dirty_card_logs_and_stats();
   void verify_empty_dirty_card_logs() const NOT_DEBUG_RETURN;
 

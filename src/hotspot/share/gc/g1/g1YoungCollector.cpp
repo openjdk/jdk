@@ -467,6 +467,13 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
+void G1YoungCollector::retire_tlabs() {
+  Ticks start = Ticks::now();
+  _g1h->retire_tlabs();
+  double retire_time = (Ticks::now() - start).seconds() * MILLIUNITS;
+  phase_times()->record_prepare_tlab_time_ms(retire_time);
+}
+
 void G1YoungCollector::concatenate_dirty_card_logs_and_stats() {
   Ticks start = Ticks::now();
   G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
@@ -503,12 +510,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
    _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
 
   _g1h->gc_prologue(false);
-
-  {
-    Ticks start = Ticks::now();
-    _g1h->retire_tlabs();
-    phase_times()->record_prepare_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
-  }
 
   hot_card_cache()->reset_hot_cache_claimed_index();
 
@@ -1086,6 +1087,10 @@ void G1YoungCollector::collect() {
     // policy for the collection deliberately elides verification (and some
     // other trivial setup above).
     policy()->record_young_collection_start();
+
+    // Flush early, so later phases don't need to account for per-thread stuff.
+    // Flushes deferred card marks, so must precede concatenting logs.
+    retire_tlabs();
 
     // Flush early, so later phases don't need to account for per-thread stuff.
     concatenate_dirty_card_logs_and_stats();
