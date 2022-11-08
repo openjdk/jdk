@@ -54,7 +54,7 @@ public class MethodRefQualifyingTypeTest {
         public static void invoke() {
             MyFunctionalInterface instance = null;
             MethodSupplierImpl ms = new MethodSupplierImpl() {
-                    public  int m(int a){
+                    public int m(int a) {
                         return a;
                     }
                 };
