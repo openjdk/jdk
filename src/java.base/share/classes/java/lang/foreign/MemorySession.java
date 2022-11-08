@@ -32,13 +32,12 @@ import jdk.internal.ref.CleanerFactory;
 /**
  * A memory session models the lifetime of a memory segment.
  * <p>
- * Segments associated with a memory session can only be accessed while the session is {@linkplain #isAlive() alive},
- * and by the {@linkplain #isAccessibleBy(Thread) thread} associated with the session (if any).
+ * Segments associated with a memory session can only be accessed while the session is {@linkplain #isAlive() alive}.
  * <p>
  * Memory sessions can be <em>unbounded</em> or <em>bounded</em>. An unbounded memory session is obtained by calling
  * {@link MemorySession#global()}. An unbounded memory session is always alive. As a result, the segments associated
  * with an unbounded session are always accessible and their backing regions of memory are never deallocated. Moreover,
- * memory segments associated with unbounded sessions can be accessed from any thread.
+ * memory segments associated with unbounded sessions can be {@linkplain #isAccessibleBy(Thread) accessed} from any thread.
  * <p>
  * Conversely, a bounded memory session has a start and an end. Bounded memory sessions can be managed either
  * explicitly, (i.e. using an {@linkplain Arena arena}) or implicitly, by the garbage collector. When a bounded memory
@@ -64,8 +63,8 @@ import jdk.internal.ref.CleanerFactory;
  * Bounded sessions that are managed implicitly can be useful to manage long-lived segments, where timely deallocation
  * is not critical, or in unstructured cases where the boundaries of the lifetime associated with a memory session
  * cannot be easily determined. As shown in the example above, a memory session that is managed implicitly cannot end
- * if a program references to one or more segments associated with that session. This means that implicitly managed
- * session can naturally support safe access from multiple threads.
+ * if a program references to one or more segments associated with that session. This means that memory segments associated
+ * with implicitly managed can be safely {@linkplain #isAccessibleBy(Thread) accessed} from multiple threads.
  *
  * @implSpec
  * Implementations of this interface are thread-safe.
@@ -87,7 +86,7 @@ public sealed interface MemorySession permits MemorySessionImpl {
     boolean isAlive();
 
     /**
-     * {@return {@code true} if the provided thread can access segments associated with this memory session}
+     * {@return {@code true} if the provided thread can access and/or obtain segments associated with this memory session}
      * @param thread the thread to be tested.
      */
     boolean isAccessibleBy(Thread thread);
