@@ -199,20 +199,28 @@
  * the restricted method {@link java.lang.foreign.MemorySegment#ofAddress(long, long, MemorySession)}
  * can be used to create a fresh segment with the given spatial bounds out of a native address.
  * <p>
- * Binding foreign data and/or functions is generally unsafe and, if done incorrectly, can result in VM crashes, or memory corruption when the bound Java API element is accessed.
- * For instance, in the case of {@link java.lang.foreign.MemorySegment#ofAddress(long, long, MemorySession)},
- * if the provided spatial bounds are incorrect, a client of the segment returned by that method might crash the VM, or corrupt
+ * Binding foreign data and/or functions is generally unsafe and, if done incorrectly, can result in VM crashes,
+ * or memory corruption when the bound Java API element is accessed. For instance, in the case of
+ * {@link java.lang.foreign.MemorySegment#ofAddress(long, long, MemorySession)}, if the provided spatial bounds are
+ * incorrect, a client of the segment returned by that method might crash the VM, or corrupt
  * memory when attempting to access said segment. For these reasons, it is crucial for code that calls a restricted method
  * to never pass arguments that might cause incorrect binding of foreign data and/or functions to a Java API.
  * <p>
- * Access to restricted methods can be controlled using the command line option {@code --enable-native-access=M1,M2, ... Mn},
- * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module, the special value {@code ALL-UNNAMED}
- * can be used). If this option is specified, access to restricted methods is only granted to the modules listed by that
- * option. If this option is not specified, access to restricted methods is enabled for all modules, but
- * access to restricted methods will result in runtime warnings.
+ * Given the potential danger of restricted methods, the Java runtime issues a warning on the standard error stream
+ * every time a restricted method is invoked. Such warnings can be disabled by granting access to restricted methods
+ * to selected modules. This can be done either via implementation-specific command line options, or programmatically, e.g. by calling
+ * {@link java.lang.ModuleLayer.Controller#enableNativeAccess(java.lang.Module)}.
  * <p>
  * For every class in this package, unless specified otherwise, any method arguments of reference
  * type must not be null, and any null argument will elicit a {@code NullPointerException}.  This fact is not individually
  * documented for methods of this API.
+ *
+ * @implNote
+ * In the reference implementation, access to restricted methods can be granted to specific modules using the command line option
+ * {@code --enable-native-access=M1,M2, ... Mn}, where {@code M1}, {@code M2}, {@code ... Mn} are module names
+ * (for the unnamed module, the special value {@code ALL-UNNAMED} can be used). If this option is specified, access to
+ * restricted methods is only granted to the modules listed by that option. If this option is not specified,
+ * access to restricted methods is enabled for all modules, but access to restricted methods will result in runtime warnings.
+ *
  */
 package java.lang.foreign;
