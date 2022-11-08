@@ -138,7 +138,6 @@ public final class ModuleHashes {
      * Computes a hash from the names and content of a module.
      *
      * @param supplier supplies the module reader to access the module content
-     *
      * @param algorithm the name of the message digest algorithm to use
      * @return the hash
      * @throws IllegalArgumentException if digest algorithm is not supported
