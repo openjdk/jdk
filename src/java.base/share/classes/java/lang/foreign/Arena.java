@@ -31,10 +31,10 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * An arena allocates and manages the lifecycle of native segments.
  * <p>
- * An arena is a {@linkplain AutoCloseable closeable} segment allocator that is associated with a {@link #session() memory session}.
- * This session is created with the arena, and is closed when the arena is {@linkplain #close() closed}.
- * Furthermore, all the native segments {@linkplain #allocate(long, long) allocated} by the arena are associated
- * with that session.
+ * An arena is a {@linkplain AutoCloseable closeable} segment allocator that has a {@link #session() memory session}.
+ * The arena's session is created when the arena is created, and is closed when the arena is {@linkplain #close() closed}.
+ * All native segments {@linkplain #allocate(long, long) allocated} by the arena are associated
+ * with its session.
  * <p>
  * The <a href="MemorySession.html#thread-confinement">confinement properties</a> of the session associated with an
  * arena are determined by the factory used to create the arena. For instance, an arena created with {@link #openConfined()}
