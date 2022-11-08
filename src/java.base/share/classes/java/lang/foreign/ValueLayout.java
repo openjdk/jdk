@@ -326,7 +326,7 @@ public sealed interface ValueLayout extends MemoryLayout {
 
         /**
          * Returns an <em>unbounded</em> address layout with the same carrier, alignment constraint, name and order as this address layout,
-         * but with the specified pointee layout. An unbounded address layouts allow raw addresses to be accessed
+         * but with the specified pointee layout. An unbounded address layout allow raw addresses to be accessed
          * as {@linkplain MemorySegment memory segments} whose size is set to {@link Long#MAX_VALUE}. As such,
          * these segments can be used in subsequent access operations.
          * <p>
