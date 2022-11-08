@@ -5196,8 +5196,12 @@ instruct prefetchalloc( memory mem ) %{
   ins_encode %{
     if ((($mem$$disp) & 0x1f) == 0) {
       __ prefetch_w(as_Register($mem$$base), $mem$$disp);
-    } else {
+    } else if (is_imm_in_range($mem$$disp, 12, 0)) {
       __ addi(t0, as_Register($mem$$base), $mem$$disp);
+      __ prefetch_w(t0, 0);
+    } else {
+      __ mv(t0, $mem$$disp);
+      __ add(t0, as_Register($mem$$base), t0);
       __ prefetch_w(t0, 0);
     }
   %}
