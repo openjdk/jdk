@@ -28,7 +28,6 @@ package sun.security.pkcs10;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Hashtable;
 
 import sun.security.util.DerEncoder;
@@ -135,14 +134,6 @@ public class PKCS10Attributes implements DerEncoder {
      */
     public void deleteAttribute(String name) {
         map.remove(name);
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<PKCS10Attribute> getElements() {
-        return (map.elements());
     }
 
     /**

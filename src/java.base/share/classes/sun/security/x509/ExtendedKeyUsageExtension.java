@@ -200,7 +200,6 @@ public class ExtendedKeyUsageExtension extends Extension
      * Get the keyUsages value.
      */
     public Vector<ObjectIdentifier> getUsages() {
-        //XXXX May want to consider cloning this
         return keyUsages;
     }
 

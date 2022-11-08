@@ -32,7 +32,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CRLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -197,14 +196,6 @@ public class CRLExtensions {
      */
     public void delete(String alias) {
         map.remove(alias);
-    }
-
-    /**
-     * Return an enumeration of the extensions.
-     * @return an enumeration of the extensions in this CRL.
-     */
-    public Enumeration<Extension> getElements() {
-        return Collections.enumeration(map.values());
     }
 
     /**

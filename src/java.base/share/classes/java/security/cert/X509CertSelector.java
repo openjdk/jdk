@@ -1310,7 +1310,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getIssuerAsBytes() throws IOException {
-        return issuer == null ? null: issuer.getEncoded();
+        return issuer == null ? null : issuer.getEncoded();
     }
 
     /**

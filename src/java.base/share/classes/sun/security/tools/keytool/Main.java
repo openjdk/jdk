@@ -1495,7 +1495,7 @@ public final class Main {
         checkWeakConstraint(rb.getString("the.certificate.request"), req, cpcp);
 
         info.setKey(new CertificateX509Key(req.getSubjectPublicKeyInfo()));
-        info.setSubject(dname==null?req.getSubjectName():new X500Name(dname));
+        info.setSubject(dname==null ? req.getSubjectName() : new X500Name(dname));
         CertificateExtensions reqex = null;
         for (PKCS10Attribute attr : req.getAttributes().getAttributes()) {
             if (attr.getAttributeId().equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {

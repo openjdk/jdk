@@ -182,7 +182,6 @@ public class CertificatePoliciesExtension extends Extension
      * Get the PolicyInformation value.
      */
     public List<PolicyInformation> getCertPolicies() {
-        //XXXX May want to consider cloning this
         return certPolicies;
     }
 
