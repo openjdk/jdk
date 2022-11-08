@@ -112,7 +112,7 @@ public class TestFileChooserSingleDirectorySelection {
     }
 
     private static void checkDirectoriesOnlyTest(UIManager.LookAndFeelInfo laf)
-            throws Exception  {
+            throws Exception {
         System.out.println("Testing Directories Only mode");
         try {
             SwingUtilities.invokeAndWait(() -> {
@@ -132,7 +132,7 @@ public class TestFileChooserSingleDirectorySelection {
     }
 
     private static void checkFilesAndDirectoriesTest(UIManager.LookAndFeelInfo laf)
-            throws Exception  {
+            throws Exception {
         System.out.println("Testing Files and Directories mode");
         try {
             SwingUtilities.invokeAndWait(() -> {
