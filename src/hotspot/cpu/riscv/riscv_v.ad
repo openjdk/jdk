@@ -809,7 +809,9 @@ instruct vnegD(vReg dst, vReg src) %{
 // vector and reduction
 
 instruct reduce_andI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) != T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+            Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AndReductionV src1 src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
@@ -843,7 +845,9 @@ instruct reduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector or reduction
 
 instruct reduce_orI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) != T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+            Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (OrReductionV src1 src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
@@ -877,7 +881,9 @@ instruct reduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector xor reduction
 
 instruct reduce_xorI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) != T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+            Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (XorReductionV src1 src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
