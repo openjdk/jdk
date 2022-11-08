@@ -57,9 +57,9 @@ public class Signatures {
         (new Random(System.nanoTime())).nextBytes(message);
 
         String signName = switch (curveName) {
-            case "secp256r1" -> "Sha256WithECDSA";
-            case "secp384r1" -> "Sha384WithECDSA";
-            case "secp521r1" -> "Sha512WithECDSA";
+            case "secp256r1" -> "SHA256withECDSA";
+            case "secp384r1" -> "SHA384withECDSA";
+            case "secp521r1" -> "SHA512withECDSA";
             case "Ed25519" -> "Ed25519";
             case "Ed448" -> "Ed448";
             default -> throw new RuntimeException();
