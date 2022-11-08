@@ -37,13 +37,9 @@ import static org.junit.Assert.*;
 public class WindowsExitValue {
 
     @Test
-    public void checkExit259() throws IOException {
-        try {
-            Process process = new ProcessBuilder("cmd", "/c", "exit /b 259").start();
-            long exitValue = process.waitFor();
-            assertEquals(exitValue, 259);
-        } catch (InterruptedException ie) {
-            org.junit.Assert.fail("InterruptedException not expected");
-        }
+    public void checkExit259() throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("cmd", "/c", "exit /b 259").start();
+        int exitValue = process.waitFor();
+        assertEquals(exitValue, 259);
     }
 }
