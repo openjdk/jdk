@@ -686,6 +686,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     }
 
     if (op == Op_MachProj || op == Op_Catch)   continue;
+    if (op == Op_Blackhole)                    continue;  // Blackholes are not really stores
     if (store->needs_anti_dependence_check())  continue;  // not really a store
 
     // Compute the alias index.  Loads and stores with different alias
