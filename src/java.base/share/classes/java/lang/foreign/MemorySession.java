@@ -80,7 +80,7 @@ import jdk.internal.ref.CleanerFactory;
  * {@snippet lang = java:
  * MemorySegment segment = MemorySegment.allocateNative(100, MemorySession.implicit());
  * ...
- * segment = null; // the segment session is unreacheable here and becomes available for implicit close
+ * segment = null; // the segment session is unreachable here and becomes available for implicit close
  *}
  *
  * Sessions closed implicitly can be useful to manage long-lived segments, where timely deallocation is not critical,
