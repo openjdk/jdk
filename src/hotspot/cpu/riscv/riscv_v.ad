@@ -133,7 +133,7 @@ instruct vabsB(vReg dst, vReg src, vReg tmp) %{
             "vmax.vv $dst, $tmp, $src" %}
   ins_encode %{
     __ vsetvli(t0, x0, Assembler::e8);
-    __ vrsub_vi(as_VectorRegister($tmp$$reg), 0, as_VectorRegister($src$$reg));
+    __ vrsub_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg), 0);
     __ vmax_vv(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -147,7 +147,7 @@ instruct vabsS(vReg dst, vReg src, vReg tmp) %{
             "vmax.vv $dst, $tmp, $src" %}
   ins_encode %{
     __ vsetvli(t0, x0, Assembler::e16);
-    __ vrsub_vi(as_VectorRegister($tmp$$reg), 0, as_VectorRegister($src$$reg));
+    __ vrsub_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg), 0);
     __ vmax_vv(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -161,7 +161,7 @@ instruct vabsI(vReg dst, vReg src, vReg tmp) %{
             "vmax.vv $dst, $tmp, $src" %}
   ins_encode %{
     __ vsetvli(t0, x0, Assembler::e32);
-    __ vrsub_vi(as_VectorRegister($tmp$$reg), 0, as_VectorRegister($src$$reg));
+    __ vrsub_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg), 0);
     __ vmax_vv(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -175,7 +175,7 @@ instruct vabsL(vReg dst, vReg src, vReg tmp) %{
             "vmax.vv $dst, $tmp, $src" %}
   ins_encode %{
     __ vsetvli(t0, x0, Assembler::e64);
-    __ vrsub_vi(as_VectorRegister($tmp$$reg), 0, as_VectorRegister($src$$reg));
+    __ vrsub_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg), 0);
     __ vmax_vv(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);

@@ -86,6 +86,7 @@ typedef struct {
     jboolean assertFatal;
     jboolean vthreadsSupported; /* If true, debugging support for vthreads is enabled. */
     jboolean includeVThreads;   /* If true, VM.AllThreads includes vthreads. */
+    jboolean rememberVThreadsWhenDisconnected;
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;

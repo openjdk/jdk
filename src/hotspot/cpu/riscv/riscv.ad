@@ -2450,17 +2450,13 @@ encode %{
 
     // Recursive lock case
     __ mv(flag, zr);
-    __ ld(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
-    __ add(tmp, tmp, 1);
-    __ sd(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
 
     __ bnez(flag, no_count);
 
-    __ ld(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
-    __ add(tmp, tmp, 1);
-    __ sd(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
+    __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
@@ -2537,9 +2533,7 @@ encode %{
 
     __ bnez(flag, no_count);
 
-    __ ld(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
-    __ sub(tmp, tmp, 1);
-    __ sd(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
+    __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
