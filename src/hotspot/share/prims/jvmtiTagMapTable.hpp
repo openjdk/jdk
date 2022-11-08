@@ -37,21 +37,16 @@ class JvmtiEnv;
 class JvmtiTagMapEntryClosure;
 
 class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
-  union {
-     WeakHandle _wh;
-     oop _lookup_oop;
-   };
-   bool _lookup;
+
+   WeakHandle _wh;
    bool _released;
+
   public:
    JvmtiTagMapEntry(oop obj);
-   JvmtiTagMapEntry(const JvmtiTagMapEntry& org);
+   //JvmtiTagMapEntry(const JvmtiTagMapEntry& org);
    ~JvmtiTagMapEntry();
+   void set_released(bool flag){ _released = flag;}
 
-   void invalidate() {
-     _lookup = true;
-     _lookup_oop = NULL; //(oop)0xdeaddead; // Should never be used again.
-   }
   void release();
   void resolve();
   oop object() const;
@@ -62,7 +57,7 @@ class JvmtiTagMapTableBase{
   static unsigned get_hash(JvmtiTagMapEntry const &entry)  {
     oop obj = entry.object_no_keepalive();
      if (obj != NULL) {
-       return Universe::heap()->hash_oop(obj);
+       return obj->identity_hash();
      }
      return 0;
   }

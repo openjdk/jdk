@@ -41,51 +41,39 @@
 
 JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj) {
   _released = false;
-   _lookup = true;
-   _lookup_oop = obj;
+  _wh = WeakHandle(JvmtiExport::weak_tag_storage(), obj);
 }
-JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& org) {
-   if (org._lookup) {
-     _lookup = false;
-     _wh = WeakHandle(JvmtiExport::weak_tag_storage(), org._lookup_oop);
-   } else { // original was a real entry
-     _lookup = false;
-     _wh = org._wh; // Take ownership of oppStorage allocation
-   }
-   _released = false;
- }
+// JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& org) {
+//    if (org._lookup) {
+//      _lookup = false;
+//    } else { // original was a real entry
+//      _lookup = false;
+//      _wh = org._wh; // Take ownership of oppStorage allocation
+//    }
+//    _released = false;
+//  }
+
  JvmtiTagMapEntry::~JvmtiTagMapEntry(){
-   if (!_lookup) {
      release();
-   }
 }
 void JvmtiTagMapEntry::release()
 {
   if(_released)
     return;
-  assert(!_lookup, "Bad");
   _wh.release(JvmtiExport::weak_tag_storage());
   _released = true;
 }
 oop JvmtiTagMapEntry::object() const {
-  if (!_lookup) {
      return _wh.resolve();
-   }
-   return _lookup_oop;}
-
-oop JvmtiTagMapEntry::object_no_keepalive() const{
+}
+oop JvmtiTagMapEntry::object_no_keepalive() const {
   // Just peek at the object without keeping it alive.
-  if (!_lookup) {
      return _wh.peek();
-   }
-   return _lookup_oop;
 }
 
-JvmtiTagMapTable::JvmtiTagMapTable()
-
-   {
-    _rrht_table = new (ResourceObj::C_HEAP, mtInternal)  ResizableResourceHT(Constants::_table_size);
-   }
+JvmtiTagMapTable::JvmtiTagMapTable(){
+  _rrht_table = new (ResourceObj::C_HEAP, mtInternal)  ResizableResourceHT(Constants::_table_size);
+}
 
 void JvmtiTagMapTable::clear() {
 
@@ -106,7 +94,6 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
   clear();
 }
 
-
 jlong JvmtiTagMapTable::find(oop obj) {
   JvmtiTagMapEntry jtme(obj);
   jlong* found = _rrht_table->get(jtme);
@@ -115,7 +102,11 @@ jlong JvmtiTagMapTable::find(oop obj) {
 
 bool JvmtiTagMapTable::add(oop obj, jlong tag) {
  JvmtiTagMapEntry new_entry(obj);
-   return _rrht_table->put(new_entry, tag);
+ bool is_added = _rrht_table->put(new_entry, tag);
+ if ( is_added ) {
+    new_entry.set_released(true);// do not release on dtor, since there is an entry inside the table
+ }
+ return is_added;
 }
 
 void JvmtiTagMapTable::remove(oop obj) {
@@ -151,26 +142,4 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   _rrht_table->unlink(&IsDead);
 }
 
-// Rehash oops in the table
-void JvmtiTagMapTable::rehash() {
-  remove_dead_entries(NULL);
-  ResourceMark rm;
-   ResizableResourceHT* new_rrht_table = new (ResourceObj::C_HEAP, mtInternal) ResizableResourceHT(_rrht_table->table_size());
-   struct CopyEntry : public JvmtiTagMapEntryClosure {
-     ResizableResourceHT* new_rrht_table;
-     CopyEntry(ResizableResourceHT* table) : new_rrht_table(table) {
-     }
-     bool do_entry(JvmtiTagMapEntry &key, jlong &value) {
-       new_rrht_table->put(key, value);
-       key.invalidate();
-       return true;
-    }
-   } copy_entry(new_rrht_table);
-   entry_iterate(&copy_entry);
-   assert(new_rrht_table->number_of_entries() == _rrht_table->number_of_entries(), "Must be same size");
-   // Swap and
-   ResizableResourceHT* to_be_freed = _rrht_table;
-   _rrht_table = new_rrht_table;
 
-   delete to_be_freed;
-}
