@@ -1,0 +1,91 @@
+#
+# Copyright (c) 2022, Rivos Inc. and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'OpenJDK Downstreaming'
+
+on:
+  schedule:
+    # Trigger on Sunday to Friday at 21:00 UTC (23:00 CET, 14:00 PT)
+    # It triggers at least 9 hours before start of the working day in CET
+    # since that's when I would want to review it. And given GHA takes a long
+    # time to run, we want to start doing it as early as possible
+    - cron: '0 21 * * 0-4'
+  workflow_dispatch:
+    inputs: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+
+jobs:
+  fetch-push-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+          ref: 'rivos/main'
+          fetch-depth: 0
+
+      - name: "Fetch"
+        id: fetch
+        run: |
+          git remote add upstream https://github.com/openjdk/jdk.git
+          git fetch --tags upstream master
+
+      - name: "Configure"
+        id: configure
+        run: |
+          TAG=$(git tag | grep --extended-regexp '^jdk\-.*' | sort --version-sort | tail --lines 1 | tr --delete '\n')
+          test -n "$TAG"
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "diff=$(test -n "$(git diff rivos/main...$TAG)" && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+
+      - name: "Push"
+        run: |
+          git push origin ${{ steps.configure.outputs.tag }}
+
+          if [ "${{ steps.configure.outputs.diff }}" = "true" ]; then
+            git branch -f rivos/merge-${{ steps.configure.outputs.tag }} ${{ steps.configure.outputs.tag }}
+            git push origin rivos/merge-${{ steps.configure.outputs.tag }}
+          fi
+
+      - name: "Create PR"
+        run: |
+          if [ "${{ steps.configure.outputs.diff }}" = "true" ]; then
+            gh pr create \
+              --repo rivosinc/jdk \
+              --base rivos/main \
+              --head rivos/merge-${{ steps.configure.outputs.tag }} \
+              --title "Merge ${{ steps.configure.outputs.tag }} into rivos/main" \
+              --body "" \
+              --assignee "luhenry" || true
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
