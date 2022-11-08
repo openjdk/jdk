@@ -934,6 +934,8 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
   int index = last_frame.get_index_u4(bytecode);
+  if (UseNewCode)
+    index = pool->decode_invokedynamic_index(index);
   {
     JvmtiHideSingleStepping jhss(current);
     JavaThread* THREAD = current; // For exception macros.
@@ -971,6 +973,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* current, Byte
     resolve_invokehandle(current);
     break;
   case Bytecodes::_invokedynamic:
+    if (UseNewCode) { tty->print_cr("Inside resolve from cache"); }
     resolve_invokedynamic(current);
     break;
   default:

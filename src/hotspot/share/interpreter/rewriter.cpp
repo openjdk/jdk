@@ -281,7 +281,9 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
     if (UseNewCode) {
+      tty->print_cr("Pushing invokedynamic index");
       Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
+      //Bytes::put_native_u4(p, _invokedynamic_index);
       int i = ConstantPool::encode_invokedynamic_index(_invokedynamic_index);
       tty->print_cr("Invokedynamic Index is %d\nEncoded Index is %d", _invokedynamic_index, i);
       _invokedynamic_index++;

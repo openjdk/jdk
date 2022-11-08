@@ -889,6 +889,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
+  tty->print_cr("In set_dynamic_call");
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
 
   // Come back to this

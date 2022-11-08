@@ -1766,7 +1766,8 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
   int pool_index;
   if (UseNewCode) {
-    indy_index = pool->decode_invokedynamic_index(indy_index);
+    tty->print_cr("In resolve invokedynamic");
+    //indy_index = pool->decode_invokedynamic_index(indy_index);
     pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
     tty->print_cr("CPool index is %d", pool_index);
   } else {
@@ -1830,7 +1831,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       // nor do we memorize a LE for posterity.
       return;
     }
-    if (UseNewCode)
+    if (UseNewCode && 0)
       ShouldNotReachHere();
     // JVMS 5.4.3 says: If an attempt by the Java Virtual Machine to resolve
     // a symbolic reference fails because an error is thrown that is an
