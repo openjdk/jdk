@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1293,6 +1293,7 @@ public class CSS implements Serializable {
         }
         // Absolute first
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL(cssString);
             if (url != null) {
                 return url;
@@ -1303,6 +1304,7 @@ public class CSS implements Serializable {
         if (base != null) {
             // Relative URL, try from base
             try {
+                @SuppressWarnings("deprecation")
                 URL url = new URL(base, cssString);
                 return url;
             }

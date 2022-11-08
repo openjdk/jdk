@@ -766,7 +766,7 @@ frame FreezeBase::freeze_start_frame_yield_stub(frame f) {
 }
 
 frame FreezeBase::freeze_start_frame_safepoint_stub(frame f) {
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   f.set_fp(f.real_fp()); // f.set_fp(*Frame::callee_link_address(f)); // ????
 #else
   Unimplemented();
@@ -1047,7 +1047,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   // The frame's top never includes the stack arguments to the callee
   intptr_t* const stack_frame_top = ContinuationHelper::InterpretedFrame::frame_top(f, callee_argsize, callee_interpreted);
   const int locals = f.interpreter_frame_method()->max_locals();
-  const int fsize = f.fp() + frame::metadata_words + locals - stack_frame_top;
+  const int fsize = f.fp() NOT_RISCV64(+ frame::metadata_words) + locals - stack_frame_top;
 
   intptr_t* const stack_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(f);
   assert(stack_frame_bottom - stack_frame_top >= fsize, ""); // == on x86
@@ -1488,7 +1488,7 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   if (!safepoint) {
     f = f.sender(&map); // this is the yield frame
   } else { // safepoint yield
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
     f.set_fp(f.real_fp()); // Instead of this, maybe in ContinuationWrapper::set_last_frame always use the real_fp?
 #else
     Unimplemented();
