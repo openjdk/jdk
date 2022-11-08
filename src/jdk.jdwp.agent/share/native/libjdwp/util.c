@@ -1980,7 +1980,7 @@ jdwpEvent
 eventIndex2jdwp(EventIndex ei)
 {
     jdwpEvent event = 0;
-    if (ei >= EI_min || ei >= EI_max) {
+    if (ei >= EI_min && ei <= EI_max) {
         event = index2jdwp[ei - EI_min];
     }
     if (event == 0) {
@@ -1993,7 +1993,7 @@ jvmtiEvent
 eventIndex2jvmti(EventIndex ei)
 {
     jvmtiEvent event = 0;
-    if (ei >= EI_min || ei >= EI_max) {
+    if (ei >= EI_min && ei <= EI_max) {
         event = index2jvmti[ei - EI_min];
     }
     if (event == 0) {
