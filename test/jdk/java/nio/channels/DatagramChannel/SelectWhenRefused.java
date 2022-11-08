@@ -25,8 +25,7 @@
  * @bug 6935563 7044870
  * @summary Test that Selector does not select an unconnected DatagramChannel when
  *    ICMP port unreachable received
- * @library /test/lib
- * @run main/othervm SelectWhenRefused
+ * @run junit/othervm SelectWhenRefused
  */
 
 import java.nio.ByteBuffer;
@@ -35,13 +34,16 @@ import java.net.*;
 import java.io.IOException;
 import java.util.Set;
 
-import static jdk.test.lib.Asserts.assertNotEquals;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class SelectWhenRefused {
     static final int MAX_TRIES = 3;
     static final String GREETINGS_MESSAGE = "Greetings from SelectWhenRefused!";
 
-    public static void main(String[] args) throws IOException {
+    @Test
+    public void test() throws IOException {
         DatagramChannel dc1 = DatagramChannel.open().bind(new InetSocketAddress(0));
         int port = dc1.socket().getLocalPort();
 
@@ -86,6 +88,7 @@ public class SelectWhenRefused {
             }
         } catch (BindException e) {
             // Do nothing, some other test has used this port
+            System.out.println("Skipping test: refuser port has been reused: " + e);
         } finally {
             sel.close();
             dc.close();
