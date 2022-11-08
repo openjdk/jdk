@@ -486,7 +486,9 @@ import jdk.internal.util.regex.Grapheme;
  *
  * <p> By default, the regular expressions {@code ^} and {@code $} ignore
  * line terminators and only match at the beginning and the end, respectively,
- * of the entire input sequence. If {@link #MULTILINE} mode is activated then
+ * of the entire input sequence. However, {@code $} also matches a final line
+ * terminator not followed by any other input character, in addition to the end
+ * of the input sequence itself. If {@link #MULTILINE} mode is activated then
  * {@code ^} matches at the beginning of input and after any line terminator
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.
