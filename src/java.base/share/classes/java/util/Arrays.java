@@ -4298,7 +4298,11 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.INT);
+        switch (a.length) {
+        case 0: return 1;
+        case 1: return 31 + a[0];
+        default: return ArraysSupport.vectorizedHashCode(a, ArraysSupport.INT);
+        }
     }
 
     /**
@@ -4321,7 +4325,11 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.SHORT);
+        switch (a.length) {
+        case 0: return 1;
+        case 1: return 31 + (int)a[0];
+        default: return ArraysSupport.vectorizedHashCode(a, ArraysSupport.SHORT);
+        }
     }
 
     /**
@@ -4344,7 +4352,11 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.CHAR);
+        switch (a.length) {
+        case 0: return 1;
+        case 1: return 31 + (int)a[0];
+        default: return ArraysSupport.vectorizedHashCode(a, ArraysSupport.CHAR);
+        }
     }
 
     /**
@@ -4367,7 +4379,11 @@ public class Arrays {
         if (a == null) {
             return 0;
         }
-        return ArraysSupport.vectorizedHashCode(a, ArraysSupport.BYTE);
+        switch (a.length) {
+        case 0: return 1;
+        case 1: return 31 + (int)a[0];
+        default: return ArraysSupport.vectorizedHashCode(a, ArraysSupport.BYTE);
+        }
     }
 
     /**
