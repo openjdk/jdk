@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,13 +134,13 @@ public enum TestCertificate {
     public String encoded;
 
     TestCertificate(String serialNumber, String subject, String issuer,
-                    long certId, String encoded) {
+                    int hash, String encoded) {
         this.serialNumber = serialNumber;
         this.subject = subject;
         this.issuer = issuer;
         this.algorithm = "SHA256withRSA";
         this.encoded = encoded;
-        this.certId = certId;
+        this.certId = Integer.toUnsignedLong(hash);
         this.keyType = "RSA";
         this.keyLength = 2048;
     }

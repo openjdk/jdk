@@ -783,7 +783,7 @@ public class X509Factory extends CertificateFactorySpi {
             String issuer = info.getIssuerDN().getName();
             String keyType = pKey.getAlgorithm();
             int length = KeyUtil.getKeySize(pKey);
-            int hashCode = info.hashCode();
+            long certificateId = Integer.toUnsignedLong(info.hashCode());
             long beginDate = info.getNotBefore().getTime();
             long endDate = info.getNotAfter().getTime();
             if (xce.shouldCommit()) {
@@ -793,7 +793,7 @@ public class X509Factory extends CertificateFactorySpi {
                 xce.issuer = issuer;
                 xce.keyType = keyType;
                 xce.keyLength = length;
-                xce.certificateId = hashCode;
+                xce.certificateId = certificateId;
                 xce.validFrom = beginDate;
                 xce.validUntil = endDate;
                 xce.commit();
@@ -805,7 +805,7 @@ public class X509Factory extends CertificateFactorySpi {
                         issuer,
                         keyType,
                         length,
-                        hashCode,
+                        certificateId,
                         beginDate,
                         endDate);
             }
