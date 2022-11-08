@@ -25,67 +25,87 @@
 #ifndef SHARE_VM_PRIMS_TAGMAPTABLE_HPP
 #define SHARE_VM_PRIMS_TAGMAPTABLE_HPP
 
+#include "gc/shared/collectedHeap.hpp"
+#include "memory/allocation.hpp"
 #include "oops/weakHandle.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 
 class JvmtiEnv;
 
 // Hashtable to record oops used for JvmtiTagMap
 class JvmtiTagMapEntryClosure;
 
-class JvmtiTagMapEntry : public HashtableEntry<WeakHandle, mtServiceability> {
-  jlong _tag;                           // the tag
- public:
-  JvmtiTagMapEntry* next() const {
-    return (JvmtiTagMapEntry*)HashtableEntry<WeakHandle, mtServiceability>::next();
-  }
+class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
+  union {
+     WeakHandle _wh;
+     oop _lookup_oop;
+   };
+   bool _lookup;
+   bool _released;
+  public:
+   JvmtiTagMapEntry(oop obj);
+   JvmtiTagMapEntry(const JvmtiTagMapEntry& org);
+   ~JvmtiTagMapEntry();
 
-  JvmtiTagMapEntry** next_addr() {
-    return (JvmtiTagMapEntry**)HashtableEntry<WeakHandle, mtServiceability>::next_addr();
-  }
-
-  oop object();
-  oop object_no_keepalive();
-  jlong tag() const       { return _tag; }
-  void set_tag(jlong tag) { _tag = tag; }
+   void invalidate() {
+     _lookup = true;
+     _lookup_oop = NULL; //(oop)0xdeaddead; // Should never be used again.
+   }
+  void release();
+  void resolve();
+  oop object() const;
+  oop object_no_keepalive() const;
 };
+class JvmtiTagMapTableBase{
+  public:
+  static unsigned get_hash(JvmtiTagMapEntry const &entry)  {
+    oop obj = entry.object_no_keepalive();
+     if (obj != NULL) {
+       return Universe::heap()->hash_oop(obj);
+     }
+     return 0;
+  }
+  static bool equals(JvmtiTagMapEntry const & lhs , JvmtiTagMapEntry const & rhs)
+  {
+    oop lhs_obj = lhs.object_no_keepalive();
+    oop rhs_obj = rhs.object_no_keepalive();
+    return lhs_obj == rhs_obj;
+  }
 
-class JvmtiTagMapTable : public Hashtable<WeakHandle, mtServiceability> {
+};
+  typedef
+  ResizeableResourceHashtable <JvmtiTagMapEntry, jlong,
+                               ResourceObj::C_HEAP, mtInternal,
+                               JvmtiTagMapTableBase::get_hash,
+                               JvmtiTagMapTableBase::equals
+                               > ResizableResourceHT ;
+
+class JvmtiTagMapTable : public ResourceObj
+{ // Hashtable<WeakHandle, mtServiceability> {
   enum Constants {
     _table_size  = 1007
   };
 
 private:
-  JvmtiTagMapEntry* bucket(int i) {
-    return (JvmtiTagMapEntry*) Hashtable<WeakHandle, mtServiceability>::bucket(i);
-  }
-
-  JvmtiTagMapEntry** bucket_addr(int i) {
-    return (JvmtiTagMapEntry**) Hashtable<WeakHandle, mtServiceability>::bucket_addr(i);
-  }
-
-  JvmtiTagMapEntry* new_entry(unsigned int hash, WeakHandle w, jlong tag);
-  void free_entry(JvmtiTagMapEntry* entry);
-
-  unsigned int compute_hash(oop obj);
-
-  JvmtiTagMapEntry* find(int index, unsigned int hash, oop obj);
 
   void resize_if_needed();
+ ResizableResourceHT  *_rrht_table;
 
 public:
   JvmtiTagMapTable();
   ~JvmtiTagMapTable();
 
-  JvmtiTagMapEntry* find(oop obj);
-  JvmtiTagMapEntry* add(oop obj, jlong tag);
+  jlong find(oop obj);
+  bool add(oop obj, jlong tag);
+
 
   void remove(oop obj);
 
   // iterate over all entries in the hashmap
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
 
-  bool is_empty() const { return number_of_entries() == 0; }
+  bool is_empty() const { return _rrht_table->number_of_entries() == 0; }
 
   // Cleanup cleared entries and store dead object tags in objects array
   void remove_dead_entries(GrowableArray<jlong>* objects);
@@ -95,7 +115,7 @@ public:
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapEntryClosure {
  public:
-  virtual void do_entry(JvmtiTagMapEntry* entry) = 0;
+  virtual bool do_entry(JvmtiTagMapEntry & key , jlong & value) = 0;
 };
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP

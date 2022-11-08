@@ -38,189 +38,139 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
-oop JvmtiTagMapEntry::object() {
-  return literal().resolve();
-}
 
-oop JvmtiTagMapEntry::object_no_keepalive() {
+JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj) {
+  _released = false;
+   _lookup = true;
+   _lookup_oop = obj;
+}
+JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& org) {
+   if (org._lookup) {
+     _lookup = false;
+     _wh = WeakHandle(JvmtiExport::weak_tag_storage(), org._lookup_oop);
+   } else { // original was a real entry
+     _lookup = false;
+     _wh = org._wh; // Take ownership of oppStorage allocation
+   }
+   _released = false;
+ }
+ JvmtiTagMapEntry::~JvmtiTagMapEntry(){
+   if (!_lookup) {
+     release();
+   }
+}
+void JvmtiTagMapEntry::release()
+{
+  if(_released)
+    return;
+  assert(!_lookup, "Bad");
+  _wh.release(JvmtiExport::weak_tag_storage());
+  _released = true;
+}
+oop JvmtiTagMapEntry::object() const {
+  if (!_lookup) {
+     return _wh.resolve();
+   }
+   return _lookup_oop;}
+
+oop JvmtiTagMapEntry::object_no_keepalive() const{
   // Just peek at the object without keeping it alive.
-  return literal().peek();
+  if (!_lookup) {
+     return _wh.peek();
+   }
+   return _lookup_oop;
 }
 
 JvmtiTagMapTable::JvmtiTagMapTable()
-  : Hashtable<WeakHandle, mtServiceability>(_table_size, sizeof(JvmtiTagMapEntry)) {}
+
+   {
+    _rrht_table = new (ResourceObj::C_HEAP, mtInternal)  ResizableResourceHT(Constants::_table_size);
+   }
 
 void JvmtiTagMapTable::clear() {
-  // Clear this table
-  log_debug(jvmti, table)("JvmtiTagMapTable cleared");
-  for (int i = 0; i < table_size(); ++i) {
-    for (JvmtiTagMapEntry* m = bucket(i); m != NULL;) {
-      JvmtiTagMapEntry* entry = m;
-      // read next before freeing.
-      m = m->next();
-      free_entry(entry);
+
+  struct RemoveAll{
+    bool do_entry(JvmtiTagMapEntry   & entry, jlong const &  tag)
+    {
+      entry.release();
+      return true;
     }
-    JvmtiTagMapEntry** p = bucket_addr(i);
-    *p = NULL; // clear out buckets.
-  }
-  assert(number_of_entries() == 0, "should have removed all entries");
+  }RemoveAll;
+  _rrht_table->unlink(&RemoveAll);
+
+  assert(_rrht_table->number_of_entries() == 0, "should have removed all entries");
+
 }
 
 JvmtiTagMapTable::~JvmtiTagMapTable() {
   clear();
-  // base class ~BasicHashtable deallocates the buckets.
 }
 
-// Entries are C_Heap allocated
-JvmtiTagMapEntry* JvmtiTagMapTable::new_entry(unsigned int hash, WeakHandle w, jlong tag) {
-  JvmtiTagMapEntry* entry = (JvmtiTagMapEntry*)Hashtable<WeakHandle, mtServiceability>::new_entry(hash, w);
-  entry->set_tag(tag);
-  return entry;
-}
 
-void JvmtiTagMapTable::free_entry(JvmtiTagMapEntry* entry) {
-  entry->literal().release(JvmtiExport::weak_tag_storage()); // release to OopStorage
-  BasicHashtable<mtServiceability>::free_entry(entry);
-}
+jlong JvmtiTagMapTable::find(oop obj) {
+  JvmtiTagMapEntry jtme(obj);
+  jlong* found = _rrht_table->get(jtme);
+  return found == NULL ? 0 : *found;
+ }
 
-unsigned int JvmtiTagMapTable::compute_hash(oop obj) {
-  assert(obj != NULL, "obj is null");
-  return obj->identity_hash();
-}
-
-JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) {
-  assert(obj != NULL, "Cannot search for a NULL object");
-
-  for (JvmtiTagMapEntry* p = bucket(index); p != NULL; p = p->next()) {
-    if (p->hash() == hash) {
-
-      // Peek the object to check if it is the right target.
-      oop target = p->object_no_keepalive();
-
-      // The obj is in the table as a target already
-      if (target == obj) {
-        ResourceMark rm;
-        log_trace(jvmti, table)("JvmtiTagMap entry found for %s index %d",
-                                obj->print_value_string(), index);
-        // The object() accessor makes sure the target object is kept alive before
-        // leaking out.
-        (void)p->object();
-        return p;
-      }
-    }
-  }
-  return NULL;
-}
-
-JvmtiTagMapEntry* JvmtiTagMapTable::find(oop obj) {
-  if (obj->fast_no_hash_check()) {
-    // Objects in the table all have a hashcode.
-    return NULL;
-  }
-  unsigned int hash = compute_hash(obj);
-  int index = hash_to_index(hash);
-  return find(index, hash, obj);
-}
-
-JvmtiTagMapEntry* JvmtiTagMapTable::add(oop obj, jlong tag) {
-  unsigned int hash = compute_hash(obj);
-  int index = hash_to_index(hash);
-  // One was added while acquiring the lock
-  assert(find(index, hash, obj) == NULL, "shouldn't already be present");
-
-  // obj was read with AS_NO_KEEPALIVE, or equivalent.
-  // The object needs to be kept alive when it is published.
-  Universe::heap()->keep_alive(obj);
-
-  WeakHandle w(JvmtiExport::weak_tag_storage(), obj);
-  JvmtiTagMapEntry* p = new_entry(hash, w, tag);
-  Hashtable<WeakHandle, mtServiceability>::add_entry(index, p);
-  ResourceMark rm;
-  log_trace(jvmti, table)("JvmtiTagMap entry added for %s index %d",
-                          obj->print_value_string(), index);
-
-  // Resize if the table is getting too big.
-  resize_if_needed();
-
-  return p;
+bool JvmtiTagMapTable::add(oop obj, jlong tag) {
+ JvmtiTagMapEntry new_entry(obj);
+   return _rrht_table->put(new_entry, tag);
 }
 
 void JvmtiTagMapTable::remove(oop obj) {
-  unsigned int hash = compute_hash(obj);
-  int index = hash_to_index(hash);
-  JvmtiTagMapEntry** p = bucket_addr(index);
-  JvmtiTagMapEntry* entry = bucket(index);
-  while (entry != NULL) {
-    oop target = entry->object_no_keepalive();
-    if (target != NULL && target == obj) {
-      log_trace(jvmti, table)("JvmtiTagMap entry removed for index %d", index);
-      *p = entry->next();
-      free_entry(entry);
-      return; // done
-    }
-    // get next entry and address
-    p = entry->next_addr();
-    entry = entry->next();
-  }
+  JvmtiTagMapEntry jtme(obj);
+  _rrht_table->remove(jtme);
 }
 
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
-  for (int i = 0; i < table_size(); ++i) {
-    for (JvmtiTagMapEntry* p = bucket(i); p != NULL; p = p->next()) {
-      closure->do_entry(p);
-    }
-  }
+  _rrht_table->iterate(closure);
 }
 
 const int _resize_load_trigger = 5;       // load factor that will trigger the resize
 static bool _resizable = true;
 
 void JvmtiTagMapTable::resize_if_needed() {
-  if (_resizable && number_of_entries() > (_resize_load_trigger*table_size())) {
-    int desired_size = calculate_resize(true);
-    if (desired_size == table_size()) {
-      _resizable = false; // hit max
-    } else {
-      if (!resize(desired_size)) {
-        // Something went wrong, turn resizing off
-        _resizable = false;
-      }
-      log_info(jvmti, table) ("JvmtiTagMap table resized to %d", table_size());
-    }
-  }
+  _rrht_table->maybe_grow();
 }
 
-// Serially remove entries for dead oops from the table and store dead oops'
-// tag in objects array if provided.
 void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
-  int oops_removed = 0;
-  int oops_counted = 0;
-  for (int i = 0; i < table_size(); ++i) {
-    JvmtiTagMapEntry** p = bucket_addr(i);
-    JvmtiTagMapEntry* entry = bucket(i);
-    while (entry != NULL) {
-      oops_counted++;
-      oop l = entry->object_no_keepalive();
-      if (l != NULL) {
-        p = entry->next_addr();
-      } else {
-        // Entry has been removed.
-        oops_removed++;
-        log_trace(jvmti, table)("JvmtiTagMap entry removed for index %d", i);
-        jlong tag = entry->tag();
-        *p = entry->next();
-        free_entry(entry);
-
-        // collect object tags for posting JVMTI events later
-        if (objects != NULL) {
-          objects->append(tag);
+  struct IsDead{
+    GrowableArray<jlong>* _objects;
+    IsDead(GrowableArray<jlong>* objects) : _objects(objects){}
+    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag){
+      if ( entry.object_no_keepalive() == NULL){
+        if(_objects!=NULL){
+          _objects->append(tag);
         }
+        return true;
       }
-      // get next entry
-      entry = *p;
+      return false;;
     }
-  }
+  }IsDead(objects);
+  _rrht_table->unlink(&IsDead);
+}
 
-  log_info(jvmti, table) ("JvmtiTagMap entries counted %d removed %d",
-                          oops_counted, oops_removed);
+// Rehash oops in the table
+void JvmtiTagMapTable::rehash() {
+  remove_dead_entries(NULL);
+  ResourceMark rm;
+   ResizableResourceHT* new_rrht_table = new (ResourceObj::C_HEAP, mtInternal) ResizableResourceHT(_rrht_table->table_size());
+   struct CopyEntry : public JvmtiTagMapEntryClosure {
+     ResizableResourceHT* new_rrht_table;
+     CopyEntry(ResizableResourceHT* table) : new_rrht_table(table) {
+     }
+     bool do_entry(JvmtiTagMapEntry &key, jlong &value) {
+       new_rrht_table->put(key, value);
+       key.invalidate();
+       return true;
+    }
+   } copy_entry(new_rrht_table);
+   entry_iterate(&copy_entry);
+   assert(new_rrht_table->number_of_entries() == _rrht_table->number_of_entries(), "Must be same size");
+   // Swap and
+   ResizableResourceHT* to_be_freed = _rrht_table;
+   _rrht_table = new_rrht_table;
+
+   delete to_be_freed;
 }
