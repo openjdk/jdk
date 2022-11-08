@@ -24,26 +24,26 @@
 
 #include "precompiled.hpp"
 
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
+#include "gc/g1/g1MonotonicArena.inline.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
 
-G1SegmentedArrayMemoryStats::G1SegmentedArrayMemoryStats() {
+G1MonotonicArenaMemoryStats::G1MonotonicArenaMemoryStats() {
   clear();
 }
 
-void G1SegmentedArrayMemoryStats::clear() {
+void G1MonotonicArenaMemoryStats::clear() {
   for (uint i = 0; i < num_pools(); i++) {
     _num_mem_sizes[i] = 0;
     _num_segments[i] = 0;
   }
 }
 
-void G1SegmentedArrayFreePool::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
+void G1MonotonicArenaFreePool::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
   uint num_free_lists = _freelist_pool.num_free_lists();
 
   for (uint i = 0; i < num_free_lists; i++) {
@@ -51,7 +51,7 @@ void G1SegmentedArrayFreePool::update_unlink_processors(G1ReturnMemoryProcessorS
   }
 }
 
-void G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::visit_free_list(G1SegmentedArrayFreeList* source) {
+void G1MonotonicArenaFreePool::G1ReturnMemoryProcessor::visit_free_list(G1MonotonicArena::SegmentFreeList* source) {
   assert(_source == nullptr, "already visited");
   if (_return_to_vm_size > 0) {
     _source = source;
@@ -73,15 +73,15 @@ void G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::visit_free_list(G1Segmen
   }
 }
 
-bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
+bool G1MonotonicArenaFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
   assert(!finished_return_to_vm(), "already returned everything to the VM");
   assert(_first != nullptr, "must have segment to return");
 
   size_t keep_size = 0;
   size_t keep_num = 0;
 
-  G1SegmentedArraySegment* cur = _first;
-  G1SegmentedArraySegment* last = nullptr;
+  Segment* cur = _first;
+  Segment* last = nullptr;
 
   while (cur != nullptr && _return_to_vm_size > 0) {
     size_t cur_size = cur->mem_size();
@@ -108,7 +108,7 @@ bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadl
   _source->bulk_add(*_first, *last, keep_num, keep_size);
   _first = cur;
 
-  log_trace(gc, task)("Segmented Array Free Memory: Returned to VM %zu segments size %zu", keep_num, keep_size);
+  log_trace(gc, task)("Monotonic Arena Free Memory: Returned to VM %zu segments size %zu", keep_num, keep_size);
 
   // _return_to_vm_size may be larger than what is available in the list at the
   // time we actually get the list. I.e. the list and _return_to_vm_size may be
@@ -122,7 +122,7 @@ bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadl
   return _source != nullptr;
 }
 
-bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
+bool G1MonotonicArenaFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
   assert(finished_return_to_vm(), "not finished returning to VM");
   assert(!finished_return_to_os(), "already returned everything to the OS");
 
@@ -131,10 +131,10 @@ bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadl
   size_t mem_size_deleted = 0;
 
   while (_first != nullptr) {
-    G1SegmentedArraySegment* next = _first->next();
+    Segment* next = _first->next();
     num_delete++;
     mem_size_deleted += _first->mem_size();
-    G1SegmentedArraySegment::delete_segment(_first);
+    Segment::delete_segment(_first);
     _first = next;
 
     // To ensure progress, perform the deadline check here.
@@ -143,31 +143,31 @@ bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadl
     }
   }
 
-  log_trace(gc, task)("Segmented Array Free Memory: Return to OS %zu segments size %zu", num_delete, mem_size_deleted);
+  log_trace(gc, task)("Monotonic Arena Free Memory: Return to OS %zu segments size %zu", num_delete, mem_size_deleted);
 
   return _first != nullptr;
 }
 
-G1SegmentedArrayFreePool G1SegmentedArrayFreePool::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
+G1MonotonicArenaFreePool G1MonotonicArenaFreePool::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
 
-G1SegmentedArrayFreePool::G1SegmentedArrayFreePool(uint num_free_lists) :
+G1MonotonicArenaFreePool::G1MonotonicArenaFreePool(uint num_free_lists) :
   _num_free_lists(num_free_lists) {
 
-  _free_lists = NEW_C_HEAP_ARRAY(G1SegmentedArrayFreeList, _num_free_lists, mtGC);
+  _free_lists = NEW_C_HEAP_ARRAY(SegmentFreeList, _num_free_lists, mtGC);
   for (uint i = 0; i < _num_free_lists; i++) {
-    new (&_free_lists[i]) G1SegmentedArrayFreeList();
+    new (&_free_lists[i]) SegmentFreeList();
   }
 }
 
-G1SegmentedArrayFreePool::~G1SegmentedArrayFreePool() {
+G1MonotonicArenaFreePool::~G1MonotonicArenaFreePool() {
   for (uint i = 0; i < _num_free_lists; i++) {
-    _free_lists[i].~G1SegmentedArrayFreeList();
+    _free_lists[i].~SegmentFreeList();
   }
   FREE_C_HEAP_ARRAY(mtGC, _free_lists);
 }
 
-G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool::memory_sizes() const {
-  G1SegmentedArrayMemoryStats free_list_stats;
+G1MonotonicArenaMemoryStats G1MonotonicArenaFreePool::memory_sizes() const {
+  G1MonotonicArenaMemoryStats free_list_stats;
   assert(free_list_stats.num_pools() == num_free_lists(), "must be");
   for (uint i = 0; i < num_free_lists(); i++) {
     free_list_stats._num_mem_sizes[i] = _free_lists[i].mem_size();
@@ -176,7 +176,7 @@ G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool::memory_sizes() const {
   return free_list_stats;
 }
 
-size_t G1SegmentedArrayFreePool::mem_size() const {
+size_t G1MonotonicArenaFreePool::mem_size() const {
   size_t result = 0;
   for (uint i = 0; i < _num_free_lists; i++) {
     result += _free_lists[i].mem_size();
@@ -184,7 +184,7 @@ size_t G1SegmentedArrayFreePool::mem_size() const {
   return result;
 }
 
-void G1SegmentedArrayFreePool::print_on(outputStream* out) {
+void G1MonotonicArenaFreePool::print_on(outputStream* out) {
   out->print_cr("  Free Pool: size %zu", free_list_pool()->mem_size());
   for (uint i = 0; i < _num_free_lists; i++) {
     FormatBuffer<> fmt("    %s", G1CardSetConfiguration::mem_object_type_name_str(i));
