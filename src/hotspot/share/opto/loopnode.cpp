@@ -4180,6 +4180,8 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 }
 
 #ifdef ASSERT
+// Goes over all children of the root of the loop tree, collects all controls for the loop and its inner loops then
+// checks whether any control is a branch out of the loop and if it is, whether it's not a NeverBranch.
 bool PhaseIdealLoop::only_has_infinite_loops() {
   for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
     Unique_Node_List wq;
@@ -4206,7 +4208,7 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     assert(wq.member(head), "");
     for (uint i = 0; i < wq.size(); ++i) {
       Node* c = wq.at(i);
-      if (c->isa_MultiBranch()) {
+      if (c->is_MultiBranch()) {
         for (DUIterator_Fast jmax, j = c->fast_outs(jmax); j < jmax; j++) {
           Node* u = c->fast_out(j);
           assert(u->is_CFG(), "");

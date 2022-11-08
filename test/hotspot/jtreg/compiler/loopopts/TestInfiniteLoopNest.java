@@ -52,16 +52,16 @@ public class TestInfiniteLoopNest {
 
     public static void main(String[] p) throws Exception {
         Thread thread = new Thread() {
-                public void run() {
-                    TestInfiniteLoopNest t = new TestInfiniteLoopNest();
-                    for (int i = 524; i < 19710; i += 1) {
-                        b = true;
-                        t.q();
-                        b = false;
-                    }
+            public void run() {
+                TestInfiniteLoopNest t = new TestInfiniteLoopNest();
+                for (int i = 524; i < 19710; i += 1) {
+                    b = true;
                     t.q();
+                    b = false;
                 }
-            };
+                t.q();
+            }
+        };
         // Give thread some time to trigger compilation
         thread.setDaemon(true);
         thread.start();
