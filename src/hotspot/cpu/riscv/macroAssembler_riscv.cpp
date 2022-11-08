@@ -3271,60 +3271,60 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub_start_addr;
 }
 
-Address MacroAssembler::add_memory_helper(const Address dst) {
+Address MacroAssembler::add_memory_helper(const Address dst, Register tmp) {
   switch (dst.getMode()) {
     case Address::base_plus_offset:
       // This is the expected mode, although we allow all the other
       // forms below.
-      return form_address(t1, dst.base(), dst.offset());
+      return form_address(tmp, dst.base(), dst.offset());
     default:
-      la(t1, dst);
-      return Address(t1);
+      la(tmp, dst);
+      return Address(tmp);
   }
 }
 
-void MacroAssembler::increment(const Address dst, int64_t value) {
+void MacroAssembler::increment(const Address dst, int64_t value, Register tmp1, Register tmp2) {
   assert(((dst.getMode() == Address::base_plus_offset &&
            is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
           "invalid value and address mode combination");
-  Address adr = add_memory_helper(dst);
-  assert(!adr.uses(t0), "invalid dst for address increment");
-  ld(t0, adr);
-  add(t0, t0, value, t1);
-  sd(t0, adr);
+  Address adr = add_memory_helper(dst, tmp2);
+  assert(!adr.uses(tmp1), "invalid dst for address increment");
+  ld(tmp1, adr);
+  add(tmp1, tmp1, value, tmp2);
+  sd(tmp1, adr);
 }
 
-void MacroAssembler::incrementw(const Address dst, int32_t value) {
+void MacroAssembler::incrementw(const Address dst, int32_t value, Register tmp1, Register tmp2) {
   assert(((dst.getMode() == Address::base_plus_offset &&
            is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
           "invalid value and address mode combination");
-  Address adr = add_memory_helper(dst);
-  assert(!adr.uses(t0), "invalid dst for address increment");
-  lwu(t0, adr);
-  addw(t0, t0, value, t1);
-  sw(t0, adr);
+  Address adr = add_memory_helper(dst, tmp2);
+  assert(!adr.uses(tmp1), "invalid dst for address increment");
+  lwu(tmp1, adr);
+  addw(tmp1, tmp1, value, tmp2);
+  sw(tmp1, adr);
 }
 
-void MacroAssembler::decrement(const Address dst, int64_t value) {
+void MacroAssembler::decrement(const Address dst, int64_t value, Register tmp1, Register tmp2) {
   assert(((dst.getMode() == Address::base_plus_offset &&
            is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
           "invalid value and address mode combination");
-  Address adr = add_memory_helper(dst);
-  assert(!adr.uses(t0), "invalid dst for address decrement");
-  ld(t0, adr);
-  sub(t0, t0, value, t1);
-  sd(t0, adr);
+  Address adr = add_memory_helper(dst, tmp2);
+  assert(!adr.uses(tmp1), "invalid dst for address decrement");
+  ld(tmp1, adr);
+  sub(tmp1, tmp1, value, tmp2);
+  sd(tmp1, adr);
 }
 
-void MacroAssembler::decrementw(const Address dst, int32_t value) {
+void MacroAssembler::decrementw(const Address dst, int32_t value, Register tmp1, Register tmp2) {
   assert(((dst.getMode() == Address::base_plus_offset &&
            is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
           "invalid value and address mode combination");
-  Address adr = add_memory_helper(dst);
-  assert(!adr.uses(t0), "invalid dst for address decrement");
-  lwu(t0, adr);
-  subw(t0, t0, value, t1);
-  sw(t0, adr);
+  Address adr = add_memory_helper(dst, tmp2);
+  assert(!adr.uses(tmp1), "invalid dst for address decrement");
+  lwu(tmp1, adr);
+  subw(tmp1, tmp1, value, tmp2);
+  sw(tmp1, adr);
 }
 
 void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
