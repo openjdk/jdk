@@ -3367,7 +3367,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // int result = 0|1;
   movl(result, is_string_hashcode ? 0 : 1);
   // int i = 0;
-  xorq(i, i);
+  xorq(index, index);
 
   /*
     if (cnt1 < $(scalar_unrolling)) {
