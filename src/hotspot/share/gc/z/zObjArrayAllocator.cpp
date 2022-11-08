@@ -48,10 +48,11 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   // A max segment size of 64K was chosen because microbenchmarking
   // suggested that it offered a good trade-off between allocation
   // time and time-to-safepoint
-  const size_t segment_max = ZUtils::bytes_to_words(64 * K);
+  const size_t segment_max = 64 * K;
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
-  const size_t header = arrayOopDesc::header_size(element_type);
-  const size_t payload_size = _word_size - header;
+  const size_t header = arrayOopDesc::base_offset_in_bytes(element_type);
+  size_t byte_size = _word_size * BytesPerWord;
+  const size_t payload_size = byte_size - header;
 
   if (payload_size <= segment_max) {
     // To small to use segmented clearing
@@ -76,12 +77,12 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
 
   for (size_t processed = 0; processed < payload_size; processed += segment_max) {
     // Calculate segment
-    HeapWord* const start = (HeapWord*)(mem + header + processed);
+    char* const start = ((char*)mem) + header + processed;
     const size_t remaining = payload_size - processed;
     const size_t segment_size = MIN2(remaining, segment_max);
 
     // Clear segment
-    Copy::zero_to_words(start, segment_size);
+    Copy::zero_to_bytes(start, segment_size);
 
     // Safepoint
     yield_for_safepoint();
