@@ -819,7 +819,7 @@ instruct reduce_andI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::AND);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -835,7 +835,7 @@ instruct reduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::AND);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -853,7 +853,7 @@ instruct reduce_orI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::OR);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -869,7 +869,7 @@ instruct reduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::OR);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -887,7 +887,7 @@ instruct reduce_xorI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::XOR);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -903,7 +903,7 @@ instruct reduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::XOR);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -923,7 +923,7 @@ instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::ADD);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -939,7 +939,7 @@ instruct reduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::ADD);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -991,7 +991,7 @@ instruct vreduce_maxI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::MAX);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1005,7 +1005,7 @@ instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::MAX);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1023,7 +1023,7 @@ instruct vreduce_minI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::MIN);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1037,7 +1037,7 @@ instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, REDUCTION_OP::MIN);
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
   %}
   ins_pipe(pipe_slow);
 %}
