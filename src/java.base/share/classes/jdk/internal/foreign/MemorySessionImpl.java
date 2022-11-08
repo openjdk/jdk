@@ -32,10 +32,8 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
 import java.util.Objects;
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -156,8 +154,8 @@ public abstract sealed class MemorySessionImpl
     }
 
     public static boolean sameOwnerThread(MemorySession session1, MemorySession session2) {
-        return MemorySessionImpl.toSessionImpl(session1).ownerThread() ==
-                MemorySessionImpl.toSessionImpl(session2).ownerThread();
+        return ((MemorySessionImpl) session1).ownerThread() ==
+                ((MemorySessionImpl) session2).ownerThread();
     }
 
     @Override
@@ -172,11 +170,6 @@ public abstract sealed class MemorySessionImpl
      */
     public boolean isAlive() {
         return state >= OPEN;
-    }
-
-    @ForceInline
-    public static MemorySessionImpl toSessionImpl(MemorySession session) {
-        return (MemorySessionImpl)session;
     }
 
     /**

@@ -41,13 +41,13 @@ import jdk.internal.reflect.Reflection;
 /**
  * Helper class to create and manipulate variable argument lists, similar in functionality to a C {@code va_list}.
  * <p>
- * A variable argument list segment can be created using the {@link #make(Consumer, MemorySession)} factory, as follows:
+ * A variable argument list can be created using the {@link #make(Consumer, MemorySession)} factory, as follows:
  * {@snippet lang = java:
  * VaList vaList = VaList.make(builder ->
  *                                    builder.addVarg(C_INT, 42)
  *                                           .addVarg(C_DOUBLE, 3.8d));
  *}
- * Once created, clients can obtain the platform-dependent {@linkplain #segment() memory segment} associated a variable
+ * Once created, clients can obtain the platform-dependent {@linkplain #segment() memory segment} associated with a variable
  * argument list, which can then be passed to {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handles}
  * targeting native functions using the C {@code va_list} type.
  * <p>

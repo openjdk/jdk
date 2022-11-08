@@ -641,7 +641,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code other.session().isAccessibleBy(T) == false}.
      */
-    long mismatch(MemorySegment other);
+    default long mismatch(MemorySegment other) {
+        Objects.requireNonNull(other);
+        return MemorySegment.mismatch(this, 0, byteSize(), other, 0, other.byteSize());
+    }
 
     /**
      * Determines whether the contents of this mapped segment is resident in physical

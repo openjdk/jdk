@@ -1213,7 +1213,7 @@ public class FileChannelImpl
     {
         Objects.requireNonNull(mode,"Mode is null");
         Objects.requireNonNull(session, "Session is null");
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
+        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
         sessionImpl.checkValidState();
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");

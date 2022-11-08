@@ -39,9 +39,15 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     UnionLayout withName(String name);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     UnionLayout withBitAlignment(long bitAlignment);
 }

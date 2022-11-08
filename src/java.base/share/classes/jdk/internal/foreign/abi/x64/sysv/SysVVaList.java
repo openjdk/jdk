@@ -51,7 +51,6 @@ import static jdk.internal.foreign.abi.SharedUtils.THROWING_ALLOCATOR;
 
 // See https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf "3.5.7 Variable Argument Lists"
 public non-sealed class SysVVaList implements VaList {
-    private static final Unsafe U = Unsafe.getUnsafe();
 
 //    struct typedef __va_list_tag __va_list_tag {
 //        unsigned int               gp_offset;            /*     0     4 */
@@ -140,14 +139,12 @@ public non-sealed class SysVVaList implements VaList {
     }
 
     private static MemorySegment emptyListAddress() {
-        long ptr = U.allocateMemory(LAYOUT.byteSize());
-        MemorySegment base = MemorySegment.ofAddress(ptr, LAYOUT.byteSize(),
-                MemorySession.implicit(), () -> U.freeMemory(ptr));
+        MemorySegment base = MemorySegment.allocateNative(LAYOUT, MemorySession.implicit());
         VH_gp_offset.set(base, MAX_GP_OFFSET);
         VH_fp_offset.set(base, MAX_FP_OFFSET);
         VH_overflow_arg_area.set(base, MemorySegment.NULL);
         VH_reg_save_area.set(base, MemorySegment.NULL);
-        return base;
+        return base.asSlice(0, 0);
     }
 
     public static VaList empty() {
@@ -310,7 +307,7 @@ public non-sealed class SysVVaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(segment.session()).checkValidState();
+        ((MemorySessionImpl) segment.session()).checkValidState();
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -343,6 +340,7 @@ public non-sealed class SysVVaList implements VaList {
 
     @Override
     public MemorySegment segment() {
+        // make sure that returned segment cannot be accessed
         return segment.asSlice(0, 0);
     }
 

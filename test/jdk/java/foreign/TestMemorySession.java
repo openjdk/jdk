@@ -327,13 +327,13 @@ public class TestMemorySession {
     }
 
     private void keepAlive(MemorySession child, MemorySession parent) {
-        MemorySessionImpl parentImpl = MemorySessionImpl.toSessionImpl(parent);
+        MemorySessionImpl parentImpl = (MemorySessionImpl) parent;
         parentImpl.acquire0();
         addCloseAction(child, parentImpl::release0);
     }
 
     private void addCloseAction(MemorySession session, Runnable action) {
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
+        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
         sessionImpl.addCloseAction(action);
     }
 

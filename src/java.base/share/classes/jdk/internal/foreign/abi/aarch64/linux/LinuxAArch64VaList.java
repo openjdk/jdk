@@ -55,7 +55,6 @@ import static jdk.internal.foreign.abi.aarch64.CallArranger.MAX_REGISTER_ARGUMEN
  * Linux. Variadic parameters may be passed in registers or on the stack.
  */
 public non-sealed class LinuxAArch64VaList implements VaList {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // See AAPCS Appendix B "Variable Argument Lists" for definition of
     // va_list on AArch64.
@@ -131,15 +130,13 @@ public non-sealed class LinuxAArch64VaList implements VaList {
     }
 
     private static MemorySegment emptyListAddress() {
-        long ptr = UNSAFE.allocateMemory(LAYOUT.byteSize());
-        MemorySegment ms = MemorySegment.ofAddress(ptr, LAYOUT.byteSize(),
-                MemorySession.implicit(), () -> UNSAFE.freeMemory(ptr));
+        MemorySegment ms = MemorySegment.allocateNative(LAYOUT, MemorySession.implicit());
         VH_stack.set(ms, MemorySegment.NULL);
         VH_gr_top.set(ms, MemorySegment.NULL);
         VH_vr_top.set(ms, MemorySegment.NULL);
         VH_gr_offs.set(ms, 0);
         VH_vr_offs.set(ms, 0);
-        return ms;
+        return ms.asSlice(0, 0);
     }
 
     public static VaList empty() {
@@ -365,7 +362,7 @@ public non-sealed class LinuxAArch64VaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(segment.session()).checkValidState();
+        ((MemorySessionImpl) segment.session()).checkValidState();
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -405,6 +402,7 @@ public non-sealed class LinuxAArch64VaList implements VaList {
 
     @Override
     public MemorySegment segment() {
+        // make sure that returned segment cannot be accessed
         return segment.asSlice(0, 0);
     }
 

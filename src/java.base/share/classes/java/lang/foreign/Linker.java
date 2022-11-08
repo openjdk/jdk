@@ -68,15 +68,7 @@ import java.lang.invoke.MethodHandle;
  * <p>
  * The Java {@linkplain java.lang.invoke.MethodType method type} associated with the returned method handle is
  * {@linkplain FunctionDescriptor#toMethodType() derived} from the argument and return layouts in the function descriptor.
- * More specifically, given each layout {@code L} in the function descriptor, a corresponding carrier {@code C} is inferred,
- * as described below:
- * <ul>
- * <li>if {@code L} is a {@link ValueLayout} with carrier {@code E} then {@code C = E}; or</li>
- * <li>if {@code L} is a {@link GroupLayout}, then {@code C} is set to {@code MemorySegment.class}</li>
- * </ul>
- * <p>
- * The downcall method handle type, derived as above, might be decorated by additional leading parameters,
- * in the given order if both are present:
+ * The downcall method handle type, might then be decorated by additional leading parameters, in the given order if both are present:
  * <ul>
  * <li>If the downcall method handle is created {@linkplain #downcallHandle(FunctionDescriptor, Option...) without specifying a target address},
  * the downcall method handle type features a leading parameter of type {@link MemorySegment}, from which the
@@ -92,14 +84,9 @@ import java.lang.invoke.MethodHandle;
  * handle and a function descriptor; in this case, the set of memory layouts in the function descriptor
  * specify the signature of the function pointer associated with the upcall stub.
  * <p>
- * The type of the provided method handle has to {@linkplain FunctionDescriptor#toMethodType() match} the Java
- * {@linkplain java.lang.invoke.MethodType method type} associated with the upcall stub, which is derived from the argument
- * and return layouts in the function descriptor. More specifically, given each layout {@code L} in the function descriptor,
- * a corresponding carrier {@code C} is inferred, as described below:
- * <ul>
- * <li>if {@code L} is a {@link ValueLayout} with carrier {@code E} then {@code C = E}; or</li>
- * <li>if {@code L} is a {@link GroupLayout}, then {@code C} is set to {@code MemorySegment.class}</li>
- * </ul>
+ * The type of the provided method handle's type has to match the method type associated with the upcall stub,
+ * which is {@linkplain FunctionDescriptor#toMethodType() derived} from the provided function descriptor.
+ * <p>
  * Upcall stubs are modelled by instances of type {@link MemorySegment}; upcall stubs can be passed by reference to other
  * downcall method handles and, when no longer required, they can be closed, via their associated
  * {@linkplain MemorySession memory session}.
@@ -116,9 +103,9 @@ import java.lang.invoke.MethodHandle;
  * <ul>
  *     <li>The memory session of {@code A} is {@linkplain MemorySession#isAlive() alive}. Otherwise, the invocation throws
  *     {@link IllegalStateException};</li>
- *     <li>The invocation occurs in same thread as the one {@linkplain MemorySession#isAccessibleBy(Thread) owning} the memory session of {@code R},
- *     if said session is confined. Otherwise, the invocation throws {@link WrongThreadException}; and</li>
- *     <li>The memory session of {@code R} is <em>kept alive</em> (and cannot be closed) during the invocation.</li>
+ *     <li>The invocation occurs in a thread {@code T} such that {@code A.session().isAccessibleBy(T) == true}.
+ *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
+ *     <li>The memory session of {@code A} is <em>kept alive</em> (and cannot be closed) during the invocation.</li>
  *</ul>
  * A downcall method handle created from a function descriptor whose return layout is an
  * {@linkplain ValueLayout.OfAddress address layout} returns a native segment associated with

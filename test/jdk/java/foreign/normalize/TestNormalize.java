@@ -200,7 +200,7 @@ public class TestNormalize extends NativeTestHelper {
     @DataProvider
     public static Object[][] bools() {
         return new Object[][]{
-            { 0b01,          true  }, // zero least significant bit, but non-zero first byte
+            { 0b10,          true  }, // zero least significant bit, but non-zero first byte
             { 0b1_0000_0000, false }  // zero first byte
         };
     }

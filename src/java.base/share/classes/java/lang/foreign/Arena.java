@@ -33,8 +33,8 @@ import java.util.Objects;
 /**
  * An arena allocates and manages the lifecycle of native segments.
  * <p>
- * An arena is a {@linkplain AutoCloseable closeable} segment allocator that has a bounded {@link #session() memory session}.
- * The arena's session is created when the arena is created, and ends when the arena is {@linkplain #close() closed}.
+ * An arena is a {@linkplain AutoCloseable closeable} segment allocator that has a bounded {@linkplain MemorySession memory session}.
+ * The arena's session starts when the arena is created, and ends when the arena is {@linkplain #close() closed}.
  * All native segments {@linkplain #allocate(long, long) allocated} by the arena are associated with its session, and
  * cannot be accessed after the arena is closed.
  * <p>
