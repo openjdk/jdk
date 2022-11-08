@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 4496095
- * @summary Add constructors for exception chaining to java.security Exceptions
+ * @bug 4496095 8296406
+ * @summary Test constructors for exception chaining of security-related exceptions
  */
 
 import java.security.*;
@@ -67,5 +67,6 @@ public class ChainingConstructors {
         test(new CertificateParsingException(cause), new CertificateParsingException(MSG, cause));
         test(new CertificateEncodingException(cause), new CertificateEncodingException(MSG, cause));
         test(new CertPathBuilderException(cause), new CertPathBuilderException(MSG, cause));
+        test(new SSLException(cause), new SSLException(MSG, cause));
     }
 }
