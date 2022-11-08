@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4941596
+ * @bug 4941596 8296442
  * @summary Test the EncryptedPrivateKeyInfo.getAlgName(...) methods.
  * @author Valerie Peng
  */
@@ -60,6 +60,14 @@ public class GetAlgName {
 
             AlgorithmParameters ap = c.getParameters();
             epki = new EncryptedPrivateKeyInfo(ap, BYTES);
+            if (!epki.getAlgName().equalsIgnoreCase(algo)) {
+                System.out.println("...expect: " + algo);
+                System.out.println("...got: " + epki.getAlgName());
+                status = false;
+            }
+
+            AlgorithmParameters ap2 = AlgorithmParameters.getInstance(ap.getAlgorithm());
+            epki = new EncryptedPrivateKeyInfo(ap2, BYTES);
             if (!epki.getAlgName().equalsIgnoreCase(algo)) {
                 System.out.println("...expect: " + algo);
                 System.out.println("...got: " + epki.getAlgName());
