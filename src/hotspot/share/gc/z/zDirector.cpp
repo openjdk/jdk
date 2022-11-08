@@ -434,18 +434,6 @@ static double calculate_extra_young_gc_time(ZDirectorStats& stats) {
   return extra_young_gc_time;
 }
 
-static bool is_major_urgent(ZDirectorStats& stats) {
-  // Boost old GC if the amount of freeeable young memory is 5% or less.
-  // and the usage is high; now freeing old memory is "urgent".
-  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
-  const size_t used = stats._heap._used;
-  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
-  const double free_percent = percent_of(free, soft_max_capacity);
-
-  return is_young_small(stats) && free_percent <= 5.0;
-}
-
 static bool rule_major_allocation_rate(ZDirectorStats& stats) {
   if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
