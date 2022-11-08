@@ -839,7 +839,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
-        Set<Figure> selectedFigures = model.getSelectedFigures();
+        Set<Integer> nodeIds = new HashSet<>(model.getSelectedNodes());
+        for (InputNode inputNode : nodes) {
+            nodeIds.add(inputNode.getId());
+        }
+        Set<Figure> selectedFigures = new HashSet<>();
+        for (Figure figure : model.getDiagram().getFigures()) {
+            if (nodeIds.contains(figure.getInputNode().getId())) {
+                selectedFigures.add(figure);
+            }
+        }
         setFigureSelection(selectedFigures);
         if (centerSelection) {
             centerFigures(selectedFigures, true);
