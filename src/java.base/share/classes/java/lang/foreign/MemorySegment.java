@@ -101,7 +101,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * Every memory segment is associated with a {@linkplain MemorySession memory session}. This ensures that access operations
  * on a memory segment cannot occur when the region of memory which backs the memory segment is no longer available
- * (e.g. after the memory session associated with the accessed memory segment is no longer {@linkplain MemorySession#isAlive() alive}.
+ * (e.g., after the memory session associated with the accessed memory segment is no longer {@linkplain MemorySession#isAlive() alive}).
  * That is, a memory segment has <em>temporal bounds</em>.
  * <p>
  * Finally, access operations on a memory segment are subject to the thread-confinement checks enforced by the associated memory
