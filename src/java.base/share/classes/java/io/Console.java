@@ -599,14 +599,14 @@ public class Console implements Flushable
                 boolean allowProviders = System.getProperty("console.allowproviders", "false").equalsIgnoreCase("true");
                 boolean useJLine = System.getProperty("console.usejline", "true").equalsIgnoreCase("true");
 
-                if (cons == null) {
+                if (istty && cons == null) {
                     // Try loading providers
                     cons = ServiceLoader.load(ConsoleProvider.class).stream()
                        .map(ServiceLoader.Provider::get)
                        .filter(cp -> "jdk.internal.le".equals(cp.getClass().getModule().getName()) && useJLine || allowProviders)
                        .findAny()
                        .map(ConsoleProvider::console)
-                       .orElse(istty ? new Console() : null);
+                       .orElse(new Console());
                 }
                 return cons;
             }
