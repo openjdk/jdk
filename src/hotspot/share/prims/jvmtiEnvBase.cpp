@@ -802,12 +802,17 @@ JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *
   JavaCalls::call_virtual(&result,
                           group_hdl,
                           vmClasses::ThreadGroup_klass(),
-                          SymbolTable::new_permanent_symbol("subgroupsArray"),
+                          SymbolTable::new_permanent_symbol("subgroupsAsArray"),
                           vmSymbols::void_threadgroup_array_signature(),
                           THREAD);
   if (HAS_PENDING_EXCEPTION) {
+    Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
     CLEAR_PENDING_EXCEPTION;
-    return JVMTI_ERROR_OUT_OF_MEMORY;
+    if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    } else {
+      return JVMTI_ERROR_INTERNAL;
+    }
   }
 
   assert(result.get_type() == T_OBJECT, "just checking");
