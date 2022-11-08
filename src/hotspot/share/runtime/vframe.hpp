@@ -156,8 +156,9 @@ class javaVFrame: public vframe {
 #ifndef PRODUCT
  public:
   // printing operations
-  void print();
-  void print_value() const;
+  void print() override;
+  void print_on(outputStream* st) const override;
+  void print_value() const override;
   void print_activation(int index) const;
 
   // verify operations

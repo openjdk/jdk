@@ -702,53 +702,57 @@ void entryVFrame::print() {
 
 // ------------- javaVFrame --------------
 
-static void print_stack_values(const char* title, StackValueCollection* values) {
+static void print_stack_values_on(const char* title, StackValueCollection* values,
+                                  outputStream* st) {
   if (values->is_empty()) return;
-  tty->print_cr("\t%s:", title);
-  values->print();
+  st->print_cr("\t%s:", title);
+  values->print_on(st);
 }
 
-
 void javaVFrame::print() {
+  print_on(tty);
+}
+
+void javaVFrame::print_on(outputStream* st) const {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
 
-  vframe::print();
-  tty->print("\t");
-  method()->print_value();
-  tty->cr();
-  tty->print_cr("\tbci:    %d", bci());
+  vframe::print_on(st);
+  st->print("\t");
+  method()->print_value_on(st);
+  st->cr();
+  st->print_cr("\tbci:    %d", bci());
 
-  print_stack_values("locals",      locals());
-  print_stack_values("expressions", expressions());
+  print_stack_values_on("locals",      locals(), st);
+  print_stack_values_on("expressions", expressions(), st);
 
   GrowableArray<MonitorInfo*>* list = monitors();
   if (list->is_empty()) return;
-  tty->print_cr("\tmonitor list:");
+  st->print_cr("\tmonitor list:");
   for (int index = (list->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = list->at(index);
-    tty->print("\t  obj\t");
+    st->print("\t  obj\t");
     if (monitor->owner_is_scalar_replaced()) {
       Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-      tty->print("( is scalar replaced %s)", k->external_name());
+      st->print("( is scalar replaced %s)", k->external_name());
     } else if (monitor->owner() == NULL) {
-      tty->print("( null )");
+      st->print("( null )");
     } else {
       monitor->owner()->print_value();
-      tty->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
+      st->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
     }
     if (monitor->eliminated()) {
       if(is_compiled_frame()) {
-        tty->print(" ( lock is eliminated in compiled frame )");
+        st->print(" ( lock is eliminated in compiled frame )");
       } else {
-        tty->print(" ( lock is eliminated, frame not compiled )");
+        st->print(" ( lock is eliminated, frame not compiled )");
       }
     }
-    tty->cr();
-    tty->print("\t  ");
-    monitor->lock()->print_on(tty, monitor->owner());
-    tty->cr();
+    st->cr();
+    st->print("\t  ");
+    monitor->lock()->print_on(st, monitor->owner());
+    st->cr();
   }
 }
 
