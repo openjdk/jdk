@@ -890,6 +890,9 @@ protected:
     void dump(outputStream *st) const;
     InterfaceSet union_with(const InterfaceSet& other) const;
     InterfaceSet intersection_with(const InterfaceSet& other) const;
+    bool contains(const InterfaceSet& other) const {
+      return intersection_with(other).eq(other);
+    }
     bool empty() const { return _list.length() == 0; }
     GrowableArray<ciKlass*>* list() const;
 

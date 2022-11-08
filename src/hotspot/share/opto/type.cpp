@@ -4435,7 +4435,7 @@ template <class T1, class T2> bool TypePtr::is_meet_subtype_of_helper_for_instan
   }
 
   return this_one->klass()->is_subtype_of(other->klass()) &&
-         (!this_xk || this_one->_interfaces.intersection_with(other->_interfaces).eq(other->_interfaces));
+         (!this_xk || this_one->_interfaces.contains(other->_interfaces));
 }
 
 
@@ -4450,7 +4450,7 @@ template <class T1, class T2>  bool TypePtr::is_meet_subtype_of_helper_for_array
   }
 
   if (this_one->is_instance_type(other)) {
-    return other->klass() == ciEnv::current()->Object_klass() && other->_interfaces.intersection_with(this_one->_interfaces).eq(other->_interfaces);
+    return other->klass() == ciEnv::current()->Object_klass() && this_one->_interfaces.contains(other->_interfaces);
   }
 
   int dummy;
@@ -4803,7 +4803,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
       // For instances when a subclass meets a superclass we fall
       // below the centerline when the superclass is exact. We need to
       // do the same here.
-      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces.intersection_with(tp_interfaces).eq(tp_interfaces) && !tp->klass_is_exact()) {
+      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces.contains(tp_interfaces) && !tp->klass_is_exact()) {
         return TypeAryPtr::make(ptr, _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
@@ -4822,7 +4822,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
         // For instances when a subclass meets a superclass we fall
         // below the centerline when the superclass is exact. We need
         // to do the same here.
-        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces.intersection_with(tp_interfaces).eq(tp_interfaces) && !tp->klass_is_exact()) {
+        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces.contains(tp_interfaces) && !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
           return make(ptr, (ptr == Constant ? const_oop() : NULL),
                       _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
@@ -5734,7 +5734,7 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
       // For instances when a subclass meets a superclass we fall
       // below the centerline when the superclass is exact. We need to
       // do the same here.
-      if (klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces.intersection_with(tp_interfaces).eq(this_interfaces) && !klass_is_exact()) {
+      if (klass()->equals(ciEnv::current()->Object_klass()) && tp_interfaces.contains(this_interfaces) && !klass_is_exact()) {
         return TypeAryKlassPtr::make(ptr, tp->elem(), tp->klass(), offset);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
@@ -5752,7 +5752,7 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
         // For instances when a subclass meets a superclass we fall
         // below the centerline when the superclass is exact. We need
         // to do the same here.
-        if (klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces.intersection_with(tp_interfaces).eq(this_interfaces) && !klass_is_exact()) {
+        if (klass()->equals(ciEnv::current()->Object_klass()) && tp_interfaces.contains(this_interfaces) && !klass_is_exact()) {
           // that is, tp's array type is a subtype of my klass
           return TypeAryKlassPtr::make(ptr,
                                        tp->elem(), tp->klass(), offset);
@@ -5795,7 +5795,7 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instan
     return true;
   }
 
-  return this_one->_klass->is_subtype_of(other->_klass) && this_one->_interfaces.intersection_with(other->_interfaces).eq(other->_interfaces);
+  return this_one->_klass->is_subtype_of(other->_klass) && this_one->_interfaces.contains(other->_interfaces);
 }
 
 bool TypeInstKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const {
@@ -5824,7 +5824,7 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
   }
 
   if (this_one->is_array_type(other)) {
-    return !this_exact && this_one->_klass->equals(ciEnv::current()->Object_klass())  && this_one->_interfaces.intersection_with(other->_interfaces).eq(this_one->_interfaces);
+    return !this_exact && this_one->_klass->equals(ciEnv::current()->Object_klass())  && other->_interfaces.contains(this_one->_interfaces);
   }
 
   assert(this_one->is_instance_type(other), "unsupported");
@@ -5838,7 +5838,7 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
   }
 
   if (this_exact) {
-    return this_one->_klass->is_subtype_of(other->_klass) && this_one->_interfaces.intersection_with(other->_interfaces).eq(other->_interfaces);
+    return this_one->_klass->is_subtype_of(other->_klass) && this_one->_interfaces.contains(other->_interfaces);
   }
 
   return true;
@@ -5849,6 +5849,9 @@ bool TypeInstKlassPtr::maybe_java_subtype_of_helper(const TypeKlassPtr* other, b
 }
 
 const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
+  if (!UseUniqueSubclasses) {
+    return this;
+  }
   ciKlass* k = klass();
   Compile* C = Compile::current();
   Dependencies* deps = C->dependencies();
@@ -5858,7 +5861,7 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
     ciInstanceKlass* ik = k->as_instance_klass();
     bool klass_is_exact = ik->is_final();
     if (!klass_is_exact &&
-        deps != NULL && UseUniqueSubclasses) {
+        deps != NULL) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
       if (sub != NULL) {
         ciKlass *sub_k = sub;
