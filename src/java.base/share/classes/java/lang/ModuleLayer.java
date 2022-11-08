@@ -321,15 +321,15 @@ public final class ModuleLayer {
          * @throws IllegalCallerException
          *         If the caller is in a module that does not have native access enabled
          */
-         @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-         @CallerSensitive
-         public Controller enableNativeAccess(Module target) {
-             ensureInLayer(target);
-             Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,
-                 "enableNativeAccess");
-             target.implAddEnableNativeAccess();
-             return this;
-         }
+        @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+        @CallerSensitive
+        public Controller enableNativeAccess(Module target) {
+            ensureInLayer(target);
+            Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,
+                "enableNativeAccess");
+            target.implAddEnableNativeAccess();
+            return this;
+        }
     }
 
 
