@@ -394,8 +394,12 @@ public:
   // Mapping to the array element's basic type.
   BasicType array_element_basic_type() const;
 
+  enum InterfaceHandling {
+      trust_interfaces,
+      ignore_interfaces
+  };
   // Create standard type for a ciType:
-  static const Type* get_const_type(ciType* type, bool trust_interface = false);
+  static const Type* get_const_type(ciType* type, InterfaceHandling interface_handling = ignore_interfaces);
 
   // Create standard zero value:
   static const Type* get_zero_type(BasicType type) {
@@ -714,8 +718,8 @@ public:
   }
 
   static const TypeTuple *make( uint cnt, const Type **fields );
-  static const TypeTuple *make_range(ciSignature *sig, bool trust_interface = false);
-  static const TypeTuple *make_domain(ciInstanceKlass* recv, ciSignature *sig, bool trust_interface);
+  static const TypeTuple *make_range(ciSignature *sig, InterfaceHandling interface_handling = ignore_interfaces);
+  static const TypeTuple *make_domain(ciInstanceKlass* recv, ciSignature *sig, InterfaceHandling interface_handling);
 
   // Subroutine call type with space allocated for argument types
   // Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly
@@ -902,7 +906,7 @@ protected:
     static int compare(ciKlass* const &, ciKlass* const & k2);
   };
 
-  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, bool trust_interface);
+  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
 
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
@@ -1114,7 +1118,7 @@ protected:
   // This is the node index of the allocation node creating this instance.
   int           _instance_id;
 
-  static const TypeOopPtr* make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact, bool trust_interface);
+  static const TypeOopPtr* make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact, InterfaceHandling interface_handling);
 
   int dual_instance_id() const;
   int meet_instance_id(int uid) const;
@@ -1151,18 +1155,18 @@ public:
   // Creates a type given a klass. Correctly handles multi-dimensional arrays
   // Respects UseUniqueSubclasses.
   // If the klass is final, the resulting type will be exact.
-  static const TypeOopPtr* make_from_klass(ciKlass* klass, bool trust_interface = false) {
-    return make_from_klass_common(klass, true, false, trust_interface);
+  static const TypeOopPtr* make_from_klass(ciKlass* klass, InterfaceHandling interface_handling = ignore_interfaces) {
+    return make_from_klass_common(klass, true, false, interface_handling);
   }
   // Same as before, but will produce an exact type, even if
   // the klass is not final, as long as it has exactly one implementation.
-  static const TypeOopPtr* make_from_klass_unique(ciKlass* klass, bool trust_interface= false) {
-    return make_from_klass_common(klass, true, true, trust_interface);
+  static const TypeOopPtr* make_from_klass_unique(ciKlass* klass, InterfaceHandling interface_handling= ignore_interfaces) {
+    return make_from_klass_common(klass, true, true, interface_handling);
   }
   // Same as before, but does not respects UseUniqueSubclasses.
   // Use this only for creating array element types.
-  static const TypeOopPtr* make_from_klass_raw(ciKlass* klass, bool trust_interface = false) {
-    return make_from_klass_common(klass, false, false, trust_interface);
+  static const TypeOopPtr* make_from_klass_raw(ciKlass* klass, InterfaceHandling interface_handling = ignore_interfaces) {
+    return make_from_klass_common(klass, false, false, interface_handling);
   }
   // Creates a singleton type given an object.
   // If the object cannot be rendered as a constant,
@@ -1276,31 +1280,31 @@ public:
   // Make a pointer to a constant oop.
   static const TypeInstPtr *make(ciObject* o) {
     ciKlass* k = o->klass();
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, false);
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(TypePtr::Constant, k, interfaces, true, o, 0, InstanceBot);
   }
   // Make a pointer to a constant oop with offset.
   static const TypeInstPtr *make(ciObject* o, int offset) {
     ciKlass* k = o->klass();
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, false);
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(TypePtr::Constant, k, interfaces, true, o, offset, InstanceBot);
   }
 
   // Make a pointer to some value of type klass.
-  static const TypeInstPtr *make(PTR ptr, ciKlass* klass, bool trust_interface = false) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, true, false, trust_interface);
+  static const TypeInstPtr *make(PTR ptr, ciKlass* klass, InterfaceHandling interface_handling = ignore_interfaces) {
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, true, false, interface_handling);
     return make(ptr, klass, interfaces, false, NULL, 0, InstanceBot);
   }
 
   // Make a pointer to some non-polymorphic value of exactly type klass.
   static const TypeInstPtr *make_exact(PTR ptr, ciKlass* klass) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, false, false, false);
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, false, false, ignore_interfaces);
     return make(ptr, klass, interfaces, true, NULL, 0, InstanceBot);
   }
 
   // Make a pointer to some value of type klass with offset.
   static const TypeInstPtr *make(PTR ptr, ciKlass* klass, int offset) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, false, false, false);
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, false, false, ignore_interfaces);
     return make(ptr, klass, interfaces, false, NULL, offset, InstanceBot);
   }
 
@@ -1310,7 +1314,7 @@ public:
                                  int inline_depth = InlineDepthBottom);
 
   static const TypeInstPtr *make(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id = InstanceBot) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, false);
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(ptr, k, interfaces, xk, o, offset, instance_id);
   }
 
@@ -1570,8 +1574,8 @@ public:
   ciKlass* exact_klass(bool maybe_null = false) const { assert(klass_is_exact(), ""); ciKlass* k = exact_klass_helper(); assert(k != NULL || maybe_null, ""); return k;  }
   virtual bool klass_is_exact()    const { return _ptr == Constant; }
 
-  static const TypeKlassPtr* make(ciKlass* klass, bool trust_interface = false);
-  static const TypeKlassPtr *make(PTR ptr, ciKlass* klass, int offset, bool trust_interface = false);
+  static const TypeKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling = ignore_interfaces);
+  static const TypeKlassPtr *make(PTR ptr, ciKlass* klass, int offset, InterfaceHandling interface_handling = ignore_interfaces);
 
   virtual bool  is_loaded() const { return _klass->is_loaded(); }
 
@@ -1642,14 +1646,14 @@ public:
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
   bool maybe_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
 
-  static const TypeInstKlassPtr *make(ciKlass* k, bool trust_interface) {
-    InterfaceSet interfaces = TypePtr::interfaces(k, true, true, false, trust_interface);
+  static const TypeInstKlassPtr *make(ciKlass* k, InterfaceHandling interface_handling) {
+    InterfaceSet interfaces = TypePtr::interfaces(k, true, true, false, interface_handling);
     return make(TypePtr::Constant, k, interfaces, 0);
   }
   static const TypeInstKlassPtr* make(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, int offset);
 
   static const TypeInstKlassPtr* make(PTR ptr, ciKlass* k, int offset) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, false);
+    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(ptr, k, interfaces, offset);
   }
 
@@ -1701,7 +1705,7 @@ public:
   // returns base element type, an instance klass (and not interface) for object arrays
   const Type* base_element_type(int& dims) const;
 
-  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset, bool trust_interface);
+  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling);
 
   bool is_same_java_type_as_helper(const TypeKlassPtr* other) const;
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
@@ -1710,7 +1714,7 @@ public:
   bool  is_loaded() const { return (_elem->isa_klassptr() ? _elem->is_klassptr()->is_loaded() : true); }
 
   static const TypeAryKlassPtr *make(PTR ptr, const Type *elem, ciKlass* k, int offset);
-  static const TypeAryKlassPtr* make(ciKlass* klass, bool trust_interface);
+  static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
 
   const Type *elem() const { return _elem; }
 

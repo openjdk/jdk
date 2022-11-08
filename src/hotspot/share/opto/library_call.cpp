@@ -3664,7 +3664,7 @@ bool LibraryCallKit::inline_Class_cast() {
       // Don't use intrinsic when class is not loaded.
       return false;
     } else {
-      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass(), true), tp->as_klass_type());
+      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass(), Type::trust_interfaces), tp->as_klass_type());
       if (static_res == Compile::SSC_always_true) {
         // isInstance() is true - fold the code.
         set_result(obj);

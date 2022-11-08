@@ -2182,7 +2182,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
 
   // Should the klass from the profile be recorded in the speculative type?
   if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
-    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls, true);
+    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls, Type::trust_interfaces);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
@@ -2844,7 +2844,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
                                     Node* *casted_receiver) {
   assert(!klass->is_interface(), "no exact type check on interfaces");
 
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, true);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
   Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
@@ -2873,7 +2873,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 //------------------------------subtype_check_receiver-------------------------
 Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
                                        Node** casted_receiver) {
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, true)->try_improve();
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces)->try_improve();
   Node* want_klass = makecon(tklass);
 
   Node* slow_ctl = gen_subtype_check(receiver, want_klass);
@@ -2996,7 +2996,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
   if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
-        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls, true)) == Compile::SSC_always_true) {
+        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls, Type::trust_interfaces)) == Compile::SSC_always_true) {
       // If we narrow the type to match what the type profile sees or
       // the speculative type, we can then remove the rest of the
       // cast.
