@@ -107,8 +107,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return the {@code int} value read from this variable argument list.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     int nextVarg(ValueLayout.OfInt layout);
@@ -121,8 +121,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return the {@code long} value read from this variable argument list.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     long nextVarg(ValueLayout.OfLong layout);
@@ -135,8 +135,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return the {@code double} value read from this variable argument list.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     double nextVarg(ValueLayout.OfDouble layout);
@@ -154,8 +154,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * this variable argument list.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     MemorySegment nextVarg(ValueLayout.OfAddress layout);
@@ -177,8 +177,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return the {@code MemorySegment} value read from this variable argument list.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator);
@@ -189,8 +189,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @param layouts the layouts of the values to be skipped.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     void skip(MemoryLayout... layouts);
@@ -207,8 +207,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return a copy of this variable argument list.
      * @throws IllegalStateException if the session associated with this variable argument list is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the session associated with this variable argument list.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code segment().session().isAccessibleBy(T) == false}.
      */
     VaList copy();
 
@@ -238,8 +238,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @param session the memory session to be associated with the returned variable argument list.
      * @return a new variable argument list backed by an off-heap region of memory starting at the given address value.
      * @throws IllegalStateException         if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException          if this method is called from a thread other than the thread
-     *                                       {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException          if this method is called from a thread {@code T},
+     *                                       such that {@code session.isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
@@ -269,8 +269,8 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @return a new variable argument list.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      */
     static VaList make(Consumer<Builder> actions, MemorySession session) {
         Objects.requireNonNull(actions);

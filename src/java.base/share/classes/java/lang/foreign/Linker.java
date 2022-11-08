@@ -116,7 +116,7 @@ import java.lang.invoke.MethodHandle;
  * <ul>
  *     <li>The memory session of {@code A} is {@linkplain MemorySession#isAlive() alive}. Otherwise, the invocation throws
  *     {@link IllegalStateException};</li>
- *     <li>The invocation occurs in same thread as the one {@linkplain MemorySession#isOwnedBy(Thread) owning} the memory session of {@code R},
+ *     <li>The invocation occurs in same thread as the one {@linkplain MemorySession#isAccessibleBy(Thread) owning} the memory session of {@code R},
  *     if said session is confined. Otherwise, the invocation throws {@link WrongThreadException}; and</li>
  *     <li>The memory session of {@code R} is <em>kept alive</em> (and cannot be closed) during the invocation.</li>
  *</ul>
@@ -269,8 +269,8 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception, or if the target method handle
      * has a type that does not match the upcall stub <a href="Linker.html#upcall-stubs"><em>inferred type</em></a>.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      */
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session);
 

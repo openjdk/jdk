@@ -264,7 +264,7 @@ public class TestSegments {
         thread.start();
         thread.join();
 
-        if (segment.session().isOwnedBy(Thread.currentThread())) {
+        if (segment.session().isAccessibleBy(Thread.currentThread())) {
             RuntimeException e = exception.get();
             if (!(e instanceof IllegalStateException)) {
                 throw e;

@@ -161,7 +161,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     @Override
-    public final boolean isOwnedBy(Thread thread) {
+    public final boolean isAccessibleBy(Thread thread) {
         Objects.requireNonNull(thread);
         return owner == thread;
     }

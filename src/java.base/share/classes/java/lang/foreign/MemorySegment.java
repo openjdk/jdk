@@ -581,8 +581,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return this memory segment
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if this segment is read-only (see {@link #isReadOnly()}).
      */
     MemorySegment fill(byte value);
@@ -600,12 +600,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code src} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code src}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code src.session().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if this segment is read-only (see {@link #isReadOnly()}).
      * @return this segment.
      */
@@ -634,12 +634,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * and the given other segment, otherwise -1 if no mismatch
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code other} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code other}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code other.session().isAccessibleBy(T) == false}.
      */
     long mismatch(MemorySegment other);
 
@@ -663,8 +663,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
      * {@code isMapped() == false}.
      */
@@ -680,8 +680,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
      * {@code isMapped() == false}.
      */
@@ -697,8 +697,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
      * {@code isMapped() == false}.
      */
@@ -726,8 +726,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
      * {@code isMapped() == false}.
      * @throws UncheckedIOException if there is an I/O error writing the contents of this segment to the associated storage device
@@ -749,7 +749,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * The life-cycle of the returned buffer will be tied to that of this segment. That is, accessing the returned buffer
      * after the memory session associated with this segment is no longer {@linkplain MemorySession#isAlive() alive}, will
      * throw an {@link IllegalStateException}. Similarly, accessing the returned buffer from a thread other than
-     * the thread {@linkplain MemorySession#isOwnedBy(Thread) owning} this segment's memory session will throw
+     * the thread {@linkplain MemorySession#isAccessibleBy(Thread) owning} this segment's memory session will throw
      * a {@link WrongThreadException}.
      * <p>
      * If this segment is associated with a confined memory session, calling read/write I/O operations on the resulting buffer
@@ -774,8 +774,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new byte array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code byte[]} instance,
      * e.g. its size is greater than {@link Integer#MAX_VALUE}.
      */
@@ -788,8 +788,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new short array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code short[]} instance,
      * e.g. because {@code byteSize() % 2 != 0}, or {@code byteSize() / 2 > Integer#MAX_VALUE}
      */
@@ -802,8 +802,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new char array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code char[]} instance,
      * e.g. because {@code byteSize() % 2 != 0}, or {@code byteSize() / 2 > Integer#MAX_VALUE}.
      */
@@ -816,8 +816,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new int array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code int[]} instance,
      * e.g. because {@code byteSize() % 4 != 0}, or {@code byteSize() / 4 > Integer#MAX_VALUE}.
      */
@@ -830,8 +830,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new float array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code float[]} instance,
      * e.g. because {@code byteSize() % 4 != 0}, or {@code byteSize() / 4 > Integer#MAX_VALUE}.
      */
@@ -844,8 +844,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new long array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code long[]} instance,
      * e.g. because {@code byteSize() % 8 != 0}, or {@code byteSize() / 8 > Integer#MAX_VALUE}.
      */
@@ -858,8 +858,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new double array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@code double[]} instance,
      * e.g. because {@code byteSize() % 8 != 0}, or {@code byteSize() / 8 > Integer#MAX_VALUE}.
      */
@@ -880,8 +880,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * string (including the terminator character).
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      */
     default String getUtf8String(long offset) {
         return SharedUtils.toJavaStringInternal(this, offset);
@@ -905,8 +905,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code str.getBytes().length() + offset >= byteSize()}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      */
     default void setUtf8String(long offset, String str) {
         Utils.toCString(str.getBytes(StandardCharsets.UTF_8), SegmentAllocator.prefixAllocator(asSlice(offset)));
@@ -1094,8 +1094,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a native segment with the given address, size and memory session.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -1137,8 +1137,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a native segment with the given address, size and memory session.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -1177,8 +1177,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param session the session to which the returned segment is associated.
      * @return a new native segment.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      */
     static MemorySegment allocateNative(MemoryLayout layout, MemorySession session) {
         Objects.requireNonNull(layout);
@@ -1213,8 +1213,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      */
     static MemorySegment allocateNative(long byteSize, MemorySession session) {
         return allocateNative(byteSize, 1, session);
@@ -1244,8 +1244,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
      *                                  is not a power of 2.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#isOwnedBy(Thread) owning} {@code session}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session.isAccessibleBy(T) == false}.
      */
     static MemorySegment allocateNative(long byteSize, long byteAlignment, MemorySession session) {
         Objects.requireNonNull(session);
@@ -1278,12 +1278,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param bytes the number of bytes to be copied.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code srcSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code srcSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code srcSegment.session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code dstSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code dstSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code dstSegment.session().isAccessibleBy(T) == false}.
      * @throws IndexOutOfBoundsException if {@code srcOffset + bytes > srcSegment.byteSize()} or if
      * {@code dstOffset + bytes > dstSegment.byteSize()}, or if either {@code srcOffset}, {@code dstOffset}
      * or {@code bytes} are {@code < 0}.
@@ -1325,12 +1325,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * (resp. destination) element layout, or if the source (resp. destination) element layout alignment is greater than its size.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code srcSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this {@code srcSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code srcSegment.session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code dstSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code dstSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code dstSegment.session().isAccessibleBy(T) == false}.
      * @throws IndexOutOfBoundsException if {@code srcOffset + (elementCount * S) > srcSegment.byteSize()} or if
      * {@code dstOffset + (elementCount * S) > dstSegment.byteSize()}, where {@code S} is the byte size
      * of the element layouts, or if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}.
@@ -1378,8 +1378,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a byte value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1398,8 +1398,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the byte value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1419,8 +1419,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a boolean value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1439,8 +1439,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the boolean value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1460,8 +1460,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a char value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1480,8 +1480,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the char value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1501,8 +1501,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a short value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1521,8 +1521,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the short value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1542,8 +1542,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return an int value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1562,8 +1562,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the int value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1583,8 +1583,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a float value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1603,8 +1603,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the float value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1624,8 +1624,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a long value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1644,8 +1644,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the long value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1665,8 +1665,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a double value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1685,8 +1685,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the double value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1709,8 +1709,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a native segment wrapping an address read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1729,8 +1729,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the address value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
@@ -1751,8 +1751,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a char value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1775,8 +1775,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the char value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1800,8 +1800,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a short value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1824,8 +1824,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the short value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1849,8 +1849,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return an int value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1873,8 +1873,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the int value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1898,8 +1898,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a float value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1922,8 +1922,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the float value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1947,8 +1947,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a long value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1971,8 +1971,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the long value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -1996,8 +1996,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a double value read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -2020,8 +2020,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the double value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -2049,8 +2049,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a native segment wrapping an address read from this segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -2073,8 +2073,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param value the address value to be written.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with this segment.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code session().isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
      * or if the layout alignment is greater than its size.
@@ -2134,8 +2134,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementCount the number of array elements to be copied.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code srcSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code srcSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code srcSegment.session().isAccessibleBy(T) == false}.
      * @throws  IllegalArgumentException if {@code dstArray} is not an array, or if it is an array but whose type is not supported,
      * if the destination array component type does not match the carrier of the source element layout, if the source
      * segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the source element layout,
@@ -2168,8 +2168,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementCount the number of array elements to be copied.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code dstSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code dstSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code dstSegment.session().isAccessibleBy(T) == false}.
      * @throws  IllegalArgumentException if {@code srcArray} is not an array, or if it is an array but whose type is not supported,
      * if the source array component type does not match the carrier of the destination element layout, if the destination
      * segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the destination element layout,
@@ -2210,12 +2210,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * otherwise -1 if no mismatch.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code srcSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code srcSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code srcSegment.session().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code dstSegment} is not
      * {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning
-     * the {@linkplain #session() session} associated with {@code dstSegment}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code dstSegment.session().isAccessibleBy(T) == false}.
      * @throws IndexOutOfBoundsException if {@code srcFromOffset < 0}, {@code srcToOffset < srcFromOffset} or
      * {@code srcToOffset > srcSegment.byteSize()}
      * @throws IndexOutOfBoundsException if {@code dstFromOffset < 0}, {@code dstToOffset < dstFromOffset} or
