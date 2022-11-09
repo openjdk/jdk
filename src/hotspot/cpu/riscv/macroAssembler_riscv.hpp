@@ -1157,23 +1157,6 @@ public:
     }
   }
 
-  void vl1re8_v(VectorRegister Vd, Register Rs)  { vl1r_v(Vd, Rs, 0b000, true); }
-  void vl1re16_v(VectorRegister Vd, Register Rs) { vl1r_v(Vd, Rs, 0b101, true); }
-  void vl1re32_v(VectorRegister Vd, Register Rs) { vl1r_v(Vd, Rs, 0b110, true); }
-  void vl1re64_v(VectorRegister Vd, Register Rs) { vl1r_v(Vd, Rs, 0b111, true); }
-  void vl2re8_v(VectorRegister Vd, Register Rs)  { vl2r_v(Vd, Rs, 0b000, true); }
-  void vl2re16_v(VectorRegister Vd, Register Rs) { vl2r_v(Vd, Rs, 0b101, true); }
-  void vl2re32_v(VectorRegister Vd, Register Rs) { vl2r_v(Vd, Rs, 0b110, true); }
-  void vl2re64_v(VectorRegister Vd, Register Rs) { vl2r_v(Vd, Rs, 0b111, true); }
-  void vl4re8_v(VectorRegister Vd, Register Rs)  { vl4r_v(Vd, Rs, 0b000, true); }
-  void vl4re16_v(VectorRegister Vd, Register Rs) { vl4r_v(Vd, Rs, 0b101, true); }
-  void vl4re32_v(VectorRegister Vd, Register Rs) { vl4r_v(Vd, Rs, 0b110, true); }
-  void vl4re64_v(VectorRegister Vd, Register Rs) { vl4r_v(Vd, Rs, 0b111, true); }
-  void vl8re8_v(VectorRegister Vd, Register Rs)  { vl8r_v(Vd, Rs, 0b000, true); }
-  void vl8re16_v(VectorRegister Vd, Register Rs) { vl8r_v(Vd, Rs, 0b101, true); }
-  void vl8re32_v(VectorRegister Vd, Register Rs) { vl8r_v(Vd, Rs, 0b110, true); }
-  void vl8re64_v(VectorRegister Vd, Register Rs) { vl8r_v(Vd, Rs, 0b111, true); }
-
   void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
     vxor_vi(Vd, Vs, -1, vm);
   }

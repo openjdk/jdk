@@ -26,10 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -233,18 +231,17 @@ implements CertAttrSet<String>, Cloneable {
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to.
+     * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.NameConstraints_Id;
             this.critical = true;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**
@@ -284,36 +281,12 @@ implements CertAttrSet<String>, Cloneable {
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(PERMITTED_SUBTREES)) {
-            permitted = null;
-        } else if (name.equalsIgnoreCase(EXCLUDED_SUBTREES)) {
-            excluded = null;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:NameConstraintsExtension.");
-        }
-        encodeThis();
-    }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(PERMITTED_SUBTREES);
-        elements.addElement(EXCLUDED_SUBTREES);
-
-        return (elements.elements());
-    }
 
     /**
      * Return the name of this attribute.
      */
+    @Override
     public String getName() {
         return (NAME);
     }
