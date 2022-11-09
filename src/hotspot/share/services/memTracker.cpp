@@ -48,7 +48,6 @@
 #endif
 
 volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
-NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
@@ -82,7 +81,7 @@ void MemTracker::initialize() {
 
   NMTPreInit::pre_to_post();
 
-  _tracking_level = _cmdline_tracking_level = level;
+  _tracking_level = level;
 
   // Log state right after NMT initialization
   if (log_is_enabled(Info, nmt)) {

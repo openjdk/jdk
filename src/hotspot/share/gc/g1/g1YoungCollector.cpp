@@ -290,7 +290,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1SegmentedArrayMemoryStats _card_set_stats;
+    G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
@@ -404,7 +404,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1SegmentedArrayMemoryStats card_set_stats() const {
+    G1MonotonicArenaMemoryStats card_set_stats() const {
       return _card_set_stats;
     }
   };
@@ -414,7 +414,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
-  G1SegmentedArrayMemoryStats _all_card_set_stats;
+  G1MonotonicArenaMemoryStats _all_card_set_stats;
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
@@ -448,7 +448,7 @@ public:
     return _humongous_total;
   }
 
-  const G1SegmentedArrayMemoryStats all_card_set_stats() const {
+  const G1MonotonicArenaMemoryStats all_card_set_stats() const {
     return _all_card_set_stats;
   }
 };
@@ -1026,11 +1026,9 @@ public:
   }
 };
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
-                                   double target_pause_time_ms) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
-  _target_pause_time_ms(target_pause_time_ms),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {
@@ -1075,7 +1073,7 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    calculate_collection_set(jtm.evacuation_info(), _target_pause_time_ms);
+    calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
 
     G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
     G1PreservedMarksSet preserved_marks_set(workers()->active_workers());
