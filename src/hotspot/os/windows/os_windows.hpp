@@ -32,7 +32,11 @@
 class outputStream;
 class Thread;
 
+<<<<<<< HEAD
 static unsigned __stdcall thread_native_entry(Thread*);
+=======
+typedef void (*signal_handler_t)(int);
+>>>>>>> upstream/master
 
 class os::win32 {
   friend class os;
@@ -122,6 +126,10 @@ public:
     _thread_ptr_offset = offset;
   }
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
+
+  // signal support
+  static void* install_signal_handler(int sig, signal_handler_t handler);
+  static void* user_handler();
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

@@ -480,6 +480,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   template <typename SCAN_FUNC>
   void do_scan(Thread* thread, SCAN_FUNC& scan_f);
 
+  // Visits nodes for buckets in range [start_idx, stop_id) with FUNC.
+  template <typename FUNC>
+  static bool do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable *table);
+
   // Visit all items with SCAN_FUNC without any protection.
   // It will assume there is no other thread accessing this
   // table during the safepoint. Must be called with VM thread.
@@ -529,6 +533,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
  public:
   class BulkDeleteTask;
   class GrowTask;
+  class ScanTask;
 };
 
 #endif // SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP

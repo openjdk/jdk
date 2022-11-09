@@ -164,9 +164,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @exception IOException on encoding error.
      */
     @Override
-    public void derEncode (OutputStream out) throws IOException {
+    public void derEncode (DerOutputStream out) throws IOException {
         DerOutputStream bytes = new DerOutputStream();
-        DerOutputStream tmp = new DerOutputStream();
 
         bytes.putOID(algid);
 
@@ -234,8 +233,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         } else {
             bytes.write(encodedParams);
         }
-        tmp.write(DerValue.tag_Sequence, bytes);
-        out.write(tmp.toByteArray());
+        out.write(DerValue.tag_Sequence, bytes);
     }
 
 

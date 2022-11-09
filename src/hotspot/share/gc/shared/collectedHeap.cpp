@@ -652,11 +652,6 @@ bool CollectedHeap::is_archived_object(oop object) const {
   return false;
 }
 
-uint32_t CollectedHeap::hash_oop(oop obj) const {
-  const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
-  return static_cast<uint32_t>(addr >> LogMinObjAlignment);
-}
-
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).
 void CollectedHeap::update_capacity_and_used_at_gc() {

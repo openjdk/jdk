@@ -42,6 +42,8 @@
 // - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
 // - - NativeMembar
+// - - NativePostCallNop
+// - - NativeDeoptInstruction
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
@@ -556,8 +558,8 @@ class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { return is_nop(); }
   int displacement() const { return 0; }
-  void patch(jint diff) { Unimplemented(); }
-  void make_deopt() { Unimplemented(); }
+  void patch(jint diff);
+  void make_deopt();
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {
@@ -568,23 +570,33 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   return NULL;
 }
 
-class NativeDeoptInstruction: public NativeInstruction {
-public:
-  address instruction_address() const       { Unimplemented(); return NULL; }
-  address next_instruction_address() const  { Unimplemented(); return NULL; }
+inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  assert(nop->check(), "");
+  return nop;
+}
 
-  void  verify() { Unimplemented(); }
+class NativeDeoptInstruction: public NativeInstruction {
+ public:
+  enum {
+    instruction_size            =    4,
+    instruction_offset          =    0,
+  };
+
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  void verify();
 
   static bool is_deopt_at(address instr) {
-    if (!Continuations::enabled()) return false;
-    Unimplemented();
-    return false;
+    assert(instr != NULL, "");
+    uint32_t value = *(uint32_t *) instr;
+    // 0xc0201073 encodes CSRRW x0, instret, x0
+    return value == 0xc0201073;
   }
 
   // MT-safe patching
-  static void insert(address code_pos) {
-    Unimplemented();
-  }
+  static void insert(address code_pos);
 };
 
 #endif // CPU_RISCV_NATIVEINST_RISCV_HPP

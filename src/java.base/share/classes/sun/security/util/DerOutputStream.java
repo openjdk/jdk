@@ -27,7 +27,6 @@ package sun.security.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
@@ -583,7 +582,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      *
      *  @exception IOException on output error.
      */
-    public void derEncode(OutputStream out) throws IOException {
+    public void derEncode(DerOutputStream out) throws IOException {
         out.write(toByteArray());
     }
 

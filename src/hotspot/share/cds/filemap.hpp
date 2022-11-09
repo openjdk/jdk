@@ -307,9 +307,9 @@ public:
   bool validate();
   int compute_crc();
 
-  FileMapRegion* space_at(int i) {
+  FileMapRegion* region_at(int i) {
     assert(is_valid_region(i), "invalid region");
-    return FileMapRegion::cast(&_space[i]);
+    return FileMapRegion::cast(&_regions[i]);
   }
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
@@ -378,7 +378,7 @@ public:
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }
   void   set_header_crc(int crc)     { header()->set_crc(crc); }
-  int    space_crc(int i)      const { return space_at(i)->crc(); }
+  int    region_crc(int i)     const { return region_at(i)->crc(); }
   void   populate_header(size_t core_region_alignment);
   bool   validate_header();
   void   invalidate();
@@ -527,23 +527,23 @@ public:
   char* region_addr(int idx);
 
   // The offset of the first core region in the archive, relative to SharedBaseAddress
-  size_t mapping_base_offset() const { return first_core_space()->mapping_offset(); }
+  size_t mapping_base_offset() const { return first_core_region()->mapping_offset();    }
   // The offset of the (exclusive) end of the last core region in this archive, relative to SharedBaseAddress
-  size_t mapping_end_offset()  const { return last_core_space()->mapping_end_offset(); }
+  size_t mapping_end_offset()  const { return last_core_region()->mapping_end_offset(); }
 
-  char* mapped_base()    const { return first_core_space()->mapped_base(); }
-  char* mapped_end()     const { return last_core_space()->mapped_end();   }
+  char* mapped_base()    const { return first_core_region()->mapped_base(); }
+  char* mapped_end()     const { return last_core_region()->mapped_end();   }
 
   // Non-zero if the archive needs to be mapped a non-default location due to ASLR.
   intx relocation_delta() const {
     return header()->mapped_base_address() - header()->requested_base_address();
   }
 
-  FileMapRegion* first_core_space() const;
-  FileMapRegion* last_core_space() const;
+  FileMapRegion* first_core_region() const;
+  FileMapRegion* last_core_region()  const;
 
-  FileMapRegion* space_at(int i) const {
-    return header()->space_at(i);
+  FileMapRegion* region_at(int i) const {
+    return header()->region_at(i);
   }
 
   void print(outputStream* st) {
