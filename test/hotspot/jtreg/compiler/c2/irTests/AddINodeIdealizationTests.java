@@ -88,8 +88,8 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ((a - b) + 190                  , test21(a, b));
         Asserts.assertEQ((a - b) + 210                  , test22(a, b));
         Asserts.assertEQ((a - b) + 190                  , test23(a, b));
-	Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test24(a, b));
-	Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
+        Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test24(a, b));
+        Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
     }
 
     @Test
