@@ -247,9 +247,6 @@ public final class NativePRNG extends SecureRandomSpi {
 
        // private static final ThreadLocal<RandomIO> INSTANCE = new ThreadLocal<> ();
         private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.BLOCKING);
-        static {
-//          initIO(Variant.BLOCKING);
-        }
 
         // return whether this is available
         static boolean isAvailable() {
@@ -299,10 +296,6 @@ public final class NativePRNG extends SecureRandomSpi {
         private static final long serialVersionUID = -1102062982994105487L;
 
         private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.NONBLOCKING);
-
-        static {
-          //initIO(Variant.NONBLOCKING);
-        }
 
         // return whether this is available
         static boolean isAvailable() {
