@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.security.Permission;
+import java.util.Locale;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
@@ -471,7 +472,7 @@ public final class URLPermission extends Permission {
             throw new IllegalArgumentException(
                 "Invalid URL string: \"" + url + "\"");
         }
-        scheme = url.substring(0, delim).toLowerCase();
+        scheme = url.substring(0, delim).toLowerCase(Locale.ROOT);
         this.ssp = url.substring(delim + 1);
 
         if (!ssp.startsWith("//")) {

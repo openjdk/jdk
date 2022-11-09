@@ -395,7 +395,8 @@ public class URLPermissionTest {
         eqtest("http://Michael@foo.com/bar","http://michael@goo.com/bar",false),
         eqtest("http://michael@foo.com/bar","http://george@foo.com/bar", true),
         eqtest("http://@foo.com/bar","http://foo.com/bar", true),
-        eqtest("http://www.IOU.com", "http://www.iou.com", true)
+        eqtest("http://www.IOU.com", "http://www.iou.com", true),
+        eqtest("HTTPI://www.IOU.com", "httpi://www.iou.com", true)
     };
 
     static Test[] createTests = {
