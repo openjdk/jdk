@@ -42,10 +42,10 @@ public:
     TARGET_ADDRESS,
     RETURN_BUFFER,
     CAPTURED_STATE_BUFFER,
-    MAX
+    LOCATION_LIMIT
   };
 private:
-  VMStorage _locs[MAX];
+  VMStorage _locs[LOCATION_LIMIT];
 public:
   StubLocations();
 

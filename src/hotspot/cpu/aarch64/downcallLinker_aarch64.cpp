@@ -165,11 +165,11 @@ void DowncallStubGenerator::generate() {
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch1);
   if (_needs_return_buffer) {
     locs.set_frame_data(StubLocations::RETURN_BUFFER, allocated_frame_size);
-    allocated_frame_size += 8; // for address spill
+    allocated_frame_size += BytesPerWord; // for address spill
   }
   if (_captured_state_mask != 0) {
     locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
-    allocated_frame_size += 8;
+    allocated_frame_size += BytesPerWord;
   }
 
   bool should_save_return_value = !_needs_return_buffer;

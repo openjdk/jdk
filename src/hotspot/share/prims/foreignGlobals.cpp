@@ -29,13 +29,13 @@
 #include "runtime/jniHandles.inline.hpp"
 
 StubLocations::StubLocations() {
-  for (uint32_t i = 0; i < MAX; i++) {
+  for (uint32_t i = 0; i < LOCATION_LIMIT; i++) {
     _locs[i] = VMStorage::invalid();
   }
 }
 
 void StubLocations::set(uint32_t loc, VMStorage storage) {
-  assert(loc < MAX, "oob");
+  assert(loc < LOCATION_LIMIT, "oob");
   _locs[loc] = storage;
 }
 
@@ -44,7 +44,7 @@ void StubLocations::set_frame_data(uint32_t loc, int offset) {
 }
 
 VMStorage StubLocations::get(uint32_t loc) const {
-  assert(loc < MAX, "oob");
+  assert(loc < LOCATION_LIMIT, "oob");
   VMStorage storage = _locs[loc];
   assert(storage.is_valid(), "not set");
   return storage;
