@@ -25,6 +25,7 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
+#include "gc/z/zBarrierSetStackChunk.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
@@ -46,6 +47,7 @@ ZBarrierSet::ZBarrierSet() :
                make_barrier_set_c1<ZBarrierSetC1>(),
                make_barrier_set_c2<ZBarrierSetC2>(),
                new ZBarrierSetNMethod(),
+               new ZBarrierSetStackChunk(),
                BarrierSet::FakeRtti(BarrierSet::ZBarrierSet)) {}
 
 ZBarrierSetAssembler* ZBarrierSet::assembler() {

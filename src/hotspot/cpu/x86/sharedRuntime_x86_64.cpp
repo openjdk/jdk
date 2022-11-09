@@ -1293,7 +1293,6 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) 
 
   int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
   OopMap* map = new OopMap(frame_size, 0);
-  ContinuationEntry::setup_oopmap(map);
 
   __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
   __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);

@@ -1384,6 +1384,13 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (jvmti_thread_state() != NULL) {
     jvmti_thread_state()->oops_do(f, cf);
   }
+
+  ContinuationEntry* entry = _cont_entry;
+  while (entry != nullptr) {
+    f->do_oop((oop*)entry->cont_addr());
+    f->do_oop((oop*)entry->chunk_addr());
+    entry = entry->parent();
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
