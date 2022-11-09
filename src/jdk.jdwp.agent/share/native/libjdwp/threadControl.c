@@ -58,10 +58,6 @@ typedef struct CoLocatedEventInfo_ {
  * suspend counts. It also acts as a repository for other
  * per-thread state such as the current method invocation or
  * current step.
- *
- * suspendCount is the number of outstanding suspends
- * from the debugger. suspends from the app itself are
- * not included in this count.
  */
 typedef struct ThreadNode {
     jthread thread;
@@ -76,7 +72,7 @@ typedef struct ThreadNode {
     unsigned int popFrameThread : 1;
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
-    jint suspendCount;
+    jint suspendCount;     /* Number of outstanding suspends from the debugger. */
     jvmtiEventMode instructionStepMode;
     StepRequest currentStep;
     InvokeRequest currentInvoke;
@@ -841,8 +837,8 @@ resumeThreadByNode(ThreadNode *node)
     if (node->suspendCount > 0) {
         node->suspendCount--;
         debugMonitorNotifyAll(threadLock);
-        if ((node->suspendCount == 0) && node->toBeResumed &&
-            !node->suspendOnStart) {
+        if ((node->suspendCount == 0) && node->toBeResumed) {
+            JDI_ASSERT(!node->suspendOnStart);
             LOG_MISC(("thread=%p resumed", node->thread));
             error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
                         (gdata->jvmti, node->thread);
@@ -950,6 +946,7 @@ resumeCopyHelper(JNIEnv *env, ThreadNode *node, void *arg)
      * won't suspend this thread after we are done with the resumeAll.
      */
     if (node->suspendCount == 1 && node->suspendOnStart) {
+        JDI_ASSERT(!node->toBeResumed);
         node->suspendCount--;
         // TODO - vthread node cleanup: If this is a vthread, we should delete the node.
         return JVMTI_ERROR_NONE;
@@ -963,12 +960,11 @@ resumeCopyHelper(JNIEnv *env, ThreadNode *node, void *arg)
     /*
      * This is tricky. A suspendCount of 1 and toBeResumed means that
      * JVMTI SuspendThread() or JVMTI SuspendThreadList() was called
-     * on this thread. The check for !suspendOnStart is paranoia that
-     * we inherited from resumeThreadByNode().
+     * on this thread.
      */
-    if (node->suspendCount == 1 && node->toBeResumed && !node->suspendOnStart) {
+    if (node->suspendCount == 1 && node->toBeResumed) {
+        JDI_ASSERT(!node->suspendOnStart);
         jthread **listPtr = (jthread **)arg;
-
         **listPtr = node->thread;
         (*listPtr)++;
     }
@@ -987,12 +983,11 @@ resumeCountHelper(JNIEnv *env, ThreadNode *node, void *arg)
     /*
      * This is tricky. A suspendCount of 1 and toBeResumed means that
      * JVMTI SuspendThread() or JVMTDI SuspendThreadList() was called
-     * on this thread. The check for !suspendOnStart is paranoia that
-     * we inherited from resumeThreadByNode().
+     * on this thread.
      */
-    if (node->suspendCount == 1 && node->toBeResumed && !node->suspendOnStart) {
+    if (node->suspendCount == 1 && node->toBeResumed) {
+        JDI_ASSERT(!node->suspendOnStart);
         jint *counter = (jint *)arg;
-
         (*counter)++;
     }
     return JVMTI_ERROR_NONE;
