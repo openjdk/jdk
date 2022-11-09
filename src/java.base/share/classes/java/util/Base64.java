@@ -753,16 +753,15 @@ public class Base64 {
          * chunks of the src that are of a favorable size for the specific
          * processor it's running on.
          *
-         * If the intrinsic function does not process all of the bytes in
-         * src, it must process a multiple of four of them, making the
-         * returned destination length a multiple of three.
-         *
          * If any illegal base64 bytes are encountered in src by the
          * intrinsic, the intrinsic must return the actual number of valid
          * data bytes already written to dst.  Note that the '=' pad
          * character is treated as an illegal Base64 character by
          * decodeBlock, so it will not process a block of 4 bytes
-         * containing pad characters.
+         * containing pad characters.  However, MIME decoding ignores
+         * illegal characters, so any intrinsic overriding decodeBlock
+         * can choose how to handle illegal characters based on the isMIME
+         * parameter.
          *
          * Given the parameters, no length check is possible on dst, so dst
          * is assumed to be large enough to store the decoded bytes.
@@ -779,10 +778,12 @@ public class Base64 {
          *         the offset into dst array to begin writing
          * @param  isURL
          *         boolean, when true decode RFC4648 URL-safe base64 characters
+         * @param  isMIME
+         *         boolean, when true decode according to RFC2045 (ignore illegal chars)
          * @return the number of destination data bytes produced
          */
         @IntrinsicCandidate
-        private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+        private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, boolean isMIME) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int sl0 = sp + ((sl - sp) & ~0b11);
             int new_dp = dp;
@@ -810,12 +811,12 @@ public class Base64 {
 
             while (sp < sl) {
                 if (shiftto == 18 && sp < sl - 4) {       // fast path
-                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL);
+                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL, isMIME);
                     /*
                      * Calculate how many characters were processed by how many
                      * bytes of data were returned.
                      */
-                    int chars_decoded = (dl / 3) * 4;
+                    int chars_decoded = ((dl + 2) / 3) * 4;
 
                     sp += chars_decoded;
                     dp += dl;

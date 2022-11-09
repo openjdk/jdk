@@ -3757,6 +3757,7 @@ class StubGenerator: public StubCodeGenerator {
     Register d      = R6_ARG4; // destination address
     Register dp     = R7_ARG5; // destination offset
     Register isURL  = R8_ARG6; // boolean, if non-zero indicates use of RFC 4648 base64url encoding
+    Register isMIME = R9_ARG7; // boolean, if non-zero indicates use of RFC 2045 MIME encoding - not used
 
     // Local variables
     Register const_ptr     = R9;  // used for loading constants
