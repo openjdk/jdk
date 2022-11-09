@@ -70,12 +70,18 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
   if (UseNewCode) {
     tty->print_cr("In resolve previously linked invokedynamic");
     // Check if method is not null
-    if ( _pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).method() != nullptr) {
-      methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).method());
-      Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_array()->at(_indy_index).cpool_index()));
+    if ( _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method() != nullptr) {
+      methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method());
+      Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->cpool_index()));
       result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
       Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
       return true;
+    } else {
+      //int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
+      int encoded_index = _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->cpool_index();
+      tty->print_cr("Method not resolved, Cpool index: %d", encoded_index);
+      //ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false);
+      return false;
     }
     return false;
   } else {
