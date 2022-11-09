@@ -32,8 +32,6 @@
 #include "utilities/resizeableResourceHash.hpp"
 
 class JvmtiEnv;
-
-// Hashtable to record oops used for JvmtiTagMap
 class JvmtiTagMapEntryClosure;
 
 class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
@@ -43,7 +41,6 @@ class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
 
   public:
    JvmtiTagMapEntry(oop obj);
-   //JvmtiTagMapEntry(const JvmtiTagMapEntry& org);
    ~JvmtiTagMapEntry();
    void set_released(bool flag){ _released = flag;}
 
@@ -76,8 +73,7 @@ class JvmtiTagMapTableBase{
                                JvmtiTagMapTableBase::equals
                                > ResizableResourceHT ;
 
-class JvmtiTagMapTable : public ResourceObj
-{ // Hashtable<WeakHandle, mtServiceability> {
+class JvmtiTagMapTable : public ResourceObj{
   enum Constants {
     _table_size  = 1007
   };
@@ -85,7 +81,7 @@ class JvmtiTagMapTable : public ResourceObj
 private:
 
   void resize_if_needed();
- ResizableResourceHT  *_rrht_table;
+  ResizableResourceHT  *_rrht_table;
 
 public:
   JvmtiTagMapTable();
@@ -109,7 +105,7 @@ public:
 
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapEntryClosure {
- public:
+  public:
   virtual bool do_entry(JvmtiTagMapEntry & key , jlong & value) = 0;
 };
 
