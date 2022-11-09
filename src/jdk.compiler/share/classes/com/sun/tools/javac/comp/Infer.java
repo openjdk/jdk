@@ -678,17 +678,16 @@ public class Infer {
 
         try {
             //step 2:
-            if (commonSuperWithDiffParameterization(patternType, exprType)) {
-                return null;
+            if (exprType.isParameterized()) {
+                Type patternAsExpression =
+                        types.asSuper(patternType, exprType.tsym);
+                if (patternAsExpression == null ||
+                    !types.isSameType(patternAsExpression, exprType)) {
+                    return null;
+                }
             }
-
-            List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
 
             doIncorporation(c, types.noWarnings);
-
-            while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
-                doIncorporation(c, types.noWarnings);
-            }
 
             //step 3:
             List<Type> freshVars = instantiatePatternVars(params, c);
