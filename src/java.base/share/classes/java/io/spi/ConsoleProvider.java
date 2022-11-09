@@ -34,9 +34,10 @@ import java.io.Console;
  */
 public abstract class ConsoleProvider {
     /**
-     * {@return the Console instance}
+     * {@return the Console instance, or {@code null} if not available}
+     * @param isTTY indicates if the jvm is attached to a terminal
      */
-    public abstract Console console();
+    public abstract Console console(boolean isTTY);
 
     /**
      * Sole constructor

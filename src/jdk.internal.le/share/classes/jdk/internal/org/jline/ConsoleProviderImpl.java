@@ -44,10 +44,11 @@ import java.io.spi.ConsoleProvider;
 public class ConsoleProviderImpl extends ConsoleProvider {
 
     /**
-     * {@return the Console instance}
+     * {@return the Console instance, or {@code null} if not available}
+     * @param isTTY indicates if the jvm is attached to a terminal
      */
-    public Console console() {
-        return new ConsoleImpl();
+    public Console console(boolean isTTY) {
+        return isTTY ? new ConsoleImpl() : null;
     }
 
     static final class ConsoleImpl extends Console {
