@@ -7778,16 +7778,12 @@ bool LibraryCallKit::inline_blackhole() {
 
   // Like GraphKit::insert_mem_bar, this code takes and produces control
   // to pin the Blackhole in the graph. Unlike GraphKit::insert_mem_bar,
-  // this code only uses memory, but does not produce it, which avoids
-  // the unfortunate side effects like breaking the optimizations across
-  // the blackhole.
-
-  Node* mem = reset_memory();
-  set_all_memory(mem);
+  // this code neither uses nor produces memory, which avoids the unfortunate
+  // side effects like breaking the optimizations across the blackhole.
 
   MemBarNode* mb = MemBarNode::make(C, Op_Blackhole);
   mb->init_req(TypeFunc::Control, control());
-  mb->init_req(TypeFunc::Memory,  mem);
+  mb->init_req(TypeFunc::Memory,  C->top());
   Node* bh = _gvn.transform(mb);
   set_control(_gvn.transform(new ProjNode(bh, TypeFunc::Control)));
 
