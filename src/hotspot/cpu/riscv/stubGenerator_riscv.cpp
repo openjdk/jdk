@@ -899,9 +899,12 @@ class StubGenerator: public StubCodeGenerator {
    *
    * if ((dst % 8) == (src % 8)) {
    *   aligned;
-   *   goto copy8;
+   *   goto copy_big;
    * }
    *
+   * copy_big:
+   * if the amount to copy is more than (or equal to) 32 bytes goto copy32
+   *  else goto copy8
    * copy_small:
    *   load element one by one;
    * done;
@@ -962,10 +965,10 @@ class StubGenerator: public StubCodeGenerator {
     bool is_backwards = step < 0;
     int granularity = uabs(step);
 
-    const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17;
+    const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
 
     Label same_aligned;
-    Label copy8, copy_small, done;
+    Label copy_big, copy32, copy8, copy_small, done;
 
     copy_insn ld_arr = NULL, st_arr = NULL;
     switch (granularity) {
@@ -991,7 +994,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ beqz(count, done);
     __ slli(cnt, count, exact_log2(granularity));
-    if (is_backwards) {
+    if (is_backwards) { //find the start
       __ add(src, s, cnt);
       __ add(dst, d, cnt);
     } else {
@@ -1000,34 +1003,67 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (is_aligned) {
+      __ addi(tmp, cnt, -32);
+      __ bgez(tmp, copy32);
       __ addi(tmp, cnt, -8);
       __ bgez(tmp, copy8);
       __ j(copy_small);
+    } else {
+      __ mv(tmp, 16);
+      __ blt(cnt, tmp, copy_small);
+
+      __ xorr(tmp, src, dst);
+      __ andi(tmp, tmp, 0b111);
+      __ bnez(tmp, copy_small);
+
+      __ bind(same_aligned);
+      __ andi(tmp, src, 0b111);
+      __ beqz(tmp, copy_big);
+      if (is_backwards) {
+        __ addi(src, src, step);
+        __ addi(dst, dst, step);
+      }
+      (_masm->*ld_arr)(tmp3, Address(src), t0);
+      (_masm->*st_arr)(tmp3, Address(dst), t0);
+      if (!is_backwards) {
+        __ addi(src, src, step);
+        __ addi(dst, dst, step);
+      }
+      __ addi(cnt, cnt, -granularity);
+      __ beqz(cnt, done);
+      __ j(same_aligned);
+
+      __ bind(copy_big);
+      __ mv(tmp, 32);
+      __ blt(cnt, tmp, copy8);
     }
-
-    __ mv(tmp, 16);
-    __ blt(cnt, tmp, copy_small);
-
-    __ xorr(tmp, src, dst);
-    __ andi(tmp, tmp, 0b111);
-    __ bnez(tmp, copy_small);
-
-    __ bind(same_aligned);
-    __ andi(tmp, src, 0b111);
-    __ beqz(tmp, copy8);
+    __ bind(copy32);
     if (is_backwards) {
-      __ addi(src, src, step);
-      __ addi(dst, dst, step);
+      __ addi(src, src, -wordSize*4);
+      __ addi(dst, dst, -wordSize*4);
     }
-    (_masm->*ld_arr)(tmp3, Address(src), t0);
-    (_masm->*st_arr)(tmp3, Address(dst), t0);
+    // we first load 32 bytes, then write it, so the direction here doesn't matter
+    __ ld(tmp3, Address(src));
+    __ ld(tmp4, Address(src, 8));
+    __ ld(tmp5, Address(src, 16));
+    __ ld(tmp6, Address(src, 24));
+    __ sd(tmp3, Address(dst));
+    __ sd(tmp4, Address(dst, 8));
+    __ sd(tmp5, Address(dst, 16));
+    __ sd(tmp6, Address(dst, 24));
+
     if (!is_backwards) {
-      __ addi(src, src, step);
-      __ addi(dst, dst, step);
+      __ addi(src, src, wordSize*4);
+      __ addi(dst, dst, wordSize*4);
     }
-    __ addi(cnt, cnt, -granularity);
-    __ beqz(cnt, done);
-    __ j(same_aligned);
+    __ addi(tmp4, cnt, -(32+wordSize*4));
+    __ addi(cnt, cnt, -wordSize*4);
+    __ bgez(tmp4, copy32); // cnt >= 32, do next loop
+
+    __ beqz(cnt, done); // if that's all - done
+
+    __ addi(tmp4, cnt, -8); // if not - copy the reminder
+    __ bltz(tmp4, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8
 
     __ bind(copy8);
     if (is_backwards) {
@@ -1040,11 +1076,11 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(src, src, wordSize);
       __ addi(dst, dst, wordSize);
     }
+    __ addi(tmp4, cnt, -(8+wordSize));
     __ addi(cnt, cnt, -wordSize);
-    __ addi(tmp4, cnt, -8);
     __ bgez(tmp4, copy8); // cnt >= 8, do next loop
 
-    __ beqz(cnt, done);
+    __ beqz(cnt, done); // if that's all - done
 
     __ bind(copy_small);
     if (is_backwards) {
