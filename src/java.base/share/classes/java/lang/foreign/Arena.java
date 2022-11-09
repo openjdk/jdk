@@ -118,8 +118,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * and all the memory segments associated with it can no longer be accessed. Furthermore, any off-heap region of memory backing the
      * segments associated with that memory session are also released.
      * @throws IllegalStateException if the session associated with this arena is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if this session is {@linkplain MemorySession#whileAlive(Runnable) kept alive} by another client.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code isOwnedBy(T) == false}.
+     * such that {@code isCloseableBy(T) == false}.
      */
     @Override
     void close();
