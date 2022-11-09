@@ -5998,33 +5998,32 @@ class RealLCA {
   const PhaseIdealLoop* _phase;
   Node* _early;
   Node* _wrong_lca;
-  int _early_index;
+  uint _early_index;
   int _wrong_lca_index;
 
-  static uint find_idom_index(const Node* n, const Unique_Node_List& idoms) {
-    for (uint i = 0; i < idoms.size(); i++) {
-      if (idoms[i] == n) {
-        return i;
+  // Given idom chains of early and wrong LCA: Walk through idoms starting at StartNode and find the first node which
+  // is different: Return the previously visited node which must be the real LCA.
+  // The node lists also contain _early and _wrong_lca, respectively.
+  Node* find_real_lca(Unique_Node_List& early_with_idoms, Unique_Node_List& wrong_lca_with_idoms) {
+    int early_index = early_with_idoms.size() - 1;
+    int wrong_lca_index = wrong_lca_with_idoms.size() - 1;
+    bool found_difference = false;
+    do {
+      if (early_with_idoms[early_index] != wrong_lca_with_idoms[wrong_lca_index]) {
+        // First time early and wrong LCA idoms differ. Real LCA must be at the previous index.
+        found_difference = true;
+        break;
       }
-    }
-    assert(false, "must find index");
-    return 0;
-  }
+      early_index--;
+      wrong_lca_index--;
+    } while (wrong_lca_index >= 0);
 
-  Node* find_real_lca(Unique_Node_List& early_idoms) {
-    Node* next = _wrong_lca;
-    while (!next->is_Start()) {
-      if (next == _early) {
-        return next;
-      } else if (early_idoms.member(next)) {
-        _early_index = find_idom_index(next, early_idoms);
-        return next;
-      }
-      next = _phase->idom(next);
-      _wrong_lca_index++;
-    }
-    assert(false, "must always find an LCA");
-    return nullptr;
+    assert(early_index >= 0, "must always find an LCA - cannot be early");
+    _early_index = early_index;
+    _wrong_lca_index = wrong_lca_index;
+    Node* real_lca = early_with_idoms[_early_index + 1]; // Plus one to skip _early.
+    assert(found_difference || real_lca == _wrong_lca, "wrong LCA dominates early and is therefore the real LCA");
+    return real_lca;
   }
 
   void dump(Node* real_lca) {
@@ -6048,15 +6047,19 @@ class RealLCA {
 
  public:
   RealLCA(const PhaseIdealLoop* phase, Node* early, Node* wrong_lca)
-      : _phase(phase), _early(early), _wrong_lca(wrong_lca), _early_index(-1), _wrong_lca_index(-1) {
+      : _phase(phase), _early(early), _wrong_lca(wrong_lca), _early_index(0), _wrong_lca_index(0) {
     assert(!wrong_lca->is_Start(), "StartNode is always a common dominator");
   }
 
   void compute_and_dump() {
     ResourceMark rm;
-    Unique_Node_List early_idoms;
-    _phase->get_idoms(_early, 1000, early_idoms);
-    Node* real_lca = find_real_lca(early_idoms);
+    Unique_Node_List early_with_idoms;
+    Unique_Node_List wrong_lca_with_idoms;
+    early_with_idoms.push(_early);
+    wrong_lca_with_idoms.push(_wrong_lca);
+    _phase->get_idoms(_early, 10000, early_with_idoms);
+    _phase->get_idoms(_wrong_lca, 10000, wrong_lca_with_idoms);
+    Node* real_lca = find_real_lca(early_with_idoms, wrong_lca_with_idoms);
     dump(real_lca);
   }
 };
@@ -6155,7 +6158,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
   Node* next = n;
   for (uint i = 0; !next->is_Start() && i < count; i++) {
     next = idom(next);
-    assert(!idoms.member(n), "duplicated idom is not possible");
+    assert(!idoms.member(next), "duplicated idom is not possible");
     idoms.push(next);
   }
 }
