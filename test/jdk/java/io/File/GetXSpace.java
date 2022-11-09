@@ -137,7 +137,7 @@ public class GetXSpace {
         String cmd = "fsutil volume diskFree C:\\";
         StringBuilder sb = new StringBuilder();
         Process p = Runtime.getRuntime().exec(cmd);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+        try (BufferedReader in = p.inputReader()) {
             String s;
             int i = 0;
             while ((s = in.readLine()) != null) {
