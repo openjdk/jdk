@@ -66,17 +66,11 @@ public class TestX509CertificateEvent {
 
         testCall(() -> {
             // test keytool cert generation with JFR enabled
-            // most interested in just detecting this cert being recorded
-            // Root CA certs get loaded by keytool - difficult to determine exact
-            // number of certificate events for this test (cacerts factor)
+            // The keytool test will load the dedicated keystore
+            // and call CertificateFactory.generateCertificate
+            // cacerts
             TestCertificate.keyToolTest();
         }, -1, false);
-
-        testCall(() -> {
-            // test CertAndKeyGen functionality
-            // most interested in just detecting this cert being created
-            TestCertificate.certAndGenTest();
-        }, 1, false);
     }
 
     private static void testCall(VoidFunction f, int expected, boolean runAsserts) throws Throwable {

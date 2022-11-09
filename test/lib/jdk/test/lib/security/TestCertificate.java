@@ -178,24 +178,6 @@ public enum TestCertificate {
         CERTIFICATE_FACTORY.generateCertPath(new ByteArrayInputStream(encoded), "PKCS7");
     }
 
-    public static void certAndGenTest() throws CertificateException {
-        CertAndKeyGen ckg;
-        try {
-            ckg = new CertAndKeyGen("RSA", "SHA256withRSA");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Unexpected failure", e);
-        }
-        // just some arbitrary dates
-        long validity = (System.currentTimeMillis() + 10_000L)/1000L + 3600;
-        Date firstDate = new Date(System.currentTimeMillis());
-        ckg.generate(2048);
-        try {
-            ckg.getSelfCertificate(new X500Name("CN=Me"), firstDate, validity);
-        } catch (GeneralSecurityException | IOException e) {
-            throw new RuntimeException("Unexpected failure", e);
-        }
-    }
-
     public static void keyToolTest() throws Exception {
         String config = """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -210,14 +192,13 @@ public enum TestCertificate {
         SecurityTools.keytool("-J-XX:StartFlightRecording=filename=keytool.jfr,settings=config.jfc",
             "-genkeypair", "-alias", "testkey", "-keyalg", "RSA", "-keysize", "2048", "-dname",
             "CN=8292033.oracle.com,OU=JPG,C=US", "-keypass", "changeit",
-            "-validity", "365", "-storetype", "PKCS12", "-keystore", "keystore.pkcs12", "-storepass", "changeit")
+            "-validity", "365", "-keystore", "keystore.pkcs12", "-storepass", "changeit")
             .shouldHaveExitValue(0);
+        // The keytool command will load the keystore and call CertificateFactory.generateCertificate
         jfrTool("keytool.jfr")
-            .shouldContain("8292033.oracle.com")
-            .shouldContain("SHA384withRSA")
+            .shouldContain("8292033.oracle.com") // should record our new cert
             .shouldNotContain("algorithm = N/A") // shouldn't record cert under construction
             .shouldHaveExitValue(0);
-
     }
 
     private static OutputAnalyzer jfrTool(String jfrFile) throws Exception {
