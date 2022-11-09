@@ -700,6 +700,8 @@ public abstract class PKCS11Test {
         osMap.put("Linux-arm-32", new String[] {
                 "/usr/lib/arm-linux-gnueabi/nss/",
                 "/usr/lib/arm-linux-gnueabihf/nss/" });
+        // Exclude linux-aarch64 at the moment until the following bug is fixed:
+        // 8296631: NSS tests failing on OL9 linux-aarch64 hosts
 //        osMap.put("Linux-aarch64-64", new String[] {
 //                "/usr/lib/aarch64-linux-gnu/",
 //                "/usr/lib/aarch64-linux-gnu/nss/",
