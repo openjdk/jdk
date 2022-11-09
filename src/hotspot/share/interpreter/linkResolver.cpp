@@ -1766,10 +1766,9 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
   int pool_index;
   if (UseNewCode) {
-    tty->print_cr("In resolve invokedynamic");
-    //indy_index = pool->decode_invokedynamic_index(indy_index);
+    tty->print_cr("In LinkResolver::resolve_invokedynamic");
     pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
-    tty->print_cr("CPool index is %d", pool_index);
+    tty->print_cr("Indy index is %d", indy_index);
   } else {
     ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
     pool_index = cpce->constant_pool_index();
@@ -1814,6 +1813,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 void LinkResolver::resolve_dynamic_call(CallInfo& result,
                                         BootstrapInfo& bootstrap_specifier,
                                         TRAPS) {
+
   // JSR 292:  this must resolve to an implicitly generated method
   // such as MH.linkToCallSite(*...) or some other call-site shape.
   // The appendix argument is likely to be a freshly-created CallSite.
@@ -1831,8 +1831,10 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       // nor do we memorize a LE for posterity.
       return;
     }
-    if (UseNewCode && 0)
+    if (UseNewCode) {
+      // I forget why this is here
       ShouldNotReachHere();
+    }
     // JVMS 5.4.3 says: If an attempt by the Java Virtual Machine to resolve
     // a symbolic reference fails because an error is thrown that is an
     // instance of LinkageError (or a subclass), then subsequent attempts to
@@ -1848,7 +1850,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
      assert(bootstrap_specifier.invokedynamic_cp_cache_entry()->indy_resolution_failed(),
             "Resolution failure flag wasn't set");
   }
-
+  if (UseNewCode) { tty->print_cr("In LinkResolver::resolve_dynamic_call"); }
   bootstrap_specifier.resolve_newly_linked_invokedynamic(result, CHECK);
   // Exceptions::wrap_dynamic_exception not used because
   // set_handle doesn't throw linkage errors

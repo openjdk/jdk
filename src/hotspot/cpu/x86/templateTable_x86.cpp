@@ -2733,15 +2733,14 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ nop();
   __ nop();
 
+  //__ mov(appendix, index); // Store original index temporarily
   __ get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
   __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
-  const int array_offset = in_bytes(ConstantPoolCache::invokedynamic_entries_offset());
-  __ movptr(cache, Address(cache, array_offset));
+  __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
   //__ movptr(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
   __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
-  //const int method_offset = in_bytes(ResolvedInvokeDynamicInfo::method_offset());
 
   __ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
   // Compare the method to zero
@@ -2752,18 +2751,27 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ nop();
   __ nop();
 
+  Bytecodes::Code code = bytecode();
+  switch (code) {
+  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
+  }
+
   // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ movl(method, bytecode()); // this is essentially Bytecodes::_invokedynamic
+  __ movl(method, code); // this is essentially Bytecodes::_invokedynamic
   __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
 
-  __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
-  __ movptr(cache, Address(cache, array_offset));
-  __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  //__ movptr(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
-  __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
+  //__ mov(index, appendix); // Get original index back
+  //__ get_cache_index_at_bcp(index, 1, sizeof(u4));
+  //__ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
 
-  __ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
+  //__ movptr(cache, Address(cache, array_offset));
+  //__ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  //__ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
+
+  //__ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
 
 #ifdef ASSERT
   __ testptr(method, method);
@@ -2802,7 +2810,8 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ nop();
 
     // compute return type
-  __ movptr(index, in_bytes(ResolvedInvokeDynamicInfo::result_type_offset()));
+  //__ movptr(index, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::result_type_offset())));
+  __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::result_type_offset())));
   // load return address
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(bytecode());
@@ -2818,6 +2827,10 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // push return address
   __ push(index);
   tty->print_cr("Done loading");
+  __ nop();
+  __ nop();
+  __ nop();
+  __ nop();
 }
 
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
@@ -4011,7 +4024,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ profile_call(rbcp);
   __ profile_arguments_type(rdx, rbx_method, rbcp, false);
 
-  //__ verify_oop(rax_callsite);
+  __ verify_oop(rax_callsite);
 
   __ jump_from_interpreted(rbx_method, rdx);
 }

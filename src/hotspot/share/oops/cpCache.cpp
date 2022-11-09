@@ -955,7 +955,11 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
 
   // MOVE THIS SOMEWHERE ELSE
   if (UseNewCode && resolved_invokedynamic_info_array()) {
+    tty->print_cr("Filling in invokedynamicinfo");
     resolved_invokedynamic_info_element(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+    tty->print_cr("Done filling, %s", adapter->name()->as_C_string());
+  } else if (UseNewCode) {
+    tty->print_cr("Invokedynamic info array is empty, not filled in!");
   }
 
   // The interpreter assembly code does not check byte_2,
