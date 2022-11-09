@@ -994,7 +994,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ beqz(count, done);
     __ slli(cnt, count, exact_log2(granularity));
-    if (is_backwards) { //find the start
+    if (is_backwards) {
       __ add(src, s, cnt);
       __ add(dst, d, cnt);
     } else {
