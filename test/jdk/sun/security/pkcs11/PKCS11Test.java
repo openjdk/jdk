@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,10 +700,10 @@ public abstract class PKCS11Test {
         osMap.put("Linux-arm-32", new String[] {
                 "/usr/lib/arm-linux-gnueabi/nss/",
                 "/usr/lib/arm-linux-gnueabihf/nss/" });
-        osMap.put("Linux-aarch64-64", new String[] {
-                "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/",
-                "/usr/lib64/" });
+//        osMap.put("Linux-aarch64-64", new String[] {
+//                "/usr/lib/aarch64-linux-gnu/",
+//                "/usr/lib/aarch64-linux-gnu/nss/",
+//                "/usr/lib64/" });
         return osMap;
     }
 
