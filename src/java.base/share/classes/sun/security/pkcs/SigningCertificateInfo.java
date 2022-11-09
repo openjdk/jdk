@@ -81,10 +81,16 @@ import sun.security.x509.SerialNumber;
  */
 public class SigningCertificateInfo {
 
+    private byte[] ber;
     private ESSCertId[] certId = null;
 
     public SigningCertificateInfo(byte[] ber) throws IOException {
         parse(ber);
+        this.ber = ber;
+    }
+
+    public byte[] toByteArray() {
+        return ber;
     }
 
     public String toString() {
