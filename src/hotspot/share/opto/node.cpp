@@ -2712,7 +2712,7 @@ void Node::verify_edges(Node* root, Unique_Node_List &visited, Node_List &nstack
         // Check for duplicate edges
         // walk the input array downcounting the input edges to n
         for(uint j = 0; j < length; j++) {
-          if (next->in(j) == n) { 
+          if (next->in(j) == n) {
             cnt--;
           }
         }
