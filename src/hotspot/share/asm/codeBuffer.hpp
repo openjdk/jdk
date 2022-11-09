@@ -27,6 +27,7 @@
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -256,18 +257,13 @@ class CodeSection {
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
   void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
-  static int alignment(int section);
-  int alignment() { return alignment(_index); }
+  int alignment() const;
 
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
-  static csize_t align_at_start(csize_t off, int section) {
-    return (csize_t) align_up(off, alignment(section));
-  }
-
   csize_t align_at_start(csize_t off) const {
-    return align_at_start(off, _index);
+    return (csize_t) align_up(off, alignment());
   }
 
   // Ensure there's enough space left in the current section.
@@ -431,6 +427,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
 
+  int          _const_section_alignment;
+
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
   DbgStrings   _dbg_strings;
@@ -455,6 +453,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);
     _stubs.initialize_outer(this,  SECT_STUBS);
+
+    // Default is to align on 8 bytes. A compiler can change this
+    // if larger alignment (e.g., 32-byte vector masks) is required.
+    _const_section_alignment = (int) sizeof(jdouble);
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -709,6 +711,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Request for a shared stub to the interpreter
   void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);
 
+  void set_const_section_alignment(int align) {
+    _const_section_alignment = align_up(align, HeapWordSize);
+  }
+
 #ifndef PRODUCT
  public:
   // Printing / Decoding
@@ -744,21 +750,6 @@ class SharedStubToInterpRequest : public ResourceObj {
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }
   return false;
-}
-
-inline int CodeSection::alignment(int section) {
-  if (section == CodeBuffer::SECT_CONSTS) {
-    return (int) sizeof(jdouble);
-  }
-  if (section == CodeBuffer::SECT_INSTS) {
-    return (int) CodeEntryAlignment;
-  }
-  if (section == CodeBuffer::SECT_STUBS) {
-    // CodeBuffer installer expects sections to be HeapWordSize aligned
-    return HeapWordSize;
-  }
-  ShouldNotReachHere();
-  return 0;
 }
 
 #endif // SHARE_ASM_CODEBUFFER_HPP

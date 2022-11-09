@@ -202,6 +202,7 @@ class Symbol : public MetaspaceObj {
     return contains_utf8_at(0, str, len);
   }
   bool equals(const char* str) const { return equals(str, (int) strlen(str)); }
+  bool is_star_match(const char* pattern) const;
 
   // Tests if the symbol starts with the given prefix.
   bool starts_with(const char* prefix, int len) const {

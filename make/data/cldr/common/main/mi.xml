@@ -17,9 +17,101 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="ab">Apakāhiana</language>
+			<language type="ace">Akanīhi</language>
+			<language type="ada">Atanga</language>
+			<language type="ady">Āteke</language>
+			<language type="af">Awherikāna</language>
+			<language type="agq">Ākeme</language>
+			<language type="ain">Ainu</language>
+			<language type="ak">Ākana</language>
+			<language type="ale">Ariuta</language>
+			<language type="alt">Ātai ki te Tonga</language>
+			<language type="am">Amahereka</language>
+			<language type="an">Arakonihi</language>
+			<language type="ann">Ōporo</language>
+			<language type="anp">Anahika</language>
+			<language type="ar">Ārapi</language>
+			<language type="ar_001">Ārapi Moroki</language>
+			<language type="arn">Mapūte</language>
+			<language type="arp">Arapaho</language>
+			<language type="ars">Arapika Nahāri</language>
+			<language type="as">Āhamēhi</language>
+			<language type="asa">Ahu</language>
+			<language type="ast">Ahitūriana</language>
+			<language type="atj">Atikameke</language>
+			<language type="av">Āwhāriki</language>
+			<language type="awa">Āwati</language>
+			<language type="ay">Aimāra</language>
+			<language type="az">Ahapahāna</language>
+			<language type="az" alt="short">Ahēri</language>
+			<language type="ba">Pākira</language>
+			<language type="ban">Pārinīhi</language>
+			<language type="bas">Pahā</language>
+			<language type="be">Perarūhiana</language>
+			<language type="bem">Pema</language>
+			<language type="bez">Pena</language>
+			<language type="bg">Pukēriana</language>
+			<language type="bho">Pōhipuri</language>
+			<language type="bi">Pihirāma</language>
+			<language type="bin">Pini</language>
+			<language type="bla">Hihika</language>
+			<language type="bm">Pāpara</language>
+			<language type="bn">Pāngara</language>
+			<language type="bo">Tipete</language>
+			<language type="br">Peretana</language>
+			<language type="brx">Pōto</language>
+			<language type="bs">Pōngiana</language>
+			<language type="bug">Pukenīhi</language>
+			<language type="byn">Pirina</language>
+			<language type="ca">Katarana</language>
+			<language type="cay">Keiuka</language>
+			<language type="ccp">Tiakamā</language>
+			<language type="ce">Tietiene</language>
+			<language type="ceb">Hepuano</language>
+			<language type="cgg">Tieka</language>
+			<language type="ch">Tiamoro</language>
+			<language type="chk">Tiukīhi</language>
+			<language type="chm">Mari</language>
+			<language type="cho">Tiokatō</language>
+			<language type="chp">Tipiwaiana</language>
+			<language type="chr">Tierokī</language>
+			<language type="chy">Haiene</language>
+			<language type="ckb">Te Puku o Kūrihi</language>
+			<language type="ckb" alt="variant">Kūrihi, Hōrani</language>
+			<language type="clc">Tiekautini</language>
+			<language type="co">Kohikana</language>
+			<language type="crg">Mītiwhi</language>
+			<language type="crj">Kirī Tonga-mā-Rāwhiti</language>
+			<language type="crk">Parana Kirī</language>
+			<language type="crl">Kirī Raki-mā-Rāwhiti</language>
+			<language type="crm">Mū Kiri</language>
+			<language type="crr">Arakōkiana Kararaina</language>
+			<language type="cs">Tiekerowākiana</language>
+			<language type="csw">Wāpi Kirī</language>
+			<language type="cv">Tiuwhā</language>
+			<language type="cy">Werehi</language>
+			<language type="da">Teina</language>
+			<language type="dak">Teikōta</language>
+			<language type="dar">Tākawa</language>
+			<language type="dav">Taita</language>
 			<language type="de">Tiamana</language>
-			<language type="de_AT">Tiamana Atiria</language>
+			<language type="de_AT">Tiamana Ateriana</language>
 			<language type="de_CH">Tiamana Ōkawa Huiterangi</language>
+			<language type="dgr">Tōkiripi</language>
+			<language type="dje">Tāma</language>
+			<language type="doi">Tōkiri</language>
+			<language type="dsb">Hōpiana Ōpaki</language>
+			<language type="dua">Tuāra</language>
+			<language type="dv">Tewhe</language>
+			<language type="dyo">Hora-Whōni</language>
+			<language type="dz">Tonoka</language>
+			<language type="dzg">Tāhaka</language>
+			<language type="ebu">Emepū</language>
+			<language type="ee">Ewe</language>
+			<language type="efi">Ewhiki</language>
+			<language type="eka">Ekatika</language>
+			<language type="el">Kiriki</language>
 			<language type="en">Ingarihi</language>
 			<language type="en_AU">Ingarihi Ahitereiriana</language>
 			<language type="en_CA">Ingarihi Kānata</language>
@@ -27,50 +119,591 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB" alt="short">Ingarihi UK</language>
 			<language type="en_US">Ingarihi Amerikana</language>
 			<language type="en_US" alt="short">Ingarihi US</language>
-			<language type="es">Paniora</language>
-			<language type="es_419">Paniora Amerika ki te Tonga</language>
-			<language type="es_ES">Paniora Uropi</language>
-			<language type="es_MX">Paniora Mēhikana</language>
+			<language type="eo">Eheperāto</language>
+			<language type="es">Pāniora</language>
+			<language type="es_419">Pāniora Amerikana ki te Tonga</language>
+			<language type="es_ES">Pāniora Ūropi</language>
+			<language type="es_MX">Pāniora Mehikana</language>
+			<language type="et">Ehetōniana</language>
+			<language type="eu">Pāka</language>
+			<language type="ewo">Ewāto</language>
+			<language type="fa">Pāhiana</language>
+			<language type="fa_AF">Tari</language>
+			<language type="ff">Wharā</language>
+			<language type="fi">Whinirānia</language>
+			<language type="fil">Piripīno</language>
+			<language type="fj">Whītīana</language>
+			<language type="fo">Wharoīhi</language>
+			<language type="fon">Whāna</language>
 			<language type="fr">Wīwī</language>
 			<language type="fr_CA">Wīwī Kānata</language>
 			<language type="fr_CH">Wīwī Huiterangi</language>
-			<language type="it">Ītariana</language>
+			<language type="frc">Wīwī Keihana</language>
+			<language type="frr">Whirīhiana ki te Raki</language>
+			<language type="fur">Whiriūriana</language>
+			<language type="fy">Whirīhiana ki te Uru</language>
+			<language type="ga">Airihi</language>
+			<language type="gaa">Kā</language>
+			<language type="gd">Kotimana Keiriki</language>
+			<language type="gez">Kīhi</language>
+			<language type="gil">Kiripatīhi</language>
+			<language type="gl">Karīhia</language>
+			<language type="gn">Kuaranī</language>
+			<language type="gor">Korōtaro</language>
+			<language type="gsw">Tiamana Huiterangi</language>
+			<language type="gu">Kutarāti</language>
+			<language type="guz">Kūhī</language>
+			<language type="gv">Manaki</language>
+			<language type="gwi">Kuīti</language>
+			<language type="ha">Hauha</language>
+			<language type="hai">Haira</language>
+			<language type="haw">Hawaiana</language>
+			<language type="hax">Haira ki te Tonga</language>
+			<language type="he">Hīperu</language>
+			<language type="hi">Hīni</language>
+			<language type="hil">Hirikeino</language>
+			<language type="hmn">Mōnga</language>
+			<language type="hr">Koroātiana</language>
+			<language type="hsb">Hōpiana Ōkawa</language>
+			<language type="ht">Haitiana Kereo</language>
+			<language type="hu">Hanakariana</language>
+			<language type="hup">Hupa</language>
+			<language type="hur">Hekomerema</language>
+			<language type="hy">Āmeiniana</language>
+			<language type="hz">Herero</language>
+			<language type="ia">Inarīngua</language>
+			<language type="iba">Īpana</language>
+			<language type="ibb">Ipīpio</language>
+			<language type="id">Initonīhiana</language>
+			<language type="ig">Ingo</language>
+			<language type="ii">Hīhuana Eī</language>
+			<language type="ikt">Inukitetū Kānata ki te Uru</language>
+			<language type="ilo">Iroko</language>
+			<language type="inh">Inguihi</language>
+			<language type="io">Īto</language>
+			<language type="is">Tiorangiana</language>
+			<language type="it">Itāriana</language>
+			<language type="iu">Inukitetū</language>
 			<language type="ja">Hapanihi</language>
-			<language type="mi">te reo Māori</language>
+			<language type="jbo">Rōpāna</language>
+			<language type="jgo">Nakōma</language>
+			<language type="jmc">Mākame</language>
+			<language type="jv">Hāwhanihi</language>
+			<language type="ka">Hōriana</language>
+			<language type="kab">Kapāio</language>
+			<language type="kac">Kātiana</language>
+			<language type="kaj">Hiu</language>
+			<language type="kam">Kāmapa</language>
+			<language type="kbd">Kapāriana</language>
+			<language type="kcg">Tiapa</language>
+			<language type="kde">Makonote</language>
+			<language type="kea">Kapuwētianu</language>
+			<language type="kfo">Koro</language>
+			<language type="kgp">Keingāna</language>
+			<language type="kha">Kahi</language>
+			<language type="khq">Kōia Tīni</language>
+			<language type="ki">Kikiu</language>
+			<language type="kj">Kuiniāma</language>
+			<language type="kk">Kahāka</language>
+			<language type="kkj">Kako</language>
+			<language type="kl">Karārihutu</language>
+			<language type="kln">Karenini</language>
+			<language type="km">Kimei</language>
+			<language type="kmb">Kimipunu</language>
+			<language type="kn">Kanara</language>
+			<language type="ko">Kōreana</language>
+			<language type="kok">Kōkani</language>
+			<language type="kpe">Kepere</language>
+			<language type="kr">Kanuri</language>
+			<language type="krc">Karatai-Pāka</language>
+			<language type="krl">Kareriana</language>
+			<language type="kru">Kurā</language>
+			<language type="ks">Kahimiri</language>
+			<language type="ksb">Hapāra</language>
+			<language type="ksf">Pāwhia</language>
+			<language type="ksh">Korōniana</language>
+			<language type="ku">Kūrihi</language>
+			<language type="kum">Kumiki</language>
+			<language type="kv">Komi</language>
+			<language type="kw">Kōnihi</language>
+			<language type="kwk">Kuakawara</language>
+			<language type="ky">Kēkete</language>
+			<language type="la">Rātini</language>
+			<language type="lad">Ratino</language>
+			<language type="lag">Rangi</language>
+			<language type="lb">Rakimipēkihi</language>
+			<language type="lez">Rēhiana</language>
+			<language type="lg">Kanāta</language>
+			<language type="li">Ripēkuehe</language>
+			<language type="lil">Rirūete</language>
+			<language type="lkt">Rakota</language>
+			<language type="ln">Ringarā</language>
+			<language type="lo">Rao</language>
+			<language type="lou">Ruīhana Kereo</language>
+			<language type="loz">Rauhi</language>
+			<language type="lrc">Ruri ki te Raki</language>
+			<language type="lsm">Hāmia</language>
+			<language type="lt">Rihuainiana</language>
+			<language type="lu">Rupa Katanga</language>
+			<language type="lua">Rupa Rurua</language>
+			<language type="lun">Runa</language>
+			<language type="luo">Ruo</language>
+			<language type="lus">Mīho</language>
+			<language type="luy">Rūia</language>
+			<language type="lv">Rātiana</language>
+			<language type="mad">Matuirīhi</language>
+			<language type="mag">Makāhi</language>
+			<language type="mai">Maitiri</language>
+			<language type="mak">Makahā</language>
+			<language type="mas">Māhai</language>
+			<language type="mdf">Mōkaha</language>
+			<language type="men">Menēte</language>
+			<language type="mer">Meru</language>
+			<language type="mfe">Morihiene</language>
+			<language type="mg">Marakāhi</language>
+			<language type="mgh">Makuwa-Mēto</language>
+			<language type="mgo">Meta</language>
+			<language type="mh">Mararīhi</language>
+			<language type="mi">Māori</language>
+			<language type="mic">Mīkamā</language>
+			<language type="min">Minākapao</language>
+			<language type="mk">Makatōniana</language>
+			<language type="ml">Mareiarama</language>
+			<language type="mn">Mongōriana</language>
+			<language type="mni">Manipuri</language>
+			<language type="moe">Inu-aimuna</language>
+			<language type="moh">Mauhōka</language>
+			<language type="mos">Mohī</language>
+			<language type="mr">Marati</language>
+			<language type="ms">Marei</language>
+			<language type="mt">Mōtīhi</language>
+			<language type="mua">Mūtanga</language>
+			<language type="mul">Ngā reo maha</language>
+			<language type="mus">Mukōki</language>
+			<language type="mwl">Miranatīhi</language>
+			<language type="my">Pūmīhī</language>
+			<language type="myv">Erehīa</language>
+			<language type="mzn">Mahaterani</language>
+			<language type="na">Nauru</language>
+			<language type="nap">Neaporitana</language>
+			<language type="naq">Nama</language>
+			<language type="nb">Pakamō Nōwītiana</language>
+			<language type="nd">Enetepēra ki te Raki</language>
+			<language type="nds">Tiamana Ōpaki</language>
+			<language type="ne">Nepari</language>
+			<language type="new">Newari</language>
+			<language type="ng">Natōka</language>
+			<language type="nia">Niēhe</language>
+			<language type="niu">Niueana</language>
+			<language type="nl">Tati</language>
+			<language type="nl_BE">Tati Whēmirihi</language>
+			<language type="nmg">Kuatio</language>
+			<language type="nn">Nīnōka Nōwītiana</language>
+			<language type="nnh">Nekeipū</language>
+			<language type="no">Nōwītiana</language>
+			<language type="nog">Nōkai</language>
+			<language type="nqo">Unukō</language>
+			<language type="nr">Enetepēra ki te Tonga</language>
+			<language type="nso">Hoto ki te Raki</language>
+			<language type="nus">Nua</language>
+			<language type="nv">Nawahō</language>
+			<language type="ny">Nānia</language>
+			<language type="nyn">Nānakore</language>
+			<language type="oc">Ōkitana</language>
+			<language type="ojb">Ōtīpia Raki-mā-Uru</language>
+			<language type="ojc">Te Puku o Ōhiwa</language>
+			<language type="ojs">Ōti-Kirī</language>
+			<language type="ojw">Ōhīpiwa ki te Uru</language>
+			<language type="oka">Ōkanakana</language>
+			<language type="om">Ōromo</language>
+			<language type="or">Ōtia</language>
+			<language type="os">Ōtītiki</language>
+			<language type="pa">Punutapi</language>
+			<language type="pag">Pāngahina</language>
+			<language type="pam">Pamapaka</language>
+			<language type="pap">Papiamēto</language>
+			<language type="pau">Parauna</language>
+			<language type="pcm">Ngāitiriana Kōrapurapu</language>
+			<language type="pis">Pītini</language>
+			<language type="pl">Pōrīhi</language>
+			<language type="pqm">Marahiti-Pehamakoare</language>
+			<language type="ps">Pātio</language>
 			<language type="pt">Pōtukīhi</language>
 			<language type="pt_BR">Pōtukīhi Parahi</language>
 			<language type="pt_PT">Pōtukīhi Uropi</language>
+			<language type="qu">Kētua</language>
+			<language type="rap">Rapanui</language>
+			<language type="rar">Rarotonga</language>
+			<language type="rhg">Rohingia</language>
+			<language type="rm">Romānihi</language>
+			<language type="rn">Rūniti</language>
+			<language type="ro">Romēniana</language>
+			<language type="rof">Romopo</language>
 			<language type="ru">Ruhiana</language>
+			<language type="rup">Aromeiniana</language>
+			<language type="rw">Kiniawāna</language>
+			<language type="rwk">Rawa</language>
+			<language type="sa">Hanahiti</language>
+			<language type="sad">Hātawe</language>
+			<language type="sah">Hakā</language>
+			<language type="saq">Hāpuru</language>
+			<language type="sat">Hātari</language>
+			<language type="sba">Nekāpei</language>
+			<language type="sbp">Hāngu</language>
+			<language type="sc">Hātīriana</language>
+			<language type="scn">Hihiriana</language>
+			<language type="sco">Kotimana</language>
+			<language type="sd">Hiniti</language>
+			<language type="se">Hami ki te Raki</language>
+			<language type="seh">Hena</language>
+			<language type="ses">Kōiaporo Heni</language>
+			<language type="sg">Hāngo</language>
+			<language type="shi">Tahere</language>
+			<language type="shn">Hāna</language>
+			<language type="si">Hinihāra</language>
+			<language type="sk">Horowākia</language>
+			<language type="sl">Horowēniana</language>
+			<language type="slh">Ratūti ki te Tonga</language>
+			<language type="sm">Hāmoa</language>
+			<language type="smn">Inari Hami</language>
+			<language type="sms">Hakoto Hāmi</language>
+			<language type="sn">Hōna</language>
+			<language type="snk">Honīke</language>
+			<language type="so">Hamāri</language>
+			<language type="sq">Arapeiniana</language>
+			<language type="sr">Hēpiana</language>
+			<language type="srn">Harāna Tongo</language>
+			<language type="ss">Wāti</language>
+			<language type="st">Hōto ki te Tonga</language>
+			<language type="str">Terete Hārihi</language>
+			<language type="su">Hunanīhi</language>
+			<language type="suk">Hukuma</language>
+			<language type="sv">Huīteneana</language>
+			<language type="sw">Wāhīri</language>
+			<language type="swb">Komōriana</language>
+			<language type="syr">Hīriaka</language>
+			<language type="ta">Tamira</language>
+			<language type="tce">Tatōne ki te Tonga</language>
+			<language type="te">Teruku</language>
+			<language type="tem">Tīmene</language>
+			<language type="teo">Teho</language>
+			<language type="tet">Tetumu</language>
+			<language type="tg">Tāhiki</language>
+			<language type="tgx">Tēkihi</language>
+			<language type="th">Tai</language>
+			<language type="tht">Tātana</language>
+			<language type="ti">Tekirina</language>
+			<language type="tig">Tīkara</language>
+			<language type="tk">Tākamana</language>
+			<language type="tlh">Kirionga</language>
+			<language type="tli">Tirīkiti</language>
+			<language type="tn">Hawāna</language>
+			<language type="to">Tonga</language>
+			<language type="tok">Toki Pona</language>
+			<language type="tpi">Toko Pīhini</language>
+			<language type="tr">Tākei</language>
+			<language type="trv">Taroko</language>
+			<language type="ts">Honga</language>
+			<language type="tt">Tatā</language>
+			<language type="ttm">Tūtone ki te Raki</language>
+			<language type="tum">Tūmuka</language>
+			<language type="tvl">Tuwaru</language>
+			<language type="twq">Tahawaka</language>
+			<language type="ty">Tahiti</language>
+			<language type="tyv">Tuwīniana</language>
+			<language type="tzm">Te Puku o Atarihi Tamahēte</language>
+			<language type="udm">Ūmutu</language>
+			<language type="ug">Wīkura</language>
+			<language type="uk">Ukarainiana</language>
+			<language type="umb">Ūpunu</language>
 			<language type="und">Reo Tē Mōhiotia</language>
+			<language type="ur">Ūru</language>
+			<language type="uz">Ūpeke</language>
+			<language type="vai">Wai</language>
+			<language type="ve">Wenēra</language>
+			<language type="vi">Witināmiana</language>
+			<language type="vun">Wāhau</language>
+			<language type="wa">Warūna</language>
+			<language type="wae">Wāhere</language>
+			<language type="wal">Wareita</language>
+			<language type="war">Warei</language>
+			<language type="wo">Warawhe</language>
+			<language type="wuu">Hainamana Wū</language>
+			<language type="xal">Karamiki</language>
+			<language type="xh">Tōha</language>
+			<language type="xog">Hoka</language>
+			<language type="yav">Angapene</language>
+			<language type="ybb">Emapa</language>
+			<language type="yi">Irihi</language>
+			<language type="yo">Ōrūpa</language>
+			<language type="yrl">Nīkātū</language>
+			<language type="yue">Katonīhi</language>
+			<language type="yue" alt="menu">Hainamana, Katonīhi</language>
+			<language type="zgh">Moroko Tamatai</language>
 			<language type="zh">Hainamana</language>
 			<language type="zh" alt="menu">Hainamana Manarini</language>
 			<language type="zh_Hans">Hainamana Māmā</language>
 			<language type="zh_Hant">Hainamana Tukuiho</language>
+			<language type="zu">Tūru</language>
+			<language type="zun">Tuni</language>
+			<language type="zxx">Wetereo kiko kore</language>
+			<language type="zza">Tātā</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Arāma</script>
 			<script type="Arab">Arapika</script>
+			<script type="Aran">Natārika</script>
+			<script type="Armn">Āmeiniana</script>
+			<script type="Beng">Pāngara</script>
+			<script type="Bopo">Papamawha</script>
+			<script type="Brai">Tuhi Matapō</script>
+			<script type="Cakm">Tiakamā</script>
+			<script type="Cans">Ngā Tohu o te reo o ngā iwi Taketake o Kānata kua paiheretia</script>
+			<script type="Cher">Terokī</script>
 			<script type="Cyrl">Hīririki</script>
+			<script type="Deva">Tewhangāngari</script>
+			<script type="Ethi">Etiopika</script>
+			<script type="Geor">Hōriana</script>
+			<script type="Grek">Kiriki</script>
+			<script type="Gujr">Kutarāti</script>
+			<script type="Guru">Kūmuki</script>
+			<script type="Hanb">Hana me te Papamawha</script>
+			<script type="Hang">Hāngū</script>
+			<script type="Hani">Hana</script>
 			<script type="Hans">Māmā</script>
 			<script type="Hans" alt="stand-alone">Hana Māmā</script>
-			<script type="Hant">Tukuiho</script>
-			<script type="Hant" alt="stand-alone">Hana Tukuiho</script>
+			<script type="Hant">Tuku iho</script>
+			<script type="Hant" alt="stand-alone">Hana Tuku iho</script>
+			<script type="Hebr">Hīperu</script>
+			<script type="Hira">Hirakana</script>
+			<script type="Hrkt">Tohu Hapanihi</script>
+			<script type="Jamo">Hamo</script>
+			<script type="Jpan">Hapanihi</script>
+			<script type="Kana">Katakana</script>
+			<script type="Khmr">Kimei</script>
+			<script type="Knda">Kanara</script>
+			<script type="Kore">Kōreana</script>
+			<script type="Laoo">Rao</script>
 			<script type="Latn">Rātina</script>
+			<script type="Mlym">Maramara</script>
+			<script type="Mong">Mongōriana</script>
+			<script type="Mtei">Meitei Maeke</script>
+			<script type="Mymr">Mienemā</script>
+			<script type="Nkoo">Unukō</script>
+			<script type="Olck">Ōtiki</script>
+			<script type="Orya">Otia</script>
+			<script type="Rohg">Hāniwhi</script>
+			<script type="Sinh">Hināra</script>
+			<script type="Sund">Hunanihi</script>
+			<script type="Syrc">Hīriaka</script>
+			<script type="Taml">Tamiera</script>
+			<script type="Telu">Teruku</script>
+			<script type="Tfng">Tiwhinā</script>
+			<script type="Thaa">Tāna</script>
+			<script type="Thai">Tai</script>
+			<script type="Tibt">Tipete</script>
+			<script type="Vaii">Wai</script>
+			<script type="Yiii">Ei</script>
+			<script type="Zmth">Reo Tohu Pāngarau</script>
+			<script type="Zsye">Emohi</script>
+			<script type="Zsym">Tohu</script>
 			<script type="Zxxx">Tuhikore</script>
+			<script type="Zyyy">Komona</script>
 			<script type="Zzzz">Momotuhi Tē Mōhiotia</script>
 		</scripts>
 		<territories>
-			<territory type="BR">Parahi</territory>
+			<territory type="001">te ao</territory>
+			<territory type="002">Āwherika</territory>
+			<territory type="003">Amerika ki te Raki</territory>
+			<territory type="005">Amerika ki te Tonga</territory>
+			<territory type="009">Ōhiānia</territory>
+			<territory type="011">Āwherika ki te Uru</territory>
+			<territory type="013">Te Puku o Amerika</territory>
+			<territory type="014">Āwherika ki te Rāwhiti</territory>
+			<territory type="015">Āwherika ki te Raki</territory>
+			<territory type="017">Te Pokapū o Āwherika</territory>
+			<territory type="018">Āwherika Whakatetonga</territory>
+			<territory type="019">Amerika</territory>
+			<territory type="021">Te Raki o Amerika</territory>
+			<territory type="029">Karapiana</territory>
+			<territory type="030">Āhia ki te Rāwhiti</territory>
+			<territory type="034">Āhia ki te Tonga</territory>
+			<territory type="035">Āhia ki te Tonga-mā-uru</territory>
+			<territory type="039">Ūropi ki te Tonga</territory>
+			<territory type="053">Te Moana Ahitereiria</territory>
+			<territory type="054">Meranīhia</territory>
+			<territory type="057">Te Rohe o Mikoronīhia</territory>
+			<territory type="061">Te Moana-nui-a-Kiwa</territory>
+			<territory type="142">Āhia</territory>
+			<territory type="143">Te Puku o Āhia</territory>
+			<territory type="145">Āhia ki te Uru</territory>
+			<territory type="150">Ūropi</territory>
+			<territory type="151">Ūropi ki te Rāwhiti</territory>
+			<territory type="154">Ūropi ki te Raki</territory>
+			<territory type="155">Ūropi ki te Uru</territory>
+			<territory type="202">Āwherika ki te Tonga o Te Hahāra</territory>
+			<territory type="419">Amerika Rātini</territory>
+			<territory type="AG">Anatikua me Pāpura</territory>
+			<territory type="AI">Ākuira</territory>
+			<territory type="AO">Anakora</territory>
+			<territory type="AR">Āketina</territory>
+			<territory type="AT">Ateria</territory>
+			<territory type="AW">Arūpa</territory>
+			<territory type="AX">Motu Ōrana</territory>
+			<territory type="BB">Pāpetō</territory>
+			<territory type="BE">Paratiamu</territory>
+			<territory type="BF">Pēkina Waho</territory>
+			<territory type="BI">Puruniti</territory>
+			<territory type="BJ">Penīna</territory>
+			<territory type="BL">Hato Pāteremi</territory>
+			<territory type="BM">Pemiuta</territory>
+			<territory type="BO">Poriwia</territory>
+			<territory type="BQ">Karepeana Hōrana</territory>
+			<territory type="BR">Parīhi</territory>
+			<territory type="BS">Pahāma</territory>
+			<territory type="BV">Motu Pūwei</territory>
+			<territory type="BW">Poriwana</territory>
+			<territory type="BZ">Perīhi</territory>
+			<territory type="CA">Kānata</territory>
+			<territory type="CD">Kōngo - Kingihāha</territory>
+			<territory type="CD" alt="variant">Kōngo</territory>
+			<territory type="CF">Te Puku o Āwherika</territory>
+			<territory type="CG">Kōngo - Parāwhe</territory>
+			<territory type="CG" alt="variant">Kōngo (Tominika)</territory>
+			<territory type="CH">Huiterangi</territory>
+			<territory type="CI">Te Tai Rei</territory>
+			<territory type="CL">Hiri</territory>
+			<territory type="CM">Kamarūna</territory>
 			<territory type="CN">Haina</territory>
-			<territory type="DE">Tiamana</territory>
+			<territory type="CO">Koromōpia</territory>
+			<territory type="CR">Kota Rīka</territory>
+			<territory type="CU">Kiupa</territory>
+			<territory type="CV">Te Kūrae Matomato</territory>
+			<territory type="CW">Kurahao</territory>
+			<territory type="DE">Tiamani</territory>
+			<territory type="DJ">Tipūti</territory>
+			<territory type="DK">Tenemāka</territory>
+			<territory type="DM">Tominika</territory>
+			<territory type="DO">Te Whenua Tominika</territory>
+			<territory type="DZ">Aratiria</territory>
+			<territory type="EA">Hūta me Merera</territory>
+			<territory type="EC">Ekuatoa</territory>
+			<territory type="EE">Etōnia</territory>
+			<territory type="EG">Īhipa</territory>
+			<territory type="EH">Hahāra ki te Tonga</territory>
+			<territory type="ER">Eritēria</territory>
+			<territory type="ET">Etiopia</territory>
+			<territory type="EU">Te Uniana o Ūropi</territory>
+			<territory type="EZ">Te Rohe o Ūropi</territory>
+			<territory type="FI">Whinirana</territory>
+			<territory type="FK">Motu Whākarangi</territory>
+			<territory type="FK" alt="variant">Motu Whākarangi (Ira Māwina)</territory>
+			<territory type="FO">Motu Wharo</territory>
 			<territory type="FR">Wīwī</territory>
-			<territory type="GB">Hononga o Piritene</territory>
+			<territory type="GA">Kāpona</territory>
+			<territory type="GB">Te Hononga o Piritene</territory>
+			<territory type="GD">Kerenāta</territory>
+			<territory type="GF">Kaiana Wīwī</territory>
+			<territory type="GG">Kēni</territory>
+			<territory type="GH">Kāna</territory>
+			<territory type="GL">Kirīrangi</territory>
+			<territory type="GM">Te Kamopia</territory>
+			<territory type="GN">Kini</territory>
+			<territory type="GP">Kuatarū</territory>
+			<territory type="GQ">Kini Ekuatoria</territory>
+			<territory type="GS">Hōria ki te Tonga me Motu Hanuwiti ki te Tonga</territory>
+			<territory type="GT">Kuatamāra</territory>
+			<territory type="GW">Kini-Pihao</territory>
+			<territory type="GY">Kaiana</territory>
+			<territory type="HN">Honūra</territory>
+			<territory type="HT">Haiti</territory>
+			<territory type="IC">Motu Kānara</territory>
+			<territory type="IE">Aerana</territory>
+			<territory type="IM">Motu Tangata</territory>
 			<territory type="IN">Inia</territory>
+			<territory type="IO">Te Rohe o te Moana Īniana Piritihi</territory>
+			<territory type="IS">Tiorangi</territory>
 			<territory type="IT">Itāria</territory>
+			<territory type="JE">Tiehe</territory>
+			<territory type="JM">Hemeika</territory>
 			<territory type="JP">Hapani</territory>
+			<territory type="KE">Kēnia</territory>
+			<territory type="KM">Komoro</territory>
+			<territory type="KN">Hato Kiti me Newhi</territory>
+			<territory type="KY">Ngā Motu Keimana</territory>
+			<territory type="LC">Hato Ruhia</territory>
+			<territory type="LI">Rīkeneteina</territory>
+			<territory type="LR">Raipiri</territory>
+			<territory type="LS">Teroto</territory>
+			<territory type="LT">Rituānia</territory>
+			<territory type="LU">Rakimipēki</territory>
+			<territory type="LV">Ratawia</territory>
+			<territory type="LY">Rīpia</territory>
+			<territory type="MA">Moroko</territory>
+			<territory type="MC">Manako</territory>
+			<territory type="MF">Hato Mātene</territory>
+			<territory type="MG">Marakāhia</territory>
 			<territory type="MK">Makerōnia ki te Raki</territory>
+			<territory type="ML">Māri</territory>
+			<territory type="MQ">Māteniki</territory>
+			<territory type="MR">Mauritānia</territory>
+			<territory type="MS">Monoterā</territory>
+			<territory type="MU">Mōrihi</territory>
+			<territory type="MW">Marāwi</territory>
+			<territory type="MX">Mēhiko</territory>
+			<territory type="MZ">Mohapiki</territory>
+			<territory type="NA">Namīpia</territory>
+			<territory type="NE">Ngāika</territory>
+			<territory type="NG">Ngāitiria</territory>
+			<territory type="NI">Nikarakua</territory>
+			<territory type="NL">Hōrana</territory>
+			<territory type="NO">Nōwei</territory>
 			<territory type="NZ">Aotearoa</territory>
+			<territory type="PA">Panama</territory>
+			<territory type="PE">Peru</territory>
+			<territory type="PM">Hato Piere &amp; Mikarona</territory>
+			<territory type="PR">Pōta Riko</territory>
+			<territory type="PY">Parakai</territory>
+			<territory type="QO">Ngā moutere mōwaho i a Ōhiānia</territory>
+			<territory type="RE">Rēnio</territory>
 			<territory type="RU">Rūhia</territory>
+			<territory type="RW">Rāwana</territory>
+			<territory type="SC">Heihere</territory>
+			<territory type="SD">Hūtāne</territory>
+			<territory type="SE">Huītene</territory>
+			<territory type="SH">Hato Harīna</territory>
+			<territory type="SJ">Heopāra me Ia Maiana</territory>
+			<territory type="SL">Te Araone</territory>
+			<territory type="SN">Henekara</territory>
+			<territory type="SO">Hūmārie</territory>
+			<territory type="SR">Hurināme</territory>
+			<territory type="SS">Hūtāne ki te Tonga</territory>
+			<territory type="ST">Hao Tomei me Pirinipei</territory>
+			<territory type="SV">Ere Hāwhatō</territory>
+			<territory type="SX">Hiti Mātene</territory>
+			<territory type="SZ">Ewatini</territory>
+			<territory type="SZ" alt="variant">Warerangi</territory>
+			<territory type="TC">Tāke me ngā Motu o Keiko</territory>
+			<territory type="TD">Kāta</territory>
+			<territory type="TF">Ngā Rohe o Wīwī ki te Tonga</territory>
+			<territory type="TG">Toko</territory>
+			<territory type="TN">Tūnihia</territory>
+			<territory type="TT">Tinitātā me Topēko</territory>
+			<territory type="TZ">Tānahia</territory>
+			<territory type="UG">Ukāna</territory>
+			<territory type="UN">Te Kotahitanga o Ngā Iwi o te Ao</territory>
 			<territory type="US">Hononga o Amerika</territory>
+			<territory type="UY">Urukoi</territory>
+			<territory type="VC">Hato Wetene me Keretīni</territory>
+			<territory type="VE">Wenehūera</territory>
+			<territory type="VG">Ngā Motu o Tātāhou Piritene</territory>
+			<territory type="VI">Ngā Motu o Tātāhou Amerika</territory>
+			<territory type="XA">Tūreo Kimikimi</territory>
+			<territory type="XB">Piri Kimikimi</territory>
+			<territory type="YT">Maio</territory>
+			<territory type="ZA">Āwherika ki te Tonga</territory>
+			<territory type="ZM">Tāmipia</territory>
+			<territory type="ZW">Timuwawe</territory>
 			<territory type="ZZ">Rohe Tē Mōhiotia</territory>
 		</territories>
 		<types>
@@ -159,58 +792,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d–d</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">G y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">G y MMM d–d</greatestDifference>
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">G y MMMM–MMMM</greatestDifference>
-							<greatestDifference id="y">G y MMMM – y MMMM</greatestDifference>
+							<greatestDifference id="y">G y MMMM – y MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -219,167 +852,167 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">Kohi</month>
-							<month type="2">Hui</month>
-							<month type="3">Pou</month>
-							<month type="4">Pae</month>
-							<month type="5">Hara</month>
-							<month type="6">Pipi</month>
-							<month type="7">Hōngo</month>
-							<month type="8">Here</month>
-							<month type="9">Mahu</month>
-							<month type="10">Nuku</month>
-							<month type="11">Rangi</month>
-							<month type="12">Haki</month>
+							<month type="1">Hān</month>
+							<month type="2">Pēp</month>
+							<month type="3">Māe</month>
+							<month type="4">Āpe</month>
+							<month type="5">Mei</month>
+							<month type="6">Hune</month>
+							<month type="7">Hūr</month>
+							<month type="8">Āku</month>
+							<month type="9">Hep</month>
+							<month type="10">Oke</month>
+							<month type="11">Noem</month>
+							<month type="12">Tīhe</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">K</month>
-							<month type="2">H</month>
-							<month type="3">P</month>
-							<month type="4">P</month>
-							<month type="5">H</month>
-							<month type="6">P</month>
+							<month type="1">H</month>
+							<month type="2">P</month>
+							<month type="3">M</month>
+							<month type="4">Ā</month>
+							<month type="5">M</month>
+							<month type="6">H</month>
 							<month type="7">H</month>
-							<month type="8">H</month>
-							<month type="9">M</month>
-							<month type="10">N</month>
-							<month type="11">R</month>
-							<month type="12">H</month>
+							<month type="8">Ā</month>
+							<month type="9">H</month>
+							<month type="10">O</month>
+							<month type="11">N</month>
+							<month type="12">T</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">Kohitātea</month>
-							<month type="2">Huitanguru</month>
-							<month type="3">Poutūterangi</month>
-							<month type="4">Paengawhāwhā</month>
-							<month type="5">Haratua</month>
-							<month type="6">Pipiri</month>
-							<month type="7">Hōngongoi</month>
-							<month type="8">Hereturikōkā</month>
-							<month type="9">Mahuru</month>
-							<month type="10">Whiringa-ā-nuku</month>
-							<month type="11">Whiringa-ā-rangi</month>
-							<month type="12">Hakihea</month>
+							<month type="1">Hānuere</month>
+							<month type="2">Pēpuere</month>
+							<month type="3">Māehe</month>
+							<month type="4">Āpereira</month>
+							<month type="5">Mei</month>
+							<month type="6">Hune</month>
+							<month type="7">Hūrae</month>
+							<month type="8">Ākuhata</month>
+							<month type="9">Hepetema</month>
+							<month type="10">Oketopa</month>
+							<month type="11">Noema</month>
+							<month type="12">Tīhema</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1">Kohi</month>
-							<month type="2">Hui</month>
-							<month type="3">Pou</month>
-							<month type="4">Pae</month>
-							<month type="5">Hara</month>
-							<month type="6">Pipi</month>
-							<month type="7">Hōngo</month>
-							<month type="8">Here</month>
-							<month type="9">Mahu</month>
-							<month type="10">Nuku</month>
-							<month type="11">Rangi</month>
-							<month type="12">Haki</month>
+							<month type="1">Hān</month>
+							<month type="2">Pēp</month>
+							<month type="3">Māe</month>
+							<month type="4">Āpe</month>
+							<month type="5">Mei</month>
+							<month type="6">Hune</month>
+							<month type="7">Hūr</month>
+							<month type="8">Āku</month>
+							<month type="9">Hep</month>
+							<month type="10">Oke</month>
+							<month type="11">Noem</month>
+							<month type="12">Tīhe</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">K</month>
-							<month type="2">H</month>
-							<month type="3">P</month>
-							<month type="4">P</month>
-							<month type="5">H</month>
-							<month type="6">P</month>
+							<month type="1">H</month>
+							<month type="2">P</month>
+							<month type="3">M</month>
+							<month type="4">Ā</month>
+							<month type="5">M</month>
+							<month type="6">H</month>
 							<month type="7">H</month>
-							<month type="8">H</month>
-							<month type="9">M</month>
-							<month type="10">N</month>
-							<month type="11">R</month>
-							<month type="12">H</month>
+							<month type="8">Ā</month>
+							<month type="9">H</month>
+							<month type="10">O</month>
+							<month type="11">N</month>
+							<month type="12">T</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">Kohitātea</month>
-							<month type="2">Huitanguru</month>
-							<month type="3">Poutūterangi</month>
-							<month type="4">Paengawhāwhā</month>
-							<month type="5">Haratua</month>
-							<month type="6">Pipiri</month>
-							<month type="7">Hōngongoi</month>
-							<month type="8">Hereturikōkā</month>
-							<month type="9">Mahuru</month>
-							<month type="10">Whiringa-ā-nuku</month>
-							<month type="11">Whiringa-ā-rangi</month>
-							<month type="12">Hakihea</month>
+							<month type="1">Hānuere</month>
+							<month type="2">Pēpuere</month>
+							<month type="3">Māehe</month>
+							<month type="4">Āpereira</month>
+							<month type="5">Mei</month>
+							<month type="6">Hune</month>
+							<month type="7">Hūrae</month>
+							<month type="8">Ākuhata</month>
+							<month type="9">Hepetema</month>
+							<month type="10">Oketopa</month>
+							<month type="11">Noema</month>
+							<month type="12">Tīhema</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">Tap</day>
-							<day type="mon">Hin</day>
-							<day type="tue">Tū</day>
-							<day type="wed">Apa</day>
-							<day type="thu">Par</day>
-							<day type="fri">Mer</day>
-							<day type="sat">Hor</day>
+							<day type="sun">Rāt</day>
+							<day type="mon">Mane</day>
+							<day type="tue">Tūr</day>
+							<day type="wed">Wene</day>
+							<day type="thu">Tāit</day>
+							<day type="fri">Par</day>
+							<day type="sat">Rāh</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">T</day>
-							<day type="mon">H</day>
+							<day type="sun">Rt</day>
+							<day type="mon">M</day>
 							<day type="tue">T</day>
-							<day type="wed">A</day>
-							<day type="thu">P</day>
-							<day type="fri">M</day>
-							<day type="sat">H</day>
+							<day type="wed">E</day>
+							<day type="thu">T</day>
+							<day type="fri">P</day>
+							<day type="sat">Rh</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">Tap</day>
-							<day type="mon">Hin</day>
+							<day type="sun">Rāt</day>
+							<day type="mon">Man</day>
 							<day type="tue">Tū</day>
-							<day type="wed">Apa</day>
-							<day type="thu">Par</day>
-							<day type="fri">Mer</day>
-							<day type="sat">Hor</day>
+							<day type="wed">Wen</day>
+							<day type="thu">Tāi</day>
+							<day type="fri">Par</day>
+							<day type="sat">Rāh</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Rātapu</day>
-							<day type="mon">Rāhina</day>
-							<day type="tue">Rātū</day>
-							<day type="wed">Rāapa</day>
-							<day type="thu">Rāpare</day>
-							<day type="fri">Rāmere</day>
+							<day type="mon">Mane</day>
+							<day type="tue">Tūrei</day>
+							<day type="wed">Wenerei</day>
+							<day type="thu">Tāite</day>
+							<day type="fri">Paraire</day>
 							<day type="sat">Rāhoroi</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun">Tap</day>
-							<day type="mon">Hin</day>
-							<day type="tue">Tū</day>
-							<day type="wed">Apa</day>
-							<day type="thu">Par</day>
-							<day type="fri">Mer</day>
-							<day type="sat">Hor</day>
+							<day type="sun">Rāt</day>
+							<day type="mon">Mane</day>
+							<day type="tue">Tūr</day>
+							<day type="wed">Wene</day>
+							<day type="thu">Tāit</day>
+							<day type="fri">Par</day>
+							<day type="sat">Rāh</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">T</day>
-							<day type="mon">H</day>
+							<day type="sun">Rt</day>
+							<day type="mon">M</day>
 							<day type="tue">T</day>
-							<day type="wed">A</day>
-							<day type="thu">P</day>
-							<day type="fri">M</day>
-							<day type="sat">H</day>
+							<day type="wed">W</day>
+							<day type="thu">T</day>
+							<day type="fri">P</day>
+							<day type="sat">Rh</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">Tap</day>
-							<day type="mon">Hin</day>
+							<day type="sun">Rāt</day>
+							<day type="mon">Man</day>
 							<day type="tue">Tū</day>
-							<day type="wed">Apa</day>
-							<day type="thu">Par</day>
-							<day type="fri">Mer</day>
-							<day type="sat">Hor</day>
+							<day type="wed">Wen</day>
+							<day type="thu">Tāi</day>
+							<day type="fri">Par</day>
+							<day type="sat">Rāh</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Rātapu</day>
-							<day type="mon">Rāhina</day>
-							<day type="tue">Rātū</day>
-							<day type="wed">Rāapa</day>
-							<day type="thu">Rāpare</day>
-							<day type="fri">Rāmere</day>
+							<day type="mon">Mane</day>
+							<day type="tue">Tūrei</day>
+							<day type="wed">Wenerei</day>
+							<day type="thu">Tāite</day>
+							<day type="fri">Paraire</day>
 							<day type="sat">Rāhoroi</day>
 						</dayWidth>
 					</dayContext>
@@ -497,25 +1130,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -550,23 +1183,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
@@ -597,100 +1230,491 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>wā</displayName>
+				<displayName>takiwātanga</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>tkwt.</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>tkwt</displayName>
 			</field>
 			<field type="year">
 				<displayName>tau</displayName>
+				<relative type="-1">i tērā tau</relative>
+				<relative type="0">i tēnei tau</relative>
+				<relative type="1">ā tērā tau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ā te {0} tau</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">i te {0} tau</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>t</displayName>
+				<displayName>t.</displayName>
 			</field>
 			<field type="year-narrow">
 				<displayName>t</displayName>
 			</field>
 			<field type="quarter">
 				<displayName>hauwhā</displayName>
+				<relative type="-1">hauwhā whakamutunga</relative>
+				<relative type="0">tēnei hauwhā</relative>
+				<relative type="1">tērā hauwhā</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} hwh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} hwh</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-short">
-				<displayName>hw</displayName>
+				<displayName>hw.</displayName>
 			</field>
 			<field type="quarter-narrow">
 				<displayName>hw</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Hwh</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>marama</displayName>
+				<relative type="-1">i tērā marama</relative>
+				<relative type="0">i tēnei marama</relative>
+				<relative type="1">ā tērā marama</relative>
 			</field>
 			<field type="month-short">
-				<displayName>m</displayName>
+				<displayName>m.</displayName>
+				<relative type="-1">i tērā m.</relative>
+				<relative type="0">i tēnei m.</relative>
+				<relative type="1">ā tērā m.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} m.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} m.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-narrow">
 				<displayName>m</displayName>
 			</field>
 			<field type="week">
 				<displayName>wiki</displayName>
+				<relative type="-1">i tērā wiki</relative>
+				<relative type="0">i tēnei wiki</relative>
+				<relative type="1">ā tērā wiki</relative>
+				<relativePeriod>te wiki o {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>w</displayName>
+				<displayName>w.</displayName>
+				<relative type="-1">i tērā w.</relative>
+				<relative type="0">i tēnei w.</relative>
+				<relative type="1">ā tērā w.</relative>
+				<relativePeriod>t w o {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>w</displayName>
 			</field>
+			<field type="weekOfMonth">
+				<displayName>wiki o te marama</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>w. o. t. m.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>w o t m</displayName>
+			</field>
 			<field type="day">
 				<displayName>rā</displayName>
 				<relative type="-1">inanahi</relative>
-				<relative type="0">āianei</relative>
+				<relative type="0">i tēnei rā</relative>
 				<relative type="1">āpōpō</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} r.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} r.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName>rā</displayName>
+				<displayName>rā.</displayName>
+				<relative type="-1">inanahi</relative>
+				<relative type="0">i tēnei rā</relative>
+				<relative type="1">āpōpō</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} r</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} r.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-narrow">
 				<displayName>rā</displayName>
+				<relative type="-1">inanahi</relative>
+				<relative type="0">i tēnei rā</relative>
+				<relative type="1">āpōpō</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} r</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} r</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>rā o te tau</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>rā. o. t. t.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>rā o t t</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>rā o te wiki</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName>rā. o. t. w.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>rā o t w</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>rā o te marama</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>rā. o. t. m.</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>rā o t m</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">i tērā Rātapu</relative>
+				<relative type="0">i tēnei Rātapu</relative>
+				<relative type="1">ā tērā Rātapu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Rātapu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Rātapu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">i tērā Rāt.</relative>
+				<relative type="0">i tēnei Rāt.</relative>
+				<relative type="1">ā tērā Rāt.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Rāt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Rāt.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">i tērā Rāt</relative>
+				<relative type="0">i tēnei Rāt</relative>
+				<relative type="1">ā tērā Rāt</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Rāt</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Rāt</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">i tērā Mane</relative>
+				<relative type="0">i tēnei Mane</relative>
+				<relative type="1">ā tērā Mane</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Mane</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Mane</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">i tērā Man.</relative>
+				<relative type="0">i tēnei Man.</relative>
+				<relative type="1">ā tērā Man.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Man.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Man.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">i tērā Man</relative>
+				<relative type="0">i tēnei Man</relative>
+				<relative type="1">ā tērā Man</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Man</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Man</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">i tērā Tūrei</relative>
+				<relative type="0">i tēnei Tūrei</relative>
+				<relative type="1">ā tērā Tūrei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Tūrei</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Tūrei</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">i tērā Tūr.</relative>
+				<relative type="0">i tēnei Tūr.</relative>
+				<relative type="1">ā tērā Tūr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Tūr.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Tūr.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">i tērā Tūr</relative>
+				<relative type="0">i tēnei Tūr</relative>
+				<relative type="1">ā tērā Tūr</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Tūr</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Tūr</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">i tērā Wenerei</relative>
+				<relative type="0">i tēnei Wenerei</relative>
+				<relative type="1">ā tērā Wenerei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Wenerei</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Wenerei</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">i tērā Wen.</relative>
+				<relative type="0">i tēnei Wen.</relative>
+				<relative type="1">ā tērā Wen.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Wen.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Wen.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">i tērā Wen</relative>
+				<relative type="0">i tēnei Wen</relative>
+				<relative type="1">ā tērā Wen</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Wen</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Wen</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">i tērā Taite</relative>
+				<relative type="0">i tēnei Taite</relative>
+				<relative type="1">ā tērā Taite</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Taite</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Taite</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">i tērā Tait.</relative>
+				<relative type="0">i tēnei Tait.</relative>
+				<relative type="1">ā tērā Tait.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Tait.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Tait.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">i tērā Tait</relative>
+				<relative type="0">i tēnei Tait</relative>
+				<relative type="1">ā tērā Tait</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Tait</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Tait</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">i tērā Paraire</relative>
+				<relative type="0">i tēnei Paraire</relative>
+				<relative type="1">ā tērā Paraire</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Paraire</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Paraire</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">i tērā Par.</relative>
+				<relative type="0">i tēnei Par.</relative>
+				<relative type="1">ā tērā Par.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Par.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Par.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">i tērā Par</relative>
+				<relative type="0">i tēnei Par</relative>
+				<relative type="1">ā tērā Par</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Par</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Par</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">i tērā Rāhoroi</relative>
+				<relative type="0">i tēnei Rāhoroi</relative>
+				<relative type="1">ā tērā Rāhoroi</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Rāhoroi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Rāhoroi</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">i tērā Rāh.</relative>
+				<relative type="0">i tēnei Rāh.</relative>
+				<relative type="1">ā tērā Rāh.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Rāh.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Rāh.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">i tērā Rāh</relative>
+				<relative type="0">i tēnei Rāh</relative>
+				<relative type="1">ā tērā Rāh</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Rāh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Rāh</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ata/ahi/pō</displayName>
+			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
+				<displayName>i te ata/i te ahiahi/i te pō</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>at/ah/pō</displayName>
 			</field>
 			<field type="hour">
 				<displayName>hāora</displayName>
+				<relative type="0">i tēnei hāora</relative>
 			</field>
 			<field type="hour-short">
-				<displayName>hr</displayName>
+				<displayName>hr.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} h.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} h.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-narrow">
 				<displayName>hr</displayName>
 			</field>
 			<field type="minute">
 				<displayName>meneti</displayName>
+				<relative type="0">i tēnei meneti</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} men</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} men</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-short">
-				<displayName>men</displayName>
+				<displayName>men.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} men.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} men.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-narrow">
 				<displayName>men</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} men</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} men</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName>hēkona</displayName>
+				<relative type="0">ināianei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-short">
 				<displayName>hēk</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} h.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} h.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName>hēk</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName>rohe wā</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>r. wā.</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>r wā</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0}</regionFormat>
-			<regionFormat type="daylight">{0} (+1)</regionFormat>
-			<regionFormat type="standard">{0} (+0)</regionFormat>
+			<regionFormat>{0} Wā</regionFormat>
+			<regionFormat type="daylight">{0} Wā Awatea</regionFormat>
+			<regionFormat type="standard">{0} Wā Aro Whānui</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
@@ -890,7 +1914,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Wā Toharite Greenwich</standard>
+					<standard>Wā Toharite Kiriwīti</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -964,10 +1988,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -1062,4 +2087,107 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>kāo:k</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — katoa</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — hototahitanga</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — tāpareparenga</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — koraha</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — o nehe</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — whakaehu</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — tētehi atu</characterLabelPattern>
+		<characterLabelPattern type="scripts">tuhinga — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} tānga tuhi</characterLabelPattern>
+		<characterLabelPattern type="subscript">tuhinga āpiti {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">tuhinga hirahira {0}</characterLabelPattern>
+		<characterLabel type="activities">mahi</characterLabel>
+		<characterLabel type="african_scripts">tuhinga Āwherikana</characterLabel>
+		<characterLabel type="american_scripts">tuhinga Amerikana</characterLabel>
+		<characterLabel type="animal">kararehe</characterLabel>
+		<characterLabel type="animals_nature">kararehe, taiao rānei</characterLabel>
+		<characterLabel type="arrows">kōpere</characterLabel>
+		<characterLabel type="body">tinana</characterLabel>
+		<characterLabel type="box_drawing">tānga waehere</characterLabel>
+		<characterLabel type="braille">tuhi matapō</characterLabel>
+		<characterLabel type="building">whare</characterLabel>
+		<characterLabel type="bullets_stars">kariri, whetū rānei</characterLabel>
+		<characterLabel type="consonantal_jamo">arapū</characterLabel>
+		<characterLabel type="currency_symbols">tohu pūnaha pūtea</characterLabel>
+		<characterLabel type="dash_connector">pīhono, kaiwhakahono rānei</characterLabel>
+		<characterLabel type="digits">mati</characterLabel>
+		<characterLabel type="dingbats">pūāhua kaitā</characterLabel>
+		<characterLabel type="divination_symbols">tohu matakite</characterLabel>
+		<characterLabel type="downwards_arrows">kōpere tohu whakararo</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">kōpere matarua tohu whakarunga, whakararo</characterLabel>
+		<characterLabel type="east_asian_scripts">tuhinga Āhia ki te Rāwhiti</characterLabel>
+		<characterLabel type="emoji">emohi</characterLabel>
+		<characterLabel type="european_scripts">tuhinga Ūropiana</characterLabel>
+		<characterLabel type="female">wahine</characterLabel>
+		<characterLabel type="flag">haki</characterLabel>
+		<characterLabel type="flags">haki</characterLabel>
+		<characterLabel type="food_drink">kai me te inu</characterLabel>
+		<characterLabel type="format">hōputu</characterLabel>
+		<characterLabel type="format_whitespace">hōputu me te tohu mokowā</characterLabel>
+		<characterLabel type="full_width_form_variant">momo tohu whārahitanga</characterLabel>
+		<characterLabel type="geometric_shapes">āhuahanga</characterLabel>
+		<characterLabel type="half_width_form_variant">momo tohu whārahitanga haurua</characterLabel>
+		<characterLabel type="han_characters">tohu Hainamana</characterLabel>
+		<characterLabel type="han_radicals">tohu Hainamana</characterLabel>
+		<characterLabel type="hanja">tohu Hainamana whakahua Kōreana</characterLabel>
+		<characterLabel type="hanzi_simplified">tohu Hainamana māmā</characterLabel>
+		<characterLabel type="hanzi_traditional">tohu Hainamana (tuku iho)</characterLabel>
+		<characterLabel type="heart">manawa</characterLabel>
+		<characterLabel type="historic_scripts">tuhinga o nehe</characterLabel>
+		<characterLabel type="ideographic_desc_characters">tohu huatau</characterLabel>
+		<characterLabel type="japanese_kana">tohu Hapanihi</characterLabel>
+		<characterLabel type="kanbun">tohu Hapanihi o nehe</characterLabel>
+		<characterLabel type="kanji">tohu Hainamana o nehe</characterLabel>
+		<characterLabel type="keycap">uhi pātuhi</characterLabel>
+		<characterLabel type="leftwards_arrows">kōpere tohu whakatemauī</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">kōpere matarua tohu whakatemauī, whakatekatau</characterLabel>
+		<characterLabel type="letterlike_symbols">tohu pūreta</characterLabel>
+		<characterLabel type="limited_use">ngā here o te whakamahinga</characterLabel>
+		<characterLabel type="male">tāne</characterLabel>
+		<characterLabel type="math_symbols">tohu pāngarau</characterLabel>
+		<characterLabel type="middle_eastern_scripts">tuhinga Arāpia</characterLabel>
+		<characterLabel type="miscellaneous">whakaehu</characterLabel>
+		<characterLabel type="modern_scripts">tuhinga hou</characterLabel>
+		<characterLabel type="modifier">tūāhua</characterLabel>
+		<characterLabel type="musical_symbols">tohu waiata</characterLabel>
+		<characterLabel type="nature">taiao</characterLabel>
+		<characterLabel type="nonspacing">mokowā kore</characterLabel>
+		<characterLabel type="numbers">nama</characterLabel>
+		<characterLabel type="objects">taputapu</characterLabel>
+		<characterLabel type="other">tētehi atu</characterLabel>
+		<characterLabel type="paired">takirua</characterLabel>
+		<characterLabel type="person">tangata</characterLabel>
+		<characterLabel type="phonetic_alphabet">arapū ororua</characterLabel>
+		<characterLabel type="pictographs">kauwhata whakaahua</characterLabel>
+		<characterLabel type="place">wāhi</characterLabel>
+		<characterLabel type="plant">tipu</characterLabel>
+		<characterLabel type="punctuation">kārawarawa</characterLabel>
+		<characterLabel type="rightwards_arrows">kōpere tohu whakatekatau</characterLabel>
+		<characterLabel type="sign_standard_symbols">tohu</characterLabel>
+		<characterLabel type="small_form_variant">ngā momo iti</characterLabel>
+		<characterLabel type="smiley">menemene</characterLabel>
+		<characterLabel type="smileys_people">menemene, tangata rānei</characterLabel>
+		<characterLabel type="south_asian_scripts">tuhinga Āhia ki te Tonga</characterLabel>
+		<characterLabel type="southeast_asian_scripts">tuhinga Āhia ki te Tonga mā Rāwhiti</characterLabel>
+		<characterLabel type="spacing">mokowā</characterLabel>
+		<characterLabel type="sport">hākinakina</characterLabel>
+		<characterLabel type="symbols">tohu</characterLabel>
+		<characterLabel type="technical_symbols">tohu hangarau</characterLabel>
+		<characterLabel type="tone_marks">tohu hā</characterLabel>
+		<characterLabel type="travel">haere</characterLabel>
+		<characterLabel type="travel_places">haere, wāhi rānei</characterLabel>
+		<characterLabel type="upwards_arrows">kōpere tohu whakarunga</characterLabel>
+		<characterLabel type="variant_forms">momo</characterLabel>
+		<characterLabel type="vocalic_jamo">ngā oropuare o te arapū Kōreana</characterLabel>
+		<characterLabel type="weather">huarere</characterLabel>
+		<characterLabel type="western_asian_scripts">tuhinga Āhia ki te Uru</characterLabel>
+		<characterLabel type="whitespace">tohu mokowā</characterLabel>
+	</characterLabels>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und mi</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

@@ -245,6 +245,7 @@ public:
   unsigned int header_size()              const { return _generic_header._header_size;              }
   unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
   unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
+  unsigned int common_app_classpath_prefix_size() const { return _generic_header._common_app_classpath_prefix_size; }
 
   void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
   void set_crc(int crc_value)                       { _generic_header._crc = crc_value; }
@@ -252,6 +253,7 @@ public:
   void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
   void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
   void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
+  void set_common_app_classpath_prefix_size(unsigned int s) { _generic_header._common_app_classpath_prefix_size = s; }
 
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
@@ -305,13 +307,14 @@ public:
   bool validate();
   int compute_crc();
 
-  FileMapRegion* space_at(int i) {
+  FileMapRegion* region_at(int i) {
     assert(is_valid_region(i), "invalid region");
-    return FileMapRegion::cast(&_space[i]);
+    return FileMapRegion::cast(&_regions[i]);
   }
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
-                size_t base_archive_name_size, size_t base_archive_name_offset);
+                size_t base_archive_name_size, size_t base_archive_name_offset,
+                size_t common_app_classpath_size);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
@@ -375,7 +378,7 @@ public:
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }
   void   set_header_crc(int crc)     { header()->set_crc(crc); }
-  int    space_crc(int i)      const { return space_at(i)->crc(); }
+  int    region_crc(int i)     const { return region_at(i)->crc(); }
   void   populate_header(size_t core_region_alignment);
   bool   validate_header();
   void   invalidate();
@@ -524,23 +527,23 @@ public:
   char* region_addr(int idx);
 
   // The offset of the first core region in the archive, relative to SharedBaseAddress
-  size_t mapping_base_offset() const { return first_core_space()->mapping_offset(); }
+  size_t mapping_base_offset() const { return first_core_region()->mapping_offset();    }
   // The offset of the (exclusive) end of the last core region in this archive, relative to SharedBaseAddress
-  size_t mapping_end_offset()  const { return last_core_space()->mapping_end_offset(); }
+  size_t mapping_end_offset()  const { return last_core_region()->mapping_end_offset(); }
 
-  char* mapped_base()    const { return first_core_space()->mapped_base(); }
-  char* mapped_end()     const { return last_core_space()->mapped_end();   }
+  char* mapped_base()    const { return first_core_region()->mapped_base(); }
+  char* mapped_end()     const { return last_core_region()->mapped_end();   }
 
   // Non-zero if the archive needs to be mapped a non-default location due to ASLR.
   intx relocation_delta() const {
     return header()->mapped_base_address() - header()->requested_base_address();
   }
 
-  FileMapRegion* first_core_space() const;
-  FileMapRegion* last_core_space() const;
+  FileMapRegion* first_core_region() const;
+  FileMapRegion* last_core_region()  const;
 
-  FileMapRegion* space_at(int i) const {
-    return header()->space_at(i);
+  FileMapRegion* region_at(int i) const {
+    return header()->region_at(i);
   }
 
   void print(outputStream* st) {
@@ -556,10 +559,16 @@ public:
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
   bool  check_paths_existence(const char* paths) NOT_CDS_RETURN_(false);
+  GrowableArray<const char*>* create_dumptime_app_classpath_array() NOT_CDS_RETURN_(NULL);
   GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
   bool  classpath_failure(const char* msg, const char* name) NOT_CDS_RETURN_(false);
+  unsigned int longest_common_app_classpath_prefix_len(int num_paths,
+                                                       GrowableArray<const char*>* rp_array)
+                                                       NOT_CDS_RETURN_(0);
   bool  check_paths(int shared_path_start_idx, int num_paths,
-                    GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
+                    GrowableArray<const char*>* rp_array,
+                    unsigned int dumptime_prefix_len,
+                    unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_regions(int first, int max, bool is_open_archive,
