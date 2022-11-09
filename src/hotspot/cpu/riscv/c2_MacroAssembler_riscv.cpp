@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
@@ -1207,8 +1208,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
     andi(t0, cnt1, 1);
     beqz(t0, SAME);
     {
-      lbu(tmp1, a1, 0);
-      lbu(tmp2, a2, 0);
+      lbu(tmp1, Address(a1, 0));
+      lbu(tmp2, Address(a2, 0));
       bne(tmp1, tmp2, DONE);
     }
   }
@@ -1229,24 +1230,24 @@ typedef void (MacroAssembler::*float_conditional_branch_insn)(FloatRegister op1,
 static conditional_branch_insn conditional_branches[] =
 {
   /* SHORT branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgt,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgt,
   NULL, // BoolTest::overflow
-  (conditional_branch_insn)&Assembler::blt,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::ble,
+  (conditional_branch_insn)&MacroAssembler::blt,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::ble,
   NULL, // BoolTest::no_overflow
-  (conditional_branch_insn)&Assembler::bge,
+  (conditional_branch_insn)&MacroAssembler::bge,
 
   /* UNSIGNED branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgtu,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgtu,
   NULL,
-  (conditional_branch_insn)&Assembler::bltu,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::bleu,
+  (conditional_branch_insn)&MacroAssembler::bltu,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::bleu,
   NULL,
-  (conditional_branch_insn)&Assembler::bgeu
+  (conditional_branch_insn)&MacroAssembler::bgeu
 };
 
 static float_conditional_branch_insn float_conditional_branches[] =
@@ -1673,8 +1674,46 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 
   bind(L_NaN);
   vfmv_s_f(tmp2, src1);
-  vfredsum_vs(tmp1, src2, tmp2);
+  vfredusum_vs(tmp1, src2, tmp2);
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);
+}
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != NULL) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+
+void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister tmp,
+                                         Register src1, VectorRegister src2,
+                                         BasicType bt, REDUCTION_OP op) {
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  vsetvli(t0, x0, sew);
+
+  vmv_s_x(tmp, src1);
+
+  switch (op) {
+    case REDUCTION_OP::ADD:
+      vredsum_vs(tmp, src2, tmp);
+      break;
+    case REDUCTION_OP::AND:
+      vredand_vs(tmp, src2, tmp);
+      break;
+    case REDUCTION_OP::OR:
+      vredor_vs(tmp, src2, tmp);
+      break;
+    case REDUCTION_OP::XOR:
+      vredxor_vs(tmp, src2, tmp);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  vmv_x_s(dst, tmp);
 }

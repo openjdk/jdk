@@ -450,7 +450,7 @@ void AwtDropTarget::RegisterTarget(WORD show) {
         return;
     }
 
-    // if we are'nt yet visible, defer until the parent is!
+    // if we aren't yet visible, defer until the parent is!
 
     if (show) {
         OLE_TRY

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,7 +316,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     public Map<String, String> getRecordingOptions(long recording) throws IllegalArgumentException {
         MBeanUtils.checkMonitor();
         Recording r = getExistingRecording(recording);
-        Map<String, String> options = new HashMap<>(10);
+        Map<String, String> options = HashMap.newHashMap(10);
         options.put(OPTION_DUMP_ON_EXIT, String.valueOf(r.getDumpOnExit()));
         options.put(OPTION_DISK, String.valueOf(r.isToDisk()));
         options.put(OPTION_NAME, String.valueOf(r.getName()));

@@ -84,7 +84,6 @@ public class EnumTypeChanges {
             case B -> { return "B"; }
             case EnumTypeChangesEnum x when e == EnumTypeChangesEnum.A -> throw new AssertionError();
         }
-        return "";
     }
 
     String expressionEnumExhaustive(EnumTypeChangesEnum e) {

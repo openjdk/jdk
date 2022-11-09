@@ -140,7 +140,7 @@ public class GTKColorType extends ColorType {
      * @param color Color to alter
      * @param hFactor Amount to scale the hue
      * @param lFactor Amount to scale the lightness
-     * @param sFactor Amount to sacle saturation
+     * @param sFactor Amount to scale saturation
      * @return newly created color
      */
     static Color adjustColor(Color color, float hFactor, float lFactor,

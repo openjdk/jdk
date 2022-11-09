@@ -1477,8 +1477,8 @@ public abstract class SunToolkit extends Toolkit
      *
      * <p> For example, requestFocus() generates native request, which
      * generates one or two Java focus events, which then generate a
-     * serie of paint events, a serie of Java focus events, which then
-     * generate a serie of paint events which then are processed -
+     * series of paint events, a series of Java focus events, which then
+     * generate a series of paint events which then are processed -
      * three cycles, minimum.
      *
      * @param timeout the maximum time to wait in milliseconds, negative means "forever".
@@ -1534,7 +1534,7 @@ public abstract class SunToolkit extends Toolkit
             bigLoop++;
             // Again, for Java events, it was simple to check for new Java
             // events by checking event queue, but what if Java events
-            // resulted in native requests?  Therefor, check native events again.
+            // resulted in native requests?  Therefore, check native events again.
         } while ((syncNativeQueue(timeout(end)) || waitForIdle(end))
                 && bigLoop < MAX_ITERS);
     }
@@ -1976,7 +1976,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns whether the native system requires using the peer.updateWindow()
      * method to update the contents of a non-opaque window, or if usual
      * painting procedures are sufficient. The default return value covers
-     * the X11 systems. On MS Windows this method is overriden in WToolkit
+     * the X11 systems. On MS Windows this method is overridden in WToolkit
      * to return true.
      */
     public boolean needUpdateWindow() {
