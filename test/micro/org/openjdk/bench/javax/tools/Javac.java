@@ -72,11 +72,11 @@ public class Javac {
     @TearDown
     public void tearDown() {
         for (File f : classOutputDir.listFiles()) {
-           if (f.isFile()) {
-              f.delete();
-           } else {
-              throw new IllegalStateException("Unexpected non-file: " + f);
-           }
+            if (f.isFile()) {
+                f.delete();
+            } else {
+                throw new IllegalStateException("Unexpected non-file: " + f);
+            }
         }
         classOutputDir.delete();
     }
