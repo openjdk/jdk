@@ -66,6 +66,10 @@ ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
+ShenandoahFullGC::~ShenandoahFullGC() {
+  delete _preserved_marks;
+}
+
 bool ShenandoahFullGC::collect(GCCause::Cause cause) {
   vmop_entry_full(cause);
   // Always success
