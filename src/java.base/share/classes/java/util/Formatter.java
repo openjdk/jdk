@@ -3112,19 +3112,19 @@ public final class Formatter implements Closeable, Flushable {
             } else if (arg instanceof Byte) {
                 byte i = (Byte) arg;
                 if (Character.isValidCodePoint(i))
-                    s = new String(Character.toChars(i));
+                    s = Character.toString(i);
                 else
                     throw new IllegalFormatCodePointException(i);
             } else if (arg instanceof Short) {
                 short i = (Short) arg;
                 if (Character.isValidCodePoint(i))
-                    s = new String(Character.toChars(i));
+                    s = Character.toString(i);
                 else
                     throw new IllegalFormatCodePointException(i);
             } else if (arg instanceof Integer) {
                 int i = (Integer) arg;
                 if (Character.isValidCodePoint(i))
-                    s = new String(Character.toChars(i));
+                    s = Character.toString(i);
                 else
                     throw new IllegalFormatCodePointException(i);
             } else {
