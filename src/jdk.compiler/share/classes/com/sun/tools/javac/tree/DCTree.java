@@ -872,8 +872,8 @@ public abstract class DCTree implements DocTree {
         DCReference(String signature, JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
             this.signature = signature;
             this.moduleName = moduleName;
-            qualifierExpression = qualExpr;
-            memberName = member;
+            this.qualifierExpression = qualExpr;
+            this.memberName = member;
             this.paramTypes = paramTypes;
         }
 

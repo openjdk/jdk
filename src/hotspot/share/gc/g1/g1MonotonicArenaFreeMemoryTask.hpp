@@ -22,18 +22,18 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
-#define SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
+#ifndef SHARE_GC_G1_G1MONOTONICARENAFREEMEMORYTASK_HPP
+#define SHARE_GC_G1_G1MONOTONICARENAFREEMEMORYTASK_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
-// Task handling deallocation of free segmented array memory.
-class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
+// Task handling deallocation of free G1MonotonicArena memory.
+class G1MonotonicArenaFreeMemoryTask : public G1ServiceTask {
 
   enum class State : uint {
     Inactive,
@@ -53,11 +53,11 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
 
   State _state;
 
-  // Current total segmented array memory usage.
-  G1SegmentedArrayMemoryStats _total_used;
+  // Current total monotonic arena  memory usage.
+  G1MonotonicArenaMemoryStats _total_used;
 
-  using G1ReturnMemoryProcessor = G1SegmentedArrayFreePool::G1ReturnMemoryProcessor;
-  using G1ReturnMemoryProcessorSet = G1SegmentedArrayFreePool::G1ReturnMemoryProcessorSet;
+  using G1ReturnMemoryProcessor = G1MonotonicArenaFreePool::G1ReturnMemoryProcessor;
+  using G1ReturnMemoryProcessorSet = G1MonotonicArenaFreePool::G1ReturnMemoryProcessorSet;
 
   G1ReturnMemoryProcessorSet* _return_info;
 
@@ -71,9 +71,9 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
   bool return_memory_to_os(jlong deadline);
   bool cleanup_return_infos();
 
-  // Free excess segmented array memory, main method. Returns true if there is more work
+  // Free excess monotonic arena memory, main method. Returns true if there is more work
   // to do.
-  bool free_excess_segmented_array_memory();
+  bool free_excess_arena_memory();
 
   void set_state(State new_state);
   // Returns whether we are currently processing a recent request.
@@ -83,14 +83,14 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
   jlong reschedule_delay_ms() const;
 
 public:
-  explicit G1SegmentedArrayFreeMemoryTask(const char* name);
+  explicit G1MonotonicArenaFreeMemoryTask(const char* name);
 
   void execute() override;
 
   // Notify the task of new used remembered set memory statistics for the young
   // generation and the collection set candidate sets.
-  void notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
-                        G1SegmentedArrayMemoryStats* collection_set_candidate_stats);
+  void notify_new_stats(G1MonotonicArenaMemoryStats* young_gen_stats,
+                        G1MonotonicArenaMemoryStats* collection_set_candidate_stats);
 };
 
-#endif // SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
+#endif // SHARE_GC_G1_G1MONOTONICARENAFREEMEMORYTASK_HPP
