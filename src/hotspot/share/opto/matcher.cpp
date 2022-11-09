@@ -1703,10 +1703,7 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
       break;
 
   if (x >= _LAST_MACH_OPER) {
-    fprintf(stderr, "x = %d, _LAST_MACH_OPER = %d\n", x, _LAST_MACH_OPER);
-    fprintf(stderr, "dump n\n");
     n->dump();
-    fprintf(stderr, "dump svec\n");
     svec->dump();
     assert( false, "bad AD file" );
   }
