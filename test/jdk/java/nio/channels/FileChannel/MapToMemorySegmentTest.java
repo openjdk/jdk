@@ -30,6 +30,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
@@ -61,21 +62,21 @@ public class MapToMemorySegmentTest {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testCustomFileChannel() throws IOException {
-        var session = MemorySession.openConfined();
+        var arena = Arena.openConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannel(fc);
-        try (session; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, session);
+        try (arena; fileChannel){
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.session());
         }
     }
 
     @Test
     public void testCustomFileChannelOverride() throws IOException {
-        var session = MemorySession.openConfined();
+        var arena = Arena.openConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannelOverride(fc);
-        try (session; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, session);
+        try (arena; fileChannel){
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.session());
         }
     }
 
