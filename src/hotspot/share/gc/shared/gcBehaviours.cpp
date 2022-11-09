@@ -30,6 +30,11 @@
 IsUnloadingBehaviour* IsUnloadingBehaviour::_current = NULL;
 
 bool IsUnloadingBehaviour::is_unloading(CompiledMethod* cm) {
+  if (cm->method()->method_holder()->class_loader_data()->is_permanent_class_loader_data()) {
+    // When the nmethod is in NonNMethod space, we may reach here without IsUnloadingBehaviour.
+    // We only allow this for permenent methods which never get unloaded.
+    return false;
+  }
   return _current->has_dead_oop(cm) || cm->as_nmethod()->is_cold();
 }
 
