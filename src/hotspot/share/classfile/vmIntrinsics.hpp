@@ -521,16 +521,16 @@ class methodHandle;
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
    do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                  \
                                                                                                                         \
-  /* support for com.sun.crypto.provider.Poly1305 */                                                                    \
-  do_class(com_sun_crypto_provider_Poly1305, "com/sun/crypto/provider/Poly1305")                                        \
-  do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, putCharStringU_signature, F_R) \
-   do_name(processMultipleBlocks_name, "processMultipleBlocks")                                                         \
-                                                                                                                        \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
    do_name(processBlocks_name, "processBlocks")                                                                         \
    do_signature(ghash_processBlocks_signature, "([BII[J[J)V")                                                           \
+                                                                                                                        \
+  /* support for com.sun.crypto.provider.Poly1305 */                                                                    \
+  do_class(com_sun_crypto_provider_Poly1305, "com/sun/crypto/provider/Poly1305")                                        \
+  do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, ghash_processBlocks_signature, F_R) \
+   do_name(processMultipleBlocks_name, "processMultipleBlocks")                                                         \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \

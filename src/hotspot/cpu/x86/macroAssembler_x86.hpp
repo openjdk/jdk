@@ -730,6 +730,9 @@ public:
   void andptr(Register dst, int32_t src);
   void andptr(Register src1, Register src2) { LP64_ONLY(andq(src1, src2)) NOT_LP64(andl(src1, src2)) ; }
 
+  using Assembler::andq;
+  void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
+
   void cmp8(AddressLiteral src1, int imm, Register rscratch = noreg);
 
   // renamed to drag out the casting of address to int32_t/intptr_t
@@ -967,7 +970,6 @@ public:
                                           Register g, Register h, int iteration);
 
   void addmq(int disp, Register r1, Register r2);
-
  public:
   void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
@@ -977,7 +979,6 @@ public:
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
-
 #endif // _LP64
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
@@ -1755,6 +1756,15 @@ public:
   void evrold(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vlen_enc);
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
+
+  using Assembler::evpandq;
+  void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::evporq;
+  void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpternlogq;
+  void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
 
   void alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch);
   void anytrue(Register dst, uint masklen, KRegister src, KRegister kscratch);

@@ -172,10 +172,10 @@ final class Poly1305 {
         }
 
         int blockMultipleLength = len & (~(BLOCK_LENGTH-1));
-        Objects.checkFromIndexSize(offset, blockMultipleLength, input.length);
-        a.checkLimbsForIntrinsic();
-        r.checkLimbsForIntrinsic();
-        processMultipleBlocks(input, offset, blockMultipleLength);
+        long[] aLimbs = a.getLimbs();
+        long[] rLimbs = r.getLimbs();
+        processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
+        processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
         offset += blockMultipleLength;
         len -= blockMultipleLength;
 
@@ -246,13 +246,24 @@ final class Poly1305 {
 
     @ForceInline
     @IntrinsicCandidate
-    private void processMultipleBlocks(byte[] input, int offset, int length) {
+    private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
         while (length >= BLOCK_LENGTH) {
             n.setValue(input, offset, BLOCK_LENGTH, (byte)0x01);
             a.setSum(n);                    // A += (temp | 0x01)
             a.setProduct(r);                // A =  (A * R) % p
             offset += BLOCK_LENGTH;
             length -= BLOCK_LENGTH;
+        }
+    }
+
+    private static void processMultipleBlocksCheck(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
+        Objects.checkFromIndexSize(offset, length, input.length);
+        final int numLimbs = 5; // Intrinsic expects exactly 5 limbs
+        if (aLimbs.length != numLimbs) {
+            throw new RuntimeException("invalid accumulator length: " + aLimbs.length);
+        }
+        if (rLimbs.length != numLimbs) {
+            throw new RuntimeException("invalid R length: " + rLimbs.length);
         }
     }
 

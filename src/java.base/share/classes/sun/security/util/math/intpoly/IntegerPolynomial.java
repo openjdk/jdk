@@ -32,8 +32,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import jdk.internal.util.Preconditions;
-
 /**
  * A large number polynomial representation using sparse limbs of signed
  * long (64-bit) values. Limb values will always fit within a long, so inputs
@@ -629,8 +627,8 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             limbsToByteArray(limbs, result);
         }
 
-        public void checkLimbsForIntrinsic() {
-            Preconditions.checkFromIndexSize(0, numLimbs, limbs.length, null);
+        public long[] getLimbs() {
+            return limbs;
         }
     }
 

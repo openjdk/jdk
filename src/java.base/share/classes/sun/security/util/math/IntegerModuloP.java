@@ -209,9 +209,8 @@ public interface IntegerModuloP {
     }
 
     /**
-     * Enforce java to IntrinsicCandidate 'contract'
-     * @throws IndexOutOfBoundsException if the check fails
+     * Break encapsulation, used for IntrinsicCandidate functions
      */
-    void checkLimbsForIntrinsic();
+    long[] getLimbs();
 }
 

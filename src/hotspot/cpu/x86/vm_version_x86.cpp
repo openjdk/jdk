@@ -1177,18 +1177,6 @@ void VM_Version::get_processor_features() {
   }
 
 #ifdef _LP64
-  if (supports_avx512ifma() & supports_avx512vlbw()) {
-    if (FLAG_IS_DEFAULT(UsePolyIntrinsics)) {
-      FLAG_SET_DEFAULT(UsePolyIntrinsics, true);
-    }
-  } else
-#endif
-  if (UsePolyIntrinsics) {
-    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UsePolyIntrinsics, false);
-  }
-
-#ifdef _LP64
   // These are only supported on 64-bit
   if (UseSHA && supports_avx2() && supports_bmi2()) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
@@ -1346,6 +1334,18 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // COMPILER2 && ASSERT
+
+#ifdef _LP64
+  if (supports_avx512ifma() & supports_avx512vlbw() & MaxVectorSize >= 64) {
+    if (FLAG_IS_DEFAULT(UsePolyIntrinsics)) {
+      FLAG_SET_DEFAULT(UsePolyIntrinsics, true);
+    }
+  } else
+#endif
+  if (UsePolyIntrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UsePolyIntrinsics, false);
+  }
 
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
