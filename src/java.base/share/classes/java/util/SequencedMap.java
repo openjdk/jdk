@@ -99,17 +99,6 @@ package java.util;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
- * @apiNote
- * The {@link #firstKey firstKey} and {@link #lastKey lastKey} methods were promoted from
- * the {@link SortedMap} interface. The
- * {@link #firstEntry firstEntry},
- * {@link #lastEntry lastEntry},
- * {@link #pollFirstEntry pollFirstEntry}, and
- * {@link #pollLastEntry pollLastEntry} methods were promoted from the
- * {@link NavigableMap} interface. The method definitions were kept the same in order
- * to preserve compatibility with the existing sub-interfaces, even though this results
- * in some apparent inconsistency among the behaviors of these methods.
- *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  * @since 20
@@ -127,38 +116,6 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * @return a reverse-ordered view of this map
      */
     SequencedMap<K, V> reversed();
-
-    /**
-     * Returns the first key currently in this map.
-     *
-     * @implSpec
-     * The default implementation in this class is implemented as if:
-     * <pre>{@code
-     *     return keySet().iterator().next();
-     * }</pre>
-     *
-     * @return the first key currently in this map
-     * @throws NoSuchElementException if this map is empty
-     */
-    default K firstKey() {
-        return keySet().iterator().next();
-    }
-
-    /**
-     * Returns the last key currently in this map.
-     *
-     * @implSpec
-     * The default implementation in this class is implemented as if:
-     * <pre>{@code
-     *     return reversed().keySet().iterator().next();
-     * }</pre>
-     *
-     * @return the last key currently in this map
-     * @throws NoSuchElementException if this map is empty
-     */
-    default K lastKey() {
-        return reversed().keySet().iterator().next();
-    }
 
     /**
      * Returns the first key-value mapping in this map,

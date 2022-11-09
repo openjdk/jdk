@@ -1213,14 +1213,6 @@ public class LinkedHashMap<K,V>
             return base;
         }
 
-        public K firstKey() {
-            return base.lastKey();
-        }
-
-        public K lastKey() {
-            return base.firstKey();
-        }
-
         public Entry<K, V> firstEntry() {
             return base.lastEntry();
         }

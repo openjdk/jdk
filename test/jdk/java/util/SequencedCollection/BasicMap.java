@@ -152,8 +152,6 @@ public class BasicMap {
             assertTrue(map.size() > 0);
             assertEquals(map.firstEntry(), ref.get(0));
             assertEquals(map.lastEntry(), ref.get(ref.size() - 1));
-            assertEquals(map.firstKey(), ref.get(0).getKey());
-            assertEquals(map.lastKey(), ref.get(ref.size() - 1).getKey());
         }
 
         // keySet
