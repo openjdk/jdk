@@ -4238,8 +4238,12 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 void Compile::verify_graph_edges(bool no_dead_code) {
   if (VerifyGraphEdges) {
     Unique_Node_List visited;
+    // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
+    uint stack_size = live_nodes() >> 4;
+    Node_List nstack(MAX2(stack_size, (uint)OptoNodeListSize));
+
     // Call recursive graph walk to check edges
-    _root->verify_edges(visited);
+    Node::verify_edges(_root, visited, nstack);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;

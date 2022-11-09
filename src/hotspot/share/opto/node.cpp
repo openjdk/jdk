@@ -2683,45 +2683,51 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
 // For each input edge to a node (ie - for each Use-Def edge), verify that
 // there is a corresponding Def-Use edge.
 //------------------------------verify_edges-----------------------------------
-void Node::verify_edges(Unique_Node_List &visited) {
-  uint i, j, idx;
-  int  cnt;
-  Node *n;
+void Node::verify_edges(Node* root, Unique_Node_List &visited, Node_List &nstack) {
+  nstack.push(root);
 
-  // Recursive termination test
-  if (visited.member(this))  return;
-  visited.push(this);
-
-  // Walk over all input edges, checking for correspondence
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if (n != NULL && !n->is_top()) {
-      // Count instances of (Node *)this
-      cnt = 0;
-      for (idx = 0; idx < n->_outcnt; idx++ ) {
-        if (n->_out[idx] == (Node *)this)  cnt++;
-      }
-      assert( cnt > 0,"Failed to find Def-Use edge." );
-      // Check for duplicate edges
-      // walk the input array downcounting the input edges to n
-      for( j = 0; j < len(); j++ ) {
-        if( in(j) == n ) cnt--;
-      }
-      assert( cnt == 0,"Mismatched edge count.");
-    } else if (n == NULL) {
-      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy() || (is_Unlock() && i == req()-1)
-              || (is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
-              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
-    } else {
-      assert(n->is_top(), "sanity");
-      // Nothing to check.
+  while (nstack.size() > 0) {
+    Node* next = nstack.pop();
+    if (visited.member(next)) {
+      continue;
     }
-  }
-  // Recursive walk over all input edges
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if( n != NULL )
-      in(i)->verify_edges(visited);
+    visited.push(next);
+
+    // Walk over all input edges, checking for correspondence
+    uint length = next->len();
+    for (uint i = 0; i < length; i++) {
+      Node* n = next->in(i);
+      if (n != NULL && !visited.member(n)) {
+        nstack.push(n); // Put it on stack
+      }
+      if (n != NULL && !n->is_top()) {
+        // Count instances of `next`
+        int cnt = 0;
+        for (uint idx = 0; idx < n->_outcnt; idx++) {
+          if (n->_out[idx] == next) {
+            cnt++;
+          }
+        }
+        assert(cnt > 0, "Failed to find Def-Use edge.");
+        // Check for duplicate edges
+        // walk the input array downcounting the input edges to n
+        for(uint j = 0; j < length; j++) {
+          if (next->in(j) == n) { 
+            cnt--;
+          }
+        }
+        assert(cnt == 0, "Mismatched edge count.");
+      } else if (n == NULL) {
+        assert(i >= next->req() || i == 0 ||
+               next->is_Region() || next->is_Phi() || next->is_ArrayCopy() ||
+               (next->is_Unlock() && i == (next->req() - 1)) ||
+               (next->is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
+              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
+      } else {
+        assert(n->is_top(), "sanity");
+        // Nothing to check.
+      }
+    }
   }
 }
 
