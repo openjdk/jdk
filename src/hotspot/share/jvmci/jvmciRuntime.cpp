@@ -1001,7 +1001,7 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
   _id(id),
   _next(next),
   _metadata_handles(new MetadataHandles()),
-  _oop_handles(100, mtJVMCI),
+  _oop_handles(mtJVMCI, 100),
   _num_attached_threads(0),
   _for_compile_broker(for_compile_broker)
 {

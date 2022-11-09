@@ -70,7 +70,7 @@ bool KlassStream::eos() {
 
 
 GrowableArray<FilteredField*> *FilteredFieldsMap::_filtered_fields =
-  new (mtServiceability) GrowableArray<FilteredField*>(3, mtServiceability);
+  new (mtServiceability) GrowableArray<FilteredField*>(mtServiceability, 3);
 
 
 void FilteredFieldsMap::initialize() {

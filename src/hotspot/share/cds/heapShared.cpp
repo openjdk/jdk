@@ -621,7 +621,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
   assert(DumpSharedSpaces, "dump time only");
   if (_subgraph_entry_fields == NULL) {
     _subgraph_entry_fields =
-      new (mtClass) GrowableArray<int>(10, mtClass);
+      new(mtClass) GrowableArray<int>(mtClass, 10);
   }
   _subgraph_entry_fields->append(static_field_offset);
   _subgraph_entry_fields->append(HeapShared::append_root(v));
@@ -634,8 +634,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
 
   if (_subgraph_object_klasses == NULL) {
-    _subgraph_object_klasses =
-      new (mtClass) GrowableArray<Klass*>(50, mtClass);
+    _subgraph_object_klasses = new(mtClass) GrowableArray<Klass*>(mtClass, 50);
   }
 
   assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_k), "must be a shared class");

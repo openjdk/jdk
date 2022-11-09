@@ -599,29 +599,36 @@ class GrowableArrayMetadata {
   // resource area nesting at creation
   debug_only(GrowableArrayNestingCheck _nesting_check;)
 
-  uintptr_t bits(MEMFLAGS memflags) const {
-    if (memflags == mtNone) {
-      // Stack allocation
-      return 0;
-    }
+  // Resource allocation
+  uintptr_t bits() const {
+    return 0;
+  }
 
-    // CHeap allocation
+  // CHeap allocation
+  uintptr_t bits(MEMFLAGS memflags) const {
+    assert(memflags != mtNone, "Must provide a proper MEMFLAGS");
     return (uintptr_t(memflags) << 1) | 1;
   }
 
+  // Arena allocation
   uintptr_t bits(Arena* arena) const {
     return uintptr_t(arena);
   }
 
 public:
+  GrowableArrayMetadata() :
+      _bits(bits())
+      debug_only(COMMA _nesting_check(true)) {
+  }
+
   GrowableArrayMetadata(Arena* arena) :
       _bits(bits(arena))
-      debug_only(COMMA _nesting_check(on_stack())) {
+      debug_only(COMMA _nesting_check(false)) {
   }
 
   GrowableArrayMetadata(MEMFLAGS memflags) :
       _bits(bits(memflags))
-      debug_only(COMMA _nesting_check(on_stack())) {
+      debug_only(COMMA _nesting_check(false)) {
   }
 
 #ifdef ASSERT
@@ -655,8 +662,8 @@ public:
 // THE GrowableArray.
 //
 // Supports multiple allocation strategies:
-//  - Resource stack allocation: if memflags == mtNone
-//  - CHeap allocation: if memflags != mtNone
+//  - Resource stack allocation: if no extra argument is provided
+//  - CHeap allocation: if memflags is provided
 //  - Arena allocation: if an arena is provided
 //
 // There are some drawbacks of using GrowableArray, that are removed in some
@@ -679,11 +686,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   }
 
   static E* allocate(int max, MEMFLAGS memflags) {
-    if (memflags != mtNone) {
-      return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), memflags);
-    }
-
-    return (E*)GrowableArrayResourceAllocator::allocate(max, sizeof(E));
+    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), memflags);
   }
 
   static E* allocate(int max, Arena* arena) {
@@ -720,7 +723,15 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   }
 
 public:
-  GrowableArray(int initial_capacity = 2, MEMFLAGS memflags = mtNone) :
+  GrowableArray(int initial_capacity = 2) :
+      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+          allocate(initial_capacity),
+          initial_capacity),
+      _metadata() {
+    init_checks();
+  }
+
+  GrowableArray(MEMFLAGS memflags, int initial_capacity = 2) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity, memflags),
           initial_capacity),
@@ -728,7 +739,15 @@ public:
     init_checks();
   }
 
-  GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags = mtNone) :
+  GrowableArray(int initial_capacity, int initial_len, const E& filler) :
+      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+          allocate(initial_capacity),
+          initial_capacity, initial_len, filler),
+      _metadata() {
+    init_checks();
+  }
+
+  GrowableArray(MEMFLAGS memflags, int initial_capacity, int initial_len, const E& filler) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity, memflags),
           initial_capacity, initial_len, filler),

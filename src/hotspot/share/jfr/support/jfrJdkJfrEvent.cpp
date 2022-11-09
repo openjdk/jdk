@@ -51,7 +51,7 @@ static const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
+  return new (mtTracing) GrowableArray<T>(mtTracing, size);
 }
 
 static bool initialize(TRAPS) {

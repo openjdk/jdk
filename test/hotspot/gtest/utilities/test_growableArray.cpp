@@ -35,7 +35,7 @@ struct WithEmbeddedArray {
   // Arena allocated data array
   WithEmbeddedArray(Arena* arena, int initial_max) : _a(arena, initial_max, 0, 0) {}
   // CHeap allocated data array
-  WithEmbeddedArray(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
+  WithEmbeddedArray(MEMFLAGS memflags, int initial_max) : _a(memflags, initial_max) {
     assert(memflags != mtNone, "test requirement");
   }
   WithEmbeddedArray(const GrowableArray<int>& other) : _a(other) {}
@@ -385,20 +385,20 @@ protected:
 
     // CHeap/CHeap allocated
     {
-      GrowableArray<int>* a = new (mtTest) GrowableArray<int>(max, mtTest);
+      GrowableArray<int>* a = new (mtTest) GrowableArray<int>(mtTest, max);
       modify_and_test(a, modify, test);
       delete a;
     }
 
     // Stack/CHeap allocated
     {
-      GrowableArray<int> a(max, mtTest);
+      GrowableArray<int> a(mtTest, max);
       modify_and_test(&a, modify, test);
     }
 
     // Embedded/CHeap allocated
     {
-      WithEmbeddedArray w(max, mtTest);
+      WithEmbeddedArray w(mtTest, max);
       modify_and_test(&w._a, modify, test);
     }
   }
@@ -462,7 +462,7 @@ TEST_VM_F(GrowableArrayTest, assignment) {
 
 #ifdef ASSERT
 TEST_VM_F(GrowableArrayTest, where) {
-  WithEmbeddedArray s(1, mtTest);
+  WithEmbeddedArray s(mtTest, 1);
   ASSERT_FALSE(s._a.allocated_on_C_heap());
   ASSERT_TRUE(elements_on_C_heap(&s._a));
 
@@ -485,7 +485,7 @@ TEST_VM_F(GrowableArrayTest, where) {
 
   // CHeap/CHeap allocated
   {
-    GrowableArray<int>* a = new (mtTest) GrowableArray<int>(0, mtTest);
+    GrowableArray<int>* a = new (mtTest) GrowableArray<int>(mtTest, 0);
     ASSERT_TRUE(a->allocated_on_C_heap());
     ASSERT_TRUE(elements_on_C_heap(a));
     delete a;
@@ -504,7 +504,7 @@ TEST_VM_F(GrowableArrayTest, where) {
 
   // Stack/CHeap allocated
   {
-    GrowableArray<int> a(0, mtTest);
+    GrowableArray<int> a(mtTest, 0);
     ASSERT_TRUE(a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&a));
   }
@@ -527,7 +527,7 @@ TEST_VM_F(GrowableArrayTest, where) {
 
   // Embedded/CHeap allocated
   {
-    WithEmbeddedArray w(0, mtTest);
+    WithEmbeddedArray w(mtTest, 0);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&w._a));
   }
@@ -543,15 +543,15 @@ TEST_VM_F(GrowableArrayTest, where) {
 
 TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, copy_with_embedded_cheap,
     "assert.!on_C_heap... failed: Copying of CHeap arrays not supported") {
-  WithEmbeddedArray s(1, mtTest);
+  WithEmbeddedArray s(mtTest, 1);
   // Intentionally asserts that copy of CHeap arrays are not allowed
   WithEmbeddedArray c(s);
 }
 
 TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, assignment_with_embedded_cheap,
     "assert.!on_C_heap... failed: Assignment of CHeap arrays not supported") {
-  WithEmbeddedArray s(1, mtTest);
-  WithEmbeddedArray c(1, mtTest);
+  WithEmbeddedArray s(mtTest, 1);
+  WithEmbeddedArray c(mtTest, 1);
 
   // Intentionally asserts that assignment of CHeap arrays are not allowed
   c = s;

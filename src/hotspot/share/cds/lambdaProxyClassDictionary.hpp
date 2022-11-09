@@ -114,7 +114,7 @@ public:
 
   void add_proxy_klass(InstanceKlass* proxy_klass) {
     if (_proxy_klasses == NULL) {
-      _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
+      _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(mtClassShared, 5);
     }
     assert(_proxy_klasses != NULL, "sanity");
     _proxy_klasses->append(proxy_klass);

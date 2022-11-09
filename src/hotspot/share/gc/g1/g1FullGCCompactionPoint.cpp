@@ -33,7 +33,7 @@ G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector) :
     _collector(collector),
     _current_region(nullptr),
     _compaction_top(nullptr) {
-  _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(32, mtGC);
+  _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(mtGC, 32);
   _compaction_region_iterator = _compaction_regions->begin();
 }
 
