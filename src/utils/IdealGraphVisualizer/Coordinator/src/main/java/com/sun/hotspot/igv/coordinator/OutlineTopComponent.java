@@ -60,6 +60,10 @@ import org.openide.windows.WindowManager;
  */
 public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, ChangedListener<InputGraphProvider> {
 
+    static {
+        System.setProperty("netbeans.exception.report.min.level", "900");
+    }
+
     public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private ExplorerManager manager;
