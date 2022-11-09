@@ -356,6 +356,14 @@ intptr_t oopDesc::identity_hash() {
   }
 }
 
+// This checks fast simple case of whether the oop has_no_hash,
+// to optimize JVMTI table lookup.
+bool oopDesc::fast_no_hash_check() {
+  markWord mrk = mark_acquire();
+  assert(!mrk.is_marked(), "should never be marked");
+  return mrk.is_unlocked() && mrk.has_no_hash();
+}
+
 bool oopDesc::has_displaced_mark() const {
   return mark().has_displaced_mark_helper();
 }

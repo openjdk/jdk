@@ -4177,9 +4177,7 @@ public final class Main {
         // Try out each certificate in the vector, until we find one
         // whose public key verifies the signature of the certificate
         // in question.
-        for (Enumeration<Pair<String,X509Certificate>> issuerCerts = vec.elements();
-                issuerCerts.hasMoreElements(); ) {
-            Pair<String,X509Certificate> issuerCert = issuerCerts.nextElement();
+        for (Pair<String, X509Certificate> issuerCert : vec) {
             PublicKey issuerPubKey = issuerCert.snd.getPublicKey();
             try {
                 certToVerify.snd.verify(issuerPubKey);

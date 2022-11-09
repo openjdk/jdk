@@ -30,7 +30,6 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -122,8 +121,8 @@ public class CRLExtensions {
             Constructor<?> cons = extClass.getConstructor(PARAMS);
             Object[] passed = new Object[] {Boolean.valueOf(ext.isCritical()),
                                             ext.getExtensionValue()};
-            CertAttrSet<?> crlExt = (CertAttrSet<?>)cons.newInstance(passed);
-            if (map.put(crlExt.getName(), (Extension)crlExt) != null) {
+            Extension crlExt = (Extension)cons.newInstance(passed);
+            if (map.put(crlExt.getName(), crlExt) != null) {
                 throw new CRLException("Duplicate extensions not allowed");
             }
         } catch (InvocationTargetException invk) {
@@ -145,16 +144,8 @@ public class CRLExtensions {
     throws CRLException {
         try {
             DerOutputStream extOut = new DerOutputStream();
-            Collection<Extension> allExts = map.values();
-            Object[] objs = allExts.toArray();
-
-            for (int i = 0; i < objs.length; i++) {
-                if (objs[i] instanceof CertAttrSet)
-                    ((CertAttrSet)objs[i]).encode(extOut);
-                else if (objs[i] instanceof Extension)
-                    ((Extension)objs[i]).encode(extOut);
-                else
-                    throw new CRLException("Illegal extension object");
+            for (Extension ext : map.values()) {
+                ext.encode(extOut);
             }
 
             DerOutputStream seq = new DerOutputStream();
@@ -168,7 +159,7 @@ public class CRLExtensions {
                 tmp = seq;
 
             out.write(tmp.toByteArray());
-        } catch (IOException | CertificateException e) {
+        } catch (IOException e) {
             throw new CRLException("Encoding error: " + e.toString());
         }
     }
@@ -247,24 +238,17 @@ public class CRLExtensions {
     public boolean equals(Object other) {
         if (this == other)
             return true;
-        if (!(other instanceof CRLExtensions))
-            return false;
-        Collection<Extension> otherC =
-                        ((CRLExtensions)other).getAllExtensions();
-        Object[] objs = otherC.toArray();
-
-        int len = objs.length;
-        if (len != map.size())
+        if (!(other instanceof CRLExtensions otherCX))
             return false;
 
-        Extension otherExt, thisExt;
-        String key = null;
-        for (int i = 0; i < len; i++) {
-            if (objs[i] instanceof CertAttrSet)
-                key = ((CertAttrSet)objs[i]).getName();
-            otherExt = (Extension)objs[i];
-            if (key == null)
-                key = otherExt.getExtensionId().toString();
+        Collection<Extension> otherX = otherCX.getAllExtensions();
+        if (otherX.size() != map.size())
+            return false;
+
+        Extension thisExt;
+        String key;
+        for (Extension otherExt : otherX) {
+            key = otherExt.getName();
             thisExt = map.get(key);
             if (thisExt == null)
                 return false;

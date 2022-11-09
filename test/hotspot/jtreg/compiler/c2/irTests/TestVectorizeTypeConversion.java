@@ -51,7 +51,7 @@ public class TestVectorizeTypeConversion {
     private static float[] floatb = new float[SIZE];
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+SuperWordRTDepCheck");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+SuperWordRTDepCheck");
     }
 
     @Test

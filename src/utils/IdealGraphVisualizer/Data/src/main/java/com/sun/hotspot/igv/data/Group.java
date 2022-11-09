@@ -34,6 +34,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     private final List<InputGraph> graphs;
     private InputMethod method;
     private final transient ChangedEvent<Group> changedEvent;
+    private final ChangedEvent<Group> displayNameChangedEvent = new ChangedEvent<>(this);
+
     private Folder parent;
 
     public Group(Folder parent) {
@@ -72,6 +74,10 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         if (graphs.remove((InputGraph) element)) {
             getChangedEvent().fire();
         }
+        for (InputGraph inputGraph : graphs) {
+            assert inputGraph.getDisplayNameChangedEvent() != null;
+            inputGraph.getDisplayNameChangedEvent().fire();
+        }
     }
 
     @Override
@@ -103,13 +109,28 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
+    public ChangedEvent<Group> getDisplayNameChangedEvent() {
+        return displayNameChangedEvent;
+    }
+
+    @Override
+    public void setName(String name) {
+        getProperties().setProperty("name", name);
+        displayNameChangedEvent.fire();
+    }
+
+    @Override
     public String getName() {
         return getProperties().get("name");
     }
 
+    @Override
+    public String getDisplayName() {
+        return getParent().getElements().indexOf(this)+1 + " - " + getName();
+    }
+
     public String getType() {
         return getProperties().get("type");
-
     }
 
     InputGraph getPrev(InputGraph graph) {
