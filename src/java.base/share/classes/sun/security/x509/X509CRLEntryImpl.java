@@ -144,7 +144,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
      * false.
      */
     public boolean hasExtensions() {
-        return (extensions != null);
+        return extensions != null;
     }
 
     /**
@@ -272,14 +272,13 @@ public class X509CRLEntryImpl extends X509CRLEntry
      * get Reason Code from CRL entry.
      *
      * @return Integer or null, if no such extension
-     * @throws IOException on error
      */
-    public Integer getReasonCode() throws IOException {
+    public Integer getReasonCode() {
         Object obj = getExtension(PKIXExtensions.ReasonCode_Id);
         if (obj == null)
             return null;
         CRLReasonCodeExtension reasonCode = (CRLReasonCodeExtension)obj;
-        return reasonCode.get(CRLReasonCodeExtension.REASON);
+        return reasonCode.getReason();
     }
 
     /**
@@ -416,7 +415,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
                     }
                 }
             } else
-                crlExt = extensions.get(extAlias);
+                crlExt = extensions.getExtension(extAlias);
             if (crlExt == null)
                 return null;
             byte[] extData = crlExt.getExtensionValue();
@@ -443,7 +442,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
 
         // following returns null if no such OID in map
         //XXX consider cloning this
-        return extensions.get(OIDMap.getName(oid));
+        return extensions.getExtension(OIDMap.getName(oid));
     }
 
     private void parse(DerValue derVal)
