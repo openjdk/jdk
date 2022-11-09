@@ -378,13 +378,13 @@ public class PKCS9Attribute implements DerEncoder {
         this.oid = oid;
         index = indexOf(oid, PKCS9_OIDS, 1);
         Class<?> clazz = index == -1 ? BYTE_ARRAY_CLASS: VALUE_CLASSES[index];
-        if (!clazz.isInstance(value)) {
+        if (clazz == null || !clazz.isInstance(value)) {
                 throw new IllegalArgumentException(
                            "Wrong value class " +
                            " for attribute " + oid +
                            " constructing PKCS9Attribute; was " +
                            value.getClass().toString() + ", should be " +
-                           clazz.toString());
+                           clazz);
         }
         this.value = value;
     }
