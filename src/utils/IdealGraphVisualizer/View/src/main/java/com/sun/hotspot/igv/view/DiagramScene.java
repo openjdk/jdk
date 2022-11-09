@@ -81,8 +81,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final LayerWidget connectionLayer;
     private final DiagramViewModel model;
     private ModelState modelState;
-
-    private boolean initialized;
     private boolean rebuilding;
 
     /**
@@ -214,7 +212,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
             setFigureSelection(figures);
-            centerFigures(figures, false);
+            centerSelectedFigures();
             validateAll();
         }
     };
@@ -260,8 +258,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     public DiagramScene(Action[] actions, Action[] actionsWithSelection, DiagramViewModel model) {
-        initialized = false;
-
         this.actions = actions;
         this.actionsWithSelection = actionsWithSelection;
 
@@ -479,7 +475,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             @Override
             public void ancestorResized(HierarchyEvent e) {
                 if (scrollPane.getBounds().width > 0) {
-                    centerFigures(model.getSelectedFigures(), false);
+                    centerSelectedFigures();
                     scrollPane.removeHierarchyBoundsListener(this);
                 }
             }
@@ -519,7 +515,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             @Override
             public void actionPerformed(ActionEvent e) {
                 setFigureSelection(Collections.singleton(figure));
-                centerFigures(Collections.singleton(figure), true);
+                model.showFigures(model.getSelectedFigures());
+                centerSelectedFigures();
             }
         };
 
@@ -617,7 +614,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildBlockLayer();
         relayout();
         setFigureSelection(model.getSelectedFigures());
-        centerFigures(model.getSelectedFigures(), false);
+        centerSelectedFigures();
         rebuilding = false;
     }
 
@@ -851,7 +848,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
         setFigureSelection(selectedFigures);
         if (centerSelection) {
-            centerFigures(selectedFigures, true);
+            model.showFigures(model.getSelectedFigures());
+            centerSelectedFigures();
         }
     }
 
@@ -860,12 +858,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         setSelectedObjects(Collections.emptySet());
     }
 
-    private void centerFigures(Collection<Figure> figures, boolean showIfHidden) {
-        if (showIfHidden) {
-            getModel().showFigures(figures);
-        }
+    @Override
+    public void centerSelectedFigures() {
+        Set<Figure> selectedFigures = model.getSelectedFigures();
         Rectangle overallRect = null;
-        for (Figure figure : figures) {
+        for (Figure figure : selectedFigures) {
             FigureWidget figureWidget = getWidget(figure);
             if (figureWidget != null) {
                 Rectangle bounds = figureWidget.getBounds();
@@ -1134,7 +1131,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         validateAll();
         if (model.getSelectedFigures().size() == 1) {
-            centerFigures(model.getSelectedFigures(), false);
+            centerSelectedFigures();
         }
         rebuilding = false;
     }

@@ -80,6 +80,8 @@ public interface DiagramViewer {
 
     void componentShowing();
 
+    void centerSelectedFigures();
+
     void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection);
 
     void clearSelectedNodes();

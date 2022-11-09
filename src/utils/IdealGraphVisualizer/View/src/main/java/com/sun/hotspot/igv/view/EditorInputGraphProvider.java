@@ -60,6 +60,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     public void addSelectedNodes(Collection<InputNode> nodes) {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
             editor.addSelectedNodes(nodes, false);
+            editor.requestActive();
         }
     }
 
@@ -67,6 +68,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     public void clearSelectedNodes() {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
             editor.clearSelectedNodes();
+            editor.requestActive();
         }
     }
 
