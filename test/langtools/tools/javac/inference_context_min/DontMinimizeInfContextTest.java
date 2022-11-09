@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,29 @@
  * questions.
  */
 
-package sun.security.x509;
-
-import java.util.Vector;
-
-/**
- * <p>This class provides the Enumeration implementation used
- * by all the X509 certificate attributes to return the attribute
- * names contained within them.
- *
- * @author Amit Kapoor
- * @author Hemma Prafullchandra
+/*
+ * @test
+ * @bug 8232933
+ * @summary Javac inferred type does not conform to equality constraint
+ * @compile DontMinimizeInfContextTest.java
  */
-public class AttributeNameEnumeration extends Vector<String> {
 
-    @java.io.Serial
-    private static final long serialVersionUID = -6067440240757099134L;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-    /**
-     * The default constructor for this class.
-     */
-    public AttributeNameEnumeration() {
-        super(4,2);
+class DontMinimizeInfContextTest {
+    void m() {
+        List<? extends A<?, ?>> a = new LinkedList<>();
+        Map<String, List<A<?, ?>>> b = a.stream().collect(
+                Collectors.groupingBy(A::getval, Collectors.toList())
+        );
+    }
+
+    class A<K, V> {
+        String getval() {
+            return "s";
+        }
     }
 }

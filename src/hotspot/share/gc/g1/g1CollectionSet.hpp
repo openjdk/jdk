@@ -161,11 +161,6 @@ class G1CollectionSet {
   // pause, and updated as more regions are added to the collection set.
   size_t _bytes_used_before;
 
-  // The number of cards in the remembered set in the collection set. Set from
-  // the incrementally built collection set at the start of an evacuation
-  // pause, and updated as more regions are added to the collection set.
-  size_t _recorded_rs_length;
-
   enum CSetBuildType {
     Active,             // We are actively building the collection set
     Inactive            // We are not actively building the collection set
@@ -174,22 +169,6 @@ class G1CollectionSet {
   CSetBuildType _inc_build_state;
   size_t _inc_part_start;
 
-  // Information about eden regions in the incremental collection set.
-  struct IncCollectionSetRegionStat {
-    // The predicted non-copy time that was added to the total incremental value
-    // for the collection set.
-    double _non_copy_time_ms;
-    // The remembered set length that was added to the total incremental value
-    // for the collection set.
-    size_t _rs_length;
-
-#ifdef ASSERT
-    // Resets members to "uninitialized" values.
-    void reset() { _rs_length = ~(size_t)0; _non_copy_time_ms = -1.0; }
-#endif
-  };
-
-  IncCollectionSetRegionStat* _inc_collection_set_stats;
   // The associated information that is maintained while the incremental
   // collection set is being built with *young* regions. Used to populate
   // the recorded info for the evacuation pause.
@@ -199,37 +178,10 @@ class G1CollectionSet {
   // an evacuation pause.
   size_t _inc_bytes_used_before;
 
-  // The RSet lengths recorded for regions in the CSet. It is updated
-  // by the thread that adds a new region to the CSet. We assume that
-  // only one thread can be allocating a new CSet region (currently,
-  // it does so after taking the Heap_lock) hence no need to
-  // synchronize updates to this field.
-  size_t _inc_recorded_rs_length;
-
-  // A concurrent refinement thread periodically samples the young
-  // region RSets and needs to update _inc_recorded_rs_length as
-  // the RSets grow. Instead of having to synchronize updates to that
-  // field we accumulate them in this field and add it to
-  // _inc_recorded_rs_length_diff at the start of a GC.
-  size_t _inc_recorded_rs_length_diff;
-
-  // The predicted elapsed time it will take to collect the regions in
-  // the CSet. This is updated by the thread that adds a new region to
-  // the CSet. See the comment for _inc_recorded_rs_length about
-  // MT-safety assumptions.
-  double _inc_predicted_non_copy_time_ms;
-
-  // See the comment for _inc_recorded_rs_length_diff.
-  double _inc_predicted_non_copy_time_ms_diff;
-
-  void set_recorded_rs_length(size_t rs_length);
-
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
   void verify_young_cset_indices() const NOT_DEBUG_RETURN;
-
-  double predict_region_non_copy_time_ms(HeapRegion* hr) const;
 
   // Update the incremental collection set information when adding a region.
   void add_young_region_common(HeapRegion* hr);
@@ -322,8 +274,6 @@ public:
 
   void iterate_optional(HeapRegionClosure* cl) const;
 
-  size_t recorded_rs_length() { return _recorded_rs_length; }
-
   size_t bytes_used_before() const {
     return _bytes_used_before;
   }
@@ -340,10 +290,6 @@ public:
   // Abandon (clean up) optional collection set regions that were not evacuated in this
   // pause.
   void abandon_optional_collection_set(G1ParScanThreadStateSet* pss);
-
-  // Update information about hr in the aggregated information for
-  // the incrementally built collection set.
-  void update_young_region_prediction(HeapRegion* hr, size_t new_rs_length);
 
   // Add eden region to the collection set.
   void add_eden_region(HeapRegion* hr);

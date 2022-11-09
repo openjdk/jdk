@@ -79,6 +79,7 @@ public class ProtectionDomainBench {
         cs = new CodeSource[numberOfCodeSources];
 
         for (int i = 0; i < numberOfCodeSources; i++) {
+            @SuppressWarnings("deprecation")
             URL u = new URL("file:/tmp/duke" + i);
             cs[i] = new CodeSource(u, (java.security.cert.Certificate[]) null);
         }

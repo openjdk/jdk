@@ -26,7 +26,7 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -34,13 +34,13 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "runtime/os.hpp"
 
-constexpr const char* G1SegmentedArrayFreeMemoryTask::_state_names[];
+constexpr const char* G1MonotonicArenaFreeMemoryTask::_state_names[];
 
-const char* G1SegmentedArrayFreeMemoryTask::get_state_name(State value) const {
+const char* G1MonotonicArenaFreeMemoryTask::get_state_name(State value) const {
   return _state_names[static_cast<std::underlying_type_t<State>>(value)];
 }
 
-bool G1SegmentedArrayFreeMemoryTask::deadline_exceeded(jlong deadline) {
+bool G1MonotonicArenaFreeMemoryTask::deadline_exceeded(jlong deadline) {
   return os::elapsed_counter() >= deadline;
 }
 
@@ -49,18 +49,18 @@ static size_t keep_size(size_t free, size_t used, double percent) {
   return MIN2(free, to_keep);
 }
 
-bool G1SegmentedArrayFreeMemoryTask::calculate_return_infos(jlong deadline) {
+bool G1MonotonicArenaFreeMemoryTask::calculate_return_infos(jlong deadline) {
   // Ignore the deadline in this step as it is very short.
 
-  G1SegmentedArrayMemoryStats used = _total_used;
-  G1SegmentedArrayMemoryStats free = G1SegmentedArrayFreePool::free_list_sizes();
+  G1MonotonicArenaMemoryStats used = _total_used;
+  G1MonotonicArenaMemoryStats free = G1MonotonicArenaFreePool::free_list_sizes();
 
   _return_info = new G1ReturnMemoryProcessorSet(used.num_pools());
   for (uint i = 0; i < used.num_pools(); i++) {
     size_t return_to_vm_size = keep_size(free._num_mem_sizes[i],
                                          used._num_mem_sizes[i],
                                          G1RemSetFreeMemoryKeepExcessRatio);
-    log_trace(gc, task)("Segmented Array Free Memory: Type %s: Free: %zu (%zu) "
+    log_trace(gc, task)("Monotonic Arena Free Memory: Type %s: Free: %zu (%zu) "
                         "Used: %zu Keep: %zu",
                         G1CardSetConfiguration::mem_object_type_name_str(i),
                         free._num_mem_sizes[i], free._num_segments[i],
@@ -69,11 +69,11 @@ bool G1SegmentedArrayFreeMemoryTask::calculate_return_infos(jlong deadline) {
     _return_info->append(new G1ReturnMemoryProcessor(return_to_vm_size));
   }
 
-  G1SegmentedArrayFreePool::update_unlink_processors(_return_info);
+  G1MonotonicArenaFreePool::update_unlink_processors(_return_info);
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::return_memory_to_vm(jlong deadline) {
+bool G1MonotonicArenaFreeMemoryTask::return_memory_to_vm(jlong deadline) {
   for (int i = 0; i < _return_info->length(); i++) {
     G1ReturnMemoryProcessor* info = _return_info->at(i);
     if (!info->finished_return_to_vm()) {
@@ -85,7 +85,7 @@ bool G1SegmentedArrayFreeMemoryTask::return_memory_to_vm(jlong deadline) {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::return_memory_to_os(jlong deadline) {
+bool G1MonotonicArenaFreeMemoryTask::return_memory_to_os(jlong deadline) {
   for (int i = 0; i < _return_info->length(); i++) {
     G1ReturnMemoryProcessor* info = _return_info->at(i);
     if (!info->finished_return_to_os()) {
@@ -97,7 +97,7 @@ bool G1SegmentedArrayFreeMemoryTask::return_memory_to_os(jlong deadline) {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::cleanup_return_infos() {
+bool G1MonotonicArenaFreeMemoryTask::cleanup_return_infos() {
   for (int i = 0; i < _return_info->length(); i++) {
      G1ReturnMemoryProcessor* info = _return_info->at(i);
      delete info;
@@ -108,12 +108,12 @@ bool G1SegmentedArrayFreeMemoryTask::cleanup_return_infos() {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
+bool G1MonotonicArenaFreeMemoryTask::free_excess_arena_memory() {
   jlong start = os::elapsed_counter();
   jlong end = start +
               (os::elapsed_frequency() / 1000) * G1RemSetFreeMemoryStepDurationMillis;
 
-  log_trace(gc, task)("Segmented Array Free Memory: Step start %1.3f end %1.3f",
+  log_trace(gc, task)("Monotonic Arena Free Memory: Step start %1.3f end %1.3f",
                       TimeHelper::counter_to_millis(start), TimeHelper::counter_to_millis(end));
 
   State next_state;
@@ -150,7 +150,7 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
         break;
       }
       default:
-        log_error(gc, task)("Should not try to free excess segmented array memory in %s state", get_state_name(_state));
+        log_error(gc, task)("Should not try to free excess monotonic area memory in %s state", get_state_name(_state));
         ShouldNotReachHere();
         break;
     }
@@ -158,41 +158,41 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
     set_state(next_state);
   } while (_state != State::Inactive && !deadline_exceeded(end));
 
-  log_trace(gc, task)("Segmented Array Free Memory: Step took %1.3fms, done %s",
+  log_trace(gc, task)("Monotonic Arena Free Memory: Step took %1.3fms, done %s",
                       TimeHelper::counter_to_millis(os::elapsed_counter() - start),
                       bool_to_str(_state == State::CalculateUsed));
 
   return is_active();
 }
 
-void G1SegmentedArrayFreeMemoryTask::set_state(State new_state) {
-  log_trace(gc, task)("Segmented Array Free Memory: State change from %s to %s",
+void G1MonotonicArenaFreeMemoryTask::set_state(State new_state) {
+  log_trace(gc, task)("Monotonic Arena Free Memory: State change from %s to %s",
                       get_state_name(_state),
                       get_state_name(new_state));
   _state = new_state;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::is_active() const {
+bool G1MonotonicArenaFreeMemoryTask::is_active() const {
   return _state != State::Inactive;
 }
 
-jlong G1SegmentedArrayFreeMemoryTask::reschedule_delay_ms() const {
+jlong G1MonotonicArenaFreeMemoryTask::reschedule_delay_ms() const {
   return G1RemSetFreeMemoryRescheduleDelayMillis;
 }
 
-G1SegmentedArrayFreeMemoryTask::G1SegmentedArrayFreeMemoryTask(const char* name) :
+G1MonotonicArenaFreeMemoryTask::G1MonotonicArenaFreeMemoryTask(const char* name) :
   G1ServiceTask(name), _state(State::CalculateUsed), _return_info(nullptr) { }
 
-void G1SegmentedArrayFreeMemoryTask::execute() {
+void G1MonotonicArenaFreeMemoryTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
-  if (free_excess_segmented_array_memory()) {
+  if (free_excess_arena_memory()) {
     schedule(reschedule_delay_ms());
   }
 }
 
-void G1SegmentedArrayFreeMemoryTask::notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
-                                                      G1SegmentedArrayMemoryStats* collection_set_candidate_stats) {
+void G1MonotonicArenaFreeMemoryTask::notify_new_stats(G1MonotonicArenaMemoryStats* young_gen_stats,
+                                                      G1MonotonicArenaMemoryStats* collection_set_candidate_stats) {
   assert_at_safepoint_on_vm_thread();
 
   _total_used = *young_gen_stats;
