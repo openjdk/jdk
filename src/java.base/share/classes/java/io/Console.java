@@ -49,6 +49,12 @@ import sun.security.action.GetPropertyAction;
  * example by a background job scheduler, then it will typically not
  * have a console.
  * <p>
+ * Console can also be supplied if an implementation of
+ * {@link ConsoleProvider} is available. The implementation may be
+ * looked for when {@systemProperty java.console.providers} is
+ * set to {@code true} on the command line.
+ *
+ * <p>
  * If this virtual machine has a console then it is represented by a
  * unique instance of this class which can be obtained by invoking the
  * {@link java.lang.System#console()} method.  If no console device is
@@ -596,8 +602,8 @@ public class Console implements Flushable
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                boolean allowProviders = System.getProperty("console.allowproviders", "false").equalsIgnoreCase("true");
-                boolean useJLine = System.getProperty("console.usejline", "true").equalsIgnoreCase("true");
+                boolean allowProviders = System.getProperty("java.console.providers", "false").equalsIgnoreCase("true");
+                boolean useJLine = System.getProperty("jdk.console.usejline", "true").equalsIgnoreCase("true");
 
                 if (cons == null) {
                     // Try loading providers

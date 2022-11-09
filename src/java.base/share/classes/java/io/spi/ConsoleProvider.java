@@ -28,7 +28,11 @@ package java.io.spi;
 import java.io.Console;
 
 /**
- * ConsoleProvider
+ * Service provider interface for supplying an implementation
+ * of {@link Console}. Implementation of this class can be
+ * looked for when the system property
+ * {@systemProperty java.console.providers} is set to
+ * {@code true} on the command line.
  *
  * @since 20
  */
