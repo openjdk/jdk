@@ -88,7 +88,7 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ((a - b) + 123_456_789_123L     , test21(a, b));
         Asserts.assertEQ((a - b) + -123_456_788_877L    , test22(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test23(a, b));
-	    Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test24(a, b));
+        Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test24(a, b));
     }
 
     @Test
