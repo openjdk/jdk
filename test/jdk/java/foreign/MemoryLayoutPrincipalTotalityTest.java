@@ -34,7 +34,7 @@ import java.lang.foreign.*;
 import static java.lang.foreign.ValueLayout.*;
 import static org.testng.Assert.*;
 
-public class MemoryLayoutPrincipalTotalityTest extends NativeTestHelper {
+public class MemoryLayoutPrincipalTotalityTest {
 
     // The tests in this class is mostly there to ensure compile-time pattern matching totality.
 
