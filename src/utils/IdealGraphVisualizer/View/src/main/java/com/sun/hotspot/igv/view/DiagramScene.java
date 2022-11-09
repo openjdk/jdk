@@ -890,8 +890,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         Rectangle viewRect = scrollPane.getViewport().getViewRect();
 
         double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
-        if (factor < 1.0) {
-            centredZoom(getZoomFactor() * factor, null);
+        double zoomFactor = getZoomFactor();
+        double newZoomFactor = zoomFactor * factor;
+        if (factor < 1.0 || zoomFactor < 1.0) {
+            newZoomFactor = Math.min(1.0, newZoomFactor);
+            centredZoom(newZoomFactor, null);
+            factor = newZoomFactor / zoomFactor;
             rect.x *= factor;
             rect.y *= factor;
             rect.width *= factor;
