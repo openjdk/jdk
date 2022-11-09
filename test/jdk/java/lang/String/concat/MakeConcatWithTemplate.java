@@ -21,14 +21,17 @@
  * questions.
  */
 
-import java.lang.invoke.*;
-import java.util.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.StringConcatFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @test
  * @summary Test StringConcatFactory.makeConcatWithTemplate... methods.
- * @compile --enable-preview -source ${jdk.version} MakeConcatWithTemplate.java
- * @run main/othervm --enable-preview MakeConcatWithTemplate
+ * @enablePreview true
  */
 
 public class MakeConcatWithTemplate {

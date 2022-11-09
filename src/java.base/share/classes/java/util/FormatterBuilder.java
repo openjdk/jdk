@@ -162,10 +162,6 @@ final class FormatterBuilder {
             findStringConcatItemConstructor(FormatItemFillRight.class,
                      int.class, FormatConcatItem.class);
 
-    private static final MethodHandle FIUpper_MH =
-            findStringConcatItemConstructor(FormatItemUpper.class,
-                    FormatConcatItem.class);
-
     private static final MethodHandle FINull_MH =
             findStringConcatItemConstructor(FormatItemNull.class);
 
@@ -276,7 +272,7 @@ final class FormatterBuilder {
                         return null;
                     }
 
-                    if (validFlags(flags, LEFT_JUSTIFY | UPPERCASE)) {
+                    if (validFlags(flags, LEFT_JUSTIFY)) {
                         handled = true;
                         mh = filterReturnValue(mh, FIBoolean_MH);
                     }
@@ -291,7 +287,7 @@ final class FormatterBuilder {
                     }
                 }
 
-                if (validFlags(flags, LEFT_JUSTIFY | UPPERCASE) && precision == -1) {
+                if (validFlags(flags, LEFT_JUSTIFY) && precision == -1) {
                     if (itype == String.class) {
                         handled = true;
                         mh = filterReturnValue(mh, FIString_MH);
@@ -315,7 +311,7 @@ final class FormatterBuilder {
                         return isPrimitive ? null : mh;
                     }
 
-                    if (validFlags(flags, LEFT_JUSTIFY | UPPERCASE)) {
+                    if (validFlags(flags, LEFT_JUSTIFY)) {
                         handled = true;
                         mh = filterReturnValue(mh, FICharacter_MH);
                     }
@@ -398,11 +394,9 @@ final class FormatterBuilder {
                 }
             }
 
-            if (isFlag(flags, UPPERCASE)) {
-                mh = filterReturnValue(mh, FIUpper_MH);
+            if (!isFlag(flags, UPPERCASE)) {
+                return mh;
             }
-
-            return mh;
         }
 
         mh = insertArguments(FIFormatSpecifier_MH, 0, fs, locale);

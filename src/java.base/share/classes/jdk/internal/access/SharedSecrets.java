@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.lang.template.StringTemplate;
 import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
@@ -89,6 +90,7 @@ public class SharedSecrets {
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
+    private static JavaTemplateAccess javaTemplateAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -512,6 +514,19 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SealedObject.class);
             access = javaxCryptoSealedObjectAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaTemplateAccess(JavaTemplateAccess jta) {
+        javaTemplateAccess = jta;
+    }
+
+    public static JavaTemplateAccess getJavaTemplateAccess() {
+        var access = javaTemplateAccess;
+        if (access == null) {
+            ensureClassInitialized(StringTemplate.class);
+            access = javaTemplateAccess;
         }
         return access;
     }

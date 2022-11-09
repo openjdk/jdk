@@ -1,5 +1,4 @@
 /*
-/*
  * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -235,11 +234,11 @@ public class JavacParser implements Parser {
     JCVariableDecl receiverParam;
 
     /** When terms are parsed, the mode determines which is expected:
-     *     mode = EXPR          : an expression
-     *     mode = TYPE          : a type
-     *     mode = NOPARAMS      : no parameters allowed for type
-     *     mode = TYPEARG       : type argument
-     *     mode |= NOLAMBDA     : lambdas are not allowed
+     *     mode = EXPR        : an expression
+     *     mode = TYPE        : a type
+     *     mode = NOPARAMS    : no parameters allowed for type
+     *     mode = TYPEARG     : type argument
+     *     mode |= NOLAMBDA   : lambdas are not allowed
      */
     protected static final int EXPR          = 1 << 0;
     protected static final int TYPE          = 1 << 1;
@@ -1895,7 +1894,7 @@ public class JavacParser implements Parser {
                     } else if (peekToken(lookahead, RPAREN, ARROW)) {
                         // Identifier, ')' '->' -> implicit lambda
                         return !isMode(NOLAMBDA) ? ParensResult.IMPLICIT_LAMBDA
-                                                      : ParensResult.PARENS;
+                                                 : ParensResult.PARENS;
                     } else if (depth == 0 && peekToken(lookahead, COMMA)) {
                         defaultResult = ParensResult.IMPLICIT_LAMBDA;
                     }

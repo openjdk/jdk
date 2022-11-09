@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@linkplain ValidatingProcessor yemplate processor} constructs a String
+ * This {@linkplain ValidatingProcessor template processor} constructs a String
  * result using {@link Formatter}. Unlike {@link Formatter}, FormatProcessor uses the value from
  * the embedded expression that follows immediately after the
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
@@ -53,7 +53,8 @@ import jdk.internal.javac.PreviewFeature;
  * specifiers in the fragments and types of the values in the value list
  * to produce a more performant formatter.
  *
- * @implSpec Since, values are in situ, argument indexing is unsupported.
+ * @implSpec Since, values are found with in the string template, argument indexing
+ * specifiers are unsupported.
  *
  * @since 20
  */

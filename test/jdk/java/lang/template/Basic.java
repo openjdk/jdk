@@ -25,8 +25,7 @@
  * @test
  * @bug 0000000
  * @summary Exercise runtime handing of templated strings.
- * @compile --enable-preview -source ${jdk.version} Basic.java
- * @run main/othervm --enable-preview Basic
+ * @enablePreview true
  */
 
 import java.lang.template.*;

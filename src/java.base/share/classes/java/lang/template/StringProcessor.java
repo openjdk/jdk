@@ -25,9 +25,6 @@
 
 package java.lang.template;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import jdk.internal.javac.PreviewFeature;
 
 /**

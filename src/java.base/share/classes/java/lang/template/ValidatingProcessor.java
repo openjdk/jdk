@@ -97,7 +97,7 @@ import jdk.internal.javac.PreviewFeature;
  *     List<Object> values = st.values();
  *     // check or manipulate the fragments and/or values
  *     ...
- *     return StringTemplate.interpolate(fragments, values);;
+ *     return StringTemplate.interpolate(fragments, values);
  * };
  * }
  * The {@link FunctionalInterface} {@link TemplateProcessor} is supplied to avoid
@@ -123,11 +123,11 @@ import jdk.internal.javac.PreviewFeature;
  * };
  * }
  * The {@link StringTemplate#interpolate()} method is available for those processors
- * that just need to work with the interpolatation;
+ * that just need to work with the interpolation;
  * {@snippet :
  * StringProcessor processor = StringTemplate::interpolate;
  * }
- * or simply transform the interpolatation into something other than
+ * or simply transform the interpolation into something other than
  * {@link String};
  * {@snippet :
  * TemplateProcessor<JSONObject> jsonProcessor = st -> new JSONObject(st.interpolate());

@@ -23,28 +23,21 @@
  * questions.
  */
 
-package java.lang.template;
+package jdk.internal.access;
 
-import jdk.internal.javac.PreviewFeature;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
+import java.util.List;
 
-/**
- * This interface simplifies declaration of
- * {@linkplain ValidatingProcessor template processors}
- * that do not throw checked exceptions. For example:
- * {@snippet :
- * TemplateProcessor<String> processor = st -> {
- *     List<String> fragments = st.fragments();
- *     List<Object> values = st.values();
- *     // check or manipulate the fragments and/or values
- *     ...
- *     return StringTemplate.interpolate(fragments, values);
- * };
- * }
- *
- * @param <R>  Processor's process result type.
- *
- * @since 20
- */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-@FunctionalInterface
-public interface TemplateProcessor<R> extends ValidatingProcessor<R, RuntimeException> {}
+public interface JavaTemplateAccess {
+
+    // Create a new {@link StringTemplateImpl} constructor.
+    //
+    // @param fragments  string template fragments
+    // @param type       method type
+    //
+    // @return {@link MethodHandle} that can construct a {@link StringTemplateImpl} with arguments
+    // used as values.
+    public MethodHandle createStringTemplateImplMH(List<String> fragments, MethodType type);
+}
+

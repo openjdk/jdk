@@ -40,6 +40,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.JavaTemplateAccess;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
@@ -51,12 +52,12 @@ import jdk.internal.javac.PreviewFeature;
  * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-final class TemplateRuntime {
+final class TemplateSupport {
 
     /**
      * Private constructor.
      */
-    private TemplateRuntime() {
+    private TemplateSupport() {
         throw new AssertionError("private constructor");
     }
 
@@ -80,14 +81,18 @@ final class TemplateRuntime {
     }
 
     /**
-     * Generic StringTemplate.
+     * Generic {@link StringTemplate}.
      *
      * @param fragments  immutable list of string fragments from string template
      * @param values     immutable list of expression values
      */
-    record SimpleStringTemplate(List<String> fragments,
-                                 List<Object> values
-    ) implements StringTemplate {}
+    record SimpleStringTemplate(List<String> fragments, List<Object> values)
+            implements StringTemplate {
+        @Override
+        public java.lang.String toString() {
+            return StringTemplate.toString(this);
+        }
+    }
 
     /**
      * Creates a string that interleaves the elements of values between the
@@ -141,22 +146,34 @@ final class TemplateRuntime {
             Objects.requireNonNull(st, "string templates should not be null");
             size += st.values().size();
         }
-        String[] fragments = new String[size + 1];
-        Object[] values = new Object[size];
+        String[] combinedFragments = new String[size + 1];
+        Object[] combinedValues = new Object[size];
         int i = 0, j = 0;
-        fragments[0] = "";
+        String last = "";
         for (StringTemplate st : sts) {
-            Iterator<String> fragmentIter = st.fragments().iterator();
-            fragments[i++] += fragmentIter.next();
-            while (fragmentIter.hasNext()) {
-                fragments[i++] = fragmentIter.next();
+            List<String> fragments = st.fragments();
+            combinedFragments[i++] = last + fragments.get(0);
+            int k = 1, sizem1 = fragments.size() - 1;
+            for(; k < sizem1; k++) {
+                combinedFragments[i++] = fragments.get(k);
             }
-            i--;
+            last = fragments.get(k);
             for (Object value : st.values()) {
-                values[j++] = value;
+                combinedValues[j++] = value;
             }
         }
-        return new SimpleStringTemplate(TemplateRuntime.toList(fragments), TemplateRuntime.toList(values));
+        combinedFragments[i] = last;
+        return new SimpleStringTemplate(TemplateSupport.toList(combinedFragments), TemplateSupport.toList(combinedValues));
+    }
+
+    /**
+     * Return the basic string interpolate process, and, initialize the SharedSecret.
+     *
+     * @return basic string interpolate process
+     */
+    static StringProcessor basicInterpolate() {
+        SharedSecrets.setJavaTemplateAccess(new StringTemplateImplFactory());
+        return StringTemplate::interpolate;
     }
 
 }

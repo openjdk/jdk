@@ -133,7 +133,7 @@ final class StringConcatHelper {
      *                    the upper word.
      * @param value       value to mix in
      * @return            new length and coder
-     * @since 19
+     * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     static long mix(long lengthCoder, FormatConcatItem value) {
@@ -354,7 +354,7 @@ final class StringConcatHelper {
      * @param buf        buffer to append to
      * @param value      String value to encode
      * @return           updated index (coder value retained)
-     * @since 19
+     * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     private static long prepend(long indexCoder, byte[] buf,
@@ -376,7 +376,7 @@ final class StringConcatHelper {
      * @param value      boolean value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
-     * @since 19
+     * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     static long prepend(long indexCoder, byte[] buf,

@@ -25,12 +25,14 @@
  * @test
  * @bug 0000000
  * @summary Exercise format builder.
- * @compile --enable-preview -source ${jdk.version} FormatterBuilder.java
- * @run main/othervm --enable-preview FormatterBuilder
+ * @enablePreview true
  */
 
-import java.lang.template.*;
-import java.util.*;
+import java.lang.template.StringTemplate;
+import java.lang.template.StringProcessor;
+import java.util.FormatProcessor;
+import java.util.Objects;
+import java.util.Locale;
 
 import static java.util.FormatProcessor.FMT;
 
@@ -50,7 +52,7 @@ public class FormatterBuilder {
         }
     }
 
-    static void suite(ValidatingProcessor<String, RuntimeException> fmt) {
+    static void suite(StringProcessor fmt) {
         Object nullObject = null;
         test(String.format("%b", false), fmt."%b\{false}");
         test(String.format("%b", true), fmt."%b\{true}");

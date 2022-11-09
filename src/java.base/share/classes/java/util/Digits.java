@@ -23,20 +23,20 @@
  * questions.
  */
 
-package jdk.internal.util;
-
-import jdk.internal.javac.PreviewFeature;
+package java.util;
 
 import java.lang.invoke.MethodHandle;
+
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Digits provides a fast methodology for converting integers and longs to
  * ASCII strings.
  *
- * @since 19
+ * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-public interface Digits {
+interface Digits {
     /**
      * Insert digits for long value in buffer from high index to low index.
      *
@@ -64,13 +64,13 @@ public interface Digits {
     /**
      * Digits class for decimal digits.
      */
-    public final class DecimalDigits implements Digits {
+    final class DecimalDigits implements Digits {
         private static final short[] DIGITS;
 
         /**
          * Singleton instance of DecimalDigits.
          */
-        public static final Digits INSTANCE = new DecimalDigits();
+        static final Digits INSTANCE = new DecimalDigits();
 
         static {
             short[] digits = new short[10 * 10];
@@ -165,13 +165,13 @@ public interface Digits {
     /**
      * Digits class for hexadecimal digits.
      */
-    public final class HexDigits implements Digits {
+    final class HexDigits implements Digits {
         private static final short[] DIGITS;
 
         /**
          * Singleton instance of HexDigits.
          */
-        public static final Digits INSTANCE = new HexDigits();
+        static final Digits INSTANCE = new HexDigits();
 
         static {
             short[] digits = new short[16 * 16];
@@ -224,13 +224,13 @@ public interface Digits {
     /**
      * Digits class for octal digits.
      */
-    public final class OctalDigits implements Digits {
+    final class OctalDigits implements Digits {
         private static final short[] DIGITS;
 
         /**
          * Singleton instance of HexDigits.
          */
-        public static final Digits INSTANCE = new OctalDigits();
+        static final Digits INSTANCE = new OctalDigits();
 
         static {
             short[] digits = new short[8 * 8];
