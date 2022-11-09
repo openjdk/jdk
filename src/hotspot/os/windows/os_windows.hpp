@@ -32,11 +32,9 @@
 class outputStream;
 class Thread;
 
-<<<<<<< HEAD
 static unsigned __stdcall thread_native_entry(Thread*);
-=======
+
 typedef void (*signal_handler_t)(int);
->>>>>>> upstream/master
 
 class os::win32 {
   friend class os;
