@@ -317,7 +317,7 @@ void C1_MacroAssembler::allocate_array(
   Register t1,                         // temp register
   Register t2,                         // temp register
   Register t3,                         // temp register
-  int      hdr_size,                   // object header size in words
+  int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
   Label&   slow_case                   // continuation point if fast allocation fails
@@ -349,7 +349,7 @@ void C1_MacroAssembler::allocate_array(
     sldi(t1, len, log2_elt_size);
     arr_len_in_bytes = t1;
   }
-  addi(arr_size, arr_len_in_bytes, hdr_size * wordSize + MinObjAlignmentInBytesMask); // Add space for header & alignment.
+  addi(arr_size, arr_len_in_bytes, base_offset_in_bytes + MinObjAlignmentInBytesMask); // Add space for header & alignment.
   clrrdi(arr_size, arr_size, LogMinObjAlignmentInBytes);                              // Align array size.
 
   // Allocate space & initialize header.
@@ -359,8 +359,8 @@ void C1_MacroAssembler::allocate_array(
   // Initialize body.
   const Register base  = t2;
   const Register index = t3;
-  addi(base, obj, hdr_size * wordSize);               // compute address of first element
-  addi(index, arr_size, -(hdr_size * wordSize));      // compute index = number of bytes to clear
+  addi(base, obj, base_offset_in_bytes);               // compute address of first element
+  addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
   initialize_body(base, index);
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
