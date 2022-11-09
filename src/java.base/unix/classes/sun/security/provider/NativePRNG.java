@@ -90,7 +90,19 @@ public final class NativePRNG extends SecureRandomSpi {
     }
 
     // singleton instance or null if not available
-    private static final RandomIO INSTANCE = initIO(Variant.MIXED);
+    // private static final RandomIO INSTANCE = initIO(Variant.MIXED);
+    // private static final ThreadLocal<RandomIO> INSTANCE = new ThreadLocal<>();
+    private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.MIXED);
+
+    static {
+     System.out.println("******INIT*****");
+//      initIO(Variant.MIXED);
+      if (INSTANCE.get() == null) {
+        System.out.println("******INIT NOT AVAILABLE*****");
+      } else {
+        System.out.println("******INIT SUCCESS*****");
+      }
+    }
 
     /**
      * Get the System egd source (if defined).  We only allow "file:"
@@ -127,11 +139,11 @@ public final class NativePRNG extends SecureRandomSpi {
      * Create a RandomIO object for all I/O of this Variant type.
      */
     @SuppressWarnings("removal")
-    private static RandomIO initIO(final Variant v) {
+    private static ThreadLocal<RandomIO> initIO(final Variant v) {
         return AccessController.doPrivileged(
-            new PrivilegedAction<>() {
+            new PrivilegedAction<ThreadLocal<RandomIO>>() {
                 @Override
-                public RandomIO run() {
+                public ThreadLocal<RandomIO> run() {
 
                     File seedFile;
                     File nextFile;
@@ -188,44 +200,53 @@ public final class NativePRNG extends SecureRandomSpi {
                         return null;
                     }
 
-                    try {
-                        return new RandomIO(seedFile, nextFile);
-                    } catch (Exception e) {
-                        return null;
-                    }
+                    return ThreadLocal.withInitial(() -> {
+                        try {
+                            return new RandomIO(seedFile, nextFile);
+                        } catch (Exception e)  {
+                            return null;
+                        }
+                    });
                 }
         });
     }
 
     // return whether the NativePRNG is available
     static boolean isAvailable() {
-        return INSTANCE != null;
+        if (INSTANCE.get() == null) {
+          System.out.println("****** NOT AVAILABLE*****");
+        } else {
+          System.out.println("****** YES AVAILABLE*****");
+        }
+        return INSTANCE.get() != null;
     }
 
     // constructor, called by the JCA framework
     public NativePRNG() {
         super();
-        if (INSTANCE == null) {
+        if (INSTANCE.get() == null) {
             throw new AssertionError("NativePRNG not available");
+        } else {
+          System.out.println("****** YES AVAILABLE1*****");
         }
     }
 
     // set the seed
     @Override
     protected void engineSetSeed(byte[] seed) {
-        INSTANCE.implSetSeed(seed);
+        INSTANCE.get().implSetSeed(seed);
     }
 
     // get pseudo random bytes
     @Override
     protected void engineNextBytes(byte[] bytes) {
-        INSTANCE.implNextBytes(bytes);
+        INSTANCE.get().implNextBytes(bytes);
     }
 
     // get true random bytes
     @Override
     protected byte[] engineGenerateSeed(int numBytes) {
-        return INSTANCE.implGenerateSeed(numBytes);
+        return INSTANCE.get().implGenerateSeed(numBytes);
     }
 
     /**
@@ -243,17 +264,21 @@ public final class NativePRNG extends SecureRandomSpi {
     public static final class Blocking extends SecureRandomSpi {
         private static final long serialVersionUID = -6396183145759983347L;
 
-        private static final RandomIO INSTANCE = initIO(Variant.BLOCKING);
+       // private static final ThreadLocal<RandomIO> INSTANCE = new ThreadLocal<> ();
+        private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.BLOCKING);
+        static {
+//          initIO(Variant.BLOCKING);
+        }
 
         // return whether this is available
         static boolean isAvailable() {
-            return INSTANCE != null;
+            return INSTANCE.get() != null;
         }
 
         // constructor, called by the JCA framework
         public Blocking() {
             super();
-            if (INSTANCE == null) {
+            if (INSTANCE.get() == null) {
                 throw new AssertionError("NativePRNG$Blocking not available");
             }
         }
@@ -261,19 +286,19 @@ public final class NativePRNG extends SecureRandomSpi {
         // set the seed
         @Override
         protected void engineSetSeed(byte[] seed) {
-            INSTANCE.implSetSeed(seed);
+            INSTANCE.get().implSetSeed(seed);
         }
 
         // get pseudo random bytes
         @Override
         protected void engineNextBytes(byte[] bytes) {
-            INSTANCE.implNextBytes(bytes);
+            INSTANCE.get().implNextBytes(bytes);
         }
 
         // get true random bytes
         @Override
         protected byte[] engineGenerateSeed(int numBytes) {
-            return INSTANCE.implGenerateSeed(numBytes);
+            return INSTANCE.get().implGenerateSeed(numBytes);
         }
     }
 
@@ -292,17 +317,22 @@ public final class NativePRNG extends SecureRandomSpi {
     public static final class NonBlocking extends SecureRandomSpi {
         private static final long serialVersionUID = -1102062982994105487L;
 
-        private static final RandomIO INSTANCE = initIO(Variant.NONBLOCKING);
+        //private static final ThreadLocal<RandomIO> INSTANCE = new ThreadLocal<>();
+        private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.NONBLOCKING);
+
+        static {
+          //initIO(Variant.NONBLOCKING);
+        }
 
         // return whether this is available
         static boolean isAvailable() {
-            return INSTANCE != null;
+            return INSTANCE.get() != null;
         }
 
         // constructor, called by the JCA framework
         public NonBlocking() {
             super();
-            if (INSTANCE == null) {
+            if (INSTANCE.get() == null) {
                 throw new AssertionError(
                     "NativePRNG$NonBlocking not available");
             }
@@ -311,19 +341,19 @@ public final class NativePRNG extends SecureRandomSpi {
         // set the seed
         @Override
         protected void engineSetSeed(byte[] seed) {
-            INSTANCE.implSetSeed(seed);
+            INSTANCE.get().implSetSeed(seed);
         }
 
         // get pseudo random bytes
         @Override
         protected void engineNextBytes(byte[] bytes) {
-            INSTANCE.implNextBytes(bytes);
+            INSTANCE.get().implNextBytes(bytes);
         }
 
         // get true random bytes
         @Override
         protected byte[] engineGenerateSeed(int numBytes) {
-            return INSTANCE.implGenerateSeed(numBytes);
+            return INSTANCE.get().implGenerateSeed(numBytes);
         }
     }
 
