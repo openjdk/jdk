@@ -65,7 +65,7 @@ import java.util.Objects;
  * and <em>shared</em> arenas.
  * <p>
  * Confined arenas, support strong thread-confinement guarantees. Upon creation, they are assigned an
- * {@linkplain #isOwnedBy(Thread) owner thread}, typically the thread which initiated the creation operation.
+ * {@linkplain #isCloseableBy(Thread) owner thread}, typically the thread which initiated the creation operation.
  * The segments created by a confined arena can only be {@linkplain MemorySession#isAccessibleBy(Thread) accessed}
  * by the thread that created the arena. Moreover, any attempt to close the confined arena from a thread other than the owner thread will
  * fail with {@link WrongThreadException}.
@@ -73,7 +73,7 @@ import java.util.Objects;
  * Shared memory sessions, on the other hand, have no owner thread. The segments created by a shared arena
  * can be {@linkplain MemorySession#isAccessibleBy(Thread) accessed} by multiple threads. This might be useful when
  * multiple threads need to access the same memory segment concurrently (e.g. in the case of parallel processing).
- * Moreover, a shared arena can be closed by any thread.
+ * Moreover, a shared arena {@linkplain #isCloseableBy(Thread) can be closed} by any thread.
  *
  * @since 20
  */
@@ -128,7 +128,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * {@return {@code true} if the provided thread can close this arena}
      * @param thread the thread to be tested.
      */
-    boolean isOwnedBy(Thread thread);
+    boolean isCloseableBy(Thread thread);
 
     /**
      * Creates a new confined arena.
@@ -159,9 +159,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
             }
 
             @Override
-            public boolean isOwnedBy(Thread thread) {
+            public boolean isCloseableBy(Thread thread) {
                 Objects.requireNonNull(thread);
-                return sessionImpl.ownerThread() == thread;
+                return sessionImpl.ownerThread() == null || // shared
+                        sessionImpl.ownerThread() == thread;
             }
         };
     }

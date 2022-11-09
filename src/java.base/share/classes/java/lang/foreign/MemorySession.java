@@ -43,14 +43,14 @@ import jdk.internal.ref.CleanerFactory;
  * explicitly, (i.e. using an {@linkplain Arena arena}) or implicitly, by the garbage collector. When a bounded memory
  * session ends, it is no longer {@linkplain #isAlive() alive}, and subsequent operations
  * on the segments associated with that bounded session (e.g. {@link MemorySegment#get(ValueLayout.OfInt, long)})
- * will fail with {@link IllegalStateException}. Moreover, to prevent temporal safety, access to memory segments associated with
+ * will fail with {@link IllegalStateException}. Moreover, to guarantee temporal safety, access to memory segments associated with
  * bounded sessions might be <a href="Arena.html#thread-confinement">restricted to specific threads</a>.
  *
  * <h2 id="implicit">Implicitly-managed bounded memory sessions</h2>
  *
  * Managing bounded memory session explicitly, using arenas, while powerful, must be used with caution. An arena must always
  * be closed when no longer in use (this is done using {@link Arena#close()}). A failure to do so
- * might result in memory leaks. To mitigate this problem, clients can obtain an {@linkplain MemorySession#implicit() obtain}
+ * might result in memory leaks. To mitigate this problem, clients can {@linkplain MemorySession#implicit() obtain}
  * bounded memory sessions that are managed implicitly, by the garbage collector. These sessions end at some unspecified
  * time <em>after</em> they become <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>, as shown below:
  *
@@ -60,7 +60,7 @@ import jdk.internal.ref.CleanerFactory;
  * segment = null; // the session might end after this instruction
  *}
  *
- * Bounded sessions that are managed implicitly can be useful to manage long-lived segments, where timely deallocation
+ * Bounded sessions that are managed implicitly can be useful to allocate long-lived segments, where timely deallocation
  * is not critical, or in unstructured cases where the boundaries of the lifetime associated with a memory session
  * cannot be easily determined. As shown in the example above, a memory session that is managed implicitly cannot end
  * if a program references to one or more segments associated with that session. This means that memory segments associated
