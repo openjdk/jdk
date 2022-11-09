@@ -69,6 +69,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
   _has_injected_fields = -1;
   _implementor = NULL; // we will fill these lazily
+  _transitive_interfaces = NULL;
 
   // Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
   // This is primarily useful for metadata which is considered as weak roots
@@ -729,17 +730,20 @@ void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass
   }
 }
 
-GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() const {
-  GrowableArray<ciInstanceKlass*>* result = NULL;
-  GUARDED_VM_ENTRY(
-    InstanceKlass* ik = get_instanceKlass();
-    Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
-    result = new GrowableArray<ciInstanceKlass*>(interfaces->length());
-    for (int i = 0; i < interfaces->length(); i++) {
-      result->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
-    }
-  );
-  return result;
+GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() {
+  if (_transitive_interfaces == NULL) {
+    GUARDED_VM_ENTRY(
+            InstanceKlass* ik = get_instanceKlass();
+            Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
+            Arena* arena = CURRENT_ENV->arena();
+            GrowableArray<ciInstanceKlass*>* transitive_interfaces = new (arena)GrowableArray<ciInstanceKlass*>(arena, interfaces->length(), 0, NULL);
+            for (int i = 0; i < interfaces->length(); i++) {
+              transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
+            }
+            _transitive_interfaces = transitive_interfaces;
+    );
+  }
+  return _transitive_interfaces;
 }
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
