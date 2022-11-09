@@ -543,6 +543,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
+    private void updateFigureTexts() {
+        for (Figure figure : getModel().getDiagram().getFigures()) {
+            // Update node text, since it might differ across views.
+            figure.updateLines();
+        }
+    }
+
     private void updateFigureWidths() {
         if (getModel().getShowCFG()) {
             Map<InputBlock, Integer> maxWidth = new HashMap<>();
@@ -550,8 +557,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 maxWidth.put(inputBlock, 10);
             }
             for (Figure figure : getModel().getDiagram().getFigures()) {
-                // Update node text, since it might differ across views.
-                figure.updateLines();
                 // Compute max node width in each block.
                 if (figure.getWidth() > maxWidth.get(figure.getBlock().getInputBlock())) {
                     maxWidth.put(figure.getBlock().getInputBlock(), figure.getWidth());
@@ -609,6 +614,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void update() {
         rebuilding = true;
         clearObjects();
+        updateFigureTexts();
         updateFigureWidths();
         rebuildMainLayer();
         rebuildBlockLayer();
