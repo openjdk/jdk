@@ -36,6 +36,8 @@ public interface InputGraphProvider {
 
     InputGraph getGraph();
 
+    void centerSelectedNodes();
+
     void addSelectedNodes(Collection<InputNode> nodes);
 
     void clearSelectedNodes();

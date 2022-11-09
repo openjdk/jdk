@@ -326,7 +326,7 @@ public final class EditorTopComponent extends TopComponent {
         scene.addSelectedNodes(nodes, centerSelection);
     }
 
-    public void centerSelectedFigures() {
+    public void centerSelectedNodes() {
         scene.centerSelectedFigures();
     }
 

@@ -43,6 +43,7 @@ public final class SelectBytecodesAction extends CookieAction {
         if (p != null) {
             p.clearSelectedNodes();
             p.addSelectedNodes(c.getNodes());
+            p.centerSelectedNodes();
         }
     }
 
