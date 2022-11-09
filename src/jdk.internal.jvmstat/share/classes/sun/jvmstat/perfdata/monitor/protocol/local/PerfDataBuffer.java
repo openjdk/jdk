@@ -63,7 +63,7 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
         try {
             ByteBuffer bb = perf.attach(vmid.getLocalVmId());
             createPerfDataBuffer(bb, vmid.getLocalVmId());
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw new MonitorException("Could not attach to "
                                        + vmid.getLocalVmId(), e);
         }
