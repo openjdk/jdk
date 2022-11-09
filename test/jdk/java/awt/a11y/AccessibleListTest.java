@@ -26,7 +26,6 @@
  * @test
  * @bug 8271846
  * @summary Test implementation of AccessibleList interface
- * @author Artem.Semenov@jetbrains.com
  * @run main AccessibleListTest
  * @requires (os.family == "windows" | os.family == "mac")
  */
