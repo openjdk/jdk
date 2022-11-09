@@ -342,6 +342,7 @@ public final class CertAndKeyGen {
             } else {
                 cert.sign(privateKey, sigAlg);
             }
+
             return cert;
 
         } catch (IOException e) {
