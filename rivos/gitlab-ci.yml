@@ -243,16 +243,17 @@ package-deb-dbg-riscv64:
     PKG_ARCH: "riscv64"
     PKG_DBG: "true"
 
-deploy-module-ubuntu:
-  extends: .deploy-module
-  dependencies:
-    - prepare-version
-    - build-linux-amd64
-  needs:
-    - prepare-version
-    - build-linux-amd64
-  variables:
-    CONTENT_PATH: "build/linux-amd64/images/jdk"
+# deploy-module-ubuntu:
+#   extends: .deploy-module
+#   dependencies:
+#     - prepare-version
+#     - build-linux-amd64
+#   needs:
+#     - prepare-version
+#     - build-linux-amd64
+#   variables:
+#     CONTENT_PATH: "build/linux-amd64/images/jdk"
+#     UBUNTU2204_INSTALL_PATH: "${SDK_MODULES_ROOT}/ubuntu.22.04/x86_64/${CI_PROJECT_NAME}/${VERSION_TAG}"
 
 # Rebuild the rivos-sdk where we are exporting the artifacts built here.
 update-sdk:
