@@ -881,10 +881,19 @@ protected:
   private:
     GrowableArray<ciKlass*> _list;
     void raw_add(ciKlass* interface);
+    void add(ciKlass* interface);
     void verify() const;
+    int _hash_computed:1;
+    int _exact_klass_computed:1;
+    int _is_loaded_computed:1;
+    int _hash;
+    ciKlass* _exact_klass;
+    bool _is_loaded;
+    void compute_hash();
+    void compute_exact_klass();
   public:
     InterfaceSet();
-    void add(ciKlass* interface);
+    InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
     bool eq(const InterfaceSet& other) const;
     int hash() const;
     void dump(outputStream *st) const;
@@ -894,9 +903,8 @@ protected:
       return intersection_with(other).eq(other);
     }
     bool empty() const { return _list.length() == 0; }
-    GrowableArray<ciKlass*>* list() const;
 
-    inline void* operator new( size_t x ) throw() {
+    inline void* operator new(size_t x) throw() {
       Compile* compile = Compile::current();
       return compile->type_arena()->AmallocWords(x);
     }
@@ -907,6 +915,8 @@ protected:
     bool is_loaded() const;
 
     static int compare(ciKlass* const &, ciKlass* const & k2);
+
+    void compute_is_loaded();
   };
 
   static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);

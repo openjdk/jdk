@@ -736,9 +736,13 @@ GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() {
             InstanceKlass* ik = get_instanceKlass();
             Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
             Arena* arena = CURRENT_ENV->arena();
-            GrowableArray<ciInstanceKlass*>* transitive_interfaces = new (arena)GrowableArray<ciInstanceKlass*>(arena, interfaces->length(), 0, NULL);
+            int len = interfaces->length() + (is_interface() ? 1 : 0);
+            GrowableArray<ciInstanceKlass*>* transitive_interfaces = new (arena)GrowableArray<ciInstanceKlass*>(arena, len, 0, NULL);
             for (int i = 0; i < interfaces->length(); i++) {
               transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
+            }
+            if (is_interface()) {
+              transitive_interfaces->append(this);
             }
             _transitive_interfaces = transitive_interfaces;
     );

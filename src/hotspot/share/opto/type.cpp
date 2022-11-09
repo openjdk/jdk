@@ -568,11 +568,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegL] = TypeLong::LONG;
   mreg2type[Op_RegFlags] = TypeInt::CC;
 
-  TypeAryPtr::_array_interfaces = new TypePtr::InterfaceSet();
-  GrowableArray<ciInstanceKlass*>* array_interfaces = ciArrayKlass::interfaces();
-  for (int i = 0; i < array_interfaces->length(); i++) {
-    TypeAryPtr::_array_interfaces->add(array_interfaces->at(i));
-  }
+  TypeAryPtr::_array_interfaces = new TypePtr::InterfaceSet(ciArrayKlass::interfaces());
   TypeAryKlassPtr::_array_interfaces = TypeAryPtr::_array_interfaces;
 
   TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), NULL /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());
@@ -3117,8 +3113,18 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
 TypePtr::InterfaceSet::InterfaceSet()
-  : _list(Compile::current()->type_arena(), 0, 0, NULL) {
+        : _list(Compile::current()->type_arena(), 0, 0, NULL),
+          _hash_computed(0), _exact_klass_computed(0), _is_loaded_computed(0) {
 }
+
+TypePtr::InterfaceSet::InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces)
+        : _list(Compile::current()->type_arena(), interfaces->length(), 0, NULL),
+          _hash_computed(0), _exact_klass_computed(0), _is_loaded_computed(0) {
+  for (int i = 0; i < interfaces->length(); i++) {
+    add(interfaces->at(i));
+  }
+}
+
 
 int TypePtr::InterfaceSet::compare(ciKlass* const& k1, ciKlass* const& k2) {
   if ((intptr_t)k1 < (intptr_t)k2) {
@@ -3155,12 +3161,22 @@ bool TypePtr::InterfaceSet::eq(const InterfaceSet& other) const {
 }
 
 int TypePtr::InterfaceSet::hash() const {
+  if (_hash_computed) {
+    return _hash;
+  }
+  const_cast<InterfaceSet*>(this)->compute_hash();
+  assert(_hash_computed, "should be computed now");
+  return _hash;
+}
+
+void TypePtr::InterfaceSet::compute_hash() {
   int hash = 0;
   for (int i = 0; i < _list.length(); i++) {
     ciKlass* k = _list.at(i);
     hash += (jint)k->hash();
   }
-  return hash;
+  _hash_computed = 1;
+  _hash = hash;
 }
 
 void TypePtr::InterfaceSet::dump(outputStream *st) const {
@@ -3267,39 +3283,53 @@ TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::intersection_with(const Interfac
   return result;
 }
 
-GrowableArray<ciKlass*>* TypePtr::InterfaceSet::list() const {
-  if (_list.length() == 0) {
-    return NULL;
-  }
-  GrowableArray<ciKlass*>* result = new GrowableArray<ciKlass*>();
-  result->appendAll(&_list);
-  return result;
-}
-
 // Is there a single ciKlass* that can represent the interface set?
 ciKlass* TypePtr::InterfaceSet::exact_klass() const {
+  if (_exact_klass_computed) {
+    return _exact_klass;
+  }
+  const_cast<InterfaceSet*>(this)->compute_exact_klass();
+  assert(_exact_klass_computed, "should be computed now");
+  return _exact_klass;
+}
+
+void TypePtr::InterfaceSet::compute_exact_klass() {
   if (_list.length() == 0) {
-    return NULL;
+    _exact_klass_computed = 1;
+    _exact_klass = NULL;
+    return;
   }
   ciKlass* res = NULL;
   for (int i = 0; i < _list.length(); i++) {
     ciKlass* interface = _list.at(i);
-    if (eq(TypePtr::interfaces(interface, false, true, false, trust_interfaces))) {
+    if (eq(interfaces(interface, false, true, false, trust_interfaces))) {
       assert(res == NULL, "");
       res = _list.at(i);
     }
   }
-  return res;
+  _exact_klass_computed = 1;
+  _exact_klass = res;
 }
 
 bool TypePtr::InterfaceSet::is_loaded() const {
+  if (_is_loaded_computed) {
+    return _is_loaded;
+  }
+  const_cast<InterfaceSet*>(this)->compute_is_loaded();
+  assert(_is_loaded_computed, "should be computed now");
+  return _is_loaded;
+}
+
+void TypePtr::InterfaceSet::compute_is_loaded() {
+  _is_loaded_computed = 1;
   for (int i = 0; i < _list.length(); i++) {
     ciKlass* interface = _list.at(i);
     if (!interface->is_loaded()) {
-      return false;
+      _is_loaded = false;
+      return;
     }
   }
-  return true;
+  _is_loaded = true;
 }
 
 //------------------------------TypeOopPtr-------------------------------------
@@ -3862,26 +3892,25 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
 }
 
 TypePtr::InterfaceSet TypePtr::interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling) {
-  InterfaceSet interfaces;
   if (k->is_instance_klass()) {
     if (k->is_loaded()) {
       if (k->is_interface() && interface_handling == ignore_interfaces) {
         assert(interface, "no interface expected");
         k = ciEnv::current()->Object_klass();
+        InterfaceSet interfaces;
         return interfaces;
       }
       GrowableArray<ciInstanceKlass *> *k_interfaces = k->as_instance_klass()->transitive_interfaces();
-      for (int i = 0; i < k_interfaces->length(); i++) {
-        interfaces.add(k_interfaces->at(i));
-      }
+      InterfaceSet interfaces(k_interfaces);
       if (k->is_interface()) {
         assert(interface, "no interface expected");
-        interfaces.add(k);
         k = ciEnv::current()->Object_klass();
       } else {
         assert(klass, "no instance klass expected");
       }
+      return interfaces;
     }
+    InterfaceSet interfaces;
     return interfaces;
   }
   assert(array, "no array expected");
