@@ -759,6 +759,7 @@ public abstract class SSLSocket extends Socket
      * Application-Layer Protocol Negotiation (ALPN), can negotiate
      * application-level values between peers.
      *
+     * @spec https://www.ietf.org/rfc/rfc7301.html Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.

@@ -37,6 +37,8 @@
  * {@link XPathException#INVALID_EXPRESSION_ERR} and {@link XPathException#TYPE_ERR}
  * are 1 and 2 respectively (instead of 51 and 52).
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-XPath Document Object Model (DOM) Level 3 XPath Specification
+ * @spec https://www.w3.org/TR/1999/REC-xpath-19991116 XML Path Language (XPath)
  * @since 1.4
  */
 

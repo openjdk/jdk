@@ -68,6 +68,7 @@ import java.util.List;
  *      factory.newDigestMethod(DigestMethod.SHA1, null));
  * </pre>
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author Erwin van der Koogh
  * @author JSR 105 Expert Group

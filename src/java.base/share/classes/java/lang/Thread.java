@@ -1900,6 +1900,7 @@ public class Thread implements Runnable {
      * with no arguments. This may result in throwing a
      * {@code SecurityException}.
      *
+     * @spec jni/index.html Java Native Interface Specification
      * @implNote In the JDK Reference Implementation, if this thread is the
      * current thread, and it's a platform thread that was not attached to the
      * VM with the Java Native Interface

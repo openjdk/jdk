@@ -75,6 +75,7 @@ package org.w3c.dom.ls;
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
 and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @since 1.5
  */
 public interface LSOutput {
@@ -105,6 +106,7 @@ public interface LSOutput {
      * output destination.
      * <br> If the system ID is a relative URI reference (see section 5 in [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]), the
      * behavior is implementation dependent.
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public String getSystemId();
     /**
@@ -112,6 +114,7 @@ public interface LSOutput {
      * output destination.
      * <br> If the system ID is a relative URI reference (see section 5 in [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]), the
      * behavior is implementation dependent.
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public void setSystemId(String systemId);
 
@@ -122,6 +125,7 @@ public interface LSOutput {
      * character encodings registered (as charsets) with the Internet
      * Assigned Numbers Authority [<a href='http://www.iana.org/assignments/character-sets/character-sets.xhtml'>IANA-CHARSETS</a>]
      *  should be referred to using their registered names.
+     * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      */
     public String getEncoding();
     /**
@@ -131,6 +135,7 @@ public interface LSOutput {
      * character encodings registered (as charsets) with the Internet
      * Assigned Numbers Authority [<a href='http://www.iana.org/assignments/character-sets/character-sets.xhtml'>IANA-CHARSETS</a>]
      *  should be referred to using their registered names.
+     * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      */
     public void setEncoding(String encoding);
 

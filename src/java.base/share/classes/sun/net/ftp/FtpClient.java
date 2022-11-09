@@ -70,6 +70,12 @@ import java.util.Iterator;
  * too much sense, due to the very sequential nature of FTP, to provide a
  * client able to be manipulated from multiple threads.
  *
+ * @spec https://www.ietf.org/rfc/rfc3659.html Extensions to FTP
+ * @spec https://www.ietf.org/rfc/rfc2428.html FTP Extensions for IPv6 and NATs
+ * @spec https://www.ietf.org/rfc/rfc2228.html FTP Security Extensions
+ * @spec https://www.ietf.org/rfc/rfc2389.html Feature negotiation mechanism for the File Transfer Protocol
+ * @spec https://www.ietf.org/rfc/rfc0959.html File Transfer Protocol
+ * @spec https://www.ietf.org/rfc/rfc4217.html Securing FTP with TLS
  * @since 1.7
  */
 public abstract class FtpClient implements java.io.Closeable {
@@ -864,6 +870,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @return this FtpCLient
      * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
+     * @spec https://www.ietf.org/rfc/rfc4217.html Securing FTP with TLS
      * @see #endSecureSession()
      */
     public abstract FtpClient startSecureSession() throws FtpProtocolException, IOException;

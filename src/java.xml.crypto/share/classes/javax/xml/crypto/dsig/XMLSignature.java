@@ -75,6 +75,7 @@ import java.util.List;
  * <code>Signature</code> to avoid naming clashes with the existing
  * {@link Signature java.security.Signature} class.
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @see XMLSignatureFactory#newXMLSignature(SignedInfo, KeyInfo)
  * @see XMLSignatureFactory#newXMLSignature(SignedInfo, KeyInfo, List, String, String)
  * @author Joyce L. Leung
@@ -197,6 +198,7 @@ public interface XMLSignature extends XMLStructure {
      *     &lt;/complexType&gt;
      * </pre>
      *
+     * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
      * @author Sean Mullan
      * @author JSR 105 Expert Group
      */

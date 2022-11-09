@@ -52,6 +52,7 @@ package org.w3c.dom;
  * and does not imply that the DOM specifies an order to these Nodes.
  * <p><code>NamedNodeMap</code> objects in the DOM are live.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public interface NamedNodeMap {
     /**
@@ -141,6 +142,8 @@ public interface NamedNodeMap {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Node getNamedItemNS(String namespaceURI,
@@ -177,6 +180,8 @@ public interface NamedNodeMap {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Node setNamedItemNS(Node arg)
@@ -203,6 +208,8 @@ public interface NamedNodeMap {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Node removeNamedItemNS(String namespaceURI,

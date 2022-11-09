@@ -67,6 +67,8 @@ import java.util.Iterator;
  * <p>A prefix can only be bound to a <strong>single</strong>
  * Namespace URI in the current scope.
  *
+ * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
+ * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
  * @author Jeff Suttor
  * @see javax.xml.XMLConstants
  *   javax.xml.XMLConstants for declarations of common XML values

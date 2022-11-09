@@ -137,6 +137,7 @@ public final class KerberosPrincipal
      * @throws SecurityException if a security manager is installed and
      * {@code name} does not contain the realm to use, and a proper
      * {@link ServicePermission} as described above is not granted.
+     * @spec https://www.ietf.org/rfc/rfc1964.html The Kerberos Version 5 GSS-API Mechanism
      */
     public KerberosPrincipal(String name) {
         this(name, KRB_NT_PRINCIPAL);
@@ -187,6 +188,8 @@ public final class KerberosPrincipal
      * @throws SecurityException if a security manager is installed and
      * {@code name} does not contain the realm to use, and a proper
      * {@link ServicePermission} as described above is not granted.
+     * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
+     * @spec https://www.ietf.org/rfc/rfc1964.html The Kerberos Version 5 GSS-API Mechanism
      */
 
     public KerberosPrincipal(String name, int nameType) {
@@ -319,6 +322,7 @@ public final class KerberosPrincipal
      * Section 2.1 of <a href=http://www.ietf.org/rfc/rfc1964.txt>RFC 1964</a>.
      *
      * @return the principal name.
+     * @spec https://www.ietf.org/rfc/rfc1964.html The Kerberos Version 5 GSS-API Mechanism
      */
     public String getName() {
         return fullName;
@@ -330,6 +334,7 @@ public final class KerberosPrincipal
      * <a href=http://www.ietf.org/rfc/rfc4120.txt> RFC4120</a>.
      *
      * @return the name type.
+     * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
      */
     public int getNameType() {
         return nameType;

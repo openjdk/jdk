@@ -330,6 +330,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * @param prefix The prefix to lookup, may not be null
    * @return the uri bound to the given prefix or null if it is not bound
    * @throws IllegalArgumentException if the prefix is null
+   * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
    */
   public String getNamespaceURI(String prefix);
 

@@ -38,6 +38,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * <p> This class can be used to initialize a {@code Cipher} object that
  * implements the <i>RC2</i> algorithm.
  *
+ * @spec https://www.ietf.org/rfc/rfc2268.html A Description of the RC2(r) Encryption Algorithm
  * @author Jan Luehe
  *
  * @since 1.4

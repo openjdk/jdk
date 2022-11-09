@@ -51,6 +51,8 @@ package org.w3c.dom;
  * are therefore readonly.
  * <p>A <code>Notation</code> node does not have any parent.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
  */
 public interface Notation extends Node {
     /**

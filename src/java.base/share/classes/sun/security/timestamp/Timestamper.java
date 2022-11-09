@@ -35,6 +35,7 @@ import java.io.IOException;
  * over different transport mechanisms. TSP permits at least the following
  * transports: HTTP, Internet mail, file-based and socket-based.
  *
+ * @spec https://www.ietf.org/rfc/rfc3161.html Internet X.509 Public Key Infrastructure Time-Stamp Protocol (TSP)
  * @author Vincent Ryan
  * @see HttpTimestamper
  */

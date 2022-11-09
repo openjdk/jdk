@@ -48,6 +48,7 @@ import sun.security.util.*;
  *
  * The AlgorithmParameters may be instantiated either by its name
  * ("ChaCha20-Poly1305") or via its OID (1.2.840.113549.1.9.16.3.18)
+ * @spec https://www.ietf.org/rfc/rfc8103.html Using ChaCha20-Poly1305 Authenticated Encryption in the Cryptographic Message Syntax (CMS)
  */
 public final class ChaCha20Poly1305Parameters extends AlgorithmParametersSpi {
 

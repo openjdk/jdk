@@ -64,6 +64,7 @@ package org.w3c.dom.ls;
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
 and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @since 1.5
  */
 public interface LSResourceResolver {
@@ -102,6 +103,9 @@ public interface LSResourceResolver {
      * @return  A <code>LSInput</code> object describing the new input
      *   source, or <code>null</code> to request that the parser open a
      *   regular URI connection to the resource.
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public LSInput resolveResource(String type,
                                    String namespaceURI,

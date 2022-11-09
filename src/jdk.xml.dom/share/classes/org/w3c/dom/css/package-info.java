@@ -32,6 +32,7 @@
  * dynamically access and update the content of style sheets documents.
  *
  *
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113 Document Object Model (DOM) Level 2 Style Specification
  * @since 1.4
  */
 

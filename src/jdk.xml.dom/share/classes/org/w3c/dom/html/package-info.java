@@ -33,6 +33,8 @@
  * HTML 4.0 Specification</a>.
  *
  *
+ * @spec https://www.w3.org/TR/DOM-Level-2 Document Object Model (DOM) Level 2 Specification
+ * @spec https://www.w3.org/TR/1998/REC-html40-19980424 HTML 4.0 Specification
  * @since 1.4
  */
 

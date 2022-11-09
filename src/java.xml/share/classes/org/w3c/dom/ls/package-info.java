@@ -33,6 +33,7 @@
  * document into an XML document.
  *
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @since 1.5
  */
 

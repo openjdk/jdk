@@ -125,6 +125,7 @@ public class TrustAnchor {
      * decoded
      * @throws NullPointerException if the specified
      * {@code X509Certificate} is {@code null}
+     * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
      */
     public TrustAnchor(X509Certificate trustedCert, byte[] nameConstraints)
     {
@@ -207,6 +208,7 @@ public class TrustAnchor {
      * or incorrectly formatted or the name constraints cannot be decoded
      * @throws NullPointerException if the specified {@code caName} or
      * {@code pubKey} parameter is {@code null}
+     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public TrustAnchor(String caName, PublicKey pubKey, byte[] nameConstraints)
     {

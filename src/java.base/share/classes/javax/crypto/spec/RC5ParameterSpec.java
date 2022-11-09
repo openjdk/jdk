@@ -40,6 +40,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * <a href="http://www.rsa.com">RSA Security LLC</a>,
  * or any parties authorized by RSA Security.
  *
+ * @spec https://www.ietf.org/rfc/rfc2040.html The RC5, RC5-CBC, RC5-CBC-Pad, and RC5-CTS Algorithms
  * @author Jan Luehe
  *
  * @since 1.4

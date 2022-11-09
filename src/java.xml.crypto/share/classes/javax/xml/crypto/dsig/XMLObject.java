@@ -73,6 +73,7 @@ import javax.xml.crypto.XMLStructure;
  * <code>Object</code> to avoid naming clashes with the existing
  * {@link java.lang.Object java.lang.Object} class.
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @author Joyce L. Leung

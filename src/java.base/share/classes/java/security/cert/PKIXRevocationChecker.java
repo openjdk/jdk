@@ -81,6 +81,8 @@ import java.util.*;
  * necessary locking. Multiple threads each manipulating separate objects
  * need not synchronize.
  *
+ * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.ietf.org/rfc/rfc2560.html X.509 Internet Public Key Infrastructure Online Certificate Status Protocol - OCSP
  * @since 1.8
  *
  * @see <a href="http://www.ietf.org/rfc/rfc2560.txt"><i>RFC&nbsp;2560: X.509

@@ -46,6 +46,10 @@
  * XPath Filter 2.0 Transform Algorithm: W3C Recommendation</a>
  * </ul>
  *
+ * @spec https://www.ietf.org/rfc/rfc3275.html (Extensible Markup Language) XML-Signature Syntax and Processing
+ * @spec https://www.w3.org/TR/xml-exc-c14n Exclusive XML Canonicalization Version 1.0
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
+ * @spec https://www.w3.org/TR/xmldsig-filter2 XML-Signature XPath Filter 2.0
  * @since 1.6
  */
 

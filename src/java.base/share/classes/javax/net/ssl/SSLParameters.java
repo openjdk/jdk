@@ -297,6 +297,7 @@ public class SSLParameters {
      *     Java Security Standard Algorithm Names</a> document
      *     for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see X509ExtendedTrustManager
      *
      * @since 1.7
@@ -661,6 +662,7 @@ public class SSLParameters {
      *     sslSocket.setSSLParameters(p);
      * </pre></blockquote>
      *
+     * @spec https://www.ietf.org/rfc/rfc7301.html Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @implSpec
      * This method will make a copy of the {@code protocols} array.
      *

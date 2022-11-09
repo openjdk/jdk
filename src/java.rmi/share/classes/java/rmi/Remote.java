@@ -42,6 +42,7 @@ package java.rmi;
  * href="{@docRoot}/../specs/rmi/index.html">RMI Specification</a> which
  * describes the RMI API and system.
  *
+ * @spec rmi/index.html Java Remote Method Invocation Specification
  * @since   1.1
  * @author  Ann Wollrath
  */

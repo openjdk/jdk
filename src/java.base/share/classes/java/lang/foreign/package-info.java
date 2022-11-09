@@ -234,5 +234,6 @@
  * For every class in this package, unless specified otherwise, any method arguments of reference
  * type must not be null, and any null argument will elicit a {@code NullPointerException}.  This fact is not individually
  * documented for methods of this API.
+ * @spec jni/index.html Java Native Interface Specification
  */
 package java.lang.foreign;

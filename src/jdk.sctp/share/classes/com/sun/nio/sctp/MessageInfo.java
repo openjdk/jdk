@@ -54,6 +54,7 @@ import java.net.SocketAddress;
  * threads. If a MessageInfo is to be used by more than one thread then access
  * to the MessageInfo should be controlled by appropriate synchronization.
  *
+ * @spec https://www.ietf.org/rfc/rfc3758.html Stream Control Transmission Protocol (SCTP) Partial Reliability Extension
  * @since 1.7
  */
 public abstract class MessageInfo {

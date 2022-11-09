@@ -108,6 +108,7 @@ import sun.util.logging.PlatformLogger;
  * with {@code Currency} or monetary values as it provides better handling of floating
  * point numbers and their operations.
  *
+ * @spec http://www.iso.org/iso/home/standards/currency_codes.htm ISO - ISO 4217 - Currency codes
  * @see java.math.BigDecimal
  * @since 1.4
  */

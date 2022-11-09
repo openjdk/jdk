@@ -49,6 +49,7 @@ package org.w3c.dom;
  * fifth method, {@link #getChildElementCount}, exposes the number of child
  * elements of an element, for preprocessing before navigation.
  *
+ * @spec https://www.w3.org/TR/ElementTraversal Element Traversal Specification
  * @see
  * <a href='http://www.w3.org/TR/ElementTraversal/'><cite>Element Traversal Specification</cite></a>
  *

@@ -56,6 +56,7 @@ public abstract class CRL {
      * "{@docRoot}/../specs/security/standard-names.html">
      * Java Security Standard Algorithm Names</a> document
      * for information about standard CRL types.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected CRL(String type) {
         this.type = type;

@@ -172,6 +172,10 @@ import org.w3c.dom.DOMException;
  * <p>See also the
  * <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+ * @spec https://www.w3.org/TR/2004/REC-xml-infoset-20040204 XML Information Set (Second Edition)
  * @since 1.5
  */
 public interface LSParser {
@@ -298,6 +302,13 @@ public interface LSParser {
      * Unlike in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
      * , this parameter cannot be set to <code>false</code>. </dd>
      * </dl>
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
+     * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
+     * @spec https://www.w3.org/TR/2004/REC-xml-names11-20040204 Namespaces in XML 1.1
+     * @spec https://www.ietf.org/rfc/rfc3023.html XML Media Types
      */
     public DOMConfiguration getDomConfig();
 
@@ -311,6 +322,7 @@ public interface LSParser {
      * example, if "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate'>validate</a>"
      * is set to <code>true</code>, the validation is done before invoking the
      * filter.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public LSParserFilter getFilter();
     /**
@@ -323,6 +335,7 @@ public interface LSParser {
      * example, if "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate'>validate</a>"
      * is set to <code>true</code>, the validation is done before invoking the
      * filter.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public void setFilter(LSParserFilter filter);
 
@@ -357,6 +370,7 @@ public interface LSParser {
      *   <code>DOMErrorHandler</code> using the parameter
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public Document parse(LSInput input)
                           throws DOMException, LSException;
@@ -384,6 +398,8 @@ public interface LSParser {
      *   <code>DOMErrorHandler</code> using the parameter
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public Document parseURI(String uri)
                              throws DOMException, LSException;
@@ -504,6 +520,7 @@ public interface LSParser {
      *   <code>DOMErrorHandler</code> using the parameter
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public Node parseWithContext(LSInput input,
                                  Node contextArg,

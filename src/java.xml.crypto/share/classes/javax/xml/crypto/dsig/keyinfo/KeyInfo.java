@@ -72,6 +72,7 @@ import javax.xml.crypto.XMLStructure;
  * <p><code>KeyInfo</code> objects can also be marshalled to XML by invoking
  * the {@link #marshal marshal} method.
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

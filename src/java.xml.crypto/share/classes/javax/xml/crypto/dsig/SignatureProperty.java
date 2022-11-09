@@ -57,6 +57,7 @@ import java.util.List;
  *      (Collections.singletonList(content), "#Signature-1", "TimeStamp");
  * </pre>
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

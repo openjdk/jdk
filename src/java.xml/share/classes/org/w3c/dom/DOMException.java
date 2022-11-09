@@ -58,6 +58,7 @@ package org.w3c.dom;
  * methods may return error codes similar to those listed in the
  * corresponding method descriptions.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public class DOMException extends RuntimeException {
     public DOMException(short code, String message) {
@@ -147,6 +148,7 @@ public class DOMException extends RuntimeException {
      * with respect to "partial validity", this exception would be raised
      * and the operation would not be done. This code is used in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Val-20040127/'>DOM Level 3 Validation</a>]
      * . Refer to this specification for further information.
+     * @spec https://www.w3.org/TR/2004/REC-DOM-Level-3-Val-20040127 Document Object Model (DOM) Level 3 Validation Specification
      * @since 1.5, DOM Level 3
      */
     public static final short VALIDATION_ERR            = 16;

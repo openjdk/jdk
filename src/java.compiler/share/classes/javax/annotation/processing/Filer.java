@@ -123,6 +123,7 @@ import java.io.IOException;
  * annotation if the environment is configured so that that class or
  * interface is accessible.
  *
+ * @spec https://www.ietf.org/rfc/rfc3986.html Uniform Resource Identifier (URI): Generic Syntax
  * @apiNote Some of the effect of overwriting a file can be
  * achieved by using a <i>decorator</i>-style pattern.  Instead of
  * modifying a class directly, the class is designed so that either

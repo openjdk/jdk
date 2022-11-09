@@ -34,6 +34,7 @@ import org.w3c.dom.Node;
  * defined in XML Path Language (XPath) Version 1.0.
  *
  * @param <T> the object type returned by the XPath evaluation.
+ * @spec https://www.w3.org/TR/xpath xpath cover page - W3C
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version
  * 1.0</a>
  *

@@ -35,6 +35,8 @@
  * </dd>
  * </dl>
  *
+ * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
+ * @spec jni/index.html Java Native Interface Specification
  * @moduleGraph
  * @since 9
  */

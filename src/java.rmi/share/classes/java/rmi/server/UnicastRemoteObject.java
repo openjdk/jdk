@@ -161,6 +161,7 @@ import sun.rmi.transport.LiveRef;
  * thrown by {@code ObjectInputStream} is reported as the cause of an
  * {@link UnmarshalException}.
  *
+ * @spec rmi/index.html Java Remote Method Invocation Specification
  * @implNote
  * Depending upon which constructor or static method is used for exporting an
  * object, {@link RMISocketFactory} may be used for creating sockets.

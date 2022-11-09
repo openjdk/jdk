@@ -117,6 +117,10 @@ import java.net.StandardSocketOptions;      // javadoc
  *     MembershipKey key = dc.join(group, ni);
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc2236.html Internet Group Management Protocol, Version 2
+ * @spec https://www.ietf.org/rfc/rfc3376.html Internet Group Management Protocol, Version 3
+ * @spec https://www.ietf.org/rfc/rfc2710.html Multicast Listener Discovery (MLD) for IPv6
+ * @spec https://www.ietf.org/rfc/rfc3810.html Multicast Listener Discovery Version 2 (MLDv2) for IPv6
  * @since 1.7
  */
 

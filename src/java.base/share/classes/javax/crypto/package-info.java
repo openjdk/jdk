@@ -59,6 +59,7 @@
  *       How to Implement a Provider in the Java Cryptography Architecture}</li>
  * </ul>
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 1.4
  */
 package javax.crypto;

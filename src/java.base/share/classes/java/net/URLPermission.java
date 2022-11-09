@@ -147,6 +147,8 @@ import java.security.Permission;
  * from being set by application code, regardless of whether the security policy
  * in force, permits it.
  *
+ * @spec https://www.ietf.org/rfc/rfc2732.html Format for Literal IPv6 Addresses in URL's
+ * @spec https://www.ietf.org/rfc/rfc2296.html HTTP Remote Variant Selection Algorithm -- RVSA/1.0
  * @since 1.8
  */
 public final class URLPermission extends Permission {

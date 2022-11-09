@@ -187,6 +187,8 @@ package org.w3c.dom;
  * </tbody>
  * </table>
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
  */
 public interface Attr extends Node {
     /**
@@ -220,6 +222,7 @@ public interface Attr extends Node {
      * implementations, may do normalization automatically, even after
      * mutation; in such case, the value on retrieval may differ from the
      * value on setting.
+     * @spec https://www.w3.org/TR/2003/REC-SVG11-20030114 Scalable Vector Graphics (SVG) 1.1 Specification
      */
     public String getValue();
     /**
@@ -237,6 +240,7 @@ public interface Attr extends Node {
      * value on setting.
      * @exception DOMException
      *   NO_MODIFICATION_ALLOWED_ERR: Raised when the node is readonly.
+     * @spec https://www.w3.org/TR/2003/REC-SVG11-20030114 Scalable Vector Graphics (SVG) 1.1 Specification
      */
     public void setValue(String value)
                             throws DOMException;
@@ -302,6 +306,8 @@ public interface Attr extends Node {
      * reevaluated in accordance to the schema used. As a consequence, if
      * the <code>Attr.schemaTypeInfo</code> attribute contains an ID type,
      * <code>isId</code> will always return true.
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
+     * @spec https://www.w3.org/TR/2003/REC-xptr-framework-20030325 XPointer Framework
      * @since 1.5, DOM Level 3
      */
     public boolean isId();

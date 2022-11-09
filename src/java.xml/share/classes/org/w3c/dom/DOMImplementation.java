@@ -46,6 +46,7 @@ package org.w3c.dom;
  * for performing operations that are independent of any particular instance
  * of the document object model.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public interface DOMImplementation {
     /**
@@ -55,6 +56,7 @@ public interface DOMImplementation {
      * @param version  This is the version number of the feature to test.
      * @return <code>true</code> if the feature is implemented in the
      *   specified version, <code>false</code> otherwise.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public boolean hasFeature(String feature,
                               String version);
@@ -77,6 +79,8 @@ public interface DOMImplementation {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
      * @since 1.4, DOM Level 2
      */
     public DocumentType createDocumentType(String qualifiedName,
@@ -129,6 +133,10 @@ public interface DOMImplementation {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109 Document Object Model (DOM) Level 2 HTML Specification
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Document createDocument(String namespaceURI,
@@ -157,6 +165,7 @@ public interface DOMImplementation {
      *   return results inconsistent with the primary core
      *   <code>DOMImplementation</code> such as <code>hasFeature</code>,
      *   <code>getFeature</code>, etc.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      * @since 1.5, DOM Level 3
      */
     public Object getFeature(String feature,

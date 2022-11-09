@@ -118,6 +118,10 @@ package org.w3c.dom;
  * and therefore should define how to represent their type systems using
  * <code>TypeInfo</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+ * @spec https://www.w3.org/TR/2004/REC-xml-infoset-20040204 XML Information Set (Second Edition)
+ * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
  * @since 1.5, DOM Level 3
  */
 public interface TypeInfo {
@@ -145,6 +149,7 @@ public interface TypeInfo {
      * reference type definition, or if the other type definition can be
      * reached recursively following the {base type definition} property
      * from the reference type definition, and all the <em>derivation methods</em> involved are restriction.
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public static final int DERIVATION_RESTRICTION    = 0x00000001;
     /**
@@ -155,6 +160,7 @@ public interface TypeInfo {
      * other type definition if the other type definition can be reached
      * recursively following the {base type definition} property from the
      * reference type definition, and at least one of the <em>derivation methods</em> involved is an extension.
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public static final int DERIVATION_EXTENSION      = 0x00000002;
     /**
@@ -169,6 +175,7 @@ public interface TypeInfo {
      * definition by <code>DERIVATION_RESTRICTION</code>, T1 has {variety} <em>union</em>, and one of the {member type definitions} is T2. Note that T1 could be
      * the same as the reference type definition, and T2 could be the same
      * as the other type definition.
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public static final int DERIVATION_UNION          = 0x00000004;
     /**
@@ -182,6 +189,7 @@ public interface TypeInfo {
      * definition by <code>DERIVATION_RESTRICTION</code>, T1 has {variety} <em>list</em>, and T2 is the {item type definition}. Note that T1 could be the same as
      * the reference type definition, and T2 could be the same as the other
      * type definition.
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public static final int DERIVATION_LIST           = 0x00000008;
 

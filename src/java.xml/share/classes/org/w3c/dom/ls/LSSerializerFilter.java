@@ -71,6 +71,8 @@ import org.w3c.dom.traversal.NodeFilter;
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
 and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113 Document Object Model (DOM) Level 2 Traversal and Range Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @since 1.5
  */
 public interface LSSerializerFilter extends NodeFilter {
@@ -88,6 +90,7 @@ public interface LSSerializerFilter extends NodeFilter {
      * <code>Attr</code> nodes are shown and passed to the filter.
      * <br> The constants used here are defined in [<a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>DOM Level 2 Traversal and      Range</a>]
      * .
+     * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113 Document Object Model (DOM) Level 2 Traversal and Range Specification
      */
     public int getWhatToShow();
 

@@ -56,6 +56,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * applications.  Other values can be specified for this class, but not
  * all CSP implementations will support them.
  *
+ * @spec https://www.ietf.org/rfc/rfc5116.html An Interface and Algorithms for Authenticated Encryption
  * @see javax.crypto.Cipher
  *
  * @since 1.7

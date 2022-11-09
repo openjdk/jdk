@@ -83,6 +83,7 @@ package org.w3c.dom.ls;
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
 and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @since 1.5
  */
 public interface LSInput {
@@ -156,6 +157,7 @@ public interface LSInput {
      * implementation will attempt to resolve the relative URI with the
      * <code>baseURI</code> as the base, if that fails, the behavior is
      * implementation dependent.
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public String getSystemId();
     /**
@@ -175,6 +177,7 @@ public interface LSInput {
      * implementation will attempt to resolve the relative URI with the
      * <code>baseURI</code> as the base, if that fails, the behavior is
      * implementation dependent.
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public void setSystemId(String systemId);
 
@@ -200,6 +203,7 @@ public interface LSInput {
      * resolving a relative <code>systemId</code> to an absolute URI.
      * <br> If, when used, the base URI is itself a relative URI, an empty
      * string, or null, the behavior is implementation dependent.
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public String getBaseURI();
     /**
@@ -207,6 +211,7 @@ public interface LSInput {
      * resolving a relative <code>systemId</code> to an absolute URI.
      * <br> If, when used, the base URI is itself a relative URI, an empty
      * string, or null, the behavior is implementation dependent.
+     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
      */
     public void setBaseURI(String baseURI);
 
@@ -219,6 +224,8 @@ public interface LSInput {
      * encoding specified by means of this attribute will override any
      * encoding specified in the XML declaration or the Text declaration, or
      * an encoding obtained from a higher level protocol, such as HTTP [<a href='http://www.ietf.org/rfc/rfc2616.txt'>IETF RFC 2616</a>].
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
      */
     public String getEncoding();
     /**
@@ -230,6 +237,8 @@ public interface LSInput {
      * encoding specified by means of this attribute will override any
      * encoding specified in the XML declaration or the Text declaration, or
      * an encoding obtained from a higher level protocol, such as HTTP [<a href='http://www.ietf.org/rfc/rfc2616.txt'>IETF RFC 2616</a>].
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
      */
     public void setEncoding(String encoding);
 
@@ -237,12 +246,14 @@ public interface LSInput {
      *  If set to true, assume that the input is certified (see section 2.13
      * in [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>]) when
      * parsing [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>].
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      */
     public boolean getCertifiedText();
     /**
      *  If set to true, assume that the input is certified (see section 2.13
      * in [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>]) when
      * parsing [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>].
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      */
     public void setCertifiedText(boolean certifiedText);
 

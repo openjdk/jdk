@@ -149,6 +149,8 @@
  *     <li>xs:unsignedShort</li>
  * </ul>
  *
+ * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
+ * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
  * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#dateTime">
  *             W3C XML Schema 1.0 Part 2, Section 3.2.7-14</a>

@@ -75,6 +75,7 @@ import javax.security.auth.DestroyFailedException;
  * "ArcFourMac" for "rc4-hmac"), but the {@link #getAlgorithm} method
  * must always return the IANA algorithm name.
  *
+ * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
  * @implNote Old algorithm names used before JDK 9 are supported in the
  * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor in this
  * implementation for compatibility reasons, which are "DES" (and null) for

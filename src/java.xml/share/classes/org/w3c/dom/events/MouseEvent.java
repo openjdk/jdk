@@ -58,6 +58,7 @@ import org.w3c.dom.views.AbstractView;
  * bubbling to obtain notification of mouse events which occur within its
  * descendent elements.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113'>Document Object Model (DOM) Level 2 Events Specification</a>.
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113 Document Object Model (DOM) Level 2 Events Specification
  * @since 1.5, DOM Level 2
  */
 public interface MouseEvent extends UIEvent {

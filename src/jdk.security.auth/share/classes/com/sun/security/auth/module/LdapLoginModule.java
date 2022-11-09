@@ -296,6 +296,10 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * </dd>
  * </dl>
  *
+ * @spec https://www.ietf.org/rfc/rfc2782.html A DNS RR for specifying the location of services (DNS SRV)
+ * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc2255.html The LDAP URL Format
+ * @spec https://www.ietf.org/rfc/rfc2254.html The String Representation of LDAP Search Filters
  * @since 1.6
  */
 public class LdapLoginModule implements LoginModule {

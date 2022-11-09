@@ -53,6 +53,8 @@ import jdk.internal.access.SharedSecrets;
  *
  * <p> HttpCookie class can accept all these 3 forms of syntax.
  *
+ * @spec https://www.ietf.org/rfc/rfc2109.html HTTP State Management Mechanism (RFC 2109)
+ * @spec https://www.ietf.org/rfc/rfc2965.html HTTP State Management Mechanism (RFC 2965)
  * @author Edward Wang
  * @since 1.6
  */

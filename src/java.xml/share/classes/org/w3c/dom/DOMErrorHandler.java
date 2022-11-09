@@ -53,6 +53,7 @@ package org.w3c.dom;
  * <p> The application that is using the DOM implementation is expected to
  * implement this interface.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  * @since 1.5, DOM Level 3
  */
 public interface DOMErrorHandler {

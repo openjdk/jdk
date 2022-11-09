@@ -79,6 +79,7 @@
  *
  * </ul>
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 1.1
  */
 package java.security;

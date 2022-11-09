@@ -76,6 +76,8 @@ import com.sun.jdi.connect.TransportTimeoutException;
  * method is used to accept a connection initiated by a
  * target VM.
  *
+ * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
+ * @spec https://www.ietf.org/rfc/rfc0793.html Transmission Control Protocol
  * @since 1.5
  */
 public abstract class TransportService {
@@ -218,6 +220,7 @@ public abstract class TransportService {
      *          If the address is invalid or the value of the
      *          attach timeout or handshake timeout is negative.
      *
+     * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
      * @see TransportService.Capabilities#supportsAttachTimeout()
      */
     public abstract Connection attach(String address, long attachTimeout,
@@ -380,6 +383,7 @@ public abstract class TransportService {
      *          called with this listen key and the transport service
      *          is no longer listening for inbound connections.
      *
+     * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
      * @see TransportService.Capabilities#supportsAcceptTimeout()
      */
     public abstract Connection accept(ListenKey listenKey, long acceptTimeout,

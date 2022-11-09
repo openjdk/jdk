@@ -28,6 +28,11 @@ package javax.xml;
 /**
  * <p>Utility class to contain basic XML values as constants.
  *
+ * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
+ * @spec https://www.w3.org/TR/xml11 Extensible Markup Language (XML) 1.1 (Second Edition)
+ * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
+ * @spec https://www.w3.org/TR/xml-names11 Namespaces in XML 1.1 (Second Edition)
+ * @spec https://www.w3.org/TR/xmlschema-1 XML Schema Part 1: Structures Second Edition
  * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xml11/">Extensible Markup Language (XML) 1.1</a>
  * @see <a href="http://www.w3.org/TR/REC-xml">Extensible Markup Language (XML) 1.0 (Second Edition)</a>
@@ -51,6 +56,7 @@ public final class XMLConstants {
      *
      * <p>Defined by the Namespace specification to be "".
      *
+     * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
      * @see <a href="http://www.w3.org/TR/REC-xml-names/#defaulting">
      * Namespaces in XML, 5.2 Namespace Defaulting</a>
      */
@@ -61,6 +67,7 @@ public final class XMLConstants {
      *
      * <p>Defined by the XML specification to be "".
      *
+     * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
      * @see <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
      * Namespaces in XML, 3. Qualified Names</a>
@@ -73,6 +80,7 @@ public final class XMLConstants {
      * <p>Defined by the XML specification to be
      * "{@code http://www.w3.org/XML/1998/namespace}".
      *
+     * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
      * @see <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
      * Namespaces in XML, 3. Qualified Names</a>
@@ -85,6 +93,7 @@ public final class XMLConstants {
      *
      * <p>Defined by the XML specification to be "{@code xml}".
      *
+     * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
      * @see <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
      * Namespaces in XML, 3. Qualified Names</a>
@@ -99,6 +108,7 @@ public final class XMLConstants {
      * <p>Defined by the XML specification to be
      * "{@code http://www.w3.org/2000/xmlns/}".
      *
+     * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
      * @see <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
      * Namespaces in XML, 3. Qualified Names</a>
@@ -114,6 +124,7 @@ public final class XMLConstants {
      * prefix.  Defined by the XML specification to be
      * "{@code xmlns}".
      *
+     * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
      * @see <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
      * Namespaces in XML, 3. Qualified Names</a>
@@ -125,6 +136,7 @@ public final class XMLConstants {
      *
      * <p>Defined to be "{@code http://www.w3.org/2001/XMLSchema}".
      *
+     * @spec https://www.w3.org/TR/xmlschema-1 XML Schema Part 1: Structures Second Edition
      * @see <a href=
      *  "http://www.w3.org/TR/xmlschema-1/#Instance_Document_Constructions">
      *  XML Schema Part 1:
@@ -138,6 +150,7 @@ public final class XMLConstants {
      *
      * <p>Defined to be "{@code http://www.w3.org/2001/XMLSchema-instance}".
      *
+     * @spec https://www.w3.org/TR/xmlschema-1 XML Schema Part 1: Structures Second Edition
      * @see <a href=
      *  "http://www.w3.org/TR/xmlschema-1/#Instance_Document_Constructions">
      *  XML Schema Part 1:
@@ -151,6 +164,7 @@ public final class XMLConstants {
      *
      * <p>Defined to be "{@code http://www.w3.org/2003/11/xpath-datatypes}".
      *
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      * @see <a href="http://www.w3.org/TR/xpath-datamodel">XQuery 1.0 and XPath 2.0 Data Model</a>
      */
     public static final String W3C_XPATH_DATATYPE_NS_URI = "http://www.w3.org/2003/11/xpath-datatypes";

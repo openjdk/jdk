@@ -55,6 +55,7 @@
  * like do not make much sense for a DOM), so the result of getLocator must always
  * be tested with an instanceof.
  *
+ * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
  * @since 1.5
  */
 

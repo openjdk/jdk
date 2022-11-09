@@ -30,6 +30,7 @@ import javax.xml.namespace.QName;
 /**
  * <p>XPath constants.</p>
  *
+ * @spec https://www.w3.org/TR/xpath xpath cover page - W3C
  * @author Norman Walsh
  * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a>

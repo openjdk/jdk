@@ -48,6 +48,7 @@ package org.w3c.dom.html;
  * <code>LinkStyle</code> interface in the  module).
  * <p>See also the <a href='http://www.w3.org/TR/2000/CR-DOM-Level-2-20000510'>Document Object Model (DOM) Level 2 Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-2 Document Object Model (DOM) Level 2 Specification
  * @since 1.4, DOM Level 2
  */
 public interface HTMLLinkElement extends HTMLElement {

@@ -42,6 +42,7 @@ import java.util.Objects;
  * {@code BigInteger}, and implementations that consume objects of this class
  * may reject integer values which are not in the range [0, p).
  *
+ * @spec https://www.ietf.org/rfc/rfc8032.html Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 

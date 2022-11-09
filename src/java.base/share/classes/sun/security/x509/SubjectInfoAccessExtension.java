@@ -62,6 +62,7 @@ import sun.security.util.DerValue;
  *          accessLocation        GeneralName  }
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @see Extension
  * @see CertAttrSet
  */

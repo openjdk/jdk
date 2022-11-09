@@ -38,6 +38,7 @@ import javax.xml.crypto.dsig.Transform;
  * XPath Filter 2.0 Transform Algorithm</a>.
  * The parameters include a list of one or more {@link XPathType} objects.
  *
+ * @spec https://www.w3.org/TR/xmldsig-filter2 XML-Signature XPath Filter 2.0
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

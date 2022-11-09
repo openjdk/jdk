@@ -412,6 +412,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Calendar Elements in the Unicode Locale Data Markup Language
      * (LDML) specification</a> for more details.
      *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @implSpec This method returns 13 elements since
      * {@link java.util.Calendar#UNDECIMBER Calendar.UNDECIMBER} is supported.
      * @return the month strings.
@@ -450,6 +451,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Calendar Elements in the Unicode Locale Data Markup Language
      * (LDML) specification</a> for more details.
      *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @implSpec This method returns 13 elements since
      * {@link java.util.Calendar#UNDECIMBER Calendar.UNDECIMBER} is supported.
      * @return the short month strings.

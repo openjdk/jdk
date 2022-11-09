@@ -49,6 +49,7 @@ package org.w3c.dom.xpath;
  * construct an implementation of <code>XPathNSResolver</code> from a node,
  * or the interface may be implemented by any application.
  * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-XPath Document Object Model (DOM) Level 3 XPath Specification
  */
 public interface XPathNSResolver {
     /**

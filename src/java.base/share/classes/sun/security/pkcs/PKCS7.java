@@ -926,6 +926,7 @@ public class PKCS7 {
      *
      * @param tsaCertificate (optional) X.509 certificate for the TSA.
      * @return An HTTP or HTTPS URI or null if none was found.
+     * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
      */
     public static URI getTimestampingURI(X509Certificate tsaCertificate) {
 

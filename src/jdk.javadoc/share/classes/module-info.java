@@ -42,6 +42,7 @@
  * or the {@linkplain java.util.ServiceLoader service loader} with the name
  * {@code "javadoc"}.
  *
+ * @spec javadoc/doc-comment-spec.html Documentation Comment Specification for the Standard Doclet
  * @toolGuide javadoc
  *
  * @provides java.util.spi.ToolProvider

@@ -55,6 +55,7 @@ import org.w3c.dom.views.AbstractView;
  * <code>CSSStyleDeclaration</code> and <code>CSSValue</code> related to
  * this declaration are no longer valid.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113'>Document Object Model (DOM) Level 2 Style Specification</a>.
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113 Document Object Model (DOM) Level 2 Style Specification
  * @since 1.4, DOM Level 2
  */
 public interface ViewCSS extends AbstractView {
@@ -65,6 +66,7 @@ public interface ViewCSS extends AbstractView {
      * @param pseudoElt  The pseudo-element or <code>null</code> if none.
      * @return  The computed style. The <code>CSSStyleDeclaration</code> is
      *   read-only and contains only absolute values.
+     * @spec https://www.w3.org/TR/1998/REC-CSS2-19980512 Cascading Style Sheets, Level 2
      */
     public CSSStyleDeclaration getComputedStyle(Element elt,
                                                 String pseudoElt);

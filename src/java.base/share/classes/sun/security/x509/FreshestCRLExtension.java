@@ -50,6 +50,7 @@ import java.util.List;
  *     FreshestCRL ::= CRLDistributionPoints
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @since 1.6
  */
 public class FreshestCRLExtension extends CRLDistributionPointsExtension {

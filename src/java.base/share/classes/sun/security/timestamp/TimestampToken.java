@@ -65,6 +65,7 @@ import sun.security.x509.AlgorithmId;
  *
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc3161.html Internet X.509 Public Key Infrastructure Time-Stamp Protocol (TSP)
  * @since 1.5
  * @see Timestamper
  * @author Vincent Ryan

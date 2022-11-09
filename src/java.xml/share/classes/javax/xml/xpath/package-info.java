@@ -409,6 +409,7 @@
  * </pre>
  * </blockquote>
  *
+ * @spec https://www.w3.org/TR/xpath xpath cover page - W3C
  * @since 1.5
  *
  */

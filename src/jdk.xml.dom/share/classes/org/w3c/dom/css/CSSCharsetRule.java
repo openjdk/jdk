@@ -59,6 +59,7 @@ import org.w3c.dom.DOMException;
  * header, has priority (see CSS document representation) but this is not
  * reflected in the <code>CSSCharsetRule</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113'>Document Object Model (DOM) Level 2 Style Specification</a>.
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113 Document Object Model (DOM) Level 2 Style Specification
  * @since 1.4, DOM Level 2
  */
 public interface CSSCharsetRule extends CSSRule {

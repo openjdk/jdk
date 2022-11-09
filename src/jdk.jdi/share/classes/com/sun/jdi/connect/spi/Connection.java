@@ -102,6 +102,7 @@ public abstract class Connection {
      * @throws  java.io.IOException
      *          If the length of the packet (as indictaed by the first
      *          4 bytes) is less than 11 bytes, or an I/O error occurs.
+     * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
      *
      *
      */
@@ -168,6 +169,7 @@ public abstract class Connection {
      * @throws  IllegalArgumentException
      *          If the value of the {@code length} field is invalid,
      *          or the byte array is of insufficient length.
+     * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
      */
     public abstract void writePacket(byte pkt[]) throws IOException;
 

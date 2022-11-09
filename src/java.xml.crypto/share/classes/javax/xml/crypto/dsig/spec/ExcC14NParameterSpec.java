@@ -52,6 +52,7 @@ import java.util.List;
  * &lt;/schema&gt;
  * </code></pre>
  *
+ * @spec https://www.w3.org/TR/xml-exc-c14n Exclusive XML Canonicalization Version 1.0
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

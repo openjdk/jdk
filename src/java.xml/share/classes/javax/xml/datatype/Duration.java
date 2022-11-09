@@ -758,6 +758,7 @@ public abstract class Duration {
      *   implementations capability.
      * @throws NullPointerException if {@code duration} is {@code null}.
      *
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      * @see #isShorterThan(Duration)
      * @see #isLongerThan(Duration)
      */

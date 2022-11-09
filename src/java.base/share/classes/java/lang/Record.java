@@ -67,6 +67,7 @@ package java.lang;
  * </pre>
  * then it must be the case that {@code r.equals(copy)}.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @apiNote
  * A record class that {@code implements} {@link java.io.Serializable} is said
  * to be a <i>serializable record</i>. Serializable records are serialized and

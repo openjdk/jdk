@@ -104,6 +104,7 @@
  * </blockquote>
  *
  *
+ * @spec jpda/jpda.html Java Platform Debugger Architecture
  * @toolGuide jdb
  *
  * @provides com.sun.jdi.connect.Connector

@@ -52,6 +52,7 @@ package org.w3c.dom.xpath;
  * Specification, Working Draft 20 August 2002 where the values of
  * {@link #INVALID_EXPRESSION_ERR} and {@link #TYPE_ERR}
  * are 1 and 2 respectively (instead of 51 and 52 as in the 2004 version).
+ * @spec https://www.w3.org/TR/DOM-Level-3-XPath Document Object Model (DOM) Level 3 XPath Specification
  */
 public class XPathException extends RuntimeException {
     private static final long serialVersionUID = 3471034171575979943L;

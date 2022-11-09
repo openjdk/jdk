@@ -119,6 +119,7 @@ import javax.xml.crypto.XMLStructure;
  * all of the fields in the schema are accessible as parameters of these
  * types.
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

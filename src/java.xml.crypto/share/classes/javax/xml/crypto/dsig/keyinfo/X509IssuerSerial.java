@@ -62,6 +62,7 @@ import javax.xml.crypto.XMLStructure;
  *     (cert.getIssuerX500Principal().getName(), cert.getSerialNumber());
  * </pre>
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

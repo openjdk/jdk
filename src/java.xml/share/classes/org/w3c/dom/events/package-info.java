@@ -36,6 +36,8 @@
  * that gives to programs and scripts a generic event system.
  *
  *
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113 Document Object Model (DOM) Level 2 Events Specification
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Views-20001113 Document Object Model (DOM) Level 2 Views Specification
  * @since 1.5
  */
 

@@ -98,6 +98,7 @@ import org.xml.sax.InputSource;
  * method is invoked, applications may not recursively call
  * the {@code evaluate} method.
  *
+ * @spec https://www.w3.org/TR/xpath xpath cover page - W3C
  * @author  Norman Walsh
  * @author  Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a>

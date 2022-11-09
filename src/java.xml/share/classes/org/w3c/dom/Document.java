@@ -52,6 +52,7 @@ package org.w3c.dom;
  * <code>ownerDocument</code> attribute which associates them with the
  * <code>Document</code> within whose context they were created.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public interface Document extends Node {
     /**
@@ -73,6 +74,7 @@ public interface Document extends Node {
      * changing it afterwards is very unlikely to result in a change of the
      * features supported.
      *
+     * @spec https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109 Document Object Model (DOM) Level 2 HTML Specification
      * @since 1.4, DOM Level 3
      */
     public DocumentType getDoctype();
@@ -337,6 +339,7 @@ public interface Document extends Node {
      *   <code>Document.xmlVersion</code> attribute. This may happen when
      *   importing an XML 1.1 [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>] element
      *   into an XML 1.0 document, for instance.
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      * @since 1.4, DOM Level 2
      */
     public Node importNode(Node importedNode,
@@ -406,6 +409,7 @@ public interface Document extends Node {
      *   <br>NOT_SUPPORTED_ERR: Always thrown if the current document does not
      *   support the <code>"XML"</code> feature, since namespaces were
      *   defined by XML.
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Element createElementNS(String namespaceURI,
@@ -480,6 +484,7 @@ public interface Document extends Node {
      *   <br>NOT_SUPPORTED_ERR: Always thrown if the current document does not
      *   support the <code>"XML"</code> feature, since namespaces were
      *   defined by XML.
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Attr createAttributeNS(String namespaceURI,
@@ -527,6 +532,7 @@ public interface Document extends Node {
      * An attribute specifying, as part of the <a href='http://www.w3.org/TR/2004/REC-xml-20040204#NT-XMLDecl'>XML declaration</a>, the encoding of this document. This is <code>null</code> when
      * unspecified or when it is not known, such as when the
      * <code>Document</code> was created in memory.
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
      * @since 1.5, DOM Level 3
      */
     public String getXmlEncoding();
@@ -539,6 +545,7 @@ public interface Document extends Node {
      * <code>Document.normalizeDocument()</code> with the "validate"
      * parameter to verify if the value matches the <a href='http://www.w3.org/TR/2004/REC-xml-20040204#sec-rmd'>validity
      * constraint for standalone document declaration</a> as defined in [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>].
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
      * @since 1.5, DOM Level 3
      */
     public boolean getXmlStandalone();
@@ -553,6 +560,7 @@ public interface Document extends Node {
      * @exception DOMException
      *    NOT_SUPPORTED_ERR: Raised if this document does not support the
      *   "XML" feature.
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
      * @since 1.5, DOM Level 3
      */
     public void setXmlStandalone(boolean xmlStandalone)
@@ -580,6 +588,8 @@ public interface Document extends Node {
      *  objects supporting a version of the "XMLVersion" feature must not
      * raise a <code>NOT_SUPPORTED_ERR</code> exception for the same version
      * number when using <code>Document.xmlVersion</code>.
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      * @since 1.5, DOM Level 3
      */
     public String getXmlVersion();
@@ -609,6 +619,8 @@ public interface Document extends Node {
      *    NOT_SUPPORTED_ERR: Raised if the version is set to a value that is
      *   not supported by this <code>Document</code> or if this document
      *   does not support the "XML" feature.
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      * @since 1.5, DOM Level 3
      */
     public void setXmlVersion(String xmlVersion)
@@ -648,6 +660,7 @@ public interface Document extends Node {
      * "HTML" [<a href='http://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109'>DOM Level 2 HTML</a>]
      * , the href attribute of the HTML BASE element takes precedence over
      * this attribute when computing <code>Node.baseURI</code>.
+     * @spec https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109 Document Object Model (DOM) Level 2 HTML Specification
      * @since 1.5, DOM Level 3
      */
     public String getDocumentURI();
@@ -662,6 +675,7 @@ public interface Document extends Node {
      * "HTML" [<a href='http://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109'>DOM Level 2 HTML</a>]
      * , the href attribute of the HTML BASE element takes precedence over
      * this attribute when computing <code>Node.baseURI</code>.
+     * @spec https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109 Document Object Model (DOM) Level 2 HTML Specification
      * @since 1.5, DOM Level 3
      */
     public void setDocumentURI(String documentURI);
@@ -844,6 +858,7 @@ public interface Document extends Node {
      *   . Also raised, when the node being renamed is an attribute, if the
      *   <code>qualifiedName</code>, or its prefix, is "xmlns" and the
      *   <code>namespaceURI</code> is different from "<a href='http://www.w3.org/2000/xmlns/'>http://www.w3.org/2000/xmlns/</a>".
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.5, DOM Level 3
      */
     public Node renameNode(Node n,

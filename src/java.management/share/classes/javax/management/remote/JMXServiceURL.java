@@ -115,6 +115,8 @@ import java.util.StringTokenizer;
  * part of the address.  Depending on the protocol, case can be
  * significant in the <code><em>url-path</em></code>.</p>
  *
+ * @spec https://www.ietf.org/rfc/rfc3111.html Service Location Protocol Modifications for IPv6
+ * @spec https://www.ietf.org/rfc/rfc2609.html Service Templates and Service: Schemes
  * @see <a
  * href="http://www.ietf.org/rfc/rfc2609.txt">RFC 2609,
  * "Service Templates and <code>Service:</code> Schemes"</a>

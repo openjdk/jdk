@@ -31,6 +31,8 @@
  * and <a href="http://www.w3.org/TR/DOM-Level-3-LS">
  *     Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @apiNote
  * The documentation comments for the get and set methods within this API are
  * written as property definitions and are shared between both methods. These

@@ -44,6 +44,7 @@ import javax.xml.crypto.XMLStructure;
  * where <code>element</code> is an {@link org.w3c.dom.Element} containing
  * the namespace-qualified stylesheet element.
  *
+ * @spec https://www.w3.org/TR/1999/REC-xslt-19991116 XSL Transformations (XSLT)
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

@@ -105,6 +105,8 @@ import sun.reflect.misc.ReflectUtil;
  * to Use Drag and Drop and Data Transfer</a>, section in
  * <em>The Java Tutorial</em>.
  *
+ * @spec https://www.ietf.org/rfc/rfc2045.html Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+ * @spec https://www.ietf.org/rfc/rfc2046.html Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
  * @author Blake Sullivan
  * @author Laurence P. G. Cable
  * @author Jeff Dunn

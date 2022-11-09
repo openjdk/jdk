@@ -77,6 +77,7 @@ package org.w3c.dom;
  * interface, such as <code>Node.insertBefore</code> and
  * <code>Node.appendChild</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public interface DocumentFragment extends Node {
 }

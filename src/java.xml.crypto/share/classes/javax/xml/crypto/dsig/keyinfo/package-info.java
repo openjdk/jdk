@@ -53,6 +53,8 @@
  * RFC 3275: XML-Signature Syntax and Processing</a>
  * </ul>
  *
+ * @spec https://www.ietf.org/rfc/rfc3275.html (Extensible Markup Language) XML-Signature Syntax and Processing
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @since 1.6
  */
 

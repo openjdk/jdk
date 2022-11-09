@@ -2004,6 +2004,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * method or constructor in this class will cause a {@link
  * NullPointerException} to be thrown.
  *
+ * @spec https://www.w3.org/TR/NOTE-datetime Date and Time Formats
+ * @spec https://www.ietf.org/rfc/rfc0822.html STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
  * @author  Iris Clark
  * @since 1.5
  */

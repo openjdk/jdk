@@ -242,6 +242,7 @@ public class PrincipalName implements Cloneable {
      * @exception IOException if an I/O error occurs
      * @exception IllegalArgumentException if encoding is null
      * reading encoded data.
+     * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
      */
     public PrincipalName(DerValue encoding, Realm realm)
             throws Asn1Exception, IOException {

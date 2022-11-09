@@ -54,6 +54,7 @@
  * string or a boolean value. A boolean value can be one of "true", "false",
  * "yes", or "no", and values are case-insensitive.
  *
+ * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
  * @since 1.4
  */
 package javax.security.auth.kerberos;

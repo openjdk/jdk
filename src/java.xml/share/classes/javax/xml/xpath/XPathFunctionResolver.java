@@ -44,6 +44,8 @@ import javax.xml.namespace.QName;
  * <p>If you wish to implement additional built-in functions, you will have to
  * extend the underlying implementation directly.</p>
  *
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
+ * @spec https://www.w3.org/TR/xpath xpath cover page - W3C
  * @author  Norman Walsh
  * @author  Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xpath#corelib">XML Path Language (XPath) Version 1.0, Core Function Library</a>

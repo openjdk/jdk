@@ -77,6 +77,7 @@ import sun.security.util.Debug;
  * that CRLs could be rather large but are rarely used. This implementation
  * should improve performance in most cases.
  *
+ * @spec https://www.ietf.org/rfc/rfc2587.html Internet X.509 Public Key Infrastructure LDAPv2 Schema
  * @see java.security.cert.CertStore
  *
  * @since       1.4

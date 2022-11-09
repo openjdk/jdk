@@ -59,6 +59,8 @@ import org.w3c.dom.DOMException;
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>
 Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
  * @since 1.5
  */
 public interface DOMImplementationLS {
@@ -114,6 +116,9 @@ public interface DOMImplementationLS {
      * @exception DOMException
      *    NOT_SUPPORTED_ERR: Raised if the requested mode or schema type is
      *   not supported.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public LSParser createLSParser(short mode,
                                    String schemaType)

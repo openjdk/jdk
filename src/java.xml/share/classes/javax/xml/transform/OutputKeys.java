@@ -31,6 +31,7 @@ package javax.xml.transform;
  * output properties from a Transformer or Templates object.
  * <p>All the fields in this class are read-only.</p>
  *
+ * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
  * @see <a href="http://www.w3.org/TR/xslt#output">
  *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
  * @since 1.4
@@ -55,6 +56,7 @@ public class OutputKeys {
      * or {@link javax.xml.transform.Transformer#setOutputProperties} will
      * throw a {@link java.lang.IllegalArgumentException}.</p>
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -73,6 +75,7 @@ public class OutputKeys {
      * that the result should be output as HTML conforming to the HTML 4.0
      * Recommendation [HTML].  If the output method is "text", the version
      * property is ignored.</p>
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -90,6 +93,8 @@ public class OutputKeys {
      * Assigned Numbers Authority <a href="http://www.iana.org/">[IANA]</a>,
      * <a href="http://www.ietf.org/rfc/rfc2278.txt">[RFC2278]</a>
      * or start with <code>X-</code>.</p>
+     * @spec https://www.ietf.org/rfc/rfc2278.html IANA Charset Registration Procedures
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      * section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -101,6 +106,7 @@ public class OutputKeys {
      * <p><code>omit-xml-declaration</code> specifies whether the XSLT
      * processor should output an XML declaration; the value must be
      * <code>yes</code> or <code>no</code>.</p>
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -112,6 +118,7 @@ public class OutputKeys {
      * <p><code>standalone</code> specifies whether the Transformer
      * should output a standalone document declaration; the value must be
      * <code>yes</code> or <code>no</code>.</p>
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -122,6 +129,7 @@ public class OutputKeys {
      * <p>See the documentation for the {@link #DOCTYPE_SYSTEM} property
      * for a description of what the value of the key should be.</p>
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -153,6 +161,7 @@ public class OutputKeys {
      *
      * <p><code>doctype-system</code> specifies the system identifier
      * to be used in the document type declaration.</p>
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -167,6 +176,7 @@ public class OutputKeys {
      * described in the section Qualified Name Representation in
      * {@link javax.xml.transform}.</p>
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation.</a>
      */
@@ -179,6 +189,7 @@ public class OutputKeys {
      * <p><code>indent</code> specifies whether the Transformer may
      * add additional whitespace when outputting the result tree; the value
      * must be <code>yes</code> or <code>no</code>.  </p>
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */
@@ -194,6 +205,7 @@ public class OutputKeys {
      * <code>text</code>, a <code>charset</code> parameter should be added
      * according to the character encoding actually used by the output
      * method.  </p>
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">s
      * ection 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
      */

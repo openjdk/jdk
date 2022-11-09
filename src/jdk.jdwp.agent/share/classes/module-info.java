@@ -26,6 +26,8 @@
 /**
  * Provides the implementation of the Java Debug Wire Protocol (JDWP) agent.
  *
+ * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
+ * @spec jdwp/jdwp-transport.html Java Debug Wire Protocol Transport Interface (jdwpTransport)
  * @moduleGraph
  * @since 9
  * @see <a href="{@docRoot}/../specs/jdwp/jdwp-spec.html">JDWP Specification</a>

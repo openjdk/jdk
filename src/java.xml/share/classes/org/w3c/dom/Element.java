@@ -57,6 +57,7 @@ package org.w3c.dom;
  * <p ><b>Note:</b> In DOM Level 2, the method <code>normalize</code> is
  * inherited from the <code>Node</code> interface where it was moved.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public interface Element extends Node {
     /**
@@ -203,6 +204,8 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public String getAttributeNS(String namespaceURI,
@@ -249,6 +252,8 @@ public interface Element extends Node {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public void setAttributeNS(String namespaceURI,
@@ -278,6 +283,8 @@ public interface Element extends Node {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public void removeAttributeNS(String namespaceURI,
@@ -299,6 +306,8 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Attr getAttributeNodeNS(String namespaceURI,
@@ -329,6 +338,8 @@ public interface Element extends Node {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public Attr setAttributeNodeNS(Attr newAttr)
@@ -348,6 +359,7 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
      * @since 1.4, DOM Level 2
      */
     public NodeList getElementsByTagNameNS(String namespaceURI,
@@ -383,6 +395,8 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public boolean hasAttributeNS(String namespaceURI,

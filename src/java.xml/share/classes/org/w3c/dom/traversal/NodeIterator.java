@@ -55,6 +55,7 @@ import org.w3c.dom.DOMException;
  * <code>NodeIterators</code> are created by calling
  * <code>DocumentTraversal</code><code>.createNodeIterator()</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>Document Object Model (DOM) Level 2 Traversal and Range Specification</a>.
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113 Document Object Model (DOM) Level 2 Traversal and Range Specification
  * @since 9, DOM Level 2
  */
 public interface NodeIterator {

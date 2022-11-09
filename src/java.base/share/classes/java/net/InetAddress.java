@@ -216,6 +216,10 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * </dd>
  * </dl>
  *
+ * @spec https://www.ietf.org/rfc/rfc1918.html Address Allocation for Private Internets
+ * @spec https://www.ietf.org/rfc/rfc2365.html Administratively Scoped IP Multicast
+ * @spec https://www.ietf.org/rfc/rfc0790.html Assigned numbers
+ * @spec https://www.ietf.org/rfc/rfc2373.html IP Version 6 Addressing Architecture
  * @author  Chris Warth
  * @see     java.net.InetAddress#getByAddress(byte[])
  * @see     java.net.InetAddress#getByAddress(java.lang.String, byte[])
@@ -1407,6 +1411,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      *               for a global IPv6 address.
      * @throws     SecurityException if a security manager exists
      *             and its checkConnect method doesn't allow the operation
+     * @spec https://www.ietf.org/rfc/rfc2373.html IP Version 6 Addressing Architecture
+     * @spec https://www.ietf.org/rfc/rfc3330.html Special-Use IPv4 Addresses
      */
     public static InetAddress getByName(String host)
         throws UnknownHostException {
@@ -1450,6 +1456,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @throws     SecurityException  if a security manager exists and its
      *               {@code checkConnect} method doesn't allow the operation.
      *
+     * @spec https://www.ietf.org/rfc/rfc2373.html IP Version 6 Addressing Architecture
+     * @spec https://www.ietf.org/rfc/rfc3330.html Special-Use IPv4 Addresses
      * @see SecurityManager#checkConnect
      */
     public static InetAddress[] getAllByName(String host)

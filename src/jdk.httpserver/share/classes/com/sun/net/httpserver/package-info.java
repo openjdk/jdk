@@ -138,6 +138,8 @@
         }
     });
    </pre></blockquote>
+    @spec https://www.ietf.org/rfc/rfc2818.html HTTP Over TLS
+    @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
    @since 1.6
  */
 package com.sun.net.httpserver;

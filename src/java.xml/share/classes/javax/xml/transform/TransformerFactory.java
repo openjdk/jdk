@@ -157,6 +157,7 @@ public abstract class TransformerFactory {
      *    parsing the {@code Source} or it is not possible to create a
      *   {@code Transformer} instance.
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt">
      *   XSL Transformations (XSLT) Version 1.0</a>
      */
@@ -218,6 +219,7 @@ public abstract class TransformerFactory {
      *   is thrown if an error occurings during parsing of the
      *   {@code source}.
      *
+     * @spec https://www.w3.org/TR/xml-stylesheet Associating Style Sheets with XML documents 1.0 (Second Edition)
      * @see <a href="http://www.w3.org/TR/xml-stylesheet/">
      *   Associating Style Sheets with XML documents Version 1.0</a>
      */

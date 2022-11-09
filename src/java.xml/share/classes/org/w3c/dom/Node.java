@@ -166,6 +166,7 @@ package org.w3c.dom;
  * </tbody>
  * </table>
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
  */
 public interface Node {
     // NodeType
@@ -496,6 +497,7 @@ public interface Node {
      * sufficient, since XPointers do not differentiate between
      * <code>Text</code> nodes and <code>CDATASection</code> nodes.
      *
+     * @spec https://www.w3.org/TR/2003/REC-xptr-framework-20030325 XPointer Framework
      * @since 1.4, DOM Level 3
      */
     public void normalize();
@@ -528,6 +530,7 @@ public interface Node {
      * attached to. If an attribute is not explicitly given a namespace, it
      * simply has no namespace.
      *
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public String getNamespaceURI();
@@ -589,6 +592,7 @@ public interface Node {
      *   this node is "xmlns" [<a href='http://www.w3.org/TR/1999/REC-xml-names-19990114/'>XML Namespaces</a>]
      *   .
      *
+     * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @since 1.4, DOM Level 2
      */
     public void setPrefix(String prefix)
@@ -624,6 +628,7 @@ public interface Node {
      * <code>documentURI</code> attribute from the <code>Document</code>
      * interface otherwise.
      *
+     * @spec https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109 Document Object Model (DOM) Level 2 HTML Specification
      * @since 1.5, DOM Level 3
      */
     public String getBaseURI();

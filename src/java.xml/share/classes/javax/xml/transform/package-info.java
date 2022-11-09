@@ -203,6 +203,8 @@
  * The returned {@link javax.xml.transform.Source} object must be usable by
  * the transformer, as specified in its implemented features.
  *
+ * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
+ * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
  * @since 1.5
  */
 

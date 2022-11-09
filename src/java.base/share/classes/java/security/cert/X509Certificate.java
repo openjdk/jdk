@@ -95,6 +95,7 @@ import java.util.List;
  * }
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @since 1.2
  *
@@ -386,6 +387,7 @@ implements X509Extension {
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
+     * @spec https://www.ietf.org/rfc/rfc3279.html Algorithms and Identifiers for the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
      */
     public abstract String getSigAlgOID();
 
@@ -608,6 +610,8 @@ implements X509Extension {
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
      *
+     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc0822.html STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      * @implNote The JDK SUN provider supports the third and fourth
      * otherName entries.
      *

@@ -72,6 +72,7 @@ import java.security.spec.MGF1ParameterSpec;
  * EncodingParameters ::= OCTET STRING(SIZE(0..MAX))
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc8017.html PKCS #1: RSA Cryptography Specifications Version 2.2
  * @see java.security.spec.MGF1ParameterSpec
  * @see PSource
  *

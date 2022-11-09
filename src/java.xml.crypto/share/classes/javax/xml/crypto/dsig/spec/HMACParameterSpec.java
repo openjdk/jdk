@@ -44,6 +44,8 @@ import javax.xml.crypto.dsig.SignatureMethod;
  * &lt;/simpleType&gt;
  * </code></pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc2104.html HMAC: Keyed-Hashing for Message Authentication
+ * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

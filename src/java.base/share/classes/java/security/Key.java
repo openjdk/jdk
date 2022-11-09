@@ -86,6 +86,8 @@ package java.security;
  * Security Appendix</a>
  * of the <cite>Java Object Serialization Specification</cite> for more information.
  *
+ * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec serialization/index.html Java Object Serialization Specification
  * @see PublicKey
  * @see PrivateKey
  * @see KeyPair

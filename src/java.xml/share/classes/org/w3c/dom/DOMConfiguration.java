@@ -383,6 +383,15 @@ package org.w3c.dom;
  * set, <code>Document.normalizeDocument()</code> will invoke the resource
  * resolver instead of using <code>Document.documentURI</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/2001/REC-xml-c14n-20010315 Canonical XML
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+ * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
+ * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
+ * @spec https://www.w3.org/TR/2004/REC-xml-names11-20040204 Namespaces in XML 1.1
+ * @spec https://www.w3.org/TR/2004/REC-xml-infoset-20040204 XML Information Set (Second Edition)
+ * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
  * @since 1.5, DOM Level 3
  */
 public interface DOMConfiguration {

@@ -33,6 +33,7 @@ import org.w3c.dom.Node;
  * in <a href="http://www.w3.org/TR/xpath/#node-sets">XML Path Language (XPath)
  * Version 1.0, 3.3 Node-sets</a>.
  *
+ * @spec https://www.w3.org/TR/xpath xpath cover page - W3C
  * @since 9
  */
 public interface XPathNodes extends Iterable<Node> {

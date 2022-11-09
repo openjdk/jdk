@@ -34,6 +34,7 @@ import java.util.Objects;
  * using the Chinese Remainder Theorem (CRT) information values
  * for efficiency.
  *
+ * @spec https://www.ietf.org/rfc/rfc8017.html PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Valerie Peng
  *
  *

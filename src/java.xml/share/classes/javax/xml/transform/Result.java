@@ -51,6 +51,7 @@ public interface Result {
      * <p>Result DOM trees may also have PI_DISABLE_OUTPUT_ESCAPING and
      * PI_ENABLE_OUTPUT_ESCAPING inserted into the tree.
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#disable-output-escaping">disable-output-escaping in XSLT Specification</a>
      */
     public static final String PI_DISABLE_OUTPUT_ESCAPING =
@@ -61,6 +62,7 @@ public interface Result {
      * if the result tree enables output escaping at some point after having
      * received a PI_DISABLE_OUTPUT_ESCAPING processing instruction.
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#disable-output-escaping">disable-output-escaping in XSLT Specification</a>
      */
     public static final String PI_ENABLE_OUTPUT_ESCAPING =

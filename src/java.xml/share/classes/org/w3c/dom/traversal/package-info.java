@@ -30,6 +30,7 @@
  * the Traversal module contains specialized interfaces dedicated to
  * traversing the document structure.
  *
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113 Document Object Model (DOM) Level 2 Traversal and Range Specification
  * @since 1.5
  */
 

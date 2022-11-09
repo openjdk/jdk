@@ -181,6 +181,7 @@ package java.io;
  * the default computed value, but the requirement for matching
  * serialVersionUID values is waived for array classes.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @see java.io.ObjectOutputStream
  * @see java.io.ObjectInputStream
  * @see java.io.ObjectOutput

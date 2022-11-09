@@ -65,6 +65,8 @@ package org.w3c.dom;
  * the quotation mark character " or the apostrophe character ' when part of
  * an attribute.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
  */
 public interface Text extends CharacterData {
     /**
@@ -93,6 +95,7 @@ public interface Text extends CharacterData {
      * determined to contain whitespace in element content during the load
      * of the document or if validation occurs while using
      * <code>Document.normalizeDocument()</code>.
+     * @spec https://www.w3.org/TR/2004/REC-xml-infoset-20040204 XML Information Set (Second Edition)
      * @since 1.5, DOM Level 3
      */
     public boolean isElementContentWhitespace();

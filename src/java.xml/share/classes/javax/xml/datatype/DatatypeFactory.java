@@ -237,6 +237,7 @@ public abstract class DatatypeFactory {
      * @param durationInMilliSeconds Duration in milliseconds to create.
      *
      * @return New {@code Duration} representing {@code durationInMilliSeconds}.
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      */
     public abstract Duration newDuration(final long durationInMilliSeconds);
 
@@ -368,6 +369,7 @@ public abstract class DatatypeFactory {
      *         not a valid representation of a {@code Duration} expressed only in terms of days and time.
      * @throws UnsupportedOperationException If implementation cannot support requested values.
      * @throws NullPointerException If {@code lexicalRepresentation} is {@code null}.
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationDayTime(final String lexicalRepresentation) {
         // lexicalRepresentation must be non-null
@@ -424,6 +426,8 @@ public abstract class DatatypeFactory {
      *
      * @return New {@code Duration} created with the specified {@code durationInMilliseconds}.
      *
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      * @see <a href="http://www.w3.org/TR/xpath-datamodel#dayTimeDuration">
      *   XQuery 1.0 and XPath 2.0 Data Model, xdt:dayTimeDuration</a>
      */
@@ -463,6 +467,7 @@ public abstract class DatatypeFactory {
      * {@code Duration}: if all the fields (day, hour, ...) are null or
      * if any of the fields is negative.
      * @throws UnsupportedOperationException If implementation cannot support requested values.
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationDayTime(
             final boolean isPositive,
@@ -506,6 +511,7 @@ public abstract class DatatypeFactory {
      *
      * @throws IllegalArgumentException If the values are not a valid representation of a
      * {@code Duration}: if any of the fields (day, hour, ...) is negative.
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationDayTime(
             final boolean isPositive,
@@ -548,6 +554,7 @@ public abstract class DatatypeFactory {
      * @throws IllegalArgumentException If {@code lexicalRepresentation} is not a valid representation of a {@code Duration} expressed only in terms of years and months.
      * @throws UnsupportedOperationException If implementation cannot support requested values.
      * @throws NullPointerException If {@code lexicalRepresentation} is {@code null}.
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationYearMonth(
             final String lexicalRepresentation) {
@@ -605,6 +612,8 @@ public abstract class DatatypeFactory {
      * @param durationInMilliseconds Milliseconds of {@code Duration} to create.
      *
      * @return New {@code Duration} created using the specified {@code durationInMilliseconds}.
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationYearMonth(
             final long durationInMilliseconds) {
@@ -648,6 +657,7 @@ public abstract class DatatypeFactory {
      * {@code Duration}: if all of the fields (year, month) are null or
      * if any of the fields is negative.
      * @throws UnsupportedOperationException If implementation cannot support requested values.
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationYearMonth(
             final boolean isPositive,
@@ -682,6 +692,7 @@ public abstract class DatatypeFactory {
      *
      * @throws IllegalArgumentException If the values are not a valid representation of a
      * {@code Duration}: if any of the fields (year, month) is negative.
+     * @spec https://www.w3.org/TR/xpath-datamodel XQuery and XPath Data Model 3.1
      */
     public Duration newDurationYearMonth(
             final boolean isPositive,
@@ -728,6 +739,7 @@ public abstract class DatatypeFactory {
      *
      * @throws IllegalArgumentException If the {@code lexicalRepresentation} is not a valid {@code XMLGregorianCalendar}.
      * @throws NullPointerException If {@code lexicalRepresentation} is {@code null}.
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      */
     public abstract XMLGregorianCalendar newXMLGregorianCalendar(final String lexicalRepresentation);
 

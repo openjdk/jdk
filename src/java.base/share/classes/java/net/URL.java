@@ -170,6 +170,9 @@ import sun.security.action.GetPropertyAction;
  * used, but only for HTML form encoding, which is not the same
  * as the encoding scheme defined in RFC2396.
  *
+ * @spec https://www.ietf.org/rfc/rfc2732.html Format for Literal IPv6 Addresses in URL's
+ * @spec https://www.ietf.org/rfc/rfc3986.html Uniform Resource Identifier (URI): Generic Syntax
+ * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
  * @apiNote
  *
  * <a id="integrity"></a>
@@ -393,6 +396,8 @@ public final class URL implements java.io.Serializable {
      *                  is a negative number other than -1, or if the
      *                  underlying stream handler implementation rejects,
      *                  or is known to reject, the {@code URL}
+     * @spec https://www.ietf.org/rfc/rfc2732.html Format for Literal IPv6 Addresses in URL's
+     * @spec https://www.ietf.org/rfc/rfc2373.html IP Version 6 Addressing Architecture
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)

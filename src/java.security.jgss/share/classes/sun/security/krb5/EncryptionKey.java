@@ -420,6 +420,7 @@ public class EncryptionKey
      * encoded data.
      * @exception IOException if an I/O error occurs while reading encoded
      * data.
+     * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
      *
      */
     public synchronized byte[] asn1Encode() throws Asn1Exception, IOException {

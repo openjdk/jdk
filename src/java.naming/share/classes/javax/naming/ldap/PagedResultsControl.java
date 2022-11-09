@@ -106,6 +106,7 @@ import com.sun.jndi.ldap.BerEncoder;
  *
  * }</pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc2696.html LDAP Control Extension for Simple Paged Results Manipulation
  * @since 1.5
  * @see PagedResultsResponseControl
  * @author Vincent Ryan

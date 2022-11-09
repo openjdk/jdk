@@ -413,6 +413,7 @@ import java.util.function.BiFunction;
  *      because there is no way to guarantee the eventual packet ordering.
  * </OL>
  *
+ * @spec https://www.ietf.org/rfc/rfc2246.html The TLS Protocol Version 1.0
  * @see SSLContext
  * @see SSLSocket
  * @see SSLServerSocket
@@ -859,6 +860,7 @@ public abstract class SSLEngine {
      *          if this engine has not received the proper SSL/TLS/DTLS close
      *          notification message from the peer.
      *
+     * @spec https://www.ietf.org/rfc/rfc2246.html The TLS Protocol Version 1.0
      * @see     #isInboundDone()
      * @see     #isOutboundDone()
      */
@@ -1351,6 +1353,7 @@ public abstract class SSLEngine {
      * Application-Layer Protocol Negotiation (ALPN), can negotiate
      * application-level values between peers.
      *
+     * @spec https://www.ietf.org/rfc/rfc7301.html Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.

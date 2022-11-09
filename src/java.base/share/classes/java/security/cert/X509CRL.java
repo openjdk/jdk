@@ -95,6 +95,7 @@ import java.util.Set;
  * }
  * }</pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @since 1.2
  *
@@ -460,6 +461,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
+     * @spec https://www.ietf.org/rfc/rfc3279.html Algorithms and Identifiers for the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
      */
     public abstract String getSigAlgOID();
 

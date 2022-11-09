@@ -42,6 +42,7 @@ package javax.naming.ldap;
   *<p>
   * This interface is used to represent both request and response controls.
   *
+  * @spec https://www.ietf.org/rfc/rfc2251.html Lightweight Directory Access Protocol (v3)
   * @author Rosanna Lee
   * @author Scott Seligman
   * @author Vincent Ryan

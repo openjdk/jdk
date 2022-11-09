@@ -61,6 +61,7 @@ import java.util.Map;
  * &lt;/complexType&gt;
  * </code></pre>
  *
+ * @spec https://www.w3.org/TR/xmldsig-filter2 XML-Signature XPath Filter 2.0
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

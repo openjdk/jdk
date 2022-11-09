@@ -165,6 +165,7 @@ public class URLDecoder {
      * UTF-8 should be used. Not doing so may introduce
      * incompatibilities.</em>
      *
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
      * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
      * when illegal strings are encountered.
      *

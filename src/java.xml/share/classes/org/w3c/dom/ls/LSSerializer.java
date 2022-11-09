@@ -216,6 +216,10 @@ import org.w3c.dom.DOMException;
  * <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>
 Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113 Document Object Model (DOM) Level 2 Core Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+ * @spec https://www.w3.org/TR/DOM-Level-3-LS Document Object Model (DOM) Level 3 Load and Save Specification
+ * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
  * @since 1.5
  */
 public interface LSSerializer {
@@ -327,6 +331,10 @@ public interface LSSerializer {
      * encoding would be needed to be able to re-parse the serialized data). </dd>
      * </dl></dd>
      * </dl>
+     * @spec https://www.w3.org/TR/2001/REC-xml-c14n-20010315 Canonical XML
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      */
     public DOMConfiguration getDomConfig();
 
@@ -349,6 +357,8 @@ public interface LSSerializer {
      * content. Setting this attribute to <code>null</code> will reset its
      * value to the default value.
      * <br>
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      */
     public String getNewLine();
     /**
@@ -370,6 +380,8 @@ public interface LSSerializer {
      * content. Setting this attribute to <code>null</code> will reset its
      * value to the default value.
      * <br>
+     * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
+     * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      */
     public void setNewLine(String newLine);
 
@@ -383,6 +395,7 @@ public interface LSSerializer {
      * example, CDATA sections won't be passed to the filter if
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-cdata-sections'>cdata-sections</a>"
      * is set to <code>false</code>.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public LSSerializerFilter getFilter();
     /**
@@ -395,6 +408,7 @@ public interface LSSerializer {
      * example, CDATA sections won't be passed to the filter if
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-cdata-sections'>cdata-sections</a>"
      * is set to <code>false</code>.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public void setFilter(LSSerializerFilter filter);
 
@@ -439,6 +453,7 @@ public interface LSSerializer {
      *   <code>DOMErrorHandler</code> using the parameter
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public boolean write(Node nodeArg,
                          LSOutput destination)
@@ -462,6 +477,7 @@ public interface LSSerializer {
      *   <code>DOMErrorHandler</code> using the parameter
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public boolean writeToURI(Node nodeArg,
                               String uri)
@@ -485,6 +501,7 @@ public interface LSSerializer {
      *   <code>DOMErrorHandler</code> using the parameter
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
+     * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
      */
     public String writeToString(Node nodeArg)
                                 throws DOMException, LSException;

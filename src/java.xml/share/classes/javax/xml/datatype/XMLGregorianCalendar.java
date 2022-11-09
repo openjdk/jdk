@@ -166,6 +166,7 @@ import java.util.GregorianCalendar;
  *   </li>
  * </ul>
  *
+ * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
  * @author Joseph Fialli
  * @author Kohsuke Kawaguchi
  * @author Jeff Suttor
@@ -660,6 +661,7 @@ public abstract class XMLGregorianCalendar
      *   {@link DatatypeConstants#INDETERMINATE}.
      *
      * @throws NullPointerException if {@code xmlGregorianCalendar} is null.
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      */
     public abstract int compare(XMLGregorianCalendar xmlGregorianCalendar);
 
@@ -738,6 +740,7 @@ public abstract class XMLGregorianCalendar
      *
      * @throws IllegalStateException if the combination of set fields
      *    does not match one of the eight defined XML Schema builtin date/time datatypes.
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      */
     public abstract String toXMLFormat();
 
@@ -887,6 +890,7 @@ public abstract class XMLGregorianCalendar
      * @param duration Duration to add to this {@code XMLGregorianCalendar}.
      *
      * @throws NullPointerException  when {@code duration} parameter is {@code null}.
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      */
     public abstract void add(Duration duration);
 

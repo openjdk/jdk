@@ -97,6 +97,8 @@
  * {@extLink security_guide_jgss_tutorial
  * Introduction to JAAS and Java GSS-API}.
  *
+ * @spec https://www.ietf.org/rfc/rfc2853.html Generic Security Service API Version 2 : Java Bindings
+ * @spec https://www.ietf.org/rfc/rfc2743.html Generic Security Service Application Program Interface Version 2, Update 1
  * @since 1.4
  * */
 package org.ietf.jgss;

@@ -54,6 +54,7 @@ import java.util.Arrays;
  * this class requests the password as a char array, so it can be overwritten
  * when done.
  *
+ * @spec https://www.ietf.org/rfc/rfc2898.html PKCS #5: Password-Based Cryptography Specification Version 2.0
  * @author Jan Luehe
  * @author Valerie Peng
  *

@@ -31,6 +31,7 @@
  * and manipulating a range in a document.
  *
  *
+ * @spec https://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113 Document Object Model (DOM) Level 2 Traversal and Range Specification
  * @since 1.5
  */
 

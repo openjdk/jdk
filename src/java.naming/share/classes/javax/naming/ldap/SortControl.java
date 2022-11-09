@@ -101,6 +101,7 @@ import com.sun.jndi.ldap.BerEncoder;
  *
  * </pre>
  *
+ * @spec https://www.ietf.org/rfc/rfc2891.html LDAP Control Extension for Server Side Sorting of Search Results
  * @since 1.5
  * @see SortKey
  * @see SortResponseControl

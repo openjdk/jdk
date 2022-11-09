@@ -72,6 +72,7 @@ import java.util.ServiceConfigurationError;
  * ctx.close;
  * </pre></blockquote>
  *
+ * @spec https://www.ietf.org/rfc/rfc2830.html Lightweight Directory Access Protocol (v3): Extension for Transport Layer Security
  * @since 1.4
  * @see StartTlsResponse
  * @author Vincent Ryan

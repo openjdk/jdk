@@ -42,6 +42,7 @@ package javax.crypto.spec;
  * }
  * EncodingParameters ::= OCTET STRING(SIZE(0..MAX))
  * </pre>
+ * @spec https://www.ietf.org/rfc/rfc8017.html PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Valerie Peng
  *
  * @since 1.5

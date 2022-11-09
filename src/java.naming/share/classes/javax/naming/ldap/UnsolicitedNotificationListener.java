@@ -46,6 +46,7 @@ import javax.naming.event.NamingListener;
  * other listener interfaces).
  *</ol>
  *
+ * @spec https://www.ietf.org/rfc/rfc2251.html Lightweight Directory Access Protocol (v3)
  * @author Rosanna Lee
  * @author Scott Seligman
  * @author Vincent Ryan

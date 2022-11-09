@@ -41,6 +41,8 @@ import java.util.Locale;
  * <a href="https://www.ietf.org/rfc/rfc5056.txt">
  *     On the Use of Channel Bindings to Secure Channels</a>
  * section 2.1.
+ * @spec https://www.ietf.org/rfc/rfc5929.html Channel Bindings for TLS
+ * @spec https://www.ietf.org/rfc/rfc5056.html On the Use of Channel Bindings to Secure Channels
  *
  */
 

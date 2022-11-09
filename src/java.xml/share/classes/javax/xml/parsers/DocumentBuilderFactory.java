@@ -270,6 +270,7 @@ public abstract class DocumentBuilderFactory {
      *
      * @param validating true if the parser produced will validate documents
      *                   as they are parsed; false otherwise.
+     * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      */
 
     public void setValidating(boolean validating) {
@@ -630,6 +631,7 @@ public abstract class DocumentBuilderFactory {
      * @throws UnsupportedOperationException When implementation does not
      *   override this method.
      *
+     * @spec https://www.w3.org/TR/xinclude XML Inclusions (XInclude) Version 1.0 (Second Edition)
      * @since 1.5
      */
     public void setXIncludeAware(final boolean state) {

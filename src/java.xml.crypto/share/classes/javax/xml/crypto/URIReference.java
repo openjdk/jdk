@@ -35,6 +35,7 @@ package javax.xml.crypto;
  * and for objects of those types, the {@link #getType} method always returns
  * <code>null</code>.
  *
+ * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6

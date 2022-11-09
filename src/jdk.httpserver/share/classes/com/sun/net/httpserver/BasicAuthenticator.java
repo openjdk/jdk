@@ -50,6 +50,7 @@ public abstract class BasicAuthenticator extends Authenticator {
      * The Basic authentication credentials (username and password) are decoded
      * using the platform's {@link Charset#defaultCharset() default character set}.
      *
+     * @spec https://www.ietf.org/rfc/rfc7230.html Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
      * @apiNote The value of the {@code realm} parameter will be embedded in a
      * quoted string.
      *
@@ -70,6 +71,7 @@ public abstract class BasicAuthenticator extends Authenticator {
      * given {@link Charset} to decode the Basic authentication credentials
      * (username and password).
      *
+     * @spec https://www.ietf.org/rfc/rfc7230.html Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
      * @apiNote {@code UTF-8} is the recommended charset because its usage is
      * communicated to the client, and therefore more likely to be used also
      * by the client.

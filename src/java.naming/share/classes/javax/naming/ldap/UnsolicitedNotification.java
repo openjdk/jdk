@@ -34,6 +34,7 @@ import javax.naming.NamingException;
  * client without any provocation from the client.
  * Its format is that of an extended response ({@code ExtendedResponse}).
  *
+ * @spec https://www.ietf.org/rfc/rfc2251.html Lightweight Directory Access Protocol (v3)
  * @author Rosanna Lee
  * @author Scott Seligman
  * @author Vincent Ryan

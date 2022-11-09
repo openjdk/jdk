@@ -105,6 +105,7 @@ import org.xml.sax.SAXParseException;
  *   </tbody>
  * </table>
  *
+ * @spec https://www.w3.org/TR/xmlschema-1 XML Schema Part 1: Structures Second Edition
  * @author  Kohsuke Kawaguchi
  * @author  Neeraj Bajaj
  *
@@ -128,6 +129,7 @@ public abstract class SchemaFactory {
      * Creates a new instance of the {@code SchemaFactory} builtin
      * system-default implementation.
      *
+     * @spec https://www.w3.org/TR/xmlschema-1 XML Schema Part 1: Structures Second Edition
      * @implSpec The {@code SchemaFactory} builtin
      * system-default implementation is only required to support the
      * <a href="http://www.w3.org/TR/xmlschema-1">W3C XML Schema 1.0</a>,

@@ -259,6 +259,7 @@ public abstract class Transformer {
      * @return A copy of the set of output properties in effect for
      *   the next transformation.
      *
+     * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see javax.xml.transform.OutputKeys
      * @see java.util.Properties
      * @see <a href="http://www.w3.org/TR/xslt#output">

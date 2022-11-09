@@ -94,6 +94,7 @@ import jdk.internal.reflect.Reflection;
  * of any method is executed, nor is any {@linkplain Thread.UncaughtExceptionHandler
  * uncaught exception handler}.
  *
+ * @spec jni/index.html Java Native Interface Specification
  * @implNote
  * Native code typically uses the
  * <a href="{@docRoot}/../specs/jni/invocation.html">JNI Invocation API</a>
@@ -787,6 +788,7 @@ public class Runtime {
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
@@ -852,6 +854,7 @@ public class Runtime {
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */

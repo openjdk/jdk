@@ -42,6 +42,7 @@ import com.sun.naming.internal.ResourceManager;
   * When a service provider receives a response control, it uses control
   * factories to return the specific/appropriate control class implementation.
   *
+  * @spec https://www.ietf.org/rfc/rfc2251.html Lightweight Directory Access Protocol (v3)
   * @author Rosanna Lee
   * @author Scott Seligman
   * @author Vincent Ryan
