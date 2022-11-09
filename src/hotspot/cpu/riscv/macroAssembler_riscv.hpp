@@ -1300,7 +1300,4 @@ class SkipIfEqual {
    ~SkipIfEqual();
 };
 
-// reduction related operations
-enum REDUCTION_OP {ADD, AND, OR, XOR};
-
 #endif // CPU_RISCV_MACROASSEMBLER_RISCV_HPP
