@@ -153,6 +153,7 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_null_object_instance = new (_arena) ciNullObject();
   init_ident_of(ciEnv::_null_object_instance);
 
+  // ciInstanceKlass objects for interfaces that the vm class implements must also be allocated from the long lived arena
 #define VM_CLASS_DEFN(name, ignore_s)                                \
   if (vmClasses::name##_is_loaded()) {                               \
     InstanceKlass* ik = vmClasses::name();                           \
