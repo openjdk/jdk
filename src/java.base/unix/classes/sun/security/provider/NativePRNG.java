@@ -89,20 +89,8 @@ public final class NativePRNG extends SecureRandomSpi {
         MIXED, BLOCKING, NONBLOCKING
     }
 
-    // singleton instance or null if not available
-    // private static final RandomIO INSTANCE = initIO(Variant.MIXED);
-    // private static final ThreadLocal<RandomIO> INSTANCE = new ThreadLocal<>();
+    // ThreadLocal instance or null if not available
     private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.MIXED);
-
-    static {
-     System.out.println("******INIT*****");
-//      initIO(Variant.MIXED);
-      if (INSTANCE.get() == null) {
-        System.out.println("******INIT NOT AVAILABLE*****");
-      } else {
-        System.out.println("******INIT SUCCESS*****");
-      }
-    }
 
     /**
      * Get the System egd source (if defined).  We only allow "file:"
@@ -213,11 +201,6 @@ public final class NativePRNG extends SecureRandomSpi {
 
     // return whether the NativePRNG is available
     static boolean isAvailable() {
-        if (INSTANCE.get() == null) {
-          System.out.println("****** NOT AVAILABLE*****");
-        } else {
-          System.out.println("****** YES AVAILABLE*****");
-        }
         return INSTANCE.get() != null;
     }
 
@@ -226,8 +209,6 @@ public final class NativePRNG extends SecureRandomSpi {
         super();
         if (INSTANCE.get() == null) {
             throw new AssertionError("NativePRNG not available");
-        } else {
-          System.out.println("****** YES AVAILABLE1*****");
         }
     }
 
@@ -317,7 +298,6 @@ public final class NativePRNG extends SecureRandomSpi {
     public static final class NonBlocking extends SecureRandomSpi {
         private static final long serialVersionUID = -1102062982994105487L;
 
-        //private static final ThreadLocal<RandomIO> INSTANCE = new ThreadLocal<>();
         private static final ThreadLocal<RandomIO> INSTANCE = initIO(Variant.NONBLOCKING);
 
         static {
