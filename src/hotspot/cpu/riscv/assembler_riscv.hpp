@@ -2745,8 +2745,6 @@ public:
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}
-
-  virtual ~Assembler() {}
 };
 
 #endif // CPU_RISCV_ASSEMBLER_RISCV_HPP
