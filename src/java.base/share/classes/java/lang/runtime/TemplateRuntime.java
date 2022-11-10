@@ -33,7 +33,11 @@ import java.lang.invoke.MethodType;
 import java.lang.template.ProcessorLinkage;
 import java.lang.template.StringTemplate;
 import java.lang.template.ValidatingProcessor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 import jdk.internal.access.JavaTemplateAccess;
 import jdk.internal.access.SharedSecrets;

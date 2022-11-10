@@ -47,4 +47,6 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
-public interface TemplateProcessor<R> extends ValidatingProcessor<R, RuntimeException> {}
+public interface TemplateProcessor<R> extends ValidatingProcessor<R, RuntimeException> {
+
+}
