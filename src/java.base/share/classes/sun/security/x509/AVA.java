@@ -625,6 +625,7 @@ public class AVA implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         DerOutputStream         tmp = new DerOutputStream();
 

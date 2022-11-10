@@ -28,6 +28,7 @@ import sun.security.util.DerEncoder;
 import sun.security.util.DerOutputStream;
 
 public class NoRepl implements DerEncoder {
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         throw new IOException();
     }

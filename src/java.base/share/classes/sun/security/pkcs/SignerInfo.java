@@ -217,6 +217,7 @@ public class SignerInfo implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         DerOutputStream seq = new DerOutputStream();
         seq.putInteger(version);

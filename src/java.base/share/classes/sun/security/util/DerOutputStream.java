@@ -582,6 +582,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      *
      *  @exception IOException on output error.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         out.write(toByteArray());
     }

@@ -273,6 +273,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
         if (signedCert == null)
             throw new IOException("Null certificate to encode");
