@@ -2171,6 +2171,7 @@ encode %{
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
     } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
+      __ addr_nop_5();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       $$$emit8$primary;
