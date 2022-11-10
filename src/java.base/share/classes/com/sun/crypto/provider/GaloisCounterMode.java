@@ -572,36 +572,64 @@ abstract class GaloisCounterMode extends CipherSpi {
         return j0;
     }
 
-    // Wrapper function around AES-GCM interleaved intrinsic that splits
-    // large chunks of data into 1MB sized chunks. This is to place
-    // an upper limit on the number of blocks encrypted in the intrinsic.
+    /**
+     * Wrapper function around Combined AES-GCM intrinsic method that splits
+     * large chunks of data into 1MB sized chunks. This is to place
+     * an upper limit on the number of blocks encrypted in the intrinsic.
+     *
+     * The combined intrinsic is not used when decrypting in-place heap
+     * bytebuffers because 'ct' will be the same as 'in' and overwritten by
+     * GCTR before GHASH calculates the encrypted tag.
+     */
     private static int implGCMCrypt(byte[] in, int inOfs, int inLen, byte[] ct,
                                     int ctOfs, byte[] out, int outOfs,
                                     GCTR gctr, GHASH ghash) {
 
         int len = 0;
-        if (inLen > SPLIT_LEN) {
+        // Loop if input length is greater than the SPLIT_LEN. Intrinsic warmup.
+        if (inLen >= SPLIT_LEN) {
             while (inLen >= SPLIT_LEN) {
-                int partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
-                    ctOfs + len, out, outOfs + len, gctr, ghash);
+                int partlen;
+                if (ct == null) {
+                    ghash.update(in, inOfs + len, SPLIT_LEN);
+                    partlen = gctr.update(in, inOfs + len, SPLIT_LEN, out,
+                        outOfs);
+                } else {
+                    partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
+                        ctOfs + len, out, outOfs + len, gctr, ghash);
+                }
                 len += partlen;
                 inLen -= partlen;
             }
         }
+
+        // Finish any remaining data
         if (inLen > 0) {
-            len += implGCMCrypt0(in, inOfs + len, inLen, ct,
-                   ctOfs + len, out, outOfs + len, gctr, ghash);
+            if (ct == null) {
+                ghash.update(in, inOfs + len, inLen);
+                len += gctr.update(in, inOfs + len, inLen, out, outOfs);
+            } else {
+                len += implGCMCrypt0(in, inOfs + len, inLen, ct,
+                    ctOfs + len, out, outOfs + len, gctr, ghash);
+            }
         }
         return len;
     }
+
     /**
-     * Intrinsic for Vector AES Galois Counter Mode implementation.
-     * AES and GHASH operations are interleaved in the intrinsic implementation.
-     * return - number of processed bytes
+     * Intrinsic for the combined AES Galois Counter Mode implementation.
+     * AES and GHASH operations are combined in the intrinsic implementation.
      *
      * Requires 768 bytes (48 AES blocks) to efficiently use the intrinsic.
      * inLen that is less than 768 size block sizes, before or after this
      * intrinsic is used, will be done by the calling method
+     *
+     * Note:
+     * Only Intel processors with AVX512 that support vaes, vpclmulqdq,
+     * avx512dq, and avx512vl trigger this intrinsic.
+     * Other processors will always use GHASH and GCTR which may have their own
+     * intrinsic support
+     *
      * @param in input buffer
      * @param inOfs input offset
      * @param inLen input length
@@ -610,7 +638,7 @@ abstract class GaloisCounterMode extends CipherSpi {
      * @param out output buffer
      * @param outOfs output offset
      * @param gctr object for the GCTR operation
-     * @param ghash object for the ghash operation
+     * @param ghash object for the GHASH operation
      * @return number of processed bytes
      */
     @IntrinsicCandidate
@@ -665,6 +693,10 @@ abstract class GaloisCounterMode extends CipherSpi {
         ByteBuffer originalDst = null;
         byte[] originalOut = null;
         int originalOutOfs = 0;
+
+        // True if ops is an in-place heap ByteBuffer decryption.  This is to
+        // avoid the AVX512 intrinsic.
+        boolean inPlaceHeapBB = false;
 
         GCMEngine(SymmetricCipher blockCipher) {
             blockSize = blockCipher.getBlockSize();
@@ -732,7 +764,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 ByteBuffer ct = (encryption ? dst : src);
                 len = GaloisCounterMode.implGCMCrypt(src.array(),
                     src.arrayOffset() + src.position(), srcLen,
-                    ct.array(), ct.arrayOffset() + ct.position(),
+                    inPlaceHeapBB ? null : ct.array(),
+                    ct.arrayOffset() + ct.position(),
                     dst.array(), dst.arrayOffset() + dst.position(),
                     gctr, ghash);
                 src.position(src.position() + len);
@@ -959,10 +992,12 @@ abstract class GaloisCounterMode extends CipherSpi {
                     // from the underlying byte[] address.
                     // If during encryption and the input offset is behind or
                     // the same as the output offset, the same buffer can be
-                    // used.  But during decryption always create a new
-                    // buffer in case of a bad auth tag.
-                    if (encryption && src.position() + src.arrayOffset() >=
+                    // used.
+                    // Set 'inPlaceHeapBB' true for decryption operations to
+                    // avoid the AVX512 intrinsic
+                    if (src.position() + src.arrayOffset() >=
                         dst.position() + dst.arrayOffset()) {
+                        inPlaceHeapBB = (!encryption);
                         return dst;
                     }
                 }
