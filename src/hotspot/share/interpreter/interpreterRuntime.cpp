@@ -937,6 +937,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   if (UseNewCode) {
     tty->print_cr("In InterpreterRuntime::resolve_invokedynamic");
     index = pool->decode_invokedynamic_index(index);
+    tty->print_cr("The decoded index is %d", index);
   }
   {
     JvmtiHideSingleStepping jhss(current);

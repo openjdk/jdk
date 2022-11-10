@@ -889,6 +889,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
+  ResourceMark rm;
   tty->print_cr("In set_dynamic_call");
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
 
@@ -946,6 +947,7 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
+    tty->print_cr("Resolved references oop: %p", resolved_references->obj_at(appendix_index));
   }
 
   // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info
@@ -957,7 +959,8 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   if (UseNewCode && resolved_invokedynamic_info_array()) {
     tty->print_cr("Filling in invokedynamicinfo");
     resolved_invokedynamic_info_element(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-    tty->print_cr("Done filling, %s", adapter->name()->as_C_string());
+    //tty->print_cr("Done filling, %s: %p", adapter->name()->as_C_string(), adapter);
+    resolved_invokedynamic_info_element(index)->print_on(tty);
   } else if (UseNewCode) {
     tty->print_cr("Invokedynamic info array is empty, not filled in!");
   }
