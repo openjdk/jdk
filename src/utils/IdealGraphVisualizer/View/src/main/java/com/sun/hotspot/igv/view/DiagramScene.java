@@ -49,6 +49,8 @@ import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import org.netbeans.api.visual.action.*;
+import org.netbeans.api.visual.animator.AnimatorEvent;
+import org.netbeans.api.visual.animator.AnimatorListener;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.model.*;
 import org.netbeans.api.visual.widget.LayerWidget;
@@ -1137,7 +1139,31 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         validateAll();
         if (model.getSelectedFigures().size() == 1) {
-            centerSelectedFigures();
+            if (getSceneAnimator().getPreferredLocationAnimator().isRunning()) {
+                getSceneAnimator().getPreferredLocationAnimator().addAnimatorListener(new AnimatorListener() {
+                    @Override
+                    public void animatorStarted(AnimatorEvent animatorEvent) {}
+
+                    @Override
+                    public void animatorReset(AnimatorEvent animatorEvent) {}
+
+                    @Override
+                    public void animatorFinished(AnimatorEvent animatorEvent) {
+                        getSceneAnimator().getPreferredLocationAnimator().removeAnimatorListener(this);
+                    }
+
+                    @Override
+                    public void animatorPreTick(AnimatorEvent animatorEvent) {}
+
+                    @Override
+                    public void animatorPostTick(AnimatorEvent animatorEvent) {
+                        validateAll();
+                        centerSelectedFigures();
+                    }
+                });
+            } else {
+                centerSelectedFigures();
+            }
         }
         rebuilding = false;
     }
