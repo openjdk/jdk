@@ -3376,7 +3376,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
       }
       UNROLLED SCALAR LOOP
     }
-    SINGLE SCALAR 
+    SINGLE SCALAR
    */
 
   if (hashMode == VectorizedHashCodeNode::UTF16) {
