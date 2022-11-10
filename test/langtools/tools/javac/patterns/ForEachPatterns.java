@@ -5,7 +5,6 @@
  * @run main/othervm --enable-preview ForEachPatterns
  */
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -158,12 +157,8 @@ public class ForEachPatterns {
     static <T> void method() {}
 
     static void for_parsing(int i) {
-        List<Point> points = Arrays.asList(new Point(0, 0));
-        List<GPoint<Integer>> generic_points =
-                Arrays.asList(new GPoint<>(0, 0));
-        List<WithPrimitives> with_primitives =
-                Arrays.asList(new WithPrimitives(0, 0));
-
+        List<Point> points = null;
+        List<GPoint<Integer>> generic_points = null;
         for (Point(Integer a, Integer b) : points) { }
         for (ForEachPatterns.Point(Integer a, Integer b) : points) { }
         for (GPoint<Integer>(Integer a, Integer b) : generic_points) { }
