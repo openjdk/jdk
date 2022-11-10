@@ -730,24 +730,29 @@ void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass
   }
 }
 
-GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() {
+GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() const{
   if (_transitive_interfaces == NULL) {
-    GUARDED_VM_ENTRY(
-            InstanceKlass* ik = get_instanceKlass();
-            Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
-            Arena* arena = CURRENT_ENV->arena();
-            int len = interfaces->length() + (is_interface() ? 1 : 0);
-            GrowableArray<ciInstanceKlass*>* transitive_interfaces = new (arena)GrowableArray<ciInstanceKlass*>(arena, len, 0, NULL);
-            for (int i = 0; i < interfaces->length(); i++) {
-              transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
-            }
-            if (is_interface()) {
-              transitive_interfaces->append(this);
-            }
-            _transitive_interfaces = transitive_interfaces;
-    );
+    const_cast<ciInstanceKlass*>(this)->compute_transitive_interfaces();
   }
   return _transitive_interfaces;
+}
+
+void ciInstanceKlass::compute_transitive_interfaces() {
+  GUARDED_VM_ENTRY(
+          InstanceKlass* ik = get_instanceKlass();
+          Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
+          Arena* arena = CURRENT_ENV->arena();
+          int len = interfaces->length() + (is_interface() ? 1 : 0);
+          GrowableArray<ciInstanceKlass*>* transitive_interfaces = new(arena)GrowableArray<ciInstanceKlass*>(arena, len,
+                                                                                                             0, NULL);
+          for (int i = 0; i < interfaces->length(); i++) {
+            transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
+          }
+          if (is_interface()) {
+            transitive_interfaces->append(this);
+          }
+          _transitive_interfaces = transitive_interfaces;
+  );
 }
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {

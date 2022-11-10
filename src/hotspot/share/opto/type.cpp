@@ -4000,21 +4000,21 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst, const I
     //
     assert(loaded->ptr() != TypePtr::Null, "insanity check");
     //
-    if(      loaded->ptr() == TypePtr::TopPTR ) { return unloaded; }
-    else if (loaded->ptr() == TypePtr::AnyNull) { return make(ptr, unloaded->klass(), interfaces, false, NULL, off, instance_id, speculative, depth); }
-    else if (loaded->ptr() == TypePtr::BotPTR ) { return TypeInstPtr::BOTTOM; }
+    if (loaded->ptr() == TypePtr::TopPTR)        { return unloaded; }
+    else if (loaded->ptr() == TypePtr::AnyNull)  { return make(ptr, unloaded->klass(), interfaces, false, NULL, off, instance_id, speculative, depth); }
+    else if (loaded->ptr() == TypePtr::BotPTR)   { return TypeInstPtr::BOTTOM; }
     else if (loaded->ptr() == TypePtr::Constant || loaded->ptr() == TypePtr::NotNull) {
-      if (unloaded->ptr() == TypePtr::BotPTR  ) { return TypeInstPtr::BOTTOM;  }
-      else                                      { return TypeInstPtr::NOTNULL; }
+      if (unloaded->ptr() == TypePtr::BotPTR)    { return TypeInstPtr::BOTTOM;  }
+      else                                       { return TypeInstPtr::NOTNULL; }
     }
-    else if( unloaded->ptr() == TypePtr::TopPTR )  { return unloaded; }
+    else if (unloaded->ptr() == TypePtr::TopPTR) { return unloaded; }
 
     return unloaded->cast_to_ptr_type(TypePtr::AnyNull)->is_instptr();
   }
 
   // Both are unloaded, not the same class, not Object
   // Or meet unloaded with a different loaded class, not java/lang/Object
-  if( ptr != TypePtr::BotPTR ) {
+  if (ptr != TypePtr::BotPTR) {
     return TypeInstPtr::NOTNULL;
   }
   return TypeInstPtr::BOTTOM;

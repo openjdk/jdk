@@ -80,6 +80,7 @@ private:
 
   void compute_injected_fields();
   bool compute_injected_fields_helper();
+  void compute_transitive_interfaces();
 
 protected:
   ciInstanceKlass(Klass* k);
@@ -293,7 +294,7 @@ public:
   bool has_trusted_loader() const {
     return _has_trusted_loader;
   }
-  GrowableArray<ciInstanceKlass*>* transitive_interfaces();
+  GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
 
   // Replay support
 
