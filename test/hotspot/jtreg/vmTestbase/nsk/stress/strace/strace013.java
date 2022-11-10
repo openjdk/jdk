@@ -59,13 +59,17 @@ import java.util.Map;
  * <p>It is expected that these methods return the same stack traces. Each stack frame
  * for both stack traces correspond to invocation of one of the methods
  * defined by the <code>EXPECTED_METHODS</code> array.</p>
+ *
+ * There is some leeway in the expected stack depth as a thread may not have
+ * reached the native wait0() call when the stacktrace is taken. So we allow
+ * a difference of 3 for the methods: wait(), wait(0), and wait0(0)
  */
 public class strace013 {
 
     static final int DEPTH = 200;
     static final int THRD_COUNT = 100;
     static final String[] EXPECTED_METHODS = {
-            "java.lang.Object.wait",
+            "java.lang.Object.wait", // two variants
             "java.lang.Object.wait0",
             "nsk.stress.strace.strace013Thread.run",
             "nsk.stress.strace.strace013Thread.recursiveMethod"
@@ -76,15 +80,8 @@ public class strace013 {
     static long waitTime = 2;
 
     static Object lockedObject = new Object();
-    static int waitingCount = 0; // accessed while holding lockedObject
 
-    // Must synchronize on the lockedObject so the right count guarantees
-    // the wait() call has been entered.
-    static int waitingCount() {
-        synchronized(strace013.lockedObject) {
-            return waitingCount;
-        }
-    }
+    volatile int achivedCount = 0;
     strace013Thread[] threads;
     static Log log;
 
@@ -119,12 +116,13 @@ public class strace013 {
 
     void startThreads() {
         threads = new strace013Thread[THRD_COUNT];
+        achivedCount = 0;
 
         String tmp_name;
         display("starting threads...");
         for (int i = 0; i < THRD_COUNT; i++) {
             tmp_name = "strace013Thread" + Integer.toString(i);
-            threads[i] = new strace013Thread(tmp_name);
+            threads[i] = new strace013Thread(this, tmp_name);
             threads[i].start();
         }
 
@@ -135,13 +133,14 @@ public class strace013 {
         if (msg.length() > 0)
             display("waiting for " + msg);
 
-        while (strace013.waitingCount() < THRD_COUNT) {
+        while (achivedCount < THRD_COUNT) {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 complain("" + e);
             }
         }
+        achivedCount = 0;
     }
 
     boolean makeSnapshot() {
@@ -172,7 +171,7 @@ public class strace013 {
         for (int i = 1; i < THRD_COUNT; i++) {
             all = (StackTraceElement[]) traces.get(threads[i]);
             int k = all.length;
-            if (count != k) {
+            if (count - k > 3) {
                 complain("wrong lengths of stack traces:\n\t"
                         + threads[0].getName() + ": " + count
                         + "\t"
@@ -254,8 +253,10 @@ class strace013Thread extends Thread {
     private int currentDepth = 0;
 
     static int[] arr = new int[1000];
+    strace013 test;
 
-    strace013Thread(String name) {
+    strace013Thread(strace013 test, String name) {
+        this.test = test;
         setName(name);
     }
 
@@ -279,11 +280,12 @@ class strace013Thread extends Thread {
 
             strace013.display(getName() + ">waiting on a monitor");
 
+            synchronized (test) {
+                test.achivedCount++;
+            }
+
             synchronized (strace013.lockedObject) {
-                strace013.waitingCount++;
                 try {
-                    // If we get a spurious wakeup then the test may break,
-                    // but there is nothing we can do to prevent that.
                     strace013.lockedObject.wait();
                 } catch (InterruptedException e) {
                     strace013.complain("" + e);
