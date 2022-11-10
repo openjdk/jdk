@@ -761,9 +761,6 @@ instruct vmulD(vReg dst, vReg src1, vReg src2) %{
 // vector neg
 
 instruct vnegI(vReg dst, vReg src) %{
-  predicate(Matcher::vector_element_basic_type(n->in(1)) == T_BYTE ||
-            Matcher::vector_element_basic_type(n->in(1)) == T_SHORT ||
-            Matcher::vector_element_basic_type(n->in(1)) == T_INT);
   match(Set dst (NegVI src));
   ins_cost(VEC_COST);
   format %{ "vrsub.vx $dst, $src, $src\t#@vnegI" %}
