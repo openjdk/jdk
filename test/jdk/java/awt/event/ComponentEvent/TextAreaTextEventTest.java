@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ public class TextAreaTextEventTest {
     private static Frame frame;
     private volatile static TextArea textArea;
     private volatile static boolean textChanged = false;
+    private volatile static Point textAreaAt;
+    private volatile static Dimension textAreaSize;
     private static Robot robot = null;
 
     public static void main(String[] args) throws Exception {
@@ -55,8 +57,12 @@ public class TextAreaTextEventTest {
             robot.setAutoWaitForIdle(true);
 
             robot.waitForIdle();
-            Point textAreaAt = textArea.getLocationOnScreen();
-            Dimension textAreaSize = textArea.getSize();
+
+            EventQueue.invokeAndWait(() -> {
+                textAreaAt = textArea.getLocationOnScreen();
+                textAreaSize = textArea.getSize();
+            });
+
             robot.mouseMove(textAreaAt.x + textAreaSize.width / 2,
                 textAreaAt.y + textAreaSize.height / 2);
 
