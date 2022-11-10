@@ -40,7 +40,6 @@ import java.awt.event.KeyEvent;
  */
 public class TextAreaTextEventTest {
 
-    private static final int delay = 100;
     private static Frame frame;
     private volatile static TextArea textArea;
     private volatile static boolean textChanged = false;
@@ -50,10 +49,10 @@ public class TextAreaTextEventTest {
 
     public static void main(String[] args) throws Exception {
         try {
-            EventQueue.invokeLater(TextAreaTextEventTest::initializeGUI);
+            EventQueue.invokeAndWait(TextAreaTextEventTest::initializeGUI);
 
             robot = new Robot();
-            robot.setAutoDelay(delay);
+            robot.setAutoDelay(100);
             robot.setAutoWaitForIdle(true);
 
             robot.waitForIdle();
@@ -124,7 +123,7 @@ public class TextAreaTextEventTest {
         frame.setLayout(new FlowLayout());
         textArea = new TextArea(5, 15);
         textArea.addTextListener((event) -> {
-            System.out.println("Got an Text Event: " + event);
+            System.out.println("Got a text event: " + event);
             textChanged = true;
         });
         frame.add(textArea);
