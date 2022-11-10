@@ -761,11 +761,16 @@ instruct vmulD(vReg dst, vReg src1, vReg src2) %{
 // vector neg
 
 instruct vnegI(vReg dst, vReg src) %{
+  predicate(Matcher::vector_element_basic_type(n->in(1)) == T_BYTE ||
+            Matcher::vector_element_basic_type(n->in(1)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(1)) == T_INT);
   match(Set dst (NegVI src));
   ins_cost(VEC_COST);
   format %{ "vrsub.vx $dst, $src, $src\t#@vnegI" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli(t0, x0, sew);
     __ vneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
