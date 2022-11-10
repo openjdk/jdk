@@ -512,7 +512,8 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     }
 
     // MH intrinsics are dispatch stubs which are compatible with NonNMethod space.
-    bool allow_NonNMethod_space = method->is_method_handle_intrinsic();
+    // IsUnloadingBehaviour::is_unloading needs to handle them separately.
+    bool allow_NonNMethod_space = method->can_be_allocated_in_NonNMethod_space();
     nm = new (native_nmethod_size, allow_NonNMethod_space)
     nmethod(method(), compiler_none, native_nmethod_size,
             compile_id, &offsets,

@@ -722,7 +722,8 @@ public:
   static methodHandle make_method_handle_intrinsic(vmIntrinsicID iid, // _invokeBasic, _linkToVirtual
                                                    Symbol* signature, //anything at all
                                                    TRAPS);
-
+  // Some special methods don't need to be findable by nmethod iterators and are permanent.
+  bool can_be_allocated_in_NonNMethod_space() const { return is_method_handle_intrinsic(); }
 
   // Continuation
   inline bool is_continuation_enter_intrinsic() const;

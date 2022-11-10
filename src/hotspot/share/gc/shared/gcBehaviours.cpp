@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "code/compiledMethod.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/gcBehaviours.hpp"
@@ -31,9 +30,9 @@
 IsUnloadingBehaviour* IsUnloadingBehaviour::_current = NULL;
 
 bool IsUnloadingBehaviour::is_unloading(CompiledMethod* cm) {
-  if (cm->method()->method_holder()->class_loader_data()->is_permanent_class_loader_data()) {
+  if (cm->method()->can_be_allocated_in_NonNMethod_space()) {
     // When the nmethod is in NonNMethod space, we may reach here without IsUnloadingBehaviour.
-    // We only allow this for permenent methods which never get unloaded.
+    // However, we only allow this for special methods which never get unloaded.
     return false;
   }
   return _current->has_dead_oop(cm) || cm->as_nmethod()->is_cold();
