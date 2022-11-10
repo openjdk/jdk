@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#if INCLUDE_JVMTI
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "jvm.h"
 #include "jvmti.h"
@@ -152,3 +153,4 @@ TEST_VM(Jvmti_TagMapTable, CallingAllAPI){
     GrowableArray<jlong> deads;
     t.remove_dead_entries(&deads);
 }
+#endif
