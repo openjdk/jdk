@@ -27,6 +27,7 @@ package jdk.internal.access;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.template.StringTemplate;
 import java.util.List;
 
 public interface JavaTemplateAccess {
@@ -39,5 +40,29 @@ public interface JavaTemplateAccess {
     // @return {@link MethodHandle} that can construct a {@link StringTemplateImpl} with arguments
     // used as values.
     public MethodHandle createStringTemplateImplMH(List<String> fragments, MethodType type);
+
+    // Returns a new StringTemplate composed from fragments and values.
+    //
+    // @param fragments array of string fragments
+    // @param values    array of expression values
+    //
+    // @return StringTemplate composed from fragments and values
+    public StringTemplate newStringTemplate(String[] fragments, Object[] values);
+
+    // Returns a new StringTemplate composed from fragments and values.
+    //
+    // @param fragments list of string fragments
+    // @param values    array of expression values
+    //
+    // @return StringTemplate composed from fragments and values
+    public StringTemplate newStringTemplate(List<String> fragments, Object[] values);
+
+    // Returns a new StringTemplate composed from fragments and values.
+    //
+    // @param fragments list of string fragments
+    // @param values    list of expression values
+    //
+    // @return StringTemplate composed from fragments and values
+    public StringTemplate newStringTemplate(List<String> fragments, List<?> values);
 }
 

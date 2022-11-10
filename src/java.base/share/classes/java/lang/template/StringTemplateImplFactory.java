@@ -30,6 +30,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatException;
 import java.lang.invoke.StringConcatFactory;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import jdk.internal.access.JavaTemplateAccess;
@@ -64,26 +66,6 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      */
     private static final MethodHandle TO_LIST;
 
-    /**
-     * Access to nullible form of {@code List.of}
-     */
-    private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
-
-    /**
-     * Collect nullable elements from an array into a unmodifiable list.
-     *
-     * @param elements  elements to place in list
-     *
-     * @return unmodifiable list.
-     *
-     * @param <E>  type of elements
-     */
-    @SafeVarargs
-    @SuppressWarnings({"unchecked", "varargs"})
-    private static <E> List<E> toList(E... elements) {
-        return JUCA.listFromTrustedArrayNullsAllowed(elements);
-    }
-
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -109,7 +91,8 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      * @return {@link MethodHandle} that can construct a {@link StringTemplateImpl} with arguments
      * used as values.
      */
-    public  MethodHandle createStringTemplateImplMH(List<String> fragments, MethodType type) {
+    @Override
+    public MethodHandle createStringTemplateImplMH(List<String> fragments, MethodType type) {
         Carriers.CarrierElements elements = Carriers.CarrierFactory.of(type);
         MethodHandle[] components = elements
                 .components()
@@ -149,6 +132,74 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
         constructor = constructor.asType(mt);
 
         return constructor;
+    }
+
+    /**
+     * Generic {@link StringTemplate}.
+     *
+     * @param fragments  immutable list of string fragments from string template
+     * @param values     immutable list of expression values
+     */
+    private record SimpleStringTemplate(List<String> fragments, List<Object> values)
+            implements StringTemplate {
+        @Override
+        public String toString() {
+            return StringTemplate.toString(this);
+        }
+    }
+
+    /**
+     * Returns a new StringTemplate composed from fragments and values.
+     *
+     * @param fragments array of string fragments
+     * @param values    array of expression values
+     *
+     * @return StringTemplate composed from fragments and values
+     */
+    @Override
+    public StringTemplate newStringTemplate(String[] fragments, Object[] values) {
+        return new SimpleStringTemplate(List.of(fragments), toList(values));
+    }
+
+    /**
+     * Returns a new StringTemplate composed from fragments and values.
+     *
+     * @param fragments list of string fragments
+     * @param values    array of expression values
+     *
+     * @return StringTemplate composed from fragments and values
+     */
+    @Override
+    public StringTemplate newStringTemplate(List<String> fragments, Object[] values) {
+        return new SimpleStringTemplate(List.copyOf(fragments), toList(values));
+    }
+
+    /**
+     * Returns a new StringTemplate composed from fragments and values.
+     *
+     * @param fragments list of string fragments
+     * @param values    list of expression values
+     *
+     * @return StringTemplate composed from fragments and values
+     */
+    @Override
+    public StringTemplate newStringTemplate(List<String> fragments, List<?> values) {
+        return new SimpleStringTemplate(List.copyOf(fragments), toList(values.stream().toArray()));
+    }
+
+    /**
+     * Collect nullable elements from an array into a unmodifiable list.
+     *
+     * @param elements  elements to place in list
+     *
+     * @return unmodifiable list.
+     *
+     * @param <E>  type of elements
+     */
+    @SafeVarargs
+    @SuppressWarnings({"unchecked", "varargs"})
+    private static <E> List<E> toList(E... elements) {
+        return Collections.unmodifiableList(Arrays.asList(elements));
     }
 
 }

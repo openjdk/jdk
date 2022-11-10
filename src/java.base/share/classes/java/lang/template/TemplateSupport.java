@@ -61,37 +61,32 @@ final class TemplateSupport {
         throw new AssertionError("private constructor");
     }
 
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
-    private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
-
-    /**
-     * Collect nullable elements from an array into a unmodifiable list.
-     *
-     * @param elements  elements to place in list
-     *
-     * @return unmodifiable list.
-     *
-     * @param <E>  type of elements
-     */
-    @SafeVarargs
-    @SuppressWarnings({"unchecked", "varargs"})
-    static <E> List<E> toList(E... elements) {
-        return JUCA.listFromTrustedArrayNullsAllowed(elements);
+    static {
+        SharedSecrets.setJavaTemplateAccess(new StringTemplateImplFactory());
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final JavaTemplateAccess JTA = SharedSecrets.getJavaTemplateAccess();
+
     /**
-     * Generic {@link StringTemplate}.
+     * Returns a StringTemplate composed from fragments and values.
      *
-     * @param fragments  immutable list of string fragments from string template
-     * @param values     immutable list of expression values
+     * @implSpec The {@code fragments} list size must be one more that the
+     * {@code values} list size.
+     *
+     * @param fragments list of string fragments
+     * @param values    list of expression values
+     *
+     * @return StringTemplate composed from fragments and values
+     *
+     * @throws IllegalArgumentException if fragments list size is not one more
+     *         than values list size
+     * @throws NullPointerException if fragments is null or values is null or if any fragment is null.
+     *
+     * @implNote Contents of both lists are copied to construct immutable lists.
      */
-    record SimpleStringTemplate(List<String> fragments, List<Object> values)
-            implements StringTemplate {
-        @Override
-        public java.lang.String toString() {
-            return StringTemplate.toString(this);
-        }
+    static StringTemplate of(List<String> fragments, List<?> values) {
+        return JTA.newStringTemplate(fragments, values);
     }
 
     /**
@@ -103,7 +98,7 @@ final class TemplateSupport {
      *
      * @return String interpolation of fragments and values
      */
-    static String interpolate(List<String> fragments, List<Object> values) {
+    static String interpolate(List<String> fragments, List<?> values) {
         int fragmentsSize = fragments.size();
         int valuesSize = values.size();
         if (fragmentsSize == 1) {
@@ -111,13 +106,12 @@ final class TemplateSupport {
         }
         int size = fragmentsSize + valuesSize;
         String[] strings = new String[size];
-        Iterator<String> fragmentsIter = fragments.iterator();
-        int i = 0;
-        for (Object value : values) {
-            strings[i++] = fragmentsIter.next();
-            strings[i++] = String.valueOf(value);
+        int i = 0, j = 0;
+        for (; j < valuesSize; j++) {
+            strings[i++] = fragments.get(j);
+            strings[i++] = String.valueOf(values.get(j));
         }
-        strings[i++] = fragmentsIter.next();
+        strings[i] = fragments.get(j);
         return JLA.join("", "", "", strings, size);
     }
 
@@ -163,7 +157,7 @@ final class TemplateSupport {
             }
         }
         combinedFragments[i] = last;
-        return new SimpleStringTemplate(TemplateSupport.toList(combinedFragments), TemplateSupport.toList(combinedValues));
+        return JTA.newStringTemplate(combinedFragments, combinedValues);
     }
 
     /**

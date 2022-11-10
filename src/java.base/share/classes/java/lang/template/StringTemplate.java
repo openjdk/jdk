@@ -215,7 +215,7 @@ public interface StringTemplate {
      */
     public static StringTemplate of(String string) {
         Objects.requireNonNull(string, "string must not be null");
-        return new TemplateSupport.SimpleStringTemplate(List.of(string), List.of());
+        return TemplateSupport.of(List.of(string), List.of());
     }
 
     /**
@@ -235,16 +235,14 @@ public interface StringTemplate {
      *
      * @implNote Contents of both lists are copied to construct immutable lists.
      */
-    public static StringTemplate of(List<String> fragments, List<Object> values) {
+    public static StringTemplate of(List<String> fragments, List<?> values) {
         Objects.requireNonNull(fragments, "fragments must not be null");
         Objects.requireNonNull(values, "values must not be null");
         if (values.size() + 1 != fragments.size()) {
             throw new IllegalArgumentException(
                     "fragments list size is not one more than values list size");
         }
-        fragments = List.copyOf(fragments);
-        values = TemplateSupport.toList(values.toArray().clone());
-        return new TemplateSupport.SimpleStringTemplate(fragments, values);
+        return TemplateSupport.of(fragments, values);
     }
 
     /**
@@ -260,7 +258,7 @@ public interface StringTemplate {
      *         than values list size
      * @throws NullPointerException fragments or values is null or if any of the fragments is null
      */
-    public static String interpolate(List<String> fragments, List<Object> values) {
+    public static String interpolate(List<String> fragments, List<?> values) {
         Objects.requireNonNull(fragments, "fragments must not be null");
         Objects.requireNonNull(values, "values must not be null");
         int fragmentsSize = fragments.size();
@@ -268,7 +266,7 @@ public interface StringTemplate {
         if (fragmentsSize != valuesSize + 1) {
             throw new IllegalArgumentException("fragments must have one more element than values");
         }
-        return TemplateSupport.interpolate(List.copyOf(fragments), TemplateSupport.toList(values.toArray()));
+        return TemplateSupport.interpolate(fragments, values);
     }
 
     /**
@@ -298,7 +296,7 @@ public interface StringTemplate {
      * }
      * @implNote The result of interpolation is not interned.
      */
-    public static final StringProcessor STR = TemplateSupport.basicInterpolate();
+    public static final StringProcessor STR = StringTemplate::interpolate;
 
     /**
      * No-op template processor. Used to highlight that non-processing of the StringTemplate

@@ -525,8 +525,10 @@ public class SharedSecrets {
     public static JavaTemplateAccess getJavaTemplateAccess() {
         var access = javaTemplateAccess;
         if (access == null) {
-            ensureClassInitialized(StringTemplate.class);
-            access = javaTemplateAccess;
+            try {
+                Class.forName("java.lang.template.TemplateSupport", true, null);
+                access = javaTemplateAccess;
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

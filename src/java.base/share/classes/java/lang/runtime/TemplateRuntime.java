@@ -33,11 +33,9 @@ import java.lang.invoke.MethodType;
 import java.lang.template.ProcessorLinkage;
 import java.lang.template.StringTemplate;
 import java.lang.template.ValidatingProcessor;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import jdk.internal.access.JavaTemplateAccess;
-import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
@@ -62,7 +60,6 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class TemplateRuntime {
     private static final JavaTemplateAccess JTA = SharedSecrets.getJavaTemplateAccess();
-    private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
 
     /**
      * {@link MethodHandle} to {@link TemplateRuntime#defaultProcess}.
@@ -202,8 +199,8 @@ public final class TemplateRuntime {
             ValidatingProcessor<?, ?> processor,
             Object[] values
     ) throws Throwable {
-        return processor.process(
-            StringTemplate.of(fragments, JUCA.listFromTrustedArrayNullsAllowed(values)));
+        List<Object> asList = Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
+        return processor.process(StringTemplate.of(fragments, asList));
     }
 
     /**
@@ -221,22 +218,7 @@ public final class TemplateRuntime {
         return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
     }
 
-    /**
-     * A {@link StringTemplate} where number of value slots exceeds
-     * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS}.
-     *
-     * @param fragments  immutable list of string fragments from string template
-     * @param values     immutable list of expression values
-     */
-    private record LargeStringTemplate(List<String> fragments, List<Object> values)
-            implements StringTemplate {
-        @Override
-        public java.lang.String toString() {
-            return StringTemplate.toString(this);
-        }
-    }
-
-    /**
+     /**
      * Used to create a {@link StringTemplate} when number of value slots exceeds
      * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS}.
      *
@@ -246,8 +228,7 @@ public final class TemplateRuntime {
      * @return new {@link StringTemplate}
      */
     private static StringTemplate fromArrays(String[] fragments, Object[] values) {
-        return new LargeStringTemplate(List.of(fragments),
-                                       JUCA.listFromTrustedArrayNullsAllowed(values));
+        return JTA.newStringTemplate(fragments, values);
     }
 }
 
