@@ -1117,10 +1117,15 @@ bool FileMapInfo::validate_shared_path_table() {
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   } else {
     if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len)) {
-      const char* mismatch_msg = "shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)";
-      fail_continue("%s", mismatch_msg);
+      const char* mismatch_msg = "shared class paths mismatch";
+      const char* hint_msg = "(hint: enable -Xlog:class+path=info to diagnose the failure)";
+      if (log_is_enabled(Info, class, path)) {
+        fail_continue("%s", mismatch_msg);
+      } else {
+        fail_continue("%s %s", mismatch_msg, hint_msg);
+      }
       if (!log_is_enabled(Info, cds) && !log_is_enabled(Info, class, path)) {
-        log_warning(cds)("%s", mismatch_msg);
+        log_warning(cds)("%s %s", mismatch_msg, hint_msg);
       }
       return false;
     }
