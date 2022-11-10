@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -54,18 +53,9 @@ import sun.security.util.*;
  * @see CertAttrSet
  */
 public class PolicyConstraintsExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.PolicyConstraints";
-    /**
-     * Attribute names.
-     */
+        implements CertAttrSet {
+
     public static final String NAME = "PolicyConstraints";
-    public static final String REQUIRE = "require";
-    public static final String INHIBIT = "inhibit";
 
     private static final byte TAG_REQUIRE = 0;
     private static final byte TAG_INHIBIT = 1;
@@ -210,70 +200,19 @@ implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Integer)) {
-            throw new IOException("Attribute value should be of type Integer.");
-        }
-        if (name.equalsIgnoreCase(REQUIRE)) {
-            require = ((Integer)obj).intValue();
-        } else if (name.equalsIgnoreCase(INHIBIT)) {
-            inhibit = ((Integer)obj).intValue();
-        } else {
-          throw new IOException("Attribute name " + "[" + name + "]" +
-                                " not recognized by " +
-                                "CertAttrSet:PolicyConstraints.");
-        }
-        encodeThis();
+    public int getRequire() {
+        return require;
+    }
+
+    public int getInhibit() {
+        return inhibit;
     }
 
     /**
-     * Get the attribute value.
+     * Return the name of this extension.
      */
-    public Integer get(String name) throws IOException {
-        if (name.equalsIgnoreCase(REQUIRE)) {
-            return require;
-        } else if (name.equalsIgnoreCase(INHIBIT)) {
-            return inhibit;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:PolicyConstraints.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(REQUIRE)) {
-            require = -1;
-        } else if (name.equalsIgnoreCase(INHIBIT)) {
-            inhibit = -1;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:PolicyConstraints.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(REQUIRE);
-        elements.addElement(INHIBIT);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

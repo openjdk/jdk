@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,27 @@
 
 /*
  * @test
- * @bug 8283082
- * @modules java.base/sun.security.x509
- * @summary This test is to confirm that
- * sun.security.x509.X509CertImpl.delete("x509.info.validity") doesn't
- * null out info field as reported by bug 8283082
+ * @bug 8232933
+ * @summary Javac inferred type does not conform to equality constraint
+ * @compile DontMinimizeInfContextTest.java
  */
 
-import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CertInfo;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class JDK8283082{
-    public static void main(String[] args) throws Exception {
-        var c = new X509CertImpl();
-        c.set("x509.info", new X509CertInfo());
-        c.set("x509.info.issuer", new X500Name("CN=one"));
-        c.delete("x509.info.issuer");
-        c.set("x509.info.issuer", new X500Name("CN=two"));
+class DontMinimizeInfContextTest {
+    void m() {
+        List<? extends A<?, ?>> a = new LinkedList<>();
+        Map<String, List<A<?, ?>>> b = a.stream().collect(
+                Collectors.groupingBy(A::getval, Collectors.toList())
+        );
+    }
+
+    class A<K, V> {
+        String getval() {
+            return "s";
+        }
     }
 }

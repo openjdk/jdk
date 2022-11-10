@@ -22,26 +22,26 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SEGMENTEDARRAYFREEPOOL_HPP
-#define SHARE_GC_G1_G1SEGMENTEDARRAYFREEPOOL_HPP
+#ifndef SHARE_GC_G1_G1MONOTONICARENAFREEPOOL_HPP
+#define SHARE_GC_G1_G1MONOTONICARENAFREEPOOL_HPP
 
 #include "gc/g1/g1CardSet.hpp"
-#include "gc/g1/g1SegmentedArray.hpp"
+#include "gc/g1/g1MonotonicArena.hpp"
 #include "utilities/growableArray.hpp"
 
-// Statistics for a segmented array. Contains the number of segments and memory
+// Statistics for a monotonic arena. Contains the number of segments and memory
 // used for each. Note that statistics are typically not taken atomically so there
 // can be inconsistencies. The user must be prepared for them.
-class G1SegmentedArrayMemoryStats {
+class G1MonotonicArenaMemoryStats {
 public:
 
   size_t _num_mem_sizes[G1CardSetConfiguration::num_mem_object_types()];
   size_t _num_segments[G1CardSetConfiguration::num_mem_object_types()];
 
   // Returns all-zero statistics.
-  G1SegmentedArrayMemoryStats();
+  G1MonotonicArenaMemoryStats();
 
-  void add(G1SegmentedArrayMemoryStats const other) {
+  void add(G1MonotonicArenaMemoryStats const other) {
     STATIC_ASSERT(ARRAY_SIZE(_num_segments) == ARRAY_SIZE(_num_mem_sizes));
     for (uint i = 0; i < ARRAY_SIZE(_num_mem_sizes); i++) {
       _num_mem_sizes[i] += other._num_mem_sizes[i];
@@ -54,47 +54,50 @@ public:
   uint num_pools() const { return G1CardSetConfiguration::num_mem_object_types(); }
 };
 
-// A set of free lists holding freed segments for use by G1SegmentedArray,
-// e.g. G1CardSetAllocators::SegmentedArray
-class G1SegmentedArrayFreePool {
+// A set of free lists holding freed segments for use by G1MonotonicArena,
+// e.g. G1CardSetAllocators::_arena
+class G1MonotonicArenaFreePool {
+  using SegmentFreeList = G1MonotonicArena::SegmentFreeList;
   // The global free pool.
-  static G1SegmentedArrayFreePool _freelist_pool;
+  static G1MonotonicArenaFreePool _freelist_pool;
 
   const uint _num_free_lists;
-  G1SegmentedArrayFreeList* _free_lists;
+  SegmentFreeList* _free_lists;
 
 public:
-  static G1SegmentedArrayFreePool* free_list_pool() { return &_freelist_pool; }
-  static G1SegmentedArrayMemoryStats free_list_sizes() { return _freelist_pool.memory_sizes(); }
+  static G1MonotonicArenaFreePool* free_list_pool() { return &_freelist_pool; }
+  static G1MonotonicArenaMemoryStats free_list_sizes() { return _freelist_pool.memory_sizes(); }
 
   class G1ReturnMemoryProcessor;
   typedef GrowableArrayCHeap<G1ReturnMemoryProcessor*, mtGC> G1ReturnMemoryProcessorSet;
 
   static void update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processors);
 
-  explicit G1SegmentedArrayFreePool(uint num_free_lists);
-  ~G1SegmentedArrayFreePool();
+  explicit G1MonotonicArenaFreePool(uint num_free_lists);
+  ~G1MonotonicArenaFreePool();
 
-  G1SegmentedArrayFreeList* free_list(uint i) {
+  SegmentFreeList* free_list(uint i) {
     assert(i < _num_free_lists, "must be");
     return &_free_lists[i];
   }
 
   uint num_free_lists() const { return _num_free_lists; }
 
-  G1SegmentedArrayMemoryStats memory_sizes() const;
+  G1MonotonicArenaMemoryStats memory_sizes() const;
   size_t mem_size() const;
 
   void print_on(outputStream* out);
 };
 
 // Data structure containing current in-progress state for returning memory to the
-// operating system for a single G1SegmentedArrayFreeList.
-class G1SegmentedArrayFreePool::G1ReturnMemoryProcessor : public CHeapObj<mtGC> {
-  G1SegmentedArrayFreeList* _source;
+// operating system for a single G1SegmentFreeList.
+class G1MonotonicArenaFreePool::G1ReturnMemoryProcessor : public CHeapObj<mtGC> {
+  using SegmentFreeList = G1MonotonicArena::SegmentFreeList;
+  using Segment = G1MonotonicArena::Segment;
+  SegmentFreeList* _source;
   size_t _return_to_vm_size;
 
-  G1SegmentedArraySegment* _first;
+  Segment* _first;
   size_t _unlinked_bytes;
   size_t _num_unlinked;
 
@@ -106,7 +109,7 @@ public:
   // Updates the instance members about the given free list for
   // the purpose of giving back memory. Only necessary members are updated,
   // e.g. if there is nothing to return to the VM, do not set the source list.
-  void visit_free_list(G1SegmentedArrayFreeList* source);
+  void visit_free_list(SegmentFreeList* source);
 
   bool finished_return_to_vm() const { return _return_to_vm_size == 0; }
   bool finished_return_to_os() const { return _first == nullptr; }
@@ -123,4 +126,4 @@ public:
   bool return_to_os(jlong deadline);
 };
 
-#endif //SHARE_GC_G1_G1SEGMENTEDARRAYFREEPOOL_HPP
+#endif //SHARE_GC_G1_G1MONOTONICARENAFREEPOOL_HPP

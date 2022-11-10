@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 
-import java.util.Collections;
 import java.util.*;
 
 import sun.security.util.DerOutputStream;
@@ -68,20 +67,9 @@ import sun.security.util.DerValue;
  */
 
 public class SubjectInfoAccessExtension extends Extension
-        implements CertAttrSet<String> {
+        implements CertAttrSet {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.SubjectInfoAccess";
-
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "SubjectInfoAccess";
-    public static final String DESCRIPTIONS = "descriptions";
 
     /**
      * The List of AccessDescription objects.
@@ -141,8 +129,9 @@ public class SubjectInfoAccessExtension extends Extension
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -163,63 +152,7 @@ public class SubjectInfoAccessExtension extends Extension
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            accessDescriptions = (List<AccessDescription>)obj;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public List<AccessDescription> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            return accessDescriptions;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions =
-                Collections.emptyList();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DESCRIPTIONS);
-        return elements.elements();
-    }
-
-     // Encode this extension value
+    // Encode this extension value
     private void encodeThis() throws IOException {
         if (accessDescriptions.isEmpty()) {
             this.extensionValue = null;
@@ -241,5 +174,4 @@ public class SubjectInfoAccessExtension extends Extension
         return super.toString() +
             "SubjectInfoAccess [\n  " + accessDescriptions + "\n]\n";
     }
-
 }

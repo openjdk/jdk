@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -40,21 +39,9 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  * @see CertAttrSet
  */
-public class CertificateSubjectName implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.subject";
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
-    public static final String NAME = "subject";
-    public static final String DN_NAME = "dname";
+public class CertificateSubjectName implements CertAttrSet {
 
-    // accessor name for cached X500Principal only
-    // do not allow a set() of this value, do not advertise with getElements()
-    public static final String DN_PRINCIPAL = "x500principal";
+    public static final String NAME = "subject";
 
     // Private data member
     private X500Name    dnName;
@@ -97,7 +84,7 @@ public class CertificateSubjectName implements CertAttrSet<String> {
      */
     public String toString() {
         if (dnName == null) return "";
-        return(dnName.toString());
+        return dnName.toString();
     }
 
     /**
@@ -109,69 +96,5 @@ public class CertificateSubjectName implements CertAttrSet<String> {
     @Override
     public void encode(DerOutputStream out) throws IOException {
         dnName.encode(out);
-    }
-
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof X500Name)) {
-            throw new IOException("Attribute must be of type X500Name.");
-        }
-        if (name.equalsIgnoreCase(DN_NAME)) {
-            this.dnName = (X500Name)obj;
-            this.dnPrincipal = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:CertificateSubjectName.");
-        }
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(DN_NAME)) {
-            return(dnName);
-        } else if (name.equalsIgnoreCase(DN_PRINCIPAL)) {
-            if ((dnPrincipal == null) && (dnName != null)) {
-                dnPrincipal = dnName.asX500Principal();
-            }
-            return dnPrincipal;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:CertificateSubjectName.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DN_NAME)) {
-            dnName = null;
-            dnPrincipal = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:CertificateSubjectName.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DN_NAME);
-
-        return(elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
     }
 }
