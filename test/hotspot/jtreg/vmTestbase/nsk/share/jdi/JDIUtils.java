@@ -23,18 +23,21 @@
 
 package nsk.share.jdi;
 
-public class Utils {
+public class JDIUtils {
 
-    public static boolean isAlive(Thread thread) {
-         for (int attempt = 1; attempt <= 5; attempt++) {
-             if (!thread.isAlive()) {
-                 return false;
-             }
-             try {
-                 Thread.sleep(attempt * 1000);
-             } catch (InterruptedException ie) {
-             }
-         }
-         return true;
+    /*
+     * Wait until thread which is supposed to complet become not alive.
+     */
+    public static boolean waitForCompletion(Thread thread) {
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            if (!thread.isAlive()) {
+                return true;
+            }
+            try {
+                Thread.sleep(attempt * 1000);
+            } catch (InterruptedException ie) {
+            }
+        }
+        return false;
     }
 }

@@ -127,14 +127,14 @@ public class dispose002a {
                          while (true) {
                              instruction = pipe.readln();
                              if (instruction.equals("check_done")) {
-                                 if (Utils.isAlive(test_thread)) {
+                                 if (test_thread.isAlive()) {
                                      logErr("ERROR: thread thread2 is still alive");
                                      exitCode = FAILED;
                                  }
                                  break;
                              } else if (instruction.equals("check_alive")) {
-                                 log1("checking on: thread2.isAlive");
-                                 if (Utils.isAlive(test_thread)) {
+                                 if (!JDIUtils.waitForCompletion(test_thread)) {
+                                     log1("thread2 is alive after vm.dispose().");
                                      pipe.println("alive");
                                      test_thread.interrupt();
                                  } else {
