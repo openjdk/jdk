@@ -7781,7 +7781,7 @@ bool LibraryCallKit::inline_blackhole() {
   // this code neither uses nor produces memory, which avoids the unfortunate
   // side effects like breaking the optimizations across the blackhole.
 
-  MemBarNode* mb = MemBarNode::make(C, Op_Blackhole);
+  MemBarNode* mb = MemBarNode::make(C, Op_Blackhole, Compile::AliasIdxTop);
   mb->init_req(TypeFunc::Control, control());
   mb->init_req(TypeFunc::Memory,  C->top());
   Node* bh = _gvn.transform(mb);
