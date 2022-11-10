@@ -23,6 +23,7 @@
 import java.awt.Desktop;
 import java.awt.Desktop.Action;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.util.concurrent.CountDownLatch;
@@ -45,21 +46,26 @@ import javax.swing.JMenuItem;
  */
 
 public class JMenuItemSetAcceleratorTest {
-    private static JFrame frame = new JFrame();
+    private static JFrame frame;
     private volatile static CountDownLatch actionPerformLatch =
         new CountDownLatch(1);
     private static Robot robot;
 
     private static void createAndShow() {
+        frame = new JFrame("Test Frame");
+        frame.setLayout(new FlowLayout());
+
         JMenuBar bar = new JMenuBar();
         JMenu menu = new JMenu("File");
         JMenuItem menuItem = new JMenuItem("Menu Item");
+
         menuItem.setAccelerator(
             KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.META_MASK));
         menuItem.addActionListener(e -> {
             System.out.println("menu item action.");
             actionPerformLatch.countDown();
         });
+
         menu.add(menuItem);
         bar.add(menu);
 
@@ -74,7 +80,7 @@ public class JMenuItemSetAcceleratorTest {
             if (!Desktop.isDesktopSupported()
                 || !Desktop.getDesktop().isSupported(Action.APP_MENU_BAR)) {
                 System.out.println(
-                    "Test passed as Desktop or Action.APP_MENU_BAR is not supported.");
+                    "Test skipped as Desktop or Action.APP_MENU_BAR is not supported.");
                 return;
             }
 
