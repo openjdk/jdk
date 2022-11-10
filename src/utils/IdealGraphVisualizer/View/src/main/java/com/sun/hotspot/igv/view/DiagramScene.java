@@ -171,10 +171,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         visibleRect.x = Math.max(0, visibleRect.x);
         visibleRect.y = Math.max(0, visibleRect.y);
 
-        // Fix for jumping during zooming
         getView().scrollRectToVisible(visibleRect);
-        getView().scrollRectToVisible(visibleRect);
-
+        validateAll();
         zoomChangedEvent.fire();
     }
 
