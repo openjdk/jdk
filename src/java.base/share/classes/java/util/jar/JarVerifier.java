@@ -536,7 +536,7 @@ class JarVerifier {
             lastURL = url;
         }
         CodeSource cs = map.get(signers);
-        if (cs == null) {
+        if (cs == null && (cs = signerToCodeSource.get(signers)) == null) {
             cs = new VerifierCodeSource(csdomain, url, signers);
             signerToCodeSource.put(signers, cs);
         }
