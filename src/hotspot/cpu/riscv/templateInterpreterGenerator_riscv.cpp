@@ -1736,12 +1736,12 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   __ mv(x7, (address) &BytecodeCounter::_counter_value);
-  __ atomic_addalw(noreg, 1, x7);
+  __ atomic_addw(noreg, 1, x7);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
   __ mv(x7, (address) &BytecodeHistogram::_counters[t->bytecode()]);
-  __ atomic_addalw(noreg, 1, x7);
+  __ atomic_addw(noreg, 1, x7);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
@@ -1762,7 +1762,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   __ mv(x7, (address) &BytecodePairHistogram::_counters);
   __ slli(index, index, LogBytesPerInt);
   __ add(counter_addr, x7, index);
-  __ atomic_addalw(noreg, 1, counter_addr);
+  __ atomic_addw(noreg, 1, counter_addr);
  }
 
 void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
