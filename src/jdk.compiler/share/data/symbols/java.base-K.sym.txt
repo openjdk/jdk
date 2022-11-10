@@ -448,6 +448,21 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name java/net/SocketImpl
 header extends java/lang/Object implements java/net/SocketOptions flags 421
 
+class name java/net/URL
+-method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
+-method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+-method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/net/URLStreamHandler;)V
+-method name <init> descriptor (Ljava/lang/String;)V
+-method name <init> descriptor (Ljava/net/URL;Ljava/lang/String;)V
+-method name <init> descriptor (Ljava/net/URL;Ljava/lang/String;Ljava/net/URLStreamHandler;)V
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V thrownTypes java/net/MalformedURLException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="20")
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V thrownTypes java/net/MalformedURLException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="20")
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/net/URLStreamHandler;)V thrownTypes java/net/MalformedURLException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="20")
+method name <init> descriptor (Ljava/lang/String;)V thrownTypes java/net/MalformedURLException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="20")
+method name <init> descriptor (Ljava/net/URL;Ljava/lang/String;)V thrownTypes java/net/MalformedURLException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="20")
+method name <init> descriptor (Ljava/net/URL;Ljava/lang/String;Ljava/net/URLStreamHandler;)V thrownTypes java/net/MalformedURLException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="20")
+method name of descriptor (Ljava/net/URI;Ljava/net/URLStreamHandler;)Ljava/net/URL; thrownTypes java/net/MalformedURLException flags 9
+
 class name java/net/spi/InetAddressResolverProvider$Configuration
 header extends java/lang/Object nestHost java/net/spi/InetAddressResolverProvider sealed true flags 601
 innerclass innerClass java/net/spi/InetAddressResolverProvider$Configuration outerClass java/net/spi/InetAddressResolverProvider innerClassName Configuration flags 609
@@ -496,6 +511,10 @@ header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Lj
 
 class name java/security/Identity
 header extends java/lang/Object implements java/security/Principal,java/io/Serializable flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
+
+class name java/security/InvalidParameterException
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/Throwable;)V flags 1
+method name <init> descriptor (Ljava/lang/Throwable;)V flags 1
 
 class name java/security/KeyStore
 header extends java/lang/Object nestMembers java/security/KeyStore$Builder,java/security/KeyStore$TrustedCertificateEntry,java/security/KeyStore$SecretKeyEntry,java/security/KeyStore$PrivateKeyEntry,java/security/KeyStore$Entry,java/security/KeyStore$Entry$Attribute,java/security/KeyStore$CallbackHandlerProtection,java/security/KeyStore$PasswordProtection,java/security/KeyStore$ProtectionParameter,java/security/KeyStore$LoadStoreParameter flags 21
@@ -659,6 +678,10 @@ header extends java/util/AbstractSet implements java/lang/Cloneable,java/io/Seri
 class name java/util/GregorianCalendar
 header extends java/util/Calendar flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
+
+class name java/util/IdentityHashMap
+method name remove descriptor (Ljava/lang/Object;Ljava/lang/Object;)Z flags 1
+method name replace descriptor (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z flags 1 signature (TK;TV;TV;)Z
 
 class name java/util/IllegalFormatException
 header extends java/lang/IllegalArgumentException sealed true flags 21
