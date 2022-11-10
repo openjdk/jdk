@@ -412,10 +412,10 @@ final class StringUTF16 {
     }
 
     public static int hashCode(byte[] value) {
-        switch (value.length) {
-        case 0: return 0;
-        case 1: return (int)value[0];
-        default: return ArraysSupport.vectorizedHashCode(value, ArraysSupport.UTF16);
+        if (value.length == 0) {
+            return 0;
+        } else {
+            return ArraysSupport.vectorizedHashCode(value, ArraysSupport.UTF16);
         }
     }
 

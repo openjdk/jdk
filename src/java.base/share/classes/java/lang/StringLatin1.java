@@ -189,11 +189,11 @@ final class StringLatin1 {
     }
 
     public static int hashCode(byte[] value) {
-        switch (value.length) {
-        case 0: return 0;
-        case 1: return (int)value[0];
-        default: return ArraysSupport.vectorizedHashCode(value, ArraysSupport.LATIN1);
-        }
+        return switch (value.length) {
+            case 0 -> 0;
+            case 1 -> value[0];
+            default -> ArraysSupport.vectorizedHashCode(value, ArraysSupport.LATIN1);
+        };
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {

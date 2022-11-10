@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.io.UnsupportedEncodingException;
@@ -137,6 +138,8 @@ public class StringHashCode {
             }
             latin1 = new String(str).getBytes("US-ASCII");
             utf16 = new String(str).getBytes("UTF-16");
+            // strip out byte order byte(s)
+            utf16 = Arrays.copyOfRange(utf16, utf16.length - str.length * 2, utf16.length);
         }
 
         @Benchmark

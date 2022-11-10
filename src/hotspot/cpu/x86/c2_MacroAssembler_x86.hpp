@@ -294,7 +294,7 @@ public:
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
   void arrays_hashcode(Register str1, Register cnt1, Register result,
-                       Register tmp1, Register tmp2, Register tmp3, Register tmp4, XMMRegister vnext,
+                       Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,
                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
