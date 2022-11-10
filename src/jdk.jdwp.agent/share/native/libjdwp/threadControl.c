@@ -734,6 +734,11 @@ commonSuspendByNode(ThreadNode *node)
     if (error == JVMTI_ERROR_NONE) {
         node->toBeResumed = JNI_TRUE;
     }
+
+    /*
+     * JVMTI_ERROR_THREAD_SUSPENDED used to be possible when Thread.suspend()
+     * was still supported, but now we should no longer ever see it.
+     */
     JDI_ASSERT(error != JVMTI_ERROR_THREAD_SUSPENDED);
 
     return error;
@@ -838,6 +843,7 @@ resumeThreadByNode(ThreadNode *node)
         node->suspendCount--;
         debugMonitorNotifyAll(threadLock);
         if ((node->suspendCount == 0) && node->toBeResumed) {
+            // We should never see both toBeResumed and suspendOnStart set true.
             JDI_ASSERT(!node->suspendOnStart);
             LOG_MISC(("thread=%p resumed", node->thread));
             error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
@@ -946,6 +952,7 @@ resumeCopyHelper(JNIEnv *env, ThreadNode *node, void *arg)
      * won't suspend this thread after we are done with the resumeAll.
      */
     if (node->suspendCount == 1 && node->suspendOnStart) {
+        // We should never see both toBeResumed and suspendOnStart set true.
         JDI_ASSERT(!node->toBeResumed);
         node->suspendCount--;
         // TODO - vthread node cleanup: If this is a vthread, we should delete the node.
@@ -963,6 +970,7 @@ resumeCopyHelper(JNIEnv *env, ThreadNode *node, void *arg)
      * on this thread.
      */
     if (node->suspendCount == 1 && node->toBeResumed) {
+        // We should never see both toBeResumed and suspendOnStart set true.
         JDI_ASSERT(!node->suspendOnStart);
         jthread **listPtr = (jthread **)arg;
         **listPtr = node->thread;
@@ -986,6 +994,7 @@ resumeCountHelper(JNIEnv *env, ThreadNode *node, void *arg)
      * on this thread.
      */
     if (node->suspendCount == 1 && node->toBeResumed) {
+        // We should never see both toBeResumed and suspendOnStart set true.
         JDI_ASSERT(!node->suspendOnStart);
         jint *counter = (jint *)arg;
         (*counter)++;
