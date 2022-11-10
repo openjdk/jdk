@@ -42,7 +42,7 @@
 class  ciMethodBlocks;
 class  ciBlock;
 
-class BCEscapeAnalyzer : public ResourceObj {
+class BCEscapeAnalyzer : public ArenaObj {
  private:
   Arena*            _arena;        // ciEnv arena
 

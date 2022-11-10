@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.jca.JCAUtil;
 import sun.security.util.*;
 import sun.security.provider.X509Factory;
 
@@ -264,6 +265,13 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             signedCert = null;
             throw new CertificateException("Unable to initialize, " + e, e);
         }
+    }
+
+    // helper method to record certificate, if necessary, after construction
+    public static X509CertImpl newX509CertImpl(byte[] certData) throws CertificateException {
+        var cert = new X509CertImpl(certData);
+        JCAUtil.tryCommitCertEvent(cert);
+        return cert;
     }
 
     /**
