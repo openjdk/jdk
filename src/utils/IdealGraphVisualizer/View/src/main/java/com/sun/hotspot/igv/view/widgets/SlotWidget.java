@@ -23,18 +23,15 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.graph.Slot;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
 import com.sun.hotspot.igv.view.DiagramScene;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.netbeans.api.visual.action.WidgetAction;
@@ -105,7 +102,7 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
             int s = h - SMALLER;
             int rectW = s;
 
-            Font font = this.getSlot().getFigure().getDiagram().getSlotFont();
+            Font font = Diagram.SLOT_FONT;
             if (this.getState().isSelected()) {
                 font = font.deriveFont(Font.BOLD);
                 g.setStroke(new BasicStroke(1.5f));
@@ -170,21 +167,21 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
         Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
         if (diagramScene.isAllVisible()) {
-            hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
+            hiddenNodes = new HashSet<>(diagramScene.getModel().getGroup().getAllNodes());
         }
 
         boolean progress = false;
-        for (Figure f : diagramScene.getModel().getDiagramToView().getFigures()) {
+        for (Figure f : diagramScene.getModel().getDiagram().getFigures()) {
             for (Slot s : f.getSlots()) {
-                if (DiagramScene.doesIntersect(s.getSource().getSourceNodesAsSet(), slot.getSource().getSourceNodesAsSet())) {
+                if (!Collections.disjoint(s.getSource().getSourceNodesAsSet(), slot.getSource().getSourceNodesAsSet())) {
                     progress = true;
-                    hiddenNodes.removeAll(f.getSource().getSourceNodesAsSet());
+                    hiddenNodes.remove(f.getInputNode().getId());
                 }
             }
         }
 
         if (progress) {
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         }
     }
 }

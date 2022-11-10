@@ -27,7 +27,7 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import java.util.Set;
+import java.util.Collection;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -49,23 +49,30 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public InputGraph getGraph() {
-        if (editor != null) {
-            return editor.getModel().getGraphToView();
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            return editor.getModel().getGraph();
         } else {
             return null;
         }
     }
 
     @Override
-    public void setSelectedNodes(Set<InputNode> nodes) {
-        if (editor != null) {
-            editor.setSelectedNodes(nodes);
+    public void addSelectedNodes(Collection<InputNode> nodes) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.addSelectedNodes(nodes, false);
+        }
+    }
+
+    @Override
+    public void clearSelectedNodes() {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.clearSelectedNodes();
         }
     }
 
     @Override
     public Iterable<InputGraph> searchBackward() {
-        if (editor != null) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
             return editor.getModel().getGraphsBackward();
         } else {
             return null;
@@ -74,7 +81,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public Iterable<InputGraph> searchForward() {
-        if (editor != null) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
             return editor.getModel().getGraphsForward();
         } else {
             return null;

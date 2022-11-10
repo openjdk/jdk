@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Date;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -57,14 +55,12 @@ import sun.security.util.*;
  *
  * @author Sean Mullan
  */
-public class InvalidityDateExtension extends Extension
-    implements CertAttrSet<String> {
+public class InvalidityDateExtension extends Extension {
 
     /**
      * Attribute name and Reason codes
      */
     public static final String NAME = "InvalidityDate";
-    public static final String DATE = "date";
 
     private Date date;
 
@@ -120,49 +116,16 @@ public class InvalidityDateExtension extends Extension
     }
 
     /**
-     * Set the attribute value.
+     * Get the Date value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Date)) {
-            throw new IOException("Attribute must be of type Date.");
-        }
-        if (name.equalsIgnoreCase(DATE)) {
-            date = (Date) obj;
+    public Date getDate() throws IOException {
+        if (date == null) {
+            return null;
         } else {
-            throw new IOException
-                ("Name not supported by InvalidityDateExtension");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Date get(String name) throws IOException {
-        if (name.equalsIgnoreCase(DATE)) {
-            if (date == null) {
-                return null;
-            } else {
-                return (new Date(date.getTime()));    // clone
-            }
-        } else {
-            throw new IOException
-                ("Name not supported by InvalidityDateExtension");
+            return new Date(date.getTime());    // clone
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DATE)) {
-            date = null;
-        } else {
-            throw new IOException
-                ("Name not supported by InvalidityDateExtension");
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the Invalidity Date.
@@ -177,32 +140,21 @@ public class InvalidityDateExtension extends Extension
      * @param out the DerOutputStream to write the extension to
      * @exception IOException on encoding errors
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream  tmp = new DerOutputStream();
-
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.InvalidityDate_Id;
             this.critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DATE);
-
-        return elements.elements();
-    }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return NAME;
     }

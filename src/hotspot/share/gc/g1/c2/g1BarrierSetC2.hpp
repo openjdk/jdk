@@ -84,7 +84,15 @@ protected:
 
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
 
- public:
+#ifdef ASSERT
+  bool has_cas_in_use_chain(Node* x) const;
+  void verify_pre_load(Node* marking_check_if, Unique_Node_List& loads /*output*/) const;
+  void verify_no_safepoints(Compile* compile, Node* marking_load, const Unique_Node_List& loads) const;
+#endif
+
+  static bool is_g1_pre_val_load(Node* n);
+public:
+  virtual bool is_gc_pre_barrier_node(Node* node) const;
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;

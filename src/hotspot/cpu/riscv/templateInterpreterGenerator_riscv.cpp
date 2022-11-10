@@ -519,7 +519,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   assert_cond(runtime_entry != NULL);
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath(xthread);
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath(xthread);
   __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -1075,7 +1077,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
     address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ mv(t1, unsatisfied);
-    __ ld(t1, t1);
+    __ ld(t1, Address(t1, 0));
     __ bne(x28, t1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -1438,6 +1440,17 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(continue_after_compile);
   }
+
+  return entry_point;
+}
+
+// Method entry for java.lang.Thread.currentThread
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+
+  __ ld(x10, Address(xthread, JavaThread::vthread_offset()));
+  __ resolve_oop_handle(x10, t0, t1);
+  __ ret();
 
   return entry_point;
 }

@@ -47,9 +47,7 @@ public class Settings {
     public static final String DEFAULT_VIEW = "defaultView";
     public static final int    DEFAULT_VIEW_DEFAULT = DefaultView.SEA_OF_NODES;
     public static final String PORT = "port";
-    public static final String PORT_BINARY = "portBinary";
     public static final String PORT_DEFAULT = "4444";
-    public static final String PORT_BINARY_DEFAULT = "4445";
     public static final String DIRECTORY = "directory";
     public static final String DIRECTORY_DEFAULT = System.getProperty("user.dir");
 

@@ -70,7 +70,7 @@ class DepMem;
 // An edge in the dependence graph.  The edges incident to a dependence
 // node are threaded through _next_in for incoming edges and _next_out
 // for outgoing edges.
-class DepEdge : public ResourceObj {
+class DepEdge : public ArenaObj {
  protected:
   DepMem* _pred;
   DepMem* _succ;
@@ -92,7 +92,7 @@ class DepEdge : public ResourceObj {
 //------------------------------DepMem---------------------------
 // A node in the dependence graph.  _in_head starts the threaded list of
 // incoming edges, and _out_head starts the list of outgoing edges.
-class DepMem : public ResourceObj {
+class DepMem : public ArenaObj {
  protected:
   Node*    _node;     // Corresponding ideal node
   DepEdge* _in_head;  // Head of list of in edges, null terminated
@@ -215,7 +215,11 @@ class CMoveKit {
   Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
   Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
   Node* is_CmpD_candidate(Node* nd) const; // otherwise return NULL
-  Node_List* make_cmovevd_pack(Node_List* cmovd_pk);
+  // If the input pack is a cmove candidate, return true, otherwise return false.
+  bool is_cmove_pack_candidate(Node_List* cmove_pk);
+  // Determine if the current cmove pack can be vectorized.
+  bool can_merge_cmove_pack(Node_List* cmove_pk);
+  void make_cmove_pack(Node_List* cmovd_pk);
   bool test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk);
 };//class CMoveKit
 
@@ -536,6 +540,8 @@ class SuperWord : public ResourceObj {
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
+  // Clear the unused cmove pack and its related packs from superword candidate packset.
+  void remove_cmove_and_related_packs(Node_List* cmove_pk);
   // Merge CMoveD into new vector-nodes
   void merge_packs_to_cmovd();
   // Adjust the memory graph for the packed operations
@@ -584,6 +590,8 @@ class SuperWord : public ResourceObj {
   Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
+  // Remove the pack in the packset
+  void remove_pack(Node_List* p);
   // Return the node executed first in pack p.
   Node* executed_first(Node_List* p);
   // Return the node executed last in pack p.
@@ -620,7 +628,7 @@ class SuperWord : public ResourceObj {
 
 //------------------------------SWPointer---------------------------
 // Information about an address for dependence checking and vector alignment
-class SWPointer : public ResourceObj {
+class SWPointer : public ArenaObj {
  protected:
   MemNode*   _mem;           // My memory reference node
   SuperWord* _slp;           // SuperWord class

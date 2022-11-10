@@ -174,46 +174,105 @@ char* ReallocateHeap(char *old,
 // handles NULL pointers
 void FreeHeap(void* p);
 
-template <MEMFLAGS F> class CHeapObj {
+class CHeapObjBase {
+ public:
+  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) throw() {
+    return AllocateHeap(size, f);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  MEMFLAGS f,
+                                  const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  MEMFLAGS f,
+                                  const std::nothrow_t&,
+                                  const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  MEMFLAGS f,
+                                  const std::nothrow_t&) throw() {
+    return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) throw() {
+    return AllocateHeap(size, f);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    MEMFLAGS f,
+                                    const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    MEMFLAGS f,
+                                    const std::nothrow_t&,
+                                    const NativeCallStack& stack) throw() {
+    return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    MEMFLAGS f,
+                                    const std::nothrow_t&) throw() {
+    return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
+  }
+
+  void operator delete(void* p)     { FreeHeap(p); }
+  void operator delete [] (void* p) { FreeHeap(p); }
+};
+
+// Uses the implicitly static new and delete operators of CHeapObjBase
+template<MEMFLAGS F>
+class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size) throw() {
-    return (void*)AllocateHeap(size, F);
+    return CHeapObjBase::operator new(size, F);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
                                   const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack);
+    return CHeapObjBase::operator new(size, F, stack);
   }
 
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&,
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt,
                                   const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+    return CHeapObjBase::operator new(size, F, nt, stack);
   }
 
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt) throw() {
+    return CHeapObjBase::operator new(size, F, nt);
   }
 
   ALWAYSINLINE void* operator new[](size_t size) throw() {
-    return (void*)AllocateHeap(size, F);
+    return CHeapObjBase::operator new[](size, F);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                  const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack);
-  }
-
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&,
                                     const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+    return CHeapObjBase::operator new[](size, F, stack);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt,
+                                    const NativeCallStack& stack) throw() {
+    return CHeapObjBase::operator new[](size, F, nt, stack);
   }
 
-  void  operator delete(void* p)     { FreeHeap(p); }
-  void  operator delete [] (void* p) { FreeHeap(p); }
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt) throw() {
+    return CHeapObjBase::operator new[](size, F, nt);
+  }
+
+  void operator delete(void* p)     {
+    CHeapObjBase::operator delete(p);
+  }
+
+  void operator delete [] (void* p) {
+    CHeapObjBase::operator delete[](p);
+  }
 };
 
 // Base class for objects allocated on the stack only.
@@ -367,13 +426,44 @@ extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_s
 extern void resource_free_bytes( char *old, size_t size );
 
 //----------------------------------------------------------------------
+// Base class for objects allocated in the resource area.
+class ResourceObj {
+ public:
+  void* operator new(size_t size) throw() {
+    return resource_allocate_bytes(size);
+  }
+
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
+    return resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
+  }
+
+  void* operator new [](size_t size) throw() = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+
+  void  operator delete(void* p) = delete;
+  void  operator delete [](void* p) = delete;
+};
+
+class ArenaObj {
+ public:
+  void* operator new(size_t size, Arena *arena) throw();
+  void* operator new [](size_t size, Arena *arena) throw() = delete;
+
+  void* operator new [](size_t size) throw() = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+
+  void  operator delete(void* p) = delete;
+  void  operator delete [](void* p) = delete;
+};
+
+//----------------------------------------------------------------------
 // Base class for objects allocated in the resource area per default.
 // Optionally, objects may be allocated on the C heap with
-// new(ResourceObj::C_HEAP) Foo(...) or in an Arena with new (&arena)
-// ResourceObj's can be allocated within other objects, but don't use
+// new (AnyObj::C_HEAP) Foo(...) or in an Arena with new (&arena).
+// AnyObj's can be allocated within other objects, but don't use
 // new or delete (allocation_type is unknown).  If new is used to allocate,
 // use delete to deallocate.
-class ResourceObj {
+class AnyObj {
  public:
   enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
   static void set_allocation_type(address res, allocation_type type) NOT_DEBUG_RETURN;
@@ -393,32 +483,33 @@ class ResourceObj {
   bool allocated_on_C_heap()   const { return get_allocation_type() == C_HEAP; }
   bool allocated_on_arena()    const { return get_allocation_type() == ARENA; }
 protected:
-  ResourceObj(); // default constructor
-  ResourceObj(const ResourceObj& r); // default copy constructor
-  ResourceObj& operator=(const ResourceObj& r); // default copy assignment
-  ~ResourceObj();
+  AnyObj(); // default constructor
+  AnyObj(const AnyObj& r); // default copy constructor
+  AnyObj& operator=(const AnyObj& r); // default copy assignment
+  ~AnyObj();
 #endif // ASSERT
 
  public:
-  void* operator new(size_t size, allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() = delete;
-  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw() = delete;
+  // CHeap allocations
+  void* operator new(size_t size, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, MEMFLAGS flags) throw() = delete;
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw() = delete;
+
+  // Arena allocations
   void* operator new(size_t size, Arena *arena) throw();
   void* operator new [](size_t size, Arena *arena) throw() = delete;
 
+  // Resource allocations
   void* operator new(size_t size) throw() {
-      address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
-      return res;
+    address res = (address)resource_allocate_bytes(size);
+    DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
+    return res;
   }
-
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
-      address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
-      return res;
+    address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
+    DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
+    return res;
   }
 
   void* operator new [](size_t size) throw() = delete;

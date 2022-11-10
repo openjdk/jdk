@@ -224,10 +224,6 @@ class MemTracker : AllStatic {
     return _baseline;
   }
 
-  static NMT_TrackingLevel cmdline_tracking_level() {
-    return _cmdline_tracking_level;
-  }
-
   static void tuning_statistics(outputStream* out);
 
  private:
@@ -239,8 +235,6 @@ class MemTracker : AllStatic {
   // If NMT option value passed by launcher through environment
   // variable is valid
   static bool                         _is_nmt_env_valid;
-  // command line tracking level
-  static NMT_TrackingLevel            _cmdline_tracking_level;
   // Stored baseline
   static MemBaseline      _baseline;
   // Query lock

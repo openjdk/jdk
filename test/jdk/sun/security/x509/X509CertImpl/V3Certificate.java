@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import sun.security.util.BitArray;
+import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
 
@@ -122,21 +123,17 @@ public class V3Certificate {
         // Certificate Info
         X509CertInfo cert = new X509CertInfo();
 
-        cert.set(X509CertInfo.VERSION,
-                new CertificateVersion(CertificateVersion.V3));
-        cert.set(X509CertInfo.SERIAL_NUMBER,
-                new CertificateSerialNumber((int) (firstDate.getTime() / 1000)));
-        cert.set(X509CertInfo.ALGORITHM_ID,
-                new CertificateAlgorithmId(AlgorithmId.get(sigAlg)));
-        cert.set(X509CertInfo.SUBJECT, subject);
-        cert.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-        cert.set(X509CertInfo.VALIDITY, interval);
-        cert.set(X509CertInfo.ISSUER, issuer);
+        cert.setVersion(new CertificateVersion(CertificateVersion.V3));
+        cert.setSerialNumber(new CertificateSerialNumber((int) (firstDate.getTime() / 1000)));
+        cert.setAlgorithmId(new CertificateAlgorithmId(AlgorithmId.get(sigAlg)));
+        cert.setSubject(subject);
+        cert.setKey(new CertificateX509Key(publicKey));
+        cert.setValidity(interval);
+        cert.setIssuer(issuer);
 
-        cert.set(X509CertInfo.ISSUER_ID,
-                new UniqueIdentity(
+        cert.setIssuerUniqueId(new UniqueIdentity(
                         new BitArray(issuerId.length * 8 - 2, issuerId)));
-        cert.set(X509CertInfo.SUBJECT_ID, new UniqueIdentity(subjectId));
+        cert.setSubjectUniqueId(new UniqueIdentity(subjectId));
 
         // Create Extensions
         CertificateExtensions exts = new CertificateExtensions();
@@ -163,13 +160,9 @@ public class V3Certificate {
         IssuerAlternativeNameExtension issuerName
                 = new IssuerAlternativeNameExtension();
 
-        GeneralNames subjectNames
-                = (GeneralNames) subjectName.
-                get(SubjectAlternativeNameExtension.SUBJECT_NAME);
+        GeneralNames subjectNames = subjectName.getNames();
 
-        GeneralNames issuerNames
-                = (GeneralNames) issuerName.
-                get(IssuerAlternativeNameExtension.ISSUER_NAME);
+        GeneralNames issuerNames = issuerName.getNames();
 
         subjectNames.add(mail);
         subjectNames.add(dns);
@@ -201,15 +194,15 @@ public class V3Certificate {
 
         PolicyConstraintsExtension pce = new PolicyConstraintsExtension(2, 4);
 
-        exts.set(SubjectAlternativeNameExtension.NAME, subjectName);
-        exts.set(IssuerAlternativeNameExtension.NAME, issuerName);
-        exts.set(PrivateKeyUsageExtension.NAME, pkusage);
-        exts.set(KeyUsageExtension.NAME, usage);
-        exts.set(AuthorityKeyIdentifierExtension.NAME, aki);
-        exts.set(SubjectKeyIdentifierExtension.NAME, ski);
-        exts.set(BasicConstraintsExtension.NAME, cons);
-        exts.set(PolicyConstraintsExtension.NAME, pce);
-        cert.set(X509CertInfo.EXTENSIONS, exts);
+        exts.setExtension(SubjectAlternativeNameExtension.NAME, subjectName);
+        exts.setExtension(IssuerAlternativeNameExtension.NAME, issuerName);
+        exts.setExtension(PrivateKeyUsageExtension.NAME, pkusage);
+        exts.setExtension(KeyUsageExtension.NAME, usage);
+        exts.setExtension(AuthorityKeyIdentifierExtension.NAME, aki);
+        exts.setExtension(SubjectKeyIdentifierExtension.NAME, ski);
+        exts.setExtension(BasicConstraintsExtension.NAME, cons);
+        exts.setExtension(PolicyConstraintsExtension.NAME, pce);
+        cert.setExtensions(exts);
 
         // Generate and sign X509CertImpl
         X509CertImpl crt = new X509CertImpl(cert);
@@ -220,7 +213,9 @@ public class V3Certificate {
                 FileOutputStream fos_b64
                 = new FileOutputStream(new File(V3_B64_FILE));
                 PrintWriter pw = new PrintWriter(fos_b64)) {
-            crt.encode((OutputStream) fos);
+            DerOutputStream dos = new DerOutputStream();
+            crt.encode(dos);
+            fos.write(dos.toByteArray());
             fos.flush();
 
             // Certificate boundaries/
