@@ -4289,6 +4289,16 @@ pipe_class ldiv_reg_reg(iRegI dst, iRegI src1, iRegI src2)
 
 //------- Load pipeline operations ------------------------
 
+// Load - prefetch
+// Eg.  PREFETCH_W  mem
+pipe_class iload_prefetch(memory mem)
+%{
+  single_instruction;
+  mem    : ID(read);
+  DECODE : ID;
+  LDST   : MEM;
+%}
+
 // Load - reg, mem
 // E.g. LA    Rd, mem
 pipe_class iload_reg_mem(iRegI dst, memory mem)
@@ -5188,6 +5198,35 @@ instruct storeNKlass(iRegN src, memory mem)
   %}
 
   ins_pipe(istore_reg_mem);
+%}
+
+// ============================================================================
+// Prefetch instructions
+// Must be safe to execute with invalid address (cannot fault).
+
+instruct prefetchalloc( memory mem ) %{
+  predicate(UseZicbop);
+  match(PrefetchAllocation mem);
+
+  ins_cost(ALU_COST * 1);
+  format %{ "prefetch_w $mem\t# Prefetch for write" %}
+
+  ins_encode %{
+    if (is_imm_in_range($mem$$disp, 12, 0)) {
+      if (($mem$$disp & 0x1f) == 0) {
+        __ prefetch_w(as_Register($mem$$base), $mem$$disp);
+      } else {
+        __ addi(t0, as_Register($mem$$base), $mem$$disp);
+        __ prefetch_w(t0, 0);
+      }
+    } else {
+      __ mv(t0, $mem$$disp);
+      __ add(t0, as_Register($mem$$base), t0);
+      __ prefetch_w(t0, 0);
+    }
+  %}
+
+  ins_pipe(iload_prefetch);
 %}
 
 // ============================================================================
