@@ -23,8 +23,8 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.*;
 import java.awt.Font;
 import java.util.*;
 

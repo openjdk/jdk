@@ -24,7 +24,6 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.DiagramScene;
-import com.sun.hotspot.igv.view.DiagramViewer;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.InputEvent;

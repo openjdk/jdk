@@ -43,7 +43,6 @@ import javax.swing.event.PopupMenuListener;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
 import org.netbeans.api.visual.action.SelectProvider;
-import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 

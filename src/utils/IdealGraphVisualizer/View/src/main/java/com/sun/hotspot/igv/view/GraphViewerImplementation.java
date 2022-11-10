@@ -26,8 +26,6 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.difference.Difference;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.settings.Settings;
 import org.openide.util.lookup.ServiceProvider;
 
 /**

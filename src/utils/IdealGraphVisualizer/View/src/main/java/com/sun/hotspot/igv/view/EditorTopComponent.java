@@ -23,12 +23,13 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;

@@ -26,15 +26,11 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.InputNode;
-import com.sun.hotspot.igv.graph.Figure;
 import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import javax.swing.JComponent;
 import org.openide.awt.UndoRedo;
 import org.openide.util.Lookup;
