@@ -316,7 +316,7 @@ public sealed interface Linker permits AbstractLinker {
         /**
          * {@return A linker option used to save portions of the execution state immediately after
          *          calling a foreign function associated with a downcall method handle,
-         *          before it can be overwritten by the runtime, or read through conventional means}
+         *          before it can be overwritten by the Java runtime, or read through conventional means}
          * <p>
          * A downcall method handle linked with this option will feature an additional {@link MemorySegment}
          * parameter directly following the target address parameter. This memory segment must be a
@@ -337,7 +337,7 @@ public sealed interface Linker permits AbstractLinker {
          * after calling a foreign function associated with a downcall method handle,
          * before it can be overwritten by the runtime, or read through conventional means.
          * <p>
-         * State is captured by a downcall method handle on invocation, by writing it
+         * Execution state is captured by a downcall method handle on invocation, by writing it
          * to a native segment provided by the user to the downcall method handle.
          * <p>
          * The native segment should have the layout {@linkplain CaptureCallState#layout associated}
