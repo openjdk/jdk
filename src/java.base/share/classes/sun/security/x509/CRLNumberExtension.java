@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -45,13 +44,9 @@ import sun.security.util.*;
  * @see CertAttrSet
  */
 public class CRLNumberExtension extends Extension
-implements CertAttrSet<String> {
+        implements CertAttrSet {
 
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "CRLNumber";
-    public static final String NUMBER = "value";
 
     private static final String LABEL = "CRL Number";
 
@@ -136,45 +131,12 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Set the attribute value.
+     * Get the crlNumber value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            if (!(obj instanceof BigInteger)) {
-                throw new IOException("Attribute must be of type BigInteger.");
-            }
-            crlNumber = (BigInteger)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
+    public BigInteger getCrlNumber() {
+        return crlNumber;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public BigInteger get(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            return crlNumber;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            crlNumber = null;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the CRLNumberExtension.
@@ -217,20 +179,12 @@ implements CertAttrSet<String> {
        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NUMBER);
-        return (elements.elements());
-    }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
-        return (extensionName);
+        return extensionName;
     }
 }

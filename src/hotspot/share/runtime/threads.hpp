@@ -143,9 +143,6 @@ class Threads: AllStatic {
   // Number of non-daemon threads on the active threads list
   static int number_of_non_daemon_threads()      { return _number_of_non_daemon_threads; }
 
-  // Deoptimizes all frames tied to marked nmethods
-  static void deoptimized_wrt_marked_nmethods();
-
   struct Test;                  // For private gtest access.
 };
 

@@ -42,6 +42,7 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
@@ -305,6 +306,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            Tracker tracker = TRACKER.getTracker(client);
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
@@ -379,7 +381,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
-            var error = TRACKER.check(1,
+            var error = TRACKER.check(tracker, 200,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testGetSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -398,6 +400,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            Tracker tracker = TRACKER.getTracker(client);
 
             CompletableFuture<CompletableFuture<?>> cancelFuture = new CompletableFuture<>();
 
@@ -490,7 +493,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
-            var error = TRACKER.check(1,
+            var error = TRACKER.check(tracker, 200,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -508,6 +511,8 @@ public class CancelRequestTest implements HttpServerAdapters {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            Tracker tracker = TRACKER.getTracker(client);
+
             Thread main = Thread.currentThread();
             CompletableFuture<Thread> interruptingThread = new CompletableFuture<>();
             Runnable interrupt = () -> {
@@ -552,7 +557,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                 throw failed;
             }
 
-            var error = TRACKER.check(1,
+            var error = TRACKER.check(tracker, 200,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);

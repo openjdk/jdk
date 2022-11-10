@@ -113,9 +113,9 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -510,6 +510,9 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 static void double_lock_wait(JavaThread* thread, Handle lockObject) {
   assert_lock_strong(SystemDictionary_lock);
 
+  assert(EnableWaitForParallelLoad,
+         "Only called when enabling legacy parallel class loading logic "
+         "for non-parallel capable class loaders");
   assert(lockObject() != NULL, "lockObject must be non-NULL");
   bool calledholdinglock
       = ObjectSynchronizer::current_thread_holds_lock(thread, lockObject);
@@ -544,9 +547,11 @@ static void handle_parallel_super_load(Symbol* name,
                                                           CHECK);
 }
 
-// parallelCapable class loaders do NOT wait for parallel superclass loads to complete
-// Serial class loaders and bootstrap classloader do wait for superclass loads
-static bool should_wait_for_loading(Handle class_loader) {
+// Bootstrap and non-parallel capable class loaders use the LOAD_INSTANCE placeholder to
+// wait for parallel class loading and to check for circularity error for Xcomp when loading
+// signature classes.
+// parallelCapable class loaders do NOT wait for parallel loads to complete
+static bool needs_load_placeholder(Handle class_loader) {
   return class_loader.is_null() || !is_parallelCapable(class_loader);
 }
 
@@ -583,12 +588,13 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
         // the original thread completes the class loading or fails
         // If it completes we will use the resulting InstanceKlass
         // which we will find below in the systemDictionary.
-        oldprobe = NULL;  // Other thread could delete this placeholder entry
 
         if (lockObject.is_null()) {
           SystemDictionary_lock->wait();
-        } else {
+        } else if (EnableWaitForParallelLoad) {
           double_lock_wait(current, lockObject);
+        } else {
+          return NULL;
         }
 
         // Check if classloading completed while we were waiting
@@ -714,7 +720,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    completes the load and other requestors wait for completion.
     {
       MutexLocker mu(THREAD, SystemDictionary_lock);
-      if (should_wait_for_loading(class_loader)) {
+      if (needs_load_placeholder(class_loader)) {
         loaded_class = handle_parallel_loading(THREAD,
                                                name,
                                                loader_data,
@@ -728,8 +734,9 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
         InstanceKlass* check = dictionary->find_class(THREAD, name);
         if (check != NULL) {
           loaded_class = check;
-        } else if (should_wait_for_loading(class_loader)) {
-          // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread.
+        } else if (needs_load_placeholder(class_loader)) {
+          // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread,
+          // and check for ClassCircularityError with -Xcomp.
           PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(name, loader_data,
                                                                       PlaceholderTable::LOAD_INSTANCE,
                                                                       NULL,
@@ -1163,18 +1170,18 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
     assert(s->is_shared(), "must be");
   }
 
-  // The lambda proxy class and its nest host have the same class loader and class loader data,
-  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
-  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host);
-
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
   if (loaded_ik != NULL) {
     assert(shared_nest_host->is_same_class_package(ik),
            "lambda proxy class and its nest host must be in the same package");
   }
+
+  // The lambda proxy class and its nest host have the same class loader and class loader data,
+  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
+  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
+  ik->set_nest_host(shared_nest_host);
 
   return loaded_ik;
 }

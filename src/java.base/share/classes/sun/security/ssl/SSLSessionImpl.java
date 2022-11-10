@@ -1311,9 +1311,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public String[] getValueNames() {
         ArrayList<Object> v = new ArrayList<>();
         Object securityCtx = SecureKey.getCurrentSecurityContext();
-        for (Enumeration<SecureKey> e = boundValues.keys();
-                e.hasMoreElements(); ) {
-            SecureKey key = e.nextElement();
+        for (SecureKey key : boundValues.keySet()) {
             if (securityCtx.equals(key.getSecurityContext())) {
                 v.add(key.getAppKey());
             }

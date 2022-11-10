@@ -28,7 +28,6 @@ package sun.security.x509;
 import java.io.IOException;
 
 import java.util.*;
-import java.util.Collections;
 
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
@@ -80,20 +79,9 @@ import sun.security.util.ObjectIdentifier;
  * @see CertAttrSet
  */
 public class CRLDistributionPointsExtension extends Extension
-        implements CertAttrSet<String> {
+        implements CertAttrSet {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.CRLDistributionPoints";
-
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "CRLDistributionPoints";
-    public static final String POINTS = "points";
 
     /**
      * The List of DistributionPoint objects.
@@ -186,8 +174,9 @@ public class CRLDistributionPointsExtension extends Extension
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return extensionName;
     }
@@ -218,61 +207,14 @@ public class CRLDistributionPointsExtension extends Extension
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
+   /**
+     * Get the DistributionPoint value.
      */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            distributionPoints = (List<DistributionPoint>)obj;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
+    public List<DistributionPoint> getDistributionPoints() {
+        return distributionPoints;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public List<DistributionPoint> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            return distributionPoints;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-    }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            distributionPoints =
-                    Collections.emptyList();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(POINTS);
-        return elements.elements();
-    }
 
      // Encode this extension value
     private void encodeThis() throws IOException {
