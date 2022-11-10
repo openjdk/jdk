@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -54,7 +52,7 @@ public class CertificateSubjectName implements CertAttrSet<String> {
     public static final String DN_NAME = "dname";
 
     // accessor name for cached X500Principal only
-    // do not allow a set() of this value, do not advertise with getElements()
+    // do not allow a set() of this value
     public static final String DN_PRINCIPAL = "x500principal";
 
     // Private data member
@@ -107,11 +105,9 @@ public class CertificateSubjectName implements CertAttrSet<String> {
      * @param out the DerOutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
-        dnName.encode(tmp);
-
-        out.write(tmp.toByteArray());
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
+        dnName.encode(out);
     }
 
     /**
@@ -145,36 +141,5 @@ public class CertificateSubjectName implements CertAttrSet<String> {
             throw new IOException("Attribute name not recognized by " +
                                   "CertAttrSet:CertificateSubjectName.");
         }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DN_NAME)) {
-            dnName = null;
-            dnPrincipal = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:CertificateSubjectName.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DN_NAME);
-
-        return(elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return(NAME);
     }
 }

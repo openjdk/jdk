@@ -355,6 +355,7 @@ public class BufferedInputStream extends FilterInputStream {
      * @throws     IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(byte[] b, int off, int len) throws IOException {
         if (lock != null) {

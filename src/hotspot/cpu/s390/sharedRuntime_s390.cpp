@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -1540,6 +1541,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ resize_frame(-frame_size_in_bytes, Z_R0_scratch);    // No new frame for the wrapper.
                                                           // Just resize the existing one.
 #endif
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(masm);
 
   wrapper_FrameDone = __ offset();
 

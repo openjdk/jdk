@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/pair.hpp"
+#include "utilities/ticks.hpp"
 
 // A G1Policy makes policy decisions that determine the
 // characteristics of the collector.  Examples include:
@@ -76,12 +78,14 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double _full_collection_start_sec;
 
-  uint _young_list_desired_length;
-  uint _young_list_target_length;
-
+  // Desired young gen length without taking actually available free regions into
+  // account.
+  volatile uint _young_list_desired_length;
+  // Actual target length given available free memory.
+  volatile uint _young_list_target_length;
   // The max number of regions we can extend the eden by while the GC
   // locker is active. This should be >= _young_list_target_length;
-  uint _young_list_max_length;
+  volatile uint _young_list_max_length;
 
   // The survivor rate groups below must be initialized after the predictor because they
   // indirectly use it through the "this" object passed to their constructor.
@@ -295,6 +299,8 @@ public:
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
+  void record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards);
+
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
   // Record the start and end of the young gc pause.
@@ -376,18 +382,19 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return _young_list_desired_length; }
-  uint young_list_target_length() const { return _young_list_target_length; }
+  uint young_list_desired_length() const { return Atomic::load(&_young_list_desired_length); }
+  uint young_list_target_length() const { return Atomic::load(&_young_list_target_length); }
+  uint young_list_max_length() const { return Atomic::load(&_young_list_max_length); }
 
   bool should_allocate_mutator_region() const;
 
   bool can_expand_young_list() const;
 
-  uint young_list_max_length() const {
-    return _young_list_max_length;
-  }
-
   bool use_adaptive_young_list_length() const;
+
+  // Return an estimate of the number of bytes used in young gen.
+  // precondition: holding Heap_lock
+  size_t estimate_used_young_bytes_locked() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 
