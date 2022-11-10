@@ -61,9 +61,6 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
     // The size in bits of the prime modulus
     private int pSize;
 
-    // The size in bits of the random exponent (private value)
-    private int lSize;
-
     // The source of randomness
     private SecureRandom random;
 
@@ -111,7 +108,6 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
         }
 
         this.pSize = keysize;
-        this.lSize = params.getL();
         this.random = random;
     }
 
@@ -138,9 +134,8 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
 
         params = (DHParameterSpec) algParams;
         pSize = params.getP().bitLength();
-        lSize = params.getL();
         try {
-            checkKeySize(pSize, lSize);
+            checkKeySize(pSize, params.getL());
         } catch (InvalidParameterException ipe) {
             throw new InvalidAlgorithmParameterException(ipe.getMessage());
         }
@@ -157,20 +152,12 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
             random = SunJCE.getRandom();
         }
 
-        if (params == null) { // when init() not called
-            try {
-                params = ParameterCache.getDHParameterSpec(pSize, random);
-                lSize = params.getL();
-            } catch (GeneralSecurityException e) {
-                // should never happen
-                throw new ProviderException(e);
-            }
-        }
         BigInteger p = params.getP();
         BigInteger g = params.getG();
 
+        int lSize = params.getL();
         if (lSize == 0) { // not specified; use our own default
-            lSize = getDefDHPrivateExpSize(pSize);
+            lSize = getDefDHPrivateExpSize(params);
         }
 
         BigInteger x;
