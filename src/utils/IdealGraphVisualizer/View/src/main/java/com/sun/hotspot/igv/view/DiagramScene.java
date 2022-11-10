@@ -1114,30 +1114,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    private void relayout() {
-        rebuilding = true;
-        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
-        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
-
-        updateVisibleFigureWidgets();
-        updateNodeHull();
-        updateVisibleBlockWidgets();
-
-        HashSet<Figure> visibleFigures = getVisibleFigures();
-        HashSet<Connection> visibleConnections = getVisibleConnections();
-        if (getModel().getShowSea()) {
-            doSeaLayout(visibleFigures, visibleConnections);
-        } else if (getModel().getShowBlocks()) {
-            doClusteredLayout(visibleConnections);
-        } else if (getModel().getShowCFG()) {
-            doCFGLayout(visibleFigures, visibleConnections);
-        }
-        rebuildConnectionLayer();
-
-        updateFigureWidgetLocations(oldVisibleFigureWidgets);
-        updateBlockWidgetBounds(oldVisibleBlockWidgets);
-
-        validateAll();
+    private void centerSingleSelectedFigure() {
         if (model.getSelectedFigures().size() == 1) {
             if (getSceneAnimator().getPreferredLocationAnimator().isRunning()) {
                 getSceneAnimator().getPreferredLocationAnimator().addAnimatorListener(new AnimatorListener() {
@@ -1165,6 +1142,33 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 centerSelectedFigures();
             }
         }
+    }
+
+    private void relayout() {
+        rebuilding = true;
+        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
+        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
+
+        updateVisibleFigureWidgets();
+        updateNodeHull();
+        updateVisibleBlockWidgets();
+
+        HashSet<Figure> visibleFigures = getVisibleFigures();
+        HashSet<Connection> visibleConnections = getVisibleConnections();
+        if (getModel().getShowSea()) {
+            doSeaLayout(visibleFigures, visibleConnections);
+        } else if (getModel().getShowBlocks()) {
+            doClusteredLayout(visibleConnections);
+        } else if (getModel().getShowCFG()) {
+            doCFGLayout(visibleFigures, visibleConnections);
+        }
+        rebuildConnectionLayer();
+
+        updateFigureWidgetLocations(oldVisibleFigureWidgets);
+        updateBlockWidgetBounds(oldVisibleBlockWidgets);
+        validateAll();
+
+        centerSingleSelectedFigure();
         rebuilding = false;
     }
 
