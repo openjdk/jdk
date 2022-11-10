@@ -863,8 +863,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-
-
     @Override
     public void clearSelectedNodes() {
         setSelectedObjects(Collections.emptySet());
