@@ -511,6 +511,19 @@ removeResumed(JNIEnv *env, ThreadList *list)
 }
 
 static void
+removeVThreads(JNIEnv *env)
+{
+    ThreadList *list = &runningVThreads;
+    ThreadNode *node = list->first;
+    while (node != NULL) {
+        ThreadNode *temp = node->next;
+        removeNode(list, node);
+        clearThread(env, node);
+        node = temp;
+    }
+}
+
+static void
 moveNode(ThreadList *source, ThreadList *dest, ThreadNode *node)
 {
     removeNode(source, node);
@@ -2754,6 +2767,30 @@ threadControl_reset(void)
     debugMonitorNotifyAll(threadLock);
     debugMonitorExit(threadLock);
     eventHandler_unlock();
+
+    /*
+     * Unless we are remembering all vthreads when the debugger is not connected,
+     * we free them all up here.
+     */
+    if (!gdata->rememberVThreadsWhenDisconnected) {
+        /*
+         * First we need to wait for all active callbacks to complete. They were resumed
+         * above by the resetHelper. We can't remove the vthreads until after they complete,
+         * because the vthread ThreadNodes might be referenced as the callbacks unwind.
+         * We do this outside of any locking, because the callbacks may need to acquire locks
+         * in order to complete. It's ok if there are more callbacks after this point because
+         * the only callbacks enabled are the permanent ones, and they never involve vthreads.
+         */
+        eventHandler_waitForActiveCallbacks();
+        /*
+         * Now that event callbacks have exited, we can reacquire the threadLock, which
+         * is needed before before calling removeVThreads().
+         */
+        debugMonitorEnter(threadLock);
+        removeVThreads(env);
+        debugMonitorExit(threadLock);
+    }
+
 }
 
 jvmtiEventMode

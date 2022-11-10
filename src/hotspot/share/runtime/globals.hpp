@@ -680,6 +680,10 @@ const int ObjectAlignmentInBytes = 8;
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
                                                                             \
+  product(bool, EnableWaitForParallelLoad, false,                           \
+          "(Deprecated) Enable legacy parallel classloading logic for "     \
+          "class loaders not registered as parallel capable")               \
+                                                                            \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
@@ -1818,11 +1822,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, PauseAtExit, false, DIAGNOSTIC,                             \
           "Pause and wait for keypress on exit if a debugger is attached")  \
-                                                                            \
-  product(bool, ExtendedDTraceProbes,    false,                             \
-          "(Deprecated) Enable performance-impacting dtrace probes. "       \
-          "Use the combination of -XX:+DTraceMethodProbes, "                \
-          "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
           "Enable dtrace tool probes for method-entry and method-exit")     \
