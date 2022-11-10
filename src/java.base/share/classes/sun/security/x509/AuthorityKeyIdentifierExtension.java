@@ -50,10 +50,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class AuthorityKeyIdentifierExtension extends Extension
-        implements CertAttrSet {
+public class AuthorityKeyIdentifierExtension extends Extension {
 
     public static final String NAME = "AuthorityKeyIdentifier";
 

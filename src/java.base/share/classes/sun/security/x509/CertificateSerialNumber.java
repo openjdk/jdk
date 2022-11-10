@@ -36,9 +36,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateSerialNumber implements CertAttrSet {
+public class CertificateSerialNumber implements DerEncoder {
 
     public static final String NAME = "serialNumber";
 

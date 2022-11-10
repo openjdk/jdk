@@ -41,10 +41,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class KeyUsageExtension extends Extension
-        implements CertAttrSet {
+public class KeyUsageExtension extends Extension {
 
     public static final String NAME = "KeyUsage";
     public static final String DIGITAL_SIGNATURE = "digital_signature";
@@ -196,7 +194,7 @@ public class KeyUsageExtension extends Extension
             set(8,val);
         } else {
           throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:KeyUsage.");
+                                + " KeyUsage.");
         }
         encodeThis();
     }
@@ -225,7 +223,7 @@ public class KeyUsageExtension extends Extension
             return isSet(8);
         } else {
           throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:KeyUsage.");
+                                + " KeyUsage.");
         }
     }
 

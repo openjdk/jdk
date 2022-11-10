@@ -57,6 +57,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import sun.security.util.BitArray;
+import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
 
@@ -212,7 +213,9 @@ public class V3Certificate {
                 FileOutputStream fos_b64
                 = new FileOutputStream(new File(V3_B64_FILE));
                 PrintWriter pw = new PrintWriter(fos_b64)) {
-            crt.encode((OutputStream) fos);
+            DerOutputStream dos = new DerOutputStream();
+            crt.encode(dos);
+            fos.write(dos.toByteArray());
             fos.flush();
 
             // Certificate boundaries/

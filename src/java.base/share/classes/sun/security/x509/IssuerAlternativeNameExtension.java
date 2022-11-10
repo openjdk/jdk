@@ -43,10 +43,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class IssuerAlternativeNameExtension
-        extends Extension implements CertAttrSet {
+public class IssuerAlternativeNameExtension extends Extension {
 
     public static final String NAME = "IssuerAlternativeName";
 

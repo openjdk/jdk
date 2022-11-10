@@ -524,7 +524,7 @@ public class PKCS9Attribute implements DerEncoder {
      * should be encoded as <code>T61String</code>s.
      */
     @Override
-    public void derEncode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) throws IOException {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
         switch (index) {

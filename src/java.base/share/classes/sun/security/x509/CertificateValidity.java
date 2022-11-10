@@ -35,9 +35,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateValidity implements CertAttrSet {
+public class CertificateValidity implements DerEncoder {
 
     public static final String NAME = "validity";
     /**
@@ -142,7 +142,7 @@ public class CertificateValidity implements CertAttrSet {
         // in cases where default constructor is used check for
         // null values
         if (notBefore == null || notAfter == null) {
-            throw new IOException("CertAttrSet:CertificateValidity:" +
+            throw new IOException("CertificateValidity:" +
                                   " null values to encode.\n");
         }
         DerOutputStream pair = new DerOutputStream();
