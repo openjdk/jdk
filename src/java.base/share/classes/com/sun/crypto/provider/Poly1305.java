@@ -244,7 +244,7 @@ final class Poly1305 {
     }
 
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
-    // They correspond to this.a and this.r respectively 
+    // They correspond to this.a and this.r respectively
     @ForceInline
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
