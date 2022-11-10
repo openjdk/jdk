@@ -27,12 +27,7 @@
  * @summary Test the EncryptedPrivateKeyInfo.getAlgName(...) methods.
  * @author Valerie Peng
  */
-import java.util.*;
-import java.nio.*;
-import java.io.*;
 import java.security.*;
-import java.util.Arrays;
-import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -61,16 +56,16 @@ public class GetAlgName {
             AlgorithmParameters ap = c.getParameters();
             epki = new EncryptedPrivateKeyInfo(ap, BYTES);
             if (!epki.getAlgName().equalsIgnoreCase(algo)) {
-                System.out.println("...expect: " + algo);
-                System.out.println("...got: " + epki.getAlgName());
+                System.out.println("...expected: " + algo);
+                System.out.println("     ...got: " + epki.getAlgName());
                 status = false;
             }
 
             AlgorithmParameters ap2 = AlgorithmParameters.getInstance(ap.getAlgorithm());
             epki = new EncryptedPrivateKeyInfo(ap2, BYTES);
             if (!epki.getAlgName().equalsIgnoreCase(algo)) {
-                System.out.println("...expect: " + algo);
-                System.out.println("...got: " + epki.getAlgName());
+                System.out.println("...expected: " + algo);
+                System.out.println("     ...got: " + epki.getAlgName());
                 status = false;
             }
         }
