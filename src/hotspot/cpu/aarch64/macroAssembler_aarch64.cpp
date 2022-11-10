@@ -684,7 +684,7 @@ static inline bool target_needs_far_branch(address addr) {
   return !CodeCache::is_non_nmethod(addr);
 }
 
-void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
+void MacroAssembler::far_call(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
@@ -697,15 +697,13 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
     adrp(tmp, entry, offset);
     add(tmp, tmp, offset);
-    if (cbuf) cbuf->set_insts_mark();
     blr(tmp);
   } else {
-    if (cbuf) cbuf->set_insts_mark();
     bl(entry);
   }
 }
 
-int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
+int MacroAssembler::far_jump(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
@@ -719,10 +717,8 @@ int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
     adrp(tmp, entry, offset);
     add(tmp, tmp, offset);
-    if (cbuf) cbuf->set_insts_mark();
     br(tmp);
   } else {
-    if (cbuf) cbuf->set_insts_mark();
     b(entry);
   }
   return pc() - start;
@@ -882,7 +878,7 @@ static bool is_always_within_branch_range(Address entry) {
 
 // Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
+address MacroAssembler::trampoline_call(Address entry) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -908,13 +904,12 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
     target = pc();
   }
 
-  if (cbuf) cbuf->set_insts_mark();
+  address call_pc = pc();
   relocate(entry.rspec());
   bl(target);
 
-  // just need to return a non-null address
   postcond(pc() != badAddress);
-  return pc();
+  return call_pc;
 }
 
 // Emit a trampoline stub for a call to a target which is too far away.
@@ -1895,24 +1890,6 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
   return Address(Rd);
 }
 
-void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
-  if (UseLSE) {
-    mov(tmp, 1);
-    ldadd(Assembler::word, tmp, zr, counter_addr);
-    return;
-  }
-  Label retry_load;
-  prfm(Address(counter_addr), PSTL1STRM);
-  bind(retry_load);
-  // flush and load exclusive from the memory location
-  ldxrw(tmp, counter_addr);
-  addw(tmp, tmp, 1);
-  // if we store+flush with no intervening write tmp will be zero
-  stxrw(tmp2, tmp, counter_addr);
-  cbnzw(tmp2, retry_load);
-}
-
-
 int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
                                     bool want_remainder, Register scratch)
 {
@@ -2081,7 +2058,7 @@ int MacroAssembler::load_signed_byte32(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
   case  8:  ldr(dst, src); break;
   case  4:  ldrw(dst, src); break;
@@ -2091,7 +2068,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
   case  8:  str(src, dst); break;
   case  4:  strw(src, dst); break;
@@ -2399,9 +2376,9 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegister::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2436,9 +2413,9 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegister::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2942,7 +2919,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
   }
   if (save_vectors && use_sve && total_predicate_in_bytes > 0) {
     sub(sp, sp, total_predicate_in_bytes);
-    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_registers; i++) {
       sve_str(as_PRegister(i), Address(sp, i));
     }
   }
@@ -2951,7 +2928,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
 void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
                                    int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   if (restore_vectors && use_sve && total_predicate_in_bytes > 0) {
-    for (int i = PRegister::number_of_saved_registers - 1; i >= 0; i--) {
+    for (int i = PRegister::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_PRegister(i), Address(sp, i));
     }
     add(sp, sp, total_predicate_in_bytes);
@@ -4416,15 +4393,15 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
-                                     Address dst, Register src,
+                                     Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
@@ -4438,9 +4415,9 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
   access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, tmp2);
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.

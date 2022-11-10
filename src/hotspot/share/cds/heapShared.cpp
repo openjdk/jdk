@@ -82,6 +82,7 @@ struct ArchivableStaticFieldInfo {
 
 bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
+GrowableArrayCHeap<Metadata**, mtClassShared>* HeapShared::_native_pointers = NULL;
 
 #ifndef PRODUCT
 #define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
@@ -320,6 +321,7 @@ oop HeapShared::archive_object(oop obj) {
     if (_original_object_table != NULL) {
       _original_object_table->put(archived_oop, obj);
     }
+    mark_native_pointers(obj, archived_oop);
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT " : %s",
@@ -350,6 +352,32 @@ void HeapShared::archive_klass_objects() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       ik->constants()->archive_resolved_references();
     }
+  }
+}
+
+void HeapShared::mark_native_pointers(oop orig_obj, oop archived_obj) {
+  if (java_lang_Class::is_instance(orig_obj)) {
+    mark_one_native_pointer(archived_obj, java_lang_Class::klass_offset());
+    mark_one_native_pointer(archived_obj, java_lang_Class::array_klass_offset());
+  }
+}
+
+void HeapShared::mark_one_native_pointer(oop archived_obj, int offset) {
+  Metadata* ptr = archived_obj->metadata_field_acquire(offset);
+  if (ptr != NULL) {
+    // Set the native pointer to the requested address (at runtime, if the metadata
+    // is mapped at the default location, it will be at this address).
+    address buffer_addr = ArchiveBuilder::current()->get_buffered_addr((address)ptr);
+    address requested_addr = ArchiveBuilder::current()->to_requested(buffer_addr);
+    archived_obj->metadata_field_put(offset, (Metadata*)requested_addr);
+
+    // Remember this pointer. At runtime, if the metadata is mapped at a non-default
+    // location, the pointer needs to be patched (see ArchiveHeapLoader::patch_native_pointers()).
+    _native_pointers->append(archived_obj->field_addr<Metadata*>(offset));
+
+    log_debug(cds, heap, mirror)(
+        "Marked metadata field at %d: " PTR_FORMAT " ==> " PTR_FORMAT,
+         offset, p2i(ptr), p2i(requested_addr));
   }
 }
 
@@ -866,28 +894,28 @@ static void verify_the_heap(Klass* k, const char* which) {
 // Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
 // ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
-void HeapShared::resolve_classes(JavaThread* THREAD) {
+void HeapShared::resolve_classes(JavaThread* current) {
   assert(UseSharedSpaces, "runtime only!");
   if (!ArchiveHeapLoader::is_fully_available()) {
     return; // nothing to do
   }
-  resolve_classes_for_subgraphs(closed_archive_subgraph_entry_fields,   THREAD);
-  resolve_classes_for_subgraphs(open_archive_subgraph_entry_fields,     THREAD);
-  resolve_classes_for_subgraphs(fmg_open_archive_subgraph_entry_fields, THREAD);
+  resolve_classes_for_subgraphs(current, closed_archive_subgraph_entry_fields);
+  resolve_classes_for_subgraphs(current, open_archive_subgraph_entry_fields);
+  resolve_classes_for_subgraphs(current, fmg_open_archive_subgraph_entry_fields);
 }
 
-void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                               JavaThread* THREAD) {
+void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]) {
   for (int i = 0; fields[i].valid(); i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
     InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name);
     assert(k != NULL && k->is_shared_boot_class(), "sanity");
-    resolve_classes_for_subgraph_of(k, THREAD);
+    resolve_classes_for_subgraph_of(current, k);
   }
 }
 
-void HeapShared::resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD) {
+void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) {
+  JavaThread* THREAD = current;
   ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
@@ -899,7 +927,8 @@ void HeapShared::resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD) {
   }
 }
 
-void HeapShared::initialize_from_archived_subgraph(Klass* k, JavaThread* THREAD) {
+void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k) {
+  JavaThread* THREAD = current;
   if (!ArchiveHeapLoader::is_fully_available()) {
     return; // nothing to do
   }
@@ -1631,6 +1660,7 @@ void HeapShared::init_for_dumping(TRAPS) {
   if (HeapShared::can_write()) {
     setup_test_class(ArchiveHeapTestClass);
     _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
+    _native_pointers = new GrowableArrayCHeap<Metadata**, mtClassShared>(2048);
     init_subgraph_entry_fields(CHECK);
   }
 }
@@ -1794,6 +1824,35 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
   log_info(cds, heap)("calculate_oopmap: objects = %6d, oop fields = %7d (nulls = %7d)",
                       num_objs, finder.num_total_oops(), finder.num_null_oops());
   return oopmap;
+}
+
+
+ResourceBitMap HeapShared::calculate_ptrmap(MemRegion region) {
+  size_t num_bits = region.byte_size() / sizeof(Metadata*);
+  ResourceBitMap oopmap(num_bits);
+
+  Metadata** start = (Metadata**)region.start();
+  Metadata** end   = (Metadata**)region.end();
+
+  int num_non_null_ptrs = 0;
+  int len = _native_pointers->length();
+  for (int i = 0; i < len; i++) {
+    Metadata** p = _native_pointers->at(i);
+    if (start <= p && p < end) {
+      assert(*p != NULL, "must be non-null");
+      num_non_null_ptrs ++;
+      size_t idx = p - start;
+      oopmap.set_bit(idx);
+    }
+  }
+
+  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers out of "
+                      SIZE_FORMAT " possible locations", num_non_null_ptrs, num_bits);
+  if (num_non_null_ptrs > 0) {
+    return oopmap;
+  } else {
+    return ResourceBitMap(0);
+  }
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

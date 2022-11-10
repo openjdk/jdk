@@ -271,5 +271,15 @@ public class SharedArchiveConsistency {
         baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
         System.out.println("new baseArchiveNameOffset = " + baseArchiveNameOffset);
         testAndCheck(verifyExecArgs);
+
+        // modify _common_app_classpath_size
+        String wrongCommonAppClasspathOffset = startNewArchive("wrongCommonAppClasspathOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, wrongCommonAppClasspathOffset);
+        int commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
+        System.out.println("    commonAppClasspathPrefixSize = " + commonAppClasspathPrefixSize);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathPrefixSize(), commonAppClasspathPrefixSize * 2);
+        commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
+        System.out.println("new commonAppClasspathPrefixSize = " + commonAppClasspathPrefixSize);
+        testAndCheck(verifyExecArgs);
     }
 }

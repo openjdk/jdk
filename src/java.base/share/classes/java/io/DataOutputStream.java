@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      * @see        java.io.FilterOutputStream#out
      */
     public synchronized void write(byte[] b, int off, int len)

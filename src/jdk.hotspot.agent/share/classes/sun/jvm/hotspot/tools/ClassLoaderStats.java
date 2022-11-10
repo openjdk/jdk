@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,8 @@ public class ClassLoaderStats extends Tool {
                            if (! (k instanceof InstanceKlass)) {
                               return;
                            }
-                           Oop loader = ((InstanceKlass) k).getClassLoader();
-                           LoaderData ld = (loader != null) ? (LoaderData)loaderMap.get(loader)
+                           Oop loader = k.getClassLoader();
+                           LoaderData ld = (loader != null) ? loaderMap.get(loader)
                                                             : bootstrapLoaderData;
                            if (ld != null) {
                               ld.numClasses++;
@@ -179,7 +179,7 @@ public class ClassLoaderStats extends Tool {
 
       for (Iterator keyItr = loaderMap.keySet().iterator(); keyItr.hasNext();) {
          Oop loader = (Oop) keyItr.next();
-         LoaderData data = (LoaderData) loaderMap.get(loader);
+         LoaderData data = loaderMap.get(loader);
          numClassLoaders ++;
          totalNumClasses += data.numClasses;
          totalClassSize  += data.classSize;
@@ -275,7 +275,7 @@ public class ClassLoaderStats extends Tool {
 
       // Methods
       MethodArray methods = k.getMethods();
-      int nmethods = (int) methods.getLength();
+      int nmethods = methods.getLength();
       if (nmethods != 0L) {
          size += methods.getSize();
          for (int i = 0; i < nmethods; ++i) {

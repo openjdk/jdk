@@ -52,6 +52,8 @@ inline bool stackChunkOopDesc::is_parent_null() const          { return jdk_inte
 inline void stackChunkOopDesc::set_parent(stackChunkOop value) { jdk_internal_vm_StackChunk::set_parent(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_parent_raw(oop value)       { jdk_internal_vm_StackChunk::set_parent_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_parent_access(oop value)    { jdk_internal_vm_StackChunk::set_parent_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm_StackChunk::size(as_oop()); }
 
@@ -90,9 +92,11 @@ inline oop stackChunkOopDesc::cont() const              {
   obj = (oop)NativeAccess<>::oop_load(&obj);
   return obj;
 }
-inline void stackChunkOopDesc::set_cont(oop value)      { jdk_internal_vm_StackChunk::set_cont(this, value); }
+inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
-inline void stackChunkOopDesc::set_cont_raw(oop value)  {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+inline void stackChunkOopDesc::set_cont_raw(oop value)    {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize(); }
 
@@ -131,8 +135,8 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 }
 
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
-  HeapWord* start = (HeapWord*)start_address() + sp() - frame::sender_sp_offset;
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
+  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words;
 #else
   Unimplemented();
   HeapWord* start = NULL;
@@ -320,7 +324,7 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
-#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+#if !defined(AMD64) || !defined(AARCH64) || !defined(RISCV64) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.
@@ -339,7 +343,7 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   assert(from >= start_address(), "");
   assert(from + size <= end_address(), "");
 
-#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+#if !defined(AMD64) || !defined(AARCH64) || !defined(RISCV64) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.

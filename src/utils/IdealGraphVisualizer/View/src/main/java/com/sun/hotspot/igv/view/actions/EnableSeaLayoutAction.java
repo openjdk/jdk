@@ -23,29 +23,27 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import java.awt.event.ActionEvent;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.ImageUtilities;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-public class EnableSeaLayoutAction extends AbstractAction {
+public class EnableSeaLayoutAction extends EnableLayoutAction {
 
-    public EnableSeaLayoutAction() {
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
-        putValue(Action.SHORT_DESCRIPTION, "Show sea of nodes");
+    public EnableSeaLayoutAction(EditorTopComponent etc) {
+        super(etc);
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
-    }
-
+    @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/sea.png";
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    protected String getDescription() {
+        return "Show sea of nodes";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowSea(this.isSelected());
     }
 }

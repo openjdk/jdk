@@ -73,13 +73,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (real_mul && in1->is_Sub() && in2->is_Sub()) {
     if (phase->type(in1->in(1))->is_zero_type() &&
         phase->type(in2->in(1))->is_zero_type()) {
-      set_req(1, in1->in(2));
-      set_req(2, in2->in(2));
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      set_req_X(1, in1->in(2), phase);
+      set_req_X(2, in2->in(2), phase);
       in1 = in(1);
       in2 = in(2);
       progress = this;
@@ -97,13 +92,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     if ((in11 == in21 && in12 == in22) ||
         (in11 == in22 && in12 == in21)) {
-      set_req(1, in11);
-      set_req(2, in12);
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      set_req_X(1, in11, phase);
+      set_req_X(2, in12, phase);
       in1 = in(1);
       in2 = in(2);
       progress = this;
@@ -433,6 +423,20 @@ const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
   return TypeF::make( t0->getf() * t1->getf() );
 }
 
+//------------------------------Ideal---------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeF *t2 = phase->type(in(2))->isa_float_constant();
+
+  // x * 2 -> x + x
+  if (t2 != NULL && t2->getf() == 2) {
+    Node* base = in(1);
+    return new AddFNode(base, base);
+  }
+
+  return MulNode::Ideal(phase, can_reshape);
+}
+
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
@@ -440,6 +444,20 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::DOUBLE || t1 == Type::DOUBLE ) return Type::DOUBLE;
   // We must be multiplying 2 double constants.
   return TypeD::make( t0->getd() * t1->getd() );
+}
+
+//------------------------------Ideal---------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeD *t2 = phase->type(in(2))->isa_double_constant();
+
+  // x * 2 -> x + x
+  if (t2 != NULL && t2->getd() == 2) {
+    Node* base = in(1);
+    return new AddDNode(base, base);
+  }
+
+  return MulNode::Ideal(phase, can_reshape);
 }
 
 //=============================================================================

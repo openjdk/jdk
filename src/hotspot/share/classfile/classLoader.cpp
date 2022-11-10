@@ -90,14 +90,12 @@ typedef void * * (*ZipOpen_t)(const char *name, char **pmsg);
 typedef void     (*ZipClose_t)(jzfile *zip);
 typedef jzentry* (*FindEntry_t)(jzfile *zip, const char *name, jint *sizeP, jint *nameLen);
 typedef jboolean (*ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
-typedef jzentry* (*GetNextEntry_t)(jzfile *zip, jint n);
 typedef jint     (*Crc32_t)(jint crc, const jbyte *buf, jint len);
 
 static ZipOpen_t         ZipOpen            = NULL;
 static ZipClose_t        ZipClose           = NULL;
 static FindEntry_t       FindEntry          = NULL;
 static ReadEntry_t       ReadEntry          = NULL;
-static GetNextEntry_t    GetNextEntry       = NULL;
 static Crc32_t           Crc32              = NULL;
 int    ClassLoader::_libzip_loaded          = 0;
 void*  ClassLoader::_zip_handle             = NULL;
@@ -239,6 +237,10 @@ const char* ClassPathEntry::copy_path(const char* path) {
   return copy;
 }
 
+ClassPathDirEntry::~ClassPathDirEntry() {
+  FREE_C_HEAP_ARRAY(char, _dir);
+}
+
 ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char* name) {
   // construct full path name
   assert((_dir != NULL) && (name != NULL), "sanity");
@@ -335,18 +337,6 @@ ClassFileStream* ClassPathZipEntry::open_stream(JavaThread* current, const char*
                              filesize,
                              _zip_name,
                              ClassFileStream::verify);
-}
-
-// invoke function for each entry in the zip file
-void ClassPathZipEntry::contents_do(void f(const char* name, void* context), void* context) {
-  JavaThread* thread = JavaThread::current();
-  HandleMark  handle_mark(thread);
-  ThreadToNativeFromVM ttn(thread);
-  for (int n = 0; ; n++) {
-    jzentry * ze = ((*GetNextEntry)(_zip, n));
-    if (ze == NULL) break;
-    (*f)(ze->name, context);
-  }
 }
 
 DEBUG_ONLY(ClassPathImageEntry* ClassPathImageEntry::_singleton = NULL;)
@@ -663,10 +653,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
           _jrt_entry = new ClassPathImageEntry(JImage_file, canonical_path);
           assert(_jrt_entry != NULL && _jrt_entry->is_modules_image(), "No java runtime image present");
           assert(_jrt_entry->jimage() != NULL, "No java runtime image");
-        } else {
-          // It's an exploded build.
-          ClassPathEntry* new_entry = create_class_path_entry(current, path, &st, false, false);
-        }
+        } // else it's an exploded build.
       } else {
         // If path does not exist, exit
         vm_exit_during_initialization("Unable to establish the boot loader search path", path);
@@ -830,7 +817,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   }
 
   if (entry->is_jar_file()) {
-    ClassLoaderExt::process_jar_manifest(current, entry, check_for_duplicates);
+    ClassLoaderExt::process_jar_manifest(current, entry);
   }
 #endif
 }
@@ -954,7 +941,6 @@ void ClassLoader::load_zip_library() {
   ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(_zip_handle, "ZIP_Close", path));
   FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(_zip_handle, "ZIP_FindEntry", path));
   ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(_zip_handle, "ZIP_ReadEntry", path));
-  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, dll_lookup(_zip_handle, "ZIP_GetNextEntry", path));
   Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(_zip_handle, "ZIP_CRC32", path));
 }
 

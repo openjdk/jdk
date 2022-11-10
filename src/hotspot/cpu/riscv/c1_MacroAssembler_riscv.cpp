@@ -41,8 +41,7 @@
 
 void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
                                   FloatRegister freg0, FloatRegister freg1,
-                                  Register result)
-{
+                                  Register result) {
   if (is_float) {
     float_compare(result, freg0, freg1, unordered_result);
   } else {
@@ -104,7 +103,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   sd(hdr, Address(disp_hdr, 0));
   // otherwise we don't care about the result and handle locking via runtime call
   bnez(hdr, slow_case, /* is_far */ true);
+  // done
   bind(done);
+  increment(Address(xthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -133,7 +134,9 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   } else {
     cmpxchgptr(disp_hdr, hdr, obj, t1, done, &slow_case);
   }
+  // done
   bind(done);
+  decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
 // Defines obj, preserves var_size_in_bytes
@@ -323,8 +326,9 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-
-  nop();
+  IncompressibleRegion ir(this);  // keep the nop as 4 bytes for patching.
+  assert_alignment(pc());
+  nop();  // 4 bytes
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
@@ -374,14 +378,14 @@ typedef void (C1_MacroAssembler::*c1_float_cond_branch_insn)(FloatRegister op1, 
 static c1_cond_branch_insn c1_cond_branch[] =
 {
   /* SHORT branches */
-  (c1_cond_branch_insn)&Assembler::beq,
-  (c1_cond_branch_insn)&Assembler::bne,
-  (c1_cond_branch_insn)&Assembler::blt,
-  (c1_cond_branch_insn)&Assembler::ble,
-  (c1_cond_branch_insn)&Assembler::bge,
-  (c1_cond_branch_insn)&Assembler::bgt,
-  (c1_cond_branch_insn)&Assembler::bleu, // lir_cond_belowEqual
-  (c1_cond_branch_insn)&Assembler::bgeu  // lir_cond_aboveEqual
+  (c1_cond_branch_insn)&MacroAssembler::beq,
+  (c1_cond_branch_insn)&MacroAssembler::bne,
+  (c1_cond_branch_insn)&MacroAssembler::blt,
+  (c1_cond_branch_insn)&MacroAssembler::ble,
+  (c1_cond_branch_insn)&MacroAssembler::bge,
+  (c1_cond_branch_insn)&MacroAssembler::bgt,
+  (c1_cond_branch_insn)&MacroAssembler::bleu, // lir_cond_belowEqual
+  (c1_cond_branch_insn)&MacroAssembler::bgeu  // lir_cond_aboveEqual
 };
 
 static c1_float_cond_branch_insn c1_float_cond_branch[] =

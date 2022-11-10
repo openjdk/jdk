@@ -36,6 +36,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">ամհարերեն</language>
 			<language type="an">արագոներեն</language>
 			<language type="ang">հին անգլերեն</language>
+			<language type="ann">օբոլո</language>
 			<language type="anp">անգիկա</language>
 			<language type="ar">արաբերեն</language>
 			<language type="ar_001">արդի ընդհանուր արաբերեն</language>
@@ -43,11 +44,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="arn">մապուչի</language>
 			<language type="arp">արապահո</language>
 			<language type="arq">ալժիրական արաբերեն</language>
+			<language type="ars">նեջդի արաբերեն</language>
 			<language type="arz">եգիպտական արաբերեն</language>
 			<language type="as">ասամերեն</language>
 			<language type="asa">ասու</language>
 			<language type="ase">ամերիկյան ժեստերի լեզու</language>
 			<language type="ast">աստուրերեն</language>
+			<language type="atj">աթիկամեկ</language>
 			<language type="av">ավարերեն</language>
 			<language type="awa">ավադհի</language>
 			<language type="ay">այմարա</language>
@@ -74,6 +77,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">բուգիերեն</language>
 			<language type="byn">բիլին</language>
 			<language type="ca">կատալաներեն</language>
+			<language type="cay">կայուգա</language>
 			<language type="ccp">չակմա</language>
 			<language type="ce">չեչեներեն</language>
 			<language type="ceb">սեբուերեն</language>
@@ -82,16 +86,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">տրուկերեն</language>
 			<language type="chm">մարի</language>
 			<language type="cho">չոկտո</language>
+			<language type="chp">չիպևայան</language>
 			<language type="chr">չերոկի</language>
 			<language type="chy">շայեն</language>
 			<language type="ckb">սորանի քրդերեն</language>
 			<language type="ckb" alt="menu">քրդերեն (սորանի)</language>
 			<language type="ckb" alt="variant">սորանի</language>
+			<language type="clc">չիլկոտիներեն</language>
 			<language type="co">կորսիկերեն</language>
 			<language type="cop">ղպտերեն</language>
+			<language type="crg">միչիֆ</language>
 			<language type="crh">ղրիմյան թուրքերեն</language>
+			<language type="crj">հարավ-արևելյան քրի</language>
+			<language type="crk">հարթավայրերի քրի</language>
+			<language type="crl">հյուսիս-արևելյան քրի</language>
+			<language type="crm">մուզ քրի</language>
+			<language type="crr">կարոլինական ալգոնկիներեն</language>
 			<language type="crs">սեյշելյան խառնակերտ ֆրանսերեն</language>
 			<language type="cs">չեխերեն</language>
+			<language type="csw">ճահճի քրի</language>
 			<language type="cu">սլավոներեն, եկեղեցական</language>
 			<language type="cv">չուվաշերեն</language>
 			<language type="cy">ուելսերեն</language>
@@ -107,7 +120,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="doi">դոգրի</language>
 			<language type="dsb">ստորին սորբերեն</language>
 			<language type="dua">դուալա</language>
-			<language type="dv">մալդիվերեն</language>
+			<language type="dv">դիվեհի</language>
 			<language type="dyo">ջոլա-ֆոնյի</language>
 			<language type="dz">ջոնգքհա</language>
 			<language type="dzg">դազագա</language>
@@ -121,7 +134,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">ավստրալիական անգլերեն</language>
 			<language type="en_CA">կանադական անգլերեն</language>
 			<language type="en_GB">բրիտանական անգլերեն</language>
-			<language type="en_GB" alt="short">անգլերեն (Բրիտանիա)</language>
 			<language type="en_US">ամերիկյան անգլերեն</language>
 			<language type="eo">էսպերանտո</language>
 			<language type="es">իսպաներեն</language>
@@ -143,7 +155,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fr">ֆրանսերեն</language>
 			<language type="fr_CA">կանադական ֆրանսերեն</language>
 			<language type="fr_CH">շվեյցարական ֆրանսերեն</language>
+			<language type="frc">քաջունական ֆրանսերեն</language>
 			<language type="fro">հին ֆրանսերեն</language>
+			<language type="frr">հյուսիսային ֆրիզերեն</language>
 			<language type="frs">արևելաֆրիզերեն</language>
 			<language type="fur">ֆրիուլիերեն</language>
 			<language type="fy">արևմտաֆրիզերեն</language>
@@ -167,9 +181,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">մեներեն</language>
 			<language type="gwi">գվիչին</language>
 			<language type="ha">հաուսա</language>
+			<language type="hai">հայդա</language>
 			<language type="haw">հավայիերեն</language>
+			<language type="hax">հարավային հայդա</language>
 			<language type="he">եբրայերեն</language>
 			<language type="hi">հինդի</language>
+			<language type="hi_Latn" alt="variant">հինգլիշ</language>
 			<language type="hil">հիլիգայնոն</language>
 			<language type="hmn">հմոնգ</language>
 			<language type="hr">խորվաթերեն</language>
@@ -178,6 +195,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">խառնակերտ հայիթերեն</language>
 			<language type="hu">հունգարերեն</language>
 			<language type="hup">հուպա</language>
+			<language type="hur">հալքոմելեմ</language>
 			<language type="hy">հայերեն</language>
 			<language type="hz">հերերո</language>
 			<language type="ia">ինտերլինգուա</language>
@@ -187,6 +205,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ie">ինտերլինգուե</language>
 			<language type="ig">իգբո</language>
 			<language type="ii">սիչուան</language>
+			<language type="ikt">արևմտականադական ինուկտիտուտ</language>
 			<language type="ilo">իլոկերեն</language>
 			<language type="inh">ինգուշերեն</language>
 			<language type="io">իդո</language>
@@ -208,6 +227,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kde">մակոնդե</language>
 			<language type="kea">կաբուվերդերեն</language>
 			<language type="kfo">կորո</language>
+			<language type="kgp">կաինգան</language>
 			<language type="kha">քասիերեն</language>
 			<language type="khq">կոյրա չինի</language>
 			<language type="ki">կիկույու</language>
@@ -235,6 +255,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">կումիկերեն</language>
 			<language type="kv">կոմիերեն</language>
 			<language type="kw">կոռներեն</language>
+			<language type="kwk">կվակվալա</language>
 			<language type="ky">ղրղզերեն</language>
 			<language type="la">լատիներեն</language>
 			<language type="lad">լադինո</language>
@@ -243,11 +264,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">լեզգիերեն</language>
 			<language type="lg">գանդա</language>
 			<language type="li">լիմբուրգերեն</language>
+			<language type="lil">լիլուետ</language>
 			<language type="lkt">լակոտա</language>
 			<language type="ln">լինգալա</language>
 			<language type="lo">լաոսերեն</language>
+			<language type="lou">լուիզիանական կրեոլերեն</language>
 			<language type="loz">լոզի</language>
 			<language type="lrc">հյուսիսային լուրիերեն</language>
+			<language type="lsm">սաամերեն</language>
 			<language type="lt">լիտվերեն</language>
 			<language type="lu">լուբա-կատանգա</language>
 			<language type="lua">լուբա-լուլուա</language>
@@ -276,6 +300,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">մալայալամ</language>
 			<language type="mn">մոնղոլերեն</language>
 			<language type="mni">մանիպուրի</language>
+			<language type="moe">իննու-այմուն</language>
 			<language type="moh">մոհավք</language>
 			<language type="mos">մոսսի</language>
 			<language type="mr">մարաթի</language>
@@ -284,7 +309,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mt">մալթայերեն</language>
 			<language type="mua">մունդանգ</language>
 			<language type="mul">բազմալեզու</language>
-			<language type="mus">կրիկ</language>
+			<language type="mus">մասքոջի</language>
 			<language type="mwl">միրանդերեն</language>
 			<language type="my">բիրմայերեն</language>
 			<language type="myv">էրզյա</language>
@@ -318,6 +343,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nyn">նյանկոլե</language>
 			<language type="oc">օքսիտաներեն</language>
 			<language type="oj">օջիբվա</language>
+			<language type="ojb">հյուսիս-արևմտյան օջիբվե</language>
+			<language type="ojc">կենտրոնական օջիբվե</language>
+			<language type="ojs">օջի քրի</language>
+			<language type="ojw">արևմտյան օջիբվե</language>
+			<language type="oka">օկանագան</language>
 			<language type="om">օրոմո</language>
 			<language type="or">օրիյա</language>
 			<language type="os">օսերեն</language>
@@ -330,17 +360,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pap">պապյամենտո</language>
 			<language type="pau">պալաուերեն</language>
 			<language type="pcd">պիկարդերեն</language>
-			<language type="pcm">նիգերյան կրեոլերեն</language>
+			<language type="pcm">նիգերիական փիջին</language>
 			<language type="pdc">փենսիլվանական գերմաներեն</language>
 			<language type="pdt">պլատագերմաներեն</language>
 			<language type="peo">հին պարսկերեն</language>
 			<language type="pfl">պալատինյան գերմաներեն</language>
 			<language type="phn">փյունիկերեն</language>
 			<language type="pi">պալի</language>
+			<language type="pis">փիջին</language>
 			<language type="pl">լեհերեն</language>
 			<language type="pms">պիեմոնտերեն</language>
 			<language type="pnt">պոնտերեն</language>
 			<language type="pon">պոնպեերեն</language>
+			<language type="pqm">մալեսիտ-պասամակվոդի</language>
 			<language type="prg">պրուսերեն</language>
 			<language type="pro">հին պրովանսերեն</language>
 			<language type="ps">փուշթու</language>
@@ -353,7 +385,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rap">ռապանուի</language>
 			<language type="rar">ռարոտոնգաներեն</language>
 			<language type="rgn">ռոմանիոլերեն</language>
-			<language type="rhg">Ռոհինջա</language>
+			<language type="rhg">ռոհինջա</language>
 			<language type="rif">ռիֆերեն</language>
 			<language type="rm">ռոմանշերեն</language>
 			<language type="rn">ռունդի</language>
@@ -391,6 +423,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">սինհալերեն</language>
 			<language type="sk">սլովակերեն</language>
 			<language type="sl">սլովեներեն</language>
+			<language type="slh">հարավային լուշուցիդ</language>
 			<language type="sm">սամոաերեն</language>
 			<language type="sma">հարավային սաամի</language>
 			<language type="smj">լուլե սաամի</language>
@@ -405,6 +438,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">սվազերեն</language>
 			<language type="ssy">սահոերեն</language>
 			<language type="st">հարավային սոթո</language>
+			<language type="str">սթրեյթս սալիշերեն</language>
 			<language type="su">սունդաներեն</language>
 			<language type="suk">սուկումա</language>
 			<language type="sv">շվեդերեն</language>
@@ -413,6 +447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">կոմորերեն</language>
 			<language type="syr">ասորերեն</language>
 			<language type="ta">թամիլերեն</language>
+			<language type="tce">հարավային թուտչոնե</language>
 			<language type="tcy">տուլու</language>
 			<language type="te">թելուգու</language>
 			<language type="tem">տեմնե</language>
@@ -420,7 +455,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ter">տերենո</language>
 			<language type="tet">տետում</language>
 			<language type="tg">տաջիկերեն</language>
+			<language type="tgx">թագիշ</language>
 			<language type="th">թայերեն</language>
+			<language type="tht">թալթան</language>
 			<language type="ti">տիգրինյա</language>
 			<language type="tig">տիգրե</language>
 			<language type="tiv">տիվերեն</language>
@@ -434,6 +471,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tmh">տամաշեկ</language>
 			<language type="tn">ցվանա</language>
 			<language type="to">տոնգերեն</language>
+			<language type="tok">տոկիպոնա</language>
 			<language type="tpi">տոկ փիսին</language>
 			<language type="tr">թուրքերեն</language>
 			<language type="tru">տուրոյո</language>
@@ -442,6 +480,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tsd">ցակոներեն</language>
 			<language type="tsi">ցիմշյան</language>
 			<language type="tt">թաթարերեն</language>
+			<language type="ttm">հյուսիսային թուտչոնե</language>
 			<language type="tum">տումբուկա</language>
 			<language type="tvl">թուվալուերեն</language>
 			<language type="tw">տուի</language>
@@ -484,6 +523,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">եմբա</language>
 			<language type="yi">իդիշ</language>
 			<language type="yo">յորուբա</language>
+			<language type="yrl">նինգաթու</language>
 			<language type="yue">կանտոներեն</language>
 			<language type="yue" alt="menu">չինարեն, կանտոներեն</language>
 			<language type="za">ժուանգ</language>
@@ -492,20 +532,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zen">զենագա</language>
 			<language type="zgh">ընդհանուր մարոկյան թամազիղտ</language>
 			<language type="zh">չինարեն</language>
+			<language type="zh" alt="menu">չինարեն, մանդարին</language>
 			<language type="zh_Hans">պարզեցված չինարեն</language>
-			<language type="zh_Hant">չինարեն, ավանդական</language>
-			<language type="zh_Hant" alt="long">չինարեն (ավանդական չինարեն)</language>
+			<language type="zh_Hans" alt="long">պարզեցված մանդարին չինարեն</language>
+			<language type="zh_Hant">ավանդական չինարեն</language>
+			<language type="zh_Hant" alt="long">ավանդական մանդարին չինարեն</language>
 			<language type="zu">զուլուերեն</language>
 			<language type="zun">զունիերեն</language>
 			<language type="zxx">առանց լեզվային բովանդակության</language>
 			<language type="zza">զազաերեն</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">ադլամ</script>
 			<script type="Arab">արաբական</script>
+			<script type="Aran">նաստալիք</script>
 			<script type="Armn">հայկական</script>
 			<script type="Beng">բենգալական</script>
 			<script type="Bopo">բոպոմոֆո</script>
-			<script type="Brai">բրայլի</script>
+			<script type="Brai">Բրայլ</script>
+			<script type="Cakm">չակմա</script>
+			<script type="Cans">կանադական միասնական վանկագիր</script>
+			<script type="Cher">չերոկի</script>
 			<script type="Cyrl">կյուրեղագիր</script>
 			<script type="Deva">դեւանագարի</script>
 			<script type="Ethi">եթովպական</script>
@@ -516,8 +563,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hanb">հանբ</script>
 			<script type="Hang">հանգըլ</script>
 			<script type="Hani">չինական</script>
-			<script type="Hans">պարզեցված չինական</script>
-			<script type="Hant">ավանդական չինական</script>
+			<script type="Hans">պարզեցված</script>
+			<script type="Hans" alt="stand-alone">պարզեցված չինական</script>
+			<script type="Hant">ավանդական</script>
+			<script type="Hant" alt="stand-alone">ավանդական չինական</script>
 			<script type="Hebr">եբրայական</script>
 			<script type="Hira">հիրագանա</script>
 			<script type="Hrkt">ճապոնական վանկագիր</script>
@@ -531,16 +580,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Latn">լատինական</script>
 			<script type="Mlym">մալայալամ</script>
 			<script type="Mong">մոնղոլական</script>
+			<script type="Mtei">մանիպուրի</script>
 			<script type="Mymr">մյանմարական</script>
+			<script type="Nkoo">նկո</script>
+			<script type="Olck">օլ չիկի</script>
 			<script type="Orya">օրիյա</script>
+			<script type="Rohg">հանիֆի</script>
 			<script type="Sinh">սինհալական</script>
+			<script type="Sund">սունդանական</script>
+			<script type="Syrc">ասորական</script>
 			<script type="Taml">թամիլական</script>
 			<script type="Telu">թելուգու</script>
+			<script type="Tfng">տիֆինաղ</script>
 			<script type="Thaa">թաանա</script>
 			<script type="Thai">թայական</script>
 			<script type="Tibt">տիբեթական</script>
+			<script type="Vaii">վայական</script>
+			<script type="Yiii">ի</script>
 			<script type="Zmth">մաթեմատիկական նշաններ</script>
-			<script type="Zsye">էմոձի</script>
+			<script type="Zsye">էմոջի</script>
 			<script type="Zsym">նշաններ</script>
 			<script type="Zxxx">չգրված</script>
 			<script type="Zyyy">ընդհանուր</script>
@@ -764,6 +822,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">Նաուրու</territory>
 			<territory type="NU">Նիուե</territory>
 			<territory type="NZ">Նոր Զելանդիա</territory>
+			<territory type="NZ" alt="variant">Աոտեարոա Նոր Զելանդիա</territory>
 			<territory type="OM">Օման</territory>
 			<territory type="PA">Պանամա</territory>
 			<territory type="PE">Պերու</territory>
@@ -823,6 +882,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">Թունիս</territory>
 			<territory type="TO">Տոնգա</territory>
 			<territory type="TR">Թուրքիա</territory>
+			<territory type="TR" alt="variant">Թյուրքիե</territory>
 			<territory type="TT">Տրինիդադ և Տոբագո</territory>
 			<territory type="TV">Տուվալու</territory>
 			<territory type="TW">Թայվան</territory>
@@ -872,11 +932,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">բուդդայական օրացույց</type>
 			<type key="calendar" type="chinese">չինական օրացույց</type>
+			<type key="calendar" type="coptic">ղպտական օրացույց</type>
 			<type key="calendar" type="dangi">դանգի օրացույց</type>
 			<type key="calendar" type="ethiopic">եթովպական օրացույց</type>
+			<type key="calendar" type="ethiopic-amete-alem">եթովպական Ամետե Ալեմ օրացույց</type>
 			<type key="calendar" type="gregorian">գրիգորյան օրացույց</type>
 			<type key="calendar" type="hebrew">հրեական օրացույց</type>
 			<type key="calendar" type="islamic">իսլամական օրացույց</type>
+			<type key="calendar" type="islamic-civil">իսլամական քաղաքացիական օրացույց</type>
+			<type key="calendar" type="islamic-umalqura">իսլամական օրացույց Ում Ալ Քուրա</type>
 			<type key="calendar" type="iso8601">ISO-8601 օրացույց</type>
 			<type key="calendar" type="japanese">ճապոնական օրացույց</type>
 			<type key="calendar" type="persian">պարսկական օրացույց</type>
@@ -898,39 +962,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem">ամերիկյան համակարգ</type>
 			<type key="numbers" type="arab">արաբա-հնդկական թվանշաններ</type>
 			<type key="numbers" type="arabext">արաբա-հնդկական թվերի ընդլայնված համակարգ</type>
-			<type key="numbers" type="armn">հայկական թվանիշեր</type>
-			<type key="numbers" type="armnlow">հայկական փոքրատառ թվանիշեր</type>
+			<type key="numbers" type="armn">հայկական թվանշաններ</type>
+			<type key="numbers" type="armnlow">հայկական փոքր թվանշաններ</type>
 			<type key="numbers" type="beng">բենգալական թվանշաններ</type>
-			<type key="numbers" type="deva">դեվանագարի թվանշաններ</type>
-			<type key="numbers" type="ethi">եթովպական թվանիշեր</type>
+			<type key="numbers" type="cakm">չակմա թվանշաններ</type>
+			<type key="numbers" type="deva">դևանագարի թվանշաններ</type>
+			<type key="numbers" type="ethi">եթովպական թվանշաններ</type>
 			<type key="numbers" type="fullwide">ամբողջ լայնքով թվանշաններ</type>
-			<type key="numbers" type="geor">վրացական թվանիշեր</type>
-			<type key="numbers" type="grek">հունական թվանիշեր</type>
+			<type key="numbers" type="geor">վրացական թվանշաններ</type>
+			<type key="numbers" type="grek">հունական թվանշաններ</type>
 			<type key="numbers" type="greklow">հունական փոքրատառ թվանիշեր</type>
 			<type key="numbers" type="gujr">գուջարաթի թվանշաններ</type>
 			<type key="numbers" type="guru">գուրմուխի թվանշաններ</type>
-			<type key="numbers" type="hanidec">չինական տասնորդական թվեր</type>
-			<type key="numbers" type="hans">չինական պարզեցված թվանիշեր</type>
-			<type key="numbers" type="hansfin">չինական պարզեցված ֆինանսական թվանիշեր</type>
+			<type key="numbers" type="hanidec">չինական տասնորդական թվանշաններ</type>
+			<type key="numbers" type="hans">պարզեցված չինարենի թվանշաններ</type>
+			<type key="numbers" type="hansfin">պարզեցված չինարենի ֆինանսական թվանշաններ</type>
 			<type key="numbers" type="hant">չինական ավանդական թվանիշեր</type>
-			<type key="numbers" type="hantfin">չինական ավանդական ֆինանսական թվանիշեր</type>
-			<type key="numbers" type="hebr">եբրայական թվանիշեր</type>
-			<type key="numbers" type="jpan">ճապոնական թվանիշեր</type>
-			<type key="numbers" type="jpanfin">ճապոնական ֆինանսական թվանիշեր</type>
+			<type key="numbers" type="hantfin">ավանդական չինարենի ֆինանսական թվանշաններ</type>
+			<type key="numbers" type="hebr">եբրայական թվանշաններ</type>
+			<type key="numbers" type="java">ճավայական թվանշաններ</type>
+			<type key="numbers" type="jpan">ճապոնական թվանշաններ</type>
+			<type key="numbers" type="jpanfin">ճապոնական ֆինանսական թվանշաններ</type>
 			<type key="numbers" type="khmr">քմերական թվանշաններ</type>
 			<type key="numbers" type="knda">կաննադա թվանշաններ</type>
 			<type key="numbers" type="laoo">լաոսական թվանշաններ</type>
 			<type key="numbers" type="latn">արևմտյան թվանշաններ</type>
 			<type key="numbers" type="mlym">մալայալամ թվանշաններ</type>
+			<type key="numbers" type="mtei">մանիպուրի թվանշաններ</type>
 			<type key="numbers" type="mymr">բիրմական թվանշաններ</type>
+			<type key="numbers" type="olck">օլ չիկի թվանշաններ</type>
 			<type key="numbers" type="orya">օրիյա թվանշաններ</type>
-			<type key="numbers" type="roman">հռոմեական թվանիշեր</type>
-			<type key="numbers" type="romanlow">հռոմեական փոքրատառ թվանիշեր</type>
-			<type key="numbers" type="taml">թամիլական ավանդական թվանիշեր</type>
+			<type key="numbers" type="roman">հռոմեական թվանշաններ</type>
+			<type key="numbers" type="romanlow">հռոմեական փոքր թվանշաններ</type>
+			<type key="numbers" type="taml">թամիլական ավանդական թվանշաններ</type>
 			<type key="numbers" type="tamldec">թամիլական թվանշաններ</type>
 			<type key="numbers" type="telu">թելուգու թվանշաններ</type>
 			<type key="numbers" type="thai">թայական թվանշաններ</type>
 			<type key="numbers" type="tibt">տիբեթական թվանշաններ</type>
+			<type key="numbers" type="vaii">վայական թվանշաններ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Մետրական</measurementSystemName>
@@ -946,7 +1015,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[ա բ գ դ ե զ է ը թ ժ ի լ խ ծ կ հ ձ ղ ճ մ յ ն շ ո չ պ ջ ռ ս վ տ ր ց ւ փ ք օ ֆ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[և]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[Ա Բ Գ Դ Ե Զ Է Ը Թ Ժ Ի Լ Խ Ծ Կ Հ Ձ Ղ Ճ Մ Յ Ն Շ Ո Չ Պ Ջ Ռ Ս Վ Տ Ր Ց Ւ Փ Ք Օ Ֆ]</exemplarCharacters>
+		<exemplarCharacters type="index">[Ա Բ Գ Դ Ե Զ Է Ը Թ Ժ Ի Լ Խ Ծ Կ Հ Ձ Ղ Ճ Մ Յ Ն Շ Ո Չ Պ Ջ Ռ Ս Վ Տ Ր Ց Ւ Փ Ք Օ Ֆ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[֊ , ՝ \: ՜ ՞ . « » ՚ ՛ ՟]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
@@ -1543,7 +1612,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Gy">G y թ.</dateFormatItem>
 						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y թ. MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM, y թ. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y թ․ MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y թ. MMM d, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
@@ -4662,9 +4731,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -5256,7 +5327,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>լեսոթոյական լոտի</displayName>
 				<displayName count="one">լեսոթոյական լոտի</displayName>
 				<displayName count="other">լեսոթոյական լոտի</displayName>
-				<symbol draft="contributed">LSL</symbol>
+				<symbol>LSL</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>Լիտվական լիտ</displayName>
@@ -6400,6 +6471,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} տարում</unitPattern>
 				<perUnitPattern>տարեկան {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>եռամսյակներ</displayName>
+				<unitPattern count="one">{0} եռամսյակ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} եռամսյակից</unitPattern>
+				<unitPattern count="one" case="dative">{0} եռամսյակին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} եռամսյակով</unitPattern>
+				<unitPattern count="one" case="locative">{0} եռամսյակում</unitPattern>
+				<unitPattern count="other">{0} եռամսյակ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} եռամսյակից</unitPattern>
+				<unitPattern count="other" case="dative">{0} եռամսյակին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} եռամսյակով</unitPattern>
+				<unitPattern count="other" case="locative">{0} եռամսյակում</unitPattern>
+				<perUnitPattern>{0}/եռմս</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>ամիսներ</displayName>
 				<unitPattern count="one">{0} ամիս</unitPattern>
@@ -7028,7 +7113,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} արեգակնային լուսատվություն</unitPattern>
 				<unitPattern count="other">{0} արեգակնային լուսատվություն</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>տոննաներ</displayName>
 				<unitPattern count="one">{0} տոննա</unitPattern>
 				<unitPattern count="one" case="ablative">{0} տոննայից</unitPattern>
@@ -8022,6 +8107,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} տ</unitPattern>
 				<perUnitPattern>{0}/տ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>եռմս</displayName>
+				<unitPattern count="one">{0} եռմս</unitPattern>
+				<unitPattern count="other">{0} եռմս</unitPattern>
+				<perUnitPattern>{0}/եռմս</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>ամս</displayName>
 				<unitPattern count="one">{0} ամս</unitPattern>
@@ -8337,7 +8428,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} լմ</unitPattern>
 				<unitPattern count="other">{0} լմ</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>տ</displayName>
 				<unitPattern count="one">{0} տ</unitPattern>
 				<unitPattern count="other">{0} տ</unitPattern>
@@ -8824,6 +8915,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>րոպե</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
@@ -8908,6 +9000,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>տ</displayName>
 				<unitPattern count="one">{0} տ</unitPattern>
 				<unitPattern count="other">{0} տ</unitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>եռմս</displayName>
+				<unitPattern count="one">{0} եռմս</unitPattern>
+				<unitPattern count="other">{0} եռմս</unitPattern>
+				<perUnitPattern>{0}/եռմս</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ա</displayName>
@@ -9326,4 +9424,152 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">աղյուսակային թվանշաններ</featureName>
 		<featureName type="zero">շեղագծված զրո</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und hy</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<initialPattern type="initial">{0}․</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core} {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core} {given-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Արթուր</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Հեղինե</nameField>
+			<nameField type="surname">Ադամյան</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Հովհաննես</nameField>
+			<nameField type="given2">Արմեն</nameField>
+			<nameField type="surname">Դարբինյան</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix" draft="contributed">դ-ր</nameField>
+			<nameField type="given">Ադա Կոռնելիա</nameField>
+			<nameField type="given-informal">Էդ</nameField>
+			<nameField type="given2" draft="contributed">Եվա Սոֆիա</nameField>
+			<nameField type="surname-prefix">վան դեն</nameField>
+			<nameField type="surname-core">Վոլֆ</nameField>
+			<nameField type="surname2">Բեքեր Շմիդտ</nameField>
+			<nameField type="suffix">կրտսեր</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

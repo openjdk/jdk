@@ -119,6 +119,10 @@ abstract class UnixFileSystem
         return needToResolveAgainstDefaultDirectory;
     }
 
+    boolean isCaseInsensitiveAndPreserving() {
+        return false;
+    }
+
     UnixPath rootDirectory() {
         return rootDirectory;
     }
@@ -428,7 +432,7 @@ abstract class UnixFileSystem
     }
 
     // The flags that control how a file is copied or moved
-    private static class Flags {
+    protected static class Flags {
         boolean replaceExisting;
         boolean atomicMove;
         boolean followLinks;

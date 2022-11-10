@@ -47,10 +47,10 @@
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
@@ -603,11 +603,8 @@ class VerifyStrings : StackObj {
 
 // This verification is part of Universe::verify() and needs to be quick.
 void StringTable::verify() {
-  Thread* thr = Thread::current();
   VerifyStrings vs;
-  if (!_local_table->try_scan(thr, vs)) {
-    log_info(stringtable)("verify unavailable at this moment");
-  }
+  _local_table->do_safepoint_scan(vs);
 }
 
 // Verification and comp
@@ -643,9 +640,7 @@ class VerifyCompStrings : StackObj {
 size_t StringTable::verify_and_compare_entries() {
   Thread* thr = Thread::current();
   VerifyCompStrings vcs;
-  if (!_local_table->try_scan(thr, vcs)) {
-    log_info(stringtable)("verify unavailable at this moment");
-  }
+  _local_table->do_scan(thr, vcs);
   return vcs._errors;
 }
 

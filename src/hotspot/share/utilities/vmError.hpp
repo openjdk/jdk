@@ -105,7 +105,7 @@ class VMError : public AllStatic {
 
   // public for use by the internal non-product debugger.
   NOT_PRODUCT(public:)
-  static void print_native_stack(outputStream* st, frame fr, Thread* t,
+  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
                                  char* buf, int buf_size);
   NOT_PRODUCT(private:)
 

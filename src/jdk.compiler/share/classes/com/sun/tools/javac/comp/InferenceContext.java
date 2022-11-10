@@ -337,6 +337,17 @@ public class InferenceContext {
         if (roots.length() == inferencevars.length()) {
             return this;
         }
+        /* if any of the inference vars is a captured variable bail out, this is because
+         * we could end up generating more than necessary captured variables in an outer
+         * inference context and then when we need to propagate back to an inner inference
+         * context that has been minimized it could be that some bounds constraints doesn't
+         * hold like subtyping constraints between bonds etc.
+         */
+        for (Type iv : inferencevars) {
+            if (iv.hasTag(TypeTag.TYPEVAR) && ((TypeVar)iv).isCaptured()) {
+                return this;
+            }
+        }
         ReachabilityVisitor rv = new ReachabilityVisitor();
         rv.scan(roots);
         if (rv.min.size() == inferencevars.length()) {

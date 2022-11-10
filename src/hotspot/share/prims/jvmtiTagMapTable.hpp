@@ -89,7 +89,6 @@ public:
 
   // Cleanup cleared entries and store dead object tags in objects array
   void remove_dead_entries(GrowableArray<jlong>* objects);
-  void rehash();
   void clear();
 };
 

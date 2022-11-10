@@ -89,7 +89,8 @@ class Opaque2Node : public Node {
     C->add_macro_node(this);
   }
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------Opaque3Node------------------------------------
