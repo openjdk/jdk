@@ -730,8 +730,10 @@ public:
   void andptr(Register dst, int32_t src);
   void andptr(Register src1, Register src2) { LP64_ONLY(andq(src1, src2)) NOT_LP64(andl(src1, src2)) ; }
 
+#ifdef _LP64
   using Assembler::andq;
   void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
+#endif
 
   void cmp8(AddressLiteral src1, int imm, Register rscratch = noreg);
 

@@ -1217,6 +1217,7 @@ void MacroAssembler::andptr(Register dst, int32_t imm32) {
   LP64_ONLY(andq(dst, imm32)) NOT_LP64(andl(dst, imm32));
 }
 
+#ifdef _LP64
 void MacroAssembler::andq(Register dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
@@ -1227,6 +1228,7 @@ void MacroAssembler::andq(Register dst, AddressLiteral src, Register rscratch) {
     andq(dst, Address(rscratch, 0));
   }
 }
+#endif
 
 void MacroAssembler::atomic_incl(Address counter_addr) {
   lock();
