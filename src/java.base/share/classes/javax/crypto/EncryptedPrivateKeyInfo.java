@@ -186,21 +186,20 @@ public class EncryptedPrivateKeyInfo {
         }
         AlgorithmId tmp;
         try {
-            // Ideally, algParams should have been initialized and we can
-            // create an AlgorithmId from it. This should usually be true
-            // since we already require its getEncoded() returning the
-            // encoded bytes of it.
             tmp = AlgorithmId.get(algParams);
         } catch (IllegalStateException e) {
+            // This exception is thrown when algParams.getEncoded() fails.
+            // While the spec of this constructor requires that
+            // "getEncoded should return...", in reality people might
+            // create with an uninitialized algParams first and only
+            // initialize it before calling getEncoded(). Thus we support
+            // this case as well.
             tmp = null;
         }
-        if (tmp != null) {
-            this.algid = tmp;
-            this.params = null;
-        } else {
-            this.algid = null;
-            this.params = algParams;
-        }
+
+        // one and only one is non null
+        this.algid = tmp;
+        this.params = this.algid != null ? null : algParams;
 
         if (encryptedData == null) {
             throw new NullPointerException("encryptedData must be non-null");
@@ -270,7 +269,7 @@ public class EncryptedPrivateKeyInfo {
         byte[] encoded;
         try {
             encoded = cipher.doFinal(encryptedData);
-            return pKCS8EncodingToSpec(encoded);
+            return pkcs8EncodingToSpec(encoded);
         } catch (GeneralSecurityException |
                  IOException |
                  IllegalStateException ex) {
@@ -293,7 +292,7 @@ public class EncryptedPrivateKeyInfo {
             }
             c.init(Cipher.DECRYPT_MODE, decryptKey, getAlgParameters());
             encoded = c.doFinal(encryptedData);
-            return pKCS8EncodingToSpec(encoded);
+            return pkcs8EncodingToSpec(encoded);
         } catch (NoSuchAlgorithmException nsae) {
             // rethrow
             throw nsae;
@@ -434,7 +433,7 @@ public class EncryptedPrivateKeyInfo {
     }
 
     @SuppressWarnings("fallthrough")
-    private static PKCS8EncodedKeySpec pKCS8EncodingToSpec(byte[] encodedKey)
+    private static PKCS8EncodedKeySpec pkcs8EncodingToSpec(byte[] encodedKey)
         throws IOException {
         DerInputStream in = new DerInputStream(encodedKey);
         DerValue[] values = in.getSequence(3);
