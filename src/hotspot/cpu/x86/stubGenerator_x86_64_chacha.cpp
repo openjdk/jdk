@@ -81,6 +81,24 @@ static address chacha20_ctradd_avx512() {
   return (address)CC20_COUNTER_ADD_AVX512;
 }
 
+/**
+ * The first 256 bits represents a byte-wise permutation
+ * for an 8-bit left-rotation on 32-bit lanes.
+ * The second 256 bits is a 16-bit rotation on 32-bit lanes.
+ */
+ATTRIBUTE_ALIGNED(64) uint64_t CC20_LROT_CONSTS[] = {
+    0x0605040702010003UL, 0x0E0D0C0F0A09080BUL,
+    0x0605040702010003UL, 0x0E0D0C0F0A09080BUL,
+
+    0x0504070601000302UL, 0x0D0C0F0E09080B0AUL,
+    0x0504070601000302UL, 0x0D0C0F0E09080B0AUL
+};
+static address chacha20_lrot_consts() {
+  return (address)CC20_LROT_CONSTS;
+}
+
+
+
 void StubGenerator::generate_chacha_stubs() {
   // Generate ChaCha20 intrinsics code
   if (UseChaCha20Intrinsics) {
@@ -102,6 +120,7 @@ address StubGenerator::generate_chacha20Block_avx() {
   const Register state        = c_rarg0;
   const Register result       = c_rarg1;
   const Register loopCounter  = r8;
+  const Register rotAddr      = r9;
 
   const XMMRegister aState = xmm0;
   const XMMRegister bState = xmm1;
@@ -117,6 +136,8 @@ address StubGenerator::generate_chacha20Block_avx() {
   const XMMRegister d2Vec = xmm11;
   const XMMRegister scratch = xmm12;
   const XMMRegister d2State = xmm13;
+  const XMMRegister lrot8 = xmm14;
+  const XMMRegister lrot16 = xmm15;
 
   int vector_len;
   int outlen;
@@ -137,6 +158,7 @@ address StubGenerator::generate_chacha20Block_avx() {
   // that starting state to the working register set.
   // Also load the address of the add mask for later use in handling
   // multi-block counter increments.
+  __ lea(rotAddr, ExternalAddress(chacha20_lrot_consts()));
   __ lea(rax, ExternalAddress(chacha20_ctradd_avx()));
   if (vector_len == Assembler::AVX_128bit) {
     __ movdqu(aState, Address(state, 0));       // Bytes 0 - 15 -> a1Vec
@@ -154,6 +176,8 @@ address StubGenerator::generate_chacha20Block_avx() {
     __ movdqu(c2Vec, cState);
     __ vpaddd(d2State, dState, Address(rax, 16), vector_len);
     __ movdqu(d2Vec, d2State);
+    __ movdqu(lrot8, Address(rotAddr, 0));      // Load 8-bit lrot const
+    __ movdqu(lrot16, Address(rotAddr, 32));    // Load 16-bit lrot const
   } else {
     // We will broadcast each 128-bit segment of the state array into
     // the high and low halves of ymm state registers.  Then apply the add
@@ -175,6 +199,8 @@ address StubGenerator::generate_chacha20Block_avx() {
     __ vmovdqu(b2Vec, bState);
     __ vmovdqu(c2Vec, cState);
     __ vmovdqu(d2Vec, d2State);
+    __ vmovdqu(lrot8, Address(rotAddr, 0));      // Load 8-bit lrot const
+    __ vmovdqu(lrot16, Address(rotAddr, 32));    // Load 16-bit lrot const
   }
 
   __ movl(loopCounter, 10);                   // Set 10 2-round iterations
@@ -185,8 +211,10 @@ address StubGenerator::generate_chacha20Block_avx() {
   //  Qround(state, 1, 5, 9,13)
   //  Qround(state, 2, 6,10,14)
   //  Qround(state, 3, 7,11,15)
-  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, vector_len);
-  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, vector_len);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch,
+      lrot8, lrot16, vector_len);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch,
+      lrot8, lrot16, vector_len);
 
   // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors
   // to diagonals.  The a1Vec does not need to change orientation.
@@ -199,8 +227,10 @@ address StubGenerator::generate_chacha20Block_avx() {
   //  Qround(state, 1, 6,11,12)
   //  Qround(state, 2, 7, 8,13)
   //  Qround(state, 3, 4, 9,14)
-  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, vector_len);
-  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, vector_len);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch,
+      lrot8, lrot16, vector_len);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch,
+      lrot8, lrot16, vector_len);
 
   // Before we start the next iteration, we need to perform shuffles
   // on the b/c/d vectors to move them back to columnar organizations
@@ -350,10 +380,14 @@ address StubGenerator::generate_chacha20Block_avx512() {
   //  Qround(state, 1, 5, 9,13)
   //  Qround(state, 2, 6,10,14)
   //  Qround(state, 3, 7,11,15)
-  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, Assembler::AVX_512bit);
-  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, Assembler::AVX_512bit);
-  cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch, Assembler::AVX_512bit);
-  cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
 
   // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors
   // to diagonals.  The a1Vec does not need to change orientation.
@@ -368,10 +402,14 @@ address StubGenerator::generate_chacha20Block_avx512() {
   //  Qround(state, 1, 6,11,12)
   //  Qround(state, 2, 7, 8,13)
   //  Qround(state, 3, 4, 9,14)
-  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch, Assembler::AVX_512bit);
-  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch, Assembler::AVX_512bit);
-  cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch, Assembler::AVX_512bit);
-  cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a1Vec, b1Vec, c1Vec, d1Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a2Vec, b2Vec, c2Vec, d2Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a3Vec, b3Vec, c3Vec, d3Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
+  cc20_quarter_round_avx(a4Vec, b4Vec, c4Vec, d4Vec, scratch,
+      xnoreg, xnoreg, Assembler::AVX_512bit);
 
   // Before we start the next iteration, we need to perform shuffles
   // on the b/c/d vectors to move them back to columnar organizations
@@ -427,18 +465,20 @@ address StubGenerator::generate_chacha20Block_avx512() {
 }
 
 /**
- * Provide a macro for AVX and AVX2 implementations of the ChaCha20 quarter
- * round function.
+ * Provide a function that implements the ChaCha20 quarter round function.
  *
  * @param aVec the SIMD register containing only the "a" values
  * @param bVec the SIMD register containing only the "b" values
  * @param cVec the SIMD register containing only the "c" values
  * @param dVec the SIMD register containing only the "d" values
- * @param scratch SIMD register used for left rotations other than 16-bit.
- * @param vector_len the length of the vector (128 and 256 bit only)
+ * @param scratch SIMD register used for non-byte-aligned left rotations
+ * @param lrot8 shuffle control mask for an 8-byte left rotation (32-bit lane)
+ * @param lrot16 shuffle control mask for a 16-byte left rotation (32-bit lane)
+ * @param vector_len the length of the vector
  */
 void StubGenerator::cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
-    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch, int vector_len) {
+    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch,
+    XMMRegister lrot8, XMMRegister lrot16, int vector_len) {
 
   // a += b; d ^= a; d <<<= 16
   __ vpaddd(aVec, aVec, bVec, vector_len);
@@ -446,8 +486,7 @@ void StubGenerator::cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
   if (vector_len == Assembler::AVX_512bit) {
     __ evprold(dVec, dVec, 16, vector_len);
   } else {
-    __ vpshufhw(dVec, dVec, 0xB1, vector_len);
-    __ vpshuflw(dVec, dVec, 0xB1, vector_len);
+    __ vpshufb(dVec, dVec, lrot16, vector_len);
   }
 
   // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
@@ -467,9 +506,7 @@ void StubGenerator::cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
   if (vector_len == Assembler::AVX_512bit) {
     __ evprold(dVec, dVec, 8, vector_len);
   } else {
-    __ vpsrld(scratch, dVec, 24, vector_len);
-    __ vpslld(dVec, dVec, 8, vector_len);
-    __ vpor(dVec, dVec, scratch, vector_len);
+    __ vpshufb(dVec, dVec, lrot8, vector_len);
   }
 
   // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)

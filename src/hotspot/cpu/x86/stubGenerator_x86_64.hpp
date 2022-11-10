@@ -392,12 +392,12 @@ class StubGenerator: public StubCodeGenerator {
   address generate_chacha20Block_avx();
   address generate_chacha20Block_avx512();
   void cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
-    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch, int vector_len);
+    XMMRegister cVec, XMMRegister dVec, XMMRegister scratch,
+    XMMRegister lrot8, XMMRegister lrot16, int vector_len);
   void cc20_shift_lane_org(XMMRegister bVec, XMMRegister cVec,
     XMMRegister dVec, int vector_len, bool colToDiag);
   void cc20_keystream_collate_avx512(XMMRegister aVec, XMMRegister bVec,
     XMMRegister cVec, XMMRegister dVec, Register baseAddr, int baseOffset);
-
 
   // BASE64 stubs
 
