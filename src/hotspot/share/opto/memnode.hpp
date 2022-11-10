@@ -1296,26 +1296,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------BlackholeNode----------------------------
-// Blackhole all arguments. This node would survive through the compiler
-// the effects on its arguments, and would be finally matched to nothing.
-class BlackholeNode : public MemBarNode {
-public:
-  BlackholeNode(Compile* C, int alias_idx, Node* precedent)
-    : MemBarNode(C, alias_idx, precedent) {}
-  virtual int   Opcode() const;
-  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
-  const RegMask &in_RegMask(uint idx) const {
-    // Fake the incoming arguments mask for blackholes: accept all registers
-    // and all stack slots. This would avoid any redundant register moves
-    // for blackhole inputs.
-    return RegMask::All;
-  }
-#ifndef PRODUCT
-  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
-#endif
-};
-
 // Isolation of object setup after an AllocateNode and before next safepoint.
 // (See comment in memnode.cpp near InitializeNode::InitializeNode for semantics.)
 class InitializeNode: public MemBarNode {

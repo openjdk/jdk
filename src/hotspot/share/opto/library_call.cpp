@@ -7771,15 +7771,12 @@ bool LibraryCallKit::inline_blackhole() {
   assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
   assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
 
-  // Like GraphKit::insert_mem_bar, this code takes and produces control
-  // to pin the Blackhole in the graph. Unlike GraphKit::insert_mem_bar,
-  // this code neither uses nor produces memory, which avoids the unfortunate
-  // side effects like breaking the optimizations across the blackhole.
+  // Blackhole node pinches only the control, not memory. This allows
+  // the blackhole to be pinned in the loop that computes blackholed
+  // values, but have no other side effects, like breaking the optimizations
+  // across the blackhole.
 
-  MemBarNode* mb = MemBarNode::make(C, Op_Blackhole, Compile::AliasIdxTop);
-  mb->init_req(TypeFunc::Control, control());
-  mb->init_req(TypeFunc::Memory,  C->top());
-  Node* bh = _gvn.transform(mb);
+  Node* bh = _gvn.transform(new BlackholeNode(control()));
   set_control(_gvn.transform(new ProjNode(bh, TypeFunc::Control)));
 
   // Bind call arguments as blackhole arguments to keep them alive
