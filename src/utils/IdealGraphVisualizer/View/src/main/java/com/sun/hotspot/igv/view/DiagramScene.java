@@ -846,7 +846,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     @Override
-    public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
         Set<Integer> nodeIds = new HashSet<>(model.getSelectedNodes());
         for (InputNode inputNode : nodes) {
             nodeIds.add(inputNode.getId());
@@ -858,11 +858,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         setFigureSelection(selectedFigures);
-        if (centerSelection) {
+        if (showIfHidden) {
             model.showFigures(model.getSelectedFigures());
-            centerSelectedFigures();
         }
     }
+
+
 
     @Override
     public void clearSelectedNodes() {

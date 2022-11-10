@@ -137,7 +137,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
                 inputNodes.addAll(w.getBlock().getNodes());
             }
             p.clearSelectedNodes();
-            p.addSelectedNodes(inputNodes);
+            p.addSelectedNodes(inputNodes, true);
             p.centerSelectedNodes();
         }
     }

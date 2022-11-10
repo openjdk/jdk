@@ -323,8 +323,8 @@ public final class EditorTopComponent extends TopComponent {
         }
     }
 
-    public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
-        scene.addSelectedNodes(nodes, centerSelection);
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
+        scene.addSelectedNodes(nodes, showIfHidden);
     }
 
     public void centerSelectedNodes() {

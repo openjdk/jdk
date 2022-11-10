@@ -78,7 +78,7 @@ public interface DiagramViewer {
 
     void centerSelectedFigures();
 
-    void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection);
+    void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
 
     void clearSelectedNodes();
 
