@@ -44,8 +44,6 @@ class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  virtual ~MacroAssembler() {}
-
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Alignment
@@ -195,14 +193,14 @@ class MacroAssembler: public Assembler {
                       Address src, Register tmp1, Register tmp2);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
-  void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
-  void cmp_klass(Register oop, Register trial_klass, Register tmp, Label &L);
+  void load_klass(Register dst, Register src, Register tmp = t0);
+  void store_klass(Register dst, Register src, Register tmp = t0);
+  void cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L);
 
-  void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src, Register tmp = xheapbase);
-  void decode_klass_not_null(Register dst, Register src, Register tmp = xheapbase);
+  void encode_klass_not_null(Register r, Register tmp = t0);
+  void decode_klass_not_null(Register r, Register tmp = t0);
+  void encode_klass_not_null(Register dst, Register src, Register tmp);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
   void decode_heap_oop_not_null(Register r);
   void decode_heap_oop_not_null(Register dst, Register src);
   void decode_heap_oop(Register d, Register s);
@@ -1299,8 +1297,5 @@ class SkipIfEqual {
    SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
    ~SkipIfEqual();
 };
-
-// reduction related operations
-enum REDUCTION_OP {ADD, AND, OR, XOR};
 
 #endif // CPU_RISCV_MACROASSEMBLER_RISCV_HPP
