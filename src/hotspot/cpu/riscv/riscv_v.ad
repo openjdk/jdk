@@ -814,7 +814,7 @@ instruct vnegD(vReg dst, vReg src) %{
 // vector and reduction
 
 instruct reduce_andI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AndReductionV src1 src2));
@@ -850,7 +850,7 @@ instruct reduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector or reduction
 
 instruct reduce_orI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (OrReductionV src1 src2));
@@ -886,7 +886,7 @@ instruct reduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector xor reduction
 
 instruct reduce_xorI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (XorReductionV src1 src2));
@@ -922,7 +922,7 @@ instruct reduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector add reduction
 
 instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AddReductionVI src1 src2));
@@ -992,7 +992,7 @@ instruct reduce_addD(fRegD src1_dst, vReg src2, vReg tmp) %{
 // vector integer max reduction
 
 instruct vreduce_maxI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MaxReductionV src1 src2));
@@ -1024,7 +1024,7 @@ instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector integer min reduction
 
 instruct vreduce_minI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE || 
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
             Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV src1 src2));
