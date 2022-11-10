@@ -30,7 +30,6 @@ import javax.crypto.CipherSpi;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
-import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -49,7 +48,6 @@ import java.util.Arrays;
  * <code>NoPadding</code>, <code>ISO10126Padding</code>).
  *
  * @author Valerie Peng
- *
  *
  * @see AESCrypt
  * @see CipherBlockChaining
