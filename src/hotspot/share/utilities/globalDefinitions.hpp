@@ -372,6 +372,9 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
+#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMTARGS(S)      byte_size_in_proper_unit(S), proper_unit_for_byte_size(S)
+
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
   if (s >= G && (s % G) == 0) {
