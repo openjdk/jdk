@@ -29,7 +29,7 @@
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "utilities/growableArray.hpp"
 
-class ShenandoahBarrierSetC2State : public ResourceObj {
+class ShenandoahBarrierSetC2State : public ArenaObj {
 private:
   GrowableArray<ShenandoahIUBarrierNode*>* _iu_barriers;
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;

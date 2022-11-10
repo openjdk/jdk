@@ -44,8 +44,6 @@ class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  virtual ~MacroAssembler() {}
-
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Alignment

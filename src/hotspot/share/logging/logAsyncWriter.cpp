@@ -116,7 +116,7 @@ AsyncLogWriter::AsyncLogWriter()
 
 void AsyncLogWriter::write() {
   ResourceMark rm;
-  AsyncLogMap<ResourceObj::RESOURCE_AREA> snapshot;
+  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
 
   // lock protection. This guarantees I/O jobs don't block logsites.
   {

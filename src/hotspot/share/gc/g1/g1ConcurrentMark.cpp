@@ -391,8 +391,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _concurrent(false),
   _has_aborted(false),
   _restart_for_overflow(false),
-  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
-  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()),
+  _gc_timer_cm(new ConcurrentGCTimer()),
+  _gc_tracer_cm(new G1OldTracer()),
 
   // _verbose_level set below
 

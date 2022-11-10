@@ -2685,7 +2685,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
 ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
-                  ResourceObj::C_HEAP, mtCode,
+                  AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals> _adapter_handler_table;
 

@@ -165,7 +165,6 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
   const ClassFileStream cfs1 = *stream;
   const ClassFileStream* const cfs = &cfs1;
 
-  assert(cfs->allocated_on_stack_or_embedded(), "should be local");
   debug_only(const u1* const old_current = stream->current();)
 
   // Used for batching symbol allocations.
@@ -2137,7 +2136,7 @@ void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
   ResourceMark rm(THREAD);
 
   typedef ResourceHashtable<LocalVariableTableElement, LocalVariableTableElement*,
-                            256, ResourceObj::RESOURCE_AREA, mtInternal,
+                            256, AnyObj::RESOURCE_AREA, mtInternal,
                             &LVT_Hash::hash, &LVT_Hash::equals> LVT_HashTable;
 
   LVT_HashTable* const table = new LVT_HashTable();

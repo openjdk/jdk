@@ -621,7 +621,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
   assert(DumpSharedSpaces, "dump time only");
   if (_subgraph_entry_fields == NULL) {
     _subgraph_entry_fields =
-      new(ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
+      new (mtClass) GrowableArray<int>(10, mtClass);
   }
   _subgraph_entry_fields->append(static_field_offset);
   _subgraph_entry_fields->append(HeapShared::append_root(v));
@@ -635,7 +635,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
 
   if (_subgraph_object_klasses == NULL) {
     _subgraph_object_klasses =
-      new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
+      new (mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
   assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_k), "must be a shared class");
@@ -1587,7 +1587,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 
 void HeapShared::init_subgraph_entry_fields(TRAPS) {
   assert(HeapShared::can_write(), "must be");
-  _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
+  _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields, CHECK);
   init_subgraph_entry_fields(open_archive_subgraph_entry_fields, CHECK);
   if (MetaspaceShared::use_full_module_graph()) {
@@ -1659,7 +1659,7 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
 void HeapShared::init_for_dumping(TRAPS) {
   if (HeapShared::can_write()) {
     setup_test_class(ArchiveHeapTestClass);
-    _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
+    _dumped_interned_strings = new (mtClass)DumpedInternedStrings();
     _native_pointers = new GrowableArrayCHeap<Metadata**, mtClassShared>(2048);
     init_subgraph_entry_fields(CHECK);
   }
