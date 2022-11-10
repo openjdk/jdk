@@ -180,11 +180,23 @@ public:
     write_signed_int(high(value));
   }
 
-  int position(); // method have a side effect: the current byte becomes aligned
+  void flush() {
+    if (_bit_pos > 0) {
+      // flush current data and start a new byte
+      write(_curr_byte << (8 - _bit_pos));
+      _curr_byte = 0;
+      _bit_pos = 0;
+    }
+  }
+  int position() {
+    flush(); // method have a side effect: the current byte becomes aligned
+    return _position;
+  }
   void set_position(int pos) {
-    position();
+    flush();
     _position = pos;
   }
+
 protected:
   int    _size;
   u_char _curr_byte {0};

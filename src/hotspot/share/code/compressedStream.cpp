@@ -165,17 +165,6 @@ jint CompressedSparseDataReadStream::read_int() {
   return (jint)result;
 }
 
-int CompressedSparseDataWriteStream::position() {
-  if (_bit_pos == 0) {
-    return _position;
-  }
-  // flush current data and start a new byte
-  write(_curr_byte << (8 - _bit_pos));
-  _curr_byte = 0;
-  _bit_pos = 0;
-  return _position;
-}
-
 void CompressedSparseDataWriteStream::write_zero() {
   _curr_byte <<= 1; // zero bit represents a zero word
   if (++_bit_pos == 8) {
@@ -209,6 +198,7 @@ void CompressedSparseDataWriteStream::write_int(juint val) {
 
 void CompressedSparseDataWriteStream::grow() {
   int nsize = _size * 2;
+  assert(nsize > 0, "debug data size must not exceed MAX_INT");
   assert(nsize > _position, "sanity");
   u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, nsize);
   memcpy(_new_buffer, _buffer, _position);
