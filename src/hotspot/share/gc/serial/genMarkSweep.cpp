@@ -83,6 +83,9 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   // Increment the invocation count
   _total_invocations++;
 
+  // Need new claim bits before marking starts.
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   // Capture used regions for each generation that will be
   // subject to collection, so that card table adjustments can
   // be made intelligently (see clear / invalidate further below).
@@ -180,8 +183,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
 
   {
     StrongRootsScope srs(0);
@@ -261,8 +263,7 @@ void GenMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", gc_timer());
 
-  // Need new claim bits for the pointer adjustment tracing.
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
   {
     StrongRootsScope srs(0);
