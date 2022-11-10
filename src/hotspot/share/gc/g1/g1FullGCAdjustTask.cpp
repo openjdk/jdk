@@ -85,7 +85,7 @@ G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
     _weak_proc_task(collector->workers()),
     _hrclaimer(collector->workers()),
     _adjust(collector) {
-  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong_stw_fullgc_adjust);
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 }
 
 void G1FullGCAdjustTask::work(uint worker_id) {
@@ -102,7 +102,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
     _weak_proc_task.work(worker_id, &always_alive, &_adjust);
   }
 
-  CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_strong_stw_fullgc_adjust);
+  CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_stw_fullgc_adjust);
   CodeBlobToOopClosure adjust_code(&_adjust, CodeBlobToOopClosure::FixRelocations);
   _root_processor.process_all_roots(&_adjust, &adjust_cld, &adjust_code);
 
