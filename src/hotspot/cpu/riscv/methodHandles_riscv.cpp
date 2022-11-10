@@ -71,23 +71,23 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  const char* error_message) {
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
-  Register temp = t1;
+  Register temp1 = t1;
   Register temp2 = t0; // used by MacroAssembler::cmpptr
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
   __ beqz(obj, L_bad);
-  __ push_reg(RegSet::of(temp, temp2), sp);
-  __ load_klass(temp, obj);
-  __ cmpptr(temp, ExternalAddress((address) klass_addr), L_ok);
+  __ push_reg(RegSet::of(temp1, temp2), sp);
+  __ load_klass(temp1, obj, temp2);
+  __ cmpptr(temp1, ExternalAddress((address) klass_addr), L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
-  __ ld(temp, Address(temp, super_check_offset));
-  __ cmpptr(temp, ExternalAddress((address) klass_addr), L_ok);
-  __ pop_reg(RegSet::of(temp, temp2), sp);
+  __ ld(temp1, Address(temp1, super_check_offset));
+  __ cmpptr(temp1, ExternalAddress((address) klass_addr), L_ok);
+  __ pop_reg(RegSet::of(temp1, temp2), sp);
   __ bind(L_bad);
   __ stop(error_message);
   __ BIND(L_ok);
-  __ pop_reg(RegSet::of(temp, temp2), sp);
+  __ pop_reg(RegSet::of(temp1, temp2), sp);
   BLOCK_COMMENT("} verify_klass");
 }
 
