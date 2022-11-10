@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.security.Key;
 import java.security.InvalidKeyException;
@@ -244,13 +243,15 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
+    // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
+    // They correspond to this.a and this.r respectively 
     @ForceInline
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
         while (length >= BLOCK_LENGTH) {
             n.setValue(input, offset, BLOCK_LENGTH, (byte)0x01);
-            a.setSum(n);                    // A += (temp | 0x01)
-            a.setProduct(r);                // A =  (A * R) % p
+            a.setSum(n);                    // a += (n | 0x01)
+            a.setProduct(r);                // a = (a * r) % p
             offset += BLOCK_LENGTH;
             length -= BLOCK_LENGTH;
         }
