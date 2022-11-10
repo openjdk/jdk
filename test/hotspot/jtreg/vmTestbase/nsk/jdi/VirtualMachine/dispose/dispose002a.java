@@ -133,6 +133,7 @@ public class dispose002a {
                                  }
                                  break;
                              } else if (instruction.equals("check_alive")) {
+                                 log1("checking if thread2 completed");
                                  if (!JDIUtils.waitForCompletion(test_thread)) {
                                      log1("thread2 is alive after vm.dispose().");
                                      pipe.println("alive");
