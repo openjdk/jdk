@@ -91,7 +91,10 @@ public class InvalidityDateExtension extends Extension {
      * @param date the invalidity date
      */
     public InvalidityDateExtension(boolean critical, Date date)
-    throws IOException {
+            throws IOException {
+        if (date == null) {
+            throw new IllegalArgumentException("date cannot be null");
+        }
         this.extensionId = PKIXExtensions.InvalidityDate_Id;
         this.critical = critical;
         this.date = date;

@@ -69,11 +69,8 @@ public class IssuerAlternativeNameExtension extends Extension {
      * @exception IOException on error.
      */
     public IssuerAlternativeNameExtension(GeneralNames names)
-    throws IOException {
-        this.names = names;
-        this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
-        this.critical = false;
-        encodeThis();
+            throws IOException {
+        this(false, names);
     }
 
     /**
@@ -85,20 +82,14 @@ public class IssuerAlternativeNameExtension extends Extension {
      * @exception IOException on error.
      */
     public IssuerAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+            throws IOException {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names should not be empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default IssuerAlternativeNameExtension.
-     */
-    public IssuerAlternativeNameExtension() {
-        extensionId = PKIXExtensions.IssuerAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**

@@ -110,7 +110,11 @@ public class AuthorityKeyIdentifierExtension extends Extension {
      */
     public AuthorityKeyIdentifierExtension(KeyIdentifier kid, GeneralNames names,
                                            SerialNumber sn)
-    throws IOException {
+            throws IOException {
+        if (kid == null && names == null && serialNum == null) {
+            throw new IllegalArgumentException(
+                    "AuthorityKeyIdentifierExtension cannot be empty");
+        }
         this.id = kid;
         this.names = names;
         this.serialNum = sn;

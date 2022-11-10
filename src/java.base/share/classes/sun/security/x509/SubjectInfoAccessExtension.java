@@ -83,6 +83,10 @@ public class SubjectInfoAccessExtension extends Extension {
      */
     public SubjectInfoAccessExtension(
             List<AccessDescription> accessDescriptions) throws IOException {
+        if (accessDescriptions == null || accessDescriptions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "AccessDescription cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
         this.critical = false;
         this.accessDescriptions = accessDescriptions;

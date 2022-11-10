@@ -84,6 +84,9 @@ public class CertificateIssuerExtension extends Extension {
      * @throws IOException on error
      */
     public CertificateIssuerExtension(GeneralNames issuer) throws IOException {
+        if (issuer == null || issuer.isEmpty()) {
+            throw new IllegalArgumentException("issuer cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.CertificateIssuer_Id;
         this.critical = true;
         this.names = issuer;

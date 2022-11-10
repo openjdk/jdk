@@ -119,6 +119,14 @@ public class IssuingDistributionPointExtension extends Extension {
         boolean hasOnlyAttributeCerts, boolean isIndirectCRL)
             throws IOException {
 
+        if (distributionPoint == null &&
+                revocationReasons == null &&
+                !hasOnlyUserCerts &&
+                !hasOnlyCACerts &&
+                !hasOnlyAttributeCerts &&
+                !isIndirectCRL) {
+            throw new IllegalArgumentException("elements cannot be empty");
+        }
         if ((hasOnlyUserCerts && (hasOnlyCACerts || hasOnlyAttributeCerts)) ||
             (hasOnlyCACerts && (hasOnlyUserCerts || hasOnlyAttributeCerts)) ||
             (hasOnlyAttributeCerts && (hasOnlyUserCerts || hasOnlyCACerts))) {

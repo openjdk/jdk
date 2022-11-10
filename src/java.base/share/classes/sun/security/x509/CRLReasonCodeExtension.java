@@ -72,7 +72,10 @@ public class CRLReasonCodeExtension extends Extension {
      * @param reason the enumerated value for the reason code.
      */
     public CRLReasonCodeExtension(boolean critical, int reason)
-    throws IOException {
+            throws IOException {
+        if (reason == 0) {
+            throw new IllegalArgumentException("reason code cannot be 0");
+        }
         this.extensionId = PKIXExtensions.ReasonCode_Id;
         this.critical = critical;
         this.reasonCode = reason;

@@ -109,7 +109,11 @@ public class PolicyConstraintsExtension extends Extension {
      * @param inhibit inhibit policy mapping (-1 for optional).
      */
     public PolicyConstraintsExtension(Boolean critical, int require, int inhibit)
-    throws IOException {
+            throws IOException {
+        if (require == -1 && inhibit == -1) {
+            throw new IllegalArgumentException(
+                    "require and inhibit cannot be all -1");
+        }
         this.require = require;
         this.inhibit = inhibit;
         this.extensionId = PKIXExtensions.PolicyConstraints_Id;

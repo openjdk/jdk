@@ -101,7 +101,11 @@ public class PrivateKeyUsageExtension extends Extension {
      *         should not be used.
      */
     public PrivateKeyUsageExtension(Date notBefore, Date notAfter)
-    throws IOException {
+            throws IOException {
+        if (notBefore == null && notAfter == null) {
+            throw new IllegalArgumentException(
+                    "notBefore and notAfter cannot be all null");
+        }
         this.notBefore = notBefore;
         this.notAfter = notAfter;
 

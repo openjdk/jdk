@@ -121,7 +121,11 @@ public class ExtendedKeyUsageExtension extends Extension {
      * @param keyUsages the Vector of KeyUsages (ObjectIdentifiers)
      */
     public ExtendedKeyUsageExtension(Boolean critical, Vector<ObjectIdentifier> keyUsages)
-    throws IOException {
+            throws IOException {
+        if (keyUsages == null || keyUsages.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "key usages cannot be null or empty");
+        }
         this.keyUsages = keyUsages;
         this.extensionId = PKIXExtensions.ExtendedKeyUsage_Id;
         this.critical = critical.booleanValue();

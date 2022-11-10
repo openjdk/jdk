@@ -79,6 +79,9 @@ public class AuthorityInfoAccessExtension extends Extension {
      */
     public AuthorityInfoAccessExtension(
             List<AccessDescription> accessDescriptions) throws IOException {
+        if (accessDescriptions == null || accessDescriptions.isEmpty()) {
+            throw new IllegalArgumentException("accessDescriptions is null or empty");
+        }
         this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
         this.critical = false;
         this.accessDescriptions = accessDescriptions;

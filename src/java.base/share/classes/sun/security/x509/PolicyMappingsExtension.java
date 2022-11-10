@@ -79,19 +79,13 @@ public class PolicyMappingsExtension extends Extension {
      */
     public PolicyMappingsExtension(List<CertificatePolicyMap> maps)
             throws IOException {
+        if (maps == null || maps.isEmpty()) {
+            throw new IllegalArgumentException("maps cannot be null or empty");
+        }
         this.maps = maps;
         this.extensionId = PKIXExtensions.PolicyMappings_Id;
         this.critical = true;
         encodeThis();
-    }
-
-    /**
-     * Create a default PolicyMappingsExtension.
-     */
-    public PolicyMappingsExtension() {
-        extensionId = PKIXExtensions.PolicyMappings_Id;
-        critical = true;
-        maps = Collections.emptyList();
     }
 
     /**

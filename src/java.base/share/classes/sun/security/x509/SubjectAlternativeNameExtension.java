@@ -88,21 +88,14 @@ public class SubjectAlternativeNameExtension extends Extension {
      * @exception IOException on error.
      */
     public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+            throws IOException {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names cannot be null or empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.SubjectAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default SubjectAlternativeNameExtension. The extension
-     * is marked non-critical.
-     */
-    public SubjectAlternativeNameExtension() {
-        extensionId = PKIXExtensions.SubjectAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**

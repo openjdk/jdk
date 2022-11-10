@@ -91,6 +91,9 @@ public class CRLNumberExtension extends Extension {
         boolean isCritical, BigInteger crlNum, String extensionName,
         String extensionLabel) throws IOException {
 
+        if (crlNumber == null) {
+            throw new IllegalArgumentException("CRL number cannot be null");
+        }
         this.extensionId = extensionId;
         this.critical = isCritical;
         this.crlNumber = crlNum;
