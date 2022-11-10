@@ -20,6 +20,9 @@ public class ForEachPatterns {
         List<Point>   inWithNullComponent = List.of(new Point(1, null), new Point(2, 3));
         List<Point>   inWithNull          = new ArrayList<>();
         Point[]       inArray             = in.toArray(Point[]::new);
+        List<WithPrimitives>   inWithPrimitives
+                                          = List.of(new WithPrimitives(1, 2),
+                                                    new WithPrimitives(2, 3));
 
         inWithNull.add(new Point(2, 3));
         inWithNull.add(null);
@@ -40,6 +43,7 @@ public class ForEachPatterns {
         assertEquals(0, breakFromEnhancedFor(in));
         assertEquals(254, primitiveWidening(inBytes));
         assertEquals(8, sealedRecordPassBaseType(in_iface));
+        assertEquals(8, withPrimitives(inWithPrimitives));
     }
 
     static int iteratorEnhancedFor(List<Point> points) {
@@ -117,6 +121,14 @@ public class ForEachPatterns {
         return result;
     }
 
+    static int withPrimitives(List<WithPrimitives> points) {
+        int result = 0;
+        for (WithPrimitives(int a, double b): points) {
+            result += a + (int) b;
+        }
+        return result;
+    }
+
     // Simpler pos tests with local variable declarations
     // Should pass now and in the future if local variable
     // declaration is subsumed by patterns (not just record patterns)
@@ -147,7 +159,6 @@ public class ForEachPatterns {
     static void for_parsing(int i) {
         List<Point> points = null;
         List<GPoint<Integer>> generic_points = null;
-
         for (Point(Integer a, Integer b) : points) { }
         for (ForEachPatterns.Point(Integer a, Integer b) : points) { }
         for (GPoint<Integer>(Integer a, Integer b) : generic_points) { }
@@ -205,6 +216,7 @@ public class ForEachPatterns {
             throw new TestPatternFailed(EXCEPTION_MESSAGE);
         }
     }
+    record WithPrimitives(int x, double y) { }
     static final String EXCEPTION_MESSAGE = "exception-message";
     public static class TestPatternFailed extends AssertionError {
         public TestPatternFailed(String message) {

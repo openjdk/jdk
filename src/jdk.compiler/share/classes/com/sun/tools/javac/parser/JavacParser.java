@@ -2995,7 +2995,8 @@ public class JavacParser implements Parser {
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR: case VOID:
                     if (peekToken(lookahead, IDENTIFIER)) {
-                        return ForInitResult.LocalVarDecl;
+                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
+                                                         : ForInitResult.LocalVarDecl;
                     }
                     break;
                 case LPAREN:
