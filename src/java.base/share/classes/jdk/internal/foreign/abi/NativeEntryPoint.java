@@ -60,7 +60,7 @@ public class NativeEntryPoint {
                                         boolean needsReturnBuffer,
                                         int capturedStateMask) {
         if (returnMoves.length > 1 != needsReturnBuffer) {
-            throw new IllegalArgumentException("Multiple register return, but needsReturnBuffer was false");
+            throw new AssertionError("Multiple register return, but needsReturnBuffer was false");
         }
         checkType(methodType, needsReturnBuffer, capturedStateMask);
 
@@ -75,12 +75,12 @@ public class NativeEntryPoint {
 
     private static void checkType(MethodType methodType, boolean needsReturnBuffer, int savedValueMask) {
         if (methodType.parameterType(0) != long.class) {
-            throw new IllegalArgumentException("Address expected as first param: " + methodType);
+            throw new AssertionError("Address expected as first param: " + methodType);
         }
         int checkIdx = 1;
         if ((needsReturnBuffer && methodType.parameterType(checkIdx++) != long.class)
             || (savedValueMask != 0 && methodType.parameterType(checkIdx) != long.class)) {
-            throw new IllegalArgumentException("return buffer and/or preserved value address expected: " + methodType);
+            throw new AssertionError("return buffer and/or preserved value address expected: " + methodType);
         }
     }
 
