@@ -1917,10 +1917,6 @@ void MacroAssembler::ror_imm(Register dst, Register src, uint32_t shift, Registe
 void MacroAssembler::andi(Register Rd, Register Rn, int64_t imm, Register tmp) {
   if (is_imm_in_range(imm, 12, 0)) {
     and_imm12(Rd, Rn, imm);
-  } else if (is_power_of_2(~(imm - 1))) {
-    int shamt = exact_log2(~(imm - 1));
-    srli(Rd, Rn, shamt);
-    slli(Rd, Rd, shamt);
   } else {
     assert_different_registers(Rn, tmp);
     mv(tmp, imm);
