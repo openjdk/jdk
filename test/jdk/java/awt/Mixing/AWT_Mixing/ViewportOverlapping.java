@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
@@ -38,6 +37,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import test.java.awt.regtesthelpers.Util;
+
+import static java.awt.event.InputEvent.BUTTON1_DOWN_MASK;
 
 /**
  * AWT/Swing overlapping test for viewport
@@ -50,13 +51,12 @@ import test.java.awt.regtesthelpers.Util;
  * @key headful
  * @bug 6778882
  * @summary Viewport overlapping test for each AWT component
- * @author sergey.grinev@oracle.com: area=awt.mixing
  * @library /java/awt/patchlib ../../regtesthelpers
  * @modules java.desktop/sun.awt
  *          java.desktop/java.awt.peer
  * @build java.desktop/java.awt.Helper
  * @build Util
- * @run main ViewportOverlapping
+ * @run main/othervm -Dsun.java2d.uiScale=1 ViewportOverlapping
  */
 public class ViewportOverlapping extends OverlappingTestBase {
 
@@ -99,27 +99,25 @@ public class ViewportOverlapping extends OverlappingTestBase {
     @Override
     protected boolean performTest() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    // prepare test data
-                    frameClicked = 0;
+            SwingUtilities.invokeAndWait(() -> {
+                // prepare test data
+                frameClicked = 0;
 
-                    b.requestFocus();
+                b.requestFocus();
 
-                    scrollPane.getHorizontalScrollBar().setUnitIncrement(40);
-                    scrollPane.getVerticalScrollBar().setUnitIncrement(40);
+                scrollPane.getHorizontalScrollBar().setUnitIncrement(40);
+                scrollPane.getVerticalScrollBar().setUnitIncrement(40);
 
-                    hLoc = scrollPane.getHorizontalScrollBar().getLocationOnScreen();
-                    hLoc.translate(scrollPane.getHorizontalScrollBar().getWidth() - 3, 3);
-                    vLoc = scrollPane.getVerticalScrollBar().getLocationOnScreen();
-                    vLoc.translate(3, scrollPane.getVerticalScrollBar().getHeight() - 3);
+                hLoc = scrollPane.getHorizontalScrollBar().getLocationOnScreen();
+                hLoc.translate(scrollPane.getHorizontalScrollBar().getWidth() - 3, 3);
+                vLoc = scrollPane.getVerticalScrollBar().getLocationOnScreen();
+                vLoc.translate(3, scrollPane.getVerticalScrollBar().getHeight() - 3);
 
-                    testLoc = p.getLocationOnScreen();
-                    testLoc.translate(-3, -3);
+                testLoc = p.getLocationOnScreen();
+                testLoc.translate(-3, -3);
 
-                    resizeLoc = f.getLocationOnScreen();
-                    resizeLoc.translate(f.getWidth() - 1, f.getHeight() - 1);
-                }
+                resizeLoc = f.getLocationOnScreen();
+                resizeLoc.translate(f.getWidth() - 1, f.getHeight() - 1);
             });
         } catch (Exception e) {
             e.printStackTrace();
@@ -130,20 +128,20 @@ public class ViewportOverlapping extends OverlappingTestBase {
         robot.setAutoDelay(ROBOT_DELAY);
 
         robot.mouseMove(hLoc.x, hLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(BUTTON1_DOWN_MASK);
+        robot.mouseRelease(BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         robot.mouseMove(vLoc.x, vLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(BUTTON1_DOWN_MASK);
+        robot.mouseRelease(BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         clickAndBlink(robot, testLoc, false);
         robot.mouseMove(resizeLoc.x, resizeLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(BUTTON1_DOWN_MASK);
         robot.mouseMove(resizeLoc.x + 5, resizeLoc.y + 5);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         clickAndBlink(robot, testLoc, false);
@@ -151,7 +149,7 @@ public class ViewportOverlapping extends OverlappingTestBase {
     }
 
     // this strange plumbing stuff is required due to "Standard Test Machinery" in base class
-    public static void main(String args[]) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         instance = new ViewportOverlapping();
         OverlappingTestBase.doMain(args);
     }
