@@ -532,7 +532,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / 1024);
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / K);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -650,7 +650,7 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
   if (stacksize == 0) {
     ss.print("stacksize: default, ");
   } else {
-    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
+    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / K);
   }
   ss.print("flags: ");
   #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
@@ -1236,8 +1236,6 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
-
-const char* os::dll_file_extension() { return ".dll"; }
 
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
@@ -2107,30 +2105,41 @@ int os::get_last_error() {
 // a signal handler for SIGBREAK is installed then that signal handler
 // takes priority over the console control handler for CTRL_CLOSE_EVENT.
 // See bug 4416763.
-static void (*sigbreakHandler)(int) = NULL;
+static signal_handler_t sigbreakHandler = NULL;
 
-static void UserHandler(int sig, void *siginfo, void *context) {
+static void UserHandler(int sig) {
   os::signal_notify(sig);
   // We need to reinstate the signal handler each time...
-  os::signal(sig, (void*)UserHandler);
+  os::win32::install_signal_handler(sig, UserHandler);
 }
 
-void* os::user_handler() {
-  return (void*) UserHandler;
+void* os::win32::user_handler() {
+  return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-void* os::signal(int signal_number, void* handler) {
-  if ((signal_number == SIGBREAK) && (!ReduceSignalUsage)) {
-    void (*oldHandler)(int) = sigbreakHandler;
-    sigbreakHandler = (void (*)(int)) handler;
-    return (void*) oldHandler;
+// Used mainly by JVM_RegisterSignal to install a signal handler,
+// but also to install the VM's BREAK_HANDLER. However, due to
+// the way Windows signals work we also have to reinstall each
+// handler at the end of its own execution.
+// The allowed set of signals is restricted by the caller.
+// The incoming handler is one of:
+// - psuedo-handler: SIG_IGN or SIG_DFL
+// - VM defined signal handling function of type signal_handler_t
+// - unknown signal handling function which we expect* is also
+//   of type signal_handler_t
+//
+// * win32 defines a two-arg signal handling function for use solely with
+//   SIGFPE. As we don't allow that to be set via the Java API we know we
+//   only have the single arg version.
+// Returns the currently installed handler.
+void* os::win32::install_signal_handler(int sig, signal_handler_t handler) {
+  if ((sig == SIGBREAK) && (!ReduceSignalUsage)) {
+    void* oldHandler = CAST_FROM_FN_PTR(void*, sigbreakHandler);
+    sigbreakHandler = handler;
+    return oldHandler;
   } else {
-    return (void*)::signal(signal_number, (void (*)(int))handler);
+    return ::signal(sig, handler);
   }
-}
-
-void os::signal_raise(int signal_number) {
-  raise(signal_number);
 }
 
 // The Win32 C runtime library maps all console control events other than ^C
@@ -2147,7 +2156,7 @@ static BOOL WINAPI consoleHandler(DWORD event) {
       os::die();
     }
 
-    os::signal_raise(SIGINT);
+    ::raise(SIGINT);
     return TRUE;
     break;
   case CTRL_BREAK_EVENT:
@@ -2173,7 +2182,7 @@ static BOOL WINAPI consoleHandler(DWORD event) {
   }
   case CTRL_CLOSE_EVENT:
   case CTRL_SHUTDOWN_EVENT:
-    os::signal_raise(SIGTERM);
+    ::raise(SIGTERM);
     return TRUE;
     break;
   default:
@@ -2226,7 +2235,7 @@ static void jdk_misc_signal_init() {
   // before the Signal Dispatcher thread is started is queued up via the
   // pending_signals[SIGBREAK] counter, and will be processed by the
   // Signal Dispatcher thread in a delayed fashion.
-  os::signal(SIGBREAK, os::user_handler());
+  os::win32::install_signal_handler(SIGBREAK, UserHandler);
 }
 
 void os::signal_notify(int sig) {

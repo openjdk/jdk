@@ -727,6 +727,10 @@ reg_class r30_reg(
     R30, R30_H
 );
 
+reg_class r31_reg(
+    R31, R31_H
+);
+
 // Class for zero registesr
 reg_class zr_reg(
     R0, R0_H
@@ -1734,7 +1738,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   C2_MacroAssembler _masm(&cbuf);
 
   Label skip;
-  __ cmp_klass(j_rarg0, t1, t0, skip);
+  __ cmp_klass(j_rarg0, t1, t0, t2 /* call-clobbered t2 as a tmp */, skip);
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   __ bind(skip);
 
@@ -2302,6 +2306,8 @@ encode %{
         }
       }
     }
+
+    __ post_call_nop();
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
@@ -2313,6 +2319,8 @@ encode %{
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
+
+    __ post_call_nop();
   %}
 
   enc_class riscv_enc_call_epilog() %{
@@ -2339,6 +2347,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      __ post_call_nop();
     } else {
       Label retaddr;
       __ la(t1, retaddr);
@@ -2348,6 +2357,7 @@ encode %{
       __ sd(t1, Address(sp, wordSize));
       __ jalr(t0);
       __ bind(retaddr);
+      __ post_call_nop();
       __ addi(sp, sp, 2 * wordSize);
     }
   %}
@@ -2362,6 +2372,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
+    Label no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, t0);
 
@@ -2439,11 +2450,15 @@ encode %{
 
     // Recursive lock case
     __ mv(flag, zr);
-    __ ld(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
-    __ add(tmp, tmp, 1u);
-    __ sd(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
+
+    __ bnez(flag, no_count);
+
+    __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
+
+    __ bind(no_count);
   %}
 
   // using cr flag to indicate the fast_unlock result: 0 for success; others failed.
@@ -2456,6 +2471,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
+    Label no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, flag);
 
@@ -2470,7 +2486,7 @@ encode %{
 
     // Handle existing monitor.
     __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ andi(t0, disp_hdr, markWord::monitor_value);
+    __ andi(t0, tmp, markWord::monitor_value);
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
@@ -2514,6 +2530,12 @@ encode %{
     __ sd(zr, Address(tmp)); // set unowned
 
     __ bind(cont);
+
+    __ bnez(flag, no_count);
+
+    __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
+
+    __ bind(no_count);
   %}
 
   // arithmetic encodings
@@ -3340,6 +3362,28 @@ operand iRegP_R16()
 operand iRegP_R28()
 %{
   constraint(ALLOC_IN_RC(r28_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Pointer 64 bit Register R30 only
+operand iRegP_R30()
+%{
+  constraint(ALLOC_IN_RC(r30_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Pointer 64 bit Register R31 only
+operand iRegP_R31()
+%{
+  constraint(ALLOC_IN_RC(r31_reg));
   match(RegP);
   match(iRegPNoSp);
   op_cost(0);
@@ -10228,11 +10272,13 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy)
+instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
+                            iRegP_R31 tmp2, Universe dummy)
 %{
-  predicate(!UseRVV);
+  // temp registers must match the one used in StubGenerator::generate_zero_blocks()
+  predicate(UseBlockZeroing || !UseRVV);
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}

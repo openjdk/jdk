@@ -33,14 +33,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="alt">جنوبی الٹائی</language>
 			<language type="am">امہاری</language>
 			<language type="an">اراگونیز</language>
+			<language type="ann">اوبولو</language>
 			<language type="anp">انگیکا</language>
 			<language type="ar">عربی</language>
 			<language type="ar_001">ماڈرن اسٹینڈرڈ عربی</language>
 			<language type="arn">ماپوچے</language>
 			<language type="arp">اراپاہو</language>
+			<language type="ars">نجدی عربی</language>
 			<language type="as">آسامی</language>
 			<language type="asa">آسو</language>
 			<language type="ast">اسٹوریائی</language>
+			<language type="atj">اٹیکامیکو</language>
 			<language type="av">اواری</language>
 			<language type="awa">اوادھی</language>
 			<language type="ay">ایمارا</language>
@@ -68,6 +71,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">بگینیز</language>
 			<language type="byn">بلین</language>
 			<language type="ca">کیٹالان</language>
+			<language type="cay">کایوگا</language>
 			<language type="ccp">چکمہ</language>
 			<language type="ce">چیچن</language>
 			<language type="ceb">سیبوآنو</language>
@@ -76,12 +80,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">چوکیز</language>
 			<language type="chm">ماری</language>
 			<language type="cho">چاکٹاؤ</language>
+			<language type="chp">چپوائن</language>
 			<language type="chr">چیروکی</language>
 			<language type="chy">چینّے</language>
 			<language type="ckb">سینٹرل کردش</language>
+			<language type="clc">چلکوٹن</language>
 			<language type="co">کوراسیکن</language>
+			<language type="crg">میچیف</language>
+			<language type="crj">جنوب مشرقی کری</language>
+			<language type="crk">پلینز کری</language>
+			<language type="crl">شمال مشرقی کری</language>
+			<language type="crm">موس کری</language>
+			<language type="crr">کیرولینا الگونکوئن</language>
 			<language type="crs">سیسلوا کریولے فرانسیسی</language>
 			<language type="cs">چیک</language>
+			<language type="csw">سوامپی کری</language>
 			<language type="cu">چرچ سلاوک</language>
 			<language type="cv">چوواش</language>
 			<language type="cy">ویلش</language>
@@ -110,8 +123,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">آسٹریلیائی انگریزی</language>
 			<language type="en_CA">کینیڈین انگریزی</language>
 			<language type="en_GB">برطانوی انگریزی</language>
+			<language type="en_GB" alt="short">انگریزی (یو کے)</language>
 			<language type="en_US">امریکی انگریزی</language>
-			<language type="en_US" alt="short">امریکی انگریزی</language>
 			<language type="eo">ایسپرانٹو</language>
 			<language type="es">ہسپانوی</language>
 			<language type="es_419">لاطینی امریکی ہسپانوی</language>
@@ -131,7 +144,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fr">فرانسیسی</language>
 			<language type="fr_CA">کینیڈین فرانسیسی</language>
 			<language type="fr_CH">سوئس فرینچ</language>
-			<language type="frc" draft="contributed">کاجن فرانسیسی</language>
+			<language type="frc">کاجن فرانسیسی</language>
+			<language type="frr">شمالی فریزئین</language>
 			<language type="fur">فریولیائی</language>
 			<language type="fy">مغربی فریسیئن</language>
 			<language type="ga">آئرش</language>
@@ -150,9 +164,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">مینکس</language>
 			<language type="gwi">گوئچ ان</language>
 			<language type="ha">ہؤسا</language>
+			<language type="hai">ہائیڈا</language>
 			<language type="haw">ہوائی</language>
+			<language type="hax">جنوبی ہائیڈا</language>
 			<language type="he">عبرانی</language>
 			<language type="hi">ہندی</language>
+			<language type="hi_Latn" alt="variant">ہنگلش</language>
 			<language type="hil">ہالیگینون</language>
 			<language type="hmn">ہمانگ</language>
 			<language type="hr">کراتی</language>
@@ -160,6 +177,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">ہیتی</language>
 			<language type="hu">ہنگیرین</language>
 			<language type="hup">ہیوپا</language>
+			<language type="hur">ہالکومیلم</language>
 			<language type="hy">آرمینیائی</language>
 			<language type="hz">ہریرو</language>
 			<language type="ia">بین لسانیات</language>
@@ -168,6 +186,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="id">انڈونیثیائی</language>
 			<language type="ig">اِگبو</language>
 			<language type="ii">سچوان ای</language>
+			<language type="ikt">مغربی کینیڈین اینُکٹیٹٹ</language>
 			<language type="ilo">ایلوکو</language>
 			<language type="inh">انگوش</language>
 			<language type="io">ایڈو</language>
@@ -190,6 +209,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">کابويرديانو</language>
 			<language type="kfo">کورو</language>
 			<language type="kg">کانگو</language>
+			<language type="kgp">کینگینگ</language>
 			<language type="kha">کھاسی</language>
 			<language type="khq">کويرا شيني</language>
 			<language type="ki">کیکویو</language>
@@ -217,6 +237,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">کومیک</language>
 			<language type="kv">کومی</language>
 			<language type="kw">کورنش</language>
+			<language type="kwk">کیواکوالا</language>
 			<language type="ky">کرغیزی</language>
 			<language type="la">لاطینی</language>
 			<language type="lad">لیڈینو</language>
@@ -225,12 +246,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">لیزگیان</language>
 			<language type="lg">گینڈا</language>
 			<language type="li">لیمبرگش</language>
+			<language type="lil">للوئیٹ</language>
 			<language type="lkt">لاکوٹا</language>
 			<language type="ln">لِنگَلا</language>
 			<language type="lo">لاؤ</language>
-			<language type="lou" draft="contributed">لوزیانا کریول</language>
+			<language type="lou">لوزیانا کریول</language>
 			<language type="loz">لوزی</language>
 			<language type="lrc">شمالی لری</language>
+			<language type="lsm">سامیہ</language>
 			<language type="lt">لیتھوینین</language>
 			<language type="lu">لبا-کاتانجا</language>
 			<language type="lua">لیوبا لولوآ</language>
@@ -259,6 +282,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">مالایالم</language>
 			<language type="mn">منگولین</language>
 			<language type="mni">منی پوری</language>
+			<language type="moe">انو ایمن</language>
 			<language type="moh">موہاک</language>
 			<language type="mos">موسی</language>
 			<language type="mr">مراٹهی</language>
@@ -298,6 +322,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ny">نیانجا</language>
 			<language type="nyn">نینکول</language>
 			<language type="oc">آکسیٹان</language>
+			<language type="ojb">شمال مغربی اوجبوا</language>
+			<language type="ojc">سینٹرل اوجبوا</language>
+			<language type="ojs">اوجی کری</language>
+			<language type="ojw">مغربی اوجبوا</language>
+			<language type="oka">اوکناگن</language>
 			<language type="om">اورومو</language>
 			<language type="or">اڑیہ</language>
 			<language type="os">اوسیٹک</language>
@@ -307,7 +336,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pap">پاپیامینٹو</language>
 			<language type="pau">پالاون</language>
 			<language type="pcm">نائجیریائی پڈگن</language>
+			<language type="pis">پجن</language>
 			<language type="pl">پولش</language>
+			<language type="pqm">مالیسیٹ پاساماکوڈی</language>
 			<language type="prg">پارسی</language>
 			<language type="ps">پشتو</language>
 			<language type="pt">پُرتگالی</language>
@@ -349,6 +380,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">سنہالا</language>
 			<language type="sk">سلوواک</language>
 			<language type="sl">سلووینیائی</language>
+			<language type="slh">جنوبی لوشوٹسیڈ</language>
 			<language type="sm">ساموآن</language>
 			<language type="sma">جنوبی سامی</language>
 			<language type="smj">لول سامی</language>
@@ -363,6 +395,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">سواتی</language>
 			<language type="ssy">ساہو</language>
 			<language type="st">جنوبی سوتھو</language>
+			<language type="str">سٹریٹس سالِش</language>
 			<language type="su">سنڈانیز</language>
 			<language type="suk">سکوما</language>
 			<language type="sv">سویڈش</language>
@@ -371,24 +404,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">کوموریائی</language>
 			<language type="syr">سریانی</language>
 			<language type="ta">تمل</language>
+			<language type="tce">جنوبی ٹچون</language>
 			<language type="te">تیلگو</language>
 			<language type="tem">ٹمنے</language>
 			<language type="teo">تیسو</language>
 			<language type="tet">ٹیٹم</language>
 			<language type="tg">تاجک</language>
+			<language type="tgx">ٹاگش</language>
 			<language type="th">تھائی</language>
+			<language type="tht">ٹاہلٹن</language>
 			<language type="ti">ٹگرینیا</language>
 			<language type="tig">ٹگرے</language>
 			<language type="tk">ترکمان</language>
 			<language type="tl">ٹیگا لوگ</language>
 			<language type="tlh">کلنگن</language>
+			<language type="tli">ٹلنگٹ</language>
 			<language type="tn">سوانا</language>
 			<language type="to">ٹونگن</language>
+			<language type="tok">ٹوکی پونا</language>
 			<language type="tpi">ٹوک پِسِن</language>
 			<language type="tr">ترکی</language>
 			<language type="trv">ٹوروکو</language>
 			<language type="ts">زونگا</language>
 			<language type="tt">تاتار</language>
+			<language type="ttm">شمالی ٹچون</language>
 			<language type="tum">ٹمبوکا</language>
 			<language type="tvl">تووالو</language>
 			<language type="tw">توی</language>
@@ -414,6 +453,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="war">وارے</language>
 			<language type="wbp">وارلپیری</language>
 			<language type="wo">وولوف</language>
+			<language type="wuu">وو چائینیز</language>
 			<language type="xal">کالمیک</language>
 			<language type="xh">ژوسا</language>
 			<language type="xog">سوگا</language>
@@ -421,6 +461,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">یمبا</language>
 			<language type="yi">یدش</language>
 			<language type="yo">یوروبا</language>
+			<language type="yrl">نینگاٹو</language>
 			<language type="yue">کینٹونیز</language>
 			<language type="yue" alt="menu">چینی، کینٹونیز</language>
 			<language type="zgh">اسٹینڈرڈ مراقشی تمازیقی</language>
@@ -436,13 +477,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">زازا</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">ایڈلم</script>
 			<script type="Arab">عربی</script>
 			<script type="Arab" alt="variant">فارسی عربی</script>
-			<script type="Aran" draft="contributed">نستعلیق</script>
+			<script type="Aran">نستعلیق</script>
 			<script type="Armn">آرمینیائی</script>
 			<script type="Beng">بنگالی</script>
 			<script type="Bopo">بوپوموفو</script>
 			<script type="Brai">بریل</script>
+			<script type="Cakm">چکما</script>
+			<script type="Cans">متحدہ کینیڈین ایبوریجنل سلیبکس</script>
+			<script type="Cher">چیروکی</script>
 			<script type="Cyrl">سیریلک</script>
 			<script type="Deva">دیوناگری</script>
 			<script type="Ethi">ایتھوپیائی</script>
@@ -470,14 +515,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Latn">لاطینی</script>
 			<script type="Mlym">ملیالم</script>
 			<script type="Mong">منگولیائی</script>
+			<script type="Mtei">میتی مئیک</script>
 			<script type="Mymr">میانمار</script>
+			<script type="Nkoo">نکو</script>
+			<script type="Olck">اول چکی</script>
 			<script type="Orya">اڑیہ</script>
+			<script type="Rohg">حنیفی</script>
 			<script type="Sinh">سنہالا</script>
+			<script type="Sund">سوڈانی</script>
+			<script type="Syrc">سریانی</script>
 			<script type="Taml">تمل</script>
 			<script type="Telu">تیلگو</script>
+			<script type="Tfng">ٹفناگ</script>
 			<script type="Thaa">تھانا</script>
 			<script type="Thai">تھائی</script>
 			<script type="Tibt">تبتی</script>
+			<script type="Vaii">وائی</script>
+			<script type="Yiii">یی</script>
 			<script type="Zmth">ریاضی کی علامتیں</script>
 			<script type="Zsye">ایموجی</script>
 			<script type="Zsym">علامات</script>
@@ -703,6 +757,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">نؤرو</territory>
 			<territory type="NU">نیئو</territory>
 			<territory type="NZ">نیوزی لینڈ</territory>
+			<territory type="NZ" alt="variant">آؤتیارورا نیوزی لینڈ</territory>
 			<territory type="OM">عمان</territory>
 			<territory type="PA">پانامہ</territory>
 			<territory type="PE">پیرو</territory>
@@ -820,12 +875,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="dangi">ڈانگی کیلنڈر</type>
 			<type key="calendar" type="ethiopic">ایتھوپیائی کیلنڈر</type>
 			<type key="calendar" type="ethiopic-amete-alem">ایتھوپک امیٹ الیم کیلنڈر</type>
-			<type key="calendar" type="gregorian">جارجیائی کیلنڈر</type>
+			<type key="calendar" type="gregorian">گریگورین کیلنڈر</type>
 			<type key="calendar" type="hebrew">عبرانی کیلنڈر</type>
 			<type key="calendar" type="indian">ہندوستانی قومی کیلنڈر</type>
 			<type key="calendar" type="islamic">اسلامی کیلنڈر</type>
-			<type key="calendar" type="islamic-civil">اسلامی شہری کیلنڈر</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">اسلامی کیلنڈر (ام القراہ)</type>
+			<type key="calendar" type="islamic-civil">اسلامی شہری کیلنڈر (شہری دور)</type>
+			<type key="calendar" type="islamic-tbla">اسلامی کیلنڈر (ٹیبولر، فلکیاتی دور)</type>
+			<type key="calendar" type="islamic-umalqura">اسلامی کیلنڈر (ام القراہ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 کیلنڈر</type>
 			<type key="calendar" type="japanese">جاپانی کیلنڈر</type>
 			<type key="calendar" type="persian">فارسی کیلنڈر</type>
@@ -886,6 +942,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">آرمینیائی اعداد</type>
 			<type key="numbers" type="armnlow">آرمینیائی زیریں اعداد</type>
 			<type key="numbers" type="beng">بنگالی ہندسے</type>
+			<type key="numbers" type="cakm">چکما اعداد</type>
 			<type key="numbers" type="deva">دیوناگری ہندسے</type>
 			<type key="numbers" type="ethi">ایتھوپیائی اعداد</type>
 			<type key="numbers" type="finance">مالیاتی ہندسے</type>
@@ -901,6 +958,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">روایتی چینی اعداد</type>
 			<type key="numbers" type="hantfin">روایتی چینی مالی اعداد</type>
 			<type key="numbers" type="hebr">عبرانی اعداد</type>
+			<type key="numbers" type="java">جاویانی اعداد</type>
 			<type key="numbers" type="jpan">جاپانی اعداد</type>
 			<type key="numbers" type="jpanfin">جاپانی مالی اعداد</type>
 			<type key="numbers" type="khmr">خمیر ہندسے</type>
@@ -909,8 +967,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="latn">مغربی ہندسے</type>
 			<type key="numbers" type="mlym">ملیالم ہندسے</type>
 			<type key="numbers" type="mong">منگولیائی ہندسے</type>
+			<type key="numbers" type="mtei">میٹی مئیک اعداد</type>
 			<type key="numbers" type="mymr">میانمار کے ہندسے</type>
 			<type key="numbers" type="native">اصل ہندسے</type>
+			<type key="numbers" type="olck">اول چیکی اعداد</type>
 			<type key="numbers" type="orya">اڑیہ ہندسے</type>
 			<type key="numbers" type="roman">رومن اعداد</type>
 			<type key="numbers" type="romanlow">رومن زیریں اعداد</type>
@@ -1193,15 +1253,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} کو {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1740,20 +1809,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} کو {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} کو {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -2041,62 +2122,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">چتررا</month>
-							<month type="2" draft="contributed">ویساکھا</month>
-							<month type="3" draft="contributed">جیہائشہ</month>
-							<month type="4" draft="contributed">اسدھا</month>
-							<month type="5" draft="contributed">سراؤنا</month>
-							<month type="6" draft="contributed">بھدرا</month>
-							<month type="7" draft="contributed">اسوینا</month>
-							<month type="8" draft="contributed">کارتیکا</month>
-							<month type="9" draft="contributed">اگراہانا</month>
-							<month type="10" draft="contributed">پوسا</month>
-							<month type="11" draft="contributed">میگا</month>
-							<month type="12" draft="contributed">پھالگنا</month>
+							<month type="1">چیت</month>
+							<month type="2">بیساکھ</month>
+							<month type="3">جیٹھ</month>
+							<month type="4">اساڑھ</month>
+							<month type="5">ساون</month>
+							<month type="6">بھادوں</month>
+							<month type="7">اسوینا</month>
+							<month type="8">کاتک</month>
+							<month type="9">اگہن</month>
+							<month type="10">پوس</month>
+							<month type="11">ماگھ</month>
+							<month type="12">پھاگن</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">چتررا</month>
-							<month type="2" draft="contributed">ویساکھا</month>
-							<month type="3" draft="contributed">جیہائشہ</month>
-							<month type="4" draft="contributed">اسدھا</month>
-							<month type="5" draft="contributed">سراؤنا</month>
-							<month type="6" draft="contributed">بھدرا</month>
-							<month type="7" draft="contributed">اسوینا</month>
-							<month type="8" draft="contributed">کارتیکا</month>
-							<month type="9" draft="contributed">اگراہانا</month>
-							<month type="10" draft="contributed">پوسا</month>
-							<month type="11" draft="contributed">میگا</month>
-							<month type="12" draft="contributed">پھالگنا</month>
+							<month type="1">چیت</month>
+							<month type="2">بیساکھ</month>
+							<month type="3">جیٹھ</month>
+							<month type="4">اساڑھ</month>
+							<month type="5">ساون</month>
+							<month type="6">بھادوں</month>
+							<month type="7">اسوینا</month>
+							<month type="8">کاتِک</month>
+							<month type="9">اگہن</month>
+							<month type="10">پوس</month>
+							<month type="11">ماگھ</month>
+							<month type="12">پھاگن</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">چتررا</month>
-							<month type="2" draft="contributed">ویساکھا</month>
-							<month type="3" draft="contributed">جیہائشہ</month>
-							<month type="4" draft="contributed">اسدھا</month>
-							<month type="5" draft="contributed">سراؤنا</month>
-							<month type="6" draft="contributed">بھدرا</month>
-							<month type="7" draft="contributed">اسوینا</month>
-							<month type="8" draft="contributed">کارتیکا</month>
-							<month type="9" draft="contributed">اگراہانا</month>
-							<month type="10" draft="contributed">پوسا</month>
-							<month type="11" draft="contributed">میگا</month>
-							<month type="12" draft="contributed">پھالگنا</month>
+							<month type="1">چیت</month>
+							<month type="2">بیساکھ</month>
+							<month type="3">جیٹھ</month>
+							<month type="4">اساڑھ</month>
+							<month type="5">ساون</month>
+							<month type="6">بھادوں</month>
+							<month type="7">اسوینا</month>
+							<month type="8">کاتِک</month>
+							<month type="9">اگہن</month>
+							<month type="10">پوس</month>
+							<month type="11">ماگھ</month>
+							<month type="12">پھاگن</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">چتررا</month>
-							<month type="2" draft="contributed">ویساکھا</month>
-							<month type="3" draft="contributed">جیہائشہ</month>
-							<month type="4" draft="contributed">اسدھا</month>
-							<month type="5" draft="contributed">سراؤنا</month>
-							<month type="6" draft="contributed">بھدرا</month>
-							<month type="7" draft="contributed">اسوینا</month>
-							<month type="8" draft="contributed">کارتیکا</month>
-							<month type="9" draft="contributed">اگراہانا</month>
-							<month type="10" draft="contributed">پوسا</month>
-							<month type="11" draft="contributed">میگا</month>
-							<month type="12" draft="contributed">پھالگنا</month>
+							<month type="1">چیت</month>
+							<month type="2">بیساکھ</month>
+							<month type="3">جیٹھ</month>
+							<month type="4">اساڑھ</month>
+							<month type="5">ساون</month>
+							<month type="6">بھادوں</month>
+							<month type="7">اسوینا</month>
+							<month type="8">کاتِک</month>
+							<month type="9">اگہن</month>
+							<month type="10">پوس</month>
+							<month type="11">ماگھ</month>
+							<month type="12">پھاگن</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -2105,7 +2214,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="0" draft="contributed">ساکا</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">ساکا</era>
+						<era type="0">ساکا</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="contributed">ساکا</era>
@@ -3062,7 +3171,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ڈارون</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>اڈیلائڈ</exemplarCity>
+				<exemplarCity>ایڈیلیڈ</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>بروکن ہِل</exemplarCity>
@@ -5289,16 +5398,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>¤#,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -5322,13 +5436,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000" count="one">¤ 0 کھرب</pattern>
 					<pattern type="100000000000" count="other">¤ 0 کھرب</pattern>
 					<pattern type="1000000000000" count="one">¤0 ٹریلین</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0 ٹریلین</pattern>
 					<pattern type="1000000000000" count="other">¤0 ٹریلین</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 ٹریلین</pattern>
 					<pattern type="10000000000000" count="one">¤ 00 ٹریلین</pattern>
 					<pattern type="10000000000000" count="other">¤ 00 ٹریلین</pattern>
 					<pattern type="100000000000000" count="one">¤ 000 ٹریلین</pattern>
 					<pattern type="100000000000000" count="other">¤ 000 ٹریلین</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
@@ -6389,7 +6506,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>مغربی افریقی [CFA] فرانک</displayName>
 				<displayName count="one">مغربی افریقی [CFA] فرانک</displayName>
 				<displayName count="other">مغربی افریقی [CFA] فرانک</displayName>
-				<symbol draft="contributed">F CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP فرانک</displayName>
@@ -6806,6 +6923,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} سال</unitPattern>
 				<perUnitPattern>فی سال {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<gender>masculine</gender>
+				<displayName>کوارٹرز</displayName>
+				<unitPattern count="one">{0} کوارٹر</unitPattern>
+				<unitPattern count="other">{0} کوارٹرز</unitPattern>
+				<perUnitPattern>{0}/کوارٹر</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
 				<displayName>مہینے</displayName>
@@ -7172,7 +7296,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} شمسی چمک</unitPattern>
 				<unitPattern count="other">{0} شمسی چمک</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>میٹرک ٹن</displayName>
 				<unitPattern count="one">{0} میٹرک ٹن</unitPattern>
@@ -7908,6 +8032,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} سال</unitPattern>
 				<perUnitPattern>{0}/y</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>کوارٹر</displayName>
+				<unitPattern count="one">{0} کوارٹر</unitPattern>
+				<unitPattern count="other">{0} کوارٹرز</unitPattern>
+				<perUnitPattern>{0}/کوارٹر</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>مہینے</displayName>
 				<unitPattern count="one">{0} مہینہ</unitPattern>
@@ -8198,7 +8328,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>شمسی چمک</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -8657,7 +8787,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}g</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName draft="contributed">ریڈین</displayName>
+				<displayName>ریڈین</displayName>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one">{0} ڈگری</unitPattern>
@@ -8684,7 +8814,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} m²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName draft="contributed">mi²</displayName>
+				<displayName>mi²</displayName>
 				<unitPattern count="one">{0}mi²</unitPattern>
 				<unitPattern count="other">{0}mi²</unitPattern>
 			</unit>
@@ -8693,22 +8823,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ایکڑ</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName draft="contributed">yd²</displayName>
+				<displayName>yd²</displayName>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName draft="contributed">ft²</displayName>
+				<displayName>ft²</displayName>
 				<unitPattern count="one">{0}ft²</unitPattern>
 				<unitPattern count="other">{0}ft²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
-				<displayName draft="contributed">in²</displayName>
+				<displayName>in²</displayName>
 			</unit>
 			<unit type="area-dunam">
-				<displayName draft="contributed">دُنام</displayName>
+				<displayName>دُنام</displayName>
 			</unit>
 			<unit type="concentr-item">
-				<unitPattern count="one" draft="contributed">{0} آئٹم</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} آئٹمز</unitPattern>
+				<unitPattern count="one">{0} آئٹم</unitPattern>
+				<unitPattern count="other">{0} آئٹمز</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
@@ -8721,19 +8851,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName draft="contributed">mpg UK</displayName>
-				<unitPattern count="one" draft="contributed">{0}m/gUK</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}m/gUK</unitPattern>
+				<displayName>mpg UK</displayName>
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<unitPattern count="one" draft="contributed">{0}B</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}B</unitPattern>
+				<unitPattern count="one">{0}B</unitPattern>
+				<unitPattern count="other">{0}B</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>سال</displayName>
 				<unitPattern count="one">{0} سال</unitPattern>
 				<unitPattern count="other">{0} سال</unitPattern>
 				<perUnitPattern>{0}/سال</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>کوارٹر</displayName>
+				<unitPattern count="one">{0}q</unitPattern>
+				<unitPattern count="other">{0}q</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>مہینہ</displayName>
@@ -8777,22 +8913,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName draft="contributed">amp</displayName>
+				<displayName>amp</displayName>
 			</unit>
 			<unit type="energy-joule">
-				<displayName draft="contributed">جول</displayName>
+				<displayName>جول</displayName>
 			</unit>
 			<unit type="energy-kilowatt-hour">
-				<displayName draft="contributed">kWh</displayName>
+				<displayName>kWh</displayName>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName draft="contributed">lbf</displayName>
+				<displayName>lbf</displayName>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName draft="contributed">px</displayName>
+				<displayName>px</displayName>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName draft="contributed">MP</displayName>
+				<displayName>MP</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
@@ -8800,24 +8936,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="contributed">dpi</displayName>
-				<unitPattern count="one" draft="contributed">{0} dpi</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} dpi</unitPattern>
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>کلو میٹر</displayName>
 				<unitPattern count="one">{0} کلو میٹر</unitPattern>
 				<unitPattern count="other">{0} کلو میٹر</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی کلو میٹر</perUnitPattern>
+				<perUnitPattern>{0} فی کلو میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>میٹر</displayName>
 				<unitPattern count="one">{0} میٹر</unitPattern>
 				<unitPattern count="other">{0} میٹر</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی میٹر</perUnitPattern>
+				<perUnitPattern>{0} فی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="contributed">ڈیسی میٹر</displayName>
+				<displayName>ڈیسی میٹر</displayName>
 				<unitPattern count="one">{0} dm</unitPattern>
 				<unitPattern count="other">{0} dm</unitPattern>
 			</unit>
@@ -8825,7 +8961,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>سینٹی میٹر</displayName>
 				<unitPattern count="one">{0}cm</unitPattern>
 				<unitPattern count="other">{0}cm</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی سینٹی میٹر</perUnitPattern>
+				<perUnitPattern>{0} فی سینٹی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>ملی میٹر</displayName>
@@ -8833,86 +8969,86 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ملیمیٹر</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName draft="contributed">pm</displayName>
+				<displayName>pm</displayName>
 				<unitPattern count="one">{0}pm</unitPattern>
 				<unitPattern count="other">{0}pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">میل</displayName>
+				<displayName>میل</displayName>
 				<unitPattern count="one">{0} میل</unitPattern>
 				<unitPattern count="other">{0} میل</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">گز</displayName>
+				<displayName>گز</displayName>
 				<unitPattern count="one">{0} یارڈ</unitPattern>
 				<unitPattern count="other">{0} یارڈ</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">فیٹ</displayName>
+				<displayName>فیٹ</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی فیٹ</perUnitPattern>
+				<perUnitPattern>{0} فی فیٹ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">انچ</displayName>
+				<displayName>انچ</displayName>
 				<unitPattern count="one">{0} انچ</unitPattern>
 				<unitPattern count="other">{0} انچ</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی انچ</perUnitPattern>
+				<perUnitPattern>{0} فی انچ</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">ly</displayName>
+				<displayName>ly</displayName>
 				<unitPattern count="one">{0}ly</unitPattern>
 				<unitPattern count="other">{0}ly</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">فرلانگ</displayName>
+				<displayName>فرلانگ</displayName>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">فیدم</displayName>
+				<displayName>فیدم</displayName>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="contributed">R☉</displayName>
+				<displayName>R☉</displayName>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی کلو گرام</perUnitPattern>
+				<perUnitPattern>{0} فی کلو گرام</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>گرام</displayName>
 				<unitPattern count="one">{0} گرام</unitPattern>
 				<unitPattern count="other">{0} گرام</unitPattern>
-				<perUnitPattern draft="contributed">{0} فی گرام</perUnitPattern>
+				<perUnitPattern>{0} فی گرام</perUnitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="contributed">lb</displayName>
+				<displayName>lb</displayName>
 				<unitPattern count="one">{0} پونڈ</unitPattern>
 				<unitPattern count="other">{0} پونڈ</unitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName draft="contributed">oz</displayName>
+				<displayName>oz</displayName>
 				<unitPattern count="one">{0} ونس</unitPattern>
 				<unitPattern count="other">{0} ونس</unitPattern>
-				<perUnitPattern draft="contributed">{0}/oz</perUnitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="contributed">ڈالٹن</displayName>
+				<displayName>ڈالٹن</displayName>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="contributed">زمینی کمیت</displayName>
+				<displayName>زمینی کمیت</displayName>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="contributed">شمسی کمیت</displayName>
+				<displayName>شمسی کمیت</displayName>
 			</unit>
 			<unit type="mass-grain">
-				<unitPattern count="one" draft="contributed">{0}gr</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}gr</unitPattern>
+				<unitPattern count="one">{0}gr</unitPattern>
+				<unitPattern count="other">{0}gr</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0}kW</unitPattern>
@@ -8927,27 +9063,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">mm Hg</displayName>
-				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mm Hg</unitPattern>
+				<displayName>mm Hg</displayName>
+				<unitPattern count="one">{0} mm Hg</unitPattern>
+				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName draft="contributed">psi</displayName>
-				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
+				<displayName>psi</displayName>
+				<unitPattern count="one">{0} psi</unitPattern>
+				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName draft="contributed">″ Hg</displayName>
+				<displayName>″ Hg</displayName>
 				<unitPattern count="one">{0} انچ مرکری</unitPattern>
 				<unitPattern count="other">{0} انچ مرکری</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
-				<displayName draft="contributed">mbar</displayName>
+				<displayName>mbar</displayName>
 				<unitPattern count="one">{0}mb</unitPattern>
 				<unitPattern count="other">{0}mb</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">hPa</displayName>
+				<displayName>hPa</displayName>
 				<unitPattern count="one">{0}hPa</unitPattern>
 				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
@@ -8957,19 +9093,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}kph</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName draft="contributed">میٹر فی سیکنڈ</displayName>
+				<displayName>میٹر فی سیکنڈ</displayName>
 				<unitPattern count="one">{0}m/s</unitPattern>
 				<unitPattern count="other">{0}m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName draft="contributed">میل فی گھنٹہ</displayName>
+				<displayName>میل فی گھنٹہ</displayName>
 				<unitPattern count="one">{0}mph</unitPattern>
 				<unitPattern count="other">{0}mph</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>⁰C</displayName>
@@ -8977,14 +9113,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}‎°</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
-				<displayName draft="contributed">°F</displayName>
+				<displayName>°F</displayName>
 				<unitPattern count="one">{0}‎°F</unitPattern>
 				<unitPattern count="other">{0}‎°F</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<displayName draft="contributed">K</displayName>
-				<unitPattern count="one" draft="contributed">{0} K</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} K</unitPattern>
+				<displayName>K</displayName>
+				<unitPattern count="one">{0} K</unitPattern>
+				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
@@ -8992,7 +9128,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}km³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
-				<displayName draft="contributed">cm³</displayName>
+				<displayName>cm³</displayName>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>mi³</displayName>
@@ -9000,13 +9136,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mi³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName draft="contributed">yd³</displayName>
+				<displayName>yd³</displayName>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<displayName draft="contributed">ft³</displayName>
+				<displayName>ft³</displayName>
 			</unit>
 			<unit type="volume-cubic-inch">
-				<displayName draft="contributed">in³</displayName>
+				<displayName>in³</displayName>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>لیٹر</displayName>
@@ -9014,38 +9150,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} لیٹر</unitPattern>
 			</unit>
 			<unit type="volume-deciliter">
-				<displayName draft="contributed">dL</displayName>
+				<displayName>dL</displayName>
 			</unit>
 			<unit type="volume-centiliter">
-				<displayName draft="contributed">cL</displayName>
+				<displayName>cL</displayName>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName draft="contributed">pt</displayName>
+				<displayName>pt</displayName>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">بُشل</displayName>
+				<displayName>بُشل</displayName>
 			</unit>
 			<unit type="volume-quart">
-				<displayName draft="contributed">qt</displayName>
+				<displayName>qt</displayName>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<unitPattern count="one" draft="contributed">{0}fl oz Im</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}fl oz Im</unitPattern>
+				<unitPattern count="one">{0}fl oz Im</unitPattern>
+				<unitPattern count="other">{0}fl oz Im</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<displayName draft="contributed">dsp</displayName>
-				<unitPattern count="one" draft="contributed">{0}dsp</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}dsp</unitPattern>
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName draft="contributed">dsp Imp</displayName>
-				<unitPattern count="one" draft="contributed">{0}dsp-Imp</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}dsp-Imp</unitPattern>
+				<displayName>dsp Imp</displayName>
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<displayName draft="contributed">fl.dr.</displayName>
-				<unitPattern count="one" draft="contributed">{0}fl.dr.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}fl.dr.</unitPattern>
+				<displayName>fl.dr.</displayName>
+				<unitPattern count="one">{0}fl.dr.</unitPattern>
+				<unitPattern count="other">{0}fl.dr.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ڈائریکشن</displayName>
@@ -9284,4 +9420,159 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">ٹیبیولر نمبرز</featureName>
 		<featureName type="zero">خط کشیدہ زیرو</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ur</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko si ta te vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<initialPattern type="initial">{0}.</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}، {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}، {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}، {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">احمد</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">شازیہ</nameField>
+			<nameField type="surname">اصغر</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">عبدل</nameField>
+			<nameField type="given2">باری</nameField>
+			<nameField type="surname">خان</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">پروفیسر ڈاکٹر</nameField>
+			<nameField type="given">یاسمین راشد</nameField>
+			<nameField type="given-informal">ملک</nameField>
+			<nameField type="given2">سدرہ منیر</nameField>
+			<nameField type="surname-prefix">ندیم جاوید</nameField>
+			<nameField type="surname-core">رضا</nameField>
+			<nameField type="surname2">یوسف زئی</nameField>
+			<nameField type="suffix">ایم ڈی، پی ایچ ڈی</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

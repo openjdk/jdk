@@ -1113,10 +1113,11 @@ void SuperWord::dependence_graph() {
         int cmp = p1.cmp(p2);
         if (SuperWordRTDepCheck &&
             p1.base() != p2.base() && p1.valid() && p2.valid()) {
-          // Create a runtime check to disambiguate
+          // Trace disjoint pointers
           OrderedPair pp(p1.base(), p2.base());
           _disjoint_ptrs.append_if_missing(pp);
-        } else if (!SWPointer::not_equal(cmp)) {
+        }
+        if (!SWPointer::not_equal(cmp)) {
           // Possibly same address
           _dg.make_edge(s1, s2);
           sink_dependent = false;
@@ -2092,6 +2093,12 @@ bool SuperWord::implemented(Node_List* p) {
       }
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
+    } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
+      // Java API for Math.min/max operations supports only int, long, float
+      // and double types. Thus, avoid generating vector min/max nodes for
+      // integer subword types with superword vectorization.
+      // See JDK-8294816 for miscompilation issues with shorts.
+      return false;
     } else {
       // Vector unsigned right shift for signed subword types behaves differently
       // from Java Spec. But when the shift amount is a constant not greater than

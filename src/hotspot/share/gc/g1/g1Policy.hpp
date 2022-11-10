@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/pair.hpp"
+#include "utilities/ticks.hpp"
 
 // A G1Policy makes policy decisions that determine the
 // characteristics of the collector.  Examples include:
@@ -76,12 +78,14 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double _full_collection_start_sec;
 
-  uint _young_list_desired_length;
-  uint _young_list_target_length;
-
+  // Desired young gen length without taking actually available free regions into
+  // account.
+  volatile uint _young_list_desired_length;
+  // Actual target length given available free memory.
+  volatile uint _young_list_target_length;
   // The max number of regions we can extend the eden by while the GC
   // locker is active. This should be >= _young_list_target_length;
-  uint _young_list_max_length;
+  volatile uint _young_list_max_length;
 
   // The survivor rate groups below must be initialized after the predictor because they
   // indirectly use it through the "this" object passed to their constructor.
@@ -138,14 +142,27 @@ public:
   double predict_base_time_ms(size_t pending_cards) const;
 
 private:
+  // Base time contains handling remembered sets and constant other time of the
+  // whole young gen, refinement buffers, and copying survivors.
+  // Basically everything but copying eden regions.
   double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
+  // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(HeapRegion* hr) const;
+  // Merge-scan time for a region is handling remembered sets of that region (as a single unit).
+  double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  // Non-copy time for a region is handling remembered sets and other time.
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
 public:
 
-  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  // Predict other time for count young regions.
+  double predict_young_region_other_time_ms(uint count) const;
+  // Predict copying live data time for count eden regions. Return the predict bytes if
+  // bytes_to_copy is non-nullptr.
+  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
+  // Total time for a region is handling remembered sets (as a single unit), copying its live data
+  // and other time.
   double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
@@ -295,6 +312,8 @@ public:
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
+  void record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards);
+
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
   // Record the start and end of the young gc pause.
@@ -376,18 +395,19 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return _young_list_desired_length; }
-  uint young_list_target_length() const { return _young_list_target_length; }
+  uint young_list_desired_length() const { return Atomic::load(&_young_list_desired_length); }
+  uint young_list_target_length() const { return Atomic::load(&_young_list_target_length); }
+  uint young_list_max_length() const { return Atomic::load(&_young_list_max_length); }
 
   bool should_allocate_mutator_region() const;
 
   bool can_expand_young_list() const;
 
-  uint young_list_max_length() const {
-    return _young_list_max_length;
-  }
-
   bool use_adaptive_young_list_length() const;
+
+  // Return an estimate of the number of bytes used in young gen.
+  // precondition: holding Heap_lock
+  size_t estimate_used_young_bytes_locked() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 

@@ -39,7 +39,7 @@ import jdk.test.lib.security.TestCertificate;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules jdk.jfr/jdk.jfr.events
+ * @modules jdk.jfr/jdk.jfr.events java.base/sun.security.x509 java.base/sun.security.tools.keytool
  * @run main/othervm jdk.jfr.event.security.TestX509ValidationEvent
  */
 public class TestX509ValidationEvent {
