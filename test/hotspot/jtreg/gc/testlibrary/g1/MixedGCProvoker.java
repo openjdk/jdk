@@ -77,9 +77,7 @@ public class MixedGCProvoker {
      * @param liveOldObjects The objects supposed to survive this marking cycle.
      */
     public static void provokeMixedGC(List<byte[]> liveOldObjects) {
-        Helpers.waitTillCMCFinished(getWhiteBox(), 10);
-        getWhiteBox().g1StartConcMarkCycle();
-        Helpers.waitTillCMCFinished(getWhiteBox(), 10);
+        getWhiteBox().g1RunConcurrentGC();
         getWhiteBox().youngGC(); // the "Prepare Mixed" gc
         getWhiteBox().youngGC(); // the "Mixed" gc
 

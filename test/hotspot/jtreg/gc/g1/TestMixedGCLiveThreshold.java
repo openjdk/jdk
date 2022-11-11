@@ -135,12 +135,7 @@ public class TestMixedGCLiveThreshold {
 
             // Memory objects have been promoted to old by full GC.
             // Concurrent cycle may select regions for rebuilding
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
-            }
+            wb.g1RunConcurrentGC();
             System.out.println(used);
         }
 
