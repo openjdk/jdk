@@ -177,6 +177,13 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   sub(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   beqz(len_in_bytes, done);
 
+  // Zero first 4 bytes, if start offset is not word aligned.
+  if (!is_aligned(hdr_size_in_bytes, BytesPerWord)) {
+    sw(zr, Address(obj, hdr_size_in_bytes));
+    sub(len_in_bytes, len_in_bytes, BytesPerInt);
+    hdr_size_in_bytes += BytesPerInt;
+  }
+
   // Preserve obj
   if (hdr_size_in_bytes) {
     add(obj, obj, hdr_size_in_bytes);
