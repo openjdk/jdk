@@ -31,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
@@ -275,24 +274,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * Appends the certificate to an output stream.
-     *
-     * @param out an input stream to which the certificate is appended.
-     * @exception CertificateEncodingException on encoding errors.
-     */
-    public void encode(OutputStream out)
-    throws CertificateEncodingException {
-        if (signedCert == null)
-            throw new CertificateEncodingException(
-                          "Null certificate to encode");
-        try {
-            out.write(signedCert.clone());
-        } catch (IOException e) {
-            throw new CertificateEncodingException(e.toString());
-        }
-    }
-
-    /**
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
      *
@@ -300,7 +281,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
-    public void derEncode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (signedCert == null)
             throw new IOException("Null certificate to encode");
         out.write(signedCert.clone());

@@ -1235,7 +1235,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     }
 
     @Override
-    public void derEncode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) throws IOException {
         if (signedCRL == null)
             throw new IOException("Null CRL to encode");
         out.write(signedCRL.clone());
