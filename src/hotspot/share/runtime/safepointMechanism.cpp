@@ -105,7 +105,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
 
     if (prev_poll_word != poll_word ||
         prev_poll_word == _poll_word_armed_value) {
-      // After updating the poll value, we allow entering new nmethods
+      // While updating the poll value, we allow entering new nmethods
       // through stack unwinding. The nmethods might have been processed in
       // a concurrent thread by the GC. So we need to run a cross modify
       // fence to ensure patching becomes visible. We may also wake up from
