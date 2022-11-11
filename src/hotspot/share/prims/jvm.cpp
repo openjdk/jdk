@@ -1366,20 +1366,9 @@ JVM_END
 class ScopedValueBindingsResolver {
 public:
   InstanceKlass* Carrier_klass;
-  Method *vthread_run_runnable_method;
-  Method *thread_run_method;
-
   ScopedValueBindingsResolver(JavaThread* THREAD) {
     Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_incubator_concurrent_ScopedValue_Carrier(), true, THREAD);
     Carrier_klass = InstanceKlass::cast(k);
-
-    vthread_run_runnable_method = vmClasses::VirtualThread_klass()->find_instance_method
-      (vmSymbols::run_method_name(), vmSymbols::runnable_void_signature(), Klass::PrivateLookupMode::find);
-    guarantee(vthread_run_runnable_method != NULL, "must be");
-
-    thread_run_method = vmClasses::Thread_klass()->find_instance_method
-      (vmSymbols::run_method_name(), vmSymbols::void_method_signature(), Klass::PrivateLookupMode::find);
-    guarantee(thread_run_method != NULL, "must be");
   }
 };
 
@@ -1401,13 +1390,13 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
 
     Symbol *name = method->name();
 
-    if (method->method_holder() == resolver.Carrier_klass &&
-        (name == vmSymbols::run_method_name() || name == vmSymbols::call_method_name())) {
-      loc = 2;
-    } else if (method == resolver.vthread_run_runnable_method) {
-      loc = 3;
-    } else if (method == resolver.thread_run_method) {
-      loc = 2;
+    InstanceKlass* holder = method->method_holder();
+    if (name == vmSymbols::invokeWith_method_name()) {
+      if ((holder == resolver.Carrier_klass
+           || holder == vmClasses::VirtualThread_klass()
+           || holder == vmClasses::Thread_klass())) {
+        loc = 1;
+      }
     }
 
     if (loc != 0) {
