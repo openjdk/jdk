@@ -28,6 +28,8 @@ package com.sun.tools.javac.util;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.nio.CharBuffer;
+import java.util.Optional;
+import java.util.OptionalInt;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
@@ -122,6 +124,20 @@ public class DiagnosticSource {
             if (lineEnd - lineStart == 0)
                 return null;
             return new String(buf, lineStart, lineEnd - lineStart);
+        } finally {
+            buf = null;
+        }
+    }
+
+    /** Returns the position representing the start of the line that contains the given pos
+     */
+    public OptionalInt getLineStartPos(final int pos) {
+        try {
+            if (!findLine(pos)) {
+                return OptionalInt.empty();
+            }
+
+            return OptionalInt.of(lineStart);
         } finally {
             buf = null;
         }

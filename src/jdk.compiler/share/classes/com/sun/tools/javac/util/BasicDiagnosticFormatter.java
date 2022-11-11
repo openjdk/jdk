@@ -134,6 +134,60 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         return buf.toString();
     }
 
+    private String formatLineColumn(final DiagnosticSource source, final int pos) {
+        return source.getLineNumber(pos) + ":" + source.getColumnNumber(pos, true);
+    }
+
+    private String formatInfo(Info help) {
+        return "";
+    }
+
+    private String formatHelp(final Help help, final Locale l) {
+        final var buf = new StringBuilder();
+        buf.append("\n");
+        buf.append("help: ");
+        final var message = help.message();
+        buf.append(localize(l, message.key(), message.getArgs()));
+        buf.append("\n");
+
+        for (final SuggestedChange change : help.suggestedChanges()) {
+            final var source = change.source();
+            final var changeStartPos = change.position().getStartPosition();
+            final var changeEndPos = change.position().getEndPosition(source.getEndPosTable());
+
+            final var startLine = source.getLine(changeStartPos);
+            final var endLine = source.getLine(changeEndPos);
+
+            if (startLine == null || endLine == null) {
+                // TODO(fancy-diags)
+                throw new IllegalArgumentException("source not found");
+            }
+
+            // if the lines are the same, all good, otherwise handle them differently
+            if (startLine.equals(endLine)) {
+                // The position will always be present if we get here, since the source line was found
+                @SuppressWarnings("OptionalGetWithoutIsPresent")
+                final var lineStartPos = source.getLineStartPos(changeStartPos).getAsInt();
+                final var startOffset = changeStartPos - lineStartPos;
+                final var endOffset = changeEndPos - lineStartPos;
+
+                final var sb = new StringBuilder(startLine);
+                sb.replace(startOffset, endOffset, change.replacement());
+
+                buf.append(sb);
+                buf.append("\n");
+            } else {
+                // TODO(fancy-diags)
+                buf.append("TODO(fancy-diags) Diagnostic from ")
+                   .append(formatLineColumn(source, changeStartPos))
+                   .append(" to ")
+                   .append(formatLineColumn(source, changeEndPos))
+                   .append(" spanned multiple lines");
+            }
+        }
+        return buf.toString();
+    }
+
     protected String addSourceLineIfNeeded(JCDiagnostic d, String msg) {
         if (!displaySource(d))
             return msg;
@@ -193,14 +247,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             case '%':
                 return "%";
             case 'h':
-                var buf = new StringBuilder();
-                d.getHelp().ifPresent(help -> {
-                    buf.append("\n");
-                    buf.append("help: ");
-                    var message = help.message();
-                    buf.append(localize(l, message.key(), message.getArgs()));
-                });
-                return buf.toString();
+                return d.getHelp().map(help -> this.formatHelp(help, l)).orElse("");
             case 'i':
                 return "";//"INFO GOES HERE";
             default:

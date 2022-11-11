@@ -47,6 +47,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import com.sun.tools.javac.util.JCDiagnostic.RangeDiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.parser.Tokens.TokenKind.*;
@@ -581,7 +582,15 @@ public class JavacParser implements Parser {
                     DiagnosticFlag.SYNTAX,
                     token.pos,
                     Errors.AssertAsIdentifier,
-                    new Help(Fragments.HelpRenameTheIdentifier)
+                    new Help(
+                            Fragments.HelpRenameTheIdentifier,
+                            List.of(new SuggestedChange(
+                                    log.currentSource(),
+                                    new RangeDiagnosticPosition(token.pos, token.endPos),
+                                    "_assert",
+                                    Applicability.UNKNOWN
+                            ))
+                    )
             );
             nextToken();
             return names.error;

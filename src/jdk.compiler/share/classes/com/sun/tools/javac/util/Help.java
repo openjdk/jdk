@@ -1,11 +1,18 @@
 package com.sun.tools.javac.util;
 
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+
 public record Help(
-        JCDiagnostic.Fragment message,
+        Fragment message,
         List<SuggestedChange> suggestedChanges
 ) {
 
-    public Help(JCDiagnostic.Fragment message) {
+    public Help(final Fragment message) {
         this(message, List.nil());
+    }
+
+    public Help(final Fragment message, final List<SuggestedChange> suggestedChanges) {
+        this.message = message;
+        this.suggestedChanges = suggestedChanges;
     }
 }

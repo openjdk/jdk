@@ -458,6 +458,41 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         private final int pos;
     }
 
+    public static class RangeDiagnosticPosition implements DiagnosticPosition  {
+        private final int startPos;
+        private final int endPos;
+
+        public RangeDiagnosticPosition(final int startPos, final int endPos) {
+            if (startPos > endPos) {
+                // TODO(fancy-diags)
+                throw new IllegalArgumentException();
+            }
+
+            this.startPos = startPos;
+            this.endPos = endPos;
+        }
+
+        @Override
+        public JCTree getTree() {
+            return null;
+        }
+
+        @Override
+        public int getStartPosition() {
+            return startPos;
+        }
+
+        @Override
+        public int getPreferredPosition() {
+            return startPos;
+        }
+
+        @Override
+        public int getEndPosition(EndPosTable endPosTable) {
+            return endPos;
+        }
+    }
+
     public enum DiagnosticFlag {
         MANDATORY,
         RESOLVE_ERROR,
