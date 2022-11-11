@@ -172,7 +172,7 @@ public class WithScopedValue {
             });
         }
     }
-    
+
     /**
      * Test fork when a scoped value is bound after a StructuredTaskScope is created.
      */

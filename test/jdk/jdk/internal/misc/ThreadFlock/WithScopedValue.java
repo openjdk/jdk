@@ -94,7 +94,7 @@ public class WithScopedValue {
         assertTrue(box.flock1.isClosed());
         assertTrue(box.flock2.isClosed());
     }
-    
+
     /**
      * Test closing a thread flock while in a dynamic scope and with enclosing thread
      * flocks. This test closes enclosing flock1.
