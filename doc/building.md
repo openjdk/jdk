@@ -403,15 +403,6 @@ Please consult the AIX section of the [Supported Build Platforms](
 https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
 
-### Support for checking standards conforming code
-
-The make system has a strict mode that enforces conforming code based on the
-standard that is used by the build, which can be useful to ensure that native code
-behaves strictly according to said standard. This option can by enabled by passing
-`--enable-conforming-compilation` during configure, but is off by default.
-If you just want to compile a working JDK it is not recommended that you set this
-flag, as it is mainly meant to aid developers that are working with native code.
-
 
 ## Boot JDK Requirements
 
