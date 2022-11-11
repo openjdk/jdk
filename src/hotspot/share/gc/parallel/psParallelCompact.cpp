@@ -988,9 +988,6 @@ void PSParallelCompact::pre_compact()
   DEBUG_ONLY(summary_data().verify_clear();)
 
   ParCompactionManager::reset_all_bitmap_query_caches();
-
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
 }
 
 void PSParallelCompact::post_compact()
@@ -1035,6 +1032,9 @@ void PSParallelCompact::post_compact()
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   DEBUG_ONLY(MetaspaceUtils::verify();)
+
+  // Need to clear claim bits for the next mark.
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   heap->prune_scavengable_nmethods();
 

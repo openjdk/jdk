@@ -83,9 +83,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   // Increment the invocation count
   _total_invocations++;
 
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
-
   // Capture used regions for each generation that will be
   // subject to collection, so that card table adjustments can
   // be made intelligently (see clear / invalidate further below).
