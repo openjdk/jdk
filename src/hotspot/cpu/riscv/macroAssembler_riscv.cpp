@@ -2060,10 +2060,10 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
     _masm->la_patchable(t0, target, offset);
     _masm->lbu(t0, Address(t0, offset));
   });
-  if (!value) {
-    _masm->beqz(t0, _label);
-  } else {
+  if (value) {
     _masm->bnez(t0, _label);
+  } else {
+    _masm->beqz(t0, _label);
   }
 }
 
