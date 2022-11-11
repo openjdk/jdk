@@ -126,6 +126,9 @@ bool CompressedSparseDataReadStream::read_zero() {
 }
 
 uint8_t CompressedSparseDataReadStream::read_byte_impl() {
+  if (_bit_pos == 0) {
+    return _buffer[_position++];
+  }
   uint8_t b1 = _buffer[_position] << _bit_pos;
   uint8_t b2 = _buffer[++_position] >> (8 - _bit_pos);
   return b1 | b2;

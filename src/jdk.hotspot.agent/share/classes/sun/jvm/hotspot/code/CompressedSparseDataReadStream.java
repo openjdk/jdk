@@ -29,30 +29,21 @@ public class CompressedSparseDataReadStream extends CompressedReadStream {
 
   public CompressedSparseDataReadStream(Address buffer, int position) {
     super(buffer, position);
-    curr_byte_ = (byte) read();
   }
 
-  byte curr_byte_ = 0;
-  int  byte_pos_  = 0;
+  int bit_pos = 0;
+
+  protected short buffer(int position) {
+    return (short)buffer.getCIntegerAt(position, 1, true);
+  }
 
   public byte readByteImpl() {
-    byte b = (byte) (curr_byte_ << byte_pos_);
-    curr_byte_ = (byte) read();
-    if (byte_pos_ > 0) {
-      b |= (byte) ((0xFF & curr_byte_) >> (8 - byte_pos_));
+    if (bit_pos == 0) {
+      return (byte)buffer(position++);
     }
-    return b;
-  }
-
-  boolean readZero() {
-    if (0 != (curr_byte_ & (1 << (7 - byte_pos_)))) {
-      return false;
-    }
-    if (++byte_pos_ == 8) {
-      byte_pos_ = 0;
-      curr_byte_ = (byte) read();
-    }
-    return true;
+    byte b1 = (byte)(buffer(position) << bit_pos);
+    byte b2 = (byte)(buffer(++position) >> (8 - bit_pos));
+    return (byte)(b1 | b2);
   }
 
   public int readInt() {
@@ -61,11 +52,22 @@ public class CompressedSparseDataReadStream extends CompressedReadStream {
     }
     byte b = readByteImpl();
     int result = b & 0x3f;
-    for (int i = 0; 0 != ((i == 0) ? (b & 0x40) : (b & 0x80)); i++) {
-        b = readByteImpl();
-        result |= ((b & 0x7f) << (6 + 7 * i));
+    for (int i = 0; (0 != ((i == 0) ? (b & 0x40) : (b & 0x80))); i++) {
+      b = readByteImpl();
+      result |= ((b & 0x7f) << (6 + 7 * i));
     }
     return result;
+  }
+
+  boolean readZero() {
+    if (0 != (buffer(position) & (1 << (7 - bit_pos)))) {
+      return false; // not a zero data
+    }
+    if (++bit_pos == 8) {
+      position++;
+      bit_pos = 0;
+    }
+    return true;
   }
 
   public boolean readBoolean() { return readInt() != 0; }
