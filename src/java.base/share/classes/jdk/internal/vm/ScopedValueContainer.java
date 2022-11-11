@@ -199,7 +199,6 @@ public class ScopedValueContainer extends StackableScope {
      * Throws {@code ex} if not null. StructureViolationException is thrown or added
      * as a suppressed exception when {@code atTop} is false.
      */
-    @DontInline @ReservedStackAccess
     private static void throwIfFailed(Throwable ex, boolean atTop) {
         if (ex != null || !atTop) {
             if (!atTop) {
