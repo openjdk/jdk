@@ -39,11 +39,15 @@
 # Do not use a POSIX TZ setting like TZ='GMT+4', which is four hours
 # behind GMT but uses the completely misleading abbreviation "GMT".
 
-Zone	Etc/GMT		0	-	GMT
-
 # The following zone is used by tzcode functions like gmtime,
 # which load the "UTC" file to handle seconds properly.
 Zone	Etc/UTC		0	-	UTC
+
+# Functions like gmtime load the "GMT" file to handle leap seconds properly.
+# Vanguard section, which works with most .zi parsers.
+#Zone	GMT		0	-	GMT
+# Rearguard section, for TZUpdater 2.3.2 and earlier.
+Zone	Etc/GMT		0	-	GMT
 
 # The following link uses older naming conventions,
 # but it belongs here, not in the file 'backward',
@@ -51,14 +55,7 @@ Zone	Etc/UTC		0	-	UTC
 # where functions like gmtime load "GMT" instead of the "Etc/UTC".
 # We want this to work even on installations that omit 'backward'.
 Link	Etc/GMT				GMT
-
-Link	Etc/UTC				Etc/Universal
-Link	Etc/UTC				Etc/Zulu
-
-Link	Etc/GMT				Etc/Greenwich
-Link	Etc/GMT				Etc/GMT-0
-Link	Etc/GMT				Etc/GMT+0
-Link	Etc/GMT				Etc/GMT0
+# End of rearguard section.
 
 # Be consistent with POSIX TZ settings in the Zone names,
 # even though this is the opposite of what many people expect.
