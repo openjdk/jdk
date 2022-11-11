@@ -249,9 +249,7 @@ final class Poly1305 {
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
         while (length >= BLOCK_LENGTH) {
-            n.setValue(input, offset, BLOCK_LENGTH, (byte)0x01);
-            a.setSum(n);                    // a += (n | 0x01)
-            a.setProduct(r);                // a = (a * r) % p
+            processBlock(input, offset, BLOCK_LENGTH);
             offset += BLOCK_LENGTH;
             length -= BLOCK_LENGTH;
         }
