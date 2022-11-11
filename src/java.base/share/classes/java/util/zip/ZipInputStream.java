@@ -217,10 +217,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * convenient to read all bytes into a byte array. It is not intended for
      * reading input streams with large amounts of data.
      *
-     * <p> The behavior for the case where the input stream is <i>asynchronously
-     * closed</i>, or the thread interrupted during the read, is highly input
-     * stream specific, and therefore not specified.
-     *
      * <p> If an I/O error occurs reading from the input stream, then it may do
      * so after some, but not all, bytes have been read. Consequently, the input
      * stream may not be at end of stream and may be in an inconsistent state.
@@ -258,10 +254,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * Therefore, the method may be safely called with very large values of
      * {@code len} provided sufficient memory is available.
      *
-     * <p> The behavior for the case where the input stream is <i>asynchronously
-     * closed</i>, or the thread interrupted during the read, is highly input
-     * stream specific, and therefore not specified.
-     *
      * <p> If an I/O error occurs reading from the input stream, then it may do
      * so after some, but not all, bytes have been read. Consequently, the input
      * stream may not be at end of stream and may be in an inconsistent state.
@@ -269,8 +261,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * error occurs.
      *
      * @implNote
-     * The number of bytes allocated to read data from this stream and return
-     * the result is bounded by {@code 2*(long)len}, inclusive.
+     * This method calls {@code super.readNBytes(int len)}.
      *
      *  @throws OutOfMemoryError {@inheritDoc}
      *
@@ -304,10 +295,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * {@code b[off+}<i>k</i>{@code -1]}, leaving elements {@code b[off+}<i>k</i>
      * {@code ]} through {@code b[off+len-1]} unaffected.
      *
-     * <p> The behavior for the case where the input stream is <i>asynchronously
-     * closed</i>, or the thread interrupted during the read, is highly input
-     * stream specific, and therefore not specified.
-     *
      * <p> If an I/O error occurs reading from the input stream, then it may do
      * so after some, but not all, bytes of {@code b} have been updated with
      * data from the input stream. Consequently, the input stream and {@code b}
@@ -340,19 +327,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * <p> If an I/O error occurs, then the input stream may be
      * in an inconsistent state. It is strongly recommended that the
      * stream be promptly closed if an I/O error occurs.
-     *
-     * @implSpec
-     * If {@code n} is zero or negative, then no bytes are skipped.
-     * If {@code n} is positive, the default implementation of this method
-     * invokes {@link #skip(long) skip()} repeatedly with its parameter equal
-     * to the remaining number of bytes to skip until the requested number
-     * of bytes has been skipped or an error condition occurs.  If at any
-     * point the return value of {@code skip()} is negative or greater than the
-     * remaining number of bytes to be skipped, then an {@code IOException} is
-     * thrown.  If {@code skip()} ever returns zero, then {@link #read()} is
-     * invoked to read a single byte, and if it returns {@code -1}, then an
-     * {@code EOFException} is thrown.  Any exception thrown by {@code skip()}
-     * or {@code read()} will be propagated.
      *
      * @since 12
      */
