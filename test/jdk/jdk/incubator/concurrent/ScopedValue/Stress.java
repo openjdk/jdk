@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,227 +30,134 @@
  * @run testng/othervm/timeout=300 --enable-preview Stress
  */
 
-import jdk.incubator.concurrent.ScopedValue;
-import jdk.incubator.concurrent.StructuredTaskScope;
-import jdk.incubator.concurrent.StructureViolationException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
+import jdk.incubator.concurrent.ScopedValue;
+import jdk.incubator.concurrent.StructureViolationException;
+import jdk.incubator.concurrent.StructuredTaskScope;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class Stress {
+    public static final ScopedValue<Integer> el = ScopedValue.newInstance();
 
-    ScopedValue<Integer> sl1 = ScopedValue.newInstance();
-    ScopedValue<Integer> sl2 = ScopedValue.newInstance();
+    public static final ScopedValue<Integer> inheritedValue = ScopedValue.newInstance();
 
-    static final ScopedValue<ThreadFactory> factory = ScopedValue.newInstance();
-    static final ScopedValue.Carrier platformFactoryCarrier = ScopedValue.where(factory, Thread.ofPlatform().factory());
-    static final ScopedValue.Carrier virtualFactoryCarrier = ScopedValue.where(factory, Thread.ofVirtual().factory());
+    final ThreadLocalRandom tlr = ThreadLocalRandom.current();
+    static RuntimeException ex = new RuntimeException();
+    int ITERS = 100_000;
 
-    final ScopedValue<Integer>[] scopeLocals;
+    class DeepRecursion implements Runnable {
+        public void run() {
+            final var last = el.get();
+            ITERS--;
+            var nextRandomFloat = tlr.nextFloat();
+            try {
+                ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+                if (!last.equals(el.get())) {
+                    throw ex;
+                }
+            } catch (StackOverflowError e) {
+                if (nextRandomFloat <= 0.1) {
+                    ScopedValue.where(el, el.get() + 1).run(this);
+                }
+            } catch (StructureViolationException structureViolationException) {
+                // Can happen if the stack overflow prevented a StackableScope from
+                // being removed. We can continue.
+            } finally {
+                if (!last.equals(el.get())) {
+                    throw ex;
+                }
+            }
 
-    Stress() {
-        scopeLocals = new ScopedValue[500];
-        for (int i = 0; i < scopeLocals.length; i++) {
-            scopeLocals[i] = ScopedValue.newInstance();
+            Thread.yield();
         }
     }
 
-    private class MyBanger implements Runnable {
-        final ScopedValue.Binder binder;
-        boolean shouldRunOutOfMemory;
-        boolean failed = false;
+    static final Runnable nop = new Runnable() {
+        public void run() { }
+    };
 
-        MyBanger(ScopedValue.Binder binder, boolean shouldRunOutOfMemory) {
-            this.binder = binder;
-            this.shouldRunOutOfMemory = shouldRunOutOfMemory;
+    long fibonacci_pad1(int n, Runnable op) {
+        if (n <= 1) {
+            op.run();
+            return n;
         }
+        return fibonacci_pad1(n - 1, op) + fibonacci_pad1(n - 2, nop);
+    }
 
-        volatile int a[][] = new int[10000][];
+    private static final Integer I_42 = 42;
 
-        public void runOutOfMemory(int base, int size) {
-            for (int i = base; i < a.length; i++) {
-                try {
-                    a[i] = new int[size];
-                } catch (OutOfMemoryError e) {
-                    size /= 2;
-                    if (size == 0) {
-                        return;
+    long fibonacci_pad(int n, Runnable op) {
+        final var last = el.get();
+        try {
+            return fibonacci_pad1(tlr.nextInt(n), op);
+        } catch (StackOverflowError err) {
+            if (!inheritedValue.get().equals(I_42)) {
+                throw ex;
+            }
+            if (!last.equals(el.get())) {
+                throw ex;
+            }
+            throw err;
+        }
+    }
+
+    void runInNewThread(Runnable op) {
+        try (var scope = new StructuredTaskScope<Object>()) {
+            var future = scope.fork(() -> {
+                op.run();
+                return null;
+            });
+            future.get();
+            scope.join();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void run() {
+        try {
+            ScopedValue.where(inheritedValue, 42).where(el, 0).run(() -> {
+                try (var scope = new StructuredTaskScope<Object>()) {
+                    try {
+                        if (tlr.nextBoolean()) {
+                            final var deepRecursion = new DeepRecursion();
+                            deepRecursion.run();
+                        } else {
+                            Runnable op = new Runnable() {
+                                public void run() {
+                                    try {
+                                        fibonacci_pad(20, this);
+                                    } catch (StackOverflowError e) {
+                                        if (!inheritedValue.get().equals(I_42)) {
+                                            throw ex;
+                                        }
+                                    }
+                                }
+                            };
+                            runInNewThread(op);
+                        }
+                        scope.join();
+                    } catch (StructureViolationException structureViolationException) {
+                        // Can happen if a stack overflow prevented a StackableScope from
+                        // being removed. We can continue.
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                 }
-            }
-        }
-
-        public void run() {
-            int n = sl1.get();
-            try {
-                ScopedValue.where(sl1, n + 1).run(this);
-            } catch (StackOverflowError e) {
-                if (sl1.get() != n) {
-                    failed = true;
-                }
-            }
-            if (shouldRunOutOfMemory) {
-                runOutOfMemory(0, 0x1000_0000);
-            }
-
-            // Trigger a StructureViolationException
-            binder.close();
-        }
-
-    }
-
-    public void stackOverflow() {
-        ScopedValue.Binder binder = sl2.bind(99);
-        try {
-            var myBanger = new MyBanger(binder, false);
-            try {
-                ScopedValue.where(sl1, 0, myBanger);
-            } catch (RuntimeException e) {
-                assertFalse(sl1.isBound());
-            } finally {
-                binder.close();
-            }
-            assertFalse(myBanger.failed);
-        } finally {
-            binder.close();
-        }
-    }
-
-    private int deepBindings(int depth) {
-        try {
-            if (depth > 0) {
-                try (var unused = scopeLocals[depth].bind(depth)) {
-                    var vx = scopeLocals[depth].get();
-                    return ScopedValue.where(sl1, sl1.get() + 1)
-                            .where(scopeLocals[depth], scopeLocals[depth].get() * 2)
-                            .call(() -> scopeLocals[depth].get() + deepBindings(depth - 1) + sl1.get());
-                }
-            } else {
-                return sl2.get();
-            }
-        } catch (Exception foo) {
-            return 0;
-        }
-    }
-
-    private void deepBindings() {
-        int result;
-        try {
-            result = ScopedValue.where(sl2, 42).where(sl1, 99).call(() ->
-                    deepBindings(scopeLocals.length - 1));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        assertEquals(result, 423693);
-    }
-
-    private int deepBindings2(int depth) throws Exception {
-        if (depth > 0) {
-            try (var unused = scopeLocals[depth].bind(depth)) {
-                try (var structuredTaskScope = new StructuredTaskScope<Integer>(null, factory.get())) {
-                    var future = structuredTaskScope.fork(
-                            () -> ScopedValue.where(sl1, sl1.get() + 1)
-                                    .where(scopeLocals[depth], scopeLocals[depth].get() * 2)
-                                    .call(() -> scopeLocals[depth].get() + deepBindings2(depth - 1) + sl1.get()));
-                    structuredTaskScope.join();
-                    return future.get();
-                }
-            }
-        } else {
-            return sl2.get();
-        }
-    }
-
-    // Serious abuse of ScopedValues. Make sure everything still works,
-    // even with a ridiculous number of bindings.
-    @Test
-    public void manyScopedValues() {
-        ScopedValue<Object>[] scopeLocals = new ScopedValue[10_000];
-        ScopedValue.Binder[] binders = new ScopedValue.Binder[scopeLocals.length];
-
-        for (int i = 0; i < scopeLocals.length; i++) {
-            scopeLocals[i] = ScopedValue.newInstance();
-            binders[i] = scopeLocals[i].bind(i);
-        }
-        long n = 0;
-        for (var sl : scopeLocals) {
-            n += (Integer)sl.get();
-        }
-        for (int i = scopeLocals.length - 1; i >= 0; --i) {
-            binders[i].close();
-        }
-        assertEquals(n, 49995000);
-        for (int i = 0; i < scopeLocals.length; i++) {
-            binders[i] = scopeLocals[i].bind(i);
-        }
-        int caught = 0;
-        // Trigger StructureViolationExceptions
-        for (int i = scopeLocals.length - 2; i >= 0; i -= 2) {
-            try {
-                binders[i].close();
-            } catch (StructureViolationException x) {
-                caught++;
-            }
-        }
-
-        assertEquals(caught, 5000);
-
-        // They should all be closed now
-        caught = 0;
-        for (int i = scopeLocals.length - 1; i >= 0; --i) {
-            binders[i].close();
-            try {
-                binders[i].close();
-            } catch (StructureViolationException x) {
-                caught++;
-            }
-        }
-        assertEquals(caught, 0);
-    }
-
-    private void testDeepBindings(ScopedValue.Carrier factoryCarrier) {
-        int val = 0;
-        try (var unused = factoryCarrier.where(sl2, 42).where(sl1, 99).bind()) {
-            val = deepBindings2(scopeLocals.length - 1);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        assertEquals(val, 423693);
-    }
-
-    // Make sure that stack overflows are handled correctly.
-    // Run for a while to trigger JIT compilation.
-    @Test
-    public void stackOverflowTest() {
-        assertFalse(sl2.isBound());
-        for (int i = 0; i < 200; i++) {
-            try {
-                stackOverflow();
-            } catch (Throwable t) {
-                ;
-            }
-            assertFalse(sl2.isBound());
+            });
+        } catch (StructureViolationException structureViolationException) {
+            // Can happen if a stack overflow prevented a StackableScope from
+            // being removed. We can continue.
         }
     }
 
     @Test
-    public void platformFactorydeepBindings() {
-        testDeepBindings(platformFactoryCarrier);
-    }
-
-    @Test
-    public void virtualFactorydeepBindings() {
-        testDeepBindings(virtualFactoryCarrier);
-    }
-
-    void run() {
-        manyScopedValues();
-        platformFactorydeepBindings();
-        stackOverflowTest();
-        virtualFactorydeepBindings();
-    }
-
-    public static void main(String[] args) {
-        new Stress().run();
+    public void doTest() {
+        while (ITERS > 0) {
+            run();
+        }
+        System.out.println("OK");
     }
 }

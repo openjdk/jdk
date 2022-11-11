@@ -802,4 +802,3 @@ java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 
 # Loom, fibers branch
 
-jdk/incubator/concurrent/ScopedValue/Stress.java                            0000000 generic-all
