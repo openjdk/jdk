@@ -54,6 +54,8 @@ import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 import jdk.internal.vm.annotation.ChangesCurrentThread;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.JvmtiMountTransition;
 import sun.nio.ch.Interruptible;
 import sun.security.action.GetPropertyAction;
@@ -285,9 +287,8 @@ final class VirtualThread extends BaseVirtualThread {
         }
 
         Object bindings = scopedValueBindings();
-        ensureMaterializedForStackWalk(bindings);
         try {
-            task.run();
+            invokeWith(bindings, task);
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
@@ -313,6 +314,13 @@ final class VirtualThread extends BaseVirtualThread {
                 setState(TERMINATED);
             }
         }
+    }
+    @Hidden
+    @ForceInline
+    private void invokeWith(Object bindings, Runnable op) {
+        ensureMaterializedForStackWalk(bindings);
+        op.run();
+        Reference.reachabilityFence(bindings);
     }
 
     /**

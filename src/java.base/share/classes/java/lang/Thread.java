@@ -52,6 +52,8 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
@@ -1605,10 +1607,16 @@ public class Thread implements Runnable {
         Runnable task = holder.task;
         if (task != null) {
             Object bindings = scopedValueBindings();
-            ensureMaterializedForStackWalk(bindings);
-            task.run();
-            Reference.reachabilityFence(bindings);
+            invokeWith(bindings, task);
         }
+    }
+
+    @Hidden
+    @ForceInline
+    private void invokeWith(Object bindings, Runnable op) {
+        ensureMaterializedForStackWalk(bindings);
+        op.run();
+        Reference.reachabilityFence(bindings);
     }
 
     /**
