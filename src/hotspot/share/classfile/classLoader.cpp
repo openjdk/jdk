@@ -242,7 +242,6 @@ ClassPathDirEntry::~ClassPathDirEntry() {
 }
 
 ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char* name) {
-  // current is Thread::current().
   // construct full path name
   assert((_dir != NULL) && (name != NULL), "sanity");
   size_t path_len = strlen(_dir) + strlen(name) + strlen(os::file_separator()) + 1;
@@ -266,10 +265,8 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
 #ifdef ASSERT
-        // now resource_area is like |path|buffer| ... |
-        //                                        \hwm  \max
-        // resource_area->Afree(path, path_len) is not expected to reclaim space, but ZapResouceArea
-        // in debug builds may help us to detect memory corruption.
+        // Freeing path is a no-op here as buffer prevents it from being reclaimed. But we keep it for
+        // debug builds so that we guard against use-after-free bugs.
         FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
 #endif
         // Resource allocated
