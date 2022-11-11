@@ -173,7 +173,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Returns 0 after EOF has reached for the current entry data,
+     * Returns 0 after EOF has reached for the current ZIP entry,
      * otherwise always return 1.
      * <p>
      * Programs should not count on this method to return the actual number
@@ -193,10 +193,10 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Reads a byte of uncompressed data from the input stream for the current
+     * Reads the next byte of data from the input stream for the current
      * ZIP entry. This method will block until enough input is available for
      * decompression.
-     * @return the byte read, or -1 if end of compressed input is reached
+     * @return the byte read, or -1 if the end of the stream is reached
      * @throws    IOException if an I/O error has occurred
      */
     @Override
@@ -273,8 +273,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Reads from the current ZIP entry the requested number of bytes
-     * from the input stream into the given byte array.
+     * Reads the requested number of bytes from the input stream into the given
+     * byte array for the current ZIP entry returning the number of
+     * inflated bytes.
      * This method blocks until {@code len} bytes of input data have
      * been read, end of stream is detected, or an exception is thrown. The
      * number of bytes actually read, possibly zero, is returned. This method
@@ -363,7 +364,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Reads from the current ZIP entry into an array of bytes, returning the number of
+     * Reads the requested number of bytes from the input stream into the given
+     * byte array for the current ZIP entry returning the number of
      * inflated bytes. If {@code len} is not zero, the method blocks until some input is
      * available; otherwise, no bytes are read and {@code 0} is returned.
      * <p>
@@ -438,7 +440,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Skips specified number of bytes in the current ZIP entry.
+     * Skips over and discards {@code n} bytes of data from this input stream
+     * for the current ZIP entry.
      * @param n the number of bytes to skip
      * @return the actual number of bytes skipped
      * @throws    ZipException if a ZIP file error has occurred
