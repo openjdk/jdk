@@ -56,6 +56,7 @@ public:
 
     void set(size_t claim_size, InternalTable* table) {
       assert(table != nullptr, "precondition");
+      _next = 0;
       _limit = table->_size;
       _size  = MIN2(claim_size, _limit);
     }
