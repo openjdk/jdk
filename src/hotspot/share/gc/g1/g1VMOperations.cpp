@@ -121,9 +121,7 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _gc_succeeded(false) {
-  _gc_cause = gc_cause;
-}
+  _gc_succeeded(false) {}
 
 bool VM_G1CollectForAllocation::should_try_allocation_before_gc() {
   // Don't allocate before a preventive GC.

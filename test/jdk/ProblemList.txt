@@ -617,6 +617,13 @@ sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 gene
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
+sun/security/tools/keytool/NssTest.java                         8295343 linux-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 linux-all
+sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
+sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
+sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+
 ############################################################################
 
 # jdk_sound
@@ -749,7 +756,7 @@ jdk/jfr/startupargs/TestStartName.java                          8214685 windows-
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
-jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 linux-x64,macosx-x64
+jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 generic-all
 
 ############################################################################
 

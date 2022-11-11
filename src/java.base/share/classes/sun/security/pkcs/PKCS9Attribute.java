@@ -524,7 +524,7 @@ public class PKCS9Attribute implements DerEncoder {
      * should be encoded as <code>T61String</code>s.
      */
     @Override
-    public void derEncode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) throws IOException {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
         switch (index) {
@@ -617,11 +617,7 @@ public class PKCS9Attribute implements DerEncoder {
             {
                 DerOutputStream temp2 = new DerOutputStream();
                 CertificateExtensions exts = (CertificateExtensions)value;
-                try {
-                    exts.encode(temp2, true);
-                } catch (CertificateException ex) {
-                    throw new IOException(ex.toString());
-                }
+                exts.encode(temp2, true);
                 temp.write(DerValue.tag_Set, temp2.toByteArray());
             }
             break;
@@ -687,7 +683,7 @@ public class PKCS9Attribute implements DerEncoder {
     public String getName() {
         String n = oid.toString();
         KnownOIDs os = KnownOIDs.findMatch(n);
-        return (os == null? n : os.stdName());
+        return os == null ? n : os.stdName();
     }
 
     /**
