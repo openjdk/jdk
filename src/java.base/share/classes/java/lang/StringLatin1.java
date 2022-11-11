@@ -191,7 +191,7 @@ final class StringLatin1 {
     public static int hashCode(byte[] value) {
         return switch (value.length) {
             case 0 -> 0;
-            case 1 -> value[0];
+            case 1 -> value[0] & 0xff;
             default -> ArraysSupport.vectorizedHashCode(value, ArraysSupport.LATIN1);
         };
     }
