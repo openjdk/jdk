@@ -409,11 +409,15 @@ void ZDriverMajor::collect_young(const ZDriverRequest& request) {
     ZGeneration::young()->collect(ZYoungType::major_partial_roots, &_gc_timer);
   }
 
-  // Requires the additional abort point in the caller.
   abortpoint();
 
   // Handle allocations waiting for a young collection
   handle_alloc_stalling_for_young();
+}
+
+void ZDriverMajor::collect_old() {
+  ZGCIdMajor major_id(gc_id(), 'O');
+  ZGeneration::old()->collect(&_gc_timer);
 }
 
 void ZDriverMajor::gc(const ZDriverRequest& request) {
@@ -422,9 +426,7 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
 
   abortpoint();
 
-  // Collect old generation
-  ZGCIdMajor major_id(gc_id(), 'O');
-  ZGeneration::old()->collect(&_gc_timer);
+  collect_old();
 }
 
 static void handle_alloc_stalling_for_old() {

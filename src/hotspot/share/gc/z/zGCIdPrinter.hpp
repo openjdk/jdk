@@ -35,7 +35,9 @@ private:
   uint _minor_gc_id;
   uint _major_gc_id;
   char _major_tag;
+
   ZGCIdPrinter();
+  int print_gc_id_unchecked(uint gc_id, char *buf, size_t len);
 
 public:
   static void initialize();
@@ -59,4 +61,4 @@ public:
   ~ZGCIdMajor();
 };
 
-#endif // SHARE_GC_Z_ZDRIVER_HPP
+#endif // SHARE_GC_Z_ZGCIDPRINTER_HPP

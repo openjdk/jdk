@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/z/zGCIdPrinter.hpp"
+#include "jvm.h"
 
 ZGCIdPrinter* ZGCIdPrinter::_instance;
 
@@ -32,29 +32,34 @@ void ZGCIdPrinter::initialize() {
   GCId::set_printer(_instance);
 }
 
-size_t ZGCIdPrinter::print_gc_id(uint gc_id, char* buf, size_t len) {
-  int ret;
+int ZGCIdPrinter::print_gc_id_unchecked(uint gc_id, char* buf, size_t len) {
   if (gc_id == _minor_gc_id) {
     // Minor collections are always tagged with 'y'.
-    ret = jio_snprintf(buf, len, "GC(%u) y: ", gc_id);
-  } else if (gc_id == _major_gc_id) {
+    return jio_snprintf(buf, len, "GC(%u) y: ", gc_id);
+  }
+
+  if (gc_id == _major_gc_id) {
     // Major collections are either tagged with 'Y' or 'O',
     // this is controlled by _major_tag.
-    ret = jio_snprintf(buf, len, "GC(%u) %c: ", gc_id, _major_tag);
-  } else {
-    // The initial log for each GC should be untagged this
-    // is handled by not yet having set the current GC id
-    // for that collection and thus falling through to here.
-    ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
+    return jio_snprintf(buf, len, "GC(%u) %c: ", gc_id, _major_tag);
   }
+
+  // The initial log for each GC should be untagged this
+  // is handled by not yet having set the current GC id
+  // for that collection and thus falling through to here.
+  return jio_snprintf(buf, len, "GC(%u) ", gc_id);
+}
+
+size_t ZGCIdPrinter::print_gc_id(uint gc_id, char* buf, size_t len) {
+  const int ret = print_gc_id_unchecked(gc_id, buf, len);
   assert(ret > 0, "Failed to print prefix. Log buffer too small?");
   return (size_t)ret;
 }
 
 ZGCIdPrinter::ZGCIdPrinter() :
-  _minor_gc_id(GCId::undefined()),
-  _major_gc_id(GCId::undefined()),
-  _major_tag('-') { }
+    _minor_gc_id(GCId::undefined()),
+    _major_gc_id(GCId::undefined()),
+    _major_tag('-') { }
 
 void ZGCIdPrinter::set_minor_gc_id(uint id) {
   _minor_gc_id = id;

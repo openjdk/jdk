@@ -98,6 +98,8 @@ private:
   size_t            _used_at_start;
 
   void collect_young(const ZDriverRequest& request);
+
+  void collect_old();
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls() const;
 
