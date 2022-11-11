@@ -128,7 +128,7 @@ public class AsyncShutdownNow {
     /**
      * Test shutdownNow with thread blocked in invokeAny.
      */
-    @Test(dataProvider = "executors")
+    @Test(dataProvider = "executors", enabled = false)
     public void testInvokeAny(ExecutorService executor) throws Exception {
         System.out.format("testInvokeAny: %s%n", executor);
         try (executor) {
