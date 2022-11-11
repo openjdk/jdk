@@ -1533,7 +1533,7 @@ Predicate *InstructForm::build_predicate() {
         s += strlen(s);
       }
       // Add predicate to working buffer
-      sprintf(s,"/*%s*/(",(char*)i._key);
+      snprintf(s, (buflen - (s - buf)), "/*%s*/(",(char*)i._key);
       s += strlen(s);
       mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);
@@ -3472,7 +3472,7 @@ void MatchNode::build_internalop( ) {
                        _rChild->_internalop : _rChild->_opType) : "";
   len += (int)strlen(lstr) + (int)strlen(rstr);
   subtree = (char *)AdlAllocateHeap(len);
-  sprintf(subtree,"_%s_%s_%s", _opType, lstr, rstr);
+  snprintf(subtree, len, "_%s_%s_%s", _opType, lstr, rstr);
   // Hash the subtree string in _internalOps; if a name exists, use it
   iop = (char *)_AD._internalOps[subtree];
   // Else create a unique name, and add it to the hash table
@@ -3919,8 +3919,9 @@ void MatchRule::matchrule_swap_commutative_op(const char* instr_ident, int count
   MatchRule* clone = new MatchRule(_AD, this);
   // Swap operands of commutative operation
   ((MatchNode*)clone)->swap_commutative_op(true, count);
-  char* buf = (char*) AdlAllocateHeap(strlen(instr_ident) + 4);
-  sprintf(buf, "%s_%d", instr_ident, match_rules_cnt++);
+  size_t buf_size = strlen(instr_ident) + 4;
+  char* buf = (char*) AdlAllocateHeap(buf_size);
+  snprintf(buf, buf_size, "%s_%d", instr_ident, match_rules_cnt++);
   clone->_result = buf;
 
   clone->_next = this->_next;

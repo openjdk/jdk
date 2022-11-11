@@ -2596,7 +2596,7 @@ const char* Deoptimization::trap_reason_name(int reason) {
   if ((uint)reason < Reason_LIMIT)
     return _trap_reason_name[reason];
   static char buf[20];
-  sprintf(buf, "reason%d", reason);
+  snprintf(buf, sizeof(buf), "reason%d", reason);
   return buf;
 }
 const char* Deoptimization::trap_action_name(int action) {
@@ -2606,7 +2606,7 @@ const char* Deoptimization::trap_action_name(int action) {
   if ((uint)action < Action_LIMIT)
     return _trap_action_name[action];
   static char buf[20];
-  sprintf(buf, "action%d", action);
+  snprintf(buf, sizeof(buf), "action%d", action);
   return buf;
 }
 
@@ -2729,7 +2729,7 @@ void Deoptimization::print_statistics() {
             Bytecodes::Code bc = (Bytecodes::Code)(counter & LSB_MASK);
             if (bc_case == BC_CASE_LIMIT && (int)bc == 0)
               bc = Bytecodes::_illegal;
-            sprintf(name, "%s/%s/%s",
+            snprintf(name, sizeof(name), "%s/%s/%s",
                     trap_reason_name(reason),
                     trap_action_name(action),
                     Bytecodes::is_defined(bc)? Bytecodes::name(bc): "other");
