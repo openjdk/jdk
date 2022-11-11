@@ -35,10 +35,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.ScopedValueContainer;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.ReservedStackAccess;
-import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.*;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -381,6 +378,14 @@ public final class ScopedValue<T> {
             var newSnapshot = new Snapshot(this, prevSnapshot);
             return invokeWith(newSnapshot, op);
         }
+
+        /**
+         * Execute the action with a set of ScopedValue bindings.
+         *
+         * The VM recognizes this method as special, so any changes to the
+         * name or signature require corresponding changes in
+         * JVM_FindScopedValueBindings().
+         */
         private <R> R invokeWith(Snapshot newSnapshot, Callable<R> op) throws Exception {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
@@ -418,6 +423,16 @@ public final class ScopedValue<T> {
             var newSnapshot = new Snapshot(this, prevSnapshot);
             invokeWith(newSnapshot, op);
         }
+
+        /**
+         * Execute the action with a set of ScopedValue bindings.
+         *
+         * The VM recognizes this method as special, so any changes to the
+         * name or signature require corresponding changes in
+         * JVM_FindScopedValueBindings().
+         */
+        @Hidden
+        @ForceInline
         private void invokeWith(Snapshot newSnapshot, Runnable op) {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
@@ -430,6 +445,7 @@ public final class ScopedValue<T> {
             }
         }
     }
+
     /**
      * Creates a new {@code Carrier} with a single mapping of a {@code ScopedValue}
      * <em>key</em> to a value. The {@code Carrier} can be used to accumlate mappings so
