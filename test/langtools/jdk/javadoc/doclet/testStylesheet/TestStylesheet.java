@@ -188,10 +188,10 @@ public class TestStylesheet extends JavadocTester {
                         font-size:0;
                     }""",
                 """
-                ::placeholder {
-                    color:var(--search-input-placeholder-color);
-                    opacity: 1;
-                }""");
+                    ::placeholder {
+                        color:var(--search-input-placeholder-color);
+                        opacity: 1;
+                    }""");
 
         checkOutput("pkg/A.html", true,
                 // Test whether a link to the stylesheet file is inserted properly
