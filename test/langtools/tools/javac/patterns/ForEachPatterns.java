@@ -44,6 +44,7 @@ public class ForEachPatterns {
         assertEquals(254, primitiveWidening(inBytes));
         assertEquals(8, sealedRecordPassBaseType(in_iface));
         assertEquals(8, withPrimitives(inWithPrimitives));
+        assertEquals(List.of(Color.RED), test_jep_example());
     }
 
     static int iteratorEnhancedFor(List<Point> points) {
@@ -157,8 +158,11 @@ public class ForEachPatterns {
     static <T> void method() {}
 
     static void for_parsing(int i) {
-        List<Point> points = null;
-        List<GPoint<Integer>> generic_points = null;
+        List<Point>                 points = null;
+        List<GPoint<Integer>>       generic_points = null;
+        List<GPoint<Point>>         generic_points_nested = null;
+        List<GPoint<VoidPoint>>     generic_vpoints_nested = null;
+
         for (Point(Integer a, Integer b) : points) { }
         for (ForEachPatterns.Point(Integer a, Integer b) : points) { }
         for (GPoint<Integer>(Integer a, Integer b) : generic_points) { }
@@ -166,6 +170,30 @@ public class ForEachPatterns {
         for (method(); i == 0;) { i++; }
         for (method(), method(); i == 0;) { i++; }
         for (ForEachPatterns.<Integer>method(); i == 0;) { i++; }
+        for (GPoint<Point>(Point(Integer a, Integer b), Point c) : generic_points_nested) { }
+        for (GPoint<Point>(Point(var a, Integer b), Point c) : generic_points_nested) { }
+        for (GPoint<VoidPoint>(VoidPoint(), VoidPoint()) : generic_vpoints_nested) { }
+    }
+
+    static List<Color> test_jep_example() {
+        Rectangle rect = new Rectangle(
+                new ColoredPoint(new Point(1,2), Color.RED),
+                new ColoredPoint(new Point(3,4), Color.GREEN)
+        );
+        Rectangle[] rArr = {rect};
+        return printUpperLeftColors(rArr);
+    }
+
+    enum Color { RED, GREEN, BLUE }
+    record ColoredPoint(Point p, Color c) {}
+    record Rectangle(ColoredPoint upperLeft, ColoredPoint lowerRight) {}
+
+    static List<Color> printUpperLeftColors(Rectangle[] r) {
+        List<Color> ret = new ArrayList<>();
+        for (Rectangle(ColoredPoint(Point p, Color c), ColoredPoint lr): r) {
+            ret.add(c);
+        }
+        return ret;
     }
 
     static void fail(String message) {
@@ -206,6 +234,8 @@ public class ForEachPatterns {
     sealed interface IPoint permits Point {}
     record Point(Integer x, Integer y) implements IPoint { }
     record GPoint<T>(T x, T y) { }
+    record VoidPoint() { }
+
     @interface Annot {
         String field();
     }
