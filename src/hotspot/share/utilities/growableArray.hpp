@@ -723,7 +723,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   }
 
 public:
-  GrowableArray(int initial_capacity = 2) :
+  explicit GrowableArray(int initial_capacity = 2) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity),
           initial_capacity),
@@ -731,7 +731,7 @@ public:
     init_checks();
   }
 
-  GrowableArray(MEMFLAGS memflags, int initial_capacity = 2) :
+  explicit GrowableArray(MEMFLAGS memflags, int initial_capacity = 2) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity, memflags),
           initial_capacity),
