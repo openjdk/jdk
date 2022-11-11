@@ -65,8 +65,8 @@ public class TextAreaTextEventTest {
             robot.mouseMove(textAreaAt.x + textAreaSize.width / 2,
                 textAreaAt.y + textAreaSize.height / 2);
 
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
             typeKey(KeyEvent.VK_T);
 
@@ -91,13 +91,13 @@ public class TextAreaTextEventTest {
             robot.waitForIdle();
             textChanged = false;
             robot.mouseMove(textAreaAt.x + 4, textAreaAt.y + 10);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (int i = 0; i < textAreaSize.width / 2; i++) {
                 robot.mouseMove(textAreaAt.x + 4 + i, textAreaAt.y + 10);
             }
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
             if (textChanged) {
                 throw new RuntimeException(
