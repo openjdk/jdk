@@ -22,12 +22,13 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
 
 class GCTraceTimeTest : public LogTestFixture {

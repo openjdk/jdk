@@ -23,12 +23,12 @@
  */
 
 // no precompiled headers
-#include "jvm_io.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "include/jvm_io.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -59,8 +59,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-
-// no precompiled headers
 
 /*
  * USELABELS - If using GCC, then use labels for the opcode dispatching

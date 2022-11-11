@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/atomic.hpp"
+
 #include "unittest.hpp"
 
 class G1BatchedTaskWorkers : AllStatic {

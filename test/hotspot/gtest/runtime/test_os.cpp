@@ -24,19 +24,20 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/align.hpp"
-#include "unittest.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/threads.hpp"
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
+
+#include "unittest.hpp"
 
 static size_t small_page_size() {
   return os::vm_page_size();

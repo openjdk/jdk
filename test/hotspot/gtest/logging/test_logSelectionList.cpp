@@ -22,11 +22,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logging/logLevel.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
 

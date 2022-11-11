@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
+#include "include/jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"

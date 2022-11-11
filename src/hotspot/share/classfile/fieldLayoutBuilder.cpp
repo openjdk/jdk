@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
+#include "include/jvm.h"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -33,7 +33,6 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-
 
 LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
   _next_block(NULL),

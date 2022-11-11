@@ -22,15 +22,16 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
+#include "include/jvm.h"
 #include "logging/logConfiguration.hpp"
 #include "logging/logOutput.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "unittest.hpp"
 #include "utilities/ostream.hpp"
+
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
+#include "unittest.hpp"
 
 LogTestFixture::LogTestFixture() : _n_snapshots(0), _configuration_snapshot(NULL) {
 

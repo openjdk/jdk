@@ -28,6 +28,8 @@
 #include "utilities/spinYield.hpp"
 #include "utilities/waitBarrier.hpp"
 #include "threadHelper.inline.hpp"
+#include "unittest.hpp"
+
 
 static volatile int wait_tag = 0;
 static volatile int valid_value = 0;

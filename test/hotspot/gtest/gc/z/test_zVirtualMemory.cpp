@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+
 #include "unittest.hpp"
 
 TEST(ZVirtualMemory, split) {

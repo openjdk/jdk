@@ -32,12 +32,12 @@
 // with the ones that should pick up the mocks removed. Those should be included
 // later after the mocks have been defined.
 
-#include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "logging/log.hpp"
 #include "runtime/os_perf.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"

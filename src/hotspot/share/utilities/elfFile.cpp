@@ -26,12 +26,7 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
-#include <string.h>
-#include <stdio.h>
-#include <limits.h>
-#include <new>
-
-#include "jvm_io.h"
+#include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/decoder.hpp"
@@ -40,6 +35,11 @@
 #include "utilities/elfStringTable.hpp"
 #include "utilities/elfSymbolTable.hpp"
 #include "utilities/ostream.hpp"
+
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
+#include <new>
 
 const char* ElfFile::USR_LIB_DEBUG_DIRECTORY = "/usr/lib/debug";
 

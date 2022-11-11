@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
+
 #include "unittest.hpp"
 
 // These tests of Atomic only verify functionality.  They don't verify atomicity.

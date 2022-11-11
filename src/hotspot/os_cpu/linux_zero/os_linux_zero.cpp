@@ -24,12 +24,12 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"

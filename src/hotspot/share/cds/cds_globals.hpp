@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_CDS_GLOBALS_HPP
-#define SHARED_CDS_CDS_GLOBALS_HPP
+#ifndef SHARE_CDS_CDS_GLOBALS_HPP
+#define SHARE_CDS_CDS_GLOBALS_HPP
 
 #include "runtime/globals_shared.hpp"
 
@@ -99,4 +99,4 @@
 
 DECLARE_FLAGS(CDS_FLAGS)
 
-#endif // SHARED_CDS_CDS_GLOBALS_HPP
+#endif // SHARE_CDS_CDS_GLOBALS_HPP

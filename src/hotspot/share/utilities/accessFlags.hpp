@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_ACCESSFLAGS_HPP
 #define SHARE_UTILITIES_ACCESSFLAGS_HPP
 
-#include "jvm_constants.h"
+#include "include/jvm_constants.h"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

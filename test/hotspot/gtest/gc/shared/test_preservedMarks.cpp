@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/oop.inline.hpp"
+
 #include "unittest.hpp"
 
 // Class to create a "fake" oop with a mark that will

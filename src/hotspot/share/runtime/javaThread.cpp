@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -39,6 +38,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "include/jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -99,12 +99,12 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
-#endif
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
 #endif
 
 // Set by os layer.

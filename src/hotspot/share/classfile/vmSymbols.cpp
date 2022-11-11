@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "include/jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -35,7 +35,6 @@
 #include "runtime/signature.hpp"
 #include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
-
 
 Symbol* vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
 

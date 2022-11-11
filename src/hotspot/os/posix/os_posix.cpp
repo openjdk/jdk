@@ -22,9 +22,9 @@
  *
  */
 
-
-#include "jvm.h"
+// no precompiled headers
 #include "classfile/classLoader.hpp"
+#include "include/jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"

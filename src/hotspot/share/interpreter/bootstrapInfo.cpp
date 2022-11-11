@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "include/jvm.h"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"

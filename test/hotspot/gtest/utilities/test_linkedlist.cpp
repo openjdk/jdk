@@ -23,8 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "unittest.hpp"
 #include "utilities/linkedlist.hpp"
+
+#include "unittest.hpp"
 
 class Integer : public StackObj {
  private:

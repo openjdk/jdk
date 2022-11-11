@@ -21,8 +21,8 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -35,6 +35,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "include/jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -80,7 +81,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
-
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.

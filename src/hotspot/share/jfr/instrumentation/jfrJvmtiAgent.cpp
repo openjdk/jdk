@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"

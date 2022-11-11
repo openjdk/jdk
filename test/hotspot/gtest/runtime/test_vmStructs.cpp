@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/macros.hpp"
+
 #include "unittest.hpp"
 
 #if INCLUDE_VM_STRUCTS

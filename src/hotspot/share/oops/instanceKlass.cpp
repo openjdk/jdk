@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
@@ -44,6 +43,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "include/jvm.h"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -100,7 +100,6 @@
 
 #ifdef DTRACE_ENABLED
 
-
 #define HOTSPOT_CLASS_INITIALIZATION_required HOTSPOT_CLASS_INITIALIZATION_REQUIRED
 #define HOTSPOT_CLASS_INITIALIZATION_recursive HOTSPOT_CLASS_INITIALIZATION_RECURSIVE
 #define HOTSPOT_CLASS_INITIALIZATION_concurrent HOTSPOT_CLASS_INITIALIZATION_CONCURRENT
@@ -135,12 +134,12 @@
       data, len, (void*)class_loader(), thread_type, wait);      \
   }
 
-#else //  ndef DTRACE_ENABLED
+#else // DTRACE_ENABLED
 
 #define DTRACE_CLASSINIT_PROBE(type, thread_type)
 #define DTRACE_CLASSINIT_PROBE_WAIT(type, thread_type, wait)
 
-#endif //  ndef DTRACE_ENABLED
+#endif // ndef DTRACE_ENABLED
 
 bool InstanceKlass::_finalization_enabled = true;
 

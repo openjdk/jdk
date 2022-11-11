@@ -29,6 +29,7 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include "unittest.hpp"
 
 class TestGenCollectorPolicy {

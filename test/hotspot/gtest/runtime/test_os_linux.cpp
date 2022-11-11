@@ -25,15 +25,16 @@
 
 #ifdef LINUX
 
-#include <sys/mman.h>
-
+#include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "concurrentTestRunner.inline.hpp"
-#include "os_linux.hpp"
-#include "unittest.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
+
+#include "concurrentTestRunner.inline.hpp"
+#include "unittest.hpp"
+
+#include <sys/mman.h>
 
 namespace {
   static void small_page_write(void* addr, size_t size) {

@@ -22,8 +22,9 @@
  */
 
 #include "precompiled.hpp"
-#include "unittest.hpp"
 #include "utilities/tribool.hpp"
+
+#include "unittest.hpp"
 
 TEST(tribool, TriBool) {
   TriBool t1;

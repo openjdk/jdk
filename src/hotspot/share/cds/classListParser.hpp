@@ -199,4 +199,5 @@ public:
 
   static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
+
 #endif // SHARE_CDS_CLASSLISTPARSER_HPP

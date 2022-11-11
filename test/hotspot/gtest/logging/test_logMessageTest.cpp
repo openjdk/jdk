@@ -22,14 +22,15 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/allocation.inline.hpp"
-#include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
+#include "unittest.hpp"
 
 class LogMessageTest : public LogTestFixture {
 protected:

@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 

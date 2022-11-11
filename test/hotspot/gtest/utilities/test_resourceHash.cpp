@@ -26,10 +26,11 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbolHandle.hpp"
-#include "unittest.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
+
+#include "unittest.hpp"
 
 class CommonResourceHashtableTest : public ::testing::Test {
  protected:

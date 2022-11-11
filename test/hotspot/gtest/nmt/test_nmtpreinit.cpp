@@ -28,6 +28,7 @@
 #include "services/nmtPreInit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
 #include "unittest.hpp"
 
 // convenience log. switch on if debugging tests. Don't use tty, plain stdio only.

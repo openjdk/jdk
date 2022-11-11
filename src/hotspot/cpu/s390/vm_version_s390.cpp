@@ -24,16 +24,16 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
+#include "include/jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 
-# include <sys/sysinfo.h>
+#include <sys/sysinfo.h>
 
 bool VM_Version::_is_determine_features_test_running  = false;
 const char*   VM_Version::_model_string = "";

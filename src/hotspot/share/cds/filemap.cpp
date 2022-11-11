@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.inline.hpp"
@@ -42,6 +41,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
@@ -72,8 +72,8 @@
 #include "gc/g1/heapRegion.hpp"
 #endif
 
-# include <sys/stat.h>
-# include <errno.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #ifndef O_BINARY       // if defined (Win32) use binary files.
 #define O_BINARY 0     // otherwise do nothing.

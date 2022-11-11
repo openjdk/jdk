@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/stringUtils.hpp"
+
 #include "unittest.hpp"
 
 TEST(StringUtils, similarity) {

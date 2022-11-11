@@ -29,8 +29,8 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "unittest.hpp"
 
+#include "unittest.hpp"
 
 TEST_VM(StackOverflow, basics) {
   StackOverflow so;

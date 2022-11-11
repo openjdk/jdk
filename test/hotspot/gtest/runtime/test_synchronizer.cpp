@@ -25,6 +25,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
+
 #include "unittest.hpp"
 
 class SynchronizerTest : public ::testing::Test {

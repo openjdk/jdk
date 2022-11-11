@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "unittest.hpp"
 
+#include "unittest.hpp"
 
 template <typename T> static void test_one_or_two_set_bits() {
   unsigned i = 0;               // Position of a set bit.

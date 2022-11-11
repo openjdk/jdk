@@ -201,4 +201,5 @@ private:
   static void unmap_archive(FileMapInfo* mapinfo);
   static void get_default_classlist(char* default_classlist, const size_t buf_size);
 };
+
 #endif // SHARE_CDS_METASPACESHARED_HPP

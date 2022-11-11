@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "signals_posix.hpp"

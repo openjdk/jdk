@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "runtime/os.hpp"
+
 #include "unittest.hpp"
 
 class G1CommittedRegionMapSerial : public G1CommittedRegionMap {

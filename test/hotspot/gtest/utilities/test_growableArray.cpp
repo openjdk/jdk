@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/growableArray.hpp"
+
 #include "unittest.hpp"
 
 struct WithEmbeddedArray {

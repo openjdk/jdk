@@ -31,6 +31,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+
 #include "unittest.hpp"
 
 // Tests for InstanceKlass::is_class_loader_instance_klass() function

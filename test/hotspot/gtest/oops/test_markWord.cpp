@@ -31,12 +31,13 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
-#include "runtime/synchronizer.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "threadHelper.inline.hpp"
-#include "unittest.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
+#include "threadHelper.inline.hpp"
+#include "unittest.hpp"
 
 // The test doesn't work for PRODUCT because it needs WizardMode
 #ifndef PRODUCT

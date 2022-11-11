@@ -24,13 +24,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
@@ -77,7 +77,6 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
-
 
 address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);

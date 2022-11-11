@@ -22,17 +22,18 @@
  *
  */
 
-#ifndef SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
-#define SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
+#ifndef SHARE_CDS_CDSPROTECTIONDOMAIN_HPP
+#define SHARE_CDS_CDSPROTECTIONDOMAIN_HPP
+
+#include "classfile/moduleEntry.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "classfile/moduleEntry.hpp"
 
 class InstanceKlass;
-class Symbol;
-class PackageEntry;
 class ModuleEntry;
+class PackageEntry;
+class Symbol;
 
 // CDS security
 class CDSProtectionDomain : AllStatic {
@@ -112,4 +113,4 @@ public:
   }
 };
 
-#endif // SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
+#endif // SHARE_CDS_CDSPROTECTIONDOMAIN_HPP

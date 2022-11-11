@@ -24,6 +24,7 @@
 
 #ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+
 #include "memory/allStatic.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -49,4 +50,5 @@ class LambdaFormInvokers : public AllStatic {
   static void serialize(SerializeClosure* soc);
   static void cleanup_regenerated_classes();
 };
+
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

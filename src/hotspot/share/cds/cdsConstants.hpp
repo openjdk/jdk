@@ -41,4 +41,5 @@ class CDSConstants : AllStatic {
   static size_t get_cds_constant(const char* name);
   static size_t get_cds_offset(const char* name);
 };
+
 #endif // SHARE_CDS_CDSCONSTANTS_HPP

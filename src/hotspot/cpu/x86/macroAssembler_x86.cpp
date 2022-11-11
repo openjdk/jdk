@@ -23,15 +23,16 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
+#include "crc32c.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -52,7 +53,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
-#include "crc32c.h"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */

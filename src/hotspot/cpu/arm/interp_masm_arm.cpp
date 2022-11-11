@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "include/jvm.h"
 #include "interp_masm_arm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"

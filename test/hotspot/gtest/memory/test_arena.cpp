@@ -28,8 +28,9 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "unittest.hpp"
+
 #include "testutils.hpp"
+#include "unittest.hpp"
 
 #define ASSERT_CONTAINS(ar, p) ASSERT_TRUE(ar.contains(p))
 

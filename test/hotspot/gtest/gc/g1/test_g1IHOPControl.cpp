@@ -26,6 +26,7 @@
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
 #include "gc/g1/g1Predictions.hpp"
+
 #include "unittest.hpp"
 
 static void test_update_allocation_tracker(G1OldGenAllocationTracker* alloc_tracker,

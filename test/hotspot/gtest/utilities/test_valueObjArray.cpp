@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/valueObjArray.hpp"
+
 #include "unittest.hpp"
 
 class ValueObjArrayTest : public ::testing::Test {

@@ -23,7 +23,7 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceUtils.hpp"

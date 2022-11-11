@@ -25,10 +25,11 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
-#include "memory/virtualspace.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+
 #include "unittest.hpp"
 
 class G1MapperWorkers : AllStatic {

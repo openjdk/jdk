@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.hpp"

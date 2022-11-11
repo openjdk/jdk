@@ -22,10 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "concurrentTestRunner.inline.hpp"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
+#include "include/jvm.h"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
@@ -33,8 +30,12 @@
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
 #include "memory/resourceArea.hpp"
-#include "unittest.hpp"
 #include "utilities/ostream.hpp"
+
+#include "concurrentTestRunner.inline.hpp"
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
+#include "unittest.hpp"
 
 class LogConfigurationTest : public LogTestFixture {
  protected:

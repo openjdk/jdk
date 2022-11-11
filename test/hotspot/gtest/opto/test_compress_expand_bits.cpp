@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "opto/intrinsicnode.hpp"
+
 #include "unittest.hpp"
 
 TEST_VM(opto, compress_expand_bits) {

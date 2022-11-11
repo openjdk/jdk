@@ -26,13 +26,13 @@
 // This file is organized as os_linux_x86.cpp.
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
+#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_s390.hpp"

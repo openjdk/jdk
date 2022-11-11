@@ -23,8 +23,9 @@
 
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include "unittest.hpp"
 
 static unsigned char memory[32];
 

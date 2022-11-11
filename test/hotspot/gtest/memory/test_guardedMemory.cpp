@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
 #include "runtime/os.hpp"
+
 #include "unittest.hpp"
 
 #define GEN_PURPOSE_TAG ((void *) ((uintptr_t)0xf000f000))

@@ -28,8 +28,9 @@
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "unittest.hpp"
+
 #include "testutils.hpp"
+#include "unittest.hpp"
 
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.

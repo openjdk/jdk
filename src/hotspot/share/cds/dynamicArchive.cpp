@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
@@ -38,6 +37,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -49,7 +49,6 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
-
 
 class DynamicArchiveBuilder : public ArchiveBuilder {
   const char* _archive_name;

@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "jimage.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
@@ -43,8 +41,10 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "jimage.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"

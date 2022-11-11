@@ -26,6 +26,7 @@
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/spinYield.hpp"
+
 #include "unittest.hpp"
 
 // Some basic tests of SpinYield, using comparison of report output with

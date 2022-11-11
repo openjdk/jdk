@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/perfMemory.hpp"
+
 #include "unittest.hpp"
 
 class PerfMemoryTest : public ::testing::Test {

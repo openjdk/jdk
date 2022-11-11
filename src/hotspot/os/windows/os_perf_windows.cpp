@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "include/jvm_io.h"
 #include "iphlp_interface.hpp"
-#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -35,6 +35,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include <math.h>
 #include <psapi.h>
 #include <TlHelp32.h>

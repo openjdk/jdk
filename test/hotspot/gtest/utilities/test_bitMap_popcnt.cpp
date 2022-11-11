@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
+
 #include "unittest.hpp"
 
 // A simple stupid bitmap to mimic BitMap operations.

@@ -22,8 +22,9 @@
  */
 
 #include "precompiled.hpp"
-#include "unittest.hpp"
 #include "utilities/chunkedList.hpp"
+
+#include "unittest.hpp"
 
 class Metadata;
 

@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -53,6 +52,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
+#include "jni.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -60,7 +60,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
 #endif

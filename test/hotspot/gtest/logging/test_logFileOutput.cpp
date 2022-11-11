@@ -22,14 +22,15 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "logTestUtils.inline.hpp"
+#include "include/jvm.h"
 #include "logging/logFileOutput.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
-#include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
+#include "logTestUtils.inline.hpp"
+#include "unittest.hpp"
 
 static const char* name = prepend_prefix_temp_dir("file=", "testlog.pid%p.%t.log");
 

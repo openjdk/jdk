@@ -27,6 +27,7 @@
 #include "logging/logOutput.hpp"
 #include "logging/logOutputList.hpp"
 #include "runtime/os.hpp"
+
 #include "unittest.hpp"
 
 // Count the outputs in the given list, starting from the specified level

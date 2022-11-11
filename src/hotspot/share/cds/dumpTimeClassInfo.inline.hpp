@@ -23,10 +23,11 @@
  *
  */
 
-#ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
-#define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
+#ifndef SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP
+#define SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP
 
 #include "cds/dumpTimeClassInfo.hpp"
+
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -67,4 +68,4 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(ITER* iter) const {
 
 #endif // INCLUDE_CDS
 
-#endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
+#endif // SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP

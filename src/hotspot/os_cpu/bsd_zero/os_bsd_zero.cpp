@@ -23,18 +23,13 @@
  *
  */
 
-#if !defined(__APPLE__) && !defined(__NetBSD__)
-#include <pthread.h>
-# include <pthread_np.h> /* For pthread_attr_get_np */
-#endif
-
 // no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
@@ -56,6 +51,11 @@
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
+
+#if !defined(__APPLE__) && !defined(__NetBSD__)
+#include <pthread.h>
+# include <pthread_np.h> /* For pthread_attr_get_np */
+#endif
 
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;

@@ -22,12 +22,14 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "unittest.hpp"
+#include "include/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include "unittest.hpp"
+
 #include <errno.h>
 
 class ArgumentsTest : public ::testing::Test {
