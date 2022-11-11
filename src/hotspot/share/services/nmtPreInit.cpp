@@ -179,7 +179,7 @@ void* NMTPreInit::do_os_malloc(size_t size) {
 // Switches from NMT pre-init state to NMT post-init state;
 //  in post-init, no modifications to the lookup table are possible.
 void NMTPreInit::pre_to_post() {
-  assert(MemTracker::is_initialized() == false, "just once");
+  assert(!MemTracker::is_initialized(), "just once");
   DEBUG_ONLY(verify();)
 }
 

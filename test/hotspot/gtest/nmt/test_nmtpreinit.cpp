@@ -113,7 +113,7 @@ public:
     log_state();
   }
   void test_post() {
-    assert(!MemTracker::is_initialized() == false,
+    assert(MemTracker::is_initialized(),
            "This should be run in post-init phase (from inside a TEST_VM test)");
     LOG("corner cases, post-init (%d)", os::current_process_id());
     log_state();
@@ -127,7 +127,7 @@ public:
     log_state();
   }
   void free_all() {
-    assert(!MemTracker::is_initialized() == false,
+    assert(MemTracker::is_initialized(),
            "This should be run in post-init phase (from inside a TEST_VM test)");
     LOG("corner cases, free-all (%d)", os::current_process_id());
     log_state();
