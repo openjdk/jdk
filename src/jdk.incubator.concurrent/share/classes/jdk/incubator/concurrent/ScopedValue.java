@@ -376,20 +376,21 @@ public final class ScopedValue<T> {
          */
         public <R> R call(Callable<? extends R> op) throws Exception {
             Objects.requireNonNull(op);
-            Cache.invalidate(bitmask);
+            ScopedValue.Cache.invalidate(bitmask);
             var prevSnapshot = scopedValueBindings();
             var newSnapshot = new Snapshot(this, prevSnapshot);
-            R result;
+            return invokeWith(newSnapshot, op);
+        }
+        private <R> R invokeWith(Snapshot newSnapshot, Callable<R> op) throws Exception {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
                 JLA.ensureMaterializedForStackWalk(newSnapshot);
-                result = ScopedValueContainer.call(op);
+                return ScopedValueContainer.call(op);
             } finally {
                 Reference.reachabilityFence(newSnapshot);
-                JLA.setScopedValueBindings(prevSnapshot);
-                Cache.invalidate(bitmask);
+                JLA.setScopedValueBindings(newSnapshot.prev);
+                ScopedValue.Cache.invalidate(bitmask);
             }
-            return result;
         }
 
         /**
@@ -413,22 +414,22 @@ public final class ScopedValue<T> {
         public void run(Runnable op) {
             Objects.requireNonNull(op);
             Cache.invalidate(bitmask);
-            Snapshot newSnapshot = null;
-            JLA.ensureMaterializedForStackWalk(newSnapshot);
             var prevSnapshot = scopedValueBindings();
-            newSnapshot = new Snapshot(this, prevSnapshot);
+            var newSnapshot = new Snapshot(this, prevSnapshot);
+            invokeWith(newSnapshot, op);
+        }
+        private void invokeWith(Snapshot newSnapshot, Runnable op) {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
                 JLA.ensureMaterializedForStackWalk(newSnapshot);
                 ScopedValueContainer.run(op);
             } finally {
                 Reference.reachabilityFence(newSnapshot);
-                JLA.setScopedValueBindings(prevSnapshot);
+                JLA.setScopedValueBindings(newSnapshot.prev);
                 Cache.invalidate(bitmask);
             }
         }
     }
-
     /**
      * Creates a new {@code Carrier} with a single mapping of a {@code ScopedValue}
      * <em>key</em> to a value. The {@code Carrier} can be used to accumlate mappings so
@@ -655,10 +656,11 @@ public final class ScopedValue<T> {
             bindings = JLA.findScopedValueBindings();
             if (bindings == null) {
                 // Nothing on the stack.
-                return EmptySnapshot.getInstance();
+                bindings = EmptySnapshot.getInstance();
             }
         }
         assert (bindings != null);
+        JLA.setScopedValueBindings(bindings);
         return (Snapshot) bindings;
     }
 
@@ -801,13 +803,11 @@ public final class ScopedValue<T> {
             return (r & 15) >= 5;
         }
 
-        @ReservedStackAccess @DontInline
         public static void invalidate() {
             setScopedValueCache(null);
         }
 
         // Null a set of cache entries, indicated by the 1-bits given
-        @ReservedStackAccess @DontInline
         static void invalidate(int toClearBits) {
             toClearBits = (toClearBits >>> TABLE_SIZE) | (toClearBits & PRIMARY_MASK);
             Object[] objects;
