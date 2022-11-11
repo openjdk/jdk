@@ -30,10 +30,10 @@ import java.io.IOException;
  * @summary Launching app shouldn't produce any jni warnings.
  * @modules jdk.compiler
  *          jdk.zipfs
- * @compile TestXcheckJNIWarnings.java
- * @run main TestXcheckJNIWarnings
+ * @compile TestXcheckJdwpJNIWarnings.java
+ * @run main TestXcheckJdwpJNIWarnings
  */
-public final class TestXcheckJNIWarnings extends TestHelper {
+public final class TestXcheckJdwpJNIWarnings extends TestHelper {
 
     static void createJarFile(File testJar) throws IOException {
         StringBuilder tsrc = new StringBuilder();
