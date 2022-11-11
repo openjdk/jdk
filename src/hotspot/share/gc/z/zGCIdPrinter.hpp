@@ -25,10 +25,13 @@
 #define SHARE_GC_Z_ZGCIDPRINTER_HPP
 
 #include "gc/shared/gcId.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZGCIdPrinter : public GCIdPrinter {
   friend class ZGCIdMinor;
   friend class ZGCIdMajor;
+
 private:
   static ZGCIdPrinter* _instance;
 
@@ -37,16 +40,16 @@ private:
   char _major_tag;
 
   ZGCIdPrinter();
-  int print_gc_id_unchecked(uint gc_id, char *buf, size_t len);
-
-public:
-  static void initialize();
 
   void set_minor_gc_id(uint id);
   void set_major_gc_id(uint id);
   void set_major_tag(char tag);
 
+  int print_gc_id_unchecked(uint gc_id, char *buf, size_t len);
   size_t print_gc_id(uint gc_id, char *buf, size_t len) override;
+
+public:
+  static void initialize();
 };
 
 class ZGCIdMinor : public StackObj {

@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zGCIdPrinter.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 
 ZGCIdPrinter* ZGCIdPrinter::_instance;
 
@@ -76,6 +76,7 @@ void ZGCIdPrinter::set_major_tag(char tag) {
 ZGCIdMinor::ZGCIdMinor(uint gc_id) {
   ZGCIdPrinter::_instance->set_minor_gc_id(gc_id);
 }
+
 ZGCIdMinor::~ZGCIdMinor() {
   ZGCIdPrinter::_instance->set_minor_gc_id(GCId::undefined());
 }

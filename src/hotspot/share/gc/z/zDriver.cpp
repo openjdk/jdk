@@ -422,10 +422,13 @@ void ZDriverMajor::collect_old() {
 
 void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverScopeMajor scope(request, &_gc_timer);
+
+  // Collect the young generation
   collect_young(request);
 
   abortpoint();
 
+  // Collect the old generation
   collect_old();
 }
 

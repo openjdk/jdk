@@ -29,6 +29,7 @@
 
 class GCIdPrinter : public CHeapObj<mtGC> {
 public:
+  virtual ~GCIdPrinter() {}
   virtual size_t print_gc_id(uint gc_id, char* buf, size_t len);
 };
 
