@@ -704,11 +704,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 #if INCLUDE_RTM_OPT
   } // use_rtm()
 #endif
-  // DONE_LABEL is a hot target - we'd really like to place it at the
-  // start of cache line by padding with NOPs.
-  // See the AMD and Intel software optimization manuals for the
-  // most efficient "long" NOP encodings.
-  // Unfortunately none of our alignment mechanisms suffice.
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -924,13 +919,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
     // Intentional fall-thru into DONE_LABEL
   }
-
-  // TODO: Comment still valid?
-  // DONE_LABEL is a hot target - we'd really like to place it at the
-  // start of cache line by padding with NOPs.
-  // See the AMD and Intel software optimization manuals for the
-  // most efficient "long" NOP encodings.
-  // Unfortunately none of our alignment mechanisms suffice.
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
