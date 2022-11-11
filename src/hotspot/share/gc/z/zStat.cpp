@@ -1474,14 +1474,16 @@ void ZStatRelocation::print_page_summary() {
   ZStatRelocationSummary medium_summary{};
   ZStatRelocationSummary large_summary{};
 
+  auto account_page_size = [&](ZStatRelocationSummary& summary, const ZRelocationSetSelectorGroupStats& stats) {
+    summary.npages_candidates += stats.npages_candidates();
+    summary.total += stats.total();
+    summary.empty += stats.empty();
+    summary.npages_selected += stats.npages_selected();
+    summary.relocate += stats.relocate();
+  };
+
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
-    auto account_page_size = [&](ZStatRelocationSummary& summary, const ZRelocationSetSelectorGroupStats& stats) {
-      summary.npages += stats.npages();
-      summary.total += stats.total();
-      summary.empty += stats.empty();
-      summary.relocate += stats.relocate();
-    };
 
     account_page_size(small_summary, _selector_stats.small(age));
     account_page_size(medium_summary, _selector_stats.medium(age));
@@ -1491,30 +1493,31 @@ void ZStatRelocation::print_page_summary() {
   ZStatTablePrinter pages(20, 12);
   lt.print("%s", pages()
            .fill()
+           .right("Candidates")
            .right("Selected")
            .right("In-Place")
-           .right("Total")
            .right("Size")
            .right("Empty")
            .right("Relocated")
            .end());
 
-  auto print_summary = [&](const char* name, ZStatRelocationSummary& summary, size_t selected, size_t in_place_count, bool skip) {
-    if (skip) { return; }
+  auto print_summary = [&](const char* name, ZStatRelocationSummary& summary, size_t in_place_count) {
     lt.print("%s", pages()
              .left("%s Pages:", name)
-             .right("%zu", selected)
+             .right("%zu", summary.npages_candidates)
+             .right("%zu", summary.npages_selected)
              .right("%zu", in_place_count)
-             .right("%zu", summary.npages)
              .right("%zuM", summary.total / M)
              .right("%zuM", summary.empty / M)
              .right("%zuM", summary.relocate /M)
              .end());
   };
 
-  print_summary("Small", small_summary, _selector_stats.small_selected(), _small_in_place_count, false /* skip */);
-  print_summary("Medium", medium_summary, _selector_stats.medium_selected(), _medium_in_place_count, ZPageSizeMedium == 0);
-  print_summary("Large", large_summary, 0 /* selected */,  0 /* in_place_count */, false /* skip */);
+  print_summary("Small", small_summary, _small_in_place_count);
+  if (ZPageSizeMedium == 0) {
+    print_summary("Medium", medium_summary, _medium_in_place_count);
+  }
+  print_summary("Large", large_summary, 0 /* in_place_count */);
 
   lt.print("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
 }

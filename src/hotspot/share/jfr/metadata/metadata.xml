@@ -1062,9 +1062,10 @@
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
-    <Field type="ulong" name="pages" label="Pages" />
+    <Field type="ulong" name="candidate_pages" label="Candidate Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" name="selected_pages" label="Selected Pages" />
     <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 

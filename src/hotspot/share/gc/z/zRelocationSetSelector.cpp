@@ -34,10 +34,11 @@
 #include "utilities/powerOfTwo.hpp"
 
 ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats() :
-    _npages(0),
+    _npages_candidates(0),
     _total(0),
     _live(0),
     _empty(0),
+    _npages_selected(0),
     _relocate(0) {}
 
 ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
@@ -193,18 +194,17 @@ void ZRelocationSetSelectorGroup::select() {
     }
   }
 
-  size_t npages = 0;
-  size_t total = 0;
-  size_t empty = 0;
-  size_t relocate = 0;
+  ZRelocationSetSelectorGroupStats s{};
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    npages += _stats[i].npages();
-    total += _stats[i].total();
-    empty += _stats[i].empty();
-    relocate += _stats[i].relocate();
+    s._npages_candidates += _stats[i].npages_candidates();
+    s._total += _stats[i].total();
+    s._empty += _stats[i].empty();
+    s._npages_selected += _stats[i].npages_selected();
+    s._relocate += _stats[i].relocate();
   }
+
   // Send event
-  event.commit((u8)_page_type, npages, total, empty, relocate);
+  event.commit((u8)_page_type, s._npages_candidates, s._total, s._empty, s._npages_selected, s._relocate);
 }
 
 ZRelocationSetSelector::ZRelocationSetSelector(double fragmentation_limit) :
@@ -233,14 +233,15 @@ void ZRelocationSetSelector::select() {
 
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
   ZRelocationSetSelectorStats stats;
+
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
     stats._small[i] = _small.stats(age);
     stats._medium[i] = _medium.stats(age);
     stats._large[i] = _large.stats(age);
   }
-  stats._small_selected = _small.selected_pages()->length();
-  stats._medium_selected = _medium.selected_pages()->length();
-  stats._total_pages = total();
+
+  stats._has_relocatable_pages = total() > 0;
+
   return stats;
 }

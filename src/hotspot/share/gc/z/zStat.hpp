@@ -508,11 +508,12 @@ public:
 };
 
 struct ZStatRelocationSummary {
-  size_t npages;
+  size_t npages_candidates;
   size_t total;
-  size_t empty;
-  size_t relocate;
   size_t live;
+  size_t empty;
+  size_t npages_selected;
+  size_t relocate;
 };
 
 //
