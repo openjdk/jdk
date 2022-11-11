@@ -1,10 +1,10 @@
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.RangeDiagnosticPosition;
 
 public record SuggestedChange(
         DiagnosticSource source,
-        DiagnosticPosition position,
+        RangeDiagnosticPosition position,
         String replacement,
         Applicability applicability
 ) {

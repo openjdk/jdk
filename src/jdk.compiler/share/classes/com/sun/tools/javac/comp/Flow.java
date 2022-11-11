@@ -1102,6 +1102,10 @@ public class Flow {
          */
         JCClassDecl classDef;
 
+        /** The current method being defined
+         */
+        JCMethodDecl methodDef;
+
         /** The list of possibly thrown declarable exceptions.
          */
         List<Type> thrown;
@@ -1115,9 +1119,12 @@ public class Flow {
 
             Type thrown;
 
-            ThrownPendingExit(JCTree tree, Type thrown) {
+            JCMethodDecl declMethod;
+
+            ThrownPendingExit(JCTree tree, Type thrown, JCMethodDecl declMethod) {
                 super(tree);
                 this.thrown = thrown;
+                this.declMethod = declMethod;
             }
         }
 
@@ -1145,8 +1152,15 @@ public class Flow {
                                   Errors.UnreportedExceptionImplicitClose(thrownExit.thrown,
                                                                           ((JCVariableDecl)exit.tree).sym.name));
                     } else {
-                        log.error(exit.tree.pos(),
-                                  Errors.UnreportedExceptionNeedToCatchOrThrow(thrownExit.thrown));
+                        if (thrownExit.declMethod != null) {
+                            // provide extra context if the method def is available
+                            log.error(
+                                    exit.tree.pos(),
+                                    Errors.UnreportedExceptionNeedToCatchOrThrow(thrownExit.thrown),
+                                    new Info(Fragments.InfoFunctionDeclaredHere, log.currentSource(), List.of(thrownExit.declMethod.pos()))
+                            );
+                        }
+                        log.error(exit.tree.pos(), Errors.UnreportedExceptionNeedToCatchOrThrow(thrownExit.thrown));
                     }
                 } else {
                     Assert.check(log.hasErrorOn(exit.tree.pos()));
@@ -1157,10 +1171,10 @@ public class Flow {
         /** Record that exception is potentially thrown and check that it
          *  is caught.
          */
-        void markThrown(JCTree tree, Type exc) {
+        void markThrown(JCTree tree, Type exc, JCMethodDecl declMethod) {
             if (!chk.isUnchecked(tree.pos(), exc)) {
                 if (!chk.isHandled(exc, caught)) {
-                    pendingExits.append(new ThrownPendingExit(tree, exc));
+                    pendingExits.append(new ThrownPendingExit(tree, exc, declMethod));
                 }
                 thrown = chk.incl(exc, thrown);
             }
@@ -1269,6 +1283,9 @@ public class Flow {
             List<Type> caughtPrev = caught;
             List<Type> mthrown = tree.sym.type.getThrownTypes();
             Lint lintPrev = lint;
+            JCMethodDecl methodPrev = methodDef;
+
+            methodDef = tree;
 
             lint = lint.augment(tree.sym);
 
@@ -1304,6 +1321,7 @@ public class Flow {
             } finally {
                 caught = caughtPrev;
                 lint = lintPrev;
+                methodDef = methodPrev;
             }
         }
 
@@ -1435,7 +1453,7 @@ public class Flow {
                         Type mt = types.memberType(resource.type, closeMethod);
                         if (closeMethod.kind == MTH) {
                             for (Type t : mt.getThrownTypes()) {
-                                markThrown(resource, t);
+                                markThrown(resource, t, methodDef);
                             }
                         }
                     }
@@ -1559,11 +1577,11 @@ public class Flow {
                 (sym.flags() & (FINAL | EFFECTIVELY_FINAL)) != 0 &&
                 preciseRethrowTypes.get(sym) != null) {
                 for (Type t : preciseRethrowTypes.get(sym)) {
-                    markThrown(tree, t);
+                    markThrown(tree, t, methodDef);
                 }
             }
             else {
-                markThrown(tree, tree.expr.type);
+                markThrown(tree, tree.expr.type, methodDef);
             }
             markDead();
         }
@@ -1572,7 +1590,7 @@ public class Flow {
             scan(tree.meth);
             scan(tree.args);
             for (List<Type> l = tree.meth.type.getThrownTypes(); l.nonEmpty(); l = l.tail)
-                markThrown(tree, l.head);
+                markThrown(tree, l.head, methodDef);
         }
 
         public void visitNewClass(JCNewClass tree) {
@@ -1582,7 +1600,7 @@ public class Flow {
             for (List<Type> l = tree.constructorType.getThrownTypes();
                  l.nonEmpty();
                  l = l.tail) {
-                markThrown(tree, l.head);
+                markThrown(tree, l.head, methodDef);
             }
             List<Type> caughtPrev = caught;
             try {

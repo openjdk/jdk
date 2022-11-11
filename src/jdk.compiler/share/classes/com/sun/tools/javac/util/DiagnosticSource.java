@@ -129,6 +129,29 @@ public class DiagnosticSource {
         }
     }
 
+    public String getLines(final int startPos, final int endPos) {
+        final var startLineStartPos = getLineStartPos(startPos);
+        final var endLineEndPos = getLineEndPos(endPos);
+        if (startLineStartPos.isEmpty() || endLineEndPos.isEmpty()) {
+            return null;
+        }
+
+        try {
+            final char[] buf;
+            if (refBuf != null) {
+                buf = refBuf.get();
+            } else {
+                buf = initBuf(fileObject);
+            }
+
+            return new String(buf, startLineStartPos.getAsInt(), endLineEndPos.getAsInt() - startLineStartPos.getAsInt());
+        } catch (final IOException e) {
+            log.directError("source.unavailable");
+            buf = new char[0];
+            return null;
+        }
+    }
+
     /** Returns the position representing the start of the line that contains the given pos
      */
     public OptionalInt getLineStartPos(final int pos) {
@@ -138,6 +161,24 @@ public class DiagnosticSource {
             }
 
             return OptionalInt.of(lineStart);
+        } finally {
+            buf = null;
+        }
+    }
+
+    /** Returns the position representing the end of the line that contains the given pos
+     */
+    public OptionalInt getLineEndPos(final int pos) {
+        try {
+            if (!findLine(pos)) {
+                return OptionalInt.empty();
+            }
+
+            int lineEnd = lineStart;
+            while (lineEnd < bufLen && buf[lineEnd] != CR && buf[lineEnd] != LF){
+                lineEnd++;
+            }
+            return OptionalInt.of(lineEnd);
         } finally {
             buf = null;
         }

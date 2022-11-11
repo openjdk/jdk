@@ -118,8 +118,26 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
 
         public JCDiagnostic error(
+                DiagnosticFlag flag, DiagnosticSource source, DiagnosticPosition pos, Error errorKey, Info info) {
+            JCDiagnostic diag = create(null, EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey, info);
+            if (flag != null) {
+                diag.setFlag(flag);
+            }
+            return diag;
+        }
+
+        public JCDiagnostic error(
                 DiagnosticFlag flag, DiagnosticSource source, DiagnosticPosition pos, Error errorKey, Help help) {
             JCDiagnostic diag = create(null, EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey, help);
+            if (flag != null) {
+                diag.setFlag(flag);
+            }
+            return diag;
+        }
+
+        public JCDiagnostic error(
+                DiagnosticFlag flag, DiagnosticSource source, DiagnosticPosition pos, Error errorKey, Info info, Help help) {
+            JCDiagnostic diag = create(null, EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey, info, help);
             if (flag != null) {
                 diag.setFlag(flag);
             }
@@ -310,8 +328,18 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
 
         public JCDiagnostic create(
+                LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, Info info) {
+            return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos, null, info, null);
+        }
+
+        public JCDiagnostic create(
                 LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, Help help) {
             return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos, null, null, help);
+        }
+
+        public JCDiagnostic create(
+                LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, Info info, Help help) {
+            return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos, null, info, help);
         }
 
         public JCDiagnostic create(
@@ -458,6 +486,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         private final int pos;
     }
 
+    /**
+     * A DiagnosticPosition that always represents a range of positions with a start and an end.
+     */
     public static class RangeDiagnosticPosition implements DiagnosticPosition  {
         private final int startPos;
         private final int endPos;
@@ -491,6 +522,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         public int getEndPosition(EndPosTable endPosTable) {
             return endPos;
         }
+
+        public int getEndPosition() {
+            return endPos;
+        }
     }
 
     public enum DiagnosticFlag {
@@ -514,8 +549,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     private final Set<DiagnosticFlag> flags;
     private final LintCategory lintCategory;
 
+    private final Info info;
     private final Help help;
-    private final Note note;
 
     /** source line position (set lazily) */
     private SourcePosition sourcePosition;
@@ -526,11 +561,11 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         return Optional.ofNullable(this.help);
     }
 
-    public Optional<Note> getNote() {
-        return Optional.ofNullable(this.note);
+    public Optional<Info> getInfo() {
+        return Optional.ofNullable(this.info);
     }
 
-    public JCDiagnostic withHelp(Help help){
+    public JCDiagnostic withHelp(final Help help){
 
         return new JCDiagnostic(
                 this.defaultFormatter,
@@ -540,8 +575,23 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                 this.source,
                 this.position,
                 this.rewriter,
-                this.note,
+                this.info,
                 help
+        );
+    }
+
+    public JCDiagnostic withInfo(final Info info){
+
+        return new JCDiagnostic(
+                this.defaultFormatter,
+                this.diagnosticInfo,
+                this.lintCategory,
+                this.flags,
+                this.source,
+                this.position,
+                this.rewriter,
+                info,
+                this.help
         );
     }
 
@@ -724,7 +774,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                            DiagnosticSource source,
                            DiagnosticPosition pos,
                            UnaryOperator<JCDiagnostic> rewriter,
-                           Note note,
+                           Info info,
                            Help help) {
         if (source == null && pos != null && pos.getPreferredPosition() != Position.NOPOS)
             throw new IllegalArgumentException();
@@ -736,7 +786,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         this.source = source;
         this.position = pos;
         this.rewriter = rewriter;
-        this.note = note;
+        this.info = info;
         this.help = help;
     }
 

@@ -126,6 +126,13 @@ public abstract class AbstractLog {
         report(diags.error(flag, source, pos, errorKey));
     }
 
+    // TODO(pretty-diags): docs
+    // same as above but with Info
+    public void error(DiagnosticPosition pos, Error errorKey, Info info) {
+        report(diags.error(null, source, pos, errorKey, info));
+    }
+
+
     /** Report an error, unless another error was already reported at same
      *  source position.
      *  @param pos    The source position at which to report the error.
