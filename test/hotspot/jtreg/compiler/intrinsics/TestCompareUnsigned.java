@@ -29,8 +29,8 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @key randomness
- * @bug 8283726
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @bug 8283726 8287925
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @summary Test the intrinsics implementation of Integer/Long::compareUnsigned
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestCompareUnsigned
@@ -74,12 +74,26 @@ public class TestCompareUnsigned {
     }
 
     @Test
+    @IR(counts = {IRNode.CMP_U3, "1"})
+    public int compareIntWith42(int x) {
+        return Integer.compareUnsigned(x, 42);
+    }
+
+    @Test
     @IR(counts = {IRNode.CMP_UL3, "1"})
     public int compareLong(long x, long y) {
         return Long.compareUnsigned(x, y);
     }
 
-    @Run(test = {"lessThanInt", "lessThanLong", "compareInt", "compareLong"})
+    @Test
+    @IR(counts = {IRNode.CMP_UL3, "1"})
+    public int compareLongWith42(long x) {
+        return Long.compareUnsigned(x, 42);
+    }
+
+    @Run(test = {"lessThanInt", "lessThanLong",
+                 "compareInt", "compareIntWith42",
+                 "compareLong", "compareLongWith42"})
     public void runTests() {
         var random = Utils.getRandomInstance();
         for (int i = 0; i < 1000; i++) {
@@ -89,6 +103,7 @@ public class TestCompareUnsigned {
             Asserts.assertEquals(compareInt(x, x), 0);
             Asserts.assertEquals(lessThanInt(x, y), expectedResult(x, y) < 0 ? TRUE_VALUE : FALSE_VALUE);
             Asserts.assertEquals(compareInt(x, y), expectedResult(x, y));
+            Asserts.assertEquals(compareIntWith42(x), expectedResult(x, 42));
         }
         for (int i = 0; i < 1000; i++) {
             long x = random.nextLong();
@@ -97,6 +112,7 @@ public class TestCompareUnsigned {
             Asserts.assertEquals(compareLong(x, x), 0);
             Asserts.assertEquals(lessThanLong(x, y), expectedResult(x, y) < 0 ? TRUE_VALUE : FALSE_VALUE);
             Asserts.assertEquals(compareLong(x, y), expectedResult(x, y));
+            Asserts.assertEquals(compareLongWith42(x), expectedResult(x, 42));
         }
     }
 }
