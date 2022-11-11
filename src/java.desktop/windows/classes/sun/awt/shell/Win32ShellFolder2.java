@@ -1437,7 +1437,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                     }
                 }
             }
-            if (retVal.getWidth(null) != w) {
+            if ((retVal != null) && (retVal.getWidth(null) != w)) {
                 BufferedImage newVariant = new BufferedImage(w, w, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = newVariant.createGraphics();
                 g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
