@@ -163,6 +163,7 @@ public:
   CompressedSparseDataWriteStream(int initial_size) : CompressedBitStream() {
     _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
     _size     = initial_size;
+    _buffer[0] = 0;
   }
 
   void write_bool(jboolean value)   { write_int(value ? 1 : 0); }
@@ -182,9 +183,8 @@ public:
 
   void flush() {
     if (_bit_pos > 0) {
-      // flush current data and start a new byte
-      write(_curr_byte << (8 - _bit_pos));
-      _curr_byte = 0;
+      // start a new byte
+      _position++;
       _bit_pos = 0;
     }
   }
@@ -195,19 +195,12 @@ public:
   void set_position(int pos) {
     flush();
     _position = pos;
+    _bit_pos = 0;
   }
 
 protected:
   int    _size;
-  u_char _curr_byte {0};
-
   void grow();
-  void write(u_char b) {
-    if (_position >= _size) {
-      grow();
-    }
-    _buffer[_position++] = b;
-  }
 
   void write_zero();  // The zero word is encoded with a single zero bit
   void write_byte_impl(uint8_t b);

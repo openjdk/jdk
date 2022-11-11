@@ -166,17 +166,33 @@ jint CompressedSparseDataReadStream::read_int() {
 }
 
 void CompressedSparseDataWriteStream::write_zero() {
-  _curr_byte <<= 1; // zero bit represents a zero word
-  if (++_bit_pos == 8) {
-    write(_curr_byte);
-    _curr_byte = 0;
+  if (_bit_pos == 0) {
+    _buffer[_position] = 0;
+  }
+  _bit_pos++;
+  if (_bit_pos == 8) {
+    _position++;
+    if (_position >= _size) {
+      grow();
+    }
+    _buffer[_position] = 0;
     _bit_pos = 0;
   }
 }
 
 void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
-  write((_curr_byte << (8 - _bit_pos)) | (b >> _bit_pos));
-  _curr_byte = (0xff >> (8 - _bit_pos)) & b;
+  if (_bit_pos == 0) {
+    _buffer[_position] = b;
+  } else {
+    _buffer[_position] |= (b >> _bit_pos);
+  }
+  _position++;
+  if (_position >= _size) {
+    grow();
+  }
+  if (_bit_pos > 0) {
+    _buffer[_position] = (b << (8 - _bit_pos));
+  }
 }
 
 // see CompressedSparseDataReadStream::read_int for a description of the encoding scheme
