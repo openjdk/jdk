@@ -52,6 +52,10 @@ class MacOSXFileSystem extends BsdFileSystem {
         super(provider, dir);
     }
 
+    boolean isCaseInsensitiveAndPreserving() {
+        return true;
+    }
+
     // match in unicode canon_eq
     Pattern compilePathMatchPattern(String expr) {
         return Pattern.compile(expr, Pattern.CANON_EQ) ;

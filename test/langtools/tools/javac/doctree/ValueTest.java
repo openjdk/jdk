@@ -178,6 +178,42 @@ DocComment[DOC_COMMENT, pos:1
   block tags: empty
 ]
 */
+
+    /**
+     * abc {@value java.awt.Color}
+     */
+    int type_reference() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 3
+    Text[TEXT, pos:1, abc_]
+    Erroneous[ERRONEOUS, pos:5, prefPos:17
+      code: compiler.err.dc.ref.unexpected.input
+      body: {@value_java.awt.Color
+    ]
+    Text[TEXT, pos:27, }]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value java.awt.Color##fragment}
+     */
+    int anchor_reference() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 3
+    Text[TEXT, pos:1, abc_]
+    Erroneous[ERRONEOUS, pos:5, prefPos:28
+      code: compiler.err.dc.ref.unexpected.input
+      body: {@value_java.awt....Color##fragment
+    ]
+    Text[TEXT, pos:37, }]
+  body: empty
+  block tags: empty
+]
+*/
 }
 
 
