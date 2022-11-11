@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -31,6 +30,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"

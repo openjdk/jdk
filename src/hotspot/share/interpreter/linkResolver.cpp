@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
@@ -33,6 +32,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "include/jvm.h"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"

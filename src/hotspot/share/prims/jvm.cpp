@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -45,6 +44,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"

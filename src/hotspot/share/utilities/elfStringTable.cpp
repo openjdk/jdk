@@ -26,7 +26,7 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
-#include "jvm.h"
+#include "include/jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/elfStringTable.hpp"

@@ -26,7 +26,6 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
@@ -37,6 +36,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/compileTask.hpp"

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -44,6 +43,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

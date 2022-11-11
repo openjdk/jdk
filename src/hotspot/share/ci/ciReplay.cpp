@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
@@ -35,6 +34,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"

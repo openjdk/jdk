@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -36,6 +35,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"

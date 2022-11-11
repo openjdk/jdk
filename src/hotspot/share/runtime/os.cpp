@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -33,7 +32,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "logging/log.hpp"
+#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

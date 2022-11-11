@@ -28,7 +28,7 @@
 
 #include "services/mallocHeader.hpp"
 
-#include "jvm_io.h"
+#include "include/jvm_io.h"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

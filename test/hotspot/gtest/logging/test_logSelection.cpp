@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logging/logLevel.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"

@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "os_windows.hpp"
 #include "runtime/osThread.hpp"

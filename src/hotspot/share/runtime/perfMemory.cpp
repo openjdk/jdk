@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"

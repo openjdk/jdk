@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "include/jvm.h"
 #include "jni.h"
-#include "jvm.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"

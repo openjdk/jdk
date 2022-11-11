@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"

@@ -23,7 +23,7 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logFileOutput.hpp"

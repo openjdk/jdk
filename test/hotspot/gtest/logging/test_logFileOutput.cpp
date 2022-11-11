@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "include/jvm.h"
 #include "logTestUtils.inline.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/resourceArea.hpp"

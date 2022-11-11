@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classPrelinker.hpp"
@@ -36,6 +35,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "include/jvm.h"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"

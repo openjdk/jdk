@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -33,6 +32,7 @@
 #include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/verificationType.hpp"
+#include "include/jvm.h"
 #include "interpreter/bytecodes.hpp"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"

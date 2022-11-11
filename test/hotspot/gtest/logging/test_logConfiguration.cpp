@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "concurrentTestRunner.inline.hpp"
+#include "include/jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"

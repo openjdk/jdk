@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "include/jvm.h"
 #include "jni.h"
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"

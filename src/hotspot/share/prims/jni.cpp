@@ -26,7 +26,6 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "jvm.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -45,6 +44,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"

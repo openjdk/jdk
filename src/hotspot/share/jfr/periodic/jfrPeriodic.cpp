@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
@@ -36,6 +35,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
+#include "include/jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"

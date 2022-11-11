@@ -25,7 +25,6 @@
 // API level must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -33,6 +32,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"

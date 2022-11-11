@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
+#include "include/jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
