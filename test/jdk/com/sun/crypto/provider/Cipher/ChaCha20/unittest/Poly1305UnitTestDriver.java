@@ -31,6 +31,7 @@
 
 /*
  * @test
+ * @key randomness
  * @modules java.base/com.sun.crypto.provider
  * @run main java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
  * @summary Unit test for com.sun.crypto.provider.Poly1305.
@@ -45,18 +46,17 @@
 
 /*
  * @test
+ * @key randomness
  * @modules java.base/com.sun.crypto.provider
- * @run main java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
  * @summary Unit test for IntrinsicCandidate in com.sun.crypto.provider.Poly1305.
- * @run main/othervm -Xcomp -XX:-TieredCompilation com.sun.crypto.provider.Cipher.ChaCha20.Poly1305UnitTestDriver
+ * @run main/othervm -Xcomp -XX:-TieredCompilation java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
  */
 
 /*
  * @test
  * @modules java.base/com.sun.crypto.provider
- * @run main java.base/com.sun.crypto.provider.Poly1305KAT
  * @summary Unit test for IntrinsicCandidate in com.sun.crypto.provider.Poly1305.
- * @run main/othervm -Xcomp -XX:-TieredCompilation com.sun.crypto.provider.Cipher.ChaCha20.Poly1305UnitTestDriver
+ * @run main/othervm -Xcomp -XX:-TieredCompilation java.base/com.sun.crypto.provider.Poly1305KAT
  */
 
 package com.sun.crypto.provider.Cipher.ChaCha20;

@@ -40,6 +40,7 @@ public class Poly1305IntrinsicFuzzTest {
                 for (int i = 0; i < repeat; i++) {
                         run();
                 }
+                System.out.println("Fuzz Success");
         }
 
         public static void run() throws Exception {

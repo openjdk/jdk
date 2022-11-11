@@ -596,7 +596,7 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   const XMMRegister R1P = xmm28;
   const XMMRegister R2P = xmm29;
 
-  __ subq(rsp, 512/8*6); // Make room to store 6 zmm registers (powers of R)
+  __ subq(rsp, (512/8)*6); // Make room to store 6 zmm registers (powers of R)
 
   // Spread accumulator into 44-bit limbs in quadwords C0,C1,C2
   __ movq(t0, a0);
@@ -781,13 +781,13 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   poly1305_limbs_avx512(T0, T1, B3, B4, B5, true);
 
   poly1305_multiply8_avx512(A0, A1, A2,            // MSG/ACC 16 blocks
-                            R0, R1, R2, R1P, R2P); //R^16..R^16, 4*5*R^16
+                            R0, R1, R2, R1P, R2P); // R^16..R^16, 4*5*R^16
   poly1305_multiply8_avx512(A3, A4, A5,            // MSG/ACC 16 blocks
-                            R0, R1, R2, R1P, R2P); //R^16..R^16, 4*5*R^16
+                            R0, R1, R2, R1P, R2P); // R^16..R^16, 4*5*R^16
 
   __ vpaddq(A0, A0, B0, Assembler::AVX_512bit); // Add low 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, B1, Assembler::AVX_512bit); // Add medium 42-bit bits from new blocks to accumulator
-  __ vpaddq(A2, A2, B2, Assembler::AVX_512bit); //Add highest bits from new blocks to accumulator
+  __ vpaddq(A2, A2, B2, Assembler::AVX_512bit); // Add highest bits from new blocks to accumulator
   __ vpaddq(A3, A3, B3, Assembler::AVX_512bit); // Add low 42-bit bits from new blocks to accumulator
   __ vpaddq(A4, A4, B4, Assembler::AVX_512bit); // Add medium 42-bit bits from new blocks to accumulator
   __ vpaddq(A5, A5, B5, Assembler::AVX_512bit); // Add highest bits from new blocks to accumulator
@@ -825,9 +825,9 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   __ vpsllq(R2P, R2P, 2, Assembler::AVX_512bit);
 
   poly1305_multiply8_avx512(A0, A1, A2,            // MSG/ACC 16 blocks
-                              B0, B1, B2, B3, B4); // R^16-R^9, R1P, R2P
-  poly1305_multiply8_avx512(A3, A4, A5,              // MSG/ACC 16 blocks
-                              R0, R1, R2, R1P, R2P); // R^8-R, R1P, R2P
+                            B0, B1, B2, B3, B4);   // R^16-R^9, R1P, R2P
+  poly1305_multiply8_avx512(A3, A4, A5,            // MSG/ACC 16 blocks
+                            R0, R1, R2, R1P, R2P); // R^8-R, R1P, R2P
 
   // Add all blocks (horizontally)
   // 16->8 blocks
@@ -882,14 +882,16 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   __ movq(t0, A1);
   __ movq(t1, t0);
   __ shlq(t1, 44);
-  __ orq(a0, t1);
-
   __ shrq(t0, 20);
+
   __ movq(a2, A2);
   __ movq(a1, a2);
   __ shlq(a1, 24);
-  __ orq(a1, t0);
   __ shrq(a2, 40);
+
+  __ addq(a0, t1);
+  __ adcq(a1, t0);
+  __ adcq(a2, 0);
 
   // Cleanup
   __ vpxorq(xmm0, xmm0, xmm0, Assembler::AVX_512bit);
@@ -953,11 +955,20 @@ address StubGenerator::generate_poly1305_processBlocks() {
   const Register R            = r8;
 
   #ifdef _WIN64
+  // c_rarg0 - rcx
+  // c_rarg1 - rdx
+  // c_rarg2 - r8
+  // c_rarg3 - r9
   __ mov(input, c_rarg0);
   __ mov(length, c_rarg1);
   __ mov(accumulator, c_rarg2);
   __ mov(R, c_rarg3);
-  #else  // input already in correct position for linux; dont clobber R, args copied out-of-order
+  #else
+  // c_rarg0 - rdi
+  // c_rarg1 - rsi
+  // c_rarg2 - rdx
+  // c_rarg3 - rcx
+  // dont clobber R, args copied out-of-order
   __ mov(length, c_rarg1);
   __ mov(R, c_rarg3);
   __ mov(accumulator, c_rarg2);
