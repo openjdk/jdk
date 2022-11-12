@@ -62,7 +62,8 @@ class CFGPrinterOutput : public CHeapObj<mtCompiler> {
 
   void inc_indent();
   void dec_indent();
-  ATTRIBUTE_PRINTF(2, 3) void print(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 3)
+  void print(const char* format, ...);
   void print_begin(const char* tag);
   void print_end(const char* tag);
 
