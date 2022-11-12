@@ -408,11 +408,11 @@ class GenerateOopMap {
 
   // Error handling
   ATTRIBUTE_PRINTF(2, 0)
-  void  error_work   (const char *format, va_list ap);
+  void  error_work                          (const char *format, va_list ap);
   ATTRIBUTE_PRINTF(2, 3)
-  void  report_error (const char *format, ...);
+  void  report_error                        (const char *format, ...);
   ATTRIBUTE_PRINTF(2, 3)
-  void  verify_error (const char *format, ...);
+  void  verify_error                        (const char *format, ...);
   bool  got_error()                         { return _got_error; }
 
   // Create result set

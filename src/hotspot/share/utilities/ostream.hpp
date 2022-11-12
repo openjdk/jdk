@@ -92,14 +92,10 @@ class outputStream : public CHeapObjBase {
    void set_position(int pos)   { _position = pos; }
 
    // printing
-   ATTRIBUTE_PRINTF(2, 3)
-   void print(const char* format, ...);
-   ATTRIBUTE_PRINTF(2, 3)
-   void print_cr(const char* format, ...);
-   ATTRIBUTE_PRINTF(2, 0)
-   void vprint(const char *format, va_list argptr);
-   ATTRIBUTE_PRINTF(2, 0)
-   void vprint_cr(const char* format, va_list argptr);
+   ATTRIBUTE_PRINTF(2, 3) void print(const char* format, ...);
+   ATTRIBUTE_PRINTF(2, 3) void print_cr(const char* format, ...);
+   ATTRIBUTE_PRINTF(2, 0) void vprint(const char *format, va_list argptr);
+   ATTRIBUTE_PRINTF(2, 0) void vprint_cr(const char* format, va_list argptr);
    void print_raw(const char* str)            { write(str, strlen(str)); }
    void print_raw(const char* str, size_t len)   { write(str,         len); }
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
