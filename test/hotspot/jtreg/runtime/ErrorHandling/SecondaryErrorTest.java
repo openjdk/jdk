@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022 SAP. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +25,32 @@
 
 /*
  * @test
- * @bug 8065896
- * @summary Synchronous signals during error reporting may terminate or hang VM process
+ * @summary Check secondary error handling
  * @library /test/lib
  * @requires vm.debug
  * @requires os.family != "windows"
- * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver SecondaryErrorTest
+ * @run driver SecondaryErrorTest no_callstacks
+ */
+
+/*
+ * @test
+ * @summary Check secondary error handling
+ * @library /test/lib
+ * @requires vm.debug
+ * @requires os.family != "windows"
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver SecondaryErrorTest with_callstacks
  */
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -48,12 +60,35 @@ public class SecondaryErrorTest {
 
 
   public static void main(String[] args) throws Exception {
+
+    boolean with_callstacks = false;
+    if (args.length != 1) {
+      throw new IllegalArgumentException("Missing argument");
+    } else if (args[0].equals("with_callstacks")) {
+      with_callstacks = true;
+    } else if (args[0].equals("no_callstacks")) {
+      with_callstacks = false;
+    } else {
+      throw new IllegalArgumentException("unknown argument");
+    }
+
+    // How this works:
+    // The test will fault with SIGFPE (ErrorHandlerTest=15) and then, during error handling,
+    // fault twice with SIGSEGV (TestCrashInErrorHandler=14). The point is not only to test
+    // secondary crashes, but secondary crashes with a *different* error signal. This should
+    // be handled correctly and not hang/end the process (so the signal mask must be set correctly).
+    // See JDK-8065895.
+    // We do this twice, to check that secondary signal handling works repeatedly.
+    // We also check, optionally, that +ErrorLogSecondaryErrorDetails produces callstacks for
+    // the secondary error.
+
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
         "-XX:ErrorHandlerTest=15",
         "-XX:TestCrashInErrorHandler=14",
+        "-XX:" + (with_callstacks ? "+" : "-") + "ErrorLogSecondaryErrorDetails",
         "-version");
 
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
@@ -85,12 +120,27 @@ public class SecondaryErrorTest {
     BufferedReader br = new BufferedReader(new InputStreamReader(fis));
     String line = null;
 
-    Pattern [] pattern = new Pattern[] {
-        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
-        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"),
-        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
-        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 2\\).*\\]"),
-    };
+    ArrayList<Pattern> patternlist = new ArrayList<>();
+    patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
+    patternlist.add(Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"));
+    if (with_callstacks) {
+      patternlist.add(Pattern.compile("\\[siginfo: si_signo: 11 \\(SIGSEGV\\).*\\]"));
+      patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
+      patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
+      patternlist.add(Pattern.compile(".*VMError::report\\(.*"));
+      patternlist.add(Pattern.compile(".*VMError::report_and_die\\(.*"));
+    }
+    // and again, to see that repeated error reporting steps work
+    patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
+    patternlist.add(Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 2\\).*\\]"));
+    if (with_callstacks) {
+      patternlist.add(Pattern.compile("\\[siginfo: si_signo: 11 \\(SIGSEGV\\).*\\]"));
+      patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
+      patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
+      patternlist.add(Pattern.compile(".*VMError::report\\(.*"));
+      patternlist.add(Pattern.compile(".*VMError::report_and_die\\(.*"));
+    }
+    Pattern[] pattern = patternlist.toArray(new Pattern[] {});
     int currentPattern = 0;
 
     String lastLine = null;
@@ -106,7 +156,7 @@ public class SecondaryErrorTest {
     br.close();
 
     if (currentPattern < pattern.length) {
-      throw new RuntimeException("hs-err file incomplete (first missing pattern: " +  currentPattern + ")");
+      throw new RuntimeException("hs-err file incomplete (first missing pattern: " +  pattern[currentPattern] + ")");
     }
 
     if (!lastLine.equals("END.")) {

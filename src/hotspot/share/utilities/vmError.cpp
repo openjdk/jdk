@@ -378,7 +378,6 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
       st->print_cr("...<more frames>...");
     }
 
-    st->cr();
   }
 }
 
@@ -1629,27 +1628,42 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // Watcherthread is about to call os::die. Lets just wait.
         os::infinite_sleep();
       } else {
-        // Crash or assert during error reporting. Lets continue reporting with the next step.
-        stringStream ss(buffer, sizeof(buffer));
+        // A secondary error happened. Print a much abridged information, but take care, since crashing
+        // here would just recurse endlessly.
+        // Any information (signal, context, siginfo etc) printed here should use the function
+        // arguments, not the information stored in *this, since those describe the primary crash.
+        char tmp[256]; // cannot use global scratch buffer
         // Note: this string does get parsed by a number of jtreg tests,
         // see hotspot/jtreg/runtime/ErrorHandling.
-        ss.print("[error occurred during error reporting (%s), id 0x%x",
+        st->print("[error occurred during error reporting (%s), id 0x%x",
                    _current_step_info, id);
-        char signal_name[64];
-        if (os::exception_name(id, signal_name, sizeof(signal_name))) {
-          ss.print(", %s (0x%x) at pc=" PTR_FORMAT, signal_name, id, p2i(pc));
+        if (os::exception_name(id, tmp, sizeof(tmp))) {
+          st->print(", %s (0x%x) at pc=" PTR_FORMAT, tmp, id, p2i(pc));
         } else {
           if (should_report_bug(id)) {
-            ss.print(", Internal Error (%s:%d)",
+            st->print(", Internal Error (%s:%d)",
               filename == NULL ? "??" : filename, lineno);
           } else {
-            ss.print(", Out of Memory Error (%s:%d)",
+            st->print(", Out of Memory Error (%s:%d)",
               filename == NULL ? "??" : filename, lineno);
           }
         }
-        ss.print("]");
-        st->print_raw_cr(buffer);
-        st->cr();
+        st->print_cr("]");
+#ifdef ASSERT
+        if (ErrorLogSecondaryErrorDetails) {
+          // Print even more information for secondary errors.
+          // This is more dangerous, therefore optional and only in debug builds.
+          if (siginfo != nullptr) {
+            st->print("[");
+            os::print_siginfo(st, siginfo);
+            st->print_cr("]");
+          }
+          st->print("[stack: ");
+          frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
+          print_native_stack(st, fr, _thread, true, tmp, sizeof(tmp));
+          st->print_cr("]");
+        }
+#endif // ASSERT
       }
     }
   }

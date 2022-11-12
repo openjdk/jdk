@@ -511,6 +511,9 @@ const int ObjectAlignmentInBytes = 8;
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
+  develop(bool, ErrorLogSecondaryErrorDetails, false,                       \
+          "If enabled, show details on secondary crashes in the error log") \
+                                                                            \
   develop(intx, TraceDwarfLevel, 0,                                         \
           "Debug levels for the dwarf parser")                              \
           range(0, 4)                                                       \
