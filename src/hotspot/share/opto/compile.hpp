@@ -1058,6 +1058,10 @@ class Compile : public Phase {
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
+  ~Compile() {
+    delete _print_inlining_stream;
+  };
+
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }
 
@@ -1161,6 +1165,9 @@ class Compile : public Phase {
   // The option no_dead_code enables stronger checks that the
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
+
+  // Verify bi-directional correspondence of edges
+  void verify_bidirectional_edges(Unique_Node_List &visited);
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;

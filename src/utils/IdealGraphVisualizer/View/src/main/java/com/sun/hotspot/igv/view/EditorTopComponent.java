@@ -23,9 +23,7 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
-import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
@@ -54,7 +52,9 @@ import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.ProxyLookup;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 
 /**
@@ -74,7 +74,8 @@ public final class EditorTopComponent extends TopComponent {
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
 
-    public EditorTopComponent(Diagram diagram) {
+
+    public EditorTopComponent(InputGraph graph) {
         initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
@@ -117,16 +118,15 @@ public final class EditorTopComponent extends TopComponent {
         };
 
         JPanel container = new JPanel(new BorderLayout());
+        add(container, BorderLayout.NORTH);
 
-        DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
-        RangeSlider rangeSlider = new RangeSlider();
-        rangeSlider.setModel(diagramViewModel);
-        if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
+        DiagramViewModel diagramViewModel = new DiagramViewModel(graph, filterChain, sequence);
+        RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
+        if (diagramViewModel.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
         }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
-        add(container, BorderLayout.NORTH);
 
         scene = new DiagramScene(actions, actionsWithSelection, diagramViewModel);
         graphContent = new InstanceContent();
@@ -135,21 +135,23 @@ public final class EditorTopComponent extends TopComponent {
         content.add(diagramViewModel);
         associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
-        diagramViewModel.getDiagramChangedEvent().addListener(source -> {
-            setDisplayName(getDiagram().getName());
-            setToolTipText(getDiagram().getGraph().getGroup().getName());
-            Collection<Object> list = new ArrayList<>();
-            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
-            graphContent.set(list, null);
-        });
-        diagramViewModel.selectGraph(diagram.getGraph());
-
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
         if (group.getParent() instanceof GraphDocument) {
             final GraphDocument doc = (GraphDocument) group.getParent();
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
+
+        diagramViewModel.addTitleCallback(changedGraph -> {
+            setDisplayName(changedGraph.getDisplayName());
+            setToolTipText(diagramViewModel.getGroup().getDisplayName());
+        });
+
+        diagramViewModel.getDiagramChangedEvent().addListener(model -> {
+            setDisplayName(model.getGraph().getDisplayName());
+            setToolTipText(model.getGroup().getDisplayName());
+            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
+        });
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
@@ -241,8 +243,6 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
-
-        getModel().getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getModel() {
@@ -250,7 +250,7 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     private Diagram getDiagram() {
-        return getModel().getDiagramToView();
+        return getModel().getDiagram();
     }
 
     public void setSelectionMode(boolean enable) {
@@ -283,10 +283,32 @@ public final class EditorTopComponent extends TopComponent {
         scene.setZoomPercentage(percentage);
     }
 
+    public static boolean isOpen(EditorTopComponent editor) {
+        return WindowManager.getDefault().isOpenedEditorTopComponent(editor);
+    }
+
     public static EditorTopComponent getActive() {
         TopComponent topComponent = getRegistry().getActivated();
         if (topComponent instanceof EditorTopComponent) {
             return (EditorTopComponent) topComponent;
+        }
+        return null;
+    }
+
+    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            List<TopComponent> l = new ArrayList<>();
+            l.add(m.getSelectedTopComponent());
+            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
+            for (TopComponent t : l) {
+                if (t instanceof EditorTopComponent) {
+                    EditorTopComponent etc = (EditorTopComponent) t;
+                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
+                        return etc;
+                    }
+                }
+            }
         }
         return null;
     }
@@ -304,42 +326,25 @@ public final class EditorTopComponent extends TopComponent {
         }
     }
 
-    public void setSelection(PropertyMatcher matcher) {
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getDiagram().getFigures());
-        List<Figure> list = selector.selectMultiple(matcher);
-        setSelectedFigures(list);
-    }
-
-    public void setSelectedFigures(List<Figure> list) {
-        scene.setSelection(list);
-        scene.centerFigures(list);
-    }
-
-    public void setSelectedNodes(Set<InputNode> nodes) {
-        List<Figure> list = new ArrayList<>();
-        Set<Integer> ids = new HashSet<>();
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
+        Set<Integer> ids = new HashSet<>(getModel().getSelectedNodes());
         for (InputNode n : nodes) {
             ids.add(n.getId());
         }
+        Set<Figure> selectedFigures = new HashSet<>();
         for (Figure f : getDiagram().getFigures()) {
-            for (InputNode n : f.getSource().getSourceNodes()) {
-                if (ids.contains(n.getId())) {
-                    list.add(f);
-                    break;
-                }
+            if (ids.contains(f.getInputNode().getId())) {
+                selectedFigures.add(f);
             }
         }
-        setSelectedFigures(list);
+        scene.setFigureSelection(selectedFigures);
+        if (centerSelection) {
+            scene.centerFigures(selectedFigures);
+        }
     }
 
-    public void setSelectedNodes(InputBlock b) {
-        List<Figure> list = new ArrayList<>();
-        for (Figure f : getDiagram().getFigures()) {
-            if (f.getBlock() == b) {
-                list.add(f);
-            }
-        }
-        setSelectedFigures(list);
+    public void clearSelectedNodes() {
+        scene.setFigureSelection(Collections.emptySet());
     }
 
     public Rectangle getSceneBounds() {

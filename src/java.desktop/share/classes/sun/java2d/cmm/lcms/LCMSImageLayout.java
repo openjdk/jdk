@@ -79,11 +79,6 @@ final class LCMSImageLayout {
     private int nextPixelOffset;
     int offset;
 
-    /* This flag indicates whether the image can be processed
-     * at once by doTransfrom() native call. Otherwise, the
-     * image is processed scan by scan.
-     */
-    boolean imageAtOnce = false;
     Object dataArray;
 
     private int dataArrayLength; /* in bytes */
@@ -234,10 +229,6 @@ final class LCMSImageLayout {
                     l.dataArray = intRaster.getDataStorage();
                     l.dataArrayLength = 4 * intRaster.getDataStorage().length;
                     l.dataType = DT_INT;
-
-                    if (l.nextRowOffset == l.width * 4 * intRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
                 } while (false);
                 break;
 
@@ -254,9 +245,6 @@ final class LCMSImageLayout {
                     l.dataArray = byteRaster.getDataStorage();
                     l.dataArrayLength = byteRaster.getDataStorage().length;
                     l.dataType = DT_BYTE;
-                    if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
                 } while (false);
                 break;
 
@@ -271,10 +259,6 @@ final class LCMSImageLayout {
                     l.offset = byteRaster.getDataOffset(0);
                     l.dataArray = byteRaster.getDataStorage();
                     l.dataType = DT_BYTE;
-
-                    if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
                 } while (false);
                 break;
 
@@ -289,10 +273,6 @@ final class LCMSImageLayout {
                     l.dataArray = shortRaster.getDataStorage();
                     l.dataArrayLength = 2 * shortRaster.getDataStorage().length;
                     l.dataType = DT_SHORT;
-
-                    if (l.nextRowOffset == l.width * 2 * shortRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
                 } while (false);
                 break;
             default:
@@ -409,10 +389,6 @@ final class LCMSImageLayout {
 
             l.width = br.getWidth();
             l.height = br.getHeight();
-
-            if (l.nextRowOffset == l.width * br.getPixelStride()) {
-                l.imageAtOnce = true;
-            }
             return l;
         }
         return null;

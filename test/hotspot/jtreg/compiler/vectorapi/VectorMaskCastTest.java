@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package compiler.vectorapi;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 import jdk.incubator.vector.ByteVector;
@@ -32,437 +34,485 @@ import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorMask;
-import jdk.test.lib.Utils;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8273264
+ * @bug 8273264 8292898
  * @key randomness
- * @library /test/lib
- * @summary AArch64: [vector] Add missing rules for VectorMaskCast
+ * @library /test/lib /
+ * @summary Unify vector mask cast and add missing rules for VectorMaskCast
  * @modules jdk.incubator.vector
  *
- * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 compiler.vectorapi.VectorMaskCastTest
+ * @run driver compiler.vectorapi.VectorMaskCastTest
  */
-
 
 // Current vector mask cast test cases at test/jdk/jdk/incubator/vector/*ConversionTests.java
 // could not be intrinsfied, hence not able to verify compiler codegen, see [1]. As a
 // supplement, we add more tests for vector mask cast operations, which could be intrinsified
 // by c2 compiler to generate vector/mask instructions on supported targets.
 //
-// [1] https://bugs.openjdk.java.net/browse/JDK-8259610
+// [1] https://bugs.openjdk.org/browse/JDK-8259610
 
-public class VectorMaskCastTest{
+public class VectorMaskCastTest {
 
-    private static final int NUM_ITER = 5000;
     private static final Random rd = Utils.getRandomInstance();
 
-    public static boolean[] genMask() {
-        boolean[] mask = new boolean[64];
-        for (int i = 0; i < 64; i ++) {
-            mask[i] = rd.nextBoolean();
+    private static final boolean[] mask_arr;
+
+    static {
+        mask_arr = new boolean[64];
+        for (int i = 0; i < 64; i++) {
+            mask_arr[i] = rd.nextBoolean();
         }
-        return mask;
     }
 
     // Byte
-    private static void testByte64ToShort128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    public static void testByte64ToShort128() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mByte64.cast(ShortVector.SPECIES_128).toString(), mByte64.toString());
+        Asserts.assertEquals(mByte64.cast(ShortVector.SPECIES_128).toString(), mByte64.toString());
     }
 
-    private static void testByte64ToInt256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testByte64ToInt256() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mByte64.cast(IntVector.SPECIES_256).toString(), mByte64.toString());
+        Asserts.assertEquals(mByte64.cast(IntVector.SPECIES_256).toString(), mByte64.toString());
     }
 
-    private static void testByte64ToFloat256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testByte64ToFloat256() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mByte64.cast(FloatVector.SPECIES_256).toString(), mByte64.toString());
+        Asserts.assertEquals(mByte64.cast(FloatVector.SPECIES_256).toString(), mByte64.toString());
     }
 
-    private static void testByte64ToLong512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testByte64ToLong512() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mByte64.cast(LongVector.SPECIES_512).toString(), mByte64.toString());
+        Asserts.assertEquals(mByte64.cast(LongVector.SPECIES_512).toString(), mByte64.toString());
     }
 
-    private static void testByte64ToDouble512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testByte64ToDouble512() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mByte64.cast(DoubleVector.SPECIES_512).toString(), mByte64.toString());
+        Asserts.assertEquals(mByte64.cast(DoubleVector.SPECIES_512).toString(), mByte64.toString());
     }
 
-    private static void testByte128ToShort256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testByte128ToShort256() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mByte128.cast(ShortVector.SPECIES_256).toString(), mByte128.toString());
+        Asserts.assertEquals(mByte128.cast(ShortVector.SPECIES_256).toString(), mByte128.toString());
     }
 
-    private static void testByte128ToInt512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testByte128ToInt512() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mByte128.cast(IntVector.SPECIES_512).toString(), mByte128.toString());
+        Asserts.assertEquals(mByte128.cast(IntVector.SPECIES_512).toString(), mByte128.toString());
     }
 
-    private static void testByte128ToFloat512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testByte128ToFloat512() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mByte128.cast(FloatVector.SPECIES_512).toString(), mByte128.toString());
+        Asserts.assertEquals(mByte128.cast(FloatVector.SPECIES_512).toString(), mByte128.toString());
     }
 
-    private static void testByte256ToShort512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testByte256ToShort512() {
         VectorMask<Byte> mByte256 = VectorMask.fromArray(ByteVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mByte256.cast(ShortVector.SPECIES_512).toString(), mByte256.toString());
+        Asserts.assertEquals(mByte256.cast(ShortVector.SPECIES_512).toString(), mByte256.toString());
     }
 
     // Short
-    private static void testShort64ToInt128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    public static void testShort64ToInt128() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mShort64.cast(IntVector.SPECIES_128).toString(), mShort64.toString());
+        Asserts.assertEquals(mShort64.cast(IntVector.SPECIES_128).toString(), mShort64.toString());
     }
 
-    private static void testShort64ToFloat128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    public static void testShort64ToFloat128() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mShort64.cast(FloatVector.SPECIES_128).toString(), mShort64.toString());
+        Asserts.assertEquals(mShort64.cast(FloatVector.SPECIES_128).toString(), mShort64.toString());
     }
 
-    private static void testShort64ToLong256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testShort64ToLong256() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mShort64.cast(LongVector.SPECIES_256).toString(), mShort64.toString());
+        Asserts.assertEquals(mShort64.cast(LongVector.SPECIES_256).toString(), mShort64.toString());
     }
 
-    private static void testShort64ToDouble256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testShort64ToDouble256() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mShort64.cast(DoubleVector.SPECIES_256).toString(), mShort64.toString());
+        Asserts.assertEquals(mShort64.cast(DoubleVector.SPECIES_256).toString(), mShort64.toString());
     }
 
-    private static void testShort128ToByte64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    public static void testShort128ToByte64() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mShort128.cast(ByteVector.SPECIES_64).toString(), mShort128.toString());
+        Asserts.assertEquals(mShort128.cast(ByteVector.SPECIES_64).toString(), mShort128.toString());
     }
 
-    private static void testShort128ToInt256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testShort128ToInt256() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mShort128.cast(IntVector.SPECIES_256).toString(), mShort128.toString());
+        Asserts.assertEquals(mShort128.cast(IntVector.SPECIES_256).toString(), mShort128.toString());
     }
 
-    private static void testShort128ToFloat256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testShort128ToFloat256() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mShort128.cast(FloatVector.SPECIES_256).toString(), mShort128.toString());
+        Asserts.assertEquals(mShort128.cast(FloatVector.SPECIES_256).toString(), mShort128.toString());
     }
 
-    private static void testShort128ToLong512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testShort128ToLong512() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mShort128.cast(LongVector.SPECIES_512).toString(), mShort128.toString());
+        Asserts.assertEquals(mShort128.cast(LongVector.SPECIES_512).toString(), mShort128.toString());
     }
 
-    private static void testShort128ToDouble512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testShort128ToDouble512() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mShort128.cast(DoubleVector.SPECIES_512).toString(), mShort128.toString());
+        Asserts.assertEquals(mShort128.cast(DoubleVector.SPECIES_512).toString(), mShort128.toString());
     }
 
-    private static void testShort256ToByte128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testShort256ToByte128() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mShort256.cast(ByteVector.SPECIES_128).toString(), mShort256.toString());
+        Asserts.assertEquals(mShort256.cast(ByteVector.SPECIES_128).toString(), mShort256.toString());
     }
 
-    private static void testShort256ToInt512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testShort256ToInt512() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mShort256.cast(IntVector.SPECIES_512).toString(), mShort256.toString());
+        Asserts.assertEquals(mShort256.cast(IntVector.SPECIES_512).toString(), mShort256.toString());
     }
 
-    private static void testShort256ToFloat512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testShort256ToFloat512() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mShort256.cast(FloatVector.SPECIES_512).toString(), mShort256.toString());
+        Asserts.assertEquals(mShort256.cast(FloatVector.SPECIES_512).toString(), mShort256.toString());
     }
 
-    private static void testShort512ToByte256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testShort512ToByte256() {
         VectorMask<Short> mShort512 = VectorMask.fromArray(ShortVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mShort512.cast(ByteVector.SPECIES_256).toString(), mShort512.toString());
+        Asserts.assertEquals(mShort512.cast(ByteVector.SPECIES_256).toString(), mShort512.toString());
     }
 
     // Int
-    private static void testInt64ToLong128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testInt64ToLong128() {
         VectorMask<Integer> mInt64 = VectorMask.fromArray(IntVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mInt64.cast(LongVector.SPECIES_128).toString(), mInt64.toString());
+        Asserts.assertEquals(mInt64.cast(LongVector.SPECIES_128).toString(), mInt64.toString());
     }
 
-    private static void testInt64ToDouble128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testInt64ToDouble128() {
         VectorMask<Integer> mInt64 = VectorMask.fromArray(IntVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mInt64.cast(DoubleVector.SPECIES_128).toString(), mInt64.toString());
+        Asserts.assertEquals(mInt64.cast(DoubleVector.SPECIES_128).toString(), mInt64.toString());
     }
 
-    private static void testInt128ToShort64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    public static void testInt128ToShort64() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mInt128.cast(ShortVector.SPECIES_64).toString(), mInt128.toString());
+        Asserts.assertEquals(mInt128.cast(ShortVector.SPECIES_64).toString(), mInt128.toString());
     }
 
-    private static void testInt128ToLong256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testInt128ToLong256() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mInt128.cast(LongVector.SPECIES_256).toString(), mInt128.toString());
+        Asserts.assertEquals(mInt128.cast(LongVector.SPECIES_256).toString(), mInt128.toString());
     }
 
-    private static void testInt128ToDouble256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testInt128ToDouble256() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mInt128.cast(DoubleVector.SPECIES_256).toString(), mInt128.toString());
+        Asserts.assertEquals(mInt128.cast(DoubleVector.SPECIES_256).toString(), mInt128.toString());
     }
 
-    private static void testInt256ToShort128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testInt256ToShort128() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mInt256.cast(ShortVector.SPECIES_128).toString(), mInt256.toString());
+        Asserts.assertEquals(mInt256.cast(ShortVector.SPECIES_128).toString(), mInt256.toString());
     }
 
-    private static void testInt256ToByte64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testInt256ToByte64() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mInt256.cast(ByteVector.SPECIES_64).toString(), mInt256.toString());
+        Asserts.assertEquals(mInt256.cast(ByteVector.SPECIES_64).toString(), mInt256.toString());
     }
 
-    private static void testInt256ToLong512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testInt256ToLong512() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mInt256.cast(LongVector.SPECIES_512).toString(), mInt256.toString());
+        Asserts.assertEquals(mInt256.cast(LongVector.SPECIES_512).toString(), mInt256.toString());
     }
 
-    private static void testInt256ToDouble512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testInt256ToDouble512() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mInt256.cast(DoubleVector.SPECIES_512).toString(), mInt256.toString());
+        Asserts.assertEquals(mInt256.cast(DoubleVector.SPECIES_512).toString(), mInt256.toString());
     }
 
-    private static void testInt512ToShort256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testInt512ToShort256() {
         VectorMask<Integer> mInt512 = VectorMask.fromArray(IntVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mInt512.cast(ShortVector.SPECIES_256).toString(), mInt512.toString());
+        Asserts.assertEquals(mInt512.cast(ShortVector.SPECIES_256).toString(), mInt512.toString());
     }
 
-    private static void testInt512ToByte128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testInt512ToByte128() {
         VectorMask<Integer> mInt512 = VectorMask.fromArray(IntVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mInt512.cast(ByteVector.SPECIES_128).toString(), mInt512.toString());
+        Asserts.assertEquals(mInt512.cast(ByteVector.SPECIES_128).toString(), mInt512.toString());
     }
 
     // Float
-    private static void testFloat64ToLong128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testFloat64ToLong128() {
         VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mFloat64.cast(LongVector.SPECIES_128).toString(), mFloat64.toString());
+        Asserts.assertEquals(mFloat64.cast(LongVector.SPECIES_128).toString(), mFloat64.toString());
     }
 
-    private static void testFloat64ToDouble128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testFloat64ToDouble128() {
         VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mask_arr, 0);
-        Assert.assertEquals(mFloat64.cast(DoubleVector.SPECIES_128).toString(), mFloat64.toString());
+        Asserts.assertEquals(mFloat64.cast(DoubleVector.SPECIES_128).toString(), mFloat64.toString());
     }
 
-    private static void testFloat128ToShort64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    public static void testFloat128ToShort64() {
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mFloat128.cast(ShortVector.SPECIES_64).toString(), mFloat128.toString());
+        Asserts.assertEquals(mFloat128.cast(ShortVector.SPECIES_64).toString(), mFloat128.toString());
     }
 
-    private static void testFloat128ToLong256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testFloat128ToLong256() {
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mFloat128.cast(LongVector.SPECIES_256).toString(), mFloat128.toString());
+        Asserts.assertEquals(mFloat128.cast(LongVector.SPECIES_256).toString(), mFloat128.toString());
     }
 
-    private static void testFloat128ToDouble256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testFloat128ToDouble256() {
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mFloat128.cast(DoubleVector.SPECIES_256).toString(), mFloat128.toString());
+        Asserts.assertEquals(mFloat128.cast(DoubleVector.SPECIES_256).toString(), mFloat128.toString());
     }
 
-    private static void testFloat256ToShort128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testFloat256ToShort128() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mFloat256.cast(ShortVector.SPECIES_128).toString(), mFloat256.toString());
+        Asserts.assertEquals(mFloat256.cast(ShortVector.SPECIES_128).toString(), mFloat256.toString());
     }
 
-    private static void testFloat256ToByte64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testFloat256ToByte64() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mFloat256.cast(ByteVector.SPECIES_64).toString(), mFloat256.toString());
+        Asserts.assertEquals(mFloat256.cast(ByteVector.SPECIES_64).toString(), mFloat256.toString());
     }
 
-    private static void testFloat256ToLong512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testFloat256ToLong512() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mFloat256.cast(LongVector.SPECIES_512).toString(), mFloat256.toString());
+        Asserts.assertEquals(mFloat256.cast(LongVector.SPECIES_512).toString(), mFloat256.toString());
     }
 
-    private static void testFloat256ToDouble512(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testFloat256ToDouble512() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mFloat256.cast(DoubleVector.SPECIES_512).toString(), mFloat256.toString());
+        Asserts.assertEquals(mFloat256.cast(DoubleVector.SPECIES_512).toString(), mFloat256.toString());
     }
 
-    private static void testFloat512ToShort256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testFloat512ToShort256() {
         VectorMask<Float> mFloat512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mFloat512.cast(ShortVector.SPECIES_256).toString(), mFloat512.toString());
+        Asserts.assertEquals(mFloat512.cast(ShortVector.SPECIES_256).toString(), mFloat512.toString());
     }
 
-    private static void testFloat512ToByte128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testFloat512ToByte128() {
         VectorMask<Float> mFloat512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mFloat512.cast(ByteVector.SPECIES_128).toString(), mFloat512.toString());
+        Asserts.assertEquals(mFloat512.cast(ByteVector.SPECIES_128).toString(), mFloat512.toString());
     }
 
     // Long
-    private static void testLong128ToInt64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testLong128ToInt64() {
         VectorMask<Long> mLong128 = VectorMask.fromArray(LongVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mLong128.cast(IntVector.SPECIES_64).toString(), mLong128.toString());
+        Asserts.assertEquals(mLong128.cast(IntVector.SPECIES_64).toString(), mLong128.toString());
     }
 
-    private static void testLong128ToFloat64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testLong128ToFloat64() {
         VectorMask<Long> mLong128 = VectorMask.fromArray(LongVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mLong128.cast(FloatVector.SPECIES_64).toString(), mLong128.toString());
+        Asserts.assertEquals(mLong128.cast(FloatVector.SPECIES_64).toString(), mLong128.toString());
     }
 
-    private static void testLong256ToInt128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testLong256ToInt128() {
         VectorMask<Long> mLong256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mLong256.cast(IntVector.SPECIES_128).toString(), mLong256.toString());
+        Asserts.assertEquals(mLong256.cast(IntVector.SPECIES_128).toString(), mLong256.toString());
     }
 
-    private static void testLong256ToFloat128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testLong256ToFloat128() {
         VectorMask<Long> mLong256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mLong256.cast(FloatVector.SPECIES_128).toString(), mLong256.toString());
+        Asserts.assertEquals(mLong256.cast(FloatVector.SPECIES_128).toString(), mLong256.toString());
     }
 
-    private static void testLong256ToShort64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testLong256ToShort64() {
         VectorMask<Long> mLong256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mLong256.cast(ShortVector.SPECIES_64).toString(), mLong256.toString());
+        Asserts.assertEquals(mLong256.cast(ShortVector.SPECIES_64).toString(), mLong256.toString());
     }
 
-    private static void testLong512ToInt256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testLong512ToInt256() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mLong512.cast(IntVector.SPECIES_256).toString(), mLong512.toString());
+        Asserts.assertEquals(mLong512.cast(IntVector.SPECIES_256).toString(), mLong512.toString());
     }
 
-    private static void testLong512ToFloat256(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testLong512ToFloat256() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mLong512.cast(FloatVector.SPECIES_256).toString(), mLong512.toString());
+        Asserts.assertEquals(mLong512.cast(FloatVector.SPECIES_256).toString(), mLong512.toString());
     }
 
-    private static void testLong512ToShort128(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testLong512ToShort128() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mLong512.cast(ShortVector.SPECIES_128).toString(), mLong512.toString());
+        Asserts.assertEquals(mLong512.cast(ShortVector.SPECIES_128).toString(), mLong512.toString());
     }
 
-    private static void testLong512ToByte64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testLong512ToByte64() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mLong512.cast(ByteVector.SPECIES_64).toString(), mLong512.toString());
+        Asserts.assertEquals(mLong512.cast(ByteVector.SPECIES_64).toString(), mLong512.toString());
     }
 
     // Double
-    private static void testDouble128ToInt64(boolean[] mask_arr) {
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testDouble128ToInt64() {
         VectorMask<Double> mDouble128 = VectorMask.fromArray(DoubleVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mDouble128.cast(IntVector.SPECIES_64).toString(), mDouble128.toString());
+        Asserts.assertEquals(mDouble128.cast(IntVector.SPECIES_64).toString(), mDouble128.toString());
     }
-
-    private static void testDouble128ToFloat64(boolean[] mask_arr) {
-        VectorMask<Double> mDouble128 = VectorMask.fromArray(DoubleVector.SPECIES_128, mask_arr, 0);
-        Assert.assertEquals(mDouble128.cast(FloatVector.SPECIES_64).toString(), mDouble128.toString());
-    }
-
-    private static void testDouble256ToInt128(boolean[] mask_arr) {
-        VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mDouble256.cast(IntVector.SPECIES_128).toString(), mDouble256.toString());
-    }
-
-    private static void testDouble256ToFloat128(boolean[] mask_arr) {
-        VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mDouble256.cast(FloatVector.SPECIES_128).toString(), mDouble256.toString());
-    }
-
-    private static void testDouble256ToShort64(boolean[] mask_arr) {
-        VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
-        Assert.assertEquals(mDouble256.cast(ShortVector.SPECIES_64).toString(), mDouble256.toString());
-    };
-
-    private static void testDouble512ToInt256(boolean[] mask_arr) {
-        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mDouble512.cast(IntVector.SPECIES_256).toString(), mDouble512.toString());
-    }
-
-    private static void testDouble512ToFloat256(boolean[] mask_arr) {
-        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mDouble512.cast(FloatVector.SPECIES_256).toString(), mDouble512.toString());
-    }
-
-    private static void testDouble512ToShort128(boolean[] mask_arr) {
-        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mDouble512.cast(ShortVector.SPECIES_128).toString(), mDouble512.toString());
-    }
-
-    private static void testDouble512ToByte64(boolean[] mask_arr) {
-        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
-        Assert.assertEquals(mDouble512.cast(ByteVector.SPECIES_64).toString(), mDouble512.toString());
-    }
-
 
     @Test
-    public static void testMaskCast() {
-        for (int i = 0; i < NUM_ITER; i++) {
-            boolean[] mask = genMask();
-            // Byte
-            testByte64ToShort128(mask);
-            testByte64ToInt256(mask);
-            testByte64ToFloat256(mask);
-            testByte64ToLong512(mask);
-            testByte64ToDouble512(mask);
-            testByte128ToShort256(mask);
-            testByte128ToInt512(mask);
-            testByte128ToFloat512(mask);
-            testByte256ToShort512(mask);
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    public static void testDouble128ToFloat64() {
+        VectorMask<Double> mDouble128 = VectorMask.fromArray(DoubleVector.SPECIES_128, mask_arr, 0);
+        Asserts.assertEquals(mDouble128.cast(FloatVector.SPECIES_64).toString(), mDouble128.toString());
+    }
 
-            // Short
-            testShort64ToInt128(mask);
-            testShort64ToFloat128(mask);
-            testShort64ToLong256(mask);
-            testShort64ToDouble256(mask);
-            testShort128ToByte64(mask);
-            testShort128ToInt256(mask);
-            testShort128ToFloat256(mask);
-            testShort128ToLong512(mask);
-            testShort128ToDouble512(mask);
-            testShort256ToByte128(mask);
-            testShort256ToInt512(mask);
-            testShort256ToFloat512(mask);
-            testShort512ToByte256(mask);
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testDouble256ToInt128() {
+        VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
+        Asserts.assertEquals(mDouble256.cast(IntVector.SPECIES_128).toString(), mDouble256.toString());
+    }
 
-            // Int
-            testInt64ToLong128(mask);
-            testInt64ToDouble128(mask);
-            testInt128ToShort64(mask);
-            testInt128ToLong256(mask);
-            testInt128ToDouble256(mask);
-            testInt256ToShort128(mask);
-            testInt256ToByte64(mask);
-            testInt256ToLong512(mask);
-            testInt256ToDouble512(mask);
-            testInt512ToShort256(mask);
-            testInt512ToByte128(mask);
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testDouble256ToFloat128() {
+        VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
+        Asserts.assertEquals(mDouble256.cast(FloatVector.SPECIES_128).toString(), mDouble256.toString());
+    }
 
-            // Float
-            testFloat64ToLong128(mask);
-            testFloat64ToDouble128(mask);
-            testFloat128ToShort64(mask);
-            testFloat128ToLong256(mask);
-            testFloat128ToDouble256(mask);
-            testFloat256ToShort128(mask);
-            testFloat256ToByte64(mask);
-            testFloat256ToLong512(mask);
-            testFloat256ToDouble512(mask);
-            testFloat512ToShort256(mask);
-            testFloat512ToByte128(mask);
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
+    public static void testDouble256ToShort64() {
+        VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
+        Asserts.assertEquals(mDouble256.cast(ShortVector.SPECIES_64).toString(), mDouble256.toString());
+    }
 
-            // Long
-            testLong128ToInt64(mask);
-            testLong128ToFloat64(mask);
-            testLong256ToInt128(mask);
-            testLong256ToFloat128(mask);
-            testLong256ToShort64(mask);
-            testLong512ToInt256(mask);
-            testLong512ToFloat256(mask);
-            testLong512ToShort128(mask);
-            testLong512ToByte64(mask);
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testDouble512ToInt256() {
+        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
+        Asserts.assertEquals(mDouble512.cast(IntVector.SPECIES_256).toString(), mDouble512.toString());
+    }
 
-            // Double
-            testDouble128ToInt64(mask);
-            testDouble128ToFloat64(mask);
-            testDouble256ToInt128(mask);
-            testDouble256ToFloat128(mask);
-            testDouble256ToShort64(mask);
-            testDouble512ToInt256(mask);
-            testDouble512ToFloat256(mask);
-            testDouble512ToShort128(mask);
-            testDouble512ToByte64(mask);
-        }
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testDouble512ToFloat256() {
+        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
+        Asserts.assertEquals(mDouble512.cast(FloatVector.SPECIES_256).toString(), mDouble512.toString());
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testDouble512ToShort128() {
+        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
+        Asserts.assertEquals(mDouble512.cast(ShortVector.SPECIES_128).toString(), mDouble512.toString());
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
+    public static void testDouble512ToByte64() {
+        VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
+        Asserts.assertEquals(mDouble512.cast(ByteVector.SPECIES_64).toString(), mDouble512.toString());
+    }
+
+    public static void main(String[] args) {
+        TestFramework testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(5000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
     }
 }

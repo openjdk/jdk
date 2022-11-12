@@ -80,11 +80,11 @@ import sun.security.action.GetPropertyAction;
 public class BasicOptionPaneUI extends OptionPaneUI {
 
     /**
-     * The mininum width of {@code JOptionPane}.
+     * The minimum width of {@code JOptionPane}.
      */
     public static final int MinimumWidth = 262;
     /**
-     * The mininum height of {@code JOptionPane}.
+     * The minimum height of {@code JOptionPane}.
      */
     public static final int MinimumHeight = 90;
 
@@ -456,51 +456,75 @@ public class BasicOptionPaneUI extends OptionPaneUI {
             } else if ((nl = s.indexOf('\n')) >= 0) {
                 nll = 1;
             }
-            if (nl >= 0) {
-                // break up newlines
-                if (nl == 0) {
-                    @SuppressWarnings("serial") // anonymous class
-                    JPanel breakPanel = new JPanel() {
-                        public Dimension getPreferredSize() {
-                            Font f = getFont();
-
-                            if (f != null) {
-                                return new Dimension(1, f.getSize() + 2);
-                            }
-                            return new Dimension(0, 0);
-                        }
-                    };
-                    breakPanel.setName("OptionPane.break");
-                    addMessageComponents(container, cons, breakPanel, maxll,
-                                         true);
-                } else {
-                    addMessageComponents(container, cons, s.substring(0, nl),
-                                      maxll, false);
+            if (s.contains("<html>")) {
+                /* line break in html text is done by <br> tag
+                 * and not by /n so it's incorrect to address newline
+                 * same as non-html text.
+                 * Text between <html> </html> tags are extracted
+                 * and rendered as JLabel text
+                 */
+                int index1 = s.indexOf("<html>");
+                int index2 = s.indexOf("</html>");
+                String str = "";
+                if (index2 >= 0) {
+                    str = s.substring(index2 + "</html>".length());
+                    s = s.substring(index1, index2 + + "</html>".length());
                 }
-                // Prevent recursion of more than
-                // 200 successive newlines in a message
-                // and indicate message is truncated via ellipsis
-                if (recursionCount++ > 200) {
-                    recursionCount = 0;
-                    addMessageComponents(container, cons, new String("..."),
-                                         maxll,false);
-                    return;
-                }
-                addMessageComponents(container, cons, s.substring(nl + nll), maxll,
-                                     false);
-
-            } else if (len > maxll) {
-                Container c = Box.createVerticalBox();
-                c.setName("OptionPane.verticalBox");
-                burstStringInto(c, s, maxll);
-                addMessageComponents(container, cons, c, maxll, true );
-
-            } else {
                 JLabel label;
-                label = new JLabel( s, JLabel.LEADING );
+                label = new JLabel(s, JLabel.LEADING);
                 label.setName("OptionPane.label");
                 configureMessageLabel(label);
                 addMessageComponents(container, cons, label, maxll, true);
+                if (!str.isEmpty()) {
+                    addMessageComponents(container, cons, str, maxll, false);
+                }
+            } else {
+                if (nl >= 0) {
+                    // break up newlines
+                    if (nl == 0) {
+                        @SuppressWarnings("serial") // anonymous class
+                                JPanel breakPanel = new JPanel() {
+                            public Dimension getPreferredSize() {
+                                Font f = getFont();
+
+                                if (f != null) {
+                                    return new Dimension(1, f.getSize() + 2);
+                                }
+                                return new Dimension(0, 0);
+                            }
+                        };
+                        breakPanel.setName("OptionPane.break");
+                        addMessageComponents(container, cons, breakPanel, maxll,
+                                true);
+                    } else {
+                        addMessageComponents(container, cons, s.substring(0, nl),
+                                maxll, false);
+                    }
+                    // Prevent recursion of more than
+                    // 200 successive newlines in a message
+                    // and indicate message is truncated via ellipsis
+                    if (recursionCount++ > 200) {
+                        recursionCount = 0;
+                        addMessageComponents(container, cons, new String("..."),
+                                maxll, false);
+                        return;
+                    }
+                    addMessageComponents(container, cons, s.substring(nl + nll), maxll,
+                            false);
+
+                } else if (len > maxll) {
+                    Container c = Box.createVerticalBox();
+                    c.setName("OptionPane.verticalBox");
+                    burstStringInto(c, s, maxll);
+                    addMessageComponents(container, cons, c, maxll, true);
+
+                } else {
+                    JLabel label;
+                    label = new JLabel(s, JLabel.LEADING);
+                    label.setName("OptionPane.label");
+                    configureMessageLabel(label);
+                    addMessageComponents(container, cons, label, maxll, true);
+                }
             }
         }
     }

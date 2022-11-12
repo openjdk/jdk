@@ -627,7 +627,7 @@ nmethod::nmethod(
     _orig_pc_offset          = 0;
     _gc_epoch                = CodeCache::gc_epoch();
 
-    _consts_offset           = data_offset();
+    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
     _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     _oops_offset             = data_offset();
     _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
@@ -1655,11 +1655,22 @@ bool nmethod::is_unloading() {
   // or because is_cold() heuristically determines it is time to unload.
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
-  state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+  uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
 
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+  // Note that if an nmethod has dead oops, everyone will agree that the
+  // nmethod is_unloading. However, the is_cold heuristics can yield
+  // different outcomes, so we guard the computed result with a CAS
+  // to ensure all threads have a shared view of whether an nmethod
+  // is_unloading or not.
+  uint8_t found_state = Atomic::cmpxchg(&_is_unloading_state, state, new_state, memory_order_relaxed);
 
-  return state_is_unloading;
+  if (found_state == state) {
+    // First to change state, we win
+    return state_is_unloading;
+  } else {
+    // State already set, so use it
+    return IsUnloadingState::is_unloading(found_state);
+  }
 }
 
 void nmethod::clear_unloading_state() {
@@ -2082,7 +2093,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
   typedef ResourceHashtable<DependencySignature, int, 11027,
-                            ResourceObj::RESOURCE_AREA, mtInternal,
+                            AnyObj::RESOURCE_AREA, mtInternal,
                             &DependencySignature::hash,
                             &DependencySignature::equals> DepTable;
 

@@ -34,7 +34,7 @@
  * Converted from Class-Path2.sh, originally written by Martin Buchholz.
  *
  * For the last version of the original, Class-Path2.sh, see
- * https://github.com/openjdk/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Class-Path2.sh
+ * https://git.openjdk.org/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Class-Path2.sh
  *
  * This class provides additional tests for the Class-Path attribute in jar
  * files, when the entries are not in the same directory.

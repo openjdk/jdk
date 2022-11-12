@@ -428,7 +428,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 class UnregisteredClassesTable : public ResourceHashtable<
   Symbol*, InstanceKlass*,
   15889, // prime number
-  ResourceObj::C_HEAP> {};
+  AnyObj::C_HEAP> {};
 
 static UnregisteredClassesTable* _unregistered_classes_table = NULL;
 
@@ -441,7 +441,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   MutexLocker ml(current, UnregisteredClassesTable_lock);
   Symbol* name = klass->name();
   if (_unregistered_classes_table == NULL) {
-    _unregistered_classes_table = new (ResourceObj::C_HEAP, mtClass)UnregisteredClassesTable();
+    _unregistered_classes_table = new (mtClass)UnregisteredClassesTable();
   }
   bool created;
   InstanceKlass** v = _unregistered_classes_table->put_if_absent(name, klass, &created);
@@ -500,9 +500,9 @@ void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassF
 
 void SystemDictionaryShared::initialize() {
   if (Arguments::is_dumping_archive()) {
-    _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+    _dumptime_table = new (mtClass) DumpTimeSharedClassTable;
     _dumptime_lambda_proxy_class_dictionary =
-                      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+                      new (mtClass) DumpTimeLambdaProxyClassDictionary;
   }
 }
 
@@ -1497,7 +1497,7 @@ void SystemDictionaryShared::clone_dumptime_tables() {
   assert_lock_strong(DumpTimeTable_lock);
 
   assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
-  _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+  _cloned_dumptime_table = new (mtClass) DumpTimeSharedClassTable;
   CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
   _dumptime_table->iterate_all_live_classes(&copy_classes);
   _cloned_dumptime_table->update_counts();
@@ -1505,7 +1505,7 @@ void SystemDictionaryShared::clone_dumptime_tables() {
   assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
          "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
   _cloned_dumptime_lambda_proxy_class_dictionary =
-                                        new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+                                        new (mtClass) DumpTimeLambdaProxyClassDictionary;
   CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
                                                         _cloned_dumptime_lambda_proxy_class_dictionary);
   _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
@@ -1550,73 +1550,3 @@ void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
   CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
   _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
 }
-
-#if INCLUDE_CDS_JAVA_HEAP
-
-class ArchivedMirrorPatcher {
-protected:
-  static void update(Klass* k) {
-    if (k->has_archived_mirror_index()) {
-      oop m = k->archived_java_mirror();
-      if (m != NULL) {
-        java_lang_Class::update_archived_mirror_native_pointers(m);
-      }
-    }
-  }
-
-public:
-  static void update_array_klasses(Klass* ak) {
-    while (ak != NULL) {
-      update(ak);
-      ak = ArrayKlass::cast(ak)->higher_dimension();
-    }
-  }
-
-  void do_value(const RunTimeClassInfo* info) {
-    InstanceKlass* ik = info->_klass;
-    update(ik);
-    update_array_klasses(ik->array_klasses());
-  }
-};
-
-class ArchivedLambdaMirrorPatcher : public ArchivedMirrorPatcher {
-public:
-  void do_value(const RunTimeLambdaProxyClassInfo* info) {
-    InstanceKlass* ik = info->proxy_klass_head();
-    while (ik != NULL) {
-      update(ik);
-      Klass* k = ik->next_link();
-      ik = (k != NULL) ? InstanceKlass::cast(k) : NULL;
-    }
-  }
-};
-
-void SystemDictionaryShared::update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict) {
-  ArchivedMirrorPatcher patcher;
-  dict->iterate(&patcher);
-}
-
-void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict) {
-  ArchivedLambdaMirrorPatcher patcher;
-  dict->iterate(&patcher);
-}
-
-void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!ArchiveHeapLoader::are_archived_mirrors_available()) {
-    return;
-  }
-  if (MetaspaceShared::relocation_delta() == 0) {
-    return;
-  }
-  // mirrors are not archived for the classes in the dynamic archive
-  update_archived_mirror_native_pointers_for(&_static_archive._builtin_dictionary);
-  update_archived_mirror_native_pointers_for(&_static_archive._unregistered_dictionary);
-  update_archived_mirror_native_pointers_for(&_static_archive._lambda_proxy_class_dictionary);
-
-  for (int t = T_BOOLEAN; t <= T_LONG; t++) {
-    Klass* k = Universe::typeArrayKlassObj((BasicType)t);
-    ArchivedMirrorPatcher::update_array_klasses(k);
-  }
-  ArchivedMirrorPatcher::update_array_klasses(Universe::fillerArrayKlassObj());
-}
-#endif

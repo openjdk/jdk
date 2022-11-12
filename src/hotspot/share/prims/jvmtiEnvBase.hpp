@@ -171,6 +171,21 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // Otherwise return JNIHandles::resolve_external_guard(thread).
   static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
+  // Return true if the thread identified with a pair <jt,thr_obj> is current.
+  // A passive carrier thread is not treated as current.
+  static bool is_JavaThread_current(JavaThread* jt, oop thr_obj) {
+    JavaThread* current = JavaThread::current();
+    // jt can be NULL in case of a virtual thread
+    if (jt == NULL || jt != current) {
+      return false;
+    }
+    oop cur_obj = current->jvmti_vthread();
+
+    // cur_obj == NULL is true for normal platform threads only
+    // otherwise it can be virtual or carrier thread.
+    return cur_obj == NULL || cur_obj == thr_obj;
+  }
+
   static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
     jvmtiError err = JVMTI_ERROR_NONE;
     if (thread == NULL) {

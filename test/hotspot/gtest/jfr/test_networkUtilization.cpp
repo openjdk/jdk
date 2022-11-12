@@ -125,7 +125,10 @@ namespace {
       for (std::list<MockNetworkInterface>::const_iterator i = _interfaces.begin();
            i != _interfaces.end();
            ++i) {
-        NetworkInterface* cur = new NetworkInterface(i->name.c_str(), i->bytes_in, i->bytes_out, *network_interfaces);
+        // The gtests are compiled with exceptions, which requires operator delete.
+        // Allocate in CHeap instead.
+        void* mem = AllocateHeap(sizeof(NetworkInterface), mtTest);
+        NetworkInterface* cur = ::new (mem) NetworkInterface(i->name.c_str(), i->bytes_in, i->bytes_out, *network_interfaces);
         *network_interfaces = cur;
       }
       return OS_OK;
