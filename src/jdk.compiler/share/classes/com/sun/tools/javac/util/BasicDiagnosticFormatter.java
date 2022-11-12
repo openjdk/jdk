@@ -163,13 +163,27 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
         for (final DiagnosticPosition displayPos : info.positions()) {
             final var startPos = displayPos.getStartPosition();
-            // TODO(fancy-diags) handle multiline (may need to add an end pos)
+            final var endPos = endPosition(displayPos, source.getEndPosTable());
+
             buf.append(formatSource(diag, true, l));
             buf.append(":");
-            buf.append(source.getLineNumber(startPos));
+            final var startLineNumber = source.getLineNumber(startPos);
+            buf.append(startLineNumber);
+
+            if (endPos.isPresent()) {
+                final var endLineNumber = source.getLineNumber(endPos.getAsInt());
+                if (endLineNumber != startLineNumber) {
+                    buf.append("-");
+                    buf.append(endLineNumber);
+                }
+            }
             buf.append("\n");
 
-            buf.append(source.getLine(startPos));
+            // get the lines from the start to the end positions, unless there's no end position
+            // then just get the line for the start position
+            final var sourceLines = source.getLines(startPos, endPos.orElse(startPos));
+
+            buf.append(sourceLines);
             buf.append("\n");
         }
 
