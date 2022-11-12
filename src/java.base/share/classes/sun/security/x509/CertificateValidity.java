@@ -35,20 +35,11 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateValidity implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.validity";
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
+public class CertificateValidity implements DerEncoder {
+
     public static final String NAME = "validity";
-    public static final String NOT_BEFORE = "notBefore";
-    public static final String NOT_AFTER = "notAfter";
     /**
      * YR_2050 date and time set to Jan01 00:00 2050 GMT
      */
@@ -59,13 +50,13 @@ public class CertificateValidity implements CertAttrSet<String> {
     private Date        notAfter;
 
     // Returns the first time the certificate is valid.
-    private Date getNotBefore() {
-        return (new Date(notBefore.getTime()));
+    public Date getNotBefore() {
+        return new Date(notBefore.getTime());
     }
 
     // Returns the last time the certificate is valid.
-    private Date getNotAfter() {
-       return (new Date(notAfter.getTime()));
+    public Date getNotAfter() {
+       return new Date(notAfter.getTime());
     }
 
     // Construct the class from the DerValue
@@ -151,7 +142,7 @@ public class CertificateValidity implements CertAttrSet<String> {
         // in cases where default constructor is used check for
         // null values
         if (notBefore == null || notAfter == null) {
-            throw new IOException("CertAttrSet:CertificateValidity:" +
+            throw new IOException("CertificateValidity:" +
                                   " null values to encode.\n");
         }
         DerOutputStream pair = new DerOutputStream();
@@ -167,37 +158,6 @@ public class CertificateValidity implements CertAttrSet<String> {
             pair.putGeneralizedTime(notAfter);
         }
         out.write(DerValue.tag_Sequence, pair);
-    }
-
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Date)) {
-            throw new IOException("Attribute must be of type Date.");
-        }
-        if (name.equalsIgnoreCase(NOT_BEFORE)) {
-            notBefore = (Date)obj;
-        } else if (name.equalsIgnoreCase(NOT_AFTER)) {
-            notAfter = (Date)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                            "CertAttrSet: CertificateValidity.");
-        }
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Date get(String name) throws IOException {
-        if (name.equalsIgnoreCase(NOT_BEFORE)) {
-            return (getNotBefore());
-        } else if (name.equalsIgnoreCase(NOT_AFTER)) {
-            return (getNotAfter());
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                            "CertAttrSet: CertificateValidity.");
-        }
     }
 
     /**

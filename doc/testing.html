@@ -23,7 +23,8 @@
 </header>
 <nav id="TOC">
 <ul>
-<li><a href="#using-make-test-the-run-test-framework">Using &quot;make test&quot; (the run-test framework)</a><ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#running-tests-locally-with-make-test">Running tests locally with <code>make test</code></a><ul>
 <li><a href="#configuration">Configuration</a></li>
 </ul></li>
 <li><a href="#test-selection">Test selection</a><ul>
@@ -49,10 +50,12 @@
 <li><a href="#editing-this-document">Editing this document</a></li>
 </ul>
 </nav>
-<h2 id="using-make-test-the-run-test-framework">Using &quot;make test&quot; (the run-test framework)</h2>
-<p>This new way of running tests is developer-centric. It assumes that you have built a JDK locally and want to test it. Running common test targets is simple, and more complex ad-hoc combination of tests is possible. The user interface is forgiving, and clearly report errors it cannot resolve.</p>
-<p>The main target <code>test</code> uses the jdk-image as the tested product. There is also an alternate target <code>exploded-test</code> that uses the exploded image instead. Not all tests will run successfully on the exploded image, but using this target can greatly improve rebuild times for certain workflows.</p>
-<p>Previously, <code>make test</code> was used to invoke an old system for running tests, and <code>make run-test</code> was used for the new test framework. For backward compatibility with scripts and muscle memory, <code>run-test</code> (and variants like <code>exploded-run-test</code> or <code>run-test-tier1</code>) are kept as aliases.</p>
+<h2 id="overview">Overview</h2>
+<p>The bulk of JDK tests use <a href="https://openjdk.org/jtreg/">jtreg</a>, a regression test framework and test runner built for the JDK's specific needs. Other test frameworks are also used. The different test frameworks can be executed directly, but there is also a set of make targets intended to simplify the interface, and figure out how to run your tests for you.</p>
+<h2 id="running-tests-locally-with-make-test">Running tests locally with <code>make test</code></h2>
+<p>This is the easiest way to get started. Assuming you've built the JDK locally, execute:</p>
+<pre><code>$ make test</code></pre>
+<p>This will run a default set of tests against the JDK, and present you with the results. <code>make test</code> is part of a family of test-related make targets which simplify running tests, because they invoke the various test frameworks for you. The &quot;make test framework&quot; is simple to start with, but more complex ad-hoc combination of tests is also possible. You can always invoke the test frameworks directly if you want even more control.</p>
 <p>Some example command-lines:</p>
 <pre><code>$ make test-tier1
 $ make test-jdk_lang JTREG=&quot;JOBS=8&quot;
@@ -62,6 +65,8 @@ $ make test TEST=&quot;hotspot:hotspot_gc&quot; JTREG=&quot;JOBS=1;TIMEOUT_FACTO
 $ make test TEST=&quot;jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java&quot;
 $ make test TEST=&quot;micro:java.lang.reflect&quot; MICRO=&quot;FORK=1;WARMUP_ITER=2&quot;
 $ make exploded-test TEST=tier2</code></pre>
+<p>&quot;tier1&quot; and &quot;tier2&quot; refer to tiered testing, see further down. &quot;TEST&quot; is a test selection argument which the make test framework will use to try to find the tests you want. It iterates over the available test frameworks, and if the test isn't present in one, it tries the next one. The main target <code>test</code> uses the jdk-image as the tested product. There is also an alternate target <code>exploded-test</code> that uses the exploded image instead. Not all tests will run successfully on the exploded image, but using this target can greatly improve rebuild times for certain workflows.</p>
+<p>Previously, <code>make test</code> was used to invoke an old system for running tests, and <code>make run-test</code> was used for the new test framework. For backward compatibility with scripts and muscle memory, <code>run-test</code> and variants like <code>exploded-run-test</code> or <code>run-test-tier1</code> are kept as aliases.</p>
 <h3 id="configuration">Configuration</h3>
 <p>To be able to run JTReg tests, <code>configure</code> needs to know where to find the JTReg test framework. If it is not picked up automatically by configure, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc. (An alternative is to set the <code>JT_HOME</code> environment variable to point to the JTReg home before running <code>configure</code>.)</p>
 <p>To be able to run microbenchmarks, <code>configure</code> needs to know where to find the JMH dependency. Use <code>--with-jmh=&lt;path to JMH jars&gt;</code> to point to a directory containing the core JMH and transitive dependencies. The recommended dependencies can be retrieved by running <code>sh make/devkit/createJMHBundle.sh</code>, after which <code>--with-jmh=build/jmh/jars</code> should work.</p>
@@ -81,8 +86,8 @@ $ make exploded-test TEST=tier2</code></pre>
 <p>A brief description of the tiered test groups:</p>
 <ul>
 <li><p><code>tier1</code>: This is the lowest test tier. Multiple developers run these tests every day. Because of the widespread use, the tests in <code>tier1</code> are carefully selected and optimized to run fast, and to run in the most stable manner. The test failures in <code>tier1</code> are usually followed up on quickly, either with fixes, or adding relevant tests to problem list. GitHub Actions workflows, if enabled, run <code>tier1</code> tests.</p></li>
-<li><p><code>tier2</code>: This test group covers even more ground. These contain, among other things, tests that either run for too long to be at <code>tier1</code>, or may require special configuration, or tests that are less stable, or cover the broader range of non-core JVM and JDK features/components (for example, XML).</p></li>
-<li><p><code>tier3</code>: This test group includes more stressful tests, the tests for corner cases not covered by previous tiers, plus the tests that require GUIs. As such, this suite should either be run with low concurrency (<code>TEST_JOBS=1</code>), or without headful tests (<code>JTREG_KEYWORDS=\!headful</code>), or both.</p></li>
+<li><p><code>tier2</code>: This test group covers even more ground. These contain, among other things, tests that either run for too long to be at <code>tier1</code>, or may require special configuration, or tests that are less stable, or cover the broader range of non-core JVM and JDK features/components(for example, XML).</p></li>
+<li><p><code>tier3</code>: This test group includes more stressful tests, the tests for corner cases not covered by previous tiers, plus the tests that require GUIs. As such, this suite should either be run with low concurrency (<code>TEST_JOBS=1</code>), or without headful tests(<code>JTREG_KEYWORDS=\!headful</code>), or both.</p></li>
 <li><p><code>tier4</code>: This test group includes every other test not covered by previous tiers. It includes, for example, <code>vmTestbase</code> suites for Hotspot, which run for many hours even on large machines. It also runs GUI tests, so the same <code>TEST_JOBS</code> and <code>JTREG_KEYWORDS</code> caveats apply.</p></li>
 </ul>
 <h3 id="jtreg">JTReg</h3>

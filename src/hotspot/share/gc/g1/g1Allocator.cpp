@@ -309,6 +309,7 @@ G1PLABAllocator::PLABData::~PLABData() {
   for (uint node_index = 0; node_index < _num_alloc_buffers; node_index++) {
     delete _alloc_buffer[node_index];
   }
+  FREE_C_HEAP_ARRAY(PLAB*, _alloc_buffer);
 }
 
 void G1PLABAllocator::PLABData::initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills) {

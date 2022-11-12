@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -146,13 +145,13 @@ final class Vertex {
         }
 
         sb.append("Issuer:     ").append
-                 (x509Cert.getIssuerX500Principal()).append("\n");
+                (x509Cert.getIssuerX500Principal()).append("\n");
         sb.append("Subject:    ").append
-                 (x509Cert.getSubjectX500Principal()).append("\n");
+                (x509Cert.getSubjectX500Principal()).append("\n");
         sb.append("SerialNum:  ").append
-                 (x509Cert.getSerialNumber().toString(16)).append("\n");
+                (x509Cert.getSerialNumber().toString(16)).append("\n");
         sb.append("Expires:    ").append
-                 (x509Cert.getNotAfter().toString()).append("\n");
+                (x509Cert.getNotAfter().toString()).append("\n");
         boolean[] iUID = x509Cert.getIssuerUniqueID();
         if (iUID != null) {
             sb.append("IssuerUID:  ");
@@ -169,26 +168,17 @@ final class Vertex {
             }
             sb.append("\n");
         }
-        try {
-            SubjectKeyIdentifierExtension sKeyID =
+        SubjectKeyIdentifierExtension sKeyID =
                 x509Cert.getSubjectKeyIdentifierExtension();
-            if (sKeyID != null) {
-                KeyIdentifier keyID = sKeyID.get(
-                        SubjectKeyIdentifierExtension.KEY_ID);
-                sb.append("SubjKeyID:  ").append(keyID.toString());
-            }
-            AuthorityKeyIdentifierExtension aKeyID =
+        if (sKeyID != null) {
+            KeyIdentifier keyID = sKeyID.getKeyIdentifier();
+            sb.append("SubjKeyID:  ").append(keyID.toString());
+        }
+        AuthorityKeyIdentifierExtension aKeyID =
                 x509Cert.getAuthorityKeyIdentifierExtension();
-            if (aKeyID != null) {
-                KeyIdentifier keyID = (KeyIdentifier)aKeyID.get(
-                        AuthorityKeyIdentifierExtension.KEY_ID);
-                sb.append("AuthKeyID:  ").append(keyID.toString());
-            }
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("Vertex.certToString() unexpected exception");
-                e.printStackTrace();
-            }
+        if (aKeyID != null) {
+            KeyIdentifier keyID = aKeyID.getKeyIdentifier();
+            sb.append("AuthKeyID:  ").append(keyID.toString());
         }
         return sb.toString();
     }

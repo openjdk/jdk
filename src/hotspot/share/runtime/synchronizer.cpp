@@ -62,7 +62,7 @@
 
 class ObjectMonitorsHashtable::PtrList :
   public LinkedListImpl<ObjectMonitor*,
-                        ResourceObj::C_HEAP, mtThread,
+                        AnyObj::C_HEAP, mtThread,
                         AllocFailStrategy::RETURN_NULL> {};
 
 class CleanupObjectMonitorsHashtable: StackObj {
@@ -84,7 +84,7 @@ void ObjectMonitorsHashtable::add_entry(void* key, ObjectMonitor* om) {
   ObjectMonitorsHashtable::PtrList* list = get_entry(key);
   if (list == nullptr) {
     // Create new list and add it to the hash table:
-    list = new (ResourceObj::C_HEAP, mtThread) ObjectMonitorsHashtable::PtrList;
+    list = new (mtThread) ObjectMonitorsHashtable::PtrList;
     add_entry(key, list);
   }
   list->add(om);  // Add the ObjectMonitor to the list.
@@ -977,13 +977,6 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     return hash;
   }
 }
-
-// Deprecated -- use FastHashCode() instead.
-
-intptr_t ObjectSynchronizer::identity_hash_value_for(Handle obj) {
-  return FastHashCode(Thread::current(), obj());
-}
-
 
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {

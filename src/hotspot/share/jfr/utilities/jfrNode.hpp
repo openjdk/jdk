@@ -64,7 +64,7 @@ inline Node* unmask(const Node* ptr) {
 }
 
 template <typename Derived, typename Version = traceid>
-class JfrLinkedNode : public ResourceObj {
+class JfrLinkedNode {
  public:
   typedef Version VersionType;
   Derived* _next;
@@ -86,7 +86,7 @@ class JfrKeyIsThisNode : public JfrLinkedNode<JfrKeyIsThisNode<V> > {
 };
 
 template <typename V>
-class JfrValueNode : public JfrLinkedNode<JfrValueNode<V> > {
+class JfrValueNode : public JfrLinkedNode<JfrValueNode<V> >, public CHeapObj<mtTracing> {
  private:
   V _value;
  public:
