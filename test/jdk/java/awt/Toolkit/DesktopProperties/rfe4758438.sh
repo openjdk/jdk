@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,20 @@ OS=`uname`
 
 case "$OS" in
     Linux* )
-        GNOMESID=`pgrep gnome-session`
+        GNOMESID=`pgrep gnome-session | head -n1`
+
+        printf "\n/* gnome-session environ\n"
+        cat "/proc/$GNOMESID/environ" | tr '\0' '\n'
+        printf "\n*/\n\n"
+
         DBUS_SESSION_BUS_ADDRESS=`grep -z DBUS_SESSION_BUS_ADDRESS /proc/$GNOMESID/environ | cut -d= -f2-`
         export DBUS_SESSION_BUS_ADDRESS
+
         DISPLAY=`grep -z DISPLAY /proc/$GNOMESID/environ | cut -d= -f2-`
         export DISPLAY
-        ;;
-    Sun* )
-        GNOMESID=`pgrep gnome-session`
-        DBUS_SESSION_BUS_ADDRESS=`pargs -e $GNOMESID | grep DBUS_SESSION_BUS_ADDRESS | cut -d= -f2-`
-        export DBUS_SESSION_BUS_ADDRESS
-        DISPLAY=`pargs -e $GNOMESID | grep DISPLAY | cut -d= -f2-`
-        export DISPLAY
+
+        XDG_CURRENT_DESKTOP=`grep -z XDG_CURRENT_DESKTOP /proc/$GNOMESID/environ | cut -d= -f2-`
+        export XDG_CURRENT_DESKTOP
         ;;
     * )
         echo "This Feature is not to be tested on $OS"
@@ -47,13 +49,18 @@ case "$OS" in
         ;;
 esac
 
-if [ ${GNOME_DESKTOP_SESSION_ID:-nonset} = "nonset" ];
+printf "\n/* Test env:\n\n"
+env
+printf "\n*/\n\n"
+
+XDG_GNOME=$(echo $XDG_CURRENT_DESKTOP | grep -i gnome)
+
+if [ -z "$XDG_GNOME" ] \
+     && [ ${GNOME_DESKTOP_SESSION_ID:-nonset} = "nonset" ] \
+     && [ ${GNOME_SESSION_NAME:-nonset} = "nonset" ]
 then
-    if [ ${GNOME_SESSION_NAME:-nonset} = "nonset" ];
-    then
-        echo "This test should run under Gnome"
-        exit 0
-    fi
+    echo "This test should run under Gnome"
+    exit 0
 fi
 
 SCHEMAS=`gsettings list-schemas | wc -l`
@@ -70,7 +77,11 @@ fi
 cd ${TESTSRC}
 echo $PWD
 echo "${TESTJAVA}/bin/javac -d ${TESTCLASSES} rfe4758438.java"
+
+set -e
 ${TESTJAVA}/bin/javac -d ${TESTCLASSES} rfe4758438.java
+set +e
+
 
 cd ${TESTCLASSES}
 ${TESTJAVA}/bin/java -DuseGsettings=${USE_GSETTINGS} -Dtool=${TOOL} ${TESTVMOPTS} rfe4758438
