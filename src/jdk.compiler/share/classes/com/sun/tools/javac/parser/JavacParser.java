@@ -2984,8 +2984,6 @@ public class JavacParser implements Parser {
         int depth = 0;
         boolean inType = false;
         boolean inSelectionAndParenthesis = false;
-        boolean sequentialIdentifiers = false;
-        boolean lambdaFormalsOrRecord = false;
         ForInitResult defaultResult = ForInitResult.LocalVarDecl;
         outer: for (int lookahead = 0; ; lookahead++) {
             TokenKind tk = S.token(lookahead).kind;
