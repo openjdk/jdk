@@ -2985,6 +2985,7 @@ public class JavacParser implements Parser {
         boolean inType = false;
         boolean inSelectionAndParenthesis = false;
         boolean sequentialIdentifiers = false;
+        boolean lambdaFormalsOrRecord = false;
         ForInitResult defaultResult = ForInitResult.LocalVarDecl;
         outer: for (int lookahead = 0; ; lookahead++) {
             TokenKind tk = S.token(lookahead).kind;
@@ -3009,12 +3010,15 @@ public class JavacParser implements Parser {
                 case RPAREN:
                     // a method call in the init part or a record pattern?
                     if (inSelectionAndParenthesis) {
-                        if (peekToken(lookahead, COMMA) ||
-                                peekToken(lookahead, DOT)  ||
-                                peekToken(lookahead, SEMI)) {
+                        if (peekToken(lookahead, DOT)  ||
+                                peekToken(lookahead, SEMI) ||
+                                peekToken(lookahead, ARROW)) {
                             return ForInitResult.LocalVarDecl;
                         }
-                        return ForInitResult.RecordPattern;
+                        else if(peekToken(lookahead, COLON)) {
+                            return ForInitResult.RecordPattern;
+                        }
+                        break;
                     }
                 case UNDERSCORE:
                 case ASSERT:
@@ -3023,10 +3027,6 @@ public class JavacParser implements Parser {
                     if (lookahead == 0) {
                         inType = true;
                     }
-                    if (inSelectionAndParenthesis && sequentialIdentifiers) {
-                        return ForInitResult.RecordPattern;
-                    }
-                    sequentialIdentifiers = true;
                     break;
                 case FINAL:
                 case ELLIPSIS:

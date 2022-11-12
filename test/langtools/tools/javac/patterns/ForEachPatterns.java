@@ -156,12 +156,16 @@ public class ForEachPatterns {
     }
 
     static <T> void method() {}
+    static <T> void method2(Function<Integer, Integer> f) {}
 
     static void for_parsing(int i) {
         List<Point>                 points = null;
         List<GPoint<Integer>>       generic_points = null;
         List<GPoint<Point>>         generic_points_nested = null;
         List<GPoint<VoidPoint>>     generic_vpoints_nested = null;
+        List<RecordOfLists>         list_of_records = null;
+        List<RecordOfLists2>        list_of_records2 = null;
+
 
         for (Point(Integer a, Integer b) : points) { }
         for (ForEachPatterns.Point(Integer a, Integer b) : points) { }
@@ -173,6 +177,9 @@ public class ForEachPatterns {
         for (GPoint<Point>(Point(Integer a, Integer b), Point c) : generic_points_nested) { }
         for (GPoint<Point>(Point(var a, Integer b), Point c) : generic_points_nested) { }
         for (GPoint<VoidPoint>(VoidPoint(), VoidPoint()) : generic_vpoints_nested) { }
+        for (method2((Integer a) -> 42); i == 0;) { i++; }
+        for (RecordOfLists(List<Integer> lr) : list_of_records) {}
+        for (RecordOfLists2(List<List<Integer>> lr) : list_of_records2) {}
     }
 
     static List<Color> test_jep_example() {
@@ -235,6 +242,8 @@ public class ForEachPatterns {
     record Point(Integer x, Integer y) implements IPoint { }
     record GPoint<T>(T x, T y) { }
     record VoidPoint() { }
+    record RecordOfLists(List<Integer> o) {}
+    record RecordOfLists2(List<List<Integer>> o) {}
 
     @interface Annot {
         String field();
