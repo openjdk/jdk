@@ -387,6 +387,7 @@ void InstanceKlass::set_nest_host(InstanceKlass* host) {
   _nest_host = host;
   // Record dependency to keep nest host from being unloaded before this class.
   ClassLoaderData* this_key = class_loader_data();
+  assert(this_key != NULL, "sanity");
   this_key->record_dependency(host);
 }
 
@@ -2733,14 +2734,12 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
 }
 
 const char* InstanceKlass::signature_name() const {
-  int hash_len = 0;
-  char hash_buf[40];
 
   // Get the internal name as a c string
   const char* src = (const char*) (name()->as_C_string());
   const int src_length = (int)strlen(src);
 
-  char* dest = NEW_RESOURCE_ARRAY(char, src_length + hash_len + 3);
+  char* dest = NEW_RESOURCE_ARRAY(char, src_length + 3);
 
   // Add L as type indicator
   int dest_index = 0;
@@ -2758,11 +2757,6 @@ const char* InstanceKlass::signature_name() const {
         break;
       }
     }
-  }
-
-  // If we have a hash, append it
-  for (int hash_index = 0; hash_index < hash_len; ) {
-    dest[dest_index++] = hash_buf[hash_index++];
   }
 
   // Add the semicolon and the NULL
