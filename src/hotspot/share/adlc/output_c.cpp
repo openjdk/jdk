@@ -197,7 +197,7 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
     return -1;
   }
 
-  int operand_stages_size = templen;
+  const size_t operand_stages_size = templen;
   char *operand_stages = new char [operand_stages_size];
   operand_stages[0] = 0;
   int i = 0;
@@ -279,7 +279,7 @@ static int pipeline_res_stages_initializer(
   int templen = 1 + commentlen + pipeline->_rescount * (max_stage + 14);
 
   // Allocate space for the resource list
-  int resource_stages_size = templen;
+  const size_t resource_stages_size = templen;
   char * resource_stages = new char [templen];
 
   templen = 0;
@@ -355,7 +355,7 @@ static int pipeline_res_cycles_initializer(
   templen = 1 + commentlen + (cyclelen + 8) * pipeline->_rescount;
 
   // Allocate space for the resource list
-  int resource_cycles_size = templen;
+  const size_t resource_cycles_size = templen;
   char * resource_cycles = new char [resource_cycles_size];
 
   templen = 0;
@@ -434,7 +434,7 @@ static int pipeline_res_mask_initializer(
      (cyclemasksize * 12) + masklen + (cycledigit * 2) + 30) * element_count;
 
   // Allocate space for the resource list
-  int resource_mask_size = templen;
+  const size_t resource_mask_size = templen;
   char * resource_mask = new char [resource_mask_size];
   char * last_comma = NULL;
 

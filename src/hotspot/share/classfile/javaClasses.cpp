@@ -2520,8 +2520,8 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   }
 
   // Allocate temporary buffer with extra space for formatting and line number
-  int buf_size = buf_len + 64;
-  int buf_off;
+  const size_t buf_size = buf_len + 64;
+  size_t buf_off;
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer

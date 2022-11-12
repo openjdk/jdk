@@ -211,7 +211,7 @@ void ADLParser::instr_parse(void) {
             return;
           }
           assert(match_rules_cnt < 100," too many match rule clones");
-          size_t buf_size = strlen(instr->_ident) + 4;
+          const size_t buf_size = strlen(instr->_ident) + 4;
           char* buf = (char*) AdlAllocateHeap(buf_size);
           snprintf(buf, buf_size, "%s_%d", instr->_ident, match_rules_cnt++);
           rule->_result = buf;
@@ -2877,7 +2877,7 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
   const char* prefix = "__ins_encode_";
-  size_t ec_name_size = strlen(inst._ident) + strlen(prefix) + 1;
+  const size_t ec_name_size = strlen(inst._ident) + strlen(prefix) + 1;
   char* ec_name = (char*) AdlAllocateHeap(ec_name_size);
   snprintf(ec_name, ec_name_size, "%s%s", prefix, inst._ident);
 
@@ -3349,7 +3349,7 @@ void ADLParser::constant_parse(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
   const char* prefix = "__constant_";
-  size_t ec_name_size = strlen(inst._ident) + strlen(prefix) + 1;
+  const size_t ec_name_size = strlen(inst._ident) + strlen(prefix) + 1;
   char* ec_name = (char*) AdlAllocateHeap(ec_name_size);
   snprintf(ec_name, ec_name_size, "%s%s", prefix, inst._ident);
 
@@ -4670,7 +4670,7 @@ char *ADLParser::get_ident_or_literal_constant(const char* description) {
     // Grab a constant expression.
     param = get_paren_expr(description);
     if (param[0] != '(') {
-      size_t buf_size = strlen(param) + 3;
+      const size_t buf_size = strlen(param) + 3;
       char* buf = (char*) AdlAllocateHeap(buf_size);
       snprintf(buf, buf_size, "(%s)", param);
       param = buf;
@@ -5279,7 +5279,7 @@ void ADLParser::next_line() {
 char* ADLParser::get_line_string(int linenum) {
   const char* file = _AD._ADL_file._name;
   int         line = linenum ? linenum : this->linenum();
-  size_t location_size = strlen(file) + 100;
+  const size_t location_size = strlen(file) + 100;
   char* location = (char *)AdlAllocateHeap(location_size);
   snprintf(location, location_size, "\n#line %d \"%s\"\n", line, file);
   return location;

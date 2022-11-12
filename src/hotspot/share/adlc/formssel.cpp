@@ -3919,7 +3919,7 @@ void MatchRule::matchrule_swap_commutative_op(const char* instr_ident, int count
   MatchRule* clone = new MatchRule(_AD, this);
   // Swap operands of commutative operation
   ((MatchNode*)clone)->swap_commutative_op(true, count);
-  size_t buf_size = strlen(instr_ident) + 4;
+  const size_t buf_size = strlen(instr_ident) + 4;
   char* buf = (char*) AdlAllocateHeap(buf_size);
   snprintf(buf, buf_size, "%s_%d", instr_ident, match_rules_cnt++);
   clone->_result = buf;
