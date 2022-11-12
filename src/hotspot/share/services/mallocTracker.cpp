@@ -228,7 +228,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
       st->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
           p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
       if (tracking_level == NMT_detail) {
-        NativeCallStack ncs; // empty stack
+        NativeCallStack ncs;
         if (mhdr->get_stack(ncs)) {
           ncs.print_on(st);
           st->cr();

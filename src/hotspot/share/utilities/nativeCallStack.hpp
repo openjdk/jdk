@@ -85,7 +85,7 @@ public:
   // Default ctor creates an empty stack.
   // (it may make sense to remove this altogether but its used in a few places).
   NativeCallStack() {
-      memset(_stack, 0, sizeof(_stack));
+    memset(_stack, 0, sizeof(_stack));
   }
 
   explicit NativeCallStack(int toSkip);
