@@ -35,9 +35,9 @@
 #include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
-                    NativeCallStack(0) : NativeCallStack())
+                    NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
-                    NativeCallStack(1) : NativeCallStack())
+                    NativeCallStack(1) : FAKE_CALLSTACK)
 
 class MemBaseline;
 

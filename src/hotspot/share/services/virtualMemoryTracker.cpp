@@ -626,7 +626,7 @@ public:
       size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
 
       ReservedMemoryRegion* region = const_cast<ReservedMemoryRegion*>(rgn);
-      NativeCallStack ncs(NULL, 0); // empty stack
+      NativeCallStack ncs; // empty stack
 
       RegionIterator itr(stack_bottom, aligned_stack_size);
       DEBUG_ONLY(bool found_stack = false;)

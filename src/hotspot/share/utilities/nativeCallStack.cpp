@@ -28,7 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-const NativeCallStack NativeCallStack::_empty_stack (NULL, 0);
+const NativeCallStack NativeCallStack::_empty_stack; // Uses default ctor
 
 NativeCallStack::NativeCallStack(int toSkip) {
 
@@ -77,6 +77,7 @@ void NativeCallStack::print_on(outputStream* out) const {
 
 // Decode and print this call path
 void NativeCallStack::print_on(outputStream* out, int indent) const {
+  DEBUG_ONLY(assert_not_fake();)
   address pc;
   char    buf[1024];
   int     offset;

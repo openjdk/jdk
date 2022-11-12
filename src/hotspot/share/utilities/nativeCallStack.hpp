@@ -57,22 +57,35 @@ class NativeCallStack : public StackObj {
 private:
   address       _stack[NMT_TrackingStackDepth];
   static const NativeCallStack _empty_stack;
+
 public:
 
-  // JDK-8296437:
-  // Default ctor is left intentionally empty to not initialize its stack.
-  // This constructor is hot, since it gets used as part of CALLER_PC or CURRENT_PC
-  // when NMT is off. Leaving this ctor empty will cause the compiler to optimize
-  // it away. That the object remains uninitialized is fine, since it won't be used
-  // anyway.
-  NativeCallStack() {
+  enum class FakeMarker { its_fake };
+#ifdef ASSERT
+  static constexpr uintptr_t _fake_address =
+             (LP64_ONLY(0x4E4D54535441434BULL) // "NMTSTACK"
+               NOT_LP64(0x4E4D5453));          // "NMTS"
+  inline void assert_not_fake() const {
+    assert(_stack[0] != (address)_fake_address, "Must not be a fake stack");
+  }
+#endif
+
+  // This "fake" constructor is only used in the CALLER_PC and CURRENT_PC macros
+  // when NMT is off or in summary mode. In these cases, it does not need a
+  // callstack, and we can leave the constructed object uninitialized. That will
+  // cause the constructor call to be optimized away (see JDK-8296437).
+  explicit NativeCallStack(FakeMarker dummy) {
 #ifdef ASSERT
     for (int i = 0; i < NMT_TrackingStackDepth; i ++) {
-      // we zap the object with a pattern in debug builds only
-      _stack[i] = (address)(LP64_ONLY(0x4E4D54535441434B) // "NMTSTACK"
-                            NOT_LP64(0x4E4D5453));        // "NMTS"
+      _stack[i] = (address)_fake_address;
     }
 #endif
+  }
+
+  // Default ctor creates an empty stack.
+  // (it may make sense to remove this altogether but its used in a few places).
+  NativeCallStack() {
+      memset(_stack, 0, sizeof(_stack));
   }
 
   explicit NativeCallStack(int toSkip);
@@ -82,6 +95,7 @@ public:
 
   // if it is an empty stack
   inline bool is_empty() const {
+    DEBUG_ONLY(assert_not_fake();)
     return _stack[0] == NULL;
   }
 
@@ -103,6 +117,7 @@ public:
 
   // Helper; calculates a hash value over the stack frames in this stack
   unsigned int calculate_hash() const {
+    DEBUG_ONLY(assert_not_fake();)
     uintptr_t hash = 0;
     for (int i = 0; i < NMT_TrackingStackDepth; i++) {
       hash += (uintptr_t)_stack[i];
@@ -113,5 +128,7 @@ public:
   void print_on(outputStream* out) const;
   void print_on(outputStream* out, int indent) const;
 };
+
+#define FAKE_CALLSTACK NativeCallStack(NativeCallStack::FakeMarker::its_fake)
 
 #endif // SHARE_UTILITIES_NATIVECALLSTACK_HPP
