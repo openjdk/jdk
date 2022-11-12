@@ -35,9 +35,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateVersion implements CertAttrSet {
+public class CertificateVersion implements DerEncoder {
     /**
      * X509Certificate Version 1
      */
