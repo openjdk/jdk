@@ -261,6 +261,28 @@ public class LinkedList<E>
             throw new NoSuchElementException();
         return l.item;
     }
+    /**
+     * Returns the middle element in this list.
+     *
+     * @return the middle element in this list
+     * @throws NoSuchElementException if this list is empty
+     */
+    public E getMiddle() {
+         Node<E> f  = first;
+
+        if (f == null)
+            throw new NoSuchElementException();
+
+        if(f!=null)
+        {
+         for(int i=0; i< size/2; i++)
+	 f=f.next;
+
+        }
+	return f.item;
+
+    }
+
 
     /**
      * Removes and returns the first element from this list.
