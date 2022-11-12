@@ -586,18 +586,12 @@ abstract class GaloisCounterMode extends CipherSpi {
                                     GCTR gctr, GHASH ghash) {
 
         int len = 0;
-        // Loop if input length is greater than the SPLIT_LEN. Intrinsic warmup.
-        if (inLen >= SPLIT_LEN) {
+        // Loop if input length is greater than the SPLIT_LEN
+        if (inLen > SPLIT_LEN && ct != null) {
+            int partlen;
             while (inLen >= SPLIT_LEN) {
-                int partlen;
-                if (ct == null) {
-                    ghash.update(in, inOfs + len, SPLIT_LEN);
-                    partlen = gctr.update(in, inOfs + len, SPLIT_LEN, out,
-                        outOfs);
-                } else {
-                    partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
-                        ctOfs + len, out, outOfs + len, gctr, ghash);
-                }
+                partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
+                    ctOfs + len, out, outOfs + len, gctr, ghash);
                 len += partlen;
                 inLen -= partlen;
             }
