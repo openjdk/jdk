@@ -46,6 +46,7 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.lang.ref.Reference;
 
+import sun.awt.AWTAccessor;
 import sun.java2d.cmm.ColorTransform;
 
 import static sun.java2d.cmm.lcms.LCMSImageLayout.ImageLayoutException;
@@ -85,9 +86,10 @@ final class LCMSTransform implements ColorTransform {
      * @param  profiles the list of color profiles
      */
     LCMSTransform(int renderingIntent, ICC_Profile... profiles) {
+        var acc = AWTAccessor.getICC_ProfileAccessor();
         lcmsProfiles = new LCMSProfile[profiles.length];
         for (int i = 0; i < profiles.length; i++) {
-            lcmsProfiles[i] = LCMS.getProfileID(profiles[i]);
+            lcmsProfiles[i] = LCMS.getLcmsProfile(acc.cmmProfile(profiles[i]));
             profiles[i].getNumComponents(); // force header initialization
         }
         this.renderingIntent = (renderingIntent == ColorTransform.Any) ?
