@@ -48,6 +48,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.JCDiagnostic.RangeDiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.parser.Tokens.TokenKind.*;
@@ -647,6 +648,15 @@ public class JavacParser implements Parser {
         return t;
     }
 
+    private boolean integerCanParseAsLong(final String literal, final int radix) {
+        try {
+            Convert.string2long(literal, radix);
+            return true;
+        } catch (final NumberFormatException e) {
+            return false;
+        }
+    }
+
     JCExpression literal(Name prefix) {
         return literal(prefix, token.pos);
     }
@@ -672,7 +682,33 @@ public class JavacParser implements Parser {
                     TypeTag.INT,
                     Convert.string2int(strval(prefix), token.radix()));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                if (integerCanParseAsLong(strval(prefix), token.radix())) {
+                    log.error(DiagnosticFlag.SYNTAX,
+                              token.pos,
+                              Errors.IntNumberTooLarge(strval(prefix)),
+                              new Info(
+                                      Fragments.InfoIntNumberRange,
+                                      log.currentSource(),
+                                      List.nil()
+                              ), new Help(
+                                    Fragments.HelpUseLongIntegerLiteral,
+                                    List.of(new SuggestedChange(
+                                            log.currentSource(),
+                                            new RangeDiagnosticPosition(token.pos, token.endPos),
+                                            strval(prefix) + "L",
+                                            Applicability.MACHINE_APPLICABLE
+                                    ))
+                            ));
+                } else {
+                    log.error(DiagnosticFlag.SYNTAX,
+                              token.pos,
+                              Errors.IntNumberTooLarge(strval(prefix)),
+                              new Info(
+                                      Fragments.InfoLongNumberRange,
+                                      log.currentSource(),
+                                      List.nil()
+                              ));
+                }
             }
             break;
         case LONGLITERAL:
@@ -681,7 +717,11 @@ public class JavacParser implements Parser {
                     TypeTag.LONG,
                     Long.valueOf(Convert.string2long(strval(prefix), token.radix())));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)), new Info(
+                        Fragments.InfoLongNumberRange,
+                        log.currentSource(),
+                        List.nil()
+                ));
             }
             break;
         case FLOATLITERAL: {

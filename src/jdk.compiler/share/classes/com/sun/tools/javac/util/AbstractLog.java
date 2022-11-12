@@ -162,8 +162,16 @@ public abstract class AbstractLog {
         report(diags.error(flag, source, wrap(pos), errorKey));
     }
 
+    public void error(DiagnosticFlag flag, int pos, Error errorKey, Info info) {
+        report(diags.error(flag, source, wrap(pos), errorKey, info));
+    }
+
     public void error(DiagnosticFlag flag, int pos, Error errorKey, Help help) {
         report(diags.error(flag, source, wrap(pos), errorKey, help));
+    }
+
+    public void error(DiagnosticFlag flag, int pos, Error errorKey, Info info, Help help) {
+        report(diags.error(flag, source, wrap(pos), errorKey, info, help));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
