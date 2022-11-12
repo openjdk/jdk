@@ -31,8 +31,6 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
-import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
-import com.sun.tools.javac.util.BasicDiagnosticFormatter.BasicConfiguration;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
@@ -157,11 +155,11 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         buf.append("info: ");
         final var message = info.message();
         buf.append(localize(l, message.key(), message.getArgs()));
-        buf.append("\n");
 
         final var source = info.sourceFile();
-
         for (final DiagnosticPosition displayPos : info.positions()) {
+            buf.append("\n");
+
             final var startPos = displayPos.getStartPosition();
             final var endPos = endPosition(displayPos, source.getEndPosTable());
 
@@ -184,7 +182,6 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             final var sourceLines = source.getLines(startPos, endPos.orElse(startPos));
 
             buf.append(sourceLines);
-            buf.append("\n");
         }
 
         return buf.toString();
@@ -327,7 +324,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                             DiagnosticPart.SUBDIAGNOSTICS,
                             DiagnosticPart.SOURCE));
             if (options.isSet(Option.PREVIEW)) {
-                initFormatWithHelpAndInfo();
+                initFormatWithInfoAndHelp();
             }
             else {
                 initFormat();
@@ -389,8 +386,8 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             initFormats("%f:%l:%_%p%L%m", "%p%L%m", "%f:%_%p%L%m");
         }
 
-        private void initFormatWithHelpAndInfo() {
-            initFormats("%f:%l:%_%p%L%m%h%i", "%p%L%m%h%i", "%f:%_%p%L%m%h%i");
+        private void initFormatWithInfoAndHelp() {
+            initFormats("%f:%l:%_%p%L%m%i%h", "%p%L%m%i%h", "%f:%_%p%L%m%i%h");
         }
 
         private void initOldFormat() {
