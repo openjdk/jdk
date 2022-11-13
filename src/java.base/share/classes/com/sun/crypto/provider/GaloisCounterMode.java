@@ -688,9 +688,10 @@ abstract class GaloisCounterMode extends CipherSpi {
         byte[] originalOut = null;
         int originalOutOfs = 0;
 
-        // True if ops is an in-place heap ByteBuffer decryption.  This is to
+        // True if ops is an in-place array decryption with the offset between
+        // input & output the same or the input greater.  This is to
         // avoid the AVX512 intrinsic.
-        boolean inPlaceHeapBB = false;
+        boolean inPlaceArray = false;
 
         GCMEngine(SymmetricCipher blockCipher) {
             blockSize = blockCipher.getBlockSize();
@@ -758,7 +759,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 ByteBuffer ct = (encryption ? dst : src);
                 len = GaloisCounterMode.implGCMCrypt(src.array(),
                     src.arrayOffset() + src.position(), srcLen,
-                    inPlaceHeapBB ? null : ct.array(),
+                    inPlaceArray ? null : ct.array(),
                     ct.arrayOffset() + ct.position(),
                     dst.array(), dst.arrayOffset() + dst.position(),
                     gctr, ghash);
@@ -969,6 +970,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // from the passed object.  That gives up the true offset from
                 // the base address.  As long as the src side is >= the dst
                 // side, we are not in overlap.
+                // NOTE: inPlaceArray does not apply here as direct buffers run
+                // through a byte[] to get to the combined intrinsic
                 if (((DirectBuffer) src).address() - srcaddr + src.position() >=
                     ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
                     return dst;
@@ -987,11 +990,11 @@ abstract class GaloisCounterMode extends CipherSpi {
                     // If during encryption and the input offset is behind or
                     // the same as the output offset, the same buffer can be
                     // used.
-                    // Set 'inPlaceHeapBB' true for decryption operations to
-                    // avoid the AVX512 intrinsic
+                    // Set 'inPlaceArray' true for decryption operations to
+                    // avoid the AVX512 combined intrinsic
                     if (src.position() + src.arrayOffset() >=
                         dst.position() + dst.arrayOffset()) {
-                        inPlaceHeapBB = (!encryption);
+                        inPlaceArray = (!encryption);
                         return dst;
                     }
                 }
@@ -1013,7 +1016,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         /**
-         * This is used for both overlap detection for the data or  decryption
+         * This is used for both overlap detection for the data or decryption
          * during in-place crypto, so to not overwrite the input if the auth tag
          * is invalid.
          *
@@ -1021,10 +1024,13 @@ abstract class GaloisCounterMode extends CipherSpi {
          * allocated because for code simplicity.
          */
         byte[] overlapDetection(byte[] in, int inOfs, byte[] out, int outOfs) {
-            if (in == out && (!encryption || inOfs < outOfs)) {
-                originalOut = out;
-                originalOutOfs = outOfs;
-                return new byte[out.length];
+            if (in == out) {
+                if (inOfs < outOfs) {
+                    originalOut = out;
+                    originalOutOfs = outOfs;
+                    return new byte[out.length];
+                }
+                inPlaceArray = (!encryption);
             }
             return out;
         }
@@ -1525,8 +1531,11 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
 
             if (mismatch != 0) {
-                // Clear output data
-                Arrays.fill(out, outOfs, outOfs + len, (byte) 0);
+                // If this is an in-place array, don't zero the input
+                if (!inPlaceArray) {
+                    // Clear output data
+                    Arrays.fill(out, outOfs, outOfs + len, (byte) 0);
+                }
                 throw new AEADBadTagException("Tag mismatch");
             }
 
@@ -1610,12 +1619,15 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (mismatch != 0) {
                 // Clear output data
                 dst.reset();
-                if (dst.hasArray()) {
-                    int ofs = dst.arrayOffset() + dst.position();
-                    Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
-                } else {
-                    Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
-                        len + dst.position(), (byte)0);
+                // If this is an in-place array, don't zero the src
+                if (!inPlaceArray) {
+                    if (dst.hasArray()) {
+                        int ofs = dst.arrayOffset() + dst.position();
+                        Arrays.fill(dst.array(), ofs, ofs + len, (byte) 0);
+                    } else {
+                        Unsafe.getUnsafe().setMemory(((DirectBuffer) dst).address(),
+                            len + dst.position(), (byte) 0);
+                    }
                 }
                 throw new AEADBadTagException("Tag mismatch");
             }
@@ -1826,8 +1838,11 @@ abstract class GaloisCounterMode extends CipherSpi {
                            int outOfs) {
             int len = 0;
             if (inLen >= PARALLEL_LEN) {
-                len += implGCMCrypt(in, inOfs, inLen, in, inOfs, out, outOfs,
-                    gctr, ghash);
+                // Since GCMDecrypt.inPlaceArray cannot be accessed, check that
+                // 'in' and 'out' are the same.  All other in-place situations
+                // have been resolved by overlapDetection()
+                len += implGCMCrypt(in, inOfs, inLen, (in == out ? null : in),
+                    inOfs, out, outOfs, gctr, ghash);
             }
             ghash.doFinal(in, inOfs + len, inLen - len);
             return len + gctr.doFinal(in, inOfs + len, inLen - len, out,
