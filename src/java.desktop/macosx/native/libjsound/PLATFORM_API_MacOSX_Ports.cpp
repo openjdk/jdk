@@ -635,7 +635,7 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                     if (channelName == NULL) {
                         return;
                     }
-                    snprintf(channelName, 16, "Ch %d", ch);
+                    os::snprintf(channelName, 16, "Ch %d", ch);
                 }
 
                 void* jControls[2];
