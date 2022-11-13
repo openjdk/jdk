@@ -463,7 +463,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
     /**
      * Wait for all threads to finish or the task scope to shut down. This method waits
-     * until all threads started in the task scope finish execution (of both task and
+     * until all threads contained in the task scope finish execution (of both task and
      * {@link #handleComplete(Future) handleComplete} method), the {@link #shutdown()
      * shutdown} method is invoked to shut down the task scope, or the current thread
      * is {@linkplain Thread#interrupt() interrupted}.
@@ -486,7 +486,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
     /**
      * Wait for all threads to finish or the task scope to shut down, up to the given
-     * deadline. This method waits until all threads started in the task scope finish
+     * deadline. This method waits until all threads contained in the task scope finish
      * execution (of both task and {@link #handleComplete(Future) handleComplete} method),
      * the {@link #shutdown() shutdown} method is invoked to shut down the task scope,
      * the current thread is {@linkplain Thread#interrupt() interrupted}, or the deadline
@@ -583,8 +583,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * <ul>
      * <li> {@linkplain Future#cancel(boolean) Cancels} the tasks that have threads
      * {@linkplain Future#get() waiting} on a result so that the waiting threads wakeup.
-     * <li> {@linkplain Thread#interrupt() Interrupts} all unfinished threads in the
-     * task scope (except the current thread).
+     * <li> {@linkplain Thread#interrupt() Interrupts} all unfinished threads contained in the
+     * task scope.
      * <li> Wakes up the owner if it is waiting in {@link #join()} or {@link
      * #joinUntil(Instant)}. If the owner is not waiting then its next call to {@code
      * join} or {@code joinUntil} will return immediately.
