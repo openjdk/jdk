@@ -577,9 +577,11 @@ abstract class GaloisCounterMode extends CipherSpi {
      * large chunks of data into 1MB sized chunks. This is to place
      * an upper limit on the number of blocks encrypted in the intrinsic.
      *
-     * The combined intrinsic is not used when decrypting in-place heap
-     * bytebuffers because 'ct' will be the same as 'in' and overwritten by
+     * The combined intrinsic is not used when decrypting in-place byte[]
+     * because 'ct' will be the same as 'in' and overwritten by
      * GCTR before GHASH calculates the encrypted tag.
+     *
+     * The value of ctOfs is irrelevant if ct is null.
      */
     private static int implGCMCrypt(byte[] in, int inOfs, int inLen, byte[] ct,
                                     int ctOfs, byte[] out, int outOfs,
@@ -760,7 +762,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 len = GaloisCounterMode.implGCMCrypt(src.array(),
                     src.arrayOffset() + src.position(), srcLen,
                     inPlaceArray ? null : ct.array(),
-                    ct.arrayOffset() + ct.position(),
+                    ct.arrayOffset() + ct.position(), //offset ignored if null
                     dst.array(), dst.arrayOffset() + dst.position(),
                     gctr, ghash);
                 src.position(src.position() + len);
