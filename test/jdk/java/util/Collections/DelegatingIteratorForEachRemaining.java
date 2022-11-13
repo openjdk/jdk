@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 Google Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -194,5 +195,42 @@ public class DelegatingIteratorForEachRemaining {
         Set<Map.Entry<String, Object>> entrySet = map().entrySet();
         Class clazz = entrySet.iterator().next().getClass();
         assertThrowingIterator(Collections.checkedSet(entrySet, clazz).iterator());
+    }
+
+    /**
+     * Calls Collections.unmodifiableMap().entrySet().iterator().forEachRemaining() by passing
+     * that method a {@code null} action and expects that call to fail with a
+     * {@code NullPointerException}. Additionally, the test verifies that the such a (failed) call
+     * doesn't advance the iterator to the next entry.
+     */
+    @Test
+    public void testUnmodifiableForEachRemainingNPE() {
+        final Map<String, String> singleEntryMap = Collections.singletonMap("foo", "bar");
+        final Iterator<Map.Entry<String, String>> it = Collections.unmodifiableMap(singleEntryMap)
+                .entrySet().iterator();
+        Assert.assertTrue("Iterator unexpectedly doesn't have any entry", it.hasNext());
+        // pass null "action" and expect it to fail with NPE
+        Assert.assertThrows(NullPointerException.class, () -> it.forEachRemaining(null));
+        // verify the iterator didn't advance
+        Assert.assertTrue("Iterator unexpectedly doesn't have any entry", it.hasNext());
+    }
+
+    /**
+     * Calls Collections.checkedMap().entrySet().iterator().forEachRemaining() by passing
+     * that method a {@code null} action and expects that call to fail with a
+     * {@code NullPointerException}. Additionally, the test verifies that the such a (failed) call
+     * doesn't advance the iterator to the next entry.
+     */
+    @Test
+    public void testCheckedMapForEachRemainingNPE() {
+        final Map<String, String> checkedMap = Collections.checkedMap(new HashMap<>(), String.class,
+                String.class);
+        checkedMap.put("hello", "world");
+        final Iterator<Map.Entry<String, String>> it = checkedMap.entrySet().iterator();
+        Assert.assertTrue("Iterator unexpectedly doesn't have any entry", it.hasNext());
+        // pass null "action" and expect it to fail with NPE
+        Assert.assertThrows(NullPointerException.class, () -> it.forEachRemaining(null));
+        // verify the iterator didn't advance
+        Assert.assertTrue("Iterator unexpectedly doesn't have any entry", it.hasNext());
     }
 }
