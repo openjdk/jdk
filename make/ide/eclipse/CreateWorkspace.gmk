@@ -379,10 +379,10 @@ define SetupEclipseWorkspaceBody
 
   # Eclipse does have rudimentary support for these, so why not?
   # Their inclusion will not affect or slow indexing down in any way regardless
-  $$(call EmitLinkedDirectory, make,$(TOPDIR)/.github)
-  $$(call EmitLinkedDirectory, make,$(TOPDIR)/.jcheck)
-  $$(call EmitLinkedDirectory, make,$(TOPDIR)/bin)
-  $$(call EmitLinkedDirectory, make,$(TOPDIR)/doc)
+  $$(call EmitLinkedDirectory, .github,$(TOPDIR)/.github)
+  $$(call EmitLinkedDirectory, .jcheck,$(TOPDIR)/.jcheck)
+  $$(call EmitLinkedDirectory, bin,$(TOPDIR)/bin)
+  $$(call EmitLinkedDirectory, doc,$(TOPDIR)/doc)
 
   ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
     $$(foreach src,$(JAVA_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
