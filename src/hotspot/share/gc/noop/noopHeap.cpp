@@ -59,11 +59,7 @@ jint NoopHeap::initialize() {
     _space = new ContiguousSpace();
     _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
-    // Compute constants
     _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
-    _step_counter_update = MIN2<size_t>(max_byte_size / 16, NoopUpdateCountersStep);
-    _step_heap_print = (NoopPrintHeapSteps == 0) ? SIZE_MAX : (max_byte_size / NoopPrintHeapSteps);
-    _decay_time_ns = (int64_t) NoopTLABDecayTime * NANOSECS_PER_MILLISEC;
 
     // Install barrier set
     BarrierSet::set_barrier_set(new NoopBarrierSet());
@@ -91,6 +87,7 @@ GrowableArray<MemoryPool*> NoopHeap::memory_pools() {
     return memory_pools;
 }
 
+//Main allocation method used in any other allocation method
 HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
     assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
@@ -202,16 +199,6 @@ void NoopHeap::collect(GCCause::Cause cause) {
         default:
             log_info(gc)("GC request for \"%s\" is ignored", GCCause::to_string(cause));
     }
-}
-
-void NoopHeap::print_on(outputStream *st) const {
-}
-
-bool NoopHeap::print_location(outputStream* st, void* addr) const {
-	return true;
-}
-
-void NoopHeap::print_tracing_info() const {
 }
 
 void NoopHeap::do_full_collection(bool clear_all_soft_refs) {

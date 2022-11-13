@@ -29,14 +29,14 @@
 #include "memory/virtualspace.hpp"
 
 #define VM_STRUCTS_NOOPGC(nonstatic_field,                       \
-                            volatile_nonstatic_field,               \
-                            static_field)                           \
+                            volatile_nonstatic_field,            \
+                            static_field)                        \
   nonstatic_field(NoopHeap, _virtual_space, VirtualSpace)        \
   nonstatic_field(NoopHeap, _space, ContiguousSpace*)
 
 #define VM_TYPES_NOOPGC(declare_type,                            \
-                          declare_toplevel_type,                    \
-                          declare_integer_type)                     \
+                          declare_toplevel_type,                 \
+                          declare_integer_type)                  \
   declare_type(NoopHeap, CollectedHeap)
 
 #define VM_INT_CONSTANTS_NOOPGC(declare_constant,                \

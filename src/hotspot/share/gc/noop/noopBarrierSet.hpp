@@ -62,7 +62,7 @@ struct BarrierSet::GetName<NoopBarrierSet> {
 
 template<>
 struct BarrierSet::GetType<BarrierSet::NoopBarrierSet> {
-    typedef ::NoopBarrierSet type;
+    typedef::NoopBarrierSet type;
 };
 
 #endif // SHARE_GC_NOOP_NOOPBARRIERSET_HPP
