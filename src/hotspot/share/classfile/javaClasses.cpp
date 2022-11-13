@@ -2525,15 +2525,15 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
     buf_off = (int)strlen(buf);
     if (module_version != NULL) {
-      snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
     } else {
-      snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
     }
   }
 
@@ -2549,17 +2549,17 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
       buf_off = (int)strlen(buf);
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
-        snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
       } else if (source_file_name != NULL) {
         // Just sourcename
-        snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
       CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
-        snprintf(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        os::snprintf(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
     }
   }

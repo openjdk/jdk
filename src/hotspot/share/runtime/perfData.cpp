@@ -101,7 +101,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
      }
   }
   else {
-    snprintf(_name, _name_size, "%s.%s", prefix, name);
+    os::snprintf(_name, _name_size, "%s.%s", prefix, name);
     // set the F_Supported flag based on the given namespace.
     if (PerfDataManager::is_stable_supported(ns) ||
         PerfDataManager::is_unstable_supported(ns)) {
@@ -365,7 +365,7 @@ char* PerfDataManager::counter_name(const char* ns, const char* name) {
 
    size_t len = strlen(ns) + strlen(name) + 2;
    char* result = NEW_RESOURCE_ARRAY(char, len);
-   snprintf(result, len, "%s.%s", ns, name);
+   os::snprintf(result, len, "%s.%s", ns, name);
    return result;
 }
 

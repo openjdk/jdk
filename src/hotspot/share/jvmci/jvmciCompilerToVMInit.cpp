@@ -310,7 +310,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
     VMStructEntry vmField = JVMCIVMStructs::localHotSpotVMStructs[i];
     const size_t name_buf_size = strlen(vmField.typeName) + strlen(vmField.fieldName) + 3 /* "::" */;
     char* name_buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, name_buf_size);
-    snprintf(name_buf, name_buf_size, "%s::%s", vmField.typeName, vmField.fieldName);
+    os::snprintf(name_buf, name_buf_size, "%s::%s", vmField.typeName, vmField.fieldName);
     CSTRING_TO_JSTRING(name, name_buf);
     CSTRING_TO_JSTRING(type, vmField.typeString);
     JVMCIObject box;
