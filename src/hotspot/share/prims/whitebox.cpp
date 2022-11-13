@@ -496,18 +496,6 @@ WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
 
-WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cm_thread()->in_progress()) {
-      g1h->collect(GCCause::_wb_conc_mark);
-      return true;
-    }
-    return false;
-  }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1StartMarkCycle: G1 GC is not enabled");
-WB_END
-
 WB_ENTRY(jint, WB_G1CompletedConcurrentMarkCycles(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -2542,7 +2530,6 @@ static JNINativeMethod methods[] = {
   {CC"g1NumMaxRegions",    CC"()J",                   (void*)&WB_G1NumMaxRegions  },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
-  {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
   {CC"g1HasRegionsToUncommit",  CC"()Z",              (void*)&WB_G1HasRegionsToUncommit},
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
