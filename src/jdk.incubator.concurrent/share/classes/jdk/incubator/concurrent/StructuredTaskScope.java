@@ -373,7 +373,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * then the {@link #handleComplete(Future) handle} method is invoked to consume the
      * completed task. The {@code handleComplete} method is run when the task completes
      * with a result or exception. If the {@code Future} {@link Future#cancel(boolean)
-     * cancel} method is used the cancel a task before the task scope is shut down, then
+     * cancel} method is used to cancel a task before the task scope is shut down, then
      * the {@code handleComplete} method is run by the thread that invokes {@code cancel}.
      * If the task scope shuts down at or around the same time that the task completes or
      * is cancelled then the {@code handleComplete} method may or may not be invoked.
