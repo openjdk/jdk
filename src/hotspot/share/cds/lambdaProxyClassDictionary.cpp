@@ -33,7 +33,7 @@ DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaP
   _proxy_klasses = NULL;
   if (src._proxy_klasses != NULL && src._proxy_klasses->length() > 0) {
     int n = src._proxy_klasses->length();
-    _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(n, mtClassShared);
+    _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(n, mtClassShared);
     for (int i = 0; i < n; i++) {
       _proxy_klasses->append(src._proxy_klasses->at(i));
     }

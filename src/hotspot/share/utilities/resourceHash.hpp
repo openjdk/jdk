@@ -31,7 +31,7 @@
 #include "utilities/tableStatistics.hpp"
 
 template<typename K, typename V>
-class ResourceHashtableNode : public ResourceObj {
+class ResourceHashtableNode : public AnyObj {
 public:
   unsigned _hash;
   K _key;
@@ -49,7 +49,7 @@ public:
 template<
     class STORAGE,
     typename K, typename V,
-    ResourceObj::allocation_type ALLOC_TYPE,
+    AnyObj::allocation_type ALLOC_TYPE,
     MEMFLAGS MEM_TYPE,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
@@ -97,7 +97,7 @@ class ResourceHashtableBase : public STORAGE {
   NONCOPYABLE(ResourceHashtableBase);
 
   ~ResourceHashtableBase() {
-    if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+    if (ALLOC_TYPE == AnyObj::C_HEAP) {
       Node* const* bucket = table();
       const unsigned sz = table_size();
       while (bucket < bucket_at(sz)) {
@@ -142,7 +142,11 @@ class ResourceHashtableBase : public STORAGE {
       (*ptr)->_value = value;
       return false;
     } else {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key, value);
+      } else {
+        *ptr = new Node(hv, key, value);
+      }
       _number_of_entries ++;
       return true;
     }
@@ -157,7 +161,11 @@ class ResourceHashtableBase : public STORAGE {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
     if (*ptr == NULL) {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key);
+      } else {
+        *ptr = new Node(hv, key);
+      }
       *p_created = true;
       _number_of_entries ++;
     } else {
@@ -175,7 +183,11 @@ class ResourceHashtableBase : public STORAGE {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
     if (*ptr == NULL) {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key, value);
+      } else {
+        *ptr = new Node(hv, key, value);
+      }
       *p_created = true;
       _number_of_entries ++;
     } else {
@@ -192,7 +204,7 @@ class ResourceHashtableBase : public STORAGE {
     Node* node = *ptr;
     if (node != NULL) {
       *ptr = node->_next;
-      if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
       }
       _number_of_entries --;
@@ -251,7 +263,7 @@ class ResourceHashtableBase : public STORAGE {
         bool clean = iter->do_entry(node->_key, node->_value);
         if (clean) {
           *ptr = node->_next;
-          if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+          if (ALLOC_TYPE == AnyObj::C_HEAP) {
             delete node;
           }
           _number_of_entries --;
@@ -285,7 +297,7 @@ class ResourceHashtableBase : public STORAGE {
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>
-class FixedResourceHashtableStorage : public ResourceObj {
+class FixedResourceHashtableStorage : public AnyObj {
   using Node = ResourceHashtableNode<K, V>;
 
   Node* _table[TABLE_SIZE];
@@ -305,7 +317,7 @@ protected:
 template<
     typename K, typename V,
     unsigned SIZE = 256,
-    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
+    AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
     MEMFLAGS MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>

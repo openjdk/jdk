@@ -66,7 +66,6 @@
 
 #undef __
 #define __ _masm->
-#define TIMES_OOP Address::sxtw(exact_log2(UseCompressedOops ? 4 : 8))
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -618,8 +617,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
-
-  void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
 
   // Generate indices for iota vector.
   address generate_iota_indices(const char *stub_name) {
@@ -1808,7 +1805,7 @@ class StubGenerator: public StubCodeGenerator {
     // caller guarantees that the arrays really are different
     // otherwise, we would have to make conjoint checks
     { Label L;
-      array_overlap_test(L, TIMES_OOP);
+      __ b(L);                  // conjoint check not yet implemented
       __ stop("checkcast_copy within a single array");
       __ bind(L);
     }
