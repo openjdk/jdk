@@ -156,7 +156,7 @@ public class SecondaryErrorTest {
     br.close();
 
     if (currentPattern < pattern.length) {
-      throw new RuntimeException("hs-err file incomplete (first missing pattern: " +  pattern[currentPattern] + ")");
+      throw new RuntimeException("hs-err file incomplete (first missing pattern: " + pattern[currentPattern] + ")");
     }
 
     if (!lastLine.equals("END.")) {
