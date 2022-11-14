@@ -561,7 +561,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   *(int32_t*)verified_entry = *(int32_t *)code_buffer;
   // Invalidate.  Opteron requires a flush after every write.
   n_jump->wrote(0);
-#endif // AMD64
+#endif // _LP64
 
 }
 
