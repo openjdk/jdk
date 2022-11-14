@@ -180,7 +180,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // note that `f.holder()` is not necessarily the same as `holder`
             var ch = utils.getCommentHelper(f.holder());
             var messages = configuration.getMessages();
-            if (f instanceof Failure.ExceptionTypeNotFound  e) {
+            if (f instanceof Failure.ExceptionTypeNotFound e) {
                 var path = ch.getDocTreePath(e.tag().getExceptionName());
                 messages.warning(path, "doclet.throws.reference_not_found");
             } else if (f instanceof Failure.NotExceptionType e) {
