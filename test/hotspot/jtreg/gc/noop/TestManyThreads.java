@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import java.util.concurrent.atomic.*;
 
 public class TestManyThreads {
 
-  static int COUNT = Integer.getInteger("count", 128);  // 128 * 4M max tlabs = 512M, would overflow without TLAB sizing
+  static int COUNT = Integer.getInteger("count", 32);  // 32 * 4M max tlabs = 128M, should not overflow
 
   static volatile Object sink;
   static volatile Throwable failed;
@@ -80,7 +80,6 @@ public class TestManyThreads {
     try {
       sink = new Object();
       allocated.incrementAndGet();
-      Thread.sleep(3600 * 1000);
     } catch (Throwable e) {
       failed = e;
     }
