@@ -62,9 +62,7 @@ public:
 
   enum class FakeMarker { its_fake };
 #ifdef ASSERT
-  static constexpr uintptr_t _fake_address =
-             (LP64_ONLY(0x4E4D54535441434BULL) // "NMTSTACK"
-               NOT_LP64(0x4E4D5453));          // "NMTS"
+  static constexpr uintptr_t _fake_address = -2; // 0xFF...FE
   inline void assert_not_fake() const {
     assert(_stack[0] != (address)_fake_address, "Must not be a fake stack");
   }
@@ -76,7 +74,7 @@ public:
   // cause the constructor call to be optimized away (see JDK-8296437).
   explicit NativeCallStack(FakeMarker dummy) {
 #ifdef ASSERT
-    for (int i = 0; i < NMT_TrackingStackDepth; i ++) {
+    for (int i = 0; i < NMT_TrackingStackDepth; i++) {
       _stack[i] = (address)_fake_address;
     }
 #endif
