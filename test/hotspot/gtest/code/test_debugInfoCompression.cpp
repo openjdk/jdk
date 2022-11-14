@@ -78,7 +78,7 @@ void check_read_write() {
 
   for (int i = 0; i < 1000*1000; i++) {
     ASSERT_TRUE(in.read_int() == i);
-    ASSERT_TRUE(in.read_bool() == (bool)i);
+    ASSERT_TRUE(in.read_bool() == (jboolean)(bool)i);
     ASSERT_TRUE(in.read_byte() == (jbyte)i);
     ASSERT_TRUE(in.read_signed_int() == (jint)i);
     ASSERT_TRUE(in.read_double() == (jdouble)i);
