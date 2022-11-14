@@ -58,7 +58,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class Extension implements java.security.cert.Extension {
+public class Extension implements java.security.cert.Extension, DerEncoder {
 
     protected ObjectIdentifier  extensionId = null;
     protected boolean           critical = false;
@@ -169,6 +169,7 @@ public class Extension implements java.security.cert.Extension {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
 
         if (extensionId == null)
