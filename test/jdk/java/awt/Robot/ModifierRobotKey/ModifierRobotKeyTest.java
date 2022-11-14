@@ -50,10 +50,10 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class ModifierRobotKeyTest extends KeyAdapter {
 
-    private boolean focusGained = false;
-    private boolean startTest = false;
+    private volatile boolean focusGained = false;
+    private volatile boolean startTest = false;
     private ExtendedRobot robot;
-    private Frame frame;
+    private volatile Frame frame;
     private Canvas canvas;
 
     private volatile boolean tempPress = false;
