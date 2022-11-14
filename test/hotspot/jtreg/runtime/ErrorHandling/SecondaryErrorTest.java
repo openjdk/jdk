@@ -69,7 +69,7 @@ public class SecondaryErrorTest {
     } else if (args[0].equals("no_callstacks")) {
       with_callstacks = false;
     } else {
-      throw new IllegalArgumentException("unknown argument");
+      throw new IllegalArgumentException("unknown argument (" + args[0] + ")");
     }
 
     // How this works:

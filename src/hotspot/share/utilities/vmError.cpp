@@ -1628,7 +1628,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // Watcherthread is about to call os::die. Lets just wait.
         os::infinite_sleep();
       } else {
-        // A secondary error happened. Print a much abridged information, but take care, since crashing
+        // A secondary error happened. Print brief information, but take care, since crashing
         // here would just recurse endlessly.
         // Any information (signal, context, siginfo etc) printed here should use the function
         // arguments, not the information stored in *this, since those describe the primary crash.
