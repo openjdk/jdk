@@ -133,8 +133,8 @@ public class CoordinateTruncationBug {
             frame.setUndecorated(true);
             canvas = new TestCanvas(this);
             frame.add(canvas);
-            frame.setLocationRelativeTo(null);
             frame.pack();
+            frame.setLocationRelativeTo(null);
         }
 
         public void runTest() {
