@@ -916,6 +916,9 @@ void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
 void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   uint hrm_index = r->hrm_index();
 
+  // we call prepare_remset_for_scan unconditionally because optional evacuation doesn't not call this method again.
+  r->prepare_remset_for_scan();
+
   // Only update non-collection set old regions, others must have already been set
   // to NULL (don't scan) in the initialization.
   if (r->in_collection_set()) {
@@ -1358,7 +1361,7 @@ public:
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
 
-        g1h->collection_set_iterate_increment_from(&combined, &_hr_claimer, worker_id);
+        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         stats = merge.stats();
       }
 

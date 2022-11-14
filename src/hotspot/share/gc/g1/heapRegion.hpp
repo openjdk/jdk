@@ -457,6 +457,8 @@ public:
 
   inline bool in_collection_set() const;
 
+  void prepare_remset_for_scan();
+
   // Methods used by the HeapRegionSetBase class and subclasses.
 
   // Getter and setter for the next and prev fields used to link regions into

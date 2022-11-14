@@ -35,6 +35,7 @@
 #include "runtime/java.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 G1CardSet::ContainerPtr G1CardSet::FullCardSet = (G1CardSet::ContainerPtr)-1;
@@ -240,12 +241,15 @@ void G1CardSetCoarsenStats::print_on(outputStream* out) {
 
 class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using ContainerPtr = G1CardSet::ContainerPtr;
+  using CHTScanTask = CardSetHash::ScanTask;
 
+  const static uint BucketClaimSize = 16;
   // Did we insert at least one card in the table?
   bool volatile _inserted_card;
 
   G1CardSetMemoryManager* _mm;
   CardSetHash _table;
+  CHTScanTask _table_scanner;
 
   class G1CardSetHashTableLookUp : public StackObj {
     uint _region_idx;
@@ -291,7 +295,8 @@ public:
                      size_t initial_log_table_size = InitialLogTableSize) :
     _inserted_card(false),
     _mm(mm),
-    _table(mm, initial_log_table_size, false) {
+    _table(mm, initial_log_table_size, false),
+    _table_scanner(&_table, BucketClaimSize) {
   }
 
   ~G1CardSetHashTable() {
@@ -332,7 +337,7 @@ public:
 
   void iterate_safepoint(G1CardSet::ContainerPtrClosure* cl2) {
     G1CardSetHashTableScan cl(cl2);
-    _table.do_safepoint_scan(cl);
+    _table_scanner.do_safepoint_scan(cl);
   }
 
   void iterate(G1CardSet::ContainerPtrClosure* cl2) {
@@ -345,6 +350,10 @@ public:
       _table.unsafe_reset(InitialLogTableSize);
       Atomic::store(&_inserted_card, false);
     }
+  }
+
+  void reset_table_scanner() {
+    _table_scanner.set(&_table, BucketClaimSize);
   }
 
   void grow() {
@@ -1028,4 +1037,8 @@ void G1CardSet::clear() {
   _table->reset();
   _num_occupied = 0;
   _mm->flush();
+}
+
+void G1CardSet::reset_table_scanner() {
+  _table->reset_table_scanner();
 }

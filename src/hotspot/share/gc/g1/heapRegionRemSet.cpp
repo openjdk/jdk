@@ -83,6 +83,10 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   assert(occupied() == 0, "Should be clear.");
 }
 
+void HeapRegionRemSet::reset_table_scanner() {
+  _card_set.reset_table_scanner();
+}
+
 G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
   return _card_set_mm.memory_stats();
 }

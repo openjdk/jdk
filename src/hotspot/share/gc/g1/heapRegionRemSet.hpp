@@ -122,6 +122,8 @@ public:
   void clear(bool only_cardset = false);
   void clear_locked(bool only_cardset = false);
 
+  void reset_table_scanner();
+
   G1MonotonicArenaMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the code
