@@ -965,11 +965,11 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
   GrowableArray<Klass*>* mirror_list =
-    new (mtClass) GrowableArray<Klass*>(mtClass, 40);
+    new (mtClass) GrowableArray<Klass*>(40, mtClass);
   set_fixup_mirror_list(mirror_list);
 
   GrowableArray<Klass*>* module_list =
-    new (mtModule) GrowableArray<Klass*>(mtModule, 500);
+    new (mtModule) GrowableArray<Klass*>(500, mtModule);
   set_fixup_module_field_list(module_list);
 }
 
@@ -1920,8 +1920,8 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
       // Pick minimum length that will cover most cases
       int init_length = 64;
-      _methods = new (mtInternal) GrowableArray<Method*>(mtInternal, init_length);
-      _bcis = new (mtInternal) GrowableArray<int>(mtInternal, init_length);
+      _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
+      _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops

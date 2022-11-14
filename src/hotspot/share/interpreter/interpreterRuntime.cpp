@@ -1279,8 +1279,8 @@ void SignatureHandlerLibrary::initialize() {
                                       SignatureHandlerLibrary::buffer_size);
   _buffer = bb->code_begin();
 
-  _fingerprints = new(mtCode)GrowableArray<uint64_t>(mtCode, 32);
-  _handlers     = new(mtCode)GrowableArray<address>(mtCode, 32);
+  _fingerprints = new (mtCode) GrowableArray<uint64_t>(32, mtCode);
+  _handlers     = new (mtCode) GrowableArray<address>(32, mtCode);
 }
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {

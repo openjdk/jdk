@@ -73,8 +73,8 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2k
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
   _line_no = 0;
-  _interfaces = new (mtClass) GrowableArray<int>(mtClass, 10);
-  _indy_items = new (mtClass) GrowableArray<const char*>(mtClass, 9);
+  _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
+  _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
   _parse_mode = parse_mode;
 
   // _instance should only be accessed by the thread that created _instance.

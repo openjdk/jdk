@@ -265,7 +265,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           }
           _cached_src_lines->clear();
         } else {
-          _cached_src_lines = new (mtCode)GrowableArray<const char*>(mtCode, 0);
+          _cached_src_lines = new (mtCode) GrowableArray<const char*>(0, mtCode);
         }
 
         if ((fp = os::fopen(file, "r")) == NULL) {

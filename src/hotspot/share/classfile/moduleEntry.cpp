@@ -163,7 +163,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == NULL) {
       // Lazily create a module's reads list
-      _reads = new (mtModule) GrowableArray<ModuleEntry*>(mtModule, MODULE_READS_SIZE);
+      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -428,7 +428,7 @@ GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEnt
   GrowableArray<ModuleEntry*>* array = NULL;
   int length = (archived_array == NULL) ? 0 : archived_array->length();
   if (length > 0) {
-    array = new (mtModule)GrowableArray<ModuleEntry*>(mtModule, length);
+    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = archived_array->at(i);
       array->append(archived_entry);

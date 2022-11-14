@@ -134,7 +134,7 @@ static bool validate_recording_options(TRAPS) {
   const int length = options->length();
   assert(length >= 1, "invariant");
   assert(dcmd_recordings_array == NULL, "invariant");
-  dcmd_recordings_array = new (mtTracing)GrowableArray<JfrStartFlightRecordingDCmd*>(mtTracing, length);
+  dcmd_recordings_array = new (mtTracing) GrowableArray<JfrStartFlightRecordingDCmd*>(length, mtTracing);
   assert(dcmd_recordings_array != NULL, "invariant");
   for (int i = 0; i < length; ++i) {
     JfrStartFlightRecordingDCmd* const dcmd_recording = new (mtTracing) JfrStartFlightRecordingDCmd(tty, true);

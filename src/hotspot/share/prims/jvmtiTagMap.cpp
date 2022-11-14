@@ -443,7 +443,7 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
 
 ClassFieldMap::ClassFieldMap() {
   _fields = new (mtServiceability)
-    GrowableArray<ClassFieldDescriptor*>(mtServiceability, initial_field_count);
+    GrowableArray<ClassFieldDescriptor*>(initial_field_count, mtServiceability);
 }
 
 ClassFieldMap::~ClassFieldMap() {
@@ -578,7 +578,7 @@ bool ClassFieldMapCacheMark::_is_active;
 void JvmtiCachedClassFieldMap::add_to_class_list(InstanceKlass* ik) {
   if (_class_list == NULL) {
     _class_list = new (mtServiceability)
-      GrowableArray<InstanceKlass*>(mtServiceability, initial_class_count);
+      GrowableArray<InstanceKlass*>(initial_class_count, mtServiceability);
   }
   _class_list->push(ik);
 }
@@ -1257,8 +1257,8 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
     _tags((jlong*)tags),
     _tag_count(tag_count),
     _some_dead_found(false),
-    _object_results(new (mtServiceability) GrowableArray<jobject>(mtServiceability, 1)),
-    _tag_results(new (mtServiceability) GrowableArray<uint64_t>(mtServiceability, 1)) { }
+    _object_results(new (mtServiceability) GrowableArray<jobject>(1, mtServiceability)),
+    _tag_results(new (mtServiceability) GrowableArray<uint64_t>(1, mtServiceability)) { }
 
   ~TagObjectCollector() {
     delete _object_results;
@@ -2275,7 +2275,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool _reporting_string_values;
 
   GrowableArray<oop>* create_visit_stack() {
-    return new (mtServiceability) GrowableArray<oop>(mtServiceability, initial_visit_stack_size);
+    return new (mtServiceability) GrowableArray<oop>(initial_visit_stack_size, mtServiceability);
   }
 
   // accessors

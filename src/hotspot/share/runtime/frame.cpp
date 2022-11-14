@@ -1253,10 +1253,10 @@ private:
 
 public:
   FrameValuesOopClosure() {
-    _oops = new (mtThread) GrowableArray<oop*>(mtThread, 100);
-    _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(mtThread, 100);
-    _base = new (mtThread) GrowableArray<oop*>(mtThread, 100);
-    _derived = new (mtThread) GrowableArray<derived_pointer*>(mtThread, 100);
+    _oops = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(100, mtThread);
+    _base = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _derived = new (mtThread) GrowableArray<derived_pointer*>(100, mtThread);
   }
   ~FrameValuesOopClosure() {
     delete _oops;
