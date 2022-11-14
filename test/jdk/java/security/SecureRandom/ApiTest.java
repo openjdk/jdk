@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ public class ApiTest {
             = Security.getProperty(DRBG_CONFIG);
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("java.security.egd", "file:/dev/urandom");
+
         if (args == null || args.length < 1) {
             throw new RuntimeException("No mechanism available to run test.");
         }

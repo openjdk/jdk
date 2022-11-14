@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.io.*;
 public class Serialize {
 
     public static void main(String args[]) throws Exception {
+        System.setProperty("java.security.egd", "file:/dev/urandom");
+
         for (String alg: new String[]{
                 "SHA1PRNG", "DRBG", "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG",
                 "Hash_DRBG,SHA-512,192,pr_and_reseed"}) {

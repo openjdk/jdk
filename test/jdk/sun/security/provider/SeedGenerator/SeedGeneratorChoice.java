@@ -26,7 +26,7 @@
  * @bug 6998583 8141039
  * @summary NativeSeedGenerator is making 8192 byte read requests from
  *             entropy pool on each init.
- * @run main/othervm SeedGeneratorChoice
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom SeedGeneratorChoice
  * @run main/othervm -Djava.security.egd=file:filename  SeedGeneratorChoice
  */
 
