@@ -595,7 +595,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         // there are no tags for the target exception type AND that type is not
         // mentioned in the `throws` clause, skip search on the remaining part
         // of the current branch of the hierarchy
-        // TODO: add a text for this; both checked and unchecked
+        // TODO: add a text for this in JDK-8295800; both checked and unchecked;
         return Result.SKIP();
     }
 
