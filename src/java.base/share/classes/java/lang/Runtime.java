@@ -278,9 +278,9 @@ public class Runtime {
      *
      * @apiNote
      * This method should be used with extreme caution. Using it may circumvent or disrupt
-     * cleanup actions performed by shutdown hooks, prevent execution of finally blocks,
-     * and skip {@linkplain AutoCloseable close} operations in try-with-resource
-     * blocks. This can lead to data corruption.
+     * any cleanup actions intended to be performed by shutdown hooks,
+     * {@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers},
+     * finally blocks, or try-with-resource blocks. This can lead to data corruption.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code
