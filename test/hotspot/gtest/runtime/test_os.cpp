@@ -889,7 +889,7 @@ TEST_VM(os, is_first_C_frame) {
 }
 
 TEST_VM(os, open_O_CLOEXEC) {
-#if defined(__APPLE__)
+#if !defined(_WIN32)
   int fd = os::open("gtest.cmdline", 0, O_RDONLY); // open will use O_CLOEXEC
   EXPECT_TRUE(fd > 0);
   int flags = ::fcntl(fd, F_GETFD);
