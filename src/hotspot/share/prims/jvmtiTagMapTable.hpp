@@ -35,7 +35,6 @@ class JvmtiEnv;
 class JvmtiTagMapEntryClosure;
 
 class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
-
    WeakHandle _wh;
    bool _released;
 
@@ -44,13 +43,14 @@ class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
    ~JvmtiTagMapEntry();
    void set_released(bool flag){ _released = flag;}
 
-  void release();
-  void resolve();
-  oop object() const;
-  oop object_no_keepalive() const;
+   void release();
+   void resolve();
+   oop object() const;
+   oop object_no_keepalive() const;
 };
+
 class JvmtiTagMapTableBase{
-  public:
+ public:
   static unsigned get_hash(JvmtiTagMapEntry const &entry)  {
     oop obj = entry.object_no_keepalive();
      if (obj != NULL) {
@@ -58,13 +58,13 @@ class JvmtiTagMapTableBase{
      }
      return 0;
   }
+
   static bool equals(JvmtiTagMapEntry const & lhs , JvmtiTagMapEntry const & rhs)
   {
     oop lhs_obj = lhs.object_no_keepalive();
     oop rhs_obj = rhs.object_no_keepalive();
     return lhs_obj == rhs_obj;
   }
-
 };
   typedef
   ResizeableResourceHashtable <JvmtiTagMapEntry, jlong,
@@ -78,18 +78,15 @@ class JvmtiTagMapTable : public CHeapObj<mtInternal> {
     _table_size  = 1007
   };
 
-private:
-
   void resize_if_needed();
   ResizableResourceHT  _rrht_table;
 
-public:
+ public:
   JvmtiTagMapTable();
   ~JvmtiTagMapTable();
 
   jlong find(oop obj);
   bool add(oop obj, jlong tag);
-
 
   bool remove(oop obj);
 
@@ -106,7 +103,7 @@ public:
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapEntryClosure {
   public:
-  virtual bool do_entry(JvmtiTagMapEntry & key , jlong & value) = 0;
+  virtual bool do_entry(JvmtiTagMapEntry & key, jlong & value) = 0;
 };
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP
