@@ -623,6 +623,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildBlockLayer();
         relayout();
         setFigureSelection(model.getSelectedFigures());
+        validateAll();
         centerSelectedFigures();
         rebuilding = false;
     }
