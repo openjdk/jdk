@@ -31,8 +31,8 @@
 
 const jint ShenandoahEvacOOMCounter::OOM_MARKER_MASK = 0x80000000;
 
-ShenandoahEvacOOMCounter::ShenandoahEvacOOMCounter()
-  : _bits(0) {
+ShenandoahEvacOOMCounter::ShenandoahEvacOOMCounter() :
+  _bits(0) {
 }
 
 void ShenandoahEvacOOMCounter::decrement() {
@@ -84,13 +84,15 @@ bool ShenandoahEvacOOMCounter::try_increment()
   }
 }
 
-ShenandoahEvacOOMHandler::ShenandoahEvacOOMHandler()
-  : _num_counters(calc_num_counters()) {
+ShenandoahEvacOOMHandler::ShenandoahEvacOOMHandler() :
+  _num_counters(calc_num_counters()) {
 
   assert(_num_counters > 0, "sanity");
+  assert(is_power_of_2(_num_counters), "must be");
+
   _threads_in_evac = NEW_C_HEAP_ARRAY(ShenandoahEvacOOMCounter, _num_counters, mtGC);
   for (int i = 0; i < _num_counters; i++) {
-    new (&_threads_in_evac[i]) ShenandoahEvacOOMCounter;
+    new (&_threads_in_evac[i]) ShenandoahEvacOOMCounter();
   }
 }
 
@@ -116,7 +118,6 @@ uint64_t ShenandoahEvacOOMHandler::hash_pointer(const void* p) {
 
 ShenandoahEvacOOMCounter* ShenandoahEvacOOMHandler::counter_for_thread(Thread* t) {
   const uint64_t key = hash_pointer(t);
-  assert(is_power_of_2(_num_counters), "must be");
   return &_threads_in_evac[key & (_num_counters - 1)];
 }
 
