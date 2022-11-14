@@ -49,7 +49,7 @@ import static java.lang.invoke.MethodType.*;
 
 /**
  * This package private class supports the construction of the {@link MethodHandle}
- * returned by {@Link Formatter#formatFactory}.
+ * used by {@link FormatProcessor}.
  *
  * @since 20
  */

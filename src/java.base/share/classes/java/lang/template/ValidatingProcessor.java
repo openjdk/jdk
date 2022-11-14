@@ -149,7 +149,7 @@ import jdk.internal.javac.PreviewFeature;
 public interface ValidatingProcessor<R, E extends Throwable> {
 
     /**
-     * Constructs a result based on the template string and values in the
+     * Constructs a result based on the template fragments and values in the
      * supplied {@link StringTemplate stringTemplate} object.
      *
      * @param stringTemplate  a {@link StringTemplate} instance

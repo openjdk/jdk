@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -405,13 +404,11 @@ final class Carriers {
         /**
          * Carrier for primitive values.
          */
-        @Stable
         private final long[] primitives;
 
         /**
          * Carrier for objects;
          */
-        @Stable
         private final Object[] objects;
 
         /**

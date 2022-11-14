@@ -39,4 +39,15 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
-public interface StringProcessor extends TemplateProcessor<String> {}
+public interface StringProcessor extends TemplateProcessor<String> {
+    /**
+     * Constructs a {@link String} based on the template fragments and values in the
+     * supplied {@link StringTemplate stringTemplate} object.
+     *
+     * @param stringTemplate  a {@link StringTemplate} instance
+     *
+     * @return constructed {@link String}
+     */
+    @Override
+    String process(StringTemplate stringTemplate);
+}

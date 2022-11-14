@@ -48,5 +48,14 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
 public interface TemplateProcessor<R> extends ValidatingProcessor<R, RuntimeException> {
-
+    /**
+     * Constructs a result based on the template fragments and values in the
+     * supplied {@link StringTemplate stringTemplate} object.
+     *
+     * @param stringTemplate  a {@link StringTemplate} instance
+     *
+     * @return constructed object of type R
+     */
+    @Override
+    R process(StringTemplate stringTemplate);
 }

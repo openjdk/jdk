@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class implements specialized {@link StringTemplate StringTemplates} produced by
@@ -55,7 +54,6 @@ final class StringTemplateImpl extends Carriers.CarrierObject implements StringT
      * List of string fragments for the string template. This value of this list is shared by
      * all instances created at the {@link java.lang.invoke.CallSite CallSite}.
      */
-    @Stable
     private final List<String> fragments;
 
     /**
@@ -63,7 +61,6 @@ final class StringTemplateImpl extends Carriers.CarrierObject implements StringT
      * {@code values} method. This {@link MethodHandle} is shared by all instances created at the
      * {@link java.lang.invoke.CallSite CallSite}.
      */
-    @Stable
     private final MethodHandle valuesMH;
 
     /**
@@ -71,7 +68,6 @@ final class StringTemplateImpl extends Carriers.CarrierObject implements StringT
      * {@code interpolate} method. This {@link MethodHandle} is shared by all instances created at the
      * {@link java.lang.invoke.CallSite CallSite}.
      */
-    @Stable
     private final MethodHandle interpolateMH;
 
     /**
