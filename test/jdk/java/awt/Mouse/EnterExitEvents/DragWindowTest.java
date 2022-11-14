@@ -80,7 +80,7 @@ public class DragWindowTest {
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
 
-        if (dragWindowMouseEnteredCount != 1) {
+        if (dragWindowMouseEnteredCount < 1) {
             throw new RuntimeException("No MouseEntered event on Drag Window!");
         }
 
@@ -103,7 +103,7 @@ public class DragWindowTest {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
 
-        if (labelMouseReleasedCount != 1) {
+        if (labelMouseReleasedCount < 1) {
             throw new RuntimeException("No MouseReleased event on label!");
         }
 
