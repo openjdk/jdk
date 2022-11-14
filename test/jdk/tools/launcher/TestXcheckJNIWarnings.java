@@ -27,11 +27,12 @@ import java.io.IOException;
 /**
  * @test
  * @bug 8187442
- * @summary Launching app shouldn't produce any jni warnings.
+ * @summary Launching app with or without jdwp agent shouldn't produce any jni warnings.
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile TestXcheckJNIWarnings.java
  * @run main TestXcheckJNIWarnings
+ * @run main TestXcheckJNIWarnings -agentlib:jdwp=transport=dt_socket,server=y,suspend=n
  */
 public final class TestXcheckJNIWarnings extends TestHelper {
 
@@ -46,8 +47,14 @@ public final class TestXcheckJNIWarnings extends TestHelper {
     public static void main(String... args) throws IOException {
         File testJarFile = new File("test.jar");
         createJarFile(testJarFile);
-        TestResult tr = doExec(javaCmd, "-jar", "-Xcheck:jni",
-                               testJarFile.getName());
+
+        TestResult tr;
+        if (args.length > 0) {
+            tr = doExec(javaCmd, "-jar", "-Xcheck:jni", args[0], testJarFile.getName());
+        } else {
+            tr = doExec(javaCmd, "-jar", "-Xcheck:jni", testJarFile.getName());
+        }
+
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new RuntimeException("test returned non-positive value");
