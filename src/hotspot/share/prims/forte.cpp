@@ -522,12 +522,14 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+
+  // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
+  // do from this context.
+  Thread* raw_thread = Thread::current_or_null_safe();
   JavaThread* thread;
 
-  if (trace->env_id == NULL ||
-    (thread = JavaThread::thread_from_jni_environment(trace->env_id)) == NULL ||
-    thread->is_exiting()) {
-
+  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() ||
+      (thread = ((JavaThread*)raw_thread))->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
@@ -539,7 +541,8 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  assert(JavaThread::current() == thread,
+  // This is safe now as the thread has not terminated and so no VM exit check occurs.
+  assert(thread == JavaThread::thread_from_jni_environment(trace->env_id),
          "AsyncGetCallTrace must be called by the current interrupted thread");
 
   if (!JvmtiExport::should_post_class_load()) {
