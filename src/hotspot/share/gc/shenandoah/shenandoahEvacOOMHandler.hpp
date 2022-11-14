@@ -111,14 +111,14 @@ private:
   const int _num_counters;
 
   shenandoah_padding(0);
-  ShenandoahEvacOOMCounter *_threads_in_evac;
+  ShenandoahEvacOOMCounter* _threads_in_evac;
 
-  ShenandoahEvacOOMCounter *counter_for_thread(Thread* t);
+  ShenandoahEvacOOMCounter* counter_for_thread(Thread* t);
 
   void wait_for_no_evac_threads();
-  void wait_for_one_counter(ShenandoahEvacOOMCounter *ptr);
+  void wait_for_one_counter(ShenandoahEvacOOMCounter* ptr);
 
-  static uint64_t hash_pointer(const void *p);
+  static uint64_t hash_pointer(const void* p);
   static int calc_num_counters();
 public:
   ShenandoahEvacOOMHandler();

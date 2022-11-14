@@ -45,7 +45,7 @@ void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
    // Entering top level scope, register this thread.
    register_thread(thr);
  } else if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
-   ShenandoahEvacOOMCounter *counter = counter_for_thread(thr);
+   ShenandoahEvacOOMCounter* counter = counter_for_thread(thr);
    jint threads_in_evac = counter->load_acquire();
    // If OOM is in progress, handle it.
    if ((threads_in_evac & ShenandoahEvacOOMCounter::OOM_MARKER_MASK) != 0) {
