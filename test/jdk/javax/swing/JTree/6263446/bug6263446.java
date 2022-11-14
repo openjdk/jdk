@@ -182,8 +182,8 @@ public class bug6263446 {
 
         frame.getContentPane().add(tree);
         frame.setAlwaysOnTop(true);
-        frame.setLocationRelativeTo(null);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         frame.toFront();
     }
