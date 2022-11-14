@@ -54,7 +54,7 @@ public:
     if (_f.is_interpreted_frame()) {
       _f.oops_interpreted_do(cl, nullptr);
     } else {
-      OopMapDo<OopClosure, DerivedOopClosure, SkipNullValue> visitor(cl, nullptr);
+      OopMapDo<OopClosure, DerivedOopClosure, IncludeAllValues> visitor(cl, nullptr);
       visitor.oops_do(&_f, _map, _f.oop_map());
     }
   }

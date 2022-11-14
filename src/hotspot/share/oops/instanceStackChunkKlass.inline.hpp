@@ -38,7 +38,7 @@
 #include "utilities/macros.hpp"
 
 inline size_t InstanceStackChunkKlass::instance_size(size_t stack_size_in_words) const {
-  return align_object_size(size_helper() + stack_size_in_words + bitmap_size(stack_size_in_words));
+  return align_object_size(size_helper() + stack_size_in_words + gc_data_size(stack_size_in_words));
 }
 
 inline size_t InstanceStackChunkKlass::bitmap_size_in_bits(size_t stack_size_in_words) {
@@ -46,6 +46,11 @@ inline size_t InstanceStackChunkKlass::bitmap_size_in_bits(size_t stack_size_in_
   size_t size_in_bits = stack_size_in_words << (LogBitsPerWord - LogBitsPerHeapOop);
 
   return align_up(size_in_bits, BitsPerWord);
+}
+
+inline size_t InstanceStackChunkKlass::gc_data_size(size_t stack_size_in_words) {
+  // At the moment all GCs are okay with GC data big enough to fit a bit map
+  return bitmap_size(stack_size_in_words);
 }
 
 inline size_t InstanceStackChunkKlass::bitmap_size(size_t stack_size_in_words) {
