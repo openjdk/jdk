@@ -510,22 +510,21 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 //
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   // complete jump instruction (to be inserted) is in code_buffer;
-#ifdef AMD64
-  unsigned char code_buffer[8];
+#ifdef _LP64
+  union {
+    jlong cb_long;
+    unsigned char code_buffer[8];
+  } u;
 
-  assert(sizeof(code_buffer)==sizeof(jlong), "sanity check");
+  u.cb_long = *(jlong *)verified_entry;
 
   intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
   guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
 
-  // save extra 3 bytes
-  *(jlong *) code_buffer = *(jlong *) verified_entry;
-  code_buffer[0] = instruction_code;
-  *(int32_t*)(code_buffer + 1) = (int32_t)disp;
+  u.code_buffer[0] = instruction_code;
+  *(int32_t*)(u.code_buffer + 1) = (int32_t)disp;
 
-  check_verified_entry_alignment(entry, verified_entry);
-
-  Atomic::store((jlong *) verified_entry, *(jlong *) code_buffer);
+  Atomic::store((jlong *) verified_entry, u.cb_long);
   ICache::invalidate_range(verified_entry, 8);
 
 #else
