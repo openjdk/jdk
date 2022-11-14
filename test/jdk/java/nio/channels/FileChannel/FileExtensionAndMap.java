@@ -25,6 +25,7 @@
  * @bug 8168628
  * @summary Test extending files to very large sizes without hitting a SIGBUS
  * @requires (os.family == "linux")
+ * @requires (sun.arch.data.model == "64")
  * @library /test/lib/
  * @run main/othervm/timeout=600 -Xms4g -Xmx4g FileExtensionAndMap
  * @run main/othervm/timeout=600 -Xms4g -Xmx4g FileExtensionAndMap true
@@ -143,7 +144,7 @@ public class FileExtensionAndMap {
         } else {
             for (Path p : List.of(destinationPath, tmpDir)) {
                 long usableDiskSpace = Files.getFileStore(p).getUsableSpace();
-                if(usableDiskSpace < totalDiskSpaceNeeded) {
+                if (usableDiskSpace < totalDiskSpaceNeeded) {
                     throw new SkippedException("Insufficient disk space on " + p
                             + ". Test requires: " + totalDiskSpaceNeeded
                             + ". Available on disk: " + usableDiskSpace);
