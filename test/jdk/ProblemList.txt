@@ -124,7 +124,6 @@ java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-al
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
-java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
 javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
