@@ -80,17 +80,21 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
 
 #define VM_RELEASE HOTSPOT_VERSION_STRING
 
+#define EMPTY(ARG)        (0-ARG-1)==1 && (ARG+0)!=-2
+
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
 // in a standalone build).
 int Abstract_VM_Version::_vm_major_version = VERSION_FEATURE;
 int Abstract_VM_Version::_vm_minor_version = VERSION_INTERIM;
 int Abstract_VM_Version::_vm_security_version = VERSION_UPDATE;
 int Abstract_VM_Version::_vm_patch_version = VERSION_PATCH;
-#if IS_EMPTY_VALUE(VERSION_BUILD)
+#if EMPTY(VERSION_BUILD)
 int Abstract_VM_Version::_vm_build_number = 0;
 #else
 int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
 #endif
+
+#undef EMPTY
 
 #if defined(_LP64)
   #define VMLP "64-Bit "
