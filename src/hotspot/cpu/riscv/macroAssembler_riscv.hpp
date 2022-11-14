@@ -457,6 +457,12 @@ class MacroAssembler: public Assembler {
     slt(Rd, x0, Rs);
   }
 
+  // Bit-manipulation extension pseudo instructions
+  // zero extend word
+  inline void zext_w(Register Rd, Register Rs) {
+    add_uw(Rd, Rs, zr);
+  }
+
   // Floating-point data-processing pseudo instructions
   inline void fmv_s(FloatRegister Rd, FloatRegister Rs) {
     if (Rd != Rs) {

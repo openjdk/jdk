@@ -2752,12 +2752,6 @@ public:
 
 #undef INSN
 
-  // Bit-manipulation extension pseudo instructions
-  // zero extend word
-  void zext_w(Register Rd, Register Rs) {
-    add_uw(Rd, Rs, zr);
-  }
-
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset) { Unimplemented(); }
 
