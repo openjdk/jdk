@@ -80,7 +80,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         CommentHelper ch = configuration.utils.getCommentHelper(owner);
         Integer position = stringIntegerMap.get(ch.getParameterName(param));
         if (position == null) {
-            return new Output(null, null, List.of(), true); // remodel, because it's an error
+            return new Output(null, null, List.of(), true);
         }
         // try to inherit description of the respective parameter in an overridden method
         try {

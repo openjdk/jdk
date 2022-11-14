@@ -42,6 +42,15 @@ public interface InheritableTaglet extends Taglet {
     /*
      * Called by InheritDocTaglet on an inheritable taglet to expand {@inheritDoc}
      * found inside a tag corresponding to that taglet.
+     *
+     * When inheriting failed some assumption, or caused an error, the taglet
+     * can return either of:
+     *
+     *   - new Output(null, null, List.of(), false)
+     *   - new Output(null, null, List.of(), true)
+     *
+     * In the future, this could be reworked using some other mechanism,
+     * such as throwing an exception.
      */
     Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
 
