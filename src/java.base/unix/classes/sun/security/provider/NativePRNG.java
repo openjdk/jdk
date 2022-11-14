@@ -191,7 +191,7 @@ public final class NativePRNG extends SecureRandomSpi {
                     return ThreadLocal.withInitial(() -> {
                         try {
                             return new RandomIO(seedFile, nextFile);
-                        } catch (Exception e)  {
+                        } catch (Exception e) {
                             return null;
                         }
                     });
