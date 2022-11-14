@@ -25,11 +25,11 @@
 
 package java.io;
 
-import java.io.spi.ConsoleProvider;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.io.JdkConsole;
 import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
@@ -48,12 +48,6 @@ import sun.security.action.GetPropertyAction;
  * was launched.  If the virtual machine is started automatically, for
  * example by a background job scheduler, then it will typically not
  * have a console.
- * <p>
- * Console can also be supplied if an implementation of
- * {@link ConsoleProvider} is available. The implementation may be
- * looked for when {@systemProperty java.console.providers} is
- * set to {@code true} on the command line.
- *
  * <p>
  * If this virtual machine has a console then it is represented by a
  * unique instance of this class which can be obtained by invoking the
@@ -602,16 +596,15 @@ public class Console implements Flushable
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                boolean allowProviders = System.getProperty("java.console.providers", "false").equalsIgnoreCase("true");
                 boolean useJLine = System.getProperty("jdk.console.usejline", "true").equalsIgnoreCase("true");
 
                 if (cons == null) {
                     // Try loading providers
-                    cons = ServiceLoader.load(ConsoleProvider.class).stream()
+                    cons = ServiceLoader.load(JdkConsole.class).stream()
                        .map(ServiceLoader.Provider::get)
-                       .filter(cp -> "jdk.internal.le".equals(cp.getClass().getModule().getName()) && useJLine || allowProviders)
+                       .filter(jc -> istty && "jdk.internal.le".equals(jc.getClass().getModule().getName()) && useJLine || !useJLine)
                        .findAny()
-                       .map(cp -> cp.console(istty))
+                       .map(jc -> (Console)new ProxyingConsole(jc))
                        .orElse(istty ? new Console() : null);
                 }
                 return cons;
@@ -625,10 +618,7 @@ public class Console implements Flushable
     private static Console cons;
     private static native boolean istty();
 
-    /**
-     * Sole constructor
-     */
-    protected Console() {
+    Console() {
         readLock = new Object();
         writeLock = new Object();
         out = StreamEncoder.forOutputStreamWriter(

@@ -22,30 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package java.io.spi;
+package jdk.internal.io;
 
 import java.io.Console;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.nio.charset.Charset;
 
-/**
- * Service provider interface for supplying an implementation
- * of {@link Console}. Implementation of this class can be
- * looked for when the system property
- * {@systemProperty java.console.providers} is set to
- * {@code true} on the command line.
- *
- * @since 20
- */
-public abstract class ConsoleProvider {
-    /**
-     * {@return the Console instance, or {@code null} if not available}
-     * @param isTTY indicates if the jvm is attached to a terminal
-     */
-    public abstract Console console(boolean isTTY);
-
-    /**
-     * Sole constructor
-     */
-    protected ConsoleProvider() {
-    }
+public abstract class JdkConsole {
+    public abstract PrintWriter writer();
+    public abstract Reader reader();
+    public abstract JdkConsole format(String fmt, Object ...args);
+    public abstract JdkConsole printf(String format, Object ... args);
+    public abstract String readLine(String fmt, Object ... args);
+    public abstract String readLine();
+    public abstract char[] readPassword(String fmt, Object ... args);
+    public abstract char[] readPassword();
+    public abstract void flush();
+//    public abstract Charset charset();
+    protected JdkConsole() {}
 }

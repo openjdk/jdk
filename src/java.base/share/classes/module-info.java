@@ -43,7 +43,6 @@
  *
  * @provides java.nio.file.spi.FileSystemProvider
  *
- * @uses java.io.spi.ConsoleProvider
  * @uses java.lang.System.LoggerFinder
  * @uses java.net.ContentHandlerFactory
  * @uses java.net.spi.URLStreamHandlerProvider
@@ -78,7 +77,6 @@
 module java.base {
 
     exports java.io;
-    exports java.io.spi;
     exports java.lang;
     exports java.lang.annotation;
     exports java.lang.constant;
@@ -173,6 +171,9 @@ module java.base {
         jdk.incubator.vector;
     exports jdk.internal.event to
         jdk.jfr;
+    exports jdk.internal.io to
+        jdk.internal.le,
+        jdk.jshell;
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
@@ -373,7 +374,6 @@ module java.base {
 
     // the service types defined by the APIs in this module
 
-    uses java.io.spi.ConsoleProvider;
     uses java.lang.System.LoggerFinder;
     uses java.net.ContentHandlerFactory;
     uses java.net.spi.InetAddressResolverProvider;
@@ -406,6 +406,7 @@ module java.base {
 
     // JDK-internal service types
 
+    uses jdk.internal.io.JdkConsole;
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;

@@ -30,28 +30,18 @@ import jdk.internal.org.jline.reader.LineReaderBuilder;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.TerminalBuilder;
 
-import java.io.Console;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.spi.ConsoleProvider;
+import jdk.internal.io.JdkConsole;
 
 /**
- * ConsoleProvider impl
+ * JdkConsole impl
  *
  * @since 20
  */
-public class ConsoleProviderImpl extends ConsoleProvider {
+public class JdkConsoleImpl extends JdkConsole {
 
-    /**
-     * {@return the Console instance, or {@code null} if not available}
-     * @param isTTY indicates if the jvm is attached to a terminal
-     */
-    public Console console(boolean isTTY) {
-        return isTTY ? new ConsoleImpl() : null;
-    }
-
-    static final class ConsoleImpl extends Console {
         /**
          * {@inheritDoc}
          */
@@ -72,7 +62,7 @@ public class ConsoleProviderImpl extends ConsoleProvider {
          * {@inheritDoc}
          */
         @Override
-        public synchronized Console format(String fmt, Object ...args) {
+        public synchronized JdkConsole format(String fmt, Object ...args) {
             writer().format(fmt, args).flush();
             return this;
         }
@@ -81,7 +71,7 @@ public class ConsoleProviderImpl extends ConsoleProvider {
          * {@inheritDoc}
          */
         @Override
-        public Console printf(String format, Object ... args) {
+        public JdkConsole printf(String format, Object ... args) {
             return format(format, args);
         }
 
@@ -128,13 +118,13 @@ public class ConsoleProviderImpl extends ConsoleProvider {
         private final LineReader jline;
         private final Terminal terminal;
 
-        private ConsoleImpl() {
+        public JdkConsoleImpl() {
             try {
-                terminal = TerminalBuilder.builder().encoding(charset()).build();
+//                terminal = TerminalBuilder.builder().encoding(charset()).build();
+                terminal = TerminalBuilder.builder().build();
                 jline = LineReaderBuilder.builder().terminal(terminal).build();
             } catch (IOException ioe) {
                 throw new InternalError("should not happen, as CHARSET is guaranteed to be a valid charset");
             }
         }
-    }
 }
