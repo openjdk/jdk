@@ -39,6 +39,10 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  */
 public interface InheritableTaglet extends Taglet {
 
+    /*
+     * Called by InheritDocTaglet on an inheritable taglet to expand {@inheritDoc}
+     * found inside a tag corresponding to that taglet.
+     */
     Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
 
     record Output(DocTree holderTag,
