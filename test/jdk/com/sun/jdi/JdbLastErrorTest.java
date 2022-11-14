@@ -28,6 +28,7 @@
  * @requires (os.family == "windows")
  * @library /test/lib
  * @enablePreview
+ * @run main/othervm JdbLastErrorTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
