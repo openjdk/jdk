@@ -546,7 +546,8 @@ tier1_serviceability = \
   -serviceability/sa/ClhsdbScanOops.java \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
-  -serviceability/sa/TestJmapCoreMetaspace.java
+  -serviceability/sa/TestJmapCoreMetaspace.java \
+  -serviceability/profiling/stress
 
 tier1 = \
   :tier1_common \
@@ -589,7 +590,8 @@ hotspot_tier2_runtime = \
 
 hotspot_tier2_serviceability = \
   serviceability/ \
- -:tier1_serviceability
+ -:tier1_serviceability \
+  -serviceability/profiling/stress
 
 hotspot_tier2_runtime_platform_agnostic = \
   runtime/SelectionResolution \
