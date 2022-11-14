@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +48,7 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -123,12 +120,9 @@ public class TestSigInfoInHsErrFile {
     patterns.add(Pattern.compile("# *Problematic frame.*"));
     patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
 
-    if (!Platform.isAix()) {
-      // Crash address is, for all non-AIX platforms, at 1K (0x400). See VMError::_segfault_address
-      patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_MAPERR\\), si_addr: 0x0*400"));
-    } else {
-      patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\).*"));
-    }
+    // Crash address: see VMError::_segfault_address
+    String crashAddress = Platform.isAix() ? "0x0*1400" : "0x0*400";
+    patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_MAPERR\\), si_addr: " + crashAddress + ".*"));
 
     HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);
 
