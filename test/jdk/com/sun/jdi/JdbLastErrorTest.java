@@ -27,8 +27,7 @@
  * @summary Test persistence of native last error value under jdb (Windows)
  * @requires (os.family == "windows")
  * @library /test/lib
- * @run compile --release ${jdk.version} --enable-preview JdbLastErrorTest.java
- * @run main/othervm --enable-preview JdbLastErrorTest
+ * @enablePreview
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
