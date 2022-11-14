@@ -86,8 +86,21 @@ void check_read_write() {
   }
 }
 
+void check_buffer_grow() {
+  ResourceMark rm;
+  DebugInfoWriteStream out(NULL, 100);
+  out.set_position(99);
+  out.write_int(0);
+  out.flush();
+  out.write_int(1);
+  out.write_int(2);
+  u_char* buf = out.buffer();
+  ASSERT_TRUE(out.position() == 102 && buf[99] == 0 && buf[100] == 0x81 && buf[101] == 0x82);
+}
+
 TEST_VM(DebugInfo, basic_test)
 {
   check_int_encoding();
   check_read_write();
+  check_buffer_grow();
 }

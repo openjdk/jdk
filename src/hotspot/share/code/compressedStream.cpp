@@ -169,6 +169,9 @@ jint CompressedSparseDataReadStream::read_int() {
 }
 
 void CompressedSparseDataWriteStream::write_zero() {
+  if (_position >= _size) {
+    grow();
+  }
   if (_bit_pos == 0) {
     _buffer[_position] = 0;
   }
@@ -184,16 +187,19 @@ void CompressedSparseDataWriteStream::write_zero() {
 }
 
 void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
+  if (_position >= _size) {
+    grow();
+  }
   if (_bit_pos == 0) {
     _buffer[_position] = b;
   } else {
     _buffer[_position] |= (b >> _bit_pos);
   }
   _position++;
-  if (_position >= _size) {
-    grow();
-  }
   if (_bit_pos > 0) {
+    if (_position >= _size) {
+      grow();
+    }
     _buffer[_position] = (b << (8 - _bit_pos));
   }
 }
