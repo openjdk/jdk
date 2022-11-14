@@ -469,7 +469,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         modelState = new ModelState(model);
 
         model.getDiagramChangedEvent().addListener(m -> update());
-        model.getGraphChangedEvent().addListener(m -> addUndo());
+        model.getGraphChangedEvent().addListener(m -> graphChanged());
         model.getHiddenNodesChangedEvent().addListener(m -> hiddenNodesChanged());
         scrollPane.addHierarchyBoundsListener(new HierarchyBoundsListener() {
             @Override
@@ -478,7 +478,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             @Override
             public void ancestorResized(HierarchyEvent e) {
                 if (scrollPane.getBounds().width > 0) {
-                    centerSelectedFigures();
+                    centerRootNode();
                     scrollPane.removeHierarchyBoundsListener(this);
                 }
             }
@@ -630,6 +630,31 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     public void validateAll() {
         validate();
         scrollPane.validate();
+    }
+
+    private void graphChanged() {
+        update();
+        centerRootNode();
+        addUndo();
+    }
+
+    private void centerRootNode() {
+        if (getModel().getSelectedNodes().isEmpty()) {
+            Figure rootFigure = getModel().getDiagram().getRootFigure();
+            if (rootFigure != null) {
+                int rootId = rootFigure.getInputNode().getId();
+                if (!getModel().getHiddenNodes().contains(rootId)) {
+                    FigureWidget rootWidget = getWidget(rootFigure);
+                    if (rootWidget != null) {
+                        Rectangle bounds = rootWidget.getBounds();
+                        if (bounds != null) {
+                            Point location = rootWidget.getLocation();
+                            centerRectangle(new Rectangle(location.x, location.y, bounds.width, bounds.height));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void hiddenNodesChanged() {

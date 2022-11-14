@@ -148,7 +148,7 @@ public final class EditorTopComponent extends TopComponent {
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
-        diagramViewModel.getDiagramChangedEvent().addListener(model -> {
+        diagramViewModel.getGraphChangedEvent().addListener(model -> {
             setDisplayName(model.getGraph().getDisplayName());
             setToolTipText(model.getGroup().getDisplayName());
             graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);

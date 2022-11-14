@@ -407,23 +407,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             cachedInputGraph = getFirstGraph();
         }
         rebuildDiagram();
-        if (selectedNodes.isEmpty()) {
-            selectRootNode();
-        }
-        diagramChangedEvent.fire();
         graphChangedEvent.fire();
         assert titleChangedListener != null;
         cachedInputGraph.getDisplayNameChangedEvent().addListener(titleChangedListener);
-    }
-
-    private void selectRootNode() {
-        Figure figure = diagram.getRootFigure();
-        if (figure != null) {
-            int rootId = figure.getInputNode().getId();
-            if (!hiddenNodes.contains(rootId)) {
-                setSelectedNodes(Collections.singleton(rootId));
-            }
-        }
     }
 
     void addTitleCallback(Consumer<InputGraph> titleCallback) {
