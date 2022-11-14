@@ -25,8 +25,8 @@
  * @test
  * @bug 8262891 8268663 8289894
  * @summary Check guards implementation.
- * @compile --enable-preview -source ${jdk.version} Guards.java
- * @run main/othervm --enable-preview Guards
+ * @enablePreview
+ * @run main/othervm Guards
  */
 
 import java.util.Objects;

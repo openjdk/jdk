@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} GenericRecordDeconstructionPattern.java
- * @run main/othervm --enable-preview GenericRecordDeconstructionPattern
+ * @enablePreview
+ * @run main/othervm GenericRecordDeconstructionPattern
  */
 
 import java.util.Objects;

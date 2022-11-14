@@ -25,8 +25,7 @@
  * @test
  * @bug 8262891
  * @summary Verify "case null" behavior.
- * @compile --enable-preview -source ${jdk.version} SwitchNull.java
- * @run main/othervm --enable-preview SwitchNull
+ * @enablePreview
  */
 
 public class SwitchNull {

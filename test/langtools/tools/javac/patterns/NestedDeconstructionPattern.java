@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} NestedDeconstructionPattern.java
- * @run main/othervm --enable-preview NestedDeconstructionPattern
+ * @enablePreview
+ * @run main/othervm NestedDeconstructionPattern
  */
 
 import java.util.Objects;

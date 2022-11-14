@@ -2,8 +2,9 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8272776
  * @summary Check null handling for non-pattern switches.
- * @compile --enable-preview -source ${jdk.version} NullSwitch.java
- * @run main/othervm --enable-preview NullSwitch
+ * @enablePreview
+ * @compile NullSwitch.java
+ * @run main/othervm NullSwitch
  */
 
 public class NullSwitch {

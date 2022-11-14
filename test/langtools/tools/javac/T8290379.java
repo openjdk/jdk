@@ -24,8 +24,8 @@
  * @test
  * @bug 8290379
  * @summary Parse error with parenthesized pattern and guard using an array
- * @compile --enable-preview -source ${jdk.version} T8290379.java
- * @run main/othervm --enable-preview T8290379
+ * @enablePreview
+ * @run main/othervm T8290379
  */
 public class T8290379 {
     public static void main(String... args) {

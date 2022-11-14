@@ -25,8 +25,8 @@
  * @test
  * @bug 8262891 8269354
  * @summary Test parenthesized pattern
- * @compile --enable-preview -source ${jdk.version} Parenthesized.java
- * @run main/othervm --enable-preview Parenthesized
+ * @enablePreview
+ * @run main/othervm Parenthesized
  */
 public class Parenthesized {
     public static void main(String... args) {

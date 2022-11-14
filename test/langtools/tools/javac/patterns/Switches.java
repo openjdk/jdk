@@ -30,8 +30,8 @@ import java.util.function.Function;
  * @test
  * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864 8290709
  * @summary Check behavior of pattern switches.
- * @compile --enable-preview -source ${jdk.version} Switches.java
- * @run main/othervm --enable-preview Switches
+ * @enablePreview
+ * @run main/othervm Switches
  */
 public class Switches {
 
