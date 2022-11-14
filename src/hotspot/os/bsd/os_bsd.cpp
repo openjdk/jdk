@@ -2209,10 +2209,7 @@ int os::open(const char *path, int oflag, int mode) {
   // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
   //
 
-  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
-  // because it saves a system call and removes a small window where the flag
-  // is unset.
-  int fd = ::open(path, oflag|O_CLOEXEC, mode);
+  int fd = ::open(path, oflag | O_CLOEXEC, mode);
   if (fd == -1) return -1;
 
   // If the open succeeded, the file might still be a directory
