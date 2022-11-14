@@ -99,7 +99,7 @@ public:
 
   Method* method() override { return _vfst.method(); }
   int bci()        override { return _vfst.bci(); }
-  oop cont() override { return _vfst.continuation(); }
+  oop cont()       override { return _vfst.continuation(); }
 
   void fill_frame(int index, objArrayHandle  frames_array,
                   const methodHandle& method, TRAPS) override;
@@ -134,7 +134,7 @@ public:
 
   Method* method() override { return _jvf->method(); }
   int bci()        override { return _jvf->bci(); }
-  oop cont() override { return continuation() != NULL ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry, _map->thread()); }
+  oop cont()       override { return continuation() != NULL ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry, _map->thread()); }
 
   void fill_frame(int index, objArrayHandle  frames_array,
                   const methodHandle& method, TRAPS) override;
