@@ -222,8 +222,6 @@ util_initialize(JNIEnv *env)
                     "<init>", "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V");
         gdata->threadSetDaemon =
                 getMethod(env, gdata->threadClass, "setDaemon", "(Z)V");
-        gdata->threadResume =
-                getMethod(env, gdata->threadClass, "resume", "()V");
         gdata->systemGetProperty =
                 getStaticMethod(env, gdata->systemClass,
                     "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
