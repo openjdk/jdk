@@ -175,8 +175,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     /**
      * Returns 0 when end of stream is detected for the current ZIP entry or
      * {@link #closeEntry()} has been called, otherwise always return 1.
-     * I think it will need to say that input stream for the current ZIP entry has been read to end of stream, or the
-     * ZIP entry has been closed with closeEntry
      * <p>
      * Programs should not count on this method to return the actual number
      * of bytes that could be read without blocking.
