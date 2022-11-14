@@ -50,7 +50,7 @@ public class ScopedValueContainer extends StackableScope {
 
     /**
      * Returns the "latest" ScopedValueContainer for the current Thread. This may be on
-     * the current thread's scope task or ma require walking up the tree to find it.
+     * the current thread's scope task or may require walking up the tree to find it.
      */
     public static <T extends ScopedValueContainer> T latest(Class<T> containerClass) {
         StackableScope scope = head();
