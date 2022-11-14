@@ -85,4 +85,6 @@ public interface DiagramViewer {
     void setInteractionMode(InteractionMode mode);
 
     Rectangle getBounds();
+
+    JComponent getView();
 }

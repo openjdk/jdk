@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.DiagramScene;
+import com.sun.hotspot.igv.view.DiagramViewer;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.InputEvent;
@@ -40,7 +41,7 @@ public class MouseZoomAction extends WidgetAction.Adapter implements MouseWheelL
     public static final int PAN_INCREMENT = 32;
 
     private static final int MODIFIER = Utilities.isMac() ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
-    private final DiagramScene scene;
+    private final DiagramViewer scene;
     private int prev_n;
 
     public MouseZoomAction(DiagramScene scene) {
