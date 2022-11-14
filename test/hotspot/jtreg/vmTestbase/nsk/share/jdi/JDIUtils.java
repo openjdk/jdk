@@ -26,7 +26,8 @@ package nsk.share.jdi;
 public class JDIUtils {
 
     /*
-     * Wait until thread which is supposed to complet become not alive.
+     * Wait until thread is no longer alive, but only wait
+     * for a short period of time since it shouldn't take long.
      */
     public static boolean waitForCompletion(Thread thread) {
         for (int attempt = 1; attempt <= 5; attempt++) {

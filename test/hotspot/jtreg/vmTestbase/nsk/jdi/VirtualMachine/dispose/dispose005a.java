@@ -152,10 +152,10 @@ public class dispose005a {
                                  logErr("ERROR: unexpected instruction: " + instruction);
                                  exitCode = FAILED;
                              } else {
-                                 log1("checking on: test_tread.done");
+                                 log1("checking on: test_thread.done");
                                  if (!test_thread.done) {
                                      pipe.println("alive");
-                                     logErr("ERROR thread_thread.done is false after vm.dispose()");
+                                     logErr("ERROR test_thread.done is false after vm.dispose()");
                                      exitCode = FAILED;
                                      break;
                                  } else {
