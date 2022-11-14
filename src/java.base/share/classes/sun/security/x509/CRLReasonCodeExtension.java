@@ -69,7 +69,7 @@ public class CRLReasonCodeExtension extends Extension {
      * Create a CRLReasonCodeExtension with the passed in reason.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param reason the enumerated value for the reason code.
+     * @param reason the enumerated value for the reason code, cannot be null.
      */
     public CRLReasonCodeExtension(boolean critical, int reason)
             throws IOException {

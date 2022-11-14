@@ -84,7 +84,7 @@ public class SubjectAlternativeNameExtension extends Extension {
      * criticality and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the subject.
+     * @param names the GeneralNames for the subject, cannot be null or empty.
      * @exception IOException on error.
      */
     public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names)

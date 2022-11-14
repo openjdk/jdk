@@ -106,7 +106,8 @@ public class CRLDistributionPointsExtension extends Extension {
      * DistributionPoint.
      *
      * @param isCritical the criticality setting.
-     * @param distributionPoints the list of distribution points
+     * @param distributionPoints the list of distribution points,
+     *                           cannot be null or empty.
      * @throws IOException on error
      */
     public CRLDistributionPointsExtension(boolean isCritical,

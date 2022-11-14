@@ -127,8 +127,8 @@ public class NameConstraintsExtension extends Extension
     }
 
     /**
-     * The default constructor for this class. Both parameters
-     * are optional and can be set to null.  The extension criticality
+     * The default constructor for this class. Both parameters are optional
+     * but at least one should be non null.  The extension criticality
      * is set to true.
      *
      * @param permitted the permitted GeneralSubtrees (null for optional).
@@ -139,7 +139,7 @@ public class NameConstraintsExtension extends Extension
             throws IOException {
         if (permitted == null && excluded == null) {
             throw new IllegalArgumentException(
-                    "permitted and exclude cannot be all null");
+                    "permitted and exclude cannot both be null");
         }
         this.permitted = permitted;
         this.excluded = excluded;

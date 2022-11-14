@@ -93,10 +93,11 @@ public class PrivateKeyUsageExtension extends Extension {
     }
 
     /**
-     * The default constructor for PrivateKeyUsageExtension.
+     * The default constructor for PrivateKeyUsageExtension. At least one
+     * of the arguments must be non null.
      *
      * @param notBefore the date/time before which the private key
-     *         should not be used.
+     *         should not be used
      * @param notAfter the date/time after which the private key
      *         should not be used.
      */
@@ -104,7 +105,7 @@ public class PrivateKeyUsageExtension extends Extension {
             throws IOException {
         if (notBefore == null && notAfter == null) {
             throw new IllegalArgumentException(
-                    "notBefore and notAfter cannot be all null");
+                    "notBefore and notAfter cannot both be null");
         }
         this.notBefore = notBefore;
         this.notAfter = notAfter;

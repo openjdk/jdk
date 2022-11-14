@@ -75,7 +75,7 @@ public class PolicyMappingsExtension extends Extension {
     /**
      * Create a PolicyMappings with the List of CertificatePolicyMap.
      *
-     * @param maps the List of CertificatePolicyMap.
+     * @param maps the List of CertificatePolicyMap, cannot be null or empty.
      */
     public PolicyMappingsExtension(List<CertificatePolicyMap> maps)
             throws IOException {

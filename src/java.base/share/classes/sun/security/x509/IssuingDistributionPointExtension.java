@@ -110,7 +110,8 @@ public class IssuingDistributionPointExtension extends Extension {
      *        issuer CRL entry extension.
      * @throws IllegalArgumentException if more than one of
      *        <code>hasOnlyUserCerts</code>, <code>hasOnlyCACerts</code>,
-     *        <code>hasOnlyAttributeCerts</code> is set to <code>true</code>.
+     *        <code>hasOnlyAttributeCerts</code> is set to <code>true</code>,
+     *        or all arguments are either <code>null</code> or <code>false</code>.
      * @throws IOException on encoding error.
      */
     public IssuingDistributionPointExtension(

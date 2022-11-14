@@ -78,7 +78,7 @@ public class IssuerAlternativeNameExtension extends Extension {
      * and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the issuer.
+     * @param names the GeneralNames for the issuer, cannot be null or empty.
      * @exception IOException on error.
      */
     public IssuerAlternativeNameExtension(Boolean critical, GeneralNames names)
