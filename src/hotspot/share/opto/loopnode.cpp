@@ -4180,24 +4180,45 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 }
 
 #ifdef ASSERT
+// Goes over all children of the root of the loop tree, collects all controls for the loop and its inner loops then
+// checks whether any control is a branch out of the loop and if it is, whether it's not a NeverBranch.
 bool PhaseIdealLoop::only_has_infinite_loops() {
   for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
-    uint i = 1;
-    for (; i < C->root()->req(); i++) {
-      Node* in = C->root()->in(i);
-      if (in != NULL &&
-          in->Opcode() == Op_Halt &&
-          in->in(0)->is_Proj() &&
-          in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
-          in->in(0)->in(0)->in(0) == l->_head) {
-        break;
+    Unique_Node_List wq;
+    Node* head = l->_head;
+    assert(head->is_Region(), "");
+    for (uint i = 1; i < head->req(); ++i) {
+      Node* in = head->in(i);
+      if (get_loop(in) != _ltree_root) {
+        wq.push(in);
       }
     }
-    if (i == C->root()->req()) {
-      return false;
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* c = wq.at(i);
+      if (c == head) {
+        continue;
+      } else if (c->is_Region()) {
+        for (uint j = 1; j < c->req(); ++j) {
+          wq.push(c->in(j));
+        }
+      } else {
+        wq.push(c->in(0));
+      }
+    }
+    assert(wq.member(head), "");
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* c = wq.at(i);
+      if (c->is_MultiBranch()) {
+        for (DUIterator_Fast jmax, j = c->fast_outs(jmax); j < jmax; j++) {
+          Node* u = c->fast_out(j);
+          assert(u->is_CFG(), "");
+          if (!wq.member(u) && c->Opcode() != Op_NeverBranch) {
+            return false;
+          }
+        }
+      }
     }
   }
-
   return true;
 }
 #endif
@@ -4212,6 +4233,8 @@ void PhaseIdealLoop::build_and_optimize() {
 
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
+  bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
+
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -4281,8 +4304,8 @@ void PhaseIdealLoop::build_and_optimize() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
-  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only &&
-    !bs->is_gc_specific_loop_opts_pass(_mode);
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll && !_verify_me &&
+          !_verify_only && !bs->is_gc_specific_loop_opts_pass(_mode);
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
   if (stop_early && !do_expensive_nodes) {
@@ -4421,7 +4444,7 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  if (_mode == LoopOptsMaxUnroll) {
+  if (do_max_unroll) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_innermost() && lpt->_allow_optimizations && !lpt->_has_call && lpt->is_counted()) {
