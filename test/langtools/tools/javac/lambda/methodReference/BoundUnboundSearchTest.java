@@ -137,15 +137,15 @@ public class BoundUnboundSearchTest extends CompilationTestCase {
                 getDiagConsumer(0, -1),
                 """
                 import java.util.function.*;
-                
+
                 interface Intf {
                     Object apply(String... args);
                 }
-                                
+
                 public class Test {
                     public static Object foo(Object o) { return "bar"; }
                     public final Object foo(Object... o) { return "foo"; }
-                                
+
                     public void test() {
                         Intf f = this::foo;
                     }
