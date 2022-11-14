@@ -2079,8 +2079,8 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
 
 void JavaThread::pretouch_stack() {
   // Given an established java thread stack with usable area followed by
-  // reserved/yellow/red zone, pretouch the usable area ranging from the current
-  // frame up to the reserved zone minus a small safety area of two pages.
+  // shadow zone and reserved/yellow/red zone, pretouch the usable area ranging
+  // from the current frame down to the start of the shadow zone.
   const address end = _stack_overflow_state.shadow_zone_safe_limit();
   if (is_in_full_stack(end)) {
     char* p1 = (char*) alloca(1);

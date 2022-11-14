@@ -51,7 +51,7 @@ public class TestAlwaysPreTouchStacks extends Thread {
     public static void main(String[] args) throws InterruptedException, IOException {
 
         int[] stackSizes = {
-          1024 * 64, 1024 * 128, 1024 * 512, 1024 * 1024 * 3
+          1024 * 256, 1024 * 512, 1024 * 1024 * 3
         };
 
         if (args.length == 1 && args[0].equals("test")) {
