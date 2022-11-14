@@ -25,6 +25,8 @@
 // FORMS.CPP - Definitions for ADL Parser Forms Classes
 #include "adlc.hpp"
 
+#define remaining_buflen(buffer, position) (sizeof(buffer) - (position - buffer))
+
 //==============================Instructions===================================
 //------------------------------InstructForm-----------------------------------
 InstructForm::InstructForm(const char *id, bool ideal_only)
@@ -1533,7 +1535,7 @@ Predicate *InstructForm::build_predicate() {
         s += strlen(s);
       }
       // Add predicate to working buffer
-      snprintf(s, (buflen - (s - buf)), "/*%s*/(",(char*)i._key);
+      snprintf(s, remaining_buflen(buf, s), "/*%s*/(",(char*)i._key);
       s += strlen(s);
       mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);

@@ -26,6 +26,8 @@
 
 #include "adlc.hpp"
 
+#define remaining_buflen(buffer, position) (sizeof(buffer) - (position - buffer))
+
 // Utilities to characterize effect statements
 static bool is_def(int usedef) {
   switch(usedef) {
@@ -2567,19 +2569,19 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
     const char* arg_name = ins_encode->rep_var_name(inst, param_no);
     int idx = inst.operand_position_format(arg_name);
     if (strcmp(arg_name, "constanttablebase") == 0) {
-      ib += snprintf(ib, (buflen - (ib - idxbuf)), "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
+      ib += snprintf(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
                     name, type, arg_name);
-      nb += snprintf(nb, (buflen - (nb - nbuf)), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      nb += snprintf(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
       // There is no operand for the constanttablebase.
     } else if (inst.is_noninput_operand(idx)) {
       globalAD->syntax_err(inst._linenum,
                            "In %s: you can not pass the non-input %s to a postalloc expand encoding.\n",
                            inst._ident, arg_name);
     } else {
-      ib += snprintf(ib, (buflen - (ib - idxbuf)), "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
+      ib += snprintf(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
                     name, idx, type, arg_name);
-      nb += snprintf(nb, (buflen - (nb - nbuf)), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
-      ob += snprintf(ob, (buflen - (ob - opbuf)), "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
+      nb += snprintf(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      ob += snprintf(ob, remaining_buflen(opbuf, ob), "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
     }
     param_no++;
   }
