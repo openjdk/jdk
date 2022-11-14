@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * @test
  * @bug 8187442
- * @summary Launching app wit jdwp agent active shouldn't produce any jni warnings.
+ * @summary Launching app with jdwp agent active shouldn't produce any jni warnings.
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile TestXcheckJdwpJNIWarnings.java
