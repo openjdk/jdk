@@ -26,14 +26,19 @@
   @key headful
   @bug 4664415
   @summary Test that double clicking the titlebar does not send RELEASE/CLICKED
-  @library    ../../regtesthelpers
-  @build      Util
   @run main TitleBarDoubleClick
 */
 
-import java.awt.*;
-import java.awt.event.*;
-import test.java.awt.regtesthelpers.Util;
+import java.awt.AWTError;
+import java.awt.AWTException;
+import java.awt.Frame;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 public class TitleBarDoubleClick implements MouseListener,
  WindowListener
@@ -45,14 +50,13 @@ public class TitleBarDoubleClick implements MouseListener,
     Frame frame;
     Robot robot;
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws AWTException {
         TitleBarDoubleClick app = new TitleBarDoubleClick();
         app.start();
     }
 
-    public void start ()
-    {
-            robot = Util.createRobot();
+    public void start () throws AWTException {
+            robot = new Robot();
             robot.setAutoDelay(100);
             robot.mouseMove(BOUNDS.x + (BOUNDS.width / 2),
                             BOUNDS.y + (BOUNDS.height/ 2));
@@ -79,16 +83,16 @@ public class TitleBarDoubleClick implements MouseListener,
             // Util.waitForIdle(robot) seem always hangs here.
             // Need to use it instead robot.delay() when the bug become fixed.
             System.out.println("1st press:   currentTimeMillis: " + System.currentTimeMillis());
-            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(50);
             System.out.println("1st release: currentTimeMillis: " + System.currentTimeMillis());
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(50);
             System.out.println("2nd press:   currentTimeMillis: " + System.currentTimeMillis());
-            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(50);
             System.out.println("2nd release: currentTimeMillis: " + System.currentTimeMillis());
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             System.out.println("done:        currentTimeMillis: " + System.currentTimeMillis());
     }
 
