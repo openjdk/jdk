@@ -257,7 +257,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x", "-Xdoclint:none");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
-                MyClass.java:5: warning: type found is not of exception type: \
+                MyClass.java:5: warning: not an exception type: \
                 x.OtherClass (MODULE <unnamed module> PACKAGE x CLASS OtherClass)
                     /** @throws OtherClass description */
                                 ^
