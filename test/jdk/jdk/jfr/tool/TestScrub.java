@@ -23,16 +23,12 @@
 
 package jdk.jfr.tool;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
@@ -91,6 +87,8 @@ public class TestScrub {
 
         testThreadExclude(file);
         testThreadInclude(file);
+
+        testMissingEventType(file);
     }
 
     private static void testInputOutput(Path file) throws Throwable {
@@ -248,6 +246,33 @@ public class TestScrub {
             assertThread(event, "Namibia");
             assertNotThread(event, "India", "Lake Tanganyika");
         }
+    }
+
+    private static void testMissingEventType(Path input) throws Throwable {
+        Path output = Path.of("scrubbed.jfr");
+        String[] args = {
+            "scrub",
+            "--exclude-events", "Foo",
+            "--include-events", "example.Zebra",
+            "--include-events", "jdk.Bar",
+            "--include-events", "example.Tigerfish",
+            "--exclude-categories", "Mammal",
+            "--exclude-categories", "jdk.Baz",
+            "--include-categories", "Fish",
+            "--include-categories", "jdk.Qux,jdk.Quuz",
+            input.toAbsolutePath().toString(),
+            output.toAbsolutePath().toString()
+        };
+        var outp = ExecuteHelper.jfr(args);
+        outp.shouldContain("Warning, no event type matched filter: Foo");
+        outp.shouldContain("Warning, no event type matched filter: jdk.Bar");
+        outp.shouldContain("Warning, no event type matched category filter: jdk.Baz");
+        outp.shouldContain("Warning, no event type matched category filter: jdk.Qux,jdk.Quuz");
+        outp.shouldNotContain("Warning, no event type matched filter: example.Zebra");
+        outp.shouldNotContain("Warning, no event type matched filter: example.Tigerfish");
+        outp.shouldNotContain("Warning, no event type matched category filter: Mammal");
+        outp.shouldNotContain("Warning, no event type matched category filter: Fish");
+        Files.delete(output);
     }
 
     private static void assertNotThread(RecordedEvent event, String... threadNames) {

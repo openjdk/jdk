@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ final class P11AEADCipher extends CipherSpi {
             try {
                 engineSetPadding(algoParts[2]);
             } catch (NoSuchPaddingException e) {
-                throw new NoSuchAlgorithmException();
+                throw new NoSuchAlgorithmException(e);
             }
         } else if (algoParts[0].equals("ChaCha20-Poly1305")) {
             fixedKeySize = 32;

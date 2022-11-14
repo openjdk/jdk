@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,43 @@ protected:
   }
 
   template <typename ArrayClass>
+  static void test_capacity(ArrayClass* a) {
+    ASSERT_EQ(a->length(), 0);
+    a->reserve(50);
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 50);
+    for (int i = 0; i < 50; ++i) {
+      a->append(i);
+    }
+    ASSERT_EQ(a->length(), 50);
+    ASSERT_EQ(a->capacity(), 50);
+    a->append(50);
+    ASSERT_EQ(a->length(), 51);
+    int capacity = a->capacity();
+    ASSERT_GE(capacity, 51);
+    for (int i = 0; i < 30; ++i) {
+      a->pop();
+    }
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), capacity);
+    a->shrink_to_fit();
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), 21);
+
+    a->reserve(50);
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), 50);
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 50);
+
+    a->shrink_to_fit();
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 0);
+  }
+
+  template <typename ArrayClass>
   static void test_copy1(ArrayClass* a) {
     ASSERT_EQ(a->length(), 1);
     ASSERT_EQ(a->at(0), 1);
@@ -200,7 +237,8 @@ protected:
   enum TestEnum {
     Append,
     Clear,
-    Iterator,
+    Capacity,
+    Iterator
   };
 
   template <typename ArrayClass>
@@ -212,6 +250,10 @@ protected:
 
       case Clear:
         test_clear(a);
+        break;
+
+      case Capacity:
+        test_capacity(a);
         break;
 
       case Iterator:
@@ -343,7 +385,7 @@ protected:
 
     // CHeap/CHeap allocated
     {
-      GrowableArray<int>* a = new (ResourceObj::C_HEAP, mtTest) GrowableArray<int>(max, mtTest);
+      GrowableArray<int>* a = new (mtTest) GrowableArray<int>(max, mtTest);
       modify_and_test(a, modify, test);
       delete a;
     }
@@ -402,6 +444,10 @@ TEST_VM_F(GrowableArrayTest, clear) {
   with_all_types_all_0(Clear);
 }
 
+TEST_VM_F(GrowableArrayTest, capacity) {
+  with_all_types_all_0(Capacity);
+}
+
 TEST_VM_F(GrowableArrayTest, iterator) {
   with_all_types_all_0(Iterator);
 }
@@ -439,7 +485,7 @@ TEST_VM_F(GrowableArrayTest, where) {
 
   // CHeap/CHeap allocated
   {
-    GrowableArray<int>* a = new (ResourceObj::C_HEAP, mtTest) GrowableArray<int>(0, mtTest);
+    GrowableArray<int>* a = new (mtTest) GrowableArray<int>(0, mtTest);
     ASSERT_TRUE(a->allocated_on_C_heap());
     ASSERT_TRUE(elements_on_C_heap(a));
     delete a;

@@ -1394,7 +1394,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     set_ctrl(K, this->C->root());
     Node* scaled_iv = new MulINode(inner_phi, K);
     register_new_node(scaled_iv, c);
-    Node* scaled_iv_plus_offset = scaled_iv_plus_offset = new AddINode(scaled_iv, L_2);
+    Node* scaled_iv_plus_offset = new AddINode(scaled_iv, L_2);
     register_new_node(scaled_iv_plus_offset, c);
 
     Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, R_2);
@@ -3900,17 +3900,6 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
   }
   return 0;
 }
-
-#ifdef ASSERT
-bool IdealLoopTree::has_reduction_nodes() const {
-  for (uint i = 0; i < _body.size(); i++) {
-    if (_body[i]->is_reduction()) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif // ASSERT
 
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------

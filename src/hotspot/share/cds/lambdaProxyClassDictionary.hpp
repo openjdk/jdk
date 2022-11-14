@@ -114,7 +114,7 @@ public:
 
   void add_proxy_klass(InstanceKlass* proxy_klass) {
     if (_proxy_klasses == NULL) {
-      _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
+      _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
     }
     assert(_proxy_klasses != NULL, "sanity");
     _proxy_klasses->append(proxy_klass);
@@ -160,7 +160,7 @@ class DumpTimeLambdaProxyClassDictionary
   : public ResourceHashtable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
                              137, // prime number
-                             ResourceObj::C_HEAP,
+                             AnyObj::C_HEAP,
                              mtClassShared,
                              LambdaProxyClassKey::DUMPTIME_HASH,
                              LambdaProxyClassKey::DUMPTIME_EQUALS> {
