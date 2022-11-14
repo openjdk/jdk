@@ -204,6 +204,9 @@ private:
   address _heap_end;                // heap end at dump time.
   bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
 
+  unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
+                                                  //    0 if no common prefix exists
+
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
@@ -245,7 +248,7 @@ public:
   unsigned int header_size()              const { return _generic_header._header_size;              }
   unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
   unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
-  unsigned int common_app_classpath_prefix_size() const { return _generic_header._common_app_classpath_prefix_size; }
+  unsigned int common_app_classpath_prefix_size() const { return _common_app_classpath_prefix_size; }
 
   void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
   void set_crc(int crc_value)                       { _generic_header._crc = crc_value; }
@@ -253,7 +256,7 @@ public:
   void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
   void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
   void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
-  void set_common_app_classpath_prefix_size(unsigned int s) { _generic_header._common_app_classpath_prefix_size = s; }
+  void set_common_app_classpath_prefix_size(unsigned int s) { _common_app_classpath_prefix_size = s; }
 
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }

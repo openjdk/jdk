@@ -94,7 +94,7 @@ public class CDSArchiveUtils {
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
             offsetVersion = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_version");
             offsetHeaderSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_header_size");
-            offsetCommonAppClasspathPrefixSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_common_app_classpath_prefix_size");
+            offsetCommonAppClasspathPrefixSize = wb.getCDSOffsetForName("FileMapHeader::_common_app_classpath_prefix_size");
             offsetBaseArchiveNameOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_offset");
             offsetBaseArchiveNameSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_size");
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");

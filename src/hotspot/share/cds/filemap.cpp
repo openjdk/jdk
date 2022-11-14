@@ -1234,6 +1234,7 @@ public:
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
       FileMapInfo::fail_continue("The shared archive file version 0x%x does not match the required version 0x%x.",
                                  gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
+      //return false??
     }
 
     size_t filelen = os::lseek(fd, 0, SEEK_END);
@@ -1257,10 +1258,6 @@ public:
     }
 
     if (!check_and_init_base_archive_name()) {
-      return false;
-    }
-
-    if (!check_common_app_classpath_prefix_len()) {
       return false;
     }
 
@@ -1344,15 +1341,6 @@ public:
 
     return true;
   }
-
-  bool check_common_app_classpath_prefix_len() {
-    int common_path_size = _header->_common_app_classpath_prefix_size;
-    if (common_path_size < 0) {
-      FileMapInfo::fail_continue("common app classpath prefix len < 0");
-      return false;
-    }
-    return true;
-  }
 };
 
 // Return value:
@@ -1425,6 +1413,12 @@ bool FileMapInfo::init_from_file(int fd) {
     log_info(cds)("           actual: 0x%x", header()->version());
     fail_continue("The shared archive file has the wrong version.");
     return false;
+  }
+
+  int common_path_size = header()->common_app_classpath_prefix_size();
+  if (common_path_size < 0) {
+      FileMapInfo::fail_continue("common app classpath prefix len < 0");
+      return false;
   }
 
   unsigned int base_offset = header()->base_archive_name_offset();
