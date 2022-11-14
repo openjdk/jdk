@@ -23,13 +23,15 @@
 
 /**
  * @test
- * @summary Stress test for ScopedValue
+ * @summary StressStackOverflow the recovery path for ScopedValue
  * @modules jdk.incubator.concurrent
- * @compile --enable-preview -source ${jdk.version} Stress.java
- * @run testng/othervm/timeout=300 -XX:-TieredCompilation --enable-preview Stress
- * @run testng/othervm/timeout=300 --enable-preview Stress
+ * @compile --enable-preview -source ${jdk.version} StressStackOverflow.java
+ * @run testng/othervm/timeout=300 -XX:-TieredCompilation --enable-preview StressStackOverflow
+ * @run testng/othervm/timeout=300 -XX:TieredStopAtLevel=1 --enable-preview StressStackOverflow
+ * @run testng/othervm/timeout=300 --enable-preview StressStackOverflow
  */
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import jdk.incubator.concurrent.ScopedValue;
@@ -38,22 +40,37 @@ import jdk.incubator.concurrent.StructuredTaskScope;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
-public class Stress {
+public class StressStackOverflow {
     public static final ScopedValue<Integer> el = ScopedValue.newInstance();
 
     public static final ScopedValue<Integer> inheritedValue = ScopedValue.newInstance();
 
     final ThreadLocalRandom tlr = ThreadLocalRandom.current();
-    static RuntimeException ex = new RuntimeException();
+    static final RuntimeException ex = new RuntimeException("Unexpected value for ScopedValue");
     int ITERS = 100_000;
 
-    class DeepRecursion implements Runnable {
+    // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
+    // and Runnable interfaces. Which one gets tested depends on the constructor argument.
+    class DeepRecursion implements Callable, Runnable {
+
+        static enum Behaviour {CALL, RUN}
+        final Behaviour behaviour;
+
+        public DeepRecursion(Behaviour behaviour) {
+            this.behaviour = behaviour;
+        }
+
         public void run() {
             final var last = el.get();
             ITERS--;
             var nextRandomFloat = tlr.nextFloat();
             try {
-                ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+                switch (behaviour) {
+                    case CALL ->
+                        ScopedValue.where(el, el.get() + 1).call(() -> fibonacci_pad(20, this));
+                    case RUN ->
+                        ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+                }
                 if (!last.equals(el.get())) {
                     throw ex;
                 }
@@ -64,6 +81,8 @@ public class Stress {
             } catch (StructureViolationException structureViolationException) {
                 // Can happen if the stack overflow prevented a StackableScope from
                 // being removed. We can continue.
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             } finally {
                 if (!last.equals(el.get())) {
                     throw ex;
@@ -72,13 +91,24 @@ public class Stress {
 
             Thread.yield();
         }
+
+        public Object call() {
+            run();
+            return null;
+        }
     }
 
     static final Runnable nop = new Runnable() {
         public void run() { }
     };
 
-    long fibonacci_pad1(int n, Runnable op) {
+    // Consume some stack.
+    //
+
+    // The double recursion used here prevents an optimizing JIT from
+    // inlining all the recursive calls, which would make it
+    // ineffective.
+    private long fibonacci_pad1(int n, Runnable op) {
         if (n <= 1) {
             op.run();
             return n;
@@ -103,8 +133,11 @@ public class Stress {
         }
     }
 
+    // Run op in a new thread. Platform or virtual threads are chosen at random.
     void runInNewThread(Runnable op) {
-        try (var scope = new StructuredTaskScope<Object>()) {
+        var threadFactory
+                = (tlr.nextBoolean() ? Thread.ofPlatform() : Thread.ofVirtual()).factory();
+        try (var scope = new StructuredTaskScope<Object>("", threadFactory)) {
             var future = scope.fork(() -> {
                 op.run();
                 return null;
@@ -122,9 +155,14 @@ public class Stress {
                 try (var scope = new StructuredTaskScope<Object>()) {
                     try {
                         if (tlr.nextBoolean()) {
-                            final var deepRecursion = new DeepRecursion();
+                            // Repeatedly test Scoped Values set by ScopedValue::call() and ScopedValue::run()
+                            final var deepRecursion
+                                    = new DeepRecursion(tlr.nextBoolean() ? DeepRecursion.Behaviour.CALL : DeepRecursion.Behaviour.RUN);
                             deepRecursion.run();
                         } else {
+                            // Recursively run ourself until we get a stack overflow
+                            // Catch the overflow and make sure the recovery path works
+                            // for values inherited from a StructuredTaskScope.
                             Runnable op = new Runnable() {
                                 public void run() {
                                     try {
