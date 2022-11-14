@@ -230,7 +230,8 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
 /** reads /proc/<pid>/stat data, with some checks and some skips.
  *  Ensure that 'fmt' does _NOT_ contain the first two "%d %s"
  */
-SCANF_ARGS(2, 0) static int vread_statdata(const char* procfile, _SCANFMT_ const char* fmt, va_list args) {
+SCANF_ARGS(2, 0)
+static int vread_statdata(const char* procfile, _SCANFMT_ const char* fmt, va_list args) {
   FILE*f;
   int n;
   char buf[2048];
@@ -259,7 +260,8 @@ SCANF_ARGS(2, 0) static int vread_statdata(const char* procfile, _SCANFMT_ const
   return n;
 }
 
-SCANF_ARGS(2, 3) static int read_statdata(const char* procfile, _SCANFMT_ const char* fmt, ...) {
+SCANF_ARGS(2, 3)
+static int read_statdata(const char* procfile, _SCANFMT_ const char* fmt, ...) {
   int   n;
   va_list args;
 
@@ -394,7 +396,8 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
   return user_load;
 }
 
-SCANF_ARGS(1, 2) static int parse_stat(_SCANFMT_ const char* fmt, ...) {
+SCANF_ARGS(1, 2)
+static int parse_stat(_SCANFMT_ const char* fmt, ...) {
   FILE *f;
   va_list args;
 

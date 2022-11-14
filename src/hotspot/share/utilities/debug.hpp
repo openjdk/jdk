@@ -168,7 +168,8 @@ void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...);
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
-ATTRIBUTE_PRINTF(4, 5) void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...);
+ATTRIBUTE_PRINTF(4, 5)
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...);
 ATTRIBUTE_PRINTF(5, 6)
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...);
