@@ -468,14 +468,14 @@ public class TestExceptionTypeMatching extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
-                Child1.java:5: warning: @inheritDoc for exception-type type parameters not declared by a method is unsupported; \
-                document such exception types directly
+                Child1.java:5: warning: @inheritDoc is not supported for exception-type type parameters \
+                that are not declared by a method; document such exception types directly
                     /** @throws T {@inheritDoc} */
                                 ^
                 """);
         checkOutput(Output.OUT, true, """
-                Child2.java:5: warning: @inheritDoc for exception-type type parameters not declared by a method is unsupported; \
-                document such exception types directly
+                Child2.java:5: warning: @inheritDoc is not supported for exception-type type parameters \
+                that are not declared by a method; document such exception types directly
                     /** @throws T {@inheritDoc} */
                                 ^
                 """);
