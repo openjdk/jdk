@@ -93,7 +93,9 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
             return null;
         }
 
-        // TODO check for more than one @return
+        // it would also be good to check if there are more than one @return
+        // tags and produce a warning or error similarly to how it's done
+        // above for a case where @return is used for void
 
         var docFinder = utils.docFinder();
         return docFinder.search(method, m -> Result.fromOptional(extract(utils, m))).toOptional()
