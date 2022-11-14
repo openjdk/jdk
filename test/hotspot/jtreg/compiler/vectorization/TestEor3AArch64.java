@@ -35,7 +35,7 @@ import jdk.test.lib.Utils;
  * @bug 8293488
  * @summary Test EOR3 Neon/SVE2 instruction for aarch64 SHA3 extension
  * @library /test/lib /
- * @requires os.arch == "aarch64" & vm.cpu.features ~= ".*sha3.*"
+ * @requires os.arch == "aarch64"
  * @run driver compiler.vectorization.TestEor3AArch64
  */
 
@@ -78,8 +78,8 @@ public class TestEor3AArch64 {
 
     // Test for eor3 Neon and SVE2 instruction for integers
     @Test
-    @IR(counts = {"veor3_neon", "> 0"}, applyIf = {"MaxVectorSize", "16"})
-    @IR(counts = {"veor3_sve", "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"}, applyIfCPUFeature = {"svesha3", "true"})
+    @IR(counts = {"veor3_neon", "> 0"}, applyIf = {"MaxVectorSize", "16"}, applyIfCPUFeature = {"sha3", "true"})
+    @IR(counts = {"veor3_sve", "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"})
     public static void testIntEor3() {
         for (int i = 0; i < LENGTH; i++) {
             ir[i] = ia[i] ^ ib[i] ^ ic[i];
@@ -96,8 +96,8 @@ public class TestEor3AArch64 {
 
     // Test for eor3 Neon and SVE2 instruction for longs
     @Test
-    @IR(counts = {"veor3_neon", "> 0"}, applyIf = {"MaxVectorSize", "16"})
-    @IR(counts = {"veor3_sve", "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"}, applyIfCPUFeature = {"svesha3", "true"})
+    @IR(counts = {"veor3_neon", "> 0"}, applyIf = {"MaxVectorSize", "16"}, applyIfCPUFeature = {"sha3", "true"})
+    @IR(counts = {"veor3_sve", "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"})
     public static void testLongEor3() {
         for (int i = 0; i < LENGTH; i++) {
             lr[i] = la[i] ^ lb[i] ^ lc[i];

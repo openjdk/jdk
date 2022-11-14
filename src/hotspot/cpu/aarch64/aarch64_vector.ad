@@ -1374,8 +1374,7 @@ instruct veor3_neon(vReg dst, vReg src1, vReg src2, vReg src3) %{
 %}
 
 instruct veor3_sve(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseSVE == 2 && VM_Version::supports_svesha3() &&
-            !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  predicate(UseSVE == 2 && !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
   match(Set dst_src1 (XorV dst_src1 (XorV src2 src3)));
   format %{ "veor3_sve $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{

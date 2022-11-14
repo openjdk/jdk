@@ -120,7 +120,6 @@ public:
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \
     decl(SVE2,          sve2,          28)    \
-    decl(SVESHA3,       svesha3,       29)    \
     decl(A53MAC,        a53mac,        31)
 
   enum Feature_Flag {

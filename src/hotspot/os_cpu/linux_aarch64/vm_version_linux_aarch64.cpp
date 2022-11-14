@@ -84,10 +84,6 @@
 #define HWCAP2_SVEBITPERM (1 << 4)
 #endif
 
-#ifndef HWCAP2_SVESHA3
-#define HWCAP2_SVESHA3 (1 << 5)
-#endif
-
 #ifndef PR_SVE_GET_VL
 // For old toolchains which do not have SVE related macros defined.
 #define PR_SVE_SET_VL   50
@@ -142,7 +138,6 @@ void VM_Version::get_os_cpu_info() {
 
   if (auxv2 & HWCAP2_SVE2) _features |= CPU_SVE2;
   if (auxv2 & HWCAP2_SVEBITPERM) _features |= CPU_SVEBITPERM;
-  if (auxv2 & HWCAP2_SVESHA3) _features |= CPU_SVESHA3;
 
   uint64_t ctr_el0;
   uint64_t dczid_el0;
