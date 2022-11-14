@@ -245,7 +245,7 @@ class Basics {
         obj = new Object();
         obj2 = new Object[1];
     }
-    
+
     @Test
     @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_ARRAY, "2"}, // works for all phases
         phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
