@@ -99,6 +99,30 @@ public class Signatures {
         }
     }
 
+    public static class DSA extends Signatures {
+        @Param({"SHA256withDSA", "SHA384withDSA", "SHA512withDSA"})
+        private String algorithm;
+
+        @Setup
+        public void setup() throws Exception {
+            message = new byte[messageLength];
+            (new Random(System.nanoTime())).nextBytes(message);
+
+            int keyLength = switch (algorithm) {
+                case "SHA256withDSA" -> 2048;
+                case "SHA384withDSA" -> 3072;
+                default -> throw new RuntimeException();
+            };
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+            kpg.initialize(keyLength);
+            KeyPair kp = kpg.generateKeyPair();
+
+            signer = Signature.getInstance(algorithm);
+            signer.initSign(kp.getPrivate());
+        }
+    }
+
     public static class RSA extends Signatures {
         @Param({"SHA256withRSA", "SHA384withRSA", "SHA512withRSA"})
         private String algorithm;
@@ -110,7 +134,7 @@ public class Signatures {
 
             int keyLength = switch (algorithm) {
                 case "SHA256withRSA" -> 2048;
-                case "SHA384withRSA" -> 3027;
+                case "SHA384withRSA" -> 3072;
                 case "SHA512withRSA" -> 4096;
                 default -> throw new RuntimeException();
             };
@@ -135,7 +159,7 @@ public class Signatures {
 
             int keyLength = switch (algorithm) {
                case "SHA256withRSASSA-PSS" -> 2048;
-               case "SHA3846withRSASSA-PSS" -> 3027;
+               case "SHA3846withRSASSA-PSS" -> 3072;
                case "SHA512withRSASSA-PSS" -> 4096;
                default -> throw new RuntimeException();
             };
