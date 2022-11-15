@@ -292,9 +292,7 @@ final class VirtualThread extends BaseVirtualThread {
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
-            Reference.reachabilityFence(bindings);
             try {
-
                 // pop any remaining scopes from the stack, this may block
                 StackableScope.popAll();
 
