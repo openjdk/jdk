@@ -222,7 +222,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
         // Child.java:5: error: reference not found
         //    /** @throws T {@inheritDoc} */
         //        ^
-        javadoc("-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x", "-Xdoclint:none");
+        javadoc("-Xdoclint:none", "-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 Child.java:5: warning: cannot find exception type by name
@@ -254,7 +254,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
                 """);
         // turn off DocLint so that it does not interfere with diagnostics
         // by raising an error for the condition we are testing
-        javadoc("-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x", "-Xdoclint:none");
+        javadoc("-Xdoclint:none", "-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 MyClass.java:5: warning: not an exception type: \
@@ -289,7 +289,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
                 """);
         // turn off DocLint so that it does not interfere with diagnostics
         // by raising an error for the condition we are testing
-        javadoc("-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x", "-Xdoclint:none");
+        javadoc("-Xdoclint:none", "-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 MyClass.java:5: warning: cannot find exception type by name
