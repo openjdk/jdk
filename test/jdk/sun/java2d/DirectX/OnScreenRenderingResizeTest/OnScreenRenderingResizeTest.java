@@ -25,13 +25,12 @@
  * @key headful
  * @bug 6664068 6666931
  * @summary Tests that resizing a window to which a tight loop is rendering
- * doesn't produce artifacts or crashes
+ *          doesn't produce artifacts or crashes
  * @run main/othervm OnScreenRenderingResizeTest
  */
 
 import java.awt.AWTException;
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -49,10 +48,10 @@ public class OnScreenRenderingResizeTest {
 
     private static volatile boolean nocheck = false;
 
-    private static final int FRAME_W = 256;
-    private static final int FRAME_H = 256;
-    private static final int IMAGE_W = 128;
-    private static final int IMAGE_H = 128;
+    private static int FRAME_W;
+    private static int FRAME_H;
+    private static int IMAGE_W;
+    private static int IMAGE_H;
     private static final int tolerance = 12;
     private static long RUN_TIME = 1000*20;
 
@@ -71,50 +70,45 @@ public class OnScreenRenderingResizeTest {
                 System.err.println("Test will not check rendering results");
                 nocheck = true;
             } else {
-                System.err.println("Usage: OnScreenRenderingResizeTest [-inf][-nocheck]");
+                System.err.println("Usage: OnScreenRenderingResizeTest" +
+                                   " [-inf][-nocheck]");
             }
         }
-
-        BufferedImage output =
-            new BufferedImage(IMAGE_W, IMAGE_H, BufferedImage.TYPE_INT_RGB);
-        output.setAccelerationPriority(0.0f);
-        Graphics g = output.getGraphics();
-        g.setColor(renderColor);
-        g.fillRect(0, 0, output.getWidth(), output.getHeight());
-
-        frame = new Frame("OnScreenRenderingResizeTest") {
-            public void paint(Graphics g) {}
-            public void update(Graphics g) {}
-        };
+        frame = new Frame();
         frame.setBackground(bgColor);
         frame.setUndecorated(true);
+        frame.setAlwaysOnTop(true);
         frame.pack();
+        frame.setVisible(true);
 
         GraphicsConfiguration gc = frame.getGraphicsConfiguration();
         Rectangle gcBounds = gc.getBounds();
-        frame.setBounds(gcBounds.width / 4, gcBounds.height / 4, FRAME_W, FRAME_H);
+        FRAME_W = (gcBounds.width / 4);
+        FRAME_H = (gcBounds.height / 4);
+        IMAGE_W = (gcBounds.width / 8);
+        IMAGE_H = (gcBounds.height / 8);
+        frame.setBounds(gcBounds.width / 4, gcBounds.height / 4,
+                        FRAME_W, FRAME_H);
 
-        try {
-            EventQueue.invokeAndWait(new Runnable() {
-                public void run() {
-                    frame.setVisible(true);
-                }
-            });
-            // wait for Vista's effects to complete
-            Thread.sleep(2000);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        BufferedImage output =
+            new BufferedImage(IMAGE_W, IMAGE_H,
+                              BufferedImage.TYPE_INT_RGB);
+        output.setAccelerationPriority(0.0f);
+        Graphics g = output.getGraphics();
+        g.setColor(renderColor);
+        g.fillRect(0, 0, IMAGE_W, IMAGE_H);
 
-        int maxW = gcBounds.width /2;
-        int maxH = gcBounds.height/2;
-        int minW = frame.getWidth();
-        int minH = frame.getHeight();
+        int maxW = gcBounds.width / 2;
+        int maxH = gcBounds.height / 2;
+        int minW = FRAME_W;
+        int minH = FRAME_H;
         int incW = 10, incH = 10, cnt = 0;
         Robot robot = null;
         if (!nocheck && gc.getColorModel().getPixelSize() > 8) {
             try {
                 robot = new Robot();
+                robot.setAutoDelay(100);
+                robot.mouseMove(0,0);
             } catch (AWTException ex) {
                 System.err.println("Robot creation failed, continuing.");
             }
@@ -122,7 +116,7 @@ public class OnScreenRenderingResizeTest {
             System.err.println("No screen rendering checks.");
         }
 
-        VolatileImage vi = gc.createCompatibleVolatileImage(512, 512);
+        VolatileImage vi = gc.createCompatibleVolatileImage(IMAGE_W, IMAGE_H);
         vi.validate(gc);
 
         long timeStarted = System.currentTimeMillis();
@@ -145,29 +139,30 @@ public class OnScreenRenderingResizeTest {
             // this operation below will set the transform
             vi.validate(gc);
             Graphics2D vig = (Graphics2D)vi.getGraphics();
-            vig.rotate(30.0f, vi.getWidth()/2, vi.getHeight()/2);
+            vig.rotate(30.0f, IMAGE_W/2, IMAGE_H/2);
             vig.drawImage(output, 0, 0,
-                          vi.getWidth(), vi.getHeight(), null);
+                          IMAGE_W, IMAGE_H, null);
 
             frame.getGraphics().drawImage(output, 0, 0, null);
             if (cnt == 90 && robot != null) {
                 robot.waitForIdle();
-                // area where we blitted to should be either white or green
+                // area where we blit and should be either white or green
                 Point p = frame.getLocationOnScreen();
                 p.translate(10, 10);
                 BufferedImage bi =
                     robot.createScreenCapture(
-                        new Rectangle(p.x, p.y, IMAGE_W/2, IMAGE_H/2));
-                int accepted1[] = { Color.white.getRGB(), Color.green.getRGB()};
+                        new Rectangle(p.x, p.y, (IMAGE_W / 2), (IMAGE_H / 2)));
+                int accepted1[] = {Color.white.getRGB(), Color.green.getRGB()};
                 checkBI(bi, accepted1);
 
-                // the are where we didn't render should stay white
+                // the area where we didn't render should stay white
+                robot.waitForIdle();
                 p = frame.getLocationOnScreen();
                 p.translate(10, IMAGE_H + 10);
                 bi = robot.createScreenCapture(
                     new Rectangle(p.x, p.y,
                                   frame.getWidth() - 20,
-                                  frame.getHeight() - 20 - IMAGE_H));
+                                  frame.getHeight() - 20 - (IMAGE_H)));
                 int accepted2[] = { Color.white.getRGB() };
                 checkBI(bi, accepted2);
             }
@@ -209,7 +204,8 @@ public class OnScreenRenderingResizeTest {
                     frame.dispose();
                     throw new
                         RuntimeException("Test failed at " + x + "-" + y +
-                                         " rgb=0x" + Integer.toHexString(actual));
+                                         " rgb=0x" + Integer.
+                                         toHexString(actual));
                 }
             }
         }
