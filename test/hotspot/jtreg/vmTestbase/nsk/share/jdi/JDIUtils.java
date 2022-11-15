@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,24 @@
  * questions.
  */
 
-package jdk.jfr.internal.tool;
+package nsk.share.jdi;
 
-import java.util.Deque;
-import java.util.List;
+public class JDIUtils {
 
-final class Version extends Command {
-    @Override
-    public String getName() {
-        return "version";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Display version of the jfr tool";
-    }
-
-    @Override
-    public void execute(Deque<String> options) {
-        System.out.println(System.getProperty("java.version"));
-    }
-
-    @Override
-    protected List<String> getAliases() {
-        return List.of("--version");
+    /*
+     * Wait until thread is no longer alive, but only wait
+     * for a short period of time since it shouldn't take long.
+     */
+    public static boolean waitForCompletion(Thread thread) {
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            if (!thread.isAlive()) {
+                return true;
+            }
+            try {
+                Thread.sleep(attempt * 1000);
+            } catch (InterruptedException ie) {
+            }
+        }
+        return false;
     }
 }

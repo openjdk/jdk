@@ -25,7 +25,7 @@
  * @test
  * @bug 8292302
  * @summary Test persistence of native last error value under jdb (Windows)
- * @requires (os.family == "windows")
+ * @requires (os.family == "windows") & (vm.compMode != "Xcomp") & (vm.compMode != "Xint")
  * @library /test/lib
  * @enablePreview
  * @run main/othervm JdbLastErrorTest
