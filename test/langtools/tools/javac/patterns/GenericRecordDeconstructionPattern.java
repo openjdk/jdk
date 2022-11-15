@@ -24,7 +24,6 @@
 /**
  * @test
  * @enablePreview
- * @run main/othervm GenericRecordDeconstructionPattern
  */
 
 import java.util.Objects;

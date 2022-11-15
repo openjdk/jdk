@@ -26,7 +26,6 @@
  * @summary Test behavior of Pretty
  * @modules jdk.compiler
  * @enablePreview
- * @run main/othervm PrettyTest
  */
 
 import java.io.IOException;

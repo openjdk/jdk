@@ -24,8 +24,6 @@
 /**
  * @test
  * @enablePreview
- * @compile TypedDeconstructionPatternExc.java
- * @run main/othervm TypedDeconstructionPatternExc
  */
 
 import java.util.Objects;

@@ -24,7 +24,6 @@
 /**
  * @test
  * @enablePreview
- * @run main/othervm NestedDeconstructionPattern
  */
 
 import java.util.Objects;

@@ -26,7 +26,6 @@
  * @bug 8262891 8268663 8289894
  * @summary Check guards implementation.
  * @enablePreview
- * @run main/othervm Guards
  */
 
 import java.util.Objects;

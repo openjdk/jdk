@@ -25,7 +25,6 @@
  * @bug 8290379
  * @summary Parse error with parenthesized pattern and guard using an array
  * @enablePreview
- * @run main/othervm T8290379
  */
 public class T8290379 {
     public static void main(String... args) {

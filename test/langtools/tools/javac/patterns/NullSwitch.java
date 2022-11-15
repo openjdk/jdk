@@ -3,8 +3,6 @@
  * @bug 8262891 8272776
  * @summary Check null handling for non-pattern switches.
  * @enablePreview
- * @compile NullSwitch.java
- * @run main/othervm NullSwitch
  */
 
 public class NullSwitch {

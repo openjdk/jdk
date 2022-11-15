@@ -26,8 +26,6 @@
  * @bug 8288120
  * @summary Verify an appropriate accessor method is looked up.
  * @enablePreview
- * @compile ProxyMethodLookup.java
- * @run main/othervm ProxyMethodLookup
  */
 public class ProxyMethodLookup {
 
