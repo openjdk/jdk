@@ -62,11 +62,6 @@ public class ClientMain {
 
         Log.setLogLevel(options.getLogLevel());
 
-        Log.debug("==========================================================");
-        Log.debug("Launching sjavac client with the following parameters:");
-        Log.debug("    " + options.getStateArgsString());
-        Log.debug("==========================================================");
-
         // Prepare sjavac object
         boolean useServer = options.getServerConf() != null;
         Sjavac sjavac = useServer ? new SjavacClient(options) : new SjavacImpl();

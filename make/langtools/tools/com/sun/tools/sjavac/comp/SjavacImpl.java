@@ -30,15 +30,9 @@ import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Result;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.options.Option;
-import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.options.SourceLocation;
 import com.sun.tools.sjavac.server.Sjavac;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -55,36 +49,6 @@ public class SjavacImpl implements Sjavac {
     @Override
     @SuppressWarnings("deprecated")
     public Result compile(String[] args) {
-        Options options;
-        try {
-            options = Options.parseArgs(args);
-        } catch (IllegalArgumentException e) {
-            Log.error(e.getMessage());
-            return Result.CMDERR;
-        }
-
-        if (!validateOptions(options))
-            return Result.CMDERR;
-
-        if (srcDstOverlap(options.getSources(), options.getDestDir())) {
-            return Result.CMDERR;
-        }
-
-        if (!createIfMissing(options.getDestDir()))
-            return Result.ERROR;
-
-        Path stateDir = options.getStateDir();
-        if (stateDir != null && !createIfMissing(options.getStateDir()))
-            return Result.ERROR;
-
-        Path gensrc = options.getGenSrcDir();
-        if (gensrc != null && !createIfMissing(gensrc))
-            return Result.ERROR;
-
-        Path hdrdir = options.getHeaderDir();
-        if (hdrdir != null && !createIfMissing(hdrdir))
-            return Result.ERROR;
-
         // Direct logging to our byte array stream.
         StringWriter strWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(strWriter);
@@ -109,62 +73,4 @@ public class SjavacImpl implements Sjavac {
     public void shutdown() {
         // Nothing to clean up
     }
-
-    private static boolean validateOptions(Options options) {
-
-        String err = null;
-
-        if (options.getDestDir() == null) {
-            err = "Please specify output directory.";
-        } else if (options.isJavaFilesAmongJavacArgs()) {
-            err = "Sjavac does not handle explicit compilation of single .java files.";
-        } else if (!options.getImplicitPolicy().equals("none")) {
-            err = "The only allowed setting for sjavac is -implicit:none";
-        } else if (options.getSources().isEmpty() && options.getStateDir() != null) {
-            err = "You have to specify -src when using --state-dir.";
-        }
-
-        if (err != null)
-            Log.error(err);
-
-        return err == null;
-
-    }
-
-    private static boolean srcDstOverlap(List<SourceLocation> locs, Path dest) {
-        for (SourceLocation loc : locs) {
-            if (isOverlapping(loc.getPath(), dest)) {
-                Log.error("Source location " + loc.getPath() + " overlaps with destination " + dest);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isOverlapping(Path p1, Path p2) {
-        p1 = p1.toAbsolutePath().normalize();
-        p2 = p2.toAbsolutePath().normalize();
-        return p1.startsWith(p2) || p2.startsWith(p1);
-    }
-
-    private static boolean createIfMissing(Path dir) {
-
-        if (Files.isDirectory(dir))
-            return true;
-
-        if (Files.exists(dir)) {
-            Log.error(dir + " is not a directory.");
-            return false;
-        }
-
-        try {
-            Files.createDirectories(dir);
-        } catch (IOException e) {
-            Log.error("Could not create directory: " + e.getMessage());
-            return false;
-        }
-
-        return true;
-    }
-
 }

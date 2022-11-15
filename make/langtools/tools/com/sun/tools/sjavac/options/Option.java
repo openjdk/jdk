@@ -48,169 +48,16 @@ import java.util.List;
  *  deletion without notice.</b>
  */
 public enum Option {
-
-    SRC("-src", "Location of source files to be compiled") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            List<Path> paths = getFileListArg(iter, helper);
-            if (paths != null)
-                helper.sourceRoots(paths);
-        }
-    },
-    SOURCE_PATH("--source-path", "Specify search path for sources.") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            List<Path> paths = getFileListArg(iter, helper);
-            if (paths != null)
-                helper.sourcepath(paths);
-        }
-    },
-    SOURCEPATH("-sourcepath", "An alias for -sourcepath") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            SOURCE_PATH.processMatching(iter, helper);
-        }
-    },
-    MODULE_PATH("--module-path", "Specify search path for modules.") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            List<Path> paths = getFileListArg(iter, helper);
-            if (paths != null)
-                helper.modulepath(paths);
-        }
-    },
-    P("-p", "An alias for --module-path") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            MODULE_PATH.processMatching(iter, helper);
-        }
-    },
-    CLASS_PATH("--class-path", "Specify search path for classes.") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            List<Path> paths = getFileListArg(iter, helper);
-            if (paths != null)
-                helper.classpath(paths);
-        }
-    },
-    CLASSPATH("-classpath", "An alias for -classpath.") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            CLASS_PATH.processMatching(iter, helper);
-        }
-    },
-    CP("-cp", "An alias for -classpath") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            CLASS_PATH.processMatching(iter, helper);
-        }
-    },
-    X("-x", "Exclude files matching the given pattern") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            String pattern = getFilePatternArg(iter, helper);
-            if (pattern != null)
-                helper.exclude(pattern);
-        }
-    },
-    I("-i", "Include only files matching the given pattern") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            String pattern = getFilePatternArg(iter, helper);
-            if (pattern != null)
-                helper.include(pattern);
-        }
-    },
-
-    J("-j", "Number of cores") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            if (!iter.hasNext() || !iter.peek().matches("\\d+")) {
-                helper.reportError(arg + " must be followed by an integer");
-                return;
-            }
-            helper.numCores(Integer.parseInt(iter.next()));
-        }
-    },
     SERVER("--server:", "Specify server configuration file of running server") {
         @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+        protected void processMatching(ArgumentIterator iter, Options.ArgDecoderOptionHelper helper) {
             helper.serverConf(iter.current().substring(arg.length()));
         }
     },
     STARTSERVER("--startserver:", "Start server and use the given configuration file") {
         @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+        protected void processMatching(ArgumentIterator iter, Options.ArgDecoderOptionHelper helper) {
             helper.startServerConf(iter.current().substring(arg.length()));
-        }
-    },
-    IMPLICIT("-implicit:", "Specify how to treat implicitly referenced source code") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            helper.implicit(iter.current().substring(arg.length()));
-        }
-    },
-    LOG("--log=", "Specify logging level") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            helper.logLevel(iter.current().substring(arg.length()));
-        }
-    },
-    VERBOSE("-verbose", "Set verbosity level to \"info\"") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            helper.logLevel("info");
-        }
-    },
-    PERMIT_ARTIFACT("--permit-artifact=", "Allow this artifact in destination directory") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            String a = iter.current().substring(arg.length());
-            helper.permitArtifact(Paths.get(a).toFile().getAbsolutePath());
-        }
-    },
-    PERMIT_UNIDENTIFIED_ARTIFACTS("--permit-unidentified-artifacts", "Allow unidentified artifacts in destination directory") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            helper.permitUnidentifiedArtifacts();
-        }
-    },
-    PERMIT_SOURCES_WITHOUT_PACKAGE("--permit-sources-without-package", "Permit sources in the default package") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            helper.permitDefaultPackage();
-        }
-    },
-    COMPARE_FOUND_SOURCES("--compare-found-sources", "Compare found sources with given sources") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            Path referenceSourceList = getFileArg(iter, helper, true, false);
-            if (referenceSourceList != null)
-                helper.compareFoundSources(referenceSourceList);
-        }
-    },
-    D("-d", "Output destination directory") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            Path dir = getFileArg(iter, helper, false, true);
-            if (dir != null)
-                helper.destDir(dir);
-        }
-    },
-    S("-s", "Directory for generated sources") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            Path dir = getFileArg(iter, helper, false, true);
-            if (dir != null)
-                helper.generatedSourcesDir(dir);
-        }
-    },
-    H("-h", "Directory for header files") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            Path dir = getFileArg(iter, helper, false, true);
-            if (dir != null)
-                helper.headerDir(dir);
         }
     };
 
@@ -222,46 +69,6 @@ public enum Option {
     private Option(String arg, String description) {
         this.arg = arg;
         this.description = description;
-    }
-
-    /** Retrieve and verify syntax of file list argument. */
-    List<Path> getFileListArg(ArgumentIterator iter, OptionHelper helper) {
-        if (!iter.hasNext()) {
-            helper.reportError(arg + " must be followed by a list of files " +
-                              "separated by " + File.pathSeparator);
-            return null;
-        }
-        List<Path> result = new ArrayList<>();
-        for (String pathStr : iter.next().split(File.pathSeparator))
-            result.add(Paths.get(pathStr));
-        return result;
-    }
-
-    /** Retrieve and verify syntax of file argument. */
-    Path getFileArg(ArgumentIterator iter, OptionHelper helper, boolean fileAcceptable, boolean dirAcceptable) {
-
-        if (!iter.hasNext()) {
-            String errmsg = arg + " must be followed by ";
-            if (fileAcceptable && dirAcceptable) errmsg += "a file or directory.";
-            else if (fileAcceptable) errmsg += "a file.";
-            else if (dirAcceptable)  errmsg += "a directory.";
-            else throw new IllegalArgumentException("File or directory must be acceptable.");
-            helper.reportError(errmsg);
-            return null;
-        }
-
-        return Paths.get(iter.next());
-    }
-
-    /** Retrieve the next file or package argument. */
-    String getFilePatternArg(ArgumentIterator iter, OptionHelper helper) {
-
-        if (!iter.hasNext()) {
-            helper.reportError(arg + " must be followed by a glob pattern.");
-            return null;
-        }
-
-        return iter.next();
     }
 
     // Future cleanup: Change the "=" syntax to ":" syntax to be consistent and
@@ -283,7 +90,7 @@ public enum Option {
      * @return true iff the argument was processed by this option.
      */
     public final boolean processCurrent(ArgumentIterator argIter,
-                                        OptionHelper helper) {
+                                        Options.ArgDecoderOptionHelper helper) {
         String fullArg = argIter.current(); // "-tr" or "-log=level"
         if (hasOption() ? fullArg.startsWith(arg) : fullArg.equals(arg)) {
             processMatching(argIter, helper);
@@ -295,5 +102,5 @@ public enum Option {
 
     /** Called by process if the current argument matches this option. */
     protected abstract void processMatching(ArgumentIterator argIter,
-                                            OptionHelper helper);
+                                            Options.ArgDecoderOptionHelper helper);
 }
