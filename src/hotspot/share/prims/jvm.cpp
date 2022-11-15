@@ -4069,6 +4069,5 @@ JVM_END
  * null value.
  */
 JVM_ENTRY(void, JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value))
-  //asm("nop");
   JVM_EnsureMaterializedForStackWalk(env, value);
 JVM_END
