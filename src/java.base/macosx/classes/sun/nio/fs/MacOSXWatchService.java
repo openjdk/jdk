@@ -132,6 +132,8 @@ class MacOSXWatchService extends AbstractWatchService {
                               final long eventFlagsPtr) {
         synchronized (watchKeysLock) {
             final MacOSXWatchKey watchKey = eventStreamToWatchKey.get(eventStreamRef);
+            System.out.println("WatchService: handleEvents for event stream " + Long.toHexString(eventStreamRef)
+                                + " watchKey=" + watchKey);
             if (watchKey != null) {
                 watchKey.handleEvents(paths, eventFlagsPtr);
             }
@@ -197,8 +199,11 @@ class MacOSXWatchService extends AbstractWatchService {
             runLoopRef = CFRunLoopGetCurrent();
             runLoopRefAvailabilitySignal.countDown();
 
+            System.out.println("WatchService: Run loop " + Long.toHexString(runLoopRef) + " - waiting...");
             while (isOpen()) {
+                System.out.println("WatchService: Run loop " + Long.toHexString(runLoopRef) + " - starting...");
                 CFRunLoopRun(MacOSXWatchService.this);
+                System.out.println("WatchService: Run loop "  + Long.toHexString(runLoopRef) +  " - waiting for event source...");
                 waitForEventSource();
             }
 
@@ -364,6 +369,7 @@ class MacOSXWatchService extends AbstractWatchService {
         }
 
         synchronized void handleEvents(final String[] paths, long eventFlagsPtr) {
+            System.out.println("WatchService: handleEvents " + paths);
             if (paths == null) {
                 reportOverflow(null);
                 return;
@@ -384,6 +390,7 @@ class MacOSXWatchService extends AbstractWatchService {
             // FSEventStreamEventFlags is UInt32.
             final long SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS = 4L;
 
+            System.out.println("WatchService: updateNeeded for " + paths.length + " path names");
             boolean rootChanged = false;
             for (final String absPath : paths) {
                 if (absPath == null) {

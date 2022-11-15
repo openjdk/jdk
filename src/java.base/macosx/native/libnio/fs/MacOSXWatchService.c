@@ -97,6 +97,10 @@ callback(ConstFSEventStreamRef streamRef,
     // so report them in chunks.
     const size_t MAX_EVENTS_TO_REPORT_AT_ONCE = (INT_MAX - 2);
 
+    fprintf(stdout, "WatchService: callback with %ld events from stream %lx\n", numEventsTotal,
+    ptr_to_jlong(streamRef));
+    fflush(stdout);
+
     jboolean success = JNI_TRUE;
     for(size_t eventIndex = 0; success && (eventIndex < numEventsTotal); ) {
         const size_t numEventsRemaining = (numEventsTotal - eventIndex);
@@ -166,6 +170,8 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamCreate(JNIEnv* env,
             (CFAbsoluteTime) latencyInSeconds,
             flags);
 
+    fprintf(stdout, "WatchService: created event stream %lx\n", ptr_to_jlong(stream));
+    fflush(stdout);
     return ptr_to_jlong(stream);
 }
 
@@ -185,6 +191,9 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamSchedule(__unused JNIEnv* env,
 
     FSEventStreamScheduleWithRunLoop(stream, runLoop, kCFRunLoopDefaultMode);
     FSEventStreamStart(stream);
+    fprintf(stdout, "WatchService: scheduled event stream %lx on run loop %lx\n",
+            ptr_to_jlong(stream), ptr_to_jlong(runLoopRef));
+    fflush(stdout);
 }
 
 /**
@@ -202,6 +211,9 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamStop(__unused JNIEnv* env,
                                         // No more callbacks from this stream.
     FSEventStreamInvalidate(streamRef); // De-schedule from any runloops.
     FSEventStreamRelease(streamRef);    // Decrement the stream's refcount.
+
+    fprintf(stdout, "WatchService: stopped event stream %lx\n", ptr_to_jlong(streamRef));
+    fflush(stdout);
 }
 
 /**
@@ -211,6 +223,8 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_fs_MacOSXWatchService_CFRunLoopGetCurrent(__unused JNIEnv* env,
                                                        __unused jclass clazz)
 {
+    fprintf(stdout, "WatchService: get run loop -> %lx\n",  ptr_to_jlong(CFRunLoopGetCurrent()));
+    fflush(stdout);
     return ptr_to_jlong(CFRunLoopGetCurrent());
 }
 
@@ -226,6 +240,8 @@ Java_sun_nio_fs_MacOSXWatchService_CFRunLoopRun(JNIEnv* env,
     // Thread-local pointer to the WatchService instance will be used by the callback
     // on this thread.
     watchService = (*env)->NewGlobalRef(env, jlong_to_ptr(watchServiceObject));
+    fprintf(stdout, "WatchService: running run loop %lx\n", ptr_to_jlong(CFRunLoopGetCurrent()));
+    fflush(stdout);
     CFRunLoopRun();
     (*env)->DeleteGlobalRef(env, watchService);
     watchService = NULL;
@@ -237,4 +253,6 @@ Java_sun_nio_fs_MacOSXWatchService_CFRunLoopStop(__unused JNIEnv* env,
                                                  jlong runLoopRef)
 {
     CFRunLoopStop(jlong_to_ptr(runLoopRef));
+    fprintf(stdout, "WatchService: stopped run loop %lx\n", runLoopRef);
+    fflush(stdout);
 }

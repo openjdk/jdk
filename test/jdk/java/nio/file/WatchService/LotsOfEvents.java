@@ -62,7 +62,11 @@ public class LotsOfEvents {
         throws IOException, InterruptedException
     {
         try (WatchService watcher = dir.getFileSystem().newWatchService()) {
+            System.out.println("Test: dir.register - start");
+
             dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE);
+
+            System.out.println("Test: dir.register - done");
 
             // create a lot of files
             int n = 1024;
@@ -70,13 +74,16 @@ public class LotsOfEvents {
             for (int i=0; i<n; i++) {
                 files[i] = Files.createFile(dir.resolve("foo" + i));
             }
+            System.out.println("Test: created files");
 
             // give time for events to accumulate (improve chance of overflow)
             Thread.sleep(1000);
 
+            System.out.println("Test: About to poll");
             // check that we see the create events (or overflow)
             drainAndCheckOverflowEvents(dir, watcher, ENTRY_CREATE, n);
-
+            System.out.println("Test: poll done");
+            
             // delete the files
             for (int i=0; i<n; i++) {
                 Files.delete(files[i]);
