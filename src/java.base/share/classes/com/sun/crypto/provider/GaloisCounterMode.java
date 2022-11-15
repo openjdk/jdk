@@ -573,13 +573,14 @@ abstract class GaloisCounterMode extends CipherSpi {
     }
 
     /**
-     * Wrapper function around Combined AES-GCM intrinsic method that splits
+     * Wrapper method around Combined AES-GCM intrinsic that splits
      * large chunks of data into 1MB sized chunks. This is to place
      * an upper limit on the number of blocks encrypted in the intrinsic.
      *
-     * The combined intrinsic is not used when decrypting in-place byte[]
-     * because 'ct' will be the same as 'in' and overwritten by
-     * GCTR before GHASH calculates the encrypted tag.
+     * For decrypting in-place byte[], calling methods must ct must set to null
+     * to avoid combined intrinsic, call GHASH directly before GCTR to avoid
+     * a bad tag exception. This check is not performed here because it would
+     * impose a check every operation which is less efficient.
      *
      * The value of ctOfs is irrelevant if ct is null.
      */
@@ -690,9 +691,9 @@ abstract class GaloisCounterMode extends CipherSpi {
         byte[] originalOut = null;
         int originalOutOfs = 0;
 
-        // True if ops is an in-place array decryption with the offset between
-        // input & output the same or the input greater.  This is to
-        // avoid the AVX512 intrinsic.
+        // True if op is in-place array decryption with the input & output
+        // offset the same or the input greater.  This is to avoid the combined
+        // intrinsic.
         boolean inPlaceArray = false;
 
         GCMEngine(SymmetricCipher blockCipher) {
@@ -758,13 +759,31 @@ abstract class GaloisCounterMode extends CipherSpi {
             int len;
 
             if (src.hasArray() && dst.hasArray()) {
-                ByteBuffer ct = (encryption ? dst : src);
-                len = GaloisCounterMode.implGCMCrypt(src.array(),
-                    src.arrayOffset() + src.position(), srcLen,
-                    inPlaceArray ? null : ct.array(),
-                    ct.arrayOffset() + ct.position(), //offset ignored if null
-                    dst.array(), dst.arrayOffset() + dst.position(),
-                    gctr, ghash);
+                byte[] array;
+                if (encryption) {
+                    array = dst.array();
+                    int ofs = dst.arrayOffset() + dst.position();
+                    len = GaloisCounterMode.implGCMCrypt(src.array(),
+                        src.arrayOffset() + src.position(), srcLen,
+                        array, ofs, array, ofs, gctr, ghash);
+                } else {
+                    array = src.array();
+                    // Don't use 'inPlaceArray' here as the src maybe ibuffer
+                    // eventhough doFinal() may have been given in-place heap
+                    // bytebuffers
+                    if (array == dst.array()) {
+                        len = GaloisCounterMode.implGCMCrypt(array,
+                            src.arrayOffset() + src.position(), srcLen,
+                            null, 0, array, dst.arrayOffset() + dst.position(),
+                            gctr, ghash);
+                    } else {
+                        int ofs = src.arrayOffset() + src.position();
+                        len = GaloisCounterMode.implGCMCrypt(array, ofs, srcLen,
+                            array, ofs, dst.array(),
+                            dst.arrayOffset() + dst.position(), gctr, ghash);
+                    }
+                }
+
                 src.position(src.position() + len);
                 dst.position(dst.position() + len);
                 return len;
@@ -993,7 +1012,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                     // the same as the output offset, the same buffer can be
                     // used.
                     // Set 'inPlaceArray' true for decryption operations to
-                    // avoid the AVX512 combined intrinsic
+                    // avoid the combined intrinsic.  Creating a temp buffer to
+                    // use with the combined intrinsic degrades performance.
                     if (src.position() + src.arrayOffset() >=
                         dst.position() + dst.arrayOffset()) {
                         inPlaceArray = (!encryption);
