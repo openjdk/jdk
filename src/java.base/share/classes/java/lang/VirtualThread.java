@@ -288,7 +288,7 @@ final class VirtualThread extends BaseVirtualThread {
 
         Object bindings = scopedValueBindings();
         try {
-            invokeWith(bindings, task);
+            runWith(bindings, task);
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
@@ -315,7 +315,7 @@ final class VirtualThread extends BaseVirtualThread {
     }
     @Hidden
     @ForceInline
-    private void invokeWith(Object bindings, Runnable op) {
+    private void runWith(Object bindings, Runnable op) {
         ensureMaterializedForStackWalk(bindings);
         op.run();
         Reference.reachabilityFence(bindings);

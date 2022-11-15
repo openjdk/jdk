@@ -376,7 +376,7 @@ public final class ScopedValue<T> {
             ScopedValue.Cache.invalidate(bitmask);
             var prevSnapshot = scopedValueBindings();
             var newSnapshot = new Snapshot(this, prevSnapshot);
-            return invokeWith(newSnapshot, op);
+            return runWith(newSnapshot, op);
         }
 
         /**
@@ -386,7 +386,7 @@ public final class ScopedValue<T> {
          * name or signature require corresponding changes in
          * JVM_FindScopedValueBindings().
          */
-        private <R> R invokeWith(Snapshot newSnapshot, Callable<R> op) throws Exception {
+        private <R> R runWith(Snapshot newSnapshot, Callable<R> op) throws Exception {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
                 JLA.ensureMaterializedForStackWalk(newSnapshot);
@@ -421,7 +421,7 @@ public final class ScopedValue<T> {
             Cache.invalidate(bitmask);
             var prevSnapshot = scopedValueBindings();
             var newSnapshot = new Snapshot(this, prevSnapshot);
-            invokeWith(newSnapshot, op);
+            runWith(newSnapshot, op);
         }
 
         /**
@@ -433,7 +433,7 @@ public final class ScopedValue<T> {
          */
         @Hidden
         @ForceInline
-        private void invokeWith(Snapshot newSnapshot, Runnable op) {
+        private void runWith(Snapshot newSnapshot, Runnable op) {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
                 JLA.ensureMaterializedForStackWalk(newSnapshot);

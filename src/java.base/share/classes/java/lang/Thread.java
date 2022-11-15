@@ -1607,13 +1607,13 @@ public class Thread implements Runnable {
         Runnable task = holder.task;
         if (task != null) {
             Object bindings = scopedValueBindings();
-            invokeWith(bindings, task);
+            runWith(bindings, task);
         }
     }
 
     @Hidden
     @ForceInline
-    private void invokeWith(Object bindings, Runnable op) {
+    private void runWith(Object bindings, Runnable op) {
         ensureMaterializedForStackWalk(bindings);
         op.run();
         Reference.reachabilityFence(bindings);

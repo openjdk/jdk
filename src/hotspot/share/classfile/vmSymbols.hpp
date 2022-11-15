@@ -399,7 +399,7 @@
   template(daemon_name,                               "daemon")                                   \
   template(run_method_name,                           "run")                                      \
   template(call_method_name,                          "call")                                     \
-  template(invokeWith_method_name,                    "invokeWith")                               \
+  template(runWith_method_name,                       "runWith")                                  \
   template(interrupt_method_name,                     "interrupt")                                \
   template(exit_method_name,                          "exit")                                     \
   template(remove_method_name,                        "remove")                                   \
