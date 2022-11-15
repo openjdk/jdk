@@ -29,13 +29,11 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/ResolvedInvokeDynamicInfo.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/constantTag.hpp"
 #include "utilities/growableArray.hpp"
-
-// New stuff
-#include "oops/ResolvedInvokeDynamicInfo.hpp"
 
 // The ConstantPoolCache is not a cache! It is the resolution table that the
 // interpreter uses to avoid going into the runtime and a way to access resolved
@@ -140,7 +138,6 @@ class ConstantPoolCacheEntry {
 
  private:
   volatile int     _indices;  // constant pool index & rewrite bytecodes
-  int              _invokedynamic_index;
   Metadata* volatile   _f1;       // entry specific metadata field
   volatile intx        _f2;       // entry specific int/metadata field
   volatile intx     _flags;    // flags
@@ -216,9 +213,6 @@ class ConstantPoolCacheEntry {
     assert(_f2 == 0, "set once");  // note: ref_index might be zero also
     _f2 = ref_index;
   }
-  void initialize_resolved_invokedynamic_index(int ri) {
-    _invokedynamic_index = ri;
-  }
 
   void set_field(                                // sets entry to resolved field state
     Bytecodes::Code get_code,                    // the bytecode used for reading the field
@@ -240,7 +234,6 @@ class ConstantPoolCacheEntry {
   );
 
  public:
-  int invokedynamic_index() { return _invokedynamic_index; }
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method to call
@@ -300,8 +293,8 @@ class ConstantPoolCacheEntry {
 
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
-  Method*      method_if_resolved(const constantPoolHandle& cpool) const;
-  oop        appendix_if_resolved(const constantPoolHandle& cpool) const;
+  Method* method_if_resolved(const constantPoolHandle& cpool) const;
+  oop     appendix_if_resolved(const constantPoolHandle& cpool) const;
 
   void set_parameter_size(int value);
 
@@ -478,19 +471,14 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 
-  // New code
-  ResolvedInvokeDynamicInfo* resolved_invokedynamic_info_element(int index) {
-    return _resolved_invokedynamic_info_array->adr_at(index);
-  }
+  Array<ResolvedInvokeDynamicInfo>* resolved_invokedynamic_info_array()     { return _resolved_invokedynamic_info_array;                }
+  ResolvedInvokeDynamicInfo* resolved_invokedynamic_info_element(int index) { return _resolved_invokedynamic_info_array->adr_at(index); }
+  int resolved_invokedynamicinfo_length() const                             { return _resolved_invokedynamic_info_array->length();      }
   void print_resolved_invokedynamicinfo_array(outputStream* st) const {
     for (int i = 0; i < _resolved_invokedynamic_info_array->length(); i++) {
         _resolved_invokedynamic_info_array->at(i).print_on(st);
     }
   }
-  int resolved_invokedynamicinfo_length() const {
-    return _resolved_invokedynamic_info_array->length();
-  }
-  Array<ResolvedInvokeDynamicInfo>* resolved_invokedynamic_info_array() { return _resolved_invokedynamic_info_array; }
 
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
