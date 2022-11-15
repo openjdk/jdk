@@ -22,7 +22,7 @@
  */
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -43,7 +43,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
                     ByteBuffer.allocateDirect(s)
                         .order(ByteOrder.nativeOrder())),
             withToString("MS:RW:NE", (int s) ->
-                    MemorySegment.allocateNative(s, MemorySession.implicit())
+                    MemorySegment.allocateNative(s, SegmentScope.auto())
                         .asByteBuffer()
                         .order(ByteOrder.nativeOrder())
             )
@@ -51,7 +51,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
 
     static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
             withToString("HMS", (int s) ->
-                    MemorySegment.allocateNative(s, MemorySession.implicit())
+                    MemorySegment.allocateNative(s, SegmentScope.auto())
             ),
             withToString("DMS", (int s) -> {
                 byte[] b = new byte[s];

@@ -24,7 +24,6 @@ package org.openjdk.tests.java.util.stream;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.SequenceLayout;
 import org.testng.annotations.Test;
 
