@@ -40,7 +40,7 @@ import java.util.List;
  * @bug 4347135
  * @summary MIDI MetaMessage callback inconsistent
  * @key intermittent sound
- * @run main/othervm/timeout=300 MetaCallback
+ * @run main/othervm/timeout=120 MetaCallback
  */
 public class MetaCallback implements MetaEventListener {
 
