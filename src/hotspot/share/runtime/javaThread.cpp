@@ -606,6 +606,7 @@ JavaThread::~JavaThread() {
   ServiceThread::add_oop_handle_release(_threadObj);
   ServiceThread::add_oop_handle_release(_vthread);
   ServiceThread::add_oop_handle_release(_jvmti_vthread);
+  ServiceThread::add_oop_handle_release(_scopedValueCache);
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
