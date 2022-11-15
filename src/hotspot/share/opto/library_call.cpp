@@ -6973,6 +6973,9 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
   stubName = "poly1305_processBlocks";
 
   if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
   Node* input = argument(1);
   Node* input_offset = argument(2);
   Node* len = argument(3);

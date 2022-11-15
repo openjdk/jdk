@@ -396,10 +396,11 @@ class StubGenerator: public StubCodeGenerator {
                                 const Register R0, const Register R1, const Register C1, bool only128);
   void poly1305_multiply8_avx512(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
                                  const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P);
-  void poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, bool only128);
-  void poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs);
+  void poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, bool only128, const Register t1, const Register t2);
+  void poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs, const Register t1, const Register t2);
   void poly1305_limbs_avx512(const XMMRegister D0, const XMMRegister D1,
-                             const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG);
+                             const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG,
+                             const XMMRegister TMP1, const XMMRegister TMP2, const Register rscratch);
 
   // BASE64 stubs
 

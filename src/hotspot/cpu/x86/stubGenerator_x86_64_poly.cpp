@@ -100,7 +100,6 @@ static address poly1305_mask42() {
 }
 
 ATTRIBUTE_ALIGNED(64) uint64_t POLY1305_MASK44[] = {
-  // OFFSET 64: mask_44
   0x00000fffffffffff, 0x00000fffffffffff,
   0x00000fffffffffff, 0x00000fffffffffff,
   0x00000fffffffffff, 0x00000fffffffffff,
@@ -349,12 +348,9 @@ void StubGenerator::poly1305_multiply_scalar(
 //
 void StubGenerator::poly1305_limbs_avx512(
     const XMMRegister D0, const XMMRegister D1,
-    const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG)
+    const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG,
+    const XMMRegister TMP1, const XMMRegister TMP2, const Register rscratch)
 {
-  const XMMRegister TMP1 = xmm0;
-  const XMMRegister TMP2 = xmm1;
-  const Register rscratch = r13;
-
   // Interleave blocks of data
   __ evpunpckhqdq(TMP1, D0, D1, Assembler::AVX_512bit);
   __ evpunpcklqdq(L0, D0, D1, Assembler::AVX_512bit);
@@ -379,11 +375,11 @@ void StubGenerator::poly1305_limbs_avx512(
  *
  * a2 is optional. When only128 is set, limbs are expected to fit into 128-bits (i.e. a1:a0 such as clamped R)
  */
-void StubGenerator::poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, bool only128)
+void StubGenerator::poly1305_limbs(
+    const Register limbs, const Register a0, const Register a1, 
+    const Register a2, bool only128,
+    const Register t1, const Register t2)
 {
-  const Register t1 = r13;
-  const Register t2 = r14;
-
   __ movq(a0, Address(limbs, 0));
   __ movq(t1, Address(limbs, 8));
   __ shlq(t1, 26);
@@ -425,11 +421,11 @@ void StubGenerator::poly1305_limbs(const Register limbs, const Register a0, cons
 /**
  * Break 3×64-bit a2:a1:a0 limbs into 5×26-bit limbs and store out into 5 quadwords at address `limbs`
  */
-void StubGenerator::poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs)
+void StubGenerator::poly1305_limbs_out(
+    const Register a0, const Register a1, const Register a2, 
+    const Register limbs,
+    const Register t1, const Register t2)
 {
-  const Register t1 = r13;
-  const Register t2 = r14;
-
   // Extra round of reduction
   // Take bits above 130 in a2, multiply by 5 and add to a2:a1:a0
   __ movq(t1, a2);
@@ -553,9 +549,10 @@ void StubGenerator::poly1305_limbs_out(const Register a0, const Register a1, con
 //  T = A >> 1  // 2 ->1 blocks
 //  A = A + T
 //  a = A
-void StubGenerator::poly1305_process_blocks_avx512(const Register input, const Register length,
-  const Register a0, const Register a1, const Register a2,
-  const Register r0, const Register r1, const Register c1)
+void StubGenerator::poly1305_process_blocks_avx512(
+    const Register input, const Register length,
+    const Register a0, const Register a1, const Register a2,
+    const Register r0, const Register r1, const Register c1)
 {
   Label L_process256Loop, L_process256LoopDone;
   // Register Map:
@@ -566,8 +563,10 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   const Register t1 = r13;
   const Register rscratch = r13;
 
-  // poly1305_limbs_avx512 clobbers: xmm0, xmm1
   // poly1305_multiply8_avx512 clobbers: xmm0-xmm6
+  const XMMRegister TMP1 = xmm0;
+  const XMMRegister TMP2 = xmm1;
+
   const XMMRegister T0 = xmm2;
   const XMMRegister T1 = xmm3;
   const XMMRegister T2 = xmm4;
@@ -620,7 +619,7 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   // A2 to have bits 127-88 of all 8 blocks in 8 qwords
   __ evmovdquq(T0, Address(input, 0), Assembler::AVX_512bit);
   __ evmovdquq(T1, Address(input, 64), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(T0, T1, A0, A1, A2, true);
+  poly1305_limbs_avx512(T0, T1, A0, A1, A2, true, TMP1, TMP2, rscratch);
 
   // Add accumulator to the fist message block
   __ vpaddq(A0, A0, C0, Assembler::AVX_512bit);
@@ -633,7 +632,7 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   // A5 to have bits 127-88 of all 8 blocks in 8 qwords
   __ evmovdquq(T0, Address(input, 64*2), Assembler::AVX_512bit);
   __ evmovdquq(T1, Address(input, 64*3), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(T0, T1, A3, A4, A5, true);
+  poly1305_limbs_avx512(T0, T1, A3, A4, A5, true, TMP1, TMP2, rscratch);
 
   __ subl(length, 16*16);
   __ lea(input, Address(input,16*16));
@@ -681,7 +680,7 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   // B1 to have bits 87-44 of all 4 blocks in alternating 8 qwords
   // B2 to have bits 127-88 of all 4 blocks in alternating 8 qwords
   __ vpxorq(T2, T2, T2, Assembler::AVX_512bit);
-  poly1305_limbs_avx512(T0, T2, B0, B1, B2, false);
+  poly1305_limbs_avx512(T0, T2, B0, B1, B2, false, TMP1, TMP2, rscratch);
 
   // T1 contains the 2 highest bits of the powers of R
   __ vpsllq(T1, T1, 40, Assembler::AVX_512bit);
@@ -773,12 +772,12 @@ void StubGenerator::poly1305_process_blocks_avx512(const Register input, const R
   // Load and interleave next block of data (128 bytes)
   __ evmovdquq(T0, Address(input, 0), Assembler::AVX_512bit);
   __ evmovdquq(T1, Address(input, 64), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(T0, T1, B0, B1, B2, true);
+  poly1305_limbs_avx512(T0, T1, B0, B1, B2, true, TMP1, TMP2, rscratch);
 
   // Load and interleave next block of data (128 bytes)
   __ evmovdquq(T0, Address(input, 64*2), Assembler::AVX_512bit);
   __ evmovdquq(T1, Address(input, 64*3), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(T0, T1, B3, B4, B5, true);
+  poly1305_limbs_avx512(T0, T1, B3, B4, B5, true, TMP1, TMP2, rscratch);
 
   poly1305_multiply8_avx512(A0, A1, A2,            // MSG/ACC 16 blocks
                             R0, R1, R2, R1P, R2P); // R^16..R^16, 4*5*R^16
@@ -948,12 +947,14 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ push(r14);
   __ push(r15);
 
-  // void processBlocks(byte[] input, int len, int[5] a, int[5] r)
-  const Register input        = rdi; //input+offset
+  const Register input        = rdi;
   const Register length       = rbx;
   const Register accumulator  = rcx;
   const Register R            = r8;
 
+  // void processBlocks(byte[] input, int len, int[5] a, int[5] r)
+  // input, a, r pointers point at first array element
+  // java headers bypassed in LibraryCallKit::inline_poly1305_processBlocks
   #ifdef _WIN64
   // c_rarg0 - rcx
   // c_rarg1 - rdx
@@ -980,11 +981,13 @@ address StubGenerator::generate_poly1305_processBlocks() {
   const Register r0 = r11;  // R constant bits 63..0
   const Register r1 = r12;  // R constant bits 127..64
   const Register c1 = r8;   // 5*R (upper limb only)
+  const Register t1 = r13;
+  const Register t2 = r14;
 
   Label L_process16Loop, L_process16LoopDone;
 
   // Load R into r1:r0
-  poly1305_limbs(R, r0, r1, r1, true);
+  poly1305_limbs(R, r0, r1, noreg, true, t1, t2);
 
   // Compute 5*R (Upper limb only)
   __ movq(c1, r1);
@@ -992,7 +995,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ addq(c1, r1); // c1 = r1 + (r1 >> 2)
 
   // Load accumulator into a2:a1:a0
-  poly1305_limbs(accumulator, a0, a1, a2, false);
+  poly1305_limbs(accumulator, a0, a1, a2, false, t1, t2);
 
   // VECTOR LOOP: Minimum of 256 bytes to run vectorized code
   __ cmpl(length, 16*16);
@@ -1018,7 +1021,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ bind(L_process16LoopDone);
 
   // Write output
-  poly1305_limbs_out(a0, a1, a2, accumulator);
+  poly1305_limbs_out(a0, a1, a2, accumulator, t1, t2);
 
   __ pop(r15);
   __ pop(r14);
