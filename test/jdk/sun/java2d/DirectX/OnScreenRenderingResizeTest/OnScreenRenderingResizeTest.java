@@ -38,6 +38,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.EventQueue;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.io.File;
@@ -79,7 +80,6 @@ public class OnScreenRenderingResizeTest {
         frame.setUndecorated(true);
         frame.setAlwaysOnTop(true);
         frame.pack();
-        frame.setVisible(true);
 
         GraphicsConfiguration gc = frame.getGraphicsConfiguration();
         Rectangle gcBounds = gc.getBounds();
@@ -97,6 +97,18 @@ public class OnScreenRenderingResizeTest {
         Graphics g = output.getGraphics();
         g.setColor(renderColor);
         g.fillRect(0, 0, IMAGE_W, IMAGE_H);
+
+        try {
+            EventQueue.invokeAndWait(new Runnable() {
+                public void run() {
+                    frame.setVisible(true);
+                }
+            });
+            // wait for Vista's effects to complete
+            Thread.sleep(2000);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         int maxW = gcBounds.width / 2;
         int maxH = gcBounds.height / 2;
