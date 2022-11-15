@@ -376,8 +376,7 @@ void StubGenerator::poly1305_limbs_avx512(
  * a2 is optional. When only128 is set, limbs are expected to fit into 128-bits (i.e. a1:a0 such as clamped R)
  */
 void StubGenerator::poly1305_limbs(
-    const Register limbs, const Register a0, const Register a1,
-    const Register a2, bool only128,
+    const Register limbs, const Register a0, const Register a1, const Register a2,
     const Register t1, const Register t2)
 {
   __ movq(a0, Address(limbs, 0));
@@ -393,13 +392,13 @@ void StubGenerator::poly1305_limbs(
   __ addq(a0, t1);
   __ adcq(a1, t2);
   __ movq(t1, Address(limbs, 32));
-  if (!only128) {
+  if (a2 != noreg) {
     __ movq(a2, t1);
     __ shrq(a2, 24);
   }
   __ shlq(t1, 40);
   __ addq(a1, t1);
-  if (only128) {
+  if (a2 == noreg) {
     return;
   }
   __ adcq(a2, 0);
@@ -987,7 +986,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   Label L_process16Loop, L_process16LoopDone;
 
   // Load R into r1:r0
-  poly1305_limbs(R, r0, r1, noreg, true, t1, t2);
+  poly1305_limbs(R, r0, r1, noreg, t1, t2);
 
   // Compute 5*R (Upper limb only)
   __ movq(c1, r1);
@@ -995,7 +994,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ addq(c1, r1); // c1 = r1 + (r1 >> 2)
 
   // Load accumulator into a2:a1:a0
-  poly1305_limbs(accumulator, a0, a1, a2, false, t1, t2);
+  poly1305_limbs(accumulator, a0, a1, a2, t1, t2);
 
   // VECTOR LOOP: Minimum of 256 bytes to run vectorized code
   __ cmpl(length, 16*16);
