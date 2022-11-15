@@ -26,7 +26,6 @@
 package com.sun.tools.sjavac.server.log;
 
 import com.sun.tools.sjavac.Log;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;

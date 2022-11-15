@@ -25,12 +25,11 @@
 
 package com.sun.tools.sjavac;
 
-import static com.sun.tools.sjavac.options.Option.STARTSERVER;
-
-import java.util.Arrays;
-
 import com.sun.tools.sjavac.client.ClientMain;
 import com.sun.tools.sjavac.server.ServerMain;
+import java.util.Arrays;
+
+import static com.sun.tools.sjavac.options.Option.STARTSERVER;
 
 /**
  * The application entry point of the smart javac wrapper tool.

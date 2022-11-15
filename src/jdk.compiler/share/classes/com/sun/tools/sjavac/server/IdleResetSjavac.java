@@ -27,7 +27,6 @@ package com.sun.tools.sjavac.server;
 
 import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
-
 import java.util.Timer;
 import java.util.TimerTask;
 

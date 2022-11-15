@@ -25,6 +25,13 @@
 
 package com.sun.tools.sjavac.client;
 
+import com.sun.tools.javac.main.Main.Result;
+import com.sun.tools.sjavac.Log;
+import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.server.PortFile;
+import com.sun.tools.sjavac.server.Sjavac;
+import com.sun.tools.sjavac.server.SjavacServer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -39,15 +46,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import com.sun.tools.javac.main.Main;
-import com.sun.tools.javac.main.Main.Result;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.PortFile;
-import com.sun.tools.sjavac.server.Sjavac;
-import com.sun.tools.sjavac.server.SjavacServer;
 
 /**
  * Sjavac implementation that delegates requests to a SjavacServer.
@@ -144,7 +142,7 @@ public class SjavacClient implements Sjavac {
                 }
 
                 if (type.equals(SjavacServer.LINE_TYPE_RC)) {
-                    result = Main.Result.valueOf(content);
+                    result = Result.valueOf(content);
                 }
             }
         } catch (PortFileInaccessibleException e) {

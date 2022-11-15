@@ -26,7 +26,6 @@
 package com.sun.tools.sjavac.server.log;
 
 import com.sun.tools.sjavac.Log;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;

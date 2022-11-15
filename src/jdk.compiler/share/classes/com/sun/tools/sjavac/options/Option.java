@@ -30,12 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import com.sun.tools.sjavac.CopyFile;
-import com.sun.tools.sjavac.Transformer;
-
 
 /**
  * Sjavac options can be classified as:
@@ -127,78 +121,7 @@ public enum Option {
                 helper.include(pattern);
         }
     },
-    TR("-tr", "Translate resources") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
 
-            if (!iter.hasNext()) {
-                helper.reportError(arg + " must be followed by a translation rule");
-                return;
-            }
-
-            String trArg = iter.next();
-
-            // Validate argument syntax. Examples:
-            //   .prop=com.sun.tools.javac.smart.CompileProperties
-            //   .idl=com.sun.corba.CompileIdl
-            //   .g3=antlr.CompileGrammar,debug=true
-            String ident = "[a-zA-Z_][a-zA-Z0-9_]*";
-            Pattern p = Pattern.compile("(?<suffix>\\." + ident + ")=" +
-                                        "(?<class>" + ident + "(\\." + ident + ")*)" +
-                                        "(?<extra>,.*)?");
-            // Check syntax
-            Matcher m = p.matcher(trArg);
-            if (!m.matches()) {
-                helper.reportError("The string \"" + trArg + "\" is not a " +
-                                   "valid translate pattern");
-                return;
-            }
-
-            // Extract relevant parts
-            String suffix = m.group("suffix");
-            String classname = m.group("class");
-            String extra = m.group("extra");
-
-            // Valid suffix?
-            if (suffix.matches("\\.(class|java)")) {
-                helper.reportError("You cannot have a translator for " +
-                                   suffix + " files!");
-                return;
-            }
-
-            // Construct transformer
-            try {
-                Class<?> trCls = Class.forName(classname);
-                Transformer transformer =
-                    (Transformer) trCls.getConstructor().newInstance();
-                transformer.setExtra(extra);
-                helper.addTransformer(suffix, transformer);
-            } catch (Exception e) {
-                helper.reportError("Cannot use " + classname +
-                                   " as a translator: " + e.getMessage());
-            }
-        }
-    },
-    COPY("-copy", "Copy resources") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            if (!iter.hasNext()) {
-                helper.reportError(arg + " must be followed by a resource type");
-                return;
-            }
-
-            String copyArg = iter.next();
-
-            // Validate argument syntax. Examples: .gif, .html
-            if (!copyArg.matches("\\.[a-zA-Z_][a-zA-Z0-9_]*")) {
-                helper.reportError("The string \"" + copyArg + "\" is not a " +
-                                   "valid resource type.");
-                return;
-            }
-
-            helper.addTransformer(copyArg, new CopyFile());
-        }
-    },
     J("-j", "Number of cores") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
@@ -288,13 +211,6 @@ public enum Option {
             Path dir = getFileArg(iter, helper, false, true);
             if (dir != null)
                 helper.headerDir(dir);
-        }
-    },
-    STATE_DIR("--state-dir=", "Directory used to store sjavac state and log files.") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            String p = iter.current().substring(arg.length());
-            helper.stateDir(Paths.get(p));
         }
     };
 

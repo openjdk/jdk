@@ -28,7 +28,6 @@ package com.sun.tools.sjavac.server;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;

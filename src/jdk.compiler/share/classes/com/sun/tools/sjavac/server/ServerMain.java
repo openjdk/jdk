@@ -25,19 +25,12 @@
 
 package com.sun.tools.sjavac.server;
 
-import java.io.FileWriter;
-import java.io.FilterOutputStream;
-import java.io.FilterWriter;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.lang.Thread.UncaughtExceptionHandler;
-
-import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Log.Level;
 import com.sun.tools.sjavac.server.log.LazyInitFileLog;
 import com.sun.tools.sjavac.server.log.LoggingOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
 import static com.sun.tools.sjavac.Log.Level.ERROR;
 import static com.sun.tools.sjavac.Log.Level.INFO;

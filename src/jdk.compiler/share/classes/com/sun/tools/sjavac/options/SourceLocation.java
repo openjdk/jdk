@@ -25,16 +25,8 @@
 
 package com.sun.tools.sjavac.options;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Module;
-import com.sun.tools.sjavac.ProblemException;
-import com.sun.tools.sjavac.Source;
 
 /**
  * Represents a directory to be used for input to sjavac. (For instance a
@@ -61,41 +53,6 @@ public class SourceLocation {
         this.excludes = excludes;
     }
 
-
-    /**
-     * Finds all files with the given suffix that pass the include / exclude
-     * filters in this source location.
-     *
-     * @param suffixes The set of suffixes to search for
-     * @param foundFiles The map in which to store the found files
-     * @param foundModules The map in which to store the found modules
-     * @param currentModule The current module
-     * @param permitSourcesInDefaultPackage true if sources in default package
-     *                                      are to be permitted
-     * @param inLinksrc true if in link source
-     */
-    public void findSourceFiles(Set<String> suffixes,
-                                Map<String, Source> foundFiles,
-                                Map<String, Module> foundModules,
-                                Module currentModule,
-                                boolean permitSourcesInDefaultPackage,
-                                boolean inLinksrc)
-                                        throws IOException {
-        try {
-            Source.scanRoot(path.toFile(),
-                            suffixes,
-                            excludes,
-                            includes,
-                            foundFiles,
-                            foundModules,
-                            currentModule,
-                            permitSourcesInDefaultPackage,
-                            false,
-                            inLinksrc);
-        } catch (ProblemException e) {
-            e.printStackTrace();
-        }
-    }
     /** Get the root directory of this source location */
     public Path getPath() {
         return path;

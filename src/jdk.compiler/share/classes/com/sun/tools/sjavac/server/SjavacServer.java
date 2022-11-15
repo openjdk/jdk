@@ -25,11 +25,13 @@
 
 package com.sun.tools.sjavac.server;
 
+import com.sun.tools.javac.main.Main.Result;
+import com.sun.tools.sjavac.Log;
+import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.comp.PooledSjavac;
+import com.sun.tools.sjavac.comp.SjavacImpl;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -39,14 +41,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.sun.tools.javac.main.Main;
-import com.sun.tools.javac.main.Main.Result;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.client.PortFileInaccessibleException;
-import com.sun.tools.sjavac.comp.PooledSjavac;
-import com.sun.tools.sjavac.comp.SjavacImpl;
 
 /**
  * The JavacServer class contains methods both to setup a server that responds to requests and methods to connect to this server.

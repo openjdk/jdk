@@ -25,13 +25,11 @@
 
 package com.sun.tools.sjavac.options;
 
+import com.sun.tools.javac.main.CommandLine;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-
-import com.sun.tools.javac.main.CommandLine;
-import com.sun.tools.sjavac.Transformer;
 
 /**
  * This class is used to decode sjavac options.
@@ -55,9 +53,6 @@ public abstract class OptionHelper {
 
     /** Record a root of sources to be compiled */
     public abstract void sourceRoots(List<Path> path);
-
-    /** Record a suffix + transformer */
-    public abstract void addTransformer(String suffix, Transformer tr);
 
     /** Record a sourcepath to be used */
     public abstract void sourcepath(List<Path> path);
@@ -154,8 +149,4 @@ public abstract class OptionHelper {
         }
     }
 
-    public static String unescapeCmdArg(String arg) {
-        return arg.replaceAll("%20", " ")
-                  .replaceAll("%2C", ",");
-    }
 }

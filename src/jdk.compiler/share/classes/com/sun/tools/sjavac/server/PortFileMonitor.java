@@ -26,7 +26,6 @@
 package com.sun.tools.sjavac.server;
 
 import com.sun.tools.sjavac.Log;
-
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;

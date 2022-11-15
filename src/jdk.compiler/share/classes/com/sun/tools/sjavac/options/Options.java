@@ -25,19 +25,15 @@
 
 package com.sun.tools.sjavac.options;
 
+import com.sun.tools.sjavac.Util;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.StringJoiner;
-
-import com.sun.tools.sjavac.Transformer;
-import com.sun.tools.sjavac.Util;
 
 /**
  * Instances of this class represent values for sjavac command line options.
@@ -68,8 +64,6 @@ public class Options {
     private int numCores = 4;
     private String implicitPolicy = "none";
     private List<String> javacArgs = new ArrayList<>();
-
-    private Map<String, Transformer> trRules = new HashMap<>();
 
     private boolean startServer = false;
 
@@ -160,14 +154,6 @@ public class Options {
         return javacArgs;
     }
 
-    /**
-     * Get a map which maps suffixes to transformers (for example
-     * ".java" {@literal ->} CompileJavaPackages)
-     */
-    public Map<String, Transformer> getTranslationRules() {
-        return trRules;
-    }
-
     /** Return true iff a new server should be started */
     public boolean startServerFlag() {
         return startServer;
@@ -246,9 +232,6 @@ public class Options {
         if (destDir != null)
             args.addArg(Option.D, destDir.normalize());
 
-        if (stateDir != null)
-            args.addArg(Option.STATE_DIR, stateDir.normalize());
-
         // Source roots
         args.addSourceLocations(Option.SRC, sources);
         args.addSourceLocations(Option.SOURCE_PATH, sourceSearchPaths);
@@ -265,12 +248,6 @@ public class Options {
 
         if (permitUnidentifiedArtifacts)
             args.addArg(Option.PERMIT_UNIDENTIFIED_ARTIFACTS);
-
-        // Translation rules
-        for (Map.Entry<String, Transformer> tr : trRules.entrySet()) {
-            String val = tr.getKey() + "=" + tr.getValue().getClass().getName();
-            args.addArg(Option.TR, val);
-        }
 
         // Javac args
         args.addAll(javacArgs);
@@ -374,16 +351,6 @@ public class Options {
         public void include(String inclPattern) {
             inclPattern = Util.normalizeDriveLetter(inclPattern);
             includes.add(inclPattern);
-        }
-
-        @Override
-        public void addTransformer(String suffix, Transformer tr) {
-            if (trRules.containsKey(suffix)) {
-                reportError("More than one transformer specified for " +
-                            "suffix " + suffix + ".");
-                return;
-            }
-            trRules.put(suffix, tr);
         }
 
         @Override

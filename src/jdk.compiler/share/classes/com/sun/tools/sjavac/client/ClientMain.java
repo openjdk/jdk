@@ -25,17 +25,14 @@
 
 package com.sun.tools.sjavac.client;
 
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-
-import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.AutoFlushWriter;
 import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.comp.SjavacImpl;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.server.Sjavac;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 /**
  *  <p><b>This is NOT part of any supported API.
