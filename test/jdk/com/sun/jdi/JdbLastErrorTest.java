@@ -27,8 +27,8 @@
  * @summary Test persistence of native last error value under jdb (Windows)
  * @requires (os.family == "windows") & (vm.compMode != "Xcomp") & (vm.compMode != "Xint")
  * @library /test/lib
- * @run compile --release 20 --enable-preview JdbLastErrorTest.java
- * @run main/othervm --enable-preview JdbLastErrorTest
+ * @enablePreview
+ * @run main/othervm JdbLastErrorTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
