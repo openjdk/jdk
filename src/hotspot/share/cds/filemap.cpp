@@ -136,15 +136,8 @@ void FileMapInfo::fail_continue_impl(LogLevelType level, const char *msg, va_lis
     if (RequireSharedSpaces) {
       fail_exit(msg, ap_copy);
     } else {
-      // LogMessage::vwrite, which makes a copy of the va_list, must be called before
-      // LogStream::vprint_cr.
       LogMessage(cds) lm;
       lm.vwrite(level, msg, ap_copy);
-      if (log_is_enabled(Info, cds)) {
-        LogStream ls(Log(cds)::info());
-        ls.print("UseSharedSpaces: ");
-        ls.vprint_cr(msg, ap_copy);
-      }
     }
   }
   va_end(ap_copy);
