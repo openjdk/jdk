@@ -508,8 +508,11 @@ public class Infer {
             }
         }
         //step 2 - replace fresh tvars in their bounds
-        List<Type> formals = vars;
-        for (Type t : todo) {
+        replaceTypeVarsInBounds(todo.toList(), inferenceContext);
+    }
+
+    private void replaceTypeVarsInBounds(List<Type> vars, InferenceContext inferenceContext) {
+        for (Type t : vars) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.getInst();
             ct.setUpperBound( types.glb(inferenceContext.asInstTypes(types.getBounds(ct))) );
@@ -517,7 +520,6 @@ public class Infer {
                 //report inference error if glb fails
                 reportBoundError(uv, InferenceBound.UPPER);
             }
-            formals = formals.tail;
         }
     }
 
@@ -653,79 +655,120 @@ public class Infer {
         }
     }
 
+    /**
+     * Infer record type for pattern matching. Given an expression type
+     * (@code expressionType}), and a given record ({@code patternTypeSymbol}),
+     * a parameterized type of {@code patternTypeSymbol} is inferred
+     * according to JLS 18.5.5.
+     *
+     * @param expressionType
+     * @param patternTypeSymbol
+     * @return
+     */
     public Type instantiatePatternType(Type expressionType, TypeSymbol patternTypeSymbol) {
         if (expressionType.tsym == patternTypeSymbol)
             return expressionType;
 
         //step 1:
-        Type expressionTypeCaptured = types.capture(expressionType);
+        List<Type> expressionTypes = List.nil();
         List<Type> params = patternTypeSymbol.type.allparams();
         List<Type> capturedWildcards = List.nil();
-        //add synthetic captured ivars
-        for (Type ta : expressionTypeCaptured.getTypeArguments()) {
-            if (ta.hasTag(TYPEVAR) && ((TypeVar)ta).isCaptured()) {
-                params = params.prepend((TypeVar)ta);
-                capturedWildcards = capturedWildcards.prepend(ta);
+        List<Type> todo = List.of(expressionType);
+        while (todo.nonEmpty()) {
+            Type current = todo.head;
+            todo = todo.tail;
+            switch (current.getTag()) {
+                case CLASS -> {
+                    if (current.isCompound()) {
+                        todo = todo.prependList(types.directSupertypes(current));
+                    } else {
+                        Type captured = types.capture(current);
+
+                        for (Type ta : captured.getTypeArguments()) {
+                            if (ta.hasTag(TYPEVAR) && ((TypeVar) ta).isCaptured()) {
+                                params = params.prepend((TypeVar) ta);
+                                capturedWildcards = capturedWildcards.prepend(ta);
+                            }
+                        }
+                        expressionTypes = expressionTypes.prepend(captured);
+                    }
+                }
+                case TYPEVAR -> {
+                    todo = todo.prepend(((TypeVar) current).getUpperBound());
+                }
+                default -> expressionTypes = expressionTypes.prepend(current);
             }
         }
+        //add synthetic captured ivars
         InferenceContext c = new InferenceContext(this, params);
         Type patternType = c.asUndetVar(patternTypeSymbol.type);
-        Type exprType = c.asUndetVar(expressionTypeCaptured);
+        List<Type> exprTypes = expressionTypes.map(t -> c.asUndetVar(t));
 
         capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
 
-        //step 2:
-        Set<Symbol> patternTypeSuperTypes = new HashSet<>();
-        types.closure(patternTypeSymbol.type).stream().map(s -> s.tsym).forEach(patternTypeSuperTypes::add);
-        Set<Symbol> expressionTypeSuperTypes = new HashSet<>();
-        types.closure(expressionType).stream().map(s -> s.tsym).forEach(expressionTypeSuperTypes::add);
-        patternTypeSuperTypes.retainAll(expressionTypeSuperTypes);
-
-        for (Symbol common : patternTypeSuperTypes) {
-            Type fromPatternType = types.asSuper(patternType, common);
-            Type fromExprType = types.asSuper(exprType, common);
-            if (!types.isSameType(fromPatternType, fromExprType) && !fromExprType.isRaw()) {
-                return null;
-            }
-        }
-
-        List<Type> varsToSolve = params.map(s -> c.asUndetVar(s));
-
         try {
+            //step 2:
+            for (Type exprType : exprTypes) {
+                if (exprType.isParameterized()) {
+                    Type patternAsExpression =
+                            types.asSuper(patternType, exprType.tsym);
+                    if (patternAsExpression == null ||
+                        !types.isSameType(patternAsExpression, exprType)) {
+                        return null;
+                    }
+                }
+            }
+
             doIncorporation(c, types.noWarnings);
 
-            while (c.solveBasic(varsToSolve, EnumSet.of(InferenceStep.EQ)).nonEmpty()) {
-                doIncorporation(c, types.noWarnings);
-            }
+            //step 3:
+            List<Type> freshVars = instantiatePatternVars(params, c);
+
+            Type substituted = c.asInstType(patternTypeSymbol.type);
+
+            //step 4:
+            return types.upward(substituted, freshVars);
         } catch (Infer.InferenceException ex) {
             return null;
         }
+    }
 
-        //step 3:
+    private List<Type> instantiatePatternVars(List<Type> vars, InferenceContext c) {
         ListBuffer<Type> freshVars = new ListBuffer<>();
+        ListBuffer<Type> todo = new ListBuffer<>();
 
-        for (Type param : patternType.allparams()) {
-            UndetVar undet = (UndetVar) param;
+        //step 1 - create fresh tvars
+        for (Type t : vars) {
+            UndetVar undet = (UndetVar) c.asUndetVar(t);
             List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
             if (bounds.nonEmpty()) {
                 undet.setInst(bounds.head);
             } else {
                 List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
-                Type bound = upperBounds.isEmpty() ? syms.objectType : types.glb(upperBounds);
+                Type upper;
+                boolean recursive = Type.containsAny(upperBounds, vars);
+                if (recursive) {
+                    upper = types.makeIntersectionType(upperBounds);
+                    todo.append(undet);
+                } else if (upperBounds.nonEmpty()) {
+                    upper = types.glb(upperBounds);
+                } else {
+                    upper = syms.objectType;
+                }
                 List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
                 Type lower = lowerBounds.isEmpty() ? syms.botType
                                                    : lowerBounds.tail.isEmpty() ? lowerBounds.head
                                                                                 : types.lub(lowerBounds);
-                TypeVar vt = new TypeVar(syms.noSymbol, bound, lower);
+                TypeVar vt = new TypeVar(syms.noSymbol, upper, lower);
                 freshVars.add(vt);
                 undet.setInst(vt);
             }
         }
 
-        Type substituted = c.asInstType(patternTypeSymbol.type);
+        //step 2 - replace fresh tvars in their bounds
+        replaceTypeVarsInBounds(todo.toList(), c);
 
-        //step 4:
-        return types.upward(substituted, freshVars.toList());
+        return freshVars.toList();
     }
     // </editor-fold>
 

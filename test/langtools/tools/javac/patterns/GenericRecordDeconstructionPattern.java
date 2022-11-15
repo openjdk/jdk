@@ -43,6 +43,7 @@ public class GenericRecordDeconstructionPattern {
         runTest(this::runSwitchInference1);
         runTest(this::runSwitchInference2);
         runTest(this::runSwitchInference3);
+        runTest(this::runSwitchInference4);
         testInference3();
         assertEquals(0, forEachInference(List.of(new Box(""))));
         assertEquals(1, forEachInference(List.of(new Box(null))));
@@ -87,6 +88,16 @@ public class GenericRecordDeconstructionPattern {
     }
 
     int runSwitchInference3(I<String> b) {
+        return b instanceof Box(var s) ? s == null ? 1 : s.length()
+                                       : -1;
+    }
+
+    <Z extends I<String>> int runSwitchInference4(Z b) {
+        return b instanceof Box(var s) ? s == null ? 1 : s.length()
+                                       : -1;
+    }
+
+    <B extends CharSequence & Runnable, Z extends I<B>> int runSwitchInference5(Z b) {
         return b instanceof Box(var s) ? s == null ? 1 : s.length()
                                        : -1;
     }

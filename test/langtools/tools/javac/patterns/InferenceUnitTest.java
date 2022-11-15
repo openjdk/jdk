@@ -38,7 +38,6 @@
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
-import java.util.List;
 
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
@@ -48,17 +47,19 @@ import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 public class InferenceUnitTest {
 
-    JavacTaskImpl task;
+    Context context;
     Infer infer;
     Types types;
 
@@ -67,7 +68,8 @@ public class InferenceUnitTest {
     }
 
     void runAll() throws URISyntaxException {
-        task = (JavacTaskImpl) ToolProvider.getSystemJavaCompiler().getTask(null, null, null, null, null, List.of(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, null, null, List.of(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
             @Override
             public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
                 return """
@@ -80,88 +82,95 @@ public class InferenceUnitTest {
                        interface G<T extends Number> extends A<T> {}
                        interface H extends A<String> {}
                        interface I<T> extends H {}
-                       class Test<T1 extends CharSequence&Runnable> {
+                       class Test<T1 extends CharSequence&Runnable, T2 extends Number> {
                        }
+                       interface RecursiveTest1Interface<IB extends RecursiveTest1Interface<IB>> { }
+                       interface RecursiveTest1Use<BB extends RecursiveTest1Use<BB>> extends RecursiveTest1Interface<BB> { }
+                       interface RecursiveTest2Interface<X> { }
+                       interface RecursiveTest2Use<X extends RecursiveTest2Use<X, Y>, Y> extends RecursiveTest2Interface<Y> { }
                        """;
             }
         }));
         task.enter();
-        infer = Infer.instance(task.getContext());
-        types = Types.instance(task.getContext());
+        context = task.getContext();
+        infer = Infer.instance(context);
+        types = Types.instance(context);
 
-        checkAsSub("A<String>", "B", "B<java.lang.String>");
-        checkAsSub("A<String>", "C", "C<java.lang.String,?>");
-        checkAsSub("A<String>", "D", "D<?,java.lang.String>");
-        checkAsSub("A<String>", "E", "E<java.lang.String>");
-        checkAsSub("A<String>", "F", null);
-        checkAsSub("A<String>", "G", null); // doesn't check bounds
-        checkAsSub("A<String>", "H", "H");
-        checkAsSub("A<String>", "I", "I<?>");
+        checkInferedType("A<String>", "B", "B<java.lang.String>");
+        checkInferedType("A<String>", "C", "C<java.lang.String,?>");
+        checkInferedType("A<String>", "D", "D<?,java.lang.String>");
+        checkInferedType("A<String>", "E", "E<java.lang.String>");
+        checkInferedType("A<String>", "F", null);
+        checkInferedType("A<String>", "G", null); // doesn't check bounds
+        checkInferedType("A<String>", "H", "H");
+        checkInferedType("A<String>", "I", "I<?>");
 
-        checkAsSub("A<B<String>>", "B", "B<B<java.lang.String>>");
-        checkAsSub("A<B<String>>", "C", "C<B<java.lang.String>,?>");
-        checkAsSub("A<B<String>>", "F", "F<java.lang.String>");
-        checkAsSub("A<B<String>>", "H", null);
-        checkAsSub("A<B<String>>", "I", null);
+        checkInferedType("A<B<String>>", "B", "B<B<java.lang.String>>");
+        checkInferedType("A<B<String>>", "C", "C<B<java.lang.String>,?>");
+        checkInferedType("A<B<String>>", "F", "F<java.lang.String>");
+        checkInferedType("A<B<String>>", "H", null);
+        checkInferedType("A<B<String>>", "I", null);
 
-        checkAsSub("C<String, String>", "E", "E<java.lang.String>");
-        checkAsSub("C<String, Integer>", "E", null);
-        checkAsSub("C<A<?>, A<?>>", "E", "E<A<?>>");
-        checkAsSub("C<A<? extends Object>, A<?>>", "E", "E<A<? extends java.lang.Object>>");
+        checkInferedType("C<String, String>", "E", "E<java.lang.String>");
+        checkInferedType("C<String, Integer>", "E", null);
+        checkInferedType("C<A<?>, A<?>>", "E", "E<A<?>>");
+        checkInferedType("C<A<? extends Object>, A<?>>", "E", "E<A<? extends java.lang.Object>>");
 
         if (false) {
-        checkAsSub("A", "B", "B");
-        checkAsSub("A", "C", "C");
-        checkAsSub("A", "D", "D");
-        checkAsSub("A", "E", "E");
-        checkAsSub("A", "F", "F");
-        checkAsSub("A", "G", "G");
-        checkAsSub("A", "H", "H");
+        checkInferedType("A", "B", "B");
+        checkInferedType("A", "C", "C");
+        checkInferedType("A", "D", "D");
+        checkInferedType("A", "E", "E");
+        checkInferedType("A", "F", "F");
+        checkInferedType("A", "G", "G");
+        checkInferedType("A", "H", "H");
         }
 
-        checkAsSub("A", "I", "I<?>"); // always erases if input is raw
+        checkInferedType("A", "I", "I<?>"); // always erases if input is raw
 
-        checkAsSub("A<?>", "B", "B<?>");
-        checkAsSub("A<?>", "C", "C<?,?>");
-        checkAsSub("A<?>", "D", "D<?,?>");
-        checkAsSub("A<?>", "E", "E<?>");
-        checkAsSub("A<?>", "F", "F<?>");
-        checkAsSub("A<?>", "G", "G<?>");
-        checkAsSub("A<?>", "H", "H");
-        checkAsSub("A<?>", "I", "I<?>");
+        checkInferedType("A<?>", "B", "B<?>");
+        checkInferedType("A<?>", "C", "C<?,?>");
+        checkInferedType("A<?>", "D", "D<?,?>");
+        checkInferedType("A<?>", "E", "E<?>");
+        checkInferedType("A<?>", "F", "F<?>");
+        checkInferedType("A<?>", "G", "G<?>");
+        checkInferedType("A<?>", "H", "H");
+        checkInferedType("A<?>", "I", "I<?>");
 
-        checkAsSub("A<? extends Runnable>", "B", "B<? extends java.lang.Runnable>");
-        checkAsSub("A<? extends Runnable>", "C", "C<? extends java.lang.Runnable,?>");
-        checkAsSub("A<? extends Runnable>", "D", "D<?,? extends java.lang.Runnable>");
-        checkAsSub("A<? extends Runnable>", "E", "E<? extends java.lang.Runnable>");
-        checkAsSub("A<? extends Runnable>", "F", null);
-        checkAsSub("A<? extends Runnable>", "G", "G<? extends java.lang.Number&java.lang.Runnable>"); // should infer an intersection bound
-        checkAsSub("A<? extends Runnable>", "H", null);
-        checkAsSub("A<? extends Runnable>", "I", null);
+        checkInferedType("A<? extends Runnable>", "B", "B<? extends java.lang.Runnable>");
+        checkInferedType("A<? extends Runnable>", "C", "C<? extends java.lang.Runnable,?>");
+        checkInferedType("A<? extends Runnable>", "D", "D<?,? extends java.lang.Runnable>");
+        checkInferedType("A<? extends Runnable>", "E", "E<? extends java.lang.Runnable>");
+        checkInferedType("A<? extends Runnable>", "F", null);
+        checkInferedType("A<? extends Runnable>", "G", "G<? extends java.lang.Number&java.lang.Runnable>"); // should infer an intersection bound
+        checkInferedType("A<? extends Runnable>", "H", null);
+        checkInferedType("A<? extends Runnable>", "I", null);
 
-        checkAsSub("A<? extends B<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks
-        checkAsSub("A<? extends A<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks
+        checkInferedType("A<? extends B<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks
+        checkInferedType("A<? extends A<String>>", "F", "F<java.lang.String>"); // inference doesn't recur on bounds checks
 
-        checkAsSub("C<? extends Number, Integer>", "E", "E<java.lang.Integer>"); // doesn't know how to mix types and wildcards
-        checkAsSub("C<Integer, ? extends Number>", "E", "E<java.lang.Integer>"); // doesn't know how to mix types and wildcards
-        checkAsSub("C<?, ? extends Number>", "E", "E<? extends java.lang.Number>");
-        checkAsSub("C<? extends Number, ?>", "E", "E<? extends java.lang.Number>");
+        checkInferedType("C<? extends Number, Integer>", "E", "E<java.lang.Integer>"); // doesn't know how to mix types and wildcards
+        checkInferedType("C<Integer, ? extends Number>", "E", "E<java.lang.Integer>"); // doesn't know how to mix types and wildcards
+        checkInferedType("C<?, ? extends Number>", "E", "E<? extends java.lang.Number>");
+        checkInferedType("C<? extends Number, ?>", "E", "E<? extends java.lang.Number>");
 
-        checkAsSub("C<? extends Number, ? extends Integer>", "E", "E<? extends java.lang.Integer>");
-        checkAsSub("C<? extends Integer, ? extends Number>", "E", "E<? extends java.lang.Integer>");
-        checkAsSub("C<? extends Runnable, ? extends Cloneable>", "E", "E<? extends java.lang.Object&java.lang.Cloneable&java.lang.Runnable>"); // should infer an intersection bound
-        checkAsSub("C<? extends Number, ? super Integer>", "E", "E<? extends java.lang.Number>"); // doesn't know how to mix lower/upper
-        checkAsSub("C<? super Integer, ? super Number>", "E", "E<? super java.lang.Number>");
-        checkAsSub("C<? super B<String>, ? super C<String,String>>", "E", "E<? super A<java.lang.String>>"); // doesn't do lub
+        checkInferedType("C<? extends Number, ? extends Integer>", "E", "E<? extends java.lang.Integer>");
+        checkInferedType("C<? extends Integer, ? extends Number>", "E", "E<? extends java.lang.Integer>");
+        checkInferedType("C<? extends Runnable, ? extends Cloneable>", "E", "E<? extends java.lang.Object&java.lang.Cloneable&java.lang.Runnable>"); // should infer an intersection bound
+        checkInferedType("C<? extends Number, ? super Integer>", "E", "E<? extends java.lang.Number>"); // doesn't know how to mix lower/upper
+        checkInferedType("C<? super Integer, ? super Number>", "E", "E<? super java.lang.Number>");
+        checkInferedType("C<? super B<String>, ? super C<String,String>>", "E", "E<? super A<java.lang.String>>"); // doesn't do lub
 
-        checkAsSub("H", "I", "I<?>");
+        checkInferedType("H", "I", "I<?>");
 
-        checkAsSub("B<String>", "C", "C<java.lang.String,?>"); // no sideways casts
+        checkInferedType("B<String>", "C", null); // no sideways casts
 
-        checkAsSub("A<T1>", "B", "B<T1>");
+        checkInferedType("A<T1>", "B", "B<T1>");
+        checkInferedType("RecursiveTest1Interface<?>", "RecursiveTest1Use", "RecursiveTest1Use<? extends java.lang.Object&RecursiveTest1Use<?>&RecursiveTest1Interface<? extends RecursiveTest1Use<?>>>");
+        checkInferedType("RecursiveTest2Interface<?>", "RecursiveTest2Use", "RecursiveTest2Use<? extends RecursiveTest2Use<?,?>,?>");
     }
 
-    private void checkAsSub(String base, String test, String expected) {
+    private void checkInferedType(String base, String test, String expected) {
         Type baseType = parseType(base);
         TypeSymbol testType = parseType(test).tsym;
         Type actualType = infer.instantiatePatternType(baseType, testType);
@@ -171,7 +180,6 @@ public class InferenceUnitTest {
         }
     }
     Type parseType(String spec) {
-        Context context = task.getContext();
         ParserFactory fact = ParserFactory.instance(context);
         JCExpression specTypeTree = fact.newParser(spec, false, false, false).parseType();
         Attr attr = Attr.instance(context);
