@@ -26,7 +26,7 @@
 #include "code/codeCache.hpp"
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
 #include "runtime/atomic.hpp"

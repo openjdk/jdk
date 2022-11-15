@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_FORMATBUFFER_HPP
 #define SHARE_UTILITIES_FORMATBUFFER_HPP
 
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "utilities/globalDefinitions.hpp"
 #include <stdarg.h>
 

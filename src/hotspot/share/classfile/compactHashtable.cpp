@@ -27,7 +27,7 @@
 #include "cds/cds_globals.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "runtime/arguments.hpp"

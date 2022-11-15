@@ -23,7 +23,7 @@
  *
  */
 #include "precompiled.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"

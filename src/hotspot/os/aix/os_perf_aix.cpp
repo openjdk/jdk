@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

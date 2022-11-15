@@ -29,7 +29,7 @@
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 
 #ifndef PRODUCT
 

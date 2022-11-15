@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "jvmci/jvmci_globals.hpp"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"

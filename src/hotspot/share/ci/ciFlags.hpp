@@ -26,7 +26,7 @@
 #define SHARE_CI_CIFLAGS_HPP
 
 #include "ci/ciClassList.hpp"
-#include "include/jvm_constants.h"
+#include "jvm_constants.h"
 #include "utilities/accessFlags.hpp"
 #include "utilities/ostream.hpp"
 

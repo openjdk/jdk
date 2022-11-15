@@ -35,10 +35,10 @@
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
-#include "include/jvm.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
+#include "jvm.h"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif

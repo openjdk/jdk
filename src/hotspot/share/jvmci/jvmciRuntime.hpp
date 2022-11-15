@@ -26,7 +26,7 @@
 
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"

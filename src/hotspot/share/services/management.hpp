@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_MANAGEMENT_HPP
 #define SHARE_SERVICES_MANAGEMENT_HPP
 
-#include "include/jmm.h"
+#include "jmm.h"
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"

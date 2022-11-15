@@ -27,7 +27,7 @@
 #include "gc/shared/ageTableTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/perfData.hpp"
 #include "logging/log.hpp"

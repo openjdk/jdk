@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"

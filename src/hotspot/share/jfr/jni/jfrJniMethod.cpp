@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
 #include "jni.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -53,6 +52,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

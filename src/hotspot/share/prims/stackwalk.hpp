@@ -26,7 +26,7 @@
 #ifndef SHARE_PRIMS_STACKWALK_HPP
 #define SHARE_PRIMS_STACKWALK_HPP
 
-#include "include/jvm.h"
+#include "jvm.h"
 #include "oops/oop.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.hpp"
