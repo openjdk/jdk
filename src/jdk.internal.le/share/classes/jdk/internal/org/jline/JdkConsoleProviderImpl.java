@@ -46,8 +46,8 @@ import jdk.internal.io.JdkConsole;
 public class JdkConsoleProviderImpl extends JdkConsoleProvider {
 
     @Override
-    public JdkConsole console(Charset charset, boolean isTTY) {
-        return new JdkConsoleImpl(charset);
+    public JdkConsole console(boolean isTTY) {
+        return isTTY ? new JdkConsoleImpl() : null;
     }
 
     public static class JdkConsoleImpl extends JdkConsole {
@@ -125,17 +125,15 @@ public class JdkConsoleProviderImpl extends JdkConsoleProvider {
         }
 
         public Charset charset() {
-            return charset;
+            return terminal.encoding();
         }
 
         private final LineReader jline;
         private final Terminal terminal;
-        private final Charset charset;
 
-        public JdkConsoleImpl(Charset cs) {
-            charset = cs;
+        public JdkConsoleImpl() {
             try {
-                terminal = TerminalBuilder.builder().encoding(cs).build();
+                terminal = TerminalBuilder.builder().build();
                 jline = LineReaderBuilder.builder().terminal(terminal).build();
             } catch (IOException ioe) {
                 throw new InternalError("should not happen, as CHARSET is guaranteed to be a valid charset");

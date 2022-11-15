@@ -596,22 +596,23 @@ public class Console implements Flushable
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                boolean useJLine = System.getProperty("jdk.console.usejline", "true").equalsIgnoreCase("true");
-
                 if (cons == null) {
                     // Try loading providers
+                    var consModName = System.getProperty("jdk.console", "jdk.internal.le");
                     cons = ServiceLoader.load(JdkConsoleProvider.class).stream()
                        .map(ServiceLoader.Provider::get)
-                       .filter(jcp -> istty && "jdk.internal.le".equals(jcp.getClass().getModule().getName()) && useJLine || !useJLine)
+                       .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
+                       .map(jcp -> jcp.console(istty))
+                       .filter(Objects::nonNull)
                        .findAny()
-                       .map(jcp -> (Console)new ProxyingConsole(jcp.console(CHARSET, istty)))
+                       .map(jc -> (Console)new ProxyingConsole(jc))
                        .orElse(istty ? new Console() : null);
                 }
                 return cons;
             }
 
             public Charset charset() {
-                return CHARSET;
+                return cons.charset();
             }
         });
     }

@@ -24,8 +24,6 @@
  */
 package jdk.internal.io;
 
-import java.nio.charset.Charset;
-
 /**
  * JdkConsoleProvider
  *
@@ -36,7 +34,7 @@ public abstract class JdkConsoleProvider {
      * {@return the Console instance, or {@code null} if not available}
      * @param isTTY indicates if the jvm is attached to a terminal
      */
-    public abstract JdkConsole console(Charset charset, boolean isTTY);
+    public abstract JdkConsole console(boolean isTTY);
 
     /**
      * Sole constructor
