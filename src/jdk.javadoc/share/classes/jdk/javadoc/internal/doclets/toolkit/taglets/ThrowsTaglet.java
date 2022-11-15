@@ -587,17 +587,19 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // if there are tags for the target exception type, conclude search successfully
             return Result.CONCLUDE(toExceptionTags(holder, tags));
         }
-        if (holder.getThrownTypes().contains(target.asType())) {
-            // if there are no tags for the target exception type, BUT that type is
-            // mentioned in the `throws` clause, continue search
-            return Result.CONTINUE();
-        }
-        // there are no tags for the target exception type AND that type is not
-        // mentioned in the `throws` clause, skip search on the remaining part
-        // of the current branch of the hierarchy
-        // TODO: expand on this and add a test in JDK-8295800;
-        //  for both checked and unchecked exceptions
-        return Result.SKIP();
+        return Result.CONTINUE();
+// TODO: reintroduce this back for JDK-8295800:
+//        if (holder.getThrownTypes().contains(target.asType())) {
+//            // if there are no tags for the target exception type, BUT that type is
+//            // mentioned in the `throws` clause, continue search
+//            return Result.CONTINUE();
+//        }
+//        // there are no tags for the target exception type AND that type is not
+//        // mentioned in the `throws` clause, skip search on the remaining part
+//        // of the current branch of the hierarchy
+//        // TODO: expand on this and add a test in JDK-8295800;
+//        //  for both checked and unchecked exceptions
+//        return Result.SKIP();
     }
 
     /*

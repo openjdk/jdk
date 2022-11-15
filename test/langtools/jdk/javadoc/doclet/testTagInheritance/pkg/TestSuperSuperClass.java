@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class TestSuperSuperClass {
      * @param <P> Test 32 passes.
      * @param x1 Test 34 passes.
      * @return Test 36 passes.
-     * @throws java.lang.NullPointerException Test 101 fails.
+     * @throws java.lang.NullPointerException Test 38 passes.
      */
     public <P,Q> String testSuperSuperMethod2(int x1, int x2) {
         return null;
