@@ -25,7 +25,6 @@
 
 package com.sun.tools.sjavac.options;
 
-import com.sun.tools.javac.main.CommandLine;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
