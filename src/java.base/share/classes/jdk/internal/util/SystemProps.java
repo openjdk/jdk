@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.util;
 import java.lang.annotation.Native;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.File;
 
 /**
  * System Property initialization for internal use only
@@ -39,6 +40,16 @@ public final class SystemProps {
 
     // no instances
     private SystemProps() {}
+
+    // custom java.io.tmpdir from command line
+    private static String customTmpdir;
+
+    // Print warning message if temp directory is not valid
+    public static void checkIoTmpdir() {
+        if (customTmpdir != null && !(new File(customTmpdir).isDirectory())) {
+            System.err.println("WARNING: java.io.tmpdir location does not exist");
+        }
+    }
 
     /**
      * Create and initialize the system properties from the native properties
@@ -53,6 +64,9 @@ public final class SystemProps {
         // Initially, cmdProperties only includes -D and props from the VM
         Raw raw = new Raw();
         HashMap<String, String> props = raw.cmdProperties();
+
+        // java.io.tmpdir from command line
+        customTmpdir = props.get("java.io.tmpdir");
 
         String javaHome = props.get("java.home");
         assert javaHome != null : "java.home not set";
@@ -280,6 +294,7 @@ public final class SystemProps {
                     break;
                 }
             }
+
             return cmdProps;
         }
 
