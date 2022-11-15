@@ -149,7 +149,7 @@ public class Signatures {
     }
 
     public static class RSASSAPSS extends Signatures {
-        @Param({"SHA256withRSASSA-PSS", "SHA3846withRSASSA-PSS", "SHA512withRSASSA-PSS"})
+        @Param({"SHA256", "SHA3846", "SHA512"})
         private String algorithm;
 
         @Setup
@@ -158,24 +158,24 @@ public class Signatures {
             (new Random(System.nanoTime())).nextBytes(message);
 
             int keyLength = switch (algorithm) {
-               case "SHA256withRSASSA-PSS" -> 2048;
-               case "SHA3846withRSASSA-PSS" -> 3072;
-               case "SHA512withRSASSA-PSS" -> 4096;
+               case "SHA256" -> 2048;
+               case "SHA384" -> 3072;
+               case "SHA512" -> 4096;
                default -> throw new RuntimeException();
             };
 
             PSSParameterSpec spec = switch (algorithm) {
-               case "SHA256withRSASSA-PSS" ->
+               case "SHA256" ->
                        new PSSParameterSpec(
                                "SHA-256", "MGF1",
                                MGF1ParameterSpec.SHA256,
                                32, PSSParameterSpec.TRAILER_FIELD_BC);
-               case "SHA3846withRSASSA-PSS" ->
+               case "SHA384" ->
                        new PSSParameterSpec(
                                "SHA-384", "MGF1",
                                MGF1ParameterSpec.SHA384,
                                48, PSSParameterSpec.TRAILER_FIELD_BC);
-               case "SHA512withRSASSA-PSS" ->
+               case "SHA512" ->
                         new PSSParameterSpec(
                                "SHA-512", "MGF1",
                                MGF1ParameterSpec.SHA512,
