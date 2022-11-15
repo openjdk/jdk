@@ -163,13 +163,13 @@ public class SSLContext {
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * <p>
-     * In the JDK Reference Implementation, a protocol can be disabled by
+     * In the JDK Reference implementation, a protocol can be disabled by
      * adding it to the {@code jdk.tls.disabledAlgorithms} security property.
      * If the specified protocol is disabled, the {@code getInstance} method
      * will still return an {@code SSLContext} if there is a configured
-     * provider that implements the protocol. However, subsequent operations
-     * that attempt to use the specified protocol will fail with an
-     * {@code SSLHandshakeException}.
+     * provider that implements the protocol. However, if the selected provider
+     * is the SunJSSE provider, subsequent operations that attempt to use the
+     * specified protocol will fail with an {@code SSLHandshakeException}.
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
@@ -213,9 +213,9 @@ public class SSLContext {
      * adding it to the {@code jdk.tls.disabledAlgorithms} security property.
      * If the specified protocol is disabled, the {@code getInstance} method
      * will still return an {@code SSLContext} if the specified provider
-     * implements the protocol. However, subsequent operations that attempt
-     * to use the specified protocol will fail with an
-     * {@code SSLHandshakeException}.
+     * implements the protocol. However, if the specified provider is "SunJSSE",
+     * subsequent operations that attempt to use the specified protocol will
+     * fail with an {@code SSLHandshakeException}.
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
@@ -270,9 +270,9 @@ public class SSLContext {
      * adding it to the {@code jdk.tls.disabledAlgorithms} security property.
      * If the specified protocol is disabled, the {@code getInstance} method
      * will still return an {@code SSLContext} if the specified provider
-     * implements the protocol. However, subsequent operations* that attempt
-     * to use the specified protocol will fail with an
-     * {@code SSLHandshakeException}.
+     * implements the protocol. However, if the specified provider is the
+     * SunJSSE provider, subsequent operations that attempt to use the
+     * specified protocol will fail with an {@code SSLHandshakeException}.
      *
      * @param provider an instance of the provider.
      *
