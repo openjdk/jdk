@@ -376,7 +376,7 @@ void StubGenerator::poly1305_limbs_avx512(
  * a2 is optional. When only128 is set, limbs are expected to fit into 128-bits (i.e. a1:a0 such as clamped R)
  */
 void StubGenerator::poly1305_limbs(
-    const Register limbs, const Register a0, const Register a1, 
+    const Register limbs, const Register a0, const Register a1,
     const Register a2, bool only128,
     const Register t1, const Register t2)
 {
@@ -422,7 +422,7 @@ void StubGenerator::poly1305_limbs(
  * Break 3×64-bit a2:a1:a0 limbs into 5×26-bit limbs and store out into 5 quadwords at address `limbs`
  */
 void StubGenerator::poly1305_limbs_out(
-    const Register a0, const Register a1, const Register a2, 
+    const Register a0, const Register a1, const Register a2,
     const Register limbs,
     const Register t1, const Register t2)
 {
