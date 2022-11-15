@@ -29,6 +29,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
+#include <wchar.h>
 #include "unittest.hpp"
 
 static size_t print_lorem(outputStream* st) {
@@ -119,6 +120,34 @@ TEST_VM(ostream, bufferedStream_dynamic_small) {
     written += print_lorem(&bs);
     ASSERT_EQ(bs.size(), written);
   }
+}
+
+static void provoke_snprintf_error() {
+  const wchar_t w[] = { (wchar_t)-1, 0 };
+  char buf[20];
+  ::memset(buf, 'X', sizeof(buf));
+  int n = ::snprintf(buf + 1, sizeof(buf) - 2, "HALLO %ls", w);
+  if (n == -1) { // yes, we get an error. Retry using stringStream.
+    ::memset(buf, 'X', sizeof(buf));
+    stringStream ss (buf + 1, sizeof(buf) - 2);
+    ss.print_cr("HALLO %ls", w); // should assert in debug
+    // We should not have overstepped the buffer boundaries.
+    ASSERT_EQ(buf[0], 'X');
+    ASSERT_EQ(buf[sizeof(buf) - 1], 'X');
+    // The resulting buffer should have length zero
+    ASSERT_EQ(buf[1], '\0');
+  }
+}
+
+// In debug, snprintf error should result in an assert, in release, the error should
+// be silently swallowed.
+#ifdef ASSERT
+TEST_VM_ASSERT_MSG(ostream, snprintf_error, ".*vsnprintf encoding error.*")
+#else
+TEST_VM(ostream, snprintf_error)
+#endif
+{
+  provoke_snprintf_error();
 }
 
 /* Activate to manually test bufferedStream dynamic cap.

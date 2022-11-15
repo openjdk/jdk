@@ -102,6 +102,10 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
   } else {
     int required_len = os::vsnprintf(buffer, buflen, format, ap);
     assert(required_len >= 0, "vsnprintf encoding error");
+    if (required_len < 0) {
+      result_len = 0;
+      return "";
+    }
     result = buffer;
     if ((size_t)required_len < buflen) {
       result_len = required_len;
