@@ -351,22 +351,11 @@ class Address {
     int shift() const { return _shift; }
     ext::operation op() const { return _op; }
   };
-  class uxtw : public extend {
-  public:
-    uxtw(int shift = -1): extend(shift, 0b010, ext::uxtw) { }
-  };
-  class lsl : public extend {
-  public:
-    lsl(int shift = -1): extend(shift, 0b011, ext::uxtx) { }
-  };
-  class sxtw : public extend {
-  public:
-    sxtw(int shift = -1): extend(shift, 0b110, ext::sxtw) { }
-  };
-  class sxtx : public extend {
-  public:
-    sxtx(int shift = -1): extend(shift, 0b111, ext::sxtx) { }
-  };
+
+  static extend uxtw(int shift = -1) { return extend(shift, 0b010, ext::uxtw); }
+  static extend lsl(int shift = -1)  { return extend(shift, 0b011, ext::uxtx); }
+  static extend sxtw(int shift = -1) { return extend(shift, 0b110, ext::sxtw); }
+  static extend sxtx(int shift = -1) { return extend(shift, 0b111, ext::sxtx); }
 
  private:
   Register _base;

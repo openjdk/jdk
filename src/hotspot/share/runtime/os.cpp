@@ -705,21 +705,61 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
-  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
+  if (MemTracker::enabled()) {
+    // NMT realloc handling
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock);
+    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
 
-  ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
-  if (new_outer_ptr == NULL) {
-    return NULL;
+    // Handle size overflow.
+    if (new_outer_size < size) {
+      return NULL;
+    }
+
+    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
+
+    // De-account the old block from NMT *before* calling the real realloc(3) since it
+    // may invalidate old block including its header. This will also perform integrity checks
+    // on the old block (e.g. overwriters) and mark the old header as dead.
+    void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+    // the real realloc
+    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
+
+    if (new_outer_ptr == NULL) {
+      // If realloc(3) failed, the old block still exists. We must re-instantiate the old
+      // NMT header then, since we marked it dead already. Otherwise subsequent os::realloc()
+      // or os::free() calls would trigger block integrity asserts.
+      void* p = MemTracker::record_malloc(old_outer_ptr, old_size, memflags, stack);
+      assert(p == memblock, "sanity");
+      return NULL;
+    }
+
+    // After a successful realloc(3), we re-account the resized block with its new size
+    // to NMT. This re-instantiates the NMT header.
+    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+
+#ifdef ASSERT
+    if (old_size < size) {
+      // We also zap the newly extended region.
+      ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
+    }
+#endif
+
+    rc = new_inner_ptr;
+
+  } else {
+
+    // NMT disabled.
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
+    if (rc == NULL) {
+      return NULL;
+    }
+
   }
 
-  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+  DEBUG_ONLY(break_if_ptr_caught(rc);)
 
-  DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
-
-  return new_inner_ptr;
+  return rc;
 }
 
 void  os::free(void *memblock) {
