@@ -74,6 +74,7 @@ public final class EditorTopComponent extends TopComponent {
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
+    private static final GlobalSelectionAction globalSelectionAction = new GlobalSelectionAction();
 
 
     public EditorTopComponent(InputGraph graph) {
@@ -223,6 +224,7 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
+        toolBar.add(new JToggleButton(globalSelectionAction));
         toolBar.add(new JToggleButton(new SelectionModeAction()));
         toolBar.addSeparator();
         toolBar.add(new ZoomLevelAction(scene));

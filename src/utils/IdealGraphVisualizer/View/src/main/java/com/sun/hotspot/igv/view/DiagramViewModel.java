@@ -65,11 +65,21 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
     private boolean hideDuplicates;
+    private static  boolean globalSelection = false;
 
     private final ChangedListener<FilterChain> filterChainChangedListener = source -> filterChanged();
 
     public Group getGroup() {
         return group;
+    }
+
+    public boolean getGlobalSelection() {
+        return globalSelection;
+    }
+
+    public void setGlobalSelection(boolean enable) {
+        globalSelection = enable;
+        diagramChangedEvent.fire();
     }
 
     public boolean getShowSea() {
