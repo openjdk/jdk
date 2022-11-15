@@ -294,7 +294,6 @@ public final class SystemProps {
                     break;
                 }
             }
-
             return cmdProps;
         }
 
