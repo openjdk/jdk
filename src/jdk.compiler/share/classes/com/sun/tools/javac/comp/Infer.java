@@ -655,35 +655,67 @@ public class Infer {
         }
     }
 
+    /**
+     * Infer record type for pattern matching. Given an expression type
+     * (@code expressionType}), and a given record ({@code patternTypeSymbol}),
+     * a parameterized type of {@code patternTypeSymbol} is inferred
+     * according to JLS 18.5.5.
+     *
+     * @param expressionType
+     * @param patternTypeSymbol
+     * @return
+     */
     public Type instantiatePatternType(Type expressionType, TypeSymbol patternTypeSymbol) {
         if (expressionType.tsym == patternTypeSymbol)
             return expressionType;
 
         //step 1:
-        Type expressionTypeCaptured = types.capture(expressionType);
+        List<Type> expressionTypes = List.nil();
         List<Type> params = patternTypeSymbol.type.allparams();
         List<Type> capturedWildcards = List.nil();
-        //add synthetic captured ivars
-        for (Type ta : expressionTypeCaptured.getTypeArguments()) {
-            if (ta.hasTag(TYPEVAR) && ((TypeVar)ta).isCaptured()) {
-                params = params.prepend((TypeVar)ta);
-                capturedWildcards = capturedWildcards.prepend(ta);
+        List<Type> todo = List.of(expressionType);
+        while (todo.nonEmpty()) {
+            Type current = todo.head;
+            todo = todo.tail;
+            switch (current.getTag()) {
+                case CLASS -> {
+                    if (current.isCompound()) {
+                        todo = todo.prependList(types.directSupertypes(current));
+                    } else {
+                        Type captured = types.capture(current);
+
+                        for (Type ta : captured.getTypeArguments()) {
+                            if (ta.hasTag(TYPEVAR) && ((TypeVar) ta).isCaptured()) {
+                                params = params.prepend((TypeVar) ta);
+                                capturedWildcards = capturedWildcards.prepend(ta);
+                            }
+                        }
+                        expressionTypes = expressionTypes.prepend(captured);
+                    }
+                }
+                case TYPEVAR -> {
+                    todo = todo.prepend(((TypeVar) current).getUpperBound());
+                }
+                default -> expressionTypes = expressionTypes.prepend(current);
             }
         }
+        //add synthetic captured ivars
         InferenceContext c = new InferenceContext(this, params);
         Type patternType = c.asUndetVar(patternTypeSymbol.type);
-        Type exprType = c.asUndetVar(expressionTypeCaptured);
+        List<Type> exprTypes = expressionTypes.map(t -> c.asUndetVar(t));
 
         capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
 
         try {
             //step 2:
-            if (exprType.isParameterized()) {
-                Type patternAsExpression =
-                        types.asSuper(patternType, exprType.tsym);
-                if (patternAsExpression == null ||
-                    !types.isSameType(patternAsExpression, exprType)) {
-                    return null;
+            for (Type exprType : exprTypes) {
+                if (exprType.isParameterized()) {
+                    Type patternAsExpression =
+                            types.asSuper(patternType, exprType.tsym);
+                    if (patternAsExpression == null ||
+                        !types.isSameType(patternAsExpression, exprType)) {
+                        return null;
+                    }
                 }
             }
 

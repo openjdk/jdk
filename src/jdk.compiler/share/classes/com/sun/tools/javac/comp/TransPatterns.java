@@ -731,7 +731,7 @@ public class TransPatterns extends TreeTranslator {
         if (bindingVar == null) {
             super.visitIdent(tree);
         } else {
-            result = make.at(tree.pos).Ident(bindingVar);
+            result = make.at(tree.pos).Ident(bindingVar).setType(bindingVar.erasure(types));
         }
     }
 
