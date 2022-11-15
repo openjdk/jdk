@@ -71,7 +71,7 @@ void check_read_write() {
     out.write_double((jdouble)i);
     out.write_long((jlong)i);
   }
-  out.flush();
+  out.align();
 
   u_char* buf = out.buffer();
   CompressedSparseDataReadStream in(buf, 0);
@@ -91,7 +91,7 @@ void check_buffer_grow() {
   DebugInfoWriteStream out(NULL, 100);
   out.set_position(99);
   out.write_int(0);
-  out.flush();
+  out.align();
   out.write_int(1);
   out.write_int(2);
   u_char* buf = out.buffer();

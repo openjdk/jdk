@@ -115,22 +115,22 @@ void CompressedWriteStream::write_long(jlong value) {
 
 
 bool CompressedSparseDataReadStream::read_zero() {
-  if (_buffer[_position] & (1 << (7 - _bit_pos))) {
+  if (_buffer[_position] & (1 << (7 - _bit_position))) {
     return 0; // not a zero data
   }
-  if (++_bit_pos == 8) {
+  if (++_bit_position == 8) {
     _position++;
-    _bit_pos = 0;
+    _bit_position = 0;
   }
   return 1;
 }
 
 uint8_t CompressedSparseDataReadStream::read_byte_impl() {
-  if (_bit_pos == 0) {
+  if (_bit_position == 0) {
     return _buffer[_position++];
   }
-  uint8_t b1 = _buffer[_position] << _bit_pos;
-  uint8_t b2 = _buffer[++_position] >> (8 - _bit_pos);
+  uint8_t b1 = _buffer[_position] << _bit_position;
+  uint8_t b2 = _buffer[++_position] >> (8 - _bit_position);
   return b1 | b2;
 }
 
@@ -169,38 +169,28 @@ jint CompressedSparseDataReadStream::read_int() {
 }
 
 void CompressedSparseDataWriteStream::write_zero() {
-  if (_position >= _size) {
-    grow();
-  }
-  if (_bit_pos == 0) {
+  if (_bit_position == 0) {
+    grow_if_need();
     _buffer[_position] = 0;
   }
-  _bit_pos++;
-  if (_bit_pos == 8) {
+  _bit_position++;
+  if (_bit_position == 8) {
     _position++;
-    if (_position >= _size) {
-      grow();
-    }
-    _buffer[_position] = 0;
-    _bit_pos = 0;
+    _bit_position = 0;
   }
 }
 
 void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
-  if (_position >= _size) {
-    grow();
-  }
-  if (_bit_pos == 0) {
+  grow_if_need();
+  if (_bit_position == 0) {
     _buffer[_position] = b;
   } else {
-    _buffer[_position] |= (b >> _bit_pos);
+    _buffer[_position] |= (b >> _bit_position);
   }
   _position++;
-  if (_bit_pos > 0) {
-    if (_position >= _size) {
-      grow();
-    }
-    _buffer[_position] = (b << (8 - _bit_pos));
+  if (_bit_position > 0) {
+    grow_if_need();
+    _buffer[_position] = (b << (8 - _bit_position));
   }
 }
 
@@ -222,8 +212,8 @@ void CompressedSparseDataWriteStream::write_int(juint val) {
 }
 
 void CompressedSparseDataWriteStream::grow() {
+  assert(_size <= INT_MAX / 2, "debug data size must not exceed INT_MAX");
   int nsize = _size * 2;
-  assert(nsize > 0, "debug data size must not exceed MAX_INT");
   assert(nsize > _position, "sanity");
   u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, nsize);
   memcpy(_new_buffer, _buffer, _position);

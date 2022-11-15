@@ -112,14 +112,14 @@ class CompressedWriteStream : public CompressedStream {
   }
 };
 
-class CompressedBitStream : public ResourceObj {
+class CompressedSparseData : public ResourceObj {
 protected:
   u_char* _buffer;
   int     _position; // current byte offset
-  size_t  _bit_pos {0}; // current bit offset
+  size_t  _bit_position {0}; // current bit offset
 
 public:
-  CompressedBitStream(u_char* buffer = NULL, int position = 0) {
+  CompressedSparseData(u_char* buffer = NULL, int position = 0) {
     _buffer   = buffer;
     _position = position;
   }
@@ -128,12 +128,12 @@ public:
 };
 
 // Modified compression algorithm for a data set in which a significant part of the data is null
-class CompressedSparseDataReadStream : public CompressedBitStream {
+class CompressedSparseDataReadStream : public CompressedSparseData {
 public:
-  CompressedSparseDataReadStream(u_char* buffer, int position) : CompressedBitStream(buffer, position) {}
+  CompressedSparseDataReadStream(u_char* buffer, int position) : CompressedSparseData(buffer, position) {}
 
   void set_position(int pos) {
-    _bit_pos = 0;
+    _bit_position = 0;
     _position = pos;
   }
 
@@ -158,9 +158,9 @@ protected:
   inline u_char read()       { return _buffer[_position++]; }
 };
 
-class CompressedSparseDataWriteStream : public CompressedBitStream {
+class CompressedSparseDataWriteStream : public CompressedSparseData {
 public:
-  CompressedSparseDataWriteStream(int initial_size) : CompressedBitStream() {
+  CompressedSparseDataWriteStream(int initial_size) : CompressedSparseData() {
     _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
     _size     = initial_size;
     _buffer[0] = 0;
@@ -181,27 +181,31 @@ public:
     write_signed_int(high(value));
   }
 
-  void flush() {
-    if (_bit_pos > 0) {
+  void align() {
+    if (_bit_position > 0) {
       // start a new byte
       _position++;
-      _bit_pos = 0;
+      _bit_position = 0;
     }
   }
   int position() {
-    flush(); // method have a side effect: the current byte becomes aligned
+    align(); // method positon() have a side effect: the current data becomes aligned
     return _position;
   }
   void set_position(int pos) {
-    flush();
     _position = pos;
-    _bit_pos = 0;
+    _bit_position = 0;
+    assert(_position < _size, "set_position is only used for rollback");
   }
 
 protected:
   int    _size;
   void grow();
-
+  inline void grow_if_need() {
+    if (_position >= _size) {
+      grow();
+    }
+  }
   void write_zero();  // The zero word is encoded with a single zero bit
   void write_byte_impl(uint8_t b);
 };
