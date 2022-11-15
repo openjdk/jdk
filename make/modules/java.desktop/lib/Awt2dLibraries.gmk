@@ -274,7 +274,7 @@ endif
 ################################################################################
 
 # The fast floor code loses precision.
-LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
+LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.

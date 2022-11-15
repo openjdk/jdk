@@ -113,9 +113,9 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -1170,18 +1170,18 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
     assert(s->is_shared(), "must be");
   }
 
-  // The lambda proxy class and its nest host have the same class loader and class loader data,
-  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
-  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host);
-
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
   if (loaded_ik != NULL) {
     assert(shared_nest_host->is_same_class_package(ik),
            "lambda proxy class and its nest host must be in the same package");
   }
+
+  // The lambda proxy class and its nest host have the same class loader and class loader data,
+  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
+  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
+  ik->set_nest_host(shared_nest_host);
 
   return loaded_ik;
 }
