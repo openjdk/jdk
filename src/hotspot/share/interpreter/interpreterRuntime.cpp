@@ -935,9 +935,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   constantPoolHandle pool(current, last_frame.method()->constants());
   int index = last_frame.get_index_u4(bytecode);
   if (UseNewCode) {
-    tty->print_cr("In InterpreterRuntime::resolve_invokedynamic");
     index = pool->decode_invokedynamic_index(index);
-    tty->print_cr("The decoded index is %d", index);
   }
   {
     JvmtiHideSingleStepping jhss(current);
@@ -976,9 +974,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* current, Byte
     resolve_invokehandle(current);
     break;
   case Bytecodes::_invokedynamic:
-    if (UseNewCode) { tty->print_cr("Inside resolve from cache"); }
     resolve_invokedynamic(current);
-    if (UseNewCode) { tty->print_cr("Should have finished resolution"); }
     break;
   default:
     fatal("unexpected bytecode: %s", Bytecodes::name(bytecode));

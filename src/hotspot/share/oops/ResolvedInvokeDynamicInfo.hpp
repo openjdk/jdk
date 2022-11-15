@@ -41,13 +41,14 @@ public:
 
     // Printing
     void print_on(outputStream* st) const;
-    void print() const;
 
+    // Initialize with fields available before resolution
     void init(u2 resolved_references_index, u2 cpool_index) {
         _resolved_references_index = resolved_references_index;
         _cpool_index = cpool_index;
     }
 
+    // Fill remaining fields
     void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
         _method = m;
         _number_of_parameters = num_params; // might be parameter size()

@@ -2735,7 +2735,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  //__ movptr(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
   __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
   __ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
 
@@ -2785,7 +2784,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ verify_oop(index);
   __ pop(rbx);
   __ push(index);  // push appendix (MethodType, CallSite, etc.)
-  //__ movptr(rax, index);
   __ bind(L_no_push);
 
   // compute return type
@@ -3986,7 +3984,6 @@ void TemplateTable::invokedynamic(int byte_no) {
   } else {
     prepare_invoke(byte_no, rbx_method, rax_callsite);
   }
-  //if(UseNewCode) {__ hlt();}
   // rax: CallSite object (from cpool->resolved_references[f1])
   // rbx: MH.linkToCallSite method (from f2)
 

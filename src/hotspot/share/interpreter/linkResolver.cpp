@@ -1766,9 +1766,7 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
   int pool_index;
   if (UseNewCode) {
-    tty->print_cr("In LinkResolver::resolve_invokedynamic");
     pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
-    tty->print_cr("Indy index is %d", indy_index);
   } else {
     ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
     pool_index = cpce->constant_pool_index();
@@ -1850,7 +1848,6 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
      assert(bootstrap_specifier.invokedynamic_cp_cache_entry()->indy_resolution_failed(),
             "Resolution failure flag wasn't set");
   }
-  if (UseNewCode) { tty->print_cr("In LinkResolver::resolve_dynamic_call"); }
   bootstrap_specifier.resolve_newly_linked_invokedynamic(result, CHECK);
   // Exceptions::wrap_dynamic_exception not used because
   // set_handle doesn't throw linkage errors

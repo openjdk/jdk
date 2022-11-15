@@ -364,13 +364,12 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   if (!is_f1_null()) {
     return;
   }
-  // New code
+
   ConstantPoolCache* cpCache = cpool->cache();
 
   if (indy_resolution_failed()) {
     // Before we got here, another thread got a LinkageError exception during
     // resolution.  Ignore our success and throw their exception.
-    //ConstantPoolCache* cpCache = cpool->cache();
     int index = -1;
     for (int i = 0; i < cpCache->length(); i++) {
       if (cpCache->entry_at(i) == this) {
@@ -439,16 +438,6 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
   }
-
-  // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info
-  // that's set in the constant pool cache here.
-  // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
-  // out of the ConstantPoolCacheEntry.
-
-  // MOVE THIS SOMEWHERE ELSE
-  /*if (UseNewCode && cpCache->resolved_invokedynamic_info_array()) {
-    cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-  }*/
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
 
@@ -751,8 +740,6 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
     int original_index = invokedynamic_inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(offset) == e, "sanity");
-    // This should match the indices of invokedynamic in the new array
-    e->initialize_resolved_invokedynamic_index(i);
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
@@ -804,7 +791,7 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
     if (_resolved_invokedynamic_info_array)
-      MetadataFactory::free_array<ResolvedInvokeDynamicInfo>(data, _resolved_invokedynamic_info_array); // new code
+      MetadataFactory::free_array<ResolvedInvokeDynamicInfo>(data, _resolved_invokedynamic_info_array);
     _initial_entries = NULL;
   }
 #endif
@@ -890,7 +877,6 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   ResourceMark rm;
-  tty->print_cr("In set_dynamic_call");
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
 
   // Come back to this
@@ -924,7 +910,7 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
                    ((has_appendix    ? 1 : 0) << has_appendix_shift        ) |
                    (                   1      << has_local_signature_shift ) |
                    (                   1      << is_final_shift            ),
-                   adapter->size_of_parameters());
+                   adapter->size_of_parameters());*/
 
   LogStream* log_stream = NULL;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
@@ -932,13 +918,13 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     ResourceMark rm;
     log_stream = &lsh_indy;
     log_stream->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method=" PTR_FORMAT " (local signature) ",
-                         invoke_code,
+                         0xba,
                          p2i(appendix()),
                          (has_appendix ? "" : " (unused)"),
                          p2i(adapter));
     adapter->print_on(log_stream);
     if (has_appendix)  appendix()->print_on(log_stream);
-  }*/
+  }
 
   if (has_appendix) {
     //const int appendix_index = f2_as_index();
@@ -947,7 +933,6 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
-    tty->print_cr("Resolved references oop: %p", resolved_references->obj_at(appendix_index));
   }
 
   // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info
@@ -957,25 +942,18 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
 
   // MOVE THIS SOMEWHERE ELSE
   if (UseNewCode && resolved_invokedynamic_info_array()) {
-    tty->print_cr("Filling in invokedynamicinfo");
+    assert(resolved_invokedynamic_info_array() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
     resolved_invokedynamic_info_element(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-    //tty->print_cr("Done filling, %s: %p", adapter->name()->as_C_string(), adapter);
-    resolved_invokedynamic_info_element(index)->print_on(tty);
-  } else if (UseNewCode) {
-    tty->print_cr("Invokedynamic info array is empty, not filled in!");
   }
 
   // The interpreter assembly code does not check byte_2,
   // but it is used by is_resolved, method_if_resolved, etc.
-  /*set_bytecode_1(invoke_code);
-  NOT_PRODUCT(verify(tty));
+  /*set_bytecode_1(invoke_code);*/
+  //NOT_PRODUCT(verify(tty));
 
   if (log_stream != NULL) {
-    this->print(log_stream, 0, cpool->cache());
+    resolved_invokedynamic_info_element(index)->print_on(log_stream);
   }
-
-  assert(has_appendix == this->has_appendix(), "proper storage of appendix flag");
-  assert(this->has_local_signature(), "proper storage of signature flag");*/
 }
 
 // Printing

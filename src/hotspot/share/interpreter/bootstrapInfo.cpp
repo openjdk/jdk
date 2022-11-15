@@ -68,7 +68,6 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
   if (UseNewCode) {
-    tty->print_cr("In resolve previously linked invokedynamic");
     // Check if method is not null
     if ( _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method() != nullptr) {
       methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method());
@@ -77,13 +76,10 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
       Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
       return true;
     } else {
-      //int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
       int encoded_index = _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->cpool_index();
-      tty->print_cr("Method not resolved, Cpool index: %d", encoded_index);
-      //ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false);
+      //ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
       return false;
     }
-    return false;
   } else {
     ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
     if (!cpce->is_f1_null()) {
