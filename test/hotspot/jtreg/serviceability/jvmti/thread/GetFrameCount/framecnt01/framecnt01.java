@@ -61,7 +61,7 @@ public class framecnt01 {
 
         // Test GetFrameCount on virtual live thread
         Thread vThread = Thread.ofVirtual().name("VirtualThread-Live").start(() -> {
-           checkFrames(Thread.currentThread(), false, 9);
+           checkFrames(Thread.currentThread(), false, 10);
         });
         vThread.join();
 
@@ -79,13 +79,13 @@ public class framecnt01 {
         }
 
         // this is too fragile, implementation can change at any time.
-        checkFrames(vThread1, false, 14);
+        checkFrames(vThread1, false, 15);
         LockSupport.unpark(vThread1);
         vThread1.join();
 
         // Test GetFrameCount on live platform thread
         Thread pThread = Thread.ofPlatform().name("PlatformThread-Live").start(() -> {
-            checkFrames(Thread.currentThread(), false, 5);
+            checkFrames(Thread.currentThread(), false, 6);
         });
         pThread.join();
 
@@ -101,7 +101,7 @@ public class framecnt01 {
         while(pThread1.getState() != Thread.State.WAITING) {
             Thread.sleep(1);
         }
-        checkFrames(pThread1, false, 5);
+        checkFrames(pThread1, false, 6);
         LockSupport.unpark(pThread1);
         pThread1.join();
 
@@ -118,10 +118,11 @@ class FixedDepthThread implements Runnable {
     Object checkFlag;
     Thread thread;
 
-    // Each stack has 2 frames additional to expected depth
+    // Each stack has 3 frames additional to expected depth
     // 0: FixedDepthThread: run()V
     // 1: java/lang/Thread: run()V
-    static final int ADDITIONAL_STACK_COUNT = 2;
+    // 2: java/lang/Thread: runWith()V
+    static final int ADDITIONAL_STACK_COUNT = 3;
 
     private FixedDepthThread(String name, int depth, Object checkFlag) {
         this.thread = Thread.ofPlatform().name(name).unstarted(this);
