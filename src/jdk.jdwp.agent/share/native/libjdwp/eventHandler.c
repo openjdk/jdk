@@ -487,7 +487,7 @@ eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
 
     debugMonitorEnter(handlerLock);
 
-    node = getHandlerChain(EI_GC_FINISH)->first;
+    node = getHandlerChain(EI_CLASS_UNLOAD)->first;
     while (node != NULL) {
         /* save next so handlers can remove themselves */
         HandlerNode *next = NEXT(node);
@@ -1508,8 +1508,13 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable thread end events");
     }
-    error = threadControl_setEventMode(JVMTI_ENABLE,
-                                       EI_GC_FINISH, NULL);
+
+    /*
+     * GARBAGE_COLLECTION_FINISH is special since it is not tied to any handlers or an EI,
+     * so it cannot be setup using threadControl_setEventMode(). Use JVMTI API directly.
+     */
+    error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
+            (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }

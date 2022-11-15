@@ -43,7 +43,6 @@ import javax.swing.event.PopupMenuListener;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
 import org.netbeans.api.visual.action.SelectProvider;
-import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -73,7 +72,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private final boolean isBold;
     private final boolean isDashed;
 
-    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, SceneAnimator animator, boolean isBold, boolean isDashed) {
+    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
         this.scene = scene;
         this.outputSlot = s;
@@ -117,12 +116,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         setCheckClipping(true);
 
         getActions().addAction(ActionFactory.createPopupMenuAction(this));
-        if (animator == null) {
-            this.setBackground(color);
-        } else {
-            this.setBackground(Color.WHITE);
-            animator.animateBackgroundColor(this, color);
-        }
+        setBackground(color);
 
         getActions().addAction(new CustomSelectAction(new SelectProvider() {
 
