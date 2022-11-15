@@ -13,6 +13,16 @@ public enum Result {
         this.exitCode = exitCode;
     }
 
+    public static Result of(int exitcode) {
+        for (Result result : values()) {
+            if (result.exitCode == exitcode) {
+                return result;
+            }
+        }
+
+        return ABNORMAL;
+    }
+
     public boolean isOK() {
         return (exitCode == 0);
     }

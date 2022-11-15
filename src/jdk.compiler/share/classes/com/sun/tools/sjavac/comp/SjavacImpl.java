@@ -25,11 +25,9 @@
 
 package com.sun.tools.sjavac.comp;
 
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.Main;
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.Main;
 import com.sun.tools.sjavac.Log;
+import com.sun.tools.sjavac.Result;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.options.Option;
 import com.sun.tools.sjavac.options.Options;
@@ -38,12 +36,10 @@ import com.sun.tools.sjavac.server.Sjavac;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-import javax.tools.JavaFileManager;
 
 /**
  * The sjavac implementation that interacts with javac and performs the actual
@@ -57,6 +53,7 @@ import javax.tools.JavaFileManager;
 public class SjavacImpl implements Sjavac {
 
     @Override
+    @SuppressWarnings("deprecated")
     public Result compile(String[] args) {
         Options options;
         try {
@@ -88,33 +85,22 @@ public class SjavacImpl implements Sjavac {
         if (hdrdir != null && !createIfMissing(hdrdir))
             return Result.ERROR;
 
-        // Prepare context. Direct logging to our byte array stream.
-        Context context = new Context();
+        // Direct logging to our byte array stream.
         StringWriter strWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(strWriter);
-        com.sun.tools.javac.util.Log.preRegister(context, printWriter);
-        JavacFileManager.preRegister(context);
 
         // Prepare arguments
         String[] passThroughArgs = Stream.of(args)
                                          .filter(arg -> !arg.startsWith(Option.SERVER.arg))
                                          .toArray(String[]::new);
         // Compile
-        Result result = new Main("javac", printWriter).compile(passThroughArgs, context);
+        int exitcode = Main.compile(passThroughArgs, printWriter);
+        Result result = Result.of(exitcode);
 
         // Process compiler output (which is always errors)
         printWriter.flush();
         Util.getLines(strWriter.toString()).forEach(Log::error);
 
-        // Clean up
-        JavaFileManager fileManager = context.get(JavaFileManager.class);
-        if (fileManager instanceof JavacFileManager javacFileManager) {
-            try {
-                javacFileManager.close();
-            } catch (IOException es) {
-                throw new UncheckedIOException(es);
-            }
-        }
         return result;
 
     }
