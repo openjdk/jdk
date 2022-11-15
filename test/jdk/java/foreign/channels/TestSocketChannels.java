@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -65,7 +65,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
              var server = ServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
             Arena drop = arenaSupplier.get();
-            ByteBuffer bb = segmentBufferOfSize(drop.session(), 16);
+            ByteBuffer bb = segmentBufferOfSize(drop.scope(), 16);
             drop.close();
             assertMessage(expectThrows(ISE, () -> channel.read(bb)),                           "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb})),        "Already closed");
@@ -84,7 +84,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
              var server = ServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
             Arena drop = arenaSupplier.get();
-            ByteBuffer[] buffers = segmentBuffersOfSize(8, drop.session(), 16);
+            ByteBuffer[] buffers = segmentBuffersOfSize(8, drop.scope(), 16);
             drop.close();
             assertMessage(expectThrows(ISE, () -> channel.write(buffers)),       "Already closed");
             assertMessage(expectThrows(ISE, () -> channel.read(buffers)),        "Already closed");
@@ -102,8 +102,8 @@ public class TestSocketChannels extends AbstractChannelsTest {
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
              var scp = drop = arenaSupplier.get()) {
-            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, drop.session());
-            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, drop.session());
+            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, drop.scope());
+            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, drop.scope());
             for (int i = 0; i < 10; i++) {
                 segment1.set(JAVA_BYTE, i, (byte) i);
             }
@@ -141,7 +141,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
              var server = ServerSocketChannel.open();
              var connected = connectChannels(server, channel);
              var drop = arenaSupplier.get()) {
-            var segment = MemorySegment.allocateNative(10, 1, drop.session());
+            var segment = MemorySegment.allocateNative(10, 1, drop.scope());
             ByteBuffer bb = segment.asByteBuffer();
             List<ThrowingRunnable> ioOps = List.of(
                     () -> channel.write(bb),
@@ -171,8 +171,8 @@ public class TestSocketChannels extends AbstractChannelsTest {
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1);
              var scp = drop = arenaSupplier.get()) {
-            var writeBuffers = mixedBuffersOfSize(32, drop.session(), 64);
-            var readBuffers = mixedBuffersOfSize(32, drop.session(), 64);
+            var writeBuffers = mixedBuffersOfSize(32, drop.scope(), 64);
+            var readBuffers = mixedBuffersOfSize(32, drop.scope(), 64);
             long expectedCount = remaining(writeBuffers);
             assertEquals(writeNBytes(sc1, writeBuffers, 0, 32, expectedCount), expectedCount);
             assertEquals(readNBytes(sc2, readBuffers, 0, 32, expectedCount), expectedCount);
@@ -189,10 +189,10 @@ public class TestSocketChannels extends AbstractChannelsTest {
              var sc2 = connectChannels(ssc, sc1);
              var drop1 = arenaSupplier.get();
              var drop2 = arenaSupplier.get()) {
-            var writeBuffers = Stream.of(mixedBuffersOfSize(16, drop1.session(), 64), mixedBuffersOfSize(16, drop2.session(), 64))
+            var writeBuffers = Stream.of(mixedBuffersOfSize(16, drop1.scope(), 64), mixedBuffersOfSize(16, drop2.scope(), 64))
                                      .flatMap(Arrays::stream)
                                      .toArray(ByteBuffer[]::new);
-            var readBuffers = Stream.of(mixedBuffersOfSize(16, drop1.session(), 64), mixedBuffersOfSize(16, drop2.session(), 64))
+            var readBuffers = Stream.of(mixedBuffersOfSize(16, drop1.scope(), 64), mixedBuffersOfSize(16, drop2.scope(), 64))
                                     .flatMap(Arrays::stream)
                                     .toArray(ByteBuffer[]::new);
 

@@ -115,7 +115,7 @@ public class TestStackWalk extends NativeTestHelper {
 
     public static void main(String[] args) throws Throwable {
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena.session());
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena.scope());
             armed = false;
             for (int i = 0; i < 20_000; i++) {
                 payload(stub); // warmup

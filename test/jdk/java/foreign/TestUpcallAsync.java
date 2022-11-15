@@ -38,10 +38,10 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import org.testng.annotations.Test;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
@@ -65,20 +65,20 @@ public class TestUpcallAsync extends TestUpcallBase {
         try (Arena arena = Arena.openShared()) {
             FunctionDescriptor descriptor = function(ret, paramTypes, fields);
             MethodHandle mh = downcallHandle(ABI, addr, arena, descriptor);
-            Object[] args = makeArgs(MemorySession.implicit(), ret, paramTypes, fields, returnChecks, argChecks);
+            Object[] args = makeArgs(SegmentScope.auto(), ret, paramTypes, fields, returnChecks, argChecks);
 
             mh = mh.asSpreader(Object[].class, args.length);
             mh = MethodHandles.insertArguments(mh, 0, (Object) args);
             FunctionDescriptor callbackDesc = descriptor.returnLayout()
                     .map(FunctionDescriptor::of)
                     .orElse(FunctionDescriptor.ofVoid());
-            MemorySegment callback = ABI.upcallStub(mh, callbackDesc, arena.session());
+            MemorySegment callback = ABI.upcallStub(mh, callbackDesc, arena.scope());
 
             MethodHandle invoker = asyncInvoker(ret, ret == Ret.VOID ? null : paramTypes.get(0), fields);
 
             Object res = (descriptor.returnLayout().isPresent() &&
                          descriptor.returnLayout().get() instanceof GroupLayout)
-                    ? invoker.invoke(arena.session(), callback)
+                    ? invoker.invoke(arena.scope(), callback)
                     : invoker.invoke(callback);
             argChecks.forEach(c -> c.accept(args));
             if (ret == Ret.NON_VOID) {

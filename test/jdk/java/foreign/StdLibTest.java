@@ -279,7 +279,7 @@ public class StdLibTest extends NativeTestHelper {
                 MemorySegment nativeArr = arena.allocateArray(C_INT, arr);
 
                 //call qsort
-                MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena.session());
+                MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena.scope());
 
                 qsort.invokeExact(nativeArr, (long)arr.length, C_INT.byteSize(), qsortUpcallStub);
 
@@ -308,7 +308,7 @@ public class StdLibTest extends NativeTestHelper {
         int vprintf(String format, List<PrintfArg> args) throws Throwable {
             try (var arena = Arena.openConfined()) {
                 MemorySegment formatStr = arena.allocateUtf8String(format);
-                VaList vaList = VaList.make(b -> args.forEach(a -> a.accept(b, arena)), arena.session());
+                VaList vaList = VaList.make(b -> args.forEach(a -> a.accept(b, arena)), arena.scope());
                 return (int)vprintf.invokeExact(formatStr, vaList.segment());
             }
         }

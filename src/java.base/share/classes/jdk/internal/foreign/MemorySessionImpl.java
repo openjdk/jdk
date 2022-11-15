@@ -26,8 +26,9 @@
 
 package jdk.internal.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -50,7 +51,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
 public abstract sealed class MemorySessionImpl
-        implements MemorySession, SegmentAllocator
+        implements SegmentScope, SegmentAllocator
         permits ConfinedSession, GlobalSession, SharedSession {
     static final int OPEN = 0;
     static final int CLOSING = -1;
@@ -74,6 +75,27 @@ public abstract sealed class MemorySessionImpl
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
+    }
+
+    public Arena asArena() {
+        return new Arena() {
+            @Override
+            public SegmentScope scope() {
+                return MemorySessionImpl.this;
+            }
+
+            @Override
+            public void close() {
+                MemorySessionImpl.this.close();
+            }
+
+            @Override
+            public boolean isCloseableBy(Thread thread) {
+                Objects.requireNonNull(thread);
+                return ownerThread() == null || // shared
+                        ownerThread() == thread;
+            }
+        };
     }
 
     public void addCloseAction(Runnable runnable) {
@@ -153,7 +175,7 @@ public abstract sealed class MemorySessionImpl
         return owner;
     }
 
-    public static boolean sameOwnerThread(MemorySession session1, MemorySession session2) {
+    public static boolean sameOwnerThread(SegmentScope session1, SegmentScope session2) {
         return ((MemorySessionImpl) session1).ownerThread() ==
                 ((MemorySessionImpl) session2).ownerThread();
     }

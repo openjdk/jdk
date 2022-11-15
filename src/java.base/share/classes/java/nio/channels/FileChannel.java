@@ -27,7 +27,7 @@ package java.nio.channels;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -1057,11 +1057,11 @@ public abstract class FileChannel
      *
      * @throws  IllegalStateException
      *          If the {@code session} is not
-     *          {@linkplain MemorySession#isAlive() alive}.
+     *          {@linkplain SegmentScope#isAlive() alive}.
      *
      * @throws  WrongThreadException
      *          If this method is called from a thread other than the thread
-     *          {@linkplain MemorySession#isAccessibleBy(Thread) owning} the
+     *          {@linkplain SegmentScope#isAccessibleBy(Thread) owning} the
      *          {@code session}.
      *
      * @throws  NonReadableChannelException
@@ -1084,7 +1084,7 @@ public abstract class FileChannel
      * @since   19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public MemorySegment map(MapMode mode, long offset, long size, MemorySession session)
+    public MemorySegment map(MapMode mode, long offset, long size, SegmentScope session)
         throws IOException
     {
         throw new UnsupportedOperationException();

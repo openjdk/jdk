@@ -31,7 +31,7 @@ import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -61,17 +61,17 @@ public final class MacOsAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, MemorySession scope) {
+    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
         return CallArranger.MACOS.arrangeUpcall(target, targetType, function, scope);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession session) {
+    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope session) {
         MacOsAArch64VaList.Builder builder = MacOsAArch64VaList.builder(session);
         actions.accept(builder);
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(long address, MemorySession session) {
+    public static VaList newVaListOfAddress(long address, SegmentScope session) {
         return MacOsAArch64VaList.ofAddress(address, session);
     }
 

@@ -25,7 +25,7 @@ package org.openjdk.bench.java.lang.foreign;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -130,7 +131,7 @@ public class Upcalls extends CLayouts {
     static MemorySegment makeCB(String name, MethodType mt, FunctionDescriptor fd) throws ReflectiveOperationException {
         return abi.upcallStub(
             lookup().findStatic(Upcalls.class, name, mt),
-            fd, MemorySession.global()
+            fd, SegmentScope.global()
         );
     }
 

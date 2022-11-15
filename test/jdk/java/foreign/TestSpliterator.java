@@ -30,7 +30,7 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SequenceLayout;
 
 import java.lang.invoke.VarHandle;
@@ -60,7 +60,7 @@ public class TestSpliterator {
 
         //setup
         try (Arena arena = Arena.openShared()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, arena.session());;
+            MemorySegment segment = MemorySegment.allocateNative(layout, arena.scope());;
             for (int i = 0; i < layout.elementCount(); i++) {
                 INT_HANDLE.set(segment, (long) i, i);
             }
@@ -86,7 +86,7 @@ public class TestSpliterator {
         SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
 
         //setup
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         for (int i = 0; i < layout.elementCount(); i++) {
             INT_HANDLE.set(segment, (long) i, i);
         }

@@ -27,12 +27,12 @@ package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 
 public interface Scoped {
     @ForceInline
     default MemorySessionImpl sessionImpl() {
-        return (MemorySessionImpl) session();
+        return (MemorySessionImpl) scope();
     }
-    MemorySession session();
+    SegmentScope scope();
 }

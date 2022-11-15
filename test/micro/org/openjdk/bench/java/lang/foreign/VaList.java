@@ -76,7 +76,7 @@ public class VaList extends CLayouts {
             java.lang.foreign.VaList vaList = java.lang.foreign.VaList.make(b ->
                     b.addVarg(C_INT, 1)
                             .addVarg(C_DOUBLE, 2D)
-                            .addVarg(C_LONG_LONG, 3L), arena.session());
+                            .addVarg(C_LONG_LONG, 3L), arena.scope());
             MH_vaList.invokeExact(3,
                     vaList.segment());
         }

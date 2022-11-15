@@ -24,7 +24,6 @@ package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -38,6 +37,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.SegmentScope;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -118,13 +118,13 @@ public class MemorySessionClose {
 
     @Benchmark
     public MemorySegment implicit_close() {
-        return MemorySegment.allocateNative(ALLOC_SIZE, 4, MemorySession.implicit());
+        return MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
     }
 
     @Benchmark
     public MemorySegment implicit_close_systemgc() {
         if (gcCount++ == 0) System.gc(); // GC when we overflow
-        return MemorySegment.allocateNative(ALLOC_SIZE, 4, MemorySession.implicit());
+        return MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
     }
 
     // keep

@@ -32,6 +32,7 @@ import java.lang.foreign.*;
 
 import org.testng.annotations.*;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -92,7 +93,7 @@ public class TestSegmentAllocators {
                 }
                 // addresses should be invalid now
                 for (MemorySegment address : addressList) {
-                    assertFalse(address.session().isAlive());
+                    assertFalse(address.scope().isAlive());
                 }
             }
         }
@@ -187,7 +188,7 @@ public class TestSegmentAllocators {
             @Override
 
             public MemorySegment allocate(long byteSize, long byteAlignment) {
-                return MemorySegment.allocateNative(byteSize, byteAlignment, MemorySession.implicit());
+                return MemorySegment.allocateNative(byteSize, byteAlignment, SegmentScope.auto());
             }
 
             @Override
@@ -347,8 +348,8 @@ public class TestSegmentAllocators {
     }
 
     enum AllocationFactory {
-        SLICING(true, (size, drop) -> SegmentAllocator.slicingAllocator(MemorySegment.allocateNative(size, drop.session()))),
-        NATIVE_ALLOCATOR(false, (size, drop) -> SegmentAllocator.nativeAllocator(drop.session()));
+        SLICING(true, (size, drop) -> SegmentAllocator.slicingAllocator(MemorySegment.allocateNative(size, drop.scope()))),
+        NATIVE_ALLOCATOR(false, (size, drop) -> SegmentAllocator.nativeAllocator(drop.scope()));
 
         private final boolean isBound;
         private final BiFunction<Long, Arena, SegmentAllocator> factory;
@@ -480,8 +481,8 @@ public class TestSegmentAllocators {
     @DataProvider(name = "allocators")
     static Object[][] allocators() {
         return new Object[][] {
-                { SegmentAllocator.nativeAllocator(MemorySession.global()) },
-                { SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(10, MemorySession.global())) },
+                { SegmentAllocator.nativeAllocator(SegmentScope.global()) },
+                { SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(10, SegmentScope.global())) },
         };
     }
 }

@@ -24,6 +24,7 @@
 
 import java.lang.foreign.*;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -378,11 +379,11 @@ public class CallGeneratorHelper extends NativeTestHelper {
     @SuppressWarnings("unchecked")
     static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
         if (layout instanceof GroupLayout) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+            MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
             initStruct(segment, (GroupLayout)layout, checks, check);
             return segment;
         } else if (isPointer(layout)) {
-            MemorySegment segment = MemorySegment.allocateNative(1L, MemorySession.implicit());
+            MemorySegment segment = MemorySegment.allocateNative(1L, SegmentScope.auto());
             if (check) {
                 checks.add(o -> {
                     try {

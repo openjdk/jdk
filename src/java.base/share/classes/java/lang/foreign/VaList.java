@@ -41,7 +41,7 @@ import jdk.internal.reflect.Reflection;
 /**
  * Helper class to create and manipulate variable argument lists, similar in functionality to a C {@code va_list}.
  * <p>
- * A variable argument list can be created using the {@link #make(Consumer, MemorySession)} factory, as follows:
+ * A variable argument list can be created using the {@link #make(Consumer, SegmentScope)} factory, as follows:
  * {@snippet lang = java:
  * VaList vaList = VaList.make(builder ->
  *                                    builder.addVarg(C_INT, 42)
@@ -56,7 +56,7 @@ import jdk.internal.reflect.Reflection;
  * {@snippet lang = java:
  * void upcall(int n, MemorySegment vaListSegment) {
  *    try (Arena arena = Arena.openConfined()) {
- *        VaList vaList = VaList.ofAddress(vaListSegment.address(), arena.session());
+ *        VaList vaList = VaList.ofAddress(vaListSegment.address(), arena.scope());
  *        VaList copy = vaList.copy();
  *        int i = vaList.nextVarg(C_INT);
  *        double d = vaList.nextVarg(C_DOUBLE);
@@ -87,12 +87,12 @@ import jdk.internal.reflect.Reflection;
  * <p>
  * Whether this detection succeeds depends on the factory method used to create the variable argument list:
  * <ul>
- *     <li>Variable argument lists created <em>safely</em>, using {@link #make(Consumer, MemorySession)} are capable of detecting out-of-bounds reads;</li>
- *     <li>Variable argument lists created <em>unsafely</em>, using {@link #ofAddress(long, MemorySession)} are not capable of detecting out-of-bounds reads</li>
+ *     <li>Variable argument lists created <em>safely</em>, using {@link #make(Consumer, SegmentScope)} are capable of detecting out-of-bounds reads;</li>
+ *     <li>Variable argument lists created <em>unsafely</em>, using {@link #ofAddress(long, SegmentScope)} are not capable of detecting out-of-bounds reads</li>
  * </ul>
  * <p>
  * This class is not thread safe, and all accesses should occur within a single thread
- * (regardless of the session associated with the variable arity list).
+ * (regardless of the scope used to obtain the variable arity list).
  *
  * @since 19
  */
@@ -105,10 +105,10 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      *
      * @param layout the layout of the value to be read.
      * @return the {@code int} value read from this variable argument list.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     int nextVarg(ValueLayout.OfInt layout);
@@ -119,10 +119,10 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      *
      * @param layout the layout of the value to be read.
      * @return the {@code long} value read from this variable argument list.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     long nextVarg(ValueLayout.OfLong layout);
@@ -133,10 +133,10 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      *
      * @param layout the layout of the value
      * @return the {@code double} value read from this variable argument list.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     double nextVarg(ValueLayout.OfDouble layout);
@@ -145,17 +145,17 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * Reads the next address value, wraps it into a native segment, and advances this variable argument list's position.
      * The behavior of this method is equivalent to the C {@code va_arg} function. The returned segment's base
      * {@linkplain MemorySegment#address()} is set to the value read from the variable argument list, and the segment
-     * is associated with the {@linkplain MemorySession#global() global} memory session. Under normal conditions, the size of the returned
+     * is associated with the {@linkplain SegmentScope#global() global scope}. Under normal conditions, the size of the returned
      * segment is {@code 0}. However, if the provided layout is an {@linkplain ValueLayout.OfAddress#asUnbounded() unbounded}
      * address layout, then the size of the returned segment is {@code Long.MAX_VALUE}.
      *
      * @param layout the layout of the value to be read.
      * @return a native segment whose {@linkplain MemorySegment#address() address} is the value read from
      * this variable argument list.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     MemorySegment nextVarg(ValueLayout.OfAddress layout);
@@ -175,10 +175,10 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @param allocator the allocator to be used to create a segment where the contents of the variable argument list
      *                  will be copied.
      * @return the {@code MemorySegment} value read from this variable argument list.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator);
@@ -187,17 +187,17 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * Skips a number of elements with the given memory layouts, and advances this variable argument list's position.
      *
      * @param layouts the layouts of the values to be skipped.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      * @throws NoSuchElementException if an <a href=VaList.html#safety>out-of-bounds</a> read is detected.
      */
     void skip(MemoryLayout... layouts);
 
     /**
      * Copies this variable argument list at its current position into a new variable argument list associated
-     * with the same memory session as this variable argument list. The behavior of this method is equivalent to the C
+     * with the same scope as this variable argument list. The behavior of this method is equivalent to the C
      * {@code va_copy} function.
      * <p>
      * Copying is useful to traverse the variable argument list elements, starting from the current position,
@@ -205,10 +205,10 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * traversed multiple times.
      *
      * @return a copy of this variable argument list.
-     * @throws IllegalStateException if the session associated with this variable argument list is not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if the scope associated with this variable argument list is not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code segment().session().isAccessibleBy(T) == false}.
+     * such that {@code segment().scope().isAccessibleBy(T) == false}.
      */
     VaList copy();
 
@@ -216,18 +216,17 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * Returns a zero-length {@linkplain MemorySegment memory segment} associated with this variable argument list.
      * The contents of the returned memory segment are platform-dependent. Whether and how the contents of
      * the returned segment are updated when iterating the contents of a variable argument list is also
-     * platform-dependent. The returned segment's memory session is the session which manages the lifecycle of this
-     * variable argument list.
+     * platform-dependent.
      * @return a zero-length {@linkplain MemorySegment memory segment} associated with this variable argument list.
      */
     MemorySegment segment();
 
     /**
-     * Creates a variable argument list from the give address value and memory session. The address is typically obtained
-     * by calling {@link MemorySegment#address()} on a foreign memory segment instance. The provided session determines
+     * Creates a variable argument list from the give address value and scope. The address is typically obtained
+     * by calling {@link MemorySegment#address()} on a foreign memory segment instance. The provided scope determines
      * the lifecycle of the returned variable argument list: the returned variable argument list will no longer be accessible,
-     * and its associated off-heap memory region will be deallocated when the session becomes not
-     * {@linkplain MemorySession#isAlive() alive}.
+     * and its associated off-heap memory region will be deallocated when the scope becomes not
+     * {@linkplain SegmentScope#isAlive() alive}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
@@ -235,28 +234,28 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param address the address of the variable argument list.
-     * @param session the memory session to be associated with the returned variable argument list.
+     * @param scope the scope associated with the returned variable argument list.
      * @return a new variable argument list backed by an off-heap region of memory starting at the given address value.
-     * @throws IllegalStateException         if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException         if {@code scope} is not {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException          if this method is called from a thread {@code T},
-     *                                       such that {@code session.isAccessibleBy(T) == false}.
+     *                                       such that {@code scope.isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
-    static VaList ofAddress(long address, MemorySession session) {
+    static VaList ofAddress(long address, SegmentScope scope) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), VaList.class, "ofAddress");
-        Objects.requireNonNull(session);
-        return SharedUtils.newVaListOfAddress(address, session);
+        Objects.requireNonNull(scope);
+        return SharedUtils.newVaListOfAddress(address, scope);
     }
 
     /**
      * Creates a variable argument list using a builder (see {@link Builder}), with the given
-     * memory session. The provided session determines the lifecycle of the returned variable argument list: the
+     * scope. The provided scope determines the lifecycle of the returned variable argument list: the
      * returned variable argument list will no longer be accessible, and its associated off-heap memory region will be
-     * deallocated when the session becomes not {@linkplain MemorySession#isAlive() alive}.
+     * deallocated when the scope becomes not {@linkplain SegmentScope#isAlive() alive}.
      * <p>
      * Note that when there are no elements added to the created va list,
      * this method will return the same as {@link #empty()}.
@@ -265,22 +264,22 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      *
      * @param actions a consumer for a builder (see {@link Builder}) which can be used to specify the elements
      *                of the underlying variable argument list.
-     * @param session the memory session to be associated with the new variable arity list.
+     * @param scope the scope to be associated with the new variable arity list.
      * @return a new variable argument list.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
-     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws IllegalStateException if {@code scope} is not {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code session.isAccessibleBy(T) == false}.
+     * such that {@code scope.isAccessibleBy(T) == false}.
      */
-    static VaList make(Consumer<Builder> actions, MemorySession session) {
+    static VaList make(Consumer<Builder> actions, SegmentScope scope) {
         Objects.requireNonNull(actions);
-        Objects.requireNonNull(session);
-        return SharedUtils.newVaList(actions, session);
+        Objects.requireNonNull(scope);
+        return SharedUtils.newVaList(actions, scope);
     }
 
     /**
-     * Returns an empty variable argument list, associated with the {@linkplain MemorySession#global() global}
-     * memory session. The resulting variable argument list does not contain any argument, and throws {@link UnsupportedOperationException}
+     * Returns an empty variable argument list, associated with the {@linkplain SegmentScope#global() global scope}.
+     * The resulting variable argument list does not contain any argument, and throws {@link UnsupportedOperationException}
      * on all operations, except for {@link VaList#segment()}, {@link VaList#copy()}.
      * @return an empty variable argument list.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.

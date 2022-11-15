@@ -68,7 +68,7 @@ public class TestHandshake {
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
             Arena arena = Arena.openShared();
-            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE, 1, arena.session());
+            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE, 1, arena.scope());
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
@@ -82,7 +82,7 @@ public class TestHandshake {
             accessExecutor.execute(new Handshaker(arena));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
-            assertTrue(!segment.session().isAlive());
+            assertTrue(!segment.scope().isAlive());
         }
     }
 
@@ -99,7 +99,7 @@ public class TestHandshake {
         @Override
         public final void run() {
             start("\"Accessor #\" + id");
-            outer: while (segment.session().isAlive()) {
+            outer: while (segment.scope().isAlive()) {
                 try {
                     doAccess();
                 } catch (IllegalStateException ex) {
@@ -193,7 +193,7 @@ public class TestHandshake {
 
         SegmentMismatchAccessor(int id, MemorySegment segment) {
             super(id, segment);
-            this.copy = MemorySegment.allocateNative(SEGMENT_SIZE, 1, segment.session());
+            this.copy = MemorySegment.allocateNative(SEGMENT_SIZE, 1, segment.scope());
             copy.copyFrom(segment);
             copy.set(JAVA_BYTE, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
         }

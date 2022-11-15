@@ -37,7 +37,7 @@
 #warn This file is preprocessed before being compiled
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemorySegment.MemorySession;
 import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.$Type$Vector;
 import jdk.incubator.vector.VectorMask;

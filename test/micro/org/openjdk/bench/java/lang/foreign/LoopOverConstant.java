@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.MemorySession;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -37,6 +36,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -69,7 +69,7 @@ public class LoopOverConstant extends JavaLayouts {
 
     //setup native memory segment
 
-    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, MemorySession.implicit());
+    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, SegmentScope.auto());
 
     static {
         for (int i = 0; i < ELEM_SIZE; i++) {

@@ -39,7 +39,6 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -130,7 +129,7 @@ public class BulkMismatchAcquire {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public long mismatch_large_segment_acquire() {
         long[] arr = new long[1];
-        mismatchSegmentLarge1.session().whileAlive(() -> {
+        mismatchSegmentLarge1.scope().whileAlive(() -> {
             arr[0] = mismatchSegmentLarge1.mismatch(mismatchSegmentSmall2);
         });
         return arr[0];
@@ -152,7 +151,7 @@ public class BulkMismatchAcquire {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public long mismatch_small_segment_acquire() {
         long[] arr = new long[1];
-        mismatchSegmentLarge1.session().whileAlive(() -> {
+        mismatchSegmentLarge1.scope().whileAlive(() -> {
             arr[0] = mismatchSegmentSmall1.mismatch(mismatchSegmentSmall2);
         });
         return arr[0];

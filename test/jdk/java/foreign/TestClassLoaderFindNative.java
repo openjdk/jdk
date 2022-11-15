@@ -29,7 +29,7 @@
  */
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import org.testng.annotations.Test;
@@ -62,7 +62,7 @@ public class TestClassLoaderFindNative {
         MemorySegment segment = MemorySegment.ofAddress(
                 SymbolLookup.loaderLookup().find("c").get().address(),
                 ValueLayout.JAVA_INT.byteSize(),
-                MemorySession.global());
+                SegmentScope.global());
         assertEquals(segment.get(JAVA_BYTE, 0), 42);
     }
 }

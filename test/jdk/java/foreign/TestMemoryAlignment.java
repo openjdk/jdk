@@ -53,7 +53,7 @@ public class TestMemoryAlignment {
         assertEquals(aligned.bitAlignment(), align); //unreasonable alignment here, to make sure access throws
         VarHandle vh = aligned.varHandle();
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(aligned, arena.session());;
+            MemorySegment segment = MemorySegment.allocateNative(aligned, arena.scope());;
             vh.set(segment, -42);
             int val = (int)vh.get(segment);
             assertEquals(val, -42);
@@ -71,7 +71,7 @@ public class TestMemoryAlignment {
         assertEquals(alignedGroup.bitAlignment(), align);
         VarHandle vh = aligned.varHandle();
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(alignedGroup, arena.session());;
+            MemorySegment segment = MemorySegment.allocateNative(alignedGroup, arena.scope());;
             vh.set(segment.asSlice(1L), -42);
             assertEquals(align, 8); //this is the only case where access is aligned
         } catch (IllegalArgumentException ex) {
@@ -98,7 +98,7 @@ public class TestMemoryAlignment {
         try {
             VarHandle vh = layout.varHandle(PathElement.sequenceElement());
             try (Arena arena = Arena.openConfined()) {
-                MemorySegment segment = MemorySegment.allocateNative(layout, arena.session());;
+                MemorySegment segment = MemorySegment.allocateNative(layout, arena.scope());;
                 for (long i = 0 ; i < 5 ; i++) {
                     vh.set(segment, i, -42);
                 }
@@ -122,7 +122,7 @@ public class TestMemoryAlignment {
         VarHandle vh_s = g.varHandle(PathElement.groupElement("b"));
         VarHandle vh_i = g.varHandle(PathElement.groupElement("c"));
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(g, arena.session());;
+            MemorySegment segment = MemorySegment.allocateNative(g, arena.scope());;
             vh_c.set(segment, Byte.MIN_VALUE);
             assertEquals(vh_c.get(segment), Byte.MIN_VALUE);
             vh_s.set(segment, Short.MIN_VALUE);
