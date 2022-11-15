@@ -623,7 +623,7 @@ public:
       debug_only(COMMA _nesting_check(true)) {
   }
 
-  // Areana allocation
+  // Arena allocation
   GrowableArrayMetadata(Arena* arena) :
       _bits(bits(arena))
       debug_only(COMMA _nesting_check(false)) {
