@@ -58,7 +58,7 @@ import jdk.internal.ref.CleanerFactory;
  * @see Arena
  * @see MemorySegment
  *
- * @since 19
+ * @since 20
  */
 @PreviewFeature(feature =PreviewFeature.Feature.FOREIGN)
 sealed public interface SegmentScope permits MemorySessionImpl {
