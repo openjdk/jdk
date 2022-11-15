@@ -395,6 +395,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
                 }
                 """);
         setAutomaticCheckLinks(false); // otherwise the link checker reports that P.MyException is defined twice
+                                       // (tracked by 8297085)
         javadoc("-d",
                 base.resolve("out").toString(),
                 src.resolve("P").resolve("MyException.java").toString(),
