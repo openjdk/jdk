@@ -694,7 +694,7 @@ public class Infer {
                     }
                 }
                 case TYPEVAR -> {
-                    todo = todo.prepend(((TypeVar) current).getUpperBound());
+                    todo = todo.prepend(types.skipTypeVars(current, false));
                 }
                 default -> expressionTypes = expressionTypes.prepend(current);
             }
