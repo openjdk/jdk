@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -740,10 +741,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         // elements share the same simple and/or qualified name. Outputting
         // individual components of that name as well as their kinds helps
         // the user disambiguate such elements.
-        // TODO: is it feasible to use javax.lang.model.util.Elements.getBinaryName(TypeElement)
-        //  to augment/replace detailed information for _type elements_?
-        //  (binary names don't work for _type variables_)
-        var thisElementDescription = e.getKind() + " " + switch (e.getKind()) {
+        var lowerCasedKind = e.getKind().toString().toLowerCase(Locale.ROOT);
+        var thisElementDescription = lowerCasedKind + " " + switch (e.getKind()) {
             // A package is never enclosed in a package and a module is
             // never never enclosed in a module, no matter what their
             // qualified name might suggest. Get their qualified
@@ -751,12 +750,12 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // modules require special treatment.
             case PACKAGE -> {
                 var p = (PackageElement) e;
-                // TODO: i18n
+                // might use i18n in the future
                 yield p.isUnnamed() ? "<unnamed package>" : p.getQualifiedName();
             }
             case MODULE -> {
                 var m = (ModuleElement) e;
-                // TODO: i18n + is there any value is displaying unnamed module?
+                // might use i18n in the future, if there's value in displaying an unnamed module
                 yield m.isUnnamed() ? "<unnamed module>" : m.getQualifiedName();
             }
             default -> e.getSimpleName();

@@ -96,7 +96,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 Child.java:7: warning: overridden methods do not document exception type c.MyException \
-                (MODULE <unnamed module> PACKAGE c CLASS MyException)
+                (module <unnamed module> package c class MyException)
                     /** @throws MyException {@inheritDoc} */
                         ^
                 """);
@@ -258,7 +258,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 MyClass.java:5: warning: not an exception type: \
-                x.OtherClass (MODULE <unnamed module> PACKAGE x CLASS OtherClass)
+                x.OtherClass (module <unnamed module> package x class OtherClass)
                     /** @throws OtherClass description */
                                 ^
                 """);
@@ -325,7 +325,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 Child.java:3: warning: overridden methods do not document exception type R \
-                (MODULE <unnamed module> PACKAGE <unnamed package> CLASS R)
+                (module <unnamed module> package <unnamed package> class R)
                     /** @throws R {@inheritDoc} */
                         ^
                 """);
@@ -404,7 +404,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true, """
                 Child.java:3: warning: overridden methods do not document exception type P.MyException \
-                (MODULE <unnamed module> PACKAGE <unnamed package> CLASS P CLASS MyException)
+                (module <unnamed module> package <unnamed package> class P class MyException)
                     /** @throws P.MyException {@inheritDoc} */
                         ^
                 """);
@@ -481,7 +481,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
                 """);
         checkOutput(Output.OUT, true, """
                 Child3.java:5: warning: overridden methods do not document exception type java.lang.NullPointerException \
-                (MODULE java.base PACKAGE java.lang CLASS NullPointerException)
+                (module java.base package java.lang class NullPointerException)
                     /** @throws NullPointerException {@inheritDoc} */
                         ^
                     """);
