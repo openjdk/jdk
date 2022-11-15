@@ -166,10 +166,15 @@ public class PKCS9AttrTypeTests {
             try {
                 System.out.print("Test - " + entry.getKey() + ": ");
 
-                // Decode each Base64 test vector into DER and place into
+                // Decode each HEX test vector into DER and place into
                 // a DerValue object to be consumed by PKCS9Attribute.
                 PKCS9Attribute p9Attr = new PKCS9Attribute(
                         new DerValue(Utils.toByteArray(entry.getValue())));
+
+                // There is a value inside
+                if (p9Attr.getValue() == null) {
+                    throw new IOException("Empty attribute");
+                }
 
                 // Encoding is supported
                 DerOutputStream dos = new DerOutputStream();
