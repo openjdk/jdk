@@ -131,17 +131,6 @@ public abstract class OptionHelper {
                 }
 
                 javacArg(arg);
-
-                // Does this javac argument take an argument? If so, don't
-                // let it pass on to sjavac as a source root directory.
-                for (com.sun.tools.javac.main.Option javacOpt : com.sun.tools.javac.main.Option.values()) {
-                    if (javacOpt.matches(arg)) {
-                        boolean takesArgument = javacOpt.hasArg();
-                        boolean separateToken = !arg.contains(":") && !arg.contains("=");
-                        if (takesArgument && separateToken)
-                            javacArg(argIter.next());
-                    }
-                }
             } else {
                 sourceRoots(Arrays.asList(Paths.get(arg)));
             }
