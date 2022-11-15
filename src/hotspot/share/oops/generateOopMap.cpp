@@ -696,6 +696,7 @@ void GenerateOopMap::make_context_uninitialized() {
 
   _stack_top = 0;
   _monitor_top = 0;
+  _max_monitors_depth = 0;
 }
 
 int GenerateOopMap::methodsig_to_effect(Symbol* signature, bool is_static, CellTypeState* effect) {
@@ -906,6 +907,7 @@ void GenerateOopMap::monitor_push(CellTypeState cts) {
     return;
   }
   monitors()[_monitor_top++] = cts;
+  _max_monitors_depth = MAX2(_max_monitors_depth, _monitor_top);
 }
 
 //

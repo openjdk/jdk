@@ -121,6 +121,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
     set_signature_handler(NULL);
   }
 
+  _max_monitors = -1;
+
   NOT_PRODUCT(set_compiled_invocation_count(0);)
   // Name is very useful for debugging.
   NOT_PRODUCT(_name = name;)

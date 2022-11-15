@@ -45,7 +45,7 @@
 #endif
 
 // C2 compiled method's prolog code.
-void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
+void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub, int max_monitors) {
 
   // WARNING: Initial instruction MUST be 5 bytes or longer so that
   // NativeJump::patch_verified_entry will be able to patch out the entry
@@ -148,6 +148,16 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
     bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
 #endif
+  }
+
+  if (max_monitors > 0) {
+    assert(!is_stub, "only methods have monitors");
+    push(rax);
+    movptr(rax, Address(r15_thread, Thread::lock_stack_current_offset()));
+    addptr(rax, max_monitors * wordSize);
+    cmpptr(rax, Address(r15_thread, Thread::lock_stack_limit_offset()));
+    jcc(Assembler::greaterEqual, slow);
+    pop(rax);
   }
 }
 

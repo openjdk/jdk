@@ -84,6 +84,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _size_of_parameters = h_m->size_of_parameters();
   _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
   _balanced_monitors  = !_uses_monitors || h_m->access_flags().is_monitor_matching();
+  _max_monitors_depth = -1;
   _is_c1_compilable   = !h_m->is_not_c1_compilable();
   _is_c2_compilable   = !h_m->is_not_c2_compilable();
   _can_be_parsed      = true;
@@ -313,6 +314,40 @@ bool ciMethod::has_balanced_monitors() {
     _balanced_monitors = true;
   }
   return true;
+}
+
+int ciMethod::max_monitors_depth() {
+  check_is_loaded();
+  if (_max_monitors_depth >= 0) return _max_monitors_depth;
+
+  VM_ENTRY_MARK;
+  methodHandle method(THREAD, get_Method());
+  if (!method->has_monitor_bytecodes()) {
+    _max_monitors_depth = 0;
+    return 0;
+  }
+
+  // Check to see if a previous compilation computed the
+  // monitor-depth analysis.
+  if (method->max_monitors() > 0) {
+    _max_monitors_depth = method->max_monitors();
+    return _max_monitors_depth;
+  }
+
+  {
+    ExceptionMark em(THREAD);
+    ResourceMark rm(THREAD);
+    GeneratePairingInfo gpi(method);
+    if (!gpi.compute_map(THREAD)) {
+      fatal("Unrecoverable verification or out-of-memory error");
+    }
+    if (!gpi.monitor_safe()) {
+      return -1;
+    }
+    method->set_max_monitors(gpi.max_monitors_depth());
+    _max_monitors_depth = gpi.max_monitors_depth();
+  }
+  return _max_monitors_depth;
 }
 
 

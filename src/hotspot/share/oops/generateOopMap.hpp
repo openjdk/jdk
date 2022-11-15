@@ -314,6 +314,7 @@ class GenerateOopMap {
   char          *_state_vec_buf;            // Buffer used to print a readable version of a state
   int            _stack_top;
   int            _monitor_top;
+  int            _max_monitors_depth;       // Maximum number of monitors active at any time
 
   // Timing and statistics
   static elapsedTimer _total_oopmap_time;   // Holds cumulative oopmap generation time
@@ -478,6 +479,8 @@ class GenerateOopMap {
 
   // Monitor query
   bool monitor_safe()                              { return _monitor_safe; }
+
+  int max_monitors_depth()                         { return _max_monitors_depth; }
 
   // Specialization methods. Intended use:
   // - possible_gc_point must return true for every bci for which the stackmaps must be returned
