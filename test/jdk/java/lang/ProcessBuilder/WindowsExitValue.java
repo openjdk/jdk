@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,25 @@
  * questions.
  */
 
-package sun.security.x509;
-
-import sun.security.util.DerOutputStream;
+/*
+ * @test
+ * @summary Verify that when a child returns exit value 259, Process.waitFor does not throw
+ * @bug 8294899
+ * @requires (os.family == "windows")
+ * @run junit WindowsExitValue
+ */
 
 import java.io.IOException;
 
-/**
- * This interface defines a certificate attribute that can be DER-encoded.
- */
-public interface CertAttrSet {
+import org.junit.*;
+import static org.junit.Assert.*;
 
-    /**
-     * Encodes the attribute to the output stream.
-     *
-     * @param out the DerOutputStream to encode the attribute to.
-     * @exception IOException on write errors.
-     */
-    void encode(DerOutputStream out) throws IOException;
+public class WindowsExitValue {
+
+    @Test
+    public void checkExit259() throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("cmd", "/c", "exit /b 259").start();
+        int exitValue = process.waitFor();
+        assertEquals(exitValue, 259);
+    }
 }

@@ -38,9 +38,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateExtensions implements CertAttrSet {
+public class CertificateExtensions implements DerEncoder {
 
     public static final String NAME = "extensions";
 
