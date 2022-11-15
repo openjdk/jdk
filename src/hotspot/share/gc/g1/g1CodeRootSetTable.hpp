@@ -24,16 +24,20 @@
 #ifndef SHARE_GC_G1_G1CODEROOTSETTABLE_HPP
 #define SHARE_GC_G1_G1CODEROOTSETTABLE_HPP
 
-#include "utilities/hashtable.hpp"
+#include "code/codeCache.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resourceHash.hpp"
 
 class nmethod;
 
-class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
+class G1CodeRootSetTable : public CHeapObj<mtGC>  {
   friend class G1CodeRootSetTest;
-  typedef HashtableEntry<nmethod*, mtGC> Entry;
 
   static G1CodeRootSetTable* volatile _purge_list;
 
+  using Table = ResizeableResourceHashtable<nmethod*, nmethod*, AnyObj::C_HEAP, mtGC>;
+  Table _table;
   G1CodeRootSetTable* _purge_next;
 
   unsigned int compute_hash(nmethod* nm) {
@@ -41,13 +45,8 @@ class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
     return hash ^ (hash >> 7); // code heap blocks are 128byte aligned
   }
 
-  void remove_entry(Entry* e, Entry* previous);
-  Entry* new_entry(nmethod* nm);
-
  public:
-  G1CodeRootSetTable(int size) : Hashtable<nmethod*, mtGC>(size, sizeof(Entry)), _purge_next(NULL) {}
-  ~G1CodeRootSetTable();
-
+  G1CodeRootSetTable(int size) : _table(size, size), _purge_next(NULL) {}
   // Needs to be protected by locks
   bool add(nmethod* nm);
   bool remove(nmethod* nm);
@@ -55,13 +54,12 @@ class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
   // Can be called without locking
   bool contains(nmethod* nm);
 
-  int entry_size() const { return BasicHashtable<mtGC>::entry_size(); }
-
   void copy_to(G1CodeRootSetTable* new_table);
   void nmethods_do(CodeBlobClosure* blk);
 
   template<typename CB>
-  int remove_if(CB& should_remove);
+  void remove_if(CB& should_remove);
+  int number_of_entries() const {return _table.number_of_entries();}
 
   static void purge_list_append(G1CodeRootSetTable* tbl);
   static void purge();

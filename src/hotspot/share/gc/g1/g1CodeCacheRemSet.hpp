@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CODECACHEREMSET_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "gc/g1/g1CodeRootSetTable.hpp"
 
 class CodeBlobClosure;
 class G1CodeRootSetTable;
@@ -45,13 +46,11 @@ class G1CodeRootSet {
   G1CodeRootSetTable* _table;
   G1CodeRootSetTable* load_acquire_table();
 
-  size_t _length;
-
   void move_to_large();
   void allocate_small_table();
 
  public:
-  G1CodeRootSet() : _table(NULL), _length(0) {}
+  G1CodeRootSet() : _table(nullptr) {}
   ~G1CodeRootSet();
 
   static void purge();
@@ -73,13 +72,11 @@ class G1CodeRootSet {
   void clean(HeapRegion* owner);
 
   bool is_empty() {
-    bool empty = length() == 0;
-    assert(empty == (_table == NULL), "is empty only if table is deallocated");
-    return empty;
+    return length() == 0;
   }
 
   // Length in elements
-  size_t length() const { return _length; }
+  size_t length() const { return _table == nullptr ? 0 : _table->number_of_entries(); }
 
   // Memory size in bytes taken by this set.
   size_t mem_size();

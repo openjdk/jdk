@@ -40,104 +40,42 @@
 G1CodeRootSetTable* volatile G1CodeRootSetTable::_purge_list = NULL;
 
 size_t G1CodeRootSetTable::mem_size() {
-  return sizeof(G1CodeRootSetTable) + (entry_size() * number_of_entries()) + (sizeof(HashtableBucket<mtGC>) * table_size());
-}
-
-G1CodeRootSetTable::Entry* G1CodeRootSetTable::new_entry(nmethod* nm) {
-  unsigned int hash = compute_hash(nm);
-  return (Entry*)Hashtable<nmethod*, mtGC>::new_entry(hash, nm);
-}
-
-void G1CodeRootSetTable::remove_entry(Entry* e, Entry* previous) {
-  int index = hash_to_index(e->hash());
-  assert((e == bucket(index)) == (previous == NULL), "if e is the first entry then previous should be null");
-
-  if (previous == NULL) {
-    set_entry(index, e->next());
-  } else {
-    previous->set_next(e->next());
-  }
-  free_entry(e);
-}
-
-G1CodeRootSetTable::~G1CodeRootSetTable() {
-  for (int index = 0; index < table_size(); ++index) {
-    for (Entry* e = bucket(index); e != NULL; ) {
-      Entry* to_remove = e;
-      // read next before freeing.
-      e = e->next();
-      BasicHashtable<mtGC>::free_entry(to_remove);
-    }
-  }
-  assert(number_of_entries() == 0, "should have removed all entries");
+  return sizeof(*this) +
+    _table.table_size() * sizeof(Table::Node*) +
+    _table.number_of_entries() * sizeof(Table::Node);
 }
 
 bool G1CodeRootSetTable::add(nmethod* nm) {
   if (!contains(nm)) {
-    Entry* e = new_entry(nm);
-    int index = hash_to_index(e->hash());
-    add_entry(index, e);
+    _table.put(nm, nm);
     return true;
   }
   return false;
 }
 
 bool G1CodeRootSetTable::contains(nmethod* nm) {
-  int index = hash_to_index(compute_hash(nm));
-  for (Entry* e = bucket(index); e != NULL; e = e->next()) {
-    if (e->literal() == nm) {
-      return true;
-    }
-  }
-  return false;
+  return _table.contains(nm);
 }
 
 bool G1CodeRootSetTable::remove(nmethod* nm) {
-  int index = hash_to_index(compute_hash(nm));
-  Entry* previous = NULL;
-  for (Entry* e = bucket(index); e != NULL; previous = e, e = e->next()) {
-    if (e->literal() == nm) {
-      remove_entry(e, previous);
-      return true;
-    }
-  }
-  return false;
+  return _table.remove(nm);
 }
 
 void G1CodeRootSetTable::copy_to(G1CodeRootSetTable* new_table) {
-  for (int index = 0; index < table_size(); ++index) {
-    for (Entry* e = bucket(index); e != NULL; e = e->next()) {
-      new_table->add(e->literal());
-    }
-  }
+  _table.iterate_all([&new_table](nmethod* nm, nmethod* _) {
+    new_table->add(nm);
+  });
 }
 
 void G1CodeRootSetTable::nmethods_do(CodeBlobClosure* blk) {
-  for (int index = 0; index < table_size(); ++index) {
-    for (Entry* e = bucket(index); e != NULL; e = e->next()) {
-      blk->do_code_blob(e->literal());
-    }
-  }
+  _table.iterate_all([&](nmethod* nm, nmethod* _) {
+    blk->do_code_blob(nm);
+  });
 }
 
 template<typename CB>
-int G1CodeRootSetTable::remove_if(CB& should_remove) {
-  int num_removed = 0;
-  for (int index = 0; index < table_size(); ++index) {
-    Entry* previous = NULL;
-    Entry* e = bucket(index);
-    while (e != NULL) {
-      Entry* next = e->next();
-      if (should_remove(e->literal())) {
-        remove_entry(e, previous);
-        ++num_removed;
-      } else {
-        previous = e;
-      }
-      e = next;
-    }
-  }
-  return num_removed;
+void G1CodeRootSetTable::remove_if(CB& should_remove) {
+  _table.unlink_destruct([&](nmethod* nm, nmethod* nm2){ return should_remove(nm);});
 }
 
 G1CodeRootSet::~G1CodeRootSet() {
@@ -199,12 +137,10 @@ void G1CodeRootSet::add(nmethod* method) {
   }
   added = _table->add(method);
   if (added) {
-    if (_length == Threshold) {
+    if (length() == Threshold) {
       move_to_large();
     }
-    ++_length;
   }
-  assert(_length == (size_t)_table->number_of_entries(), "sizes should match");
 }
 
 bool G1CodeRootSet::remove(nmethod* method) {
@@ -213,13 +149,10 @@ bool G1CodeRootSet::remove(nmethod* method) {
     removed = _table->remove(method);
   }
   if (removed) {
-    _length--;
-    if (_length == 0) {
+    if (length() == 0) {
       clear();
     }
   }
-  assert((_length == 0 && _table == NULL) ||
-         (_length == (size_t)_table->number_of_entries()), "sizes should match");
   return removed;
 }
 
@@ -234,7 +167,6 @@ bool G1CodeRootSet::contains(nmethod* method) {
 void G1CodeRootSet::clear() {
   delete _table;
   _table = NULL;
-  _length = 0;
 }
 
 size_t G1CodeRootSet::mem_size() {
@@ -286,11 +218,9 @@ class CleanCallback : public StackObj {
 void G1CodeRootSet::clean(HeapRegion* owner) {
   CleanCallback should_clean(owner);
   if (_table != NULL) {
-    int removed = _table->remove_if(should_clean);
-    assert((size_t)removed <= _length, "impossible");
-    _length -= removed;
+    _table->remove_if(should_clean);
   }
-  if (_length == 0) {
+  if (length() == 0) {
     clear();
   }
 }
