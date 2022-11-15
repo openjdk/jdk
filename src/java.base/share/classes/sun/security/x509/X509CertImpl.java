@@ -247,7 +247,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         return der;
     }
-    
+
     // helper method to record certificate, if necessary, after construction
     public static X509CertImpl newX509CertImpl(byte[] certData) throws CertificateException {
         var cert = new X509CertImpl(certData);
