@@ -25,7 +25,7 @@
  * @test
  * @enablePreview
  * @compile -doe SimpleAndGuardPattern.java
- * @run main/othervm SimpleAndGuardPattern
+ * @run main SimpleAndGuardPattern
  */
 
 import java.util.Objects;

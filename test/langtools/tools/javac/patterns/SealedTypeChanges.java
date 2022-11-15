@@ -28,7 +28,7 @@
  * @enablePreview
  * @compile SealedTypeChanges.java
  * @compile SealedTypeChanges2.java
- * @run main/othervm SealedTypeChanges
+ * @run main SealedTypeChanges
  */
 
 import java.util.function.Consumer;

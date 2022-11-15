@@ -29,7 +29,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JavapTask
  * @enablePreview
- * @run main/othervm Patterns
+ * @run main Patterns
  */
 
 import java.lang.annotation.*;

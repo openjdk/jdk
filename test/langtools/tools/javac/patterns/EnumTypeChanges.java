@@ -28,7 +28,7 @@
  * @enablePreview
  * @compile EnumTypeChanges.java
  * @compile EnumTypeChanges2.java
- * @run main/othervm EnumTypeChanges
+ * @run main EnumTypeChanges
  */
 
 import java.util.function.Function;
