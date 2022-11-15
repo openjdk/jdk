@@ -47,6 +47,7 @@ class       PCTableNode;
 class         JumpNode;
 class         CatchNode;
 class       NeverBranchNode;
+class     BlackholeNode;
 class   ProjNode;
 class     CProjNode;
 class       IfTrueNode;
