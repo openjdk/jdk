@@ -89,7 +89,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * Returns a native memory segment with the given size (in bytes) and alignment constraint (in bytes).
      * The returned segment is associated with the arena scope.
      * The segment's {@link MemorySegment#address() address} is the starting address of the
-     * allocated off-heap memory region backing the segment, and the address is 
+     * allocated off-heap memory region backing the segment, and the address is
      * aligned according the provided alignment constraint.
      *
      * @implSpec
