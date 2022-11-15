@@ -66,7 +66,7 @@ public class MapToMemorySegmentTest {
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannel(fc);
         try (arena; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.session());
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.scope());
         }
     }
 
@@ -76,7 +76,7 @@ public class MapToMemorySegmentTest {
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannelOverride(fc);
         try (arena; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.session());
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.scope());
         }
     }
 
