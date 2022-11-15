@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,28 @@
  * questions.
  */
 
-package jdk.jfr.internal.tool;
+/* @test
+ * @bug 8296741
+ * @summary Illegal X400Address and EDIPartyName should not be created
+ * @library /test/lib
+ * @modules java.base/sun.security.x509
+ */
 
-import java.util.Deque;
-import java.util.List;
+import jdk.test.lib.Utils;
+import sun.security.x509.EDIPartyName;
 
-final class Version extends Command {
-    @Override
-    public String getName() {
-        return "version";
-    }
+public class NullName {
 
-    @Override
-    public String getDescription() {
-        return "Display version of the jfr tool";
-    }
-
-    @Override
-    public void execute(Deque<String> options) {
-        System.out.println(System.getProperty("java.version"));
-    }
-
-    @Override
-    protected List<String> getAliases() {
-        return List.of("--version");
+    public static void main(String[] argv) throws Exception {
+        Utils.runAndCheckException(
+                () -> new EDIPartyName((String)null),
+                NullPointerException.class);
+        Utils.runAndCheckException(
+                () -> new EDIPartyName(null, null),
+                NullPointerException.class);
+        Utils.runAndCheckException(
+                () -> new EDIPartyName("hello", null),
+                NullPointerException.class);
+        new EDIPartyName(null, "hello");
     }
 }

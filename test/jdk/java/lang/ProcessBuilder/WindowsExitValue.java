@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,25 @@
  * questions.
  */
 
-package jdk.jfr.internal.tool;
+/*
+ * @test
+ * @summary Verify that when a child returns exit value 259, Process.waitFor does not throw
+ * @bug 8294899
+ * @requires (os.family == "windows")
+ * @run junit WindowsExitValue
+ */
 
-import java.util.Deque;
-import java.util.List;
+import java.io.IOException;
 
-final class Version extends Command {
-    @Override
-    public String getName() {
-        return "version";
-    }
+import org.junit.*;
+import static org.junit.Assert.*;
 
-    @Override
-    public String getDescription() {
-        return "Display version of the jfr tool";
-    }
+public class WindowsExitValue {
 
-    @Override
-    public void execute(Deque<String> options) {
-        System.out.println(System.getProperty("java.version"));
-    }
-
-    @Override
-    protected List<String> getAliases() {
-        return List.of("--version");
+    @Test
+    public void checkExit259() throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("cmd", "/c", "exit /b 259").start();
+        int exitValue = process.waitFor();
+        assertEquals(exitValue, 259);
     }
 }

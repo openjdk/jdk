@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,31 @@
  * questions.
  */
 
-package jdk.jfr.internal.tool;
+/*
+ * @test
+ * @summary Checks that -XX:+PrintC1Statistics works
+ * @bug 8296969
+ * @requires vm.debug == true & vm.compiler1.enabled
+ * @library /test/lib
+ * @run main/othervm -XX:+Verbose compiler.c1.TestPrintC1Statistics
+ */
 
-import java.util.Deque;
+package compiler.c1;
+
+import java.util.ArrayList;
 import java.util.List;
 
-final class Version extends Command {
-    @Override
-    public String getName() {
-        return "version";
-    }
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-    @Override
-    public String getDescription() {
-        return "Display version of the jfr tool";
-    }
+public class TestPrintC1Statistics {
+    public static void main(String[] args) throws Exception {
+        List<String> options = new ArrayList<String>();
+        options.add("-XX:+PrintC1Statistics");
+        options.add("--version");
 
-    @Override
-    public void execute(Deque<String> options) {
-        System.out.println(System.getProperty("java.version"));
-    }
+        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
 
-    @Override
-    protected List<String> getAliases() {
-        return List.of("--version");
+        oa.shouldHaveExitValue(0).shouldContain("C1 Runtime statistics");
     }
-}
+ }
