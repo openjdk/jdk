@@ -1234,7 +1234,7 @@ public:
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
       FileMapInfo::fail_continue("The shared archive file version 0x%x does not match the required version 0x%x.",
                                  gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
-      //return false??
+      return false;
     }
 
     size_t filelen = os::lseek(fd, 0, SEEK_END);
@@ -1476,6 +1476,11 @@ void FileMapInfo::seek_to_position(size_t pos) {
 // Read the FileMapInfo information from the file.
 bool FileMapInfo::open_for_read() {
   if (_file_open) {
+    LogMessage(cds) msg;
+    if (msg.is_info()) {
+      msg.info("Reading from archive: ");
+      msg.info("   %s", _full_path);
+    }
     return true;
   }
   log_info(cds)("trying to map %s", _full_path);
