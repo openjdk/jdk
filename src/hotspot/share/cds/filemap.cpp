@@ -123,24 +123,21 @@ void FileMapInfo::fail_continue(LogLevelType level, const char *msg, ...) {
 }
 
 void FileMapInfo::fail_continue_impl(LogLevelType level, const char *msg, va_list ap) {
-  va_list ap_copy;
-  va_copy(ap_copy, ap);
   if (PrintSharedArchiveAndExit && _validating_shared_path_table) {
     // If we are doing PrintSharedArchiveAndExit and some of the classpath entries
     // do not validate, we can still continue "limping" to validate the remaining
     // entries. No need to quit.
     tty->print("[");
-    tty->vprint(msg, ap_copy);
+    tty->vprint(msg, ap);
     tty->print_cr("]");
   } else {
     if (RequireSharedSpaces) {
-      fail_exit(msg, ap_copy);
+      fail_exit(msg, ap);
     } else {
       LogMessage(cds) lm;
-      lm.vwrite(level, msg, ap_copy);
+      lm.vwrite(level, msg, ap);
     }
   }
-  va_end(ap_copy);
 }
 
 // Fill in the fileMapInfo structure with data about this VM instance.
