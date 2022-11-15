@@ -46,8 +46,12 @@ public class StressStackOverflow {
     public static final ScopedValue<Integer> inheritedValue = ScopedValue.newInstance();
 
     final ThreadLocalRandom tlr = ThreadLocalRandom.current();
-    static final RuntimeException ex = new RuntimeException("Unexpected value for ScopedValue");
-    int ITERS = 100_000;
+    static final TestFailureException testFailureException = new TestFailureException("Unexpected value for ScopedValue");
+    int ITERS = 1_000_000;
+
+    static class TestFailureException extends RuntimeException {
+        TestFailureException(String s) { super(s); }
+    }
 
     // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
     // and Runnable interfaces. Which one gets tested depends on the constructor argument.
@@ -72,20 +76,22 @@ public class StressStackOverflow {
                         ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
                 }
                 if (!last.equals(el.get())) {
-                    throw ex;
+                    throw testFailureException;
                 }
             } catch (StackOverflowError e) {
                 if (nextRandomFloat <= 0.1) {
                     ScopedValue.where(el, el.get() + 1).run(this);
                 }
-            } catch (StructureViolationException structureViolationException) {
-                // Can happen if the stack overflow prevented a StackableScope from
-                // being removed. We can continue.
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            } catch (TestFailureException e) {
+                throw e;
+            } catch (Throwable throwable) {
+                // StackOverflowErrors cause many different failures. These include
+                // StructureViolationExceptions and InvocationTargetExceptions. This test
+                // checks that, no matter what the failure mode, scoped values are handled
+                // correctly.
             } finally {
                 if (!last.equals(el.get())) {
-                    throw ex;
+                    throw testFailureException;
                 }
             }
 
@@ -124,10 +130,10 @@ public class StressStackOverflow {
             return fibonacci_pad1(tlr.nextInt(n), op);
         } catch (StackOverflowError err) {
             if (!inheritedValue.get().equals(I_42)) {
-                throw ex;
+                throw testFailureException;
             }
             if (!last.equals(el.get())) {
-                throw ex;
+                throw testFailureException;
             }
             throw err;
         }
@@ -168,8 +174,16 @@ public class StressStackOverflow {
                                     try {
                                         fibonacci_pad(20, this);
                                     } catch (StackOverflowError e) {
+                                    } catch (TestFailureException e) {
+                                        throw e;
+                                    } catch (Throwable throwable) {
+                                        // StackOverflowErrors cause many different failures. These include
+                                        // StructureViolationExceptions and InvocationTargetExceptions. This test
+                                        // checks that, no matter what the failure mode, scoped values are handled
+                                        // correctly.
+                                    } finally {
                                         if (!inheritedValue.get().equals(I_42)) {
-                                            throw ex;
+                                            throw testFailureException;
                                         }
                                     }
                                 }
@@ -191,10 +205,10 @@ public class StressStackOverflow {
         }
     }
 
-    @Test
-    public void doTest() {
-        while (ITERS > 0) {
-            run();
+    public static void main(String[] args) {
+        var torture = new StressStackOverflow();
+        while (torture.ITERS > 0) {
+            torture.run();
         }
         System.out.println("OK");
     }
