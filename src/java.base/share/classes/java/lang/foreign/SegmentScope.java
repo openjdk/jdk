@@ -90,7 +90,7 @@ sealed public interface SegmentScope permits MemorySessionImpl {
     boolean isAlive();
 
     /**
-     * {@return {@code true} if the provided thread can access and/or associated segments with this scope}
+     * {@return {@code true} if the provided thread can access and/or associate segments with this scope}
      * @param thread the thread to be tested.
      */
     boolean isAccessibleBy(Thread thread);
