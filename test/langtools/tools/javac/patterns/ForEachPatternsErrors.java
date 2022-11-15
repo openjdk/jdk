@@ -26,12 +26,18 @@ public class ForEachPatternsErrors {
         }
     }
 
+    static void exhaustivity_error4(List<?> f) {
+        for (Rec(var x): f){
+        }
+    }
+
     static void applicability_error(List<Object> points) {
         for (Interface p: points) {
             System.out.println(p);
         }
     }
 
+    record  Rec(String x) { }
     interface Interface {}
     sealed interface IPoint permits Point {}
     record Point(Integer x, Integer y) implements IPoint { }

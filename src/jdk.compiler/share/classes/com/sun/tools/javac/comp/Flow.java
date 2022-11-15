@@ -657,7 +657,7 @@ public class Flow {
                         isExhaustive(jcRecordPattern.pos(), tree.elementType, coveredSymbols);
 
                 if (!isExhaustive) {
-                    log.error(tree, Errors.NotExhaustive);
+                    log.error(tree, Errors.ForeachNotExhaustiveOnType(jcRecordPattern.type, tree.elementType));
                 }
             }
             ListBuffer<PendingExit> prevPendingExits = pendingExits;

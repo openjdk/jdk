@@ -1,7 +1,8 @@
-ForEachPatternsErrors.java:30:27: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Object, ForEachPatternsErrors.Interface)
-ForEachPatternsErrors.java:12:9: compiler.err.not.exhaustive
-ForEachPatternsErrors.java:18:9: compiler.err.not.exhaustive
-ForEachPatternsErrors.java:24:9: compiler.err.not.exhaustive
+ForEachPatternsErrors.java:35:27: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Object, ForEachPatternsErrors.Interface)
+ForEachPatternsErrors.java:12:9: compiler.err.foreach.not.exhaustive.on.type: ForEachPatternsErrors.Point, java.lang.Object
+ForEachPatternsErrors.java:18:9: compiler.err.foreach.not.exhaustive.on.type: ForEachPatternsErrors.Point, java.lang.Object
+ForEachPatternsErrors.java:24:9: compiler.err.foreach.not.exhaustive.on.type: ForEachPatternsErrors.OPoint, ForEachPatternsErrors.OPoint
+ForEachPatternsErrors.java:30:9: compiler.err.foreach.not.exhaustive.on.type: ForEachPatternsErrors.Rec, compiler.misc.type.captureof: 1, ?
 - compiler.note.preview.filename: ForEachPatternsErrors.java, DEFAULT
 - compiler.note.preview.recompile
-4 errors
+5 errors
