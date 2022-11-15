@@ -303,7 +303,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   )
 
   AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
-      [set up toolchain on Mac OS using a path to an xcode installation])])
+      [set up toolchain on Mac OS using a path to an Xcode installation])])
 
   if test "x$with_xcode_path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
