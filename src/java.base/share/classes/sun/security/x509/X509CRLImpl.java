@@ -263,7 +263,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         /**
          * Return the issuer as X500Principal.
          */
-        private X500Principal getIssuerX500Principal() {
+        public X500Principal getIssuerX500Principal() {
             if (issuerPrincipal == null) {
                 issuerPrincipal = issuer.asX500Principal();
             }
