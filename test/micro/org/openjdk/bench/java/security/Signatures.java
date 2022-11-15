@@ -111,6 +111,7 @@ public class Signatures {
             int keyLength = switch (algorithm) {
                 case "SHA256withDSA" -> 2048;
                 case "SHA384withDSA" -> 3072;
+                case "SHA512withDSA" -> 3072;
                 default -> throw new RuntimeException();
             };
 
@@ -149,7 +150,7 @@ public class Signatures {
     }
 
     public static class RSASSAPSS extends Signatures {
-        @Param({"SHA256", "SHA3846", "SHA512"})
+        @Param({"SHA256", "SHA384", "SHA512"})
         private String algorithm;
 
         @Setup
