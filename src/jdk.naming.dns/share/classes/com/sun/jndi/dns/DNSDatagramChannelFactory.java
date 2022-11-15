@@ -27,7 +27,6 @@ package com.sun.jndi.dns;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ProtocolFamily;
-import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.security.AccessController;
@@ -35,7 +34,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 import java.util.Random;
 
-class DNSDatagramSocketFactory {
+class DNSDatagramChannelFactory {
     static final int DEVIATION = 3;
     static final int THRESHOLD = 6;
     static final int BIT_DEVIATION = 2;
@@ -120,17 +119,17 @@ class DNSDatagramSocketFactory {
     final Random random;
     final PortHistory history;
 
-    DNSDatagramSocketFactory() {
+    DNSDatagramChannelFactory() {
         this(new Random());
     }
 
-    DNSDatagramSocketFactory(Random random) {
+    DNSDatagramChannelFactory(Random random) {
         this(Objects.requireNonNull(random), null, DEVIATION, THRESHOLD);
     }
-    DNSDatagramSocketFactory(Random random,
-                             ProtocolFamily family,
-                             int deviation,
-                             int threshold) {
+    DNSDatagramChannelFactory(Random random,
+                              ProtocolFamily family,
+                              int deviation,
+                              int threshold) {
         this.random = Objects.requireNonNull(random);
         this.history = new PortHistory(HISTORY, random);
         this.family = family;
@@ -145,12 +144,13 @@ class DNSDatagramSocketFactory {
      * port) then the underlying OS implementation is used. Otherwise, this
      * method will allocate and bind a socket on a randomly selected ephemeral
      * port in the dynamic range.
-     * @return A new DatagramSocket bound to a random port.
-     * @throws SocketException if the socket cannot be created.
+     *
+     * @return A new DatagramChannel bound to a random port.
+     * @throws IOException if the socket cannot be created.
      */
-    public synchronized DatagramSocket open() throws SocketException {
+    public synchronized DatagramChannel open() throws IOException {
         int lastseen = lastport;
-        DatagramSocket s;
+        DatagramChannel s;
 
         boolean thresholdCrossed = unsuitablePortCount > thresholdCount;
         if (thresholdCrossed) {
@@ -166,7 +166,7 @@ class DNSDatagramSocketFactory {
 
         // Allocate an ephemeral port (port 0)
         s = openDefault();
-        lastport = s.getLocalPort();
+        lastport = getLocalPort(s);
         if (lastseen == 0) {
             lastSystemAllocated = lastport;
             history.offer(lastport);
@@ -199,36 +199,27 @@ class DNSDatagramSocketFactory {
         // Undecided... the new port was too close. Let's allocate a random
         // port using our own algorithm
         assert !thresholdCrossed;
-        DatagramSocket ss = openRandom();
+        DatagramChannel ss = openRandom();
         if (ss == null) return s;
         unsuitablePortCount++;
         s.close();
         return ss;
     }
 
-    private DatagramSocket openDefault() throws SocketException {
-        if (family != null) {
-            try {
-                DatagramChannel c = DatagramChannel.open(family);
-                try {
-                    DatagramSocket s = c.socket();
-                    s.bind(null);
-                    return s;
-                } catch (Throwable x) {
-                    c.close();
-                    throw x;
-                }
-            } catch (SocketException x) {
-                throw x;
-            } catch (IOException x) {
-                throw new SocketException(x.getMessage(), x);
-            }
+    private DatagramChannel openDefault() throws IOException {
+        DatagramChannel c = family != null ? DatagramChannel.open(family)
+                                           : DatagramChannel.open();
+        try {
+            c.bind(null);
+            return c;
+        } catch (Throwable x) {
+            c.close();
+            throw x;
         }
-        return new DatagramSocket();
     }
 
     synchronized boolean isUsingNativePortRandomization() {
-        return  unsuitablePortCount <= thresholdCount
+        return unsuitablePortCount <= thresholdCount
                 && suitablePortCount > thresholdCount;
     }
 
@@ -246,7 +237,7 @@ class DNSDatagramSocketFactory {
                 && Math.abs(port - lastport) > deviation;
     }
 
-    private DatagramSocket openRandom() {
+    private DatagramChannel openRandom() throws IOException {
         int maxtries = MAX_RANDOM_TRIES;
         while (maxtries-- > 0) {
             int port;
@@ -265,29 +256,24 @@ class DNSDatagramSocketFactory {
             // times - but that should be OK with MAX_RANDOM_TRIES = 5.
             if (!suitable) continue;
 
+            DatagramChannel dc = (family != null)
+                    ? DatagramChannel.open(family)
+                    : DatagramChannel.open();
             try {
-                if (family != null) {
-                    DatagramChannel c = DatagramChannel.open(family);
-                    try {
-                        DatagramSocket s = c.socket();
-                        s.bind(new InetSocketAddress(port));
-                        lastport = s.getLocalPort();
-                        if (!recycled) history.add(port);
-                        return s;
-                    } catch (Throwable x) {
-                        c.close();
-                        throw x;
-                    }
-                }
-                DatagramSocket s = new DatagramSocket(port);
-                lastport = s.getLocalPort();
+                dc.bind(new InetSocketAddress(port));
+                lastport = getLocalPort(dc);
                 if (!recycled) history.add(port);
-                return s;
+                return dc;
             } catch (IOException x) {
+                dc.close();
                 // try again until maxtries == 0;
             }
         }
         return null;
+    }
+
+    private static int getLocalPort(DatagramChannel dc) throws IOException {
+        return ((InetSocketAddress) dc.getLocalAddress()).getPort();
     }
 
 }

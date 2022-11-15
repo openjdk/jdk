@@ -249,7 +249,7 @@ protected:
   HeapRegion* _allocation_region;
 
   // Regions allocated for the current archive range.
-  GrowableArray<HeapRegion*> _allocated_regions;
+  GrowableArrayCHeap<HeapRegion*, mtGC> _allocated_regions;
 
   // Current allocation window within the current region.
   HeapWord* _bottom;
@@ -265,9 +265,7 @@ public:
     _open(open),
     _g1h(g1h),
     _allocation_region(NULL),
-    _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
-                                                         ResourceObj::C_HEAP),
-                        2), mtGC),
+    _allocated_regions(2),
     _bottom(NULL),
     _top(NULL),
     _max(NULL) { }

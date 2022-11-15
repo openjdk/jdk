@@ -40,12 +40,12 @@ public class TestTLSHandshakeLog {
         l.addExpected("Subject:CN=Regression Test");
         l.addExpected("Key type:EC, Length:256");
         l.addExpected("FINE: ValidationChain: " +
-                TestTLSHandshake.ANCHOR_HASHCODE +
-                ", " + TestTLSHandshake.HASHCODE);
+                TestTLSHandshake.ANCHOR_CERT_ID +
+                ", " + TestTLSHandshake.CERT_ID);
         l.addExpected("SunJSSE Test Serivce");
         l.addExpected("TLSHandshake:");
         l.addExpected("TLSv1.2");
-        l.addExpected(TestTLSHandshake.CIPHER_SUITE +", " + TestTLSHandshake.HASHCODE);
+        l.addExpected(TestTLSHandshake.CIPHER_SUITE +", " + TestTLSHandshake.CERT_ID);
         l.testExpected();
     }
 

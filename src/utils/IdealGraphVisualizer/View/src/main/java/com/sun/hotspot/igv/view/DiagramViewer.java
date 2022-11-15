@@ -25,13 +25,12 @@
 package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.data.InputNode;
 import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Collection;
-import java.util.Set;
 import javax.swing.JComponent;
 import org.openide.awt.UndoRedo;
 import org.openide.util.Lookup;
@@ -77,9 +76,11 @@ public interface DiagramViewer {
 
     void componentShowing();
 
-    void setFigureSelection(Set<Figure> list);
+    void centerSelectedFigures();
 
-    void centerFigures(Collection<Figure> list);
+    void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
+
+    void clearSelectedNodes();
 
     void setInteractionMode(InteractionMode mode);
 

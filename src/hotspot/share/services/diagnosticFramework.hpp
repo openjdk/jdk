@@ -236,7 +236,7 @@ public:
 // each diagnostic command instance. In case of a C-heap allocated diagnostic
 // command instance, the DCmdMark must be created in the context of the last
 // thread that will access the instance.
-class DCmd : public ResourceObj {
+class DCmd : public AnyObj {
 protected:
   outputStream* const _output;
   const bool          _is_heap_allocated;
