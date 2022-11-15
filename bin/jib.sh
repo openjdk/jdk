@@ -128,6 +128,19 @@ install_jib() {
             exit 1
         fi
     fi
+    # Want to check the filetype using file, to see if we got served a HTML error page.
+    # In order to support solaris, we don't use any fancy flags to file.
+    # file will prepend the filename, so we need to remove it before testing the output.
+    PREFIX="${installed_jib_script}.gz: "
+    FILEOUTPUT=`file ${installed_jib_script}.gz`
+    # ${X:${#Y}} gives X without the first ${#Y} characters, and ${#Y} is length of Y.
+    FILEOUTPUT=${FILEOUTPUT:${#PREFIX}}
+    if [[ "$FILEOUTPUT" != *"gzip compressed data"* ]]; then
+        echo "Warning: ${installed_jib_script}.gz is not a gzip file."
+        echo "If you are behind a proxy you may need to configure exceptions using no_proxy."
+        echo "The download URL was: ${jib_url}"
+        exit 1
+    fi
     echo "Extracting JIB bootstrap script"
     rm -f "${installed_jib_script}"
     gunzip "${installed_jib_script}.gz"
