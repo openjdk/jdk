@@ -162,6 +162,15 @@ public class SSLContext {
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
+     * <p>
+     * In the JDK Reference Implementation, a protocol can be disabled by
+     * adding it to the {@code jdk.tls.disabledAlgorithms} security property.
+     * If the specified protocol is disabled, the {@code getInstance} method
+     * will still return an {@code SSLContext} if there is a configured
+     * provider that implements the protocol. However, subsequent operations
+     * that attempt to use the specified protocol will fail with an
+     * {@code SSLHandshakeException}.
+     *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
@@ -198,6 +207,15 @@ public class SSLContext {
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * In the JDK Reference Implementation, a protocol can be disabled by
+     * adding it to the {@code jdk.tls.disabledAlgorithms} security property.
+     * If the specified protocol is disabled, the {@code getInstance} method
+     * will still return an {@code SSLContext} if the specified provider
+     * implements the protocol. However, subsequent operations that attempt
+     * to use the specified protocol will fail with an
+     * {@code SSLHandshakeException}.
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
@@ -246,6 +264,15 @@ public class SSLContext {
      * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
      *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard protocol names.
+     *
+     * @implNote
+     * In the JDK Reference Implementation, a protocol can be disabled by
+     * adding it to the {@code jdk.tls.disabledAlgorithms} security property.
+     * If the specified protocol is disabled, the {@code getInstance} method
+     * will still return an {@code SSLContext} if the specified provider
+     * implements the protocol. However, subsequent operations* that attempt
+     * to use the specified protocol will fail with an
+     * {@code SSLHandshakeException}.
      *
      * @param provider an instance of the provider.
      *
