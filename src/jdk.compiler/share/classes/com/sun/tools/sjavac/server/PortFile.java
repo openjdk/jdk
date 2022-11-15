@@ -25,7 +25,6 @@
 
 package com.sun.tools.sjavac.server;
 
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.client.PortFileInaccessibleException;
 import java.io.File;
@@ -150,7 +149,6 @@ public class PortFile {
      * If so, then we can acquire the tcp/ip port on localhost.
      */
     public int getPort() {
-        Assert.check(containsPortInfo);
         return serverPort;
     }
 
@@ -158,7 +156,6 @@ public class PortFile {
      * If so, then we can acquire the server cookie.
      */
     public long getCookie() {
-        Assert.check(containsPortInfo);
         return serverCookie;
     }
 
@@ -166,7 +163,6 @@ public class PortFile {
      * Store the values into the locked port file.
      */
     public void setValues(int port, long cookie) throws IOException {
-        Assert.check(lock != null);
         rwfile.seek(0);
         // Write the magic nr that identifies a port file.
         rwfile.writeInt(magicNr);

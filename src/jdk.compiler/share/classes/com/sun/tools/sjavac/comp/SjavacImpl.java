@@ -27,7 +27,7 @@ package com.sun.tools.sjavac.comp;
 
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Main;
-import com.sun.tools.javac.main.Main.Result;
+import com.sun.tools.sjavac.Result;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;

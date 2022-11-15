@@ -25,9 +25,8 @@
 
 package com.sun.tools.sjavac.server;
 
-import com.sun.tools.javac.main.Main.Result;
+import com.sun.tools.sjavac.Result;
 
-import java.io.Writer;
 
 
 /**

@@ -25,8 +25,8 @@
 
 package com.sun.tools.sjavac.server;
 
-import com.sun.tools.javac.main.Main;
 import com.sun.tools.sjavac.Log;
+import com.sun.tools.sjavac.Result;
 import com.sun.tools.sjavac.Util;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -100,7 +100,7 @@ public class RequestHandler extends Thread {
             checkInternalErrorLog();
 
             // Perform compilation
-            Main.Result rc = sjavac.compile(args);
+            Result rc = sjavac.compile(args);
 
             // Send return code back to client
             out.println(LINE_TYPE_RC + ":" + rc.name());

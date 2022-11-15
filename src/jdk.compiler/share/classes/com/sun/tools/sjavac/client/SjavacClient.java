@@ -25,7 +25,7 @@
 
 package com.sun.tools.sjavac.client;
 
-import com.sun.tools.javac.main.Main.Result;
+import com.sun.tools.sjavac.Result;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.options.Options;
