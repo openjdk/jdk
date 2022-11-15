@@ -31,6 +31,9 @@ import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Track;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @test
@@ -61,6 +64,8 @@ public class MetaCallback implements MetaEventListener {
 
     int metaCount = 0;
     boolean finished = false;
+    // On M1 Mac sometimes system notifies listener about the same message twice
+    static List<MetaMessage> received = Collections.synchronizedList(new ArrayList<>());
 
     MetaCallback() throws Exception {
 
@@ -101,13 +106,17 @@ public class MetaCallback implements MetaEventListener {
         }
     }
     void start() {sequencer.start();}
-    void stop() {sequencer.stop();}
+    void stop() {
+        sequencer.stop();
+        sequencer.close();
+    }
 
     public void meta(MetaMessage msg) {
         System.out.println(""+metaCount+": got "+msg);
         if (msg.getType() == 0x2F) {
             finished = true;
-        } else if (msg.getData().length > 0 && msg.getType() == 1) {
+        } else if (msg.getData().length > 0 && msg.getType() == 1 && !received.contains(msg)) {
+            received.add(msg);
             metaCount++;
         }
     }
