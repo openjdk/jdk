@@ -398,7 +398,7 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 
   bm_word_t* allocate(idx_t size_in_words) const;
   void free(bm_word_t* map, idx_t size_in_words) const {
-    // ArenaBitMaps currently don't free memory.
+    // ResourceBitMaps currently don't free memory.
   }
 };
 
@@ -413,8 +413,7 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
 
  public:
   explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
-  // Clears the bitmap memory.
-  CHeapBitMap(MEMFLAGS flags, idx_t size_in_bits, bool clear = true);
+  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;
