@@ -29,10 +29,10 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * An arena controls the lifecycle of one or more memory segments, providing both flexible allocation and timely deallocation.
+ * An arena controls the lifecycle of memory segments, providing both flexible allocation and timely deallocation.
  * <p>
  * An arena has a {@linkplain #scope() scope}, called the arena scope. When the arena is {@linkplain #close() closed},
- * the arena scope becomes not {@linkplain SegmentScope#isAlive() alive}. As a result, all the
+ * the arena scope is no longer {@linkplain SegmentScope#isAlive() alive}. As a result, all the
  * segments associated with the arena scope are invalidated, safely and atomically, their backing memory regions are
  * deallocated (where applicable) and can no longer be accessed after the arena is closed:
  *
@@ -76,7 +76,7 @@ import jdk.internal.javac.PreviewFeature;
  * fail with {@link WrongThreadException}.
  * <p>
  * Shared arenas, on the other hand, have no owner thread. The segments created by a shared arena
- * can be {@linkplain SegmentScope#isAccessibleBy(Thread) accessed} by multiple threads. This might be useful when
+ * can be {@linkplain SegmentScope#isAccessibleBy(Thread) accessed} by any thread. This might be useful when
  * multiple threads need to access the same memory segment concurrently (e.g. in the case of parallel processing).
  * Moreover, a shared arena {@linkplain #isCloseableBy(Thread) can be closed} by any thread.
  *
@@ -97,8 +97,13 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * {@snippet lang = java:
      * MemorySegment.allocateNative(bytesSize, byteAlignment, scope());
      *}
-     * More generally implementations of this method must return a native method featuring the requested size,
-     * and that is compatible with the provided alignment constraint.
+     * More generally implementations of this method must return a native segment featuring the requested size,
+     * and that is compatible with the provided alignment constraint. Furthermore, for any two segments
+     * {@code S1, S2} returned by this method, the following invariant must hold:
+     *
+     * {@snippet lang = java:
+     * S1.overlappingSlice(S2).isEmpty() == true
+     *}
      *
      * @param byteSize the size (in bytes) of the off-heap memory block backing the native memory segment.
      * @param byteAlignment the alignment constraint (in bytes) of the off-heap region of memory backing the native memory segment.
@@ -121,7 +126,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     SegmentScope scope();
 
     /**
-     * Closes this arena. If this method completes normally, the arena scope becomes not {@linkplain SegmentScope#isAlive() alive},
+     * Closes this arena. If this method completes normally, the arena scope is no longer {@linkplain SegmentScope#isAlive() alive},
      * and all the memory segments associated with it can no longer be accessed. Furthermore, any off-heap region of memory backing the
      * segments associated with that scope are also released.
      * @throws IllegalStateException if the arena has already been {@linkplain #close() closed}.
