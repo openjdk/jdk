@@ -1330,25 +1330,21 @@ void C2_MacroAssembler::minmax_FD(FloatRegister dst, FloatRegister src1, FloatRe
   assert_different_registers(dst, src1, src2);
 
   Label Done;
-  fsflags(zr);
+  // Sum the args and check the result for NaN
+  is_double ? fadd_d(dst, src1, src2)
+            : fadd_s(dst, src1, src2);
+  is_double ? fclass_d(t0, dst)
+            : fclass_s(t0, dst);
+  andi(t0, t0, 0b1100000000); //if sum is quiet or signaling NaN
+  bnez(t0, Done);
+
   if (is_double) {
     is_min ? fmin_d(dst, src1, src2)
            : fmax_d(dst, src1, src2);
-    // Checking NaNs
-    flt_d(zr, src1, src2);
   } else {
     is_min ? fmin_s(dst, src1, src2)
            : fmax_s(dst, src1, src2);
-    // Checking NaNs
-    flt_s(zr, src1, src2);
   }
-
-  frflags(t0);
-  beqz(t0, Done);
-
-  // In case of NaNs
-  is_double ? fadd_d(dst, src1, src2)
-            : fadd_s(dst, src1, src2);
 
   bind(Done);
 }
