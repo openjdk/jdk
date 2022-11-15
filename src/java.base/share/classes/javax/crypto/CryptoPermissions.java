@@ -229,9 +229,9 @@ implements Serializable {
         // For each algorithm in this CryptoPermissions,
         // find out if there is anything we should add into
         // ret.
-        for (var entry : perms.entrySet()) {
-            PermissionCollection thisPc = entry.getValue();
-            PermissionCollection thatPc = other.perms.get(entry.getKey());
+        for (String alg : this.perms.keySet()) {
+            PermissionCollection thisPc = this.perms.get(alg);
+            PermissionCollection thatPc = other.perms.get(alg);
 
             CryptoPermission[] partialResult;
 
@@ -267,14 +267,13 @@ implements Serializable {
         maxKeySize =
             ((CryptoPermission)
                     thisWildcard.elements().nextElement()).getMaxKeySize();
-        for (var entry : other.perms.entrySet()) {
-            String alg = entry.getKey();
+        for (String alg : other.perms.keySet()) {
 
             if (this.perms.containsKey(alg)) {
                 continue;
             }
 
-            PermissionCollection thatPc = entry.getValue();
+            PermissionCollection thatPc = other.perms.get(alg);
 
             CryptoPermission[] partialResult;
 
