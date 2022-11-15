@@ -120,8 +120,8 @@ const Type* Type::            _zero_type[T_CONFLICT+1];
 
 // Map basic types to array-body alias types.
 const TypeAryPtr* TypeAryPtr::_array_body_type[T_CONFLICT+1];
-TypePtr::InterfaceSet* TypeAryPtr::_array_interfaces = NULL;
-TypePtr::InterfaceSet* TypeAryKlassPtr::_array_interfaces = NULL;
+const TypePtr::InterfaceSet* TypeAryPtr::_array_interfaces = NULL;
+const TypePtr::InterfaceSet* TypeAryKlassPtr::_array_interfaces = NULL;
 
 //=============================================================================
 // Convenience common pre-built types.
@@ -568,7 +568,10 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegL] = TypeLong::LONG;
   mreg2type[Op_RegFlags] = TypeInt::CC;
 
-  TypeAryPtr::_array_interfaces = new TypePtr::InterfaceSet(ciArrayKlass::interfaces());
+  GrowableArray<ciInstanceKlass*> array_interfaces;
+  array_interfaces.push(current->env()->Cloneable_klass());
+  array_interfaces.push(current->env()->Serializable_klass());
+  TypeAryPtr::_array_interfaces = new TypePtr::InterfaceSet(&array_interfaces);
   TypeAryKlassPtr::_array_interfaces = TypeAryPtr::_array_interfaces;
 
   TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), NULL /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());

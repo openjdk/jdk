@@ -1411,7 +1411,7 @@ class TypeAryPtr : public TypeOopPtr {
 
   // A pointer to delay allocation to Type::Initialize_shared()
 
-  static InterfaceSet* _array_interfaces;
+  static const InterfaceSet* _array_interfaces;
   ciKlass* exact_klass_helper() const;
   // Only guaranteed non null for array of basic types
   ciKlass* klass() const;
@@ -1701,7 +1701,7 @@ class TypeAryKlassPtr : public TypeKlassPtr {
 
   const Type *_elem;
 
-  static InterfaceSet* _array_interfaces;
+  static const InterfaceSet* _array_interfaces;
   TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, int offset)
     : TypeKlassPtr(AryKlassPtr, ptr, klass, *_array_interfaces, offset), _elem(elem) {
     assert(klass == NULL || klass->is_type_array_klass() || !klass->as_obj_array_klass()->base_element_klass()->is_interface(), "");

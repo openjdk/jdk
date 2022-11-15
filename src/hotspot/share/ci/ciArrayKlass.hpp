@@ -57,7 +57,6 @@ public:
 
   static ciArrayKlass* make(ciType* element_type);
 
-  static GrowableArray<ciInstanceKlass*>* interfaces();
 };
 
 #endif // SHARE_CI_CIARRAYKLASS_HPP

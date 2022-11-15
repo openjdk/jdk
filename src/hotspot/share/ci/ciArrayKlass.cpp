@@ -105,16 +105,3 @@ ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
   }
 }
 
-GrowableArray<ciInstanceKlass*>* ciArrayKlass::interfaces() {
-  GrowableArray<ciInstanceKlass*>* result = NULL;
-  GUARDED_VM_ENTRY(
-    Array<Klass*>* interfaces = Universe::the_array_interfaces_array();
-    result = new GrowableArray<ciInstanceKlass*>(interfaces->length());
-    for (int i = 0; i < interfaces->length(); i++) {
-      ciInstanceKlass* interface = CURRENT_ENV->get_instance_klass(interfaces->at(i));
-      assert(!CURRENT_ENV->arena()->contains(interfaces), "should be shareable");
-      result->append(interface);
-    }
-  );
-  return result;
-}
