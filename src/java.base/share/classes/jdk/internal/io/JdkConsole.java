@@ -39,6 +39,6 @@ public abstract class JdkConsole {
     public abstract char[] readPassword(String fmt, Object ... args);
     public abstract char[] readPassword();
     public abstract void flush();
-//    public abstract Charset charset();
+    public abstract Charset charset();
     protected JdkConsole() {}
 }

@@ -79,6 +79,6 @@ final class ProxyingConsole extends Console {
     }
 
     public Charset charset() {
-        return super.charset();
+        return delegate.charset();
     }
 }

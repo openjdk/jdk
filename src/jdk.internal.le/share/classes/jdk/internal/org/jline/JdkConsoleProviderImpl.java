@@ -25,6 +25,7 @@
 
 package jdk.internal.org.jline;
 
+import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReaderBuilder;
 import jdk.internal.org.jline.terminal.Terminal;
@@ -33,6 +34,8 @@ import jdk.internal.org.jline.terminal.TerminalBuilder;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.nio.charset.Charset;
+
 import jdk.internal.io.JdkConsole;
 
 /**
@@ -40,8 +43,14 @@ import jdk.internal.io.JdkConsole;
  *
  * @since 20
  */
-public class JdkConsoleImpl extends JdkConsole {
+public class JdkConsoleProviderImpl extends JdkConsoleProvider {
 
+    @Override
+    public JdkConsole console(Charset charset, boolean isTTY) {
+        return new JdkConsoleImpl(charset);
+    }
+
+    public static class JdkConsoleImpl extends JdkConsole {
         /**
          * {@inheritDoc}
          */
@@ -115,16 +124,22 @@ public class JdkConsoleImpl extends JdkConsole {
             terminal.flush();
         }
 
+        public Charset charset() {
+            return charset;
+        }
+
         private final LineReader jline;
         private final Terminal terminal;
+        private final Charset charset;
 
-        public JdkConsoleImpl() {
+        public JdkConsoleImpl(Charset cs) {
+            charset = cs;
             try {
-//                terminal = TerminalBuilder.builder().encoding(charset()).build();
-                terminal = TerminalBuilder.builder().build();
+                terminal = TerminalBuilder.builder().encoding(cs).build();
                 jline = LineReaderBuilder.builder().terminal(terminal).build();
             } catch (IOException ioe) {
                 throw new InternalError("should not happen, as CHARSET is guaranteed to be a valid charset");
             }
         }
+    }
 }

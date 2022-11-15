@@ -406,7 +406,7 @@ module java.base {
 
     // JDK-internal service types
 
-    uses jdk.internal.io.JdkConsole;
+    uses jdk.internal.io.JdkConsoleProvider;
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.io;
+
+import java.nio.charset.Charset;
 
 /**
- * Internal API for line editing
+ * JdkConsoleProvider
  *
- * @since 9
+ * @since 20
  */
-module jdk.internal.le {
-    exports jdk.internal.org.jline.keymap to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.completer to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.history to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal to
-        jdk.jshell;
-    exports jdk.internal.org.jline.utils to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.spi to
-        jdk.jshell;
+public abstract class JdkConsoleProvider {
+    /**
+     * {@return the Console instance, or {@code null} if not available}
+     * @param isTTY indicates if the jvm is attached to a terminal
+     */
+    public abstract JdkConsole console(Charset charset, boolean isTTY);
 
-    uses jdk.internal.org.jline.terminal.spi.JnaSupport;
-
-    // Console
-    provides jdk.internal.io.JdkConsoleProvider with
-            jdk.internal.org.jline.JdkConsoleProviderImpl;
+    /**
+     * Sole constructor
+     */
+    protected JdkConsoleProvider() {
+    }
 }
-

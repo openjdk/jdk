@@ -29,7 +29,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.io.JdkConsole;
+import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
@@ -600,11 +600,11 @@ public class Console implements Flushable
 
                 if (cons == null) {
                     // Try loading providers
-                    cons = ServiceLoader.load(JdkConsole.class).stream()
+                    cons = ServiceLoader.load(JdkConsoleProvider.class).stream()
                        .map(ServiceLoader.Provider::get)
-                       .filter(jc -> istty && "jdk.internal.le".equals(jc.getClass().getModule().getName()) && useJLine || !useJLine)
+                       .filter(jcp -> istty && "jdk.internal.le".equals(jcp.getClass().getModule().getName()) && useJLine || !useJLine)
                        .findAny()
-                       .map(jc -> (Console)new ProxyingConsole(jc))
+                       .map(jcp -> (Console)new ProxyingConsole(jcp.console(CHARSET, istty)))
                        .orElse(istty ? new Console() : null);
                 }
                 return cons;
