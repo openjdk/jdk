@@ -854,9 +854,6 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 #endif
-  // If the OS doesn't support SSE, we can't use this feature even if the HW does
-  if (!os::supports_sse())
-    _features &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
 
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
