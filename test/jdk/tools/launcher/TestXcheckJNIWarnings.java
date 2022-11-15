@@ -25,13 +25,21 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * @test
+ *
+ * @test id=noagent
  * @bug 8187442
  * @summary Launching app with or without jdwp agent shouldn't produce any jni warnings.
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile TestXcheckJNIWarnings.java
  * @run main TestXcheckJNIWarnings
+ *
+ * @test id=jdwp-agent
+ * @bug 8187442
+ * @summary Launching app with or without jdwp agent shouldn't produce any jni warnings.
+ * @modules jdk.compiler
+ *          jdk.zipfs
+ * @compile TestXcheckJNIWarnings.java
  * @run main TestXcheckJNIWarnings -agentlib:jdwp=transport=dt_socket,server=y,suspend=n
  */
 public final class TestXcheckJNIWarnings extends TestHelper {
