@@ -542,11 +542,11 @@ JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
     return NULL;
   }
 
-  jobject *objArray = (jobject *) jvmtiMalloc(sizeof(jobject) * length);
+  jthread* objArray = (jthread *) jvmtiMalloc(sizeof(jthread) * length);
   NULL_CHECK(objArray, NULL);
 
-  for (int i=0; i<length; i++) {
-    objArray[i] = jni_reference(handles[i]);
+  for (int i = 0; i < length; i++) {
+    objArray[i] = (jthread)jni_reference(handles[i]);
   }
   return objArray;
 }
@@ -557,11 +557,11 @@ JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
     return NULL;
   }
 
-  jobject *objArray = (jobject *) jvmtiMalloc(sizeof(jobject) * length);
+  jthreadGroup* objArray = (jthreadGroup *) jvmtiMalloc(sizeof(jthreadGroup) * length);
   NULL_CHECK(objArray, NULL);
 
-  for (int i=0; i<length; i++) {
-    objArray[i] = JNIHandles::make_local(groups->obj_at(i));
+  for (int i = 0; i < length; i++) {
+    objArray[i] = (jthreadGroup)JNIHandles::make_local(groups->obj_at(i));
   }
   return objArray;
 }
