@@ -176,7 +176,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      *
      ************************************************/
     /*
-     * Overriden initialization
+     * Overridden initialization
      */
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
@@ -325,7 +325,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     /**
      * Returns size of menu window's caption or null
      * if window has no caption.
-     * Can be overriden for popup menus and tear-off menus
+     * Can be overridden for popup menus and tear-off menus
      */
     protected Dimension getCaptionSize() {
         return null;
@@ -333,7 +333,7 @@ public class XMenuWindow extends XBaseMenuWindow {
 
     /**
      * Paints menu window's caption.
-     * Can be overriden for popup menus and tear-off menus.
+     * Can be overridden for popup menus and tear-off menus.
      * Default implementation does nothing
      */
     protected void paintCaption(Graphics g, Rectangle rect) {
@@ -354,7 +354,7 @@ public class XMenuWindow extends XBaseMenuWindow {
 
     /**
      * Reads vector of items from target
-     * This function is overriden in XPopupMenuPeer
+     * This function is overridden in XPopupMenuPeer
      */
     Vector<MenuItem> getMenuTargetItems() {
         return menuPeer.getTargetItems();

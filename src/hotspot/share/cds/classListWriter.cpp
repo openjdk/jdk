@@ -67,7 +67,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
 class ClassListWriter::IDTable : public ResourceHashtable<
   const InstanceKlass*, int,
   15889, // prime number
-  ResourceObj::C_HEAP> {};
+  AnyObj::C_HEAP> {};
 
 ClassListWriter::IDTable* ClassListWriter::_id_table = NULL;
 int ClassListWriter::_total_ids = 0;
@@ -75,7 +75,7 @@ int ClassListWriter::_total_ids = 0;
 int ClassListWriter::get_id(const InstanceKlass* k) {
   assert_locked();
   if (_id_table == NULL) {
-    _id_table = new (ResourceObj::C_HEAP, mtClass)IDTable();
+    _id_table = new (mtClass)IDTable();
   }
   bool created;
   int* v = _id_table->put_if_absent(k, &created);

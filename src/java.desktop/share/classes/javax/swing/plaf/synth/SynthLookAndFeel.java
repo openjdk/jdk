@@ -279,7 +279,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * A convience method that will reset the Style of StyleContext if
+     * A convenience method that will reset the Style of StyleContext if
      * necessary.
      *
      * @return newStyle

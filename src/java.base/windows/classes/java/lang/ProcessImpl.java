@@ -572,7 +572,7 @@ final class ProcessImpl extends Process {
         }
         if (Thread.interrupted())
             throw new InterruptedException();
-        return exitValue();
+        return getExitCodeProcess(handle);
     }
 
     private static native void waitForInterruptibly(long handle);

@@ -1390,52 +1390,24 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
   uint32_t debug_bits = 0;
   // first derive the object's owner and entry_count (if any)
-  {
-    address owner = NULL;
-    {
-      markWord mark = hobj()->mark();
+  owning_thread = ObjectSynchronizer::get_lock_owner(tlh.list(), hobj);
+  if (owning_thread != NULL) {
+    Handle th(current_thread, get_vthread_or_thread_oop(owning_thread));
+    ret.owner = (jthread)jni_reference(calling_thread, th);
 
-      if (!mark.has_monitor()) {
-        // this object has a lightweight monitor
-
-        if (mark.has_locker()) {
-          owner = (address)mark.locker(); // save the address of the Lock word
-        }
-        // implied else: no owner
-      } else {
-        // this object has a heavyweight monitor
-        mon = mark.monitor();
-
-        // The owner field of a heavyweight monitor may be NULL for no
-        // owner, a JavaThread * or it may still be the address of the
-        // Lock word in a JavaThread's stack. A monitor can be inflated
-        // by a non-owning JavaThread, but only the owning JavaThread
-        // can change the owner field from the Lock word to the
-        // JavaThread * and it may not have done that yet.
-        owner = (address)mon->owner();
-      }
-    }
-
-    if (owner != NULL) {
-      // This monitor is owned so we have to find the owning JavaThread.
-      owning_thread = Threads::owning_thread_from_monitor_owner(tlh.list(), owner);
-      assert(owning_thread != NULL, "owning JavaThread must not be NULL");
-      Handle th(current_thread, get_vthread_or_thread_oop(owning_thread));
-      ret.owner = (jthread)jni_reference(calling_thread, th);
-    }
-
-    if (owning_thread != NULL) {  // monitor is owned
-      // The recursions field of a monitor does not reflect recursions
-      // as lightweight locks before inflating the monitor are not included.
-      // We have to count the number of recursive monitor entries the hard way.
-      // We pass a handle to survive any GCs along the way.
-      ret.entry_count = count_locked_objects(owning_thread, hobj);
-    }
-    // implied else: entry_count == 0
+    // The recursions field of a monitor does not reflect recursions
+    // as lightweight locks before inflating the monitor are not included.
+    // We have to count the number of recursive monitor entries the hard way.
+    // We pass a handle to survive any GCs along the way.
+    ret.entry_count = count_locked_objects(owning_thread, hobj);
   }
+  // implied else: entry_count == 0
 
   jint nWant = 0, nWait = 0;
-  if (mon != NULL) {
+  markWord mark = hobj->mark();
+  if (mark.has_monitor()) {
+    mon = mark.monitor();
+    assert(mon != NULL, "must have monitor");
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor
     nWait = mon->waiters();     // # of threads in Object.wait()
@@ -1679,7 +1651,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
   _env = env;
-  _allocations = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<unsigned char*>(20, mtServiceability);
+  _allocations = new (mtServiceability) GrowableArray<unsigned char*>(20, mtServiceability);
   _failed = false;
 }
 ResourceTracker::~ResourceTracker() {

@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.*;
 
 import sun.security.util.DerValue;
@@ -64,20 +63,10 @@ import sun.security.util.DerOutputStream;
  * @author Anne Anderson
  * @since       1.4
  * @see Extension
- * @see CertAttrSet
  */
-public class CertificatePoliciesExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.CertificatePolicies";
-    /**
-     * Attribute names.
-     */
+public class CertificatePoliciesExtension extends Extension {
+
     public static final String NAME = "CertificatePolicies";
-    public static final String POLICIES = "policies";
 
     /**
      * List of PolicyInformation for this object.
@@ -177,78 +166,30 @@ implements CertAttrSet<String> {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.CertificatePolicies_Id;
           critical = false;
           encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**
-     * Set the attribute value.
+     * Get the PolicyInformation value.
      */
-    @SuppressWarnings("unchecked") // Checked with an instanceof check
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(POLICIES)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            certPolicies = (List<PolicyInformation>)obj;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:CertificatePoliciesExtension.");
-        }
-        encodeThis();
+    public List<PolicyInformation> getCertPolicies() {
+        return certPolicies;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public List<PolicyInformation> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(POLICIES)) {
-            //XXXX May want to consider cloning this
-            return certPolicies;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:CertificatePoliciesExtension.");
-        }
-    }
+
 
     /**
-     * Delete the attribute value.
+     * Return the name of this extension.
      */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(POLICIES)) {
-            certPolicies = null;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:CertificatePoliciesExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(POLICIES);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

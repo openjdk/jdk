@@ -61,8 +61,8 @@ class LogSelection : public StackObj {
   bool selects(const LogTagSet& ts) const;
   bool consists_of(const LogTagType tags[LogTag::MaxTags]) const;
 
-  int describe_tags(char* buf, size_t bufsize) const;
-  int describe(char* buf, size_t bufsize) const;
+  void describe_tags_on(outputStream* out) const;
+  void describe_on(outputStream* out) const;
 
   // List similar selections that matches existing tag sets on the given outputstream
   void suggest_similar_matching(outputStream* out) const;

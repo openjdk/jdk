@@ -332,7 +332,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
                 }
             }
 
-            // Asssume the listeners are in the same order and that there are no gaps.
+            // Assume the listeners are in the same order and that there are no gaps.
             // Eventually, this may need to do true differencing.
             String addListenerMethodName = d.getAddListenerMethod().getName();
             for (int i = newL.length; i < oldL.length; i++) {

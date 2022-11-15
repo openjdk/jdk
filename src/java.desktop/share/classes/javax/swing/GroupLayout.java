@@ -1651,7 +1651,7 @@ public class GroupLayout implements LayoutManager2 {
 
         /**
          * Used to compute how the two values representing two springs
-         * will be combined.  For example, a group that layed things out
+         * will be combined.  For example, a group that laid things out
          * one after the next would return {@code a + b}.
          */
         abstract int operator(int a, int b);
@@ -2460,7 +2460,7 @@ public class GroupLayout implements LayoutManager2 {
     public sealed class ParallelGroup extends Group
          permits BaselineGroup {
 
-        // How children are layed out.
+        // How children are laid out.
         private final Alignment childAlignment;
         // Whether or not we're resizable.
         private final boolean resizable;
@@ -3591,7 +3591,7 @@ public class GroupLayout implements LayoutManager2 {
      * linked.
      */
     private class ComponentInfo {
-        // Component being layed out
+        // Component being laid out
         private Component component;
 
         ComponentSpring horizontalSpring;
