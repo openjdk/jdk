@@ -600,32 +600,36 @@ class GrowableArrayMetadata {
   debug_only(GrowableArrayNestingCheck _nesting_check;)
 
   // Resource allocation
-  uintptr_t bits() const {
+  static uintptr_t bits() {
     return 0;
   }
 
   // CHeap allocation
-  uintptr_t bits(MEMFLAGS memflags) const {
+  static uintptr_t bits(MEMFLAGS memflags) {
     assert(memflags != mtNone, "Must provide a proper MEMFLAGS");
     return (uintptr_t(memflags) << 1) | 1;
   }
 
   // Arena allocation
-  uintptr_t bits(Arena* arena) const {
+  static uintptr_t bits(Arena* arena) {
+    assert((uintptr_t(arena) & 1) == 0, "Required for on_C_heap() to work");
     return uintptr_t(arena);
   }
 
 public:
+  // Resource allocation
   GrowableArrayMetadata() :
       _bits(bits())
       debug_only(COMMA _nesting_check(true)) {
   }
 
+  // Areana allocation
   GrowableArrayMetadata(Arena* arena) :
       _bits(bits(arena))
       debug_only(COMMA _nesting_check(false)) {
   }
 
+  // CHeap allocation
   GrowableArrayMetadata(MEMFLAGS memflags) :
       _bits(bits(memflags))
       debug_only(COMMA _nesting_check(false)) {
