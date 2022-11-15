@@ -733,7 +733,7 @@ public:
     init_checks();
   }
 
-  explicit GrowableArray(int initial_capacity, MEMFLAGS memflags) :
+  GrowableArray(int initial_capacity, MEMFLAGS memflags) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity, memflags),
           initial_capacity),
