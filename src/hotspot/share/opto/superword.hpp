@@ -214,11 +214,11 @@ class CMoveKit {
   void unmap(Node* key)                  { _dict->Delete(_2p(key)); }
   Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
   Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
-  Node* is_CmpD_candidate(Node* nd) const; // otherwise return NULL
+  Node* is_Cmp_candidate(Node* nd) const; // otherwise return NULL
   // Determine if the current pack is a cmove candidate that can be vectorized.
   bool can_merge_cmove_pack(Node_List* cmove_pk);
-  void make_cmove_pack(Node_List* cmovd_pk);
-  bool test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk);
+  void make_cmove_pack(Node_List* cmove_pk);
+  bool test_cmp_pack(Node_List* cmp_pk, Node_List* cmove_pk);
 };//class CMoveKit
 
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
@@ -539,8 +539,8 @@ class SuperWord : public ResourceObj {
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
-  // Merge CMoveD into new vector-nodes
-  void merge_packs_to_cmovd();
+  // Merge CMove into new vector-nodes
+  void merge_packs_to_cmove();
   // Adjust the memory graph for the packed operations
   void schedule();
   // Remove "current" from its current position in the memory graph and insert

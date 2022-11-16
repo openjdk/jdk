@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8295407
- * @summary C2 crash: Error: ShouldNotReachHere() in multiple vector tests with
- *          -XX:-MonomorphicArrayCheck -XX:-UncommonNullCast
+ * @summary Superword should remove unsupported cmove packs from candidate packset
  * @library /test/lib /
  * @run main TestUnsupportedConditionalMove
  */
