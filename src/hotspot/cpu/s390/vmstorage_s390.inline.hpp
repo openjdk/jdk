@@ -27,7 +27,6 @@
 #include <cstdint>
 
 #include "asm/register.hpp"
-#include "prims/vmstorageBase.inline.hpp"
 
 enum class StorageType : int8_t {
   STACK = 0,
