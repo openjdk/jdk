@@ -107,7 +107,6 @@ typedef struct {
     jclass              systemClass;
     jmethodID           threadConstructor;
     jmethodID           threadSetDaemon;
-    jmethodID           threadResume;
     jmethodID           systemGetProperty;
     jmethodID           setProperty;
     jthreadGroup        systemThreadGroup;
