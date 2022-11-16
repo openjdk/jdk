@@ -612,7 +612,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
 JNI_COCOA_ENTER(env);
     // Get the first page's PageFormat for setting things up (This introduces
     //  and is a facet of the same problem in Radar 2818593/2708932).
-    jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, 0); // AWT_THREADING Safe (!appKit)
+    jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, firstPage); // AWT_THREADING Safe (!appKit)
     CHECK_EXCEPTION();
     if (page != NULL) {
         jobject pageFormatArea = (*env)->CallObjectMethod(env, jthis, jm_getPageFormatArea, page); // AWT_THREADING Safe (!appKit)
