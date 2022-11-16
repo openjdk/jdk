@@ -136,6 +136,11 @@ public:
 
   int size() { return stub_size(&_stub_size); }
   void emit(C2_MacroAssembler& masm);
+
+  virtual void reinit_labels() {
+    C2CodeStub::reinit_labels();
+    _guard.init();
+  }
 };
 
 class C2CheckLockStackStub : public C2CodeStub {
