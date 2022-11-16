@@ -224,6 +224,7 @@ int C2CodeStub::measure_stub_size(C2CodeStub& stub) {
   CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
   C2_MacroAssembler masm(&cb);
   stub.emit(masm);
+  stub.reinit_labels();
   return cb.insts_size();
 }
 
@@ -238,8 +239,6 @@ int C2CodeStub::stub_size(volatile int* stub_size) {
   Atomic::store(stub_size, size);
   return size;
 }
-
-volatile int C2SafepointPollStub::_stub_size = 0;
 
 int C2CodeStubList::measure_code_size() const {
   int size = 0;
@@ -264,8 +263,9 @@ void C2CodeStubList::emit(CodeBuffer& cb) {
   }
 }
 
-// Nmethod entry barrier stubs
+volatile int C2SafepointPollStub::_stub_size = 0;
 volatile int C2EntryBarrierStub::_stub_size = 0;
+volatile int C2CheckLockStackStub::_stub_size = 0;
 
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
