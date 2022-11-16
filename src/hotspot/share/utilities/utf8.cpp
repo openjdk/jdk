@@ -224,7 +224,7 @@ void UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int
       *p++ = (char)c;
     } else {
       if (p + 6 >= end) break;      // string is truncated
-      os::snprintf(p, 7, "\\u%04x", c);
+      os::snprintf(p, 7, "\\u%04x", c);  // counting terminating zero in
       p += 6;
     }
   }

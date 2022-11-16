@@ -2521,19 +2521,17 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
 
   // Allocate temporary buffer with extra space for formatting and line number
   const size_t buf_size = buf_len + 64;
-  size_t buf_off;
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  size_t buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
-    buf_off = (int)strlen(buf);
     if (module_version != NULL) {
-      os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
     } else {
-      os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
     }
   }
 
@@ -2546,16 +2544,15 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     if (line_number == -2) {
       strcat(buf, "Native Method)");
     } else {
-      buf_off = (int)strlen(buf);
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
-        os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
       } else if (source_file_name != NULL) {
         // Just sourcename
-        os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
       CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
