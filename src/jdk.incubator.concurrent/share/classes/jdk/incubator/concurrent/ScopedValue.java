@@ -34,8 +34,10 @@ import java.util.function.Supplier;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
+import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.ScopedValueContainer;
-import jdk.internal.vm.annotation.*;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -119,7 +121,7 @@ import sun.security.action.GetPropertyAction;
  * value "{@code duke}" for the execution of a runnable operation. The code in the {@code
  * run} method creates a {@code StructuredTaskScope} and forks three child threads. Code
  * executed directly or indirectly by these threads running {@code childTask1()},
- * {@code childTask2()}, and {@code childTask3()} will read the value "duke".
+ * {@code childTask2()}, and {@code childTask3()} will read the value "{@code duke}".
  *
  * {@snippet lang=java :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
@@ -150,15 +152,15 @@ import sun.security.action.GetPropertyAction;
  * leaving an scoped-value binding also requires little more than
  * updating a pointer.
  *
- * <p>Because the scoped-value per-thread cache is small, you should
- * try to minimize the number of bound scoped values in
- * use. For example, if you need to pass a number of values in this
- * way, it makes sense to create a record class to hold those values,
- * and then bind a single `ScopedValue` to an instance of that
- * record.
+ * <p>Because the scoped-value per-thread cache is small, clients
+ * should minimize the number of bound scoped values in use. For
+ * example, if it is necessary to pass a number of values in this way,
+ * it makes sense to create a record class to hold those values, and
+ * then bind a single `ScopedValue` to an instance of that record.
  *
- * <p>For this incubator release, we have provided some system properties
- * to tune the performance of scoped values.
+ * <p>For this incubator release, the reference implementation
+ * provides some system properties to tune the performance of scoped
+ * values.
  *
  * <p>The system property {@code jdk.incubator.concurrent.ScopedValue.cacheSize}
  * controls the size of the (per-thread) scoped-value cache. This cache is crucial
@@ -176,11 +178,11 @@ import sun.security.action.GetPropertyAction;
  * cache is preserved when a virtual thread is blocked. By default
  * this property is set to {@code true}, meaning that every virtual
  * thread preserves its scoped-value cache when blocked. Like {@code
- * ScopedValue.cacheSize}, this is a space versus speed trade-off: if
- * you have a great many virtual threads that are blocked most of the
- * time, setting this property to {@code false} might result in a
- * useful memory saving, but each virtual thread's scoped-value cache
- * would have to be regenerated after a blocking operation.
+ * ScopedValue.cacheSize}, this is a space versus speed trade-off: in
+ * situations where many virtual threads are blocked most of the time,
+ * setting this property to {@code false} might result in a useful
+ * memory saving, but each virtual thread's scoped-value cache would
+ * have to be regenerated after a blocking operation.
  *
  * @param <T> the type of the value
  * @since 20
@@ -253,9 +255,9 @@ public final class ScopedValue<T> {
      * A mapping of scoped values, as <em>keys</em>, to values.
      *
      * <p> A {@code Carrier} is used to accumlate mappings so that an operation (a
-     * {@link Runnable} or {@link Callable}) can be executed with all scoped values in
-     * the mapping bound to values. The following example runs an operation with k1
-     * bound (or rebound) to v1, and k2 bound (or rebound) to v2.
+     * {@link Runnable} or {@link Callable}) can be executed with all scoped values in the
+     * mapping bound to values. The following example runs an operation with {@code k1}
+     * bound (or rebound) to {@code v1}, and {@code k2} bound (or rebound) to {@code v2}.
      * {@snippet lang=java :
      *     // @link substring="where" target="#where(ScopedValue, Object)" :
      *     ScopedValue.where(k1, v1).where(k2, v2).run(() -> ... );
@@ -304,7 +306,7 @@ public final class ScopedValue<T> {
          * {@code value}. The current carrier is immutable, it is not changed by this
          * method.
          *
-         * @param key the ScopedValue key
+         * @param key the {@code ScopedValue} key
          * @param value the value, can be {@code null}
          * @param <T> the type of the value
          * @return a new Carrier with the mappings from this carrier plus the new mapping
@@ -450,14 +452,14 @@ public final class ScopedValue<T> {
      * Creates a new {@code Carrier} with a single mapping of a {@code ScopedValue}
      * <em>key</em> to a value. The {@code Carrier} can be used to accumlate mappings so
      * that an operation can be executed with all scoped values in the mapping bound to
-     * values. The following example runs an operation with k1 bound (or rebound) to v1,
-     * and k2 bound (or rebound) to v2.
+     * values. The following example runs an operation with {@code k1} bound (or rebound)
+     * to {@code v1}, and {@code k2} bound (or rebound) to {@code v2}.
      * {@snippet lang=java :
      *     // @link substring="run" target="Carrier#run(Runnable)" :
      *     ScopedValue.where(k1, v1).where(k2, v2).run(() -> ... );
      * }
      *
-     * @param key the ScopedValue key
+     * @param key the {@code ScopedValue} key
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
      * @return a new Carrier with a single mapping
