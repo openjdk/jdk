@@ -41,14 +41,16 @@ public final class SystemProps {
     // no instances
     private SystemProps() {}
 
-    // custom java.io.tmpdir from command line
+    // custom java.io.tmpdir via command line
     private static String customTmpdir;
 
-    // Print warning message if temp directory is not valid
-    public static void checkIoTmpdir() {
-        if (customTmpdir != null && !(new File(customTmpdir).isDirectory())) {
-            System.err.println("WARNING: java.io.tmpdir location does not exist");
-        }
+    /**
+     * check if warning for custom java.io.tmpdir is required
+     *
+     * @return a boolean value
+     */
+    public static boolean checkIfWarningRequired() {
+        return customTmpdir != null && !(new File(customTmpdir).isDirectory());
     }
 
     /**
@@ -65,7 +67,6 @@ public final class SystemProps {
         Raw raw = new Raw();
         HashMap<String, String> props = raw.cmdProperties();
 
-        // java.io.tmpdir from command line
         customTmpdir = props.get("java.io.tmpdir");
 
         String javaHome = props.get("java.home");

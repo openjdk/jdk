@@ -2244,8 +2244,10 @@ public final class System {
         // SecurityManager
         Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
 
-        // print out warning message if java.io.tmpdir is set through command line with non-existing folder
-        SystemProps.checkIoTmpdir();
+        // Emit a warning if java.io.tmpdir is set via the command line to a directory that doesn't exist
+        if (SystemProps.checkIfWarningRequired()) {
+            System.err.println("WARNING: java.io.tmpdir location does not exist");
+        }
 
         String smProp = System.getProperty("java.security.manager");
         boolean needWarning = false;
