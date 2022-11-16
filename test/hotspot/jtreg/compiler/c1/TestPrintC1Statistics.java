@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,31 @@
  * questions.
  */
 
-package sun.security.x509;
-
-import sun.security.util.DerOutputStream;
-
-import java.io.IOException;
-
-/**
- * This interface defines a certificate attribute that can be DER-encoded.
+/*
+ * @test
+ * @summary Checks that -XX:+PrintC1Statistics works
+ * @bug 8296969
+ * @requires vm.debug == true & vm.compiler1.enabled
+ * @library /test/lib
+ * @run main/othervm -XX:+Verbose compiler.c1.TestPrintC1Statistics
  */
-public interface CertAttrSet {
 
-    /**
-     * Encodes the attribute to the output stream.
-     *
-     * @param out the DerOutputStream to encode the attribute to.
-     * @exception IOException on write errors.
-     */
-    void encode(DerOutputStream out) throws IOException;
-}
+package compiler.c1;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+public class TestPrintC1Statistics {
+    public static void main(String[] args) throws Exception {
+        List<String> options = new ArrayList<String>();
+        options.add("-XX:+PrintC1Statistics");
+        options.add("--version");
+
+        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+
+        oa.shouldHaveExitValue(0).shouldContain("C1 Runtime statistics");
+    }
+ }
