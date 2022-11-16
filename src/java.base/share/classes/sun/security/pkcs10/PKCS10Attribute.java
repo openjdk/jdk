@@ -107,9 +107,10 @@ public class PKCS10Attribute implements DerEncoder {
      *
      * @exception IOException on encoding errors.
      */
-    public void derEncode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         PKCS9Attribute attr = new PKCS9Attribute(attributeId, attributeValue);
-        attr.derEncode(out);
+        attr.encode(out);
     }
 
     /**

@@ -399,7 +399,7 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
 
  public:
   explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
-  CHeapBitMap(MEMFLAGS flags, idx_t size_in_bits, bool clear = true);
+  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;

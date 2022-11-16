@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -34,6 +33,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

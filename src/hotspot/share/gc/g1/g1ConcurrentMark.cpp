@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -57,7 +58,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -2108,7 +2109,7 @@ static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h
 
 G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
                                G1CMTask* task)
-  : MetadataVisitingOopIterateClosure(get_cm_oop_closure_ref_processor(g1h)),
+  : ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_strong, get_cm_oop_closure_ref_processor(g1h)),
     _g1h(g1h), _task(task)
 { }
 
