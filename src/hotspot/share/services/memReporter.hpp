@@ -241,10 +241,10 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
 
 class MemJFRReporter : public AllStatic {
 private:
-  static void sendComponentEvent(const char* component, size_t reserved, size_t committed);
+  static void sendTypeEvent(const char* type, size_t reserved, size_t committed);
  public:
   static void sendTotalEvent();
-  static void sendComponentEvents();
+  static void sendTypeEvents();
 };
 
 

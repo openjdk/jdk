@@ -512,12 +512,12 @@
       <setting name="cutoff" control="old-objects-cutoff">0 ns</setting>
     </event>
 
-    <event name="jdk.ComponentNativeMemoryUsage">
+    <event name="jdk.NativeMemoryUsage">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="period">1000 ms</setting>
     </event>
 
-    <event name="jdk.TotalNativeMemoryUsage">
+    <event name="jdk.NativeMemoryUsagePart">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="period">1000 ms</setting>
     </event>

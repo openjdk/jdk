@@ -838,21 +838,21 @@ void MemJFRReporter::sendTotalEvent() {
   const size_t reserved = malloced_memory + reserved_memory;
   const size_t committed = malloced_memory + committed_memory;
 
-  EventTotalNativeMemoryUsage event;
+  EventNativeMemoryUsage event;
   event.set_reserved(reserved);
   event.set_committed(committed);
   event.commit();
 }
 
-void MemJFRReporter::sendComponentEvent(const char* component, size_t reserved, size_t committed) {
-  EventComponentNativeMemoryUsage event;
-  event.set_component(component);
+void MemJFRReporter::sendTypeEvent(const char* type, size_t reserved, size_t committed) {
+  EventNativeMemoryUsagePart event;
+  event.set_type(type);
   event.set_reserved(reserved);
   event.set_committed(committed);
   event.commit();
 }
 
-void MemJFRReporter::sendComponentEvents() {
+void MemJFRReporter::sendTypeEvents() {
   if (!MemTracker::enabled()) {
     return;
   }
@@ -884,6 +884,6 @@ void MemJFRReporter::sendComponentEvents() {
       reserved += usage.malloc_memory_snapshot()->malloc_overhead();
       committed += usage.malloc_memory_snapshot()->malloc_overhead();
     }
-    sendComponentEvent(NMTUtil::flag_to_name(flag), reserved, committed);
+    sendTypeEvent(NMTUtil::flag_to_name(flag), reserved, committed);
   }
 }

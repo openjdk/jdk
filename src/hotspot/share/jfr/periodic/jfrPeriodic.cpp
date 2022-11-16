@@ -626,10 +626,10 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #endif
 }
 
-TRACE_REQUEST_FUNC(ComponentNativeMemoryUsage) {
-  MemJFRReporter::sendComponentEvents();
+TRACE_REQUEST_FUNC(NativeMemoryUsagePart) {
+  MemJFRReporter::sendTypeEvents();
 }
 
-TRACE_REQUEST_FUNC(TotalNativeMemoryUsage) {
+TRACE_REQUEST_FUNC(NativeMemoryUsage) {
   MemJFRReporter::sendTotalEvent();
 }
