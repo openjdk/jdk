@@ -148,11 +148,7 @@ public final class EditorTopComponent extends TopComponent {
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> {
-            setDisplayName(model.getGraph().getDisplayName());
-            setToolTipText(model.getGroup().getDisplayName());
-            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
-        });
+        diagramViewModel.getGraphChangedEvent().addListener(model -> graphChanged(model));
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
@@ -244,6 +240,14 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
+
+        graphChanged(diagramViewModel);
+    }
+
+    private void graphChanged(DiagramViewModel model) {
+        setDisplayName(model.getGraph().getDisplayName());
+        setToolTipText(model.getGroup().getDisplayName());
+        graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
     }
 
     public DiagramViewModel getModel() {
