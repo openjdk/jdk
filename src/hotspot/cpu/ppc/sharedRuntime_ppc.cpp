@@ -1690,7 +1690,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 
   DEBUG_ONLY(__ block_comment("fill {"));
 #ifdef ASSERT
-  __ load_const_optimized(tmp2, 0x1234);
+  __ load_const_optimized(tmp2, ContinuationEntry::cookie_value());
   __ stw(tmp2, in_bytes(ContinuationEntry::cookie_offset()), R1_SP);
 #endif //ASSERT
 
