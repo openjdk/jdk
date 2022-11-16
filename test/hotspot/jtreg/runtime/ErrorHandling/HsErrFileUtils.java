@@ -91,7 +91,7 @@ public class HsErrFileUtils {
 
         if (currentPattern < patterns.length) {
             throw new RuntimeException("hs-err file incomplete (found " + currentPattern + " matching pattern, " +
-                                       "first missing pattern: " +  patterns[currentPattern] + ")");
+                                       "first missing pattern: " + patterns[currentPattern] + ")");
         }
 
         if (!lastLine.equals("END.")) {
