@@ -78,9 +78,9 @@ public class ModifierRobotKeyTest extends KeyAdapter {
             modifierKeys[2] = KeyEvent.VK_ALT;
 
             inputMasks = new int[3];
-            inputMasks[0] =  InputEvent.SHIFT_DOWN_MASK;
-            inputMasks[1] =  InputEvent.CTRL_DOWN_MASK;
-            inputMasks[2] =  InputEvent.ALT_DOWN_MASK;
+            inputMasks[0] = InputEvent.SHIFT_DOWN_MASK;
+            inputMasks[1] = InputEvent.CTRL_DOWN_MASK;
+            inputMasks[2] = InputEvent.ALT_DOWN_MASK;
         } else {
             modifierKeys =  new int[4];
             modifierKeys[0] = KeyEvent.VK_SHIFT;
@@ -89,10 +89,10 @@ public class ModifierRobotKeyTest extends KeyAdapter {
             modifierKeys[3] = KeyEvent.VK_ALT_GRAPH;
 
             inputMasks = new int[4];
-            inputMasks[0] =  InputEvent.SHIFT_DOWN_MASK;
-            inputMasks[1] =  InputEvent.CTRL_DOWN_MASK;
-            inputMasks[2] =  InputEvent.ALT_DOWN_MASK;
-            inputMasks[3] =  InputEvent.ALT_GRAPH_DOWN_MASK;
+            inputMasks[0] = InputEvent.SHIFT_DOWN_MASK;
+            inputMasks[1] = InputEvent.CTRL_DOWN_MASK;
+            inputMasks[2] = InputEvent.ALT_DOWN_MASK;
+            inputMasks[3] = InputEvent.ALT_GRAPH_DOWN_MASK;
         }
 
         modifierStatus = new boolean[modifierKeys.length];
