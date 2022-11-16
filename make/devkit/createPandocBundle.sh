@@ -38,6 +38,8 @@ if [ $# = 1 ]; then
   TARGET_PLATFORM="$1"
 fi
 
+PANDOC_EXE="pandoc"
+PANDOC_PATH="bin/$PANDOC_EXE"
 if [[ $TARGET_PLATFORM == linux_x64 ]] ; then
   PANDOC_PLATFORM=linux-amd64
   PANDOC_SUFFIX=tar.gz
@@ -50,6 +52,8 @@ elif [[ $TARGET_PLATFORM == macosx_x64 ]] ; then
 elif [[ $TARGET_PLATFORM == windows_x64 ]] ; then
   PANDOC_PLATFORM=windows-x86_64
   PANDOC_SUFFIX=zip
+  PANDOC_EXE="pandoc.exe"
+  PANDOC_PATH="$PANDOC_EXE"
 else
   echo "Unknown platform"
   exit 1
@@ -68,13 +72,6 @@ fi
 cd ..
 
 mkdir pandoc
-if [[ $TARGET_PLATFORM == windows_x64 ]] ; then
-  PANDOC_EXE="pandoc.exe"
-  PANDOC_PATH="$PANDOC_EXE"
-else
-  PANDOC_EXE="pandoc"
-  PANDOC_PATH="bin/$PANDOC_EXE"
-fi
 cp tmp/pandoc-$PANDOC_VERSION/$PANDOC_PATH pandoc
 chmod +x pandoc/$PANDOC_EXE
 
