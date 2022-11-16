@@ -22,9 +22,8 @@
  *
  */
 
-
-#include "jvm.h"
 #include "classfile/classLoader.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
