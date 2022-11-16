@@ -214,4 +214,9 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         }
         return runtime().reflection.getFieldAnnotation(this, annotationClass);
     }
+
+    @Override
+    public JavaConstant getConstantValue() {
+        return holder.createFieldInfo(index).getConstantValue();
+    }
 }
