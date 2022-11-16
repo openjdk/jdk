@@ -1321,7 +1321,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public synchronized Collection<List<?>> getSubjectAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
-        if (subjectAlternativeNames != null)  {
+        if (subjectAlternativeNames != null) {
             return cloneAltNames(subjectAlternativeNames);
         }
         SubjectAlternativeNameExtension subjectAltNameExt =
