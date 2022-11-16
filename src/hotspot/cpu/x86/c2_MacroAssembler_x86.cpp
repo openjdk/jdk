@@ -138,8 +138,9 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
       Label* continuation = &dummy_continuation;
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
-        slow_path = &stub->slow_path();
+        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+        Compile::current()->output()->stub_list()->add_stub(stub);
+        slow_path = &stub->entry();
         continuation = &stub->continuation();
       }
       bs->nmethod_entry_barrier(this, slow_path, continuation);
@@ -159,16 +160,6 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     jcc(Assembler::greaterEqual, slow);
     pop(rax);
   }
-}
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
-  jmp(stub->continuation(), false /* maybe_short */);
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 10;
 }
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {

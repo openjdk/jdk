@@ -40,7 +40,7 @@ public interface DerEncoder {
      *
      * @param out  the stream on which the DER encoding is written.
      */
-    void derEncode(DerOutputStream out)
+    void encode(DerOutputStream out)
         throws IOException;
 
 }
