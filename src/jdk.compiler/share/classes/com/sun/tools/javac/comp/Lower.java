@@ -130,8 +130,8 @@ public class Lower extends TreeTranslator {
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
         Source source = Source.instance(context);
         Preview preview = Preview.instance(context);
-        useMatchException = Feature.RECORD_PATTERNS.allowedInSource(source) &&
-                            (preview.isEnabled() || !preview.isPreview(Feature.RECORD_PATTERNS));
+        useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
+                            (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
     }
 
     /** The currently enclosing class.
