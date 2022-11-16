@@ -1901,9 +1901,6 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredConstructors, (JNIEnv* env, jobject, A
   }
 
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  // Ensure class is linked
-  iklass->link_class(CHECK_NULL);
-
   GrowableArray<Method*> constructors_array;
   for (int i = 0; i < iklass->methods()->length(); i++) {
     Method* m = iklass->methods()->at(i);
@@ -1931,9 +1928,6 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   }
 
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  // Ensure class is linked
-  iklass->link_class(CHECK_NULL);
-
   GrowableArray<Method*> methods_array;
   for (int i = 0; i < iklass->methods()->length(); i++) {
     Method* m = iklass->methods()->at(i);
