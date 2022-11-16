@@ -92,7 +92,6 @@ public class OnScreenRenderingResizeTest {
                     createAndShowGUI();
                 }
             });
-            // wait for Vista's effects to complete
             Thread.sleep(2000);
         } catch (Exception ex) {
             ex.printStackTrace();
