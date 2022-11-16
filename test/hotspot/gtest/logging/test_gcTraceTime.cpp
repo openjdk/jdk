@@ -23,7 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 

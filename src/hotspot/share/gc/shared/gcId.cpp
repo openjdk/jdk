@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/safepoint.hpp"

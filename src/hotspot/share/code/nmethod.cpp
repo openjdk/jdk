@@ -45,6 +45,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "include/jvm.h"
 #include "interpreter/bytecode.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"

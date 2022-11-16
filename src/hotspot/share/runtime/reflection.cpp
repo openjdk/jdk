@@ -32,6 +32,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"

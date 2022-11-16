@@ -40,6 +40,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "include/jvm.h"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"

@@ -34,6 +34,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "include/jvm.h"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

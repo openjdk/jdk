@@ -31,6 +31,7 @@
 #include "code/vtableStubs.hpp"
 #include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
 #include "os_bsd.hpp"

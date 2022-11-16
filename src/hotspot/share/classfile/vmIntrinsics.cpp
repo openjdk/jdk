@@ -26,8 +26,8 @@
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "include/jvm_constants.h"
-#include "include/jvm_io.h"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:

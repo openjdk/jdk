@@ -40,6 +40,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "include/jvm_io.h"
 #include "jfr/jfrEvents.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"

@@ -47,6 +47,7 @@
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"

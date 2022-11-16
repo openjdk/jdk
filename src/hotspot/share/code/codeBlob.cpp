@@ -33,6 +33,7 @@
 #include "include/jvm.h"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
 #include "memory/resourceArea.hpp"

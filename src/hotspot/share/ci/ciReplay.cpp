@@ -36,6 +36,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"

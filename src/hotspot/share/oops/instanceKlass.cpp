@@ -46,6 +46,7 @@
 #include "include/jvm.h"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"

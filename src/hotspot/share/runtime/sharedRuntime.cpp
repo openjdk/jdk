@@ -42,6 +42,7 @@
 #include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"

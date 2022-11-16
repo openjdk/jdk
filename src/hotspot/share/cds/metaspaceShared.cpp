@@ -53,6 +53,7 @@
 #include "include/jvm_io.h"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"

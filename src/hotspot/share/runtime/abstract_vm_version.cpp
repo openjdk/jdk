@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"

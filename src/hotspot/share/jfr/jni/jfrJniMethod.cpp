@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -53,6 +52,7 @@
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
 #include "jni.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

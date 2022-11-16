@@ -31,6 +31,7 @@
 #include "compiler/disassembler.hpp"
 #include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

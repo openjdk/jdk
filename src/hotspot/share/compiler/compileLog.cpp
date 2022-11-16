@@ -26,7 +26,7 @@
 #include "ci/ciMethod.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileLog.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"

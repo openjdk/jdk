@@ -34,6 +34,7 @@
 #include "classfile/verificationType.hpp"
 #include "include/jvm.h"
 #include "interpreter/bytecodes.hpp"
+#include "jvm.h"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"

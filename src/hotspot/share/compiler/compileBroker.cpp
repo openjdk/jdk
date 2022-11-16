@@ -39,6 +39,7 @@
 #include "compiler/directivesParser.hpp"
 #include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

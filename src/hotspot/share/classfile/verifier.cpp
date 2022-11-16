@@ -37,6 +37,7 @@
 #include "include/jvm.h"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"

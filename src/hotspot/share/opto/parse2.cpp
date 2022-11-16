@@ -28,6 +28,7 @@
 #include "compiler/compileLog.hpp"
 #include "include/jvm_io.h"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"

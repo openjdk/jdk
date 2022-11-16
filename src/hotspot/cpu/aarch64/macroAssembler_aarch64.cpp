@@ -41,6 +41,7 @@
 #include "include/jvm.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -3976,7 +3977,11 @@ SkipIfEqual::SkipIfEqual(
   uint64_t offset;
   _masm->adrp(rscratch1, ExternalAddress((address)flag_addr), offset);
   _masm->ldrb(rscratch1, Address(rscratch1, offset));
-  _masm->cbzw(rscratch1, _label);
+  if (value) {
+    _masm->cbnzw(rscratch1, _label);
+  } else {
+    _masm->cbzw(rscratch1, _label);
+  }
 }
 
 SkipIfEqual::~SkipIfEqual() {

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "include/jvm.h"
 #include "jni.h"
+#include "jvm.h"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/stackwalk.hpp"

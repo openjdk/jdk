@@ -34,6 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"

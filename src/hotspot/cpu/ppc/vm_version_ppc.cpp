@@ -27,7 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"

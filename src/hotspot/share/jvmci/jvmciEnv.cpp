@@ -29,7 +29,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
