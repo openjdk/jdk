@@ -2906,6 +2906,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
       }
+    // Skip --disable-@files as it has already been handled
+    } else if (match_option(option, "--disable-@files")) {
     // Unknown option
     } else if (is_bad_option(option, args->ignoreUnrecognized)) {
       return JNI_ERR;
