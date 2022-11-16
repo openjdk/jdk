@@ -25,8 +25,7 @@ package org.openjdk.bench.java.security;
 import org.openjdk.jmh.annotations.*;
 
 import java.security.*;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.NamedParameterSpec;
+import java.security.spec.*;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -37,53 +36,38 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 @Fork(jvmArgsAppend = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 3)
 public class Signatures {
-    private Signature signer;
+    private static Signature signer;
 
     @Param({"64", "512", "2048", "16384"})
-    private int messageLength;
+    private static int messageLength;
 
-    @Param({"secp256r1", "secp384r1", "secp521r1", "Ed25519", "Ed448"})
-    private String curveName;
+    @Param({"secp256r1", "secp384r1", "secp521r1"})
+    private String algorithm;
 
-    private byte[] message;
-
-    record CurveSpec(String curveName, String signName) {
-        // blank
-    }
+    private static byte[] message;
 
     @Setup
     public void setup() throws Exception {
         message = new byte[messageLength];
         (new Random(System.nanoTime())).nextBytes(message);
 
-        String signName = switch (curveName) {
+        String signName = switch (algorithm) {
             case "secp256r1" -> "SHA256withECDSA";
             case "secp384r1" -> "SHA384withECDSA";
             case "secp521r1" -> "SHA512withECDSA";
-            case "Ed25519" -> "Ed25519";
-            case "Ed448" -> "Ed448";
             default -> throw new RuntimeException();
         };
 
-        KeyPair kp;
-        if (curveName.startsWith("secp")) {
-            AlgorithmParameters params =
-                    AlgorithmParameters.getInstance("EC", "SunEC");
-            params.init(new ECGenParameterSpec(curveName));
-            ECGenParameterSpec ecParams =
-                    params.getParameterSpec(ECGenParameterSpec.class);
+        AlgorithmParameters params =
+                AlgorithmParameters.getInstance("EC", "SunEC");
+        params.init(new ECGenParameterSpec(algorithm));
+        ECGenParameterSpec ecParams =
+                params.getParameterSpec(ECGenParameterSpec.class);
 
-            KeyPairGenerator kpg =
-                    KeyPairGenerator.getInstance("EC", "SunEC");
-            kpg.initialize(ecParams);
-            kp = kpg.generateKeyPair();
-        } else {
-            KeyPairGenerator kpg =
-                    KeyPairGenerator.getInstance(curveName, "SunEC");
-            NamedParameterSpec spec = new NamedParameterSpec(curveName);
-            kpg.initialize(spec);
-            kp = kpg.generateKeyPair();
-        }
+        KeyPairGenerator kpg =
+                KeyPairGenerator.getInstance("EC", "SunEC");
+        kpg.initialize(ecParams);
+        KeyPair kp = kpg.generateKeyPair();
 
         signer = Signature.getInstance(signName, "SunEC");
         signer.initSign(kp.getPrivate());
@@ -93,6 +77,121 @@ public class Signatures {
     public byte[] sign() throws SignatureException {
         signer.update(message);
         return signer.sign();
+    }
+
+    public static class EdDSA extends Signatures {
+        @Param({"Ed25519", "Ed448"})
+        private String algorithm;
+
+        @Setup
+        public void setup() throws Exception {
+            message = new byte[messageLength];
+            (new Random(System.nanoTime())).nextBytes(message);
+
+            KeyPairGenerator kpg =
+                    KeyPairGenerator.getInstance(algorithm, "SunEC");
+            NamedParameterSpec spec = new NamedParameterSpec(algorithm);
+            kpg.initialize(spec);
+            KeyPair kp = kpg.generateKeyPair();
+
+            signer = Signature.getInstance(algorithm, "SunEC");
+            signer.initSign(kp.getPrivate());
+        }
+    }
+
+    public static class DSA extends Signatures {
+        @Param({"SHA256withDSA", "SHA384withDSA", "SHA512withDSA"})
+        private String algorithm;
+
+        @Setup
+        public void setup() throws Exception {
+            message = new byte[messageLength];
+            (new Random(System.nanoTime())).nextBytes(message);
+
+            int keyLength = switch (algorithm) {
+                case "SHA256withDSA" -> 2048;
+                case "SHA384withDSA" -> 3072;
+                case "SHA512withDSA" -> 3072;
+                default -> throw new RuntimeException();
+            };
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+            kpg.initialize(keyLength);
+            KeyPair kp = kpg.generateKeyPair();
+
+            signer = Signature.getInstance(algorithm);
+            signer.initSign(kp.getPrivate());
+        }
+    }
+
+    public static class RSA extends Signatures {
+        @Param({"SHA256withRSA", "SHA384withRSA", "SHA512withRSA"})
+        private String algorithm;
+
+        @Setup
+        public void setup() throws Exception {
+            message = new byte[messageLength];
+            (new Random(System.nanoTime())).nextBytes(message);
+
+            int keyLength = switch (algorithm) {
+                case "SHA256withRSA" -> 2048;
+                case "SHA384withRSA" -> 3072;
+                case "SHA512withRSA" -> 4096;
+                default -> throw new RuntimeException();
+            };
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(keyLength);
+            KeyPair kp = kpg.generateKeyPair();
+
+            signer = Signature.getInstance(algorithm);
+            signer.initSign(kp.getPrivate());
+        }
+    }
+
+    public static class RSASSAPSS extends Signatures {
+        @Param({"SHA256", "SHA384", "SHA512"})
+        private String algorithm;
+
+        @Setup
+        public void setup() throws Exception {
+            message = new byte[messageLength];
+            (new Random(System.nanoTime())).nextBytes(message);
+
+            int keyLength = switch (algorithm) {
+               case "SHA256" -> 2048;
+               case "SHA384" -> 3072;
+               case "SHA512" -> 4096;
+               default -> throw new RuntimeException();
+            };
+
+            PSSParameterSpec spec = switch (algorithm) {
+               case "SHA256" ->
+                       new PSSParameterSpec(
+                               "SHA-256", "MGF1",
+                               MGF1ParameterSpec.SHA256,
+                               32, PSSParameterSpec.TRAILER_FIELD_BC);
+               case "SHA384" ->
+                       new PSSParameterSpec(
+                               "SHA-384", "MGF1",
+                               MGF1ParameterSpec.SHA384,
+                               48, PSSParameterSpec.TRAILER_FIELD_BC);
+               case "SHA512" ->
+                        new PSSParameterSpec(
+                               "SHA-512", "MGF1",
+                               MGF1ParameterSpec.SHA512,
+                               64, PSSParameterSpec.TRAILER_FIELD_BC);
+               default -> throw new RuntimeException();
+            };
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS");
+            kpg.initialize(keyLength);
+            KeyPair kp = kpg.generateKeyPair();
+
+            signer = Signature.getInstance("RSASSA-PSS");
+            signer.setParameter(spec);
+            signer.initSign(kp.getPrivate());
+        }
     }
 }
 
