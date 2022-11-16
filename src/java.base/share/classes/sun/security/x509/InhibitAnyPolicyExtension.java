@@ -53,9 +53,11 @@ import sun.security.util.*;
  * SkipCerts ::= INTEGER (0..MAX)
  * }</pre>
  * @author Anne Anderson
+ * @see CertAttrSet
  * @see Extension
  */
-public class InhibitAnyPolicyExtension extends Extension {
+public class InhibitAnyPolicyExtension extends Extension
+        implements CertAttrSet {
 
     /**
      * Object identifier for "any-policy"

@@ -66,7 +66,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showEmptyBlocks;
     private boolean hideDuplicates;
 
-    private final ChangedListener<FilterChain> filterChainChangedListener = source -> filterChanged();
+    private final ChangedListener<FilterChain> filterChainChangedListener = source -> rebuildDiagram();
 
     public Group getGroup() {
         return group;
@@ -118,7 +118,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setHideDuplicates(boolean hideDuplicates) {
-        this.hideDuplicates = hideDuplicates;
         InputGraph currentGraph = getFirstGraph();
         if (hideDuplicates) {
             // Back up to the unhidden equivalent graph
@@ -130,10 +129,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         filterGraphs();
         selectGraph(currentGraph);
+        diagramChangedEvent.fire();
     }
 
 
     public DiagramViewModel(InputGraph graph, FilterChain filterChain, FilterChain sequenceFilterChain) {
+        super(Collections.singletonList("default"));
         assert filterChain != null;
         assert sequenceFilterChain != null;
 
@@ -201,7 +202,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setSelectedNodes(Set<Integer> nodes) {
-        selectedNodes = nodes;
+        this.selectedNodes = nodes;
         List<Color> colors = new ArrayList<>();
         for (String ignored : getPositions()) {
             colors.add(Color.black);
@@ -242,15 +243,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void showFigures(Collection<Figure> figures) {
-        boolean somethingChanged = false;
+        HashSet<Integer> newHiddenNodes = new HashSet<>(hiddenNodes);
         for (Figure f : figures) {
-            if (hiddenNodes.remove(f.getInputNode().getId())) {
-                somethingChanged = true;
-            }
+            newHiddenNodes.remove(f.getInputNode().getId());
         }
-        if (somethingChanged) {
-            hiddenNodesChangedEvent.fire();
-        }
+        setHiddenNodes(newHiddenNodes);
     }
 
     public Set<Figure> getSelectedFigures() {
@@ -270,18 +267,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setHiddenNodes(Set<Integer> nodes) {
-        hiddenNodes = nodes;
-        selectedNodes.removeAll(hiddenNodes);
+        this.hiddenNodes = nodes;
         hiddenNodesChangedEvent.fire();
     }
 
     public FilterChain getSequenceFilterChain() {
         return filterChain;
-    }
-
-    private void filterChanged() {
-        rebuildDiagram();
-        diagramChangedEvent.fire();
     }
 
     private void rebuildDiagram() {
@@ -306,6 +297,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             f.addRule(stateColorRule("deleted", Color.red));
             f.apply(diagram);
         }
+
+        diagramChangedEvent.fire();
     }
 
     public FilterChain getFilterChain() {

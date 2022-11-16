@@ -55,7 +55,8 @@ import sun.security.util.*;
  *
  * @author Sean Mullan
  */
-public class InvalidityDateExtension extends Extension {
+public class InvalidityDateExtension extends Extension
+        implements CertAttrSet {
 
     /**
      * Attribute name and Reason codes

@@ -32,13 +32,11 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
@@ -167,10 +165,13 @@ public class MethodBuilder extends AbstractMemberBuilder {
     protected void buildMethodComments(Content methodContent) {
         if (!options.noComment()) {
             assert utils.isMethod(currentMethod); // not all executables are methods
-            var docFinder = utils.docFinder();
-            Optional<ExecutableElement> r = docFinder.search(currentMethod,
-                    m -> Result.fromOptional(utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m))).toOptional();
-            ExecutableElement method = r.orElse(currentMethod);
+            ExecutableElement method = currentMethod;
+            if (utils.getFullBody(currentMethod).isEmpty()) {
+                DocFinder.Output docs = DocFinder.search(configuration,
+                        new DocFinder.Input(utils, currentMethod));
+                if (!docs.inlineTags.isEmpty())
+                    method = (ExecutableElement) docs.holder;
+            }
             TypeMirror containingType = method.getEnclosingElement().asType();
             writer.addComments(containingType, method, methodContent);
         }

@@ -80,6 +80,7 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
   address pc;
   char    buf[1024];
   int     offset;
+  int     line_no;
   if (is_empty()) {
     for (int index = 0; index < indent; index ++) out->print(" ");
     out->print("[BOOTSTRAP]");
@@ -95,10 +96,9 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
         out->print("[" PTR_FORMAT "]", p2i(pc));
       }
 
-      // Note: we deliberately omit printing source information here. NativeCallStack::print_on()
-      // can be called thousands of times as part of NMT detail reporting, and source printing
-      // can slow down reporting by a factor of 5 or more depending on platform (see JDK-8296931).
-
+      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no, frame != 0)) {
+        out->print("  (%s:%d)", buf, line_no);
+      }
       out->cr();
     }
   }

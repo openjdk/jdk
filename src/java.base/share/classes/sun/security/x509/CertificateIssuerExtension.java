@@ -56,8 +56,10 @@ import sun.security.util.DerOutputStream;
  * @author Sean Mullan
  * @since 1.5
  * @see Extension
+ * @see CertAttrSet
  */
-public class CertificateIssuerExtension extends Extension {
+public class CertificateIssuerExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "CertificateIssuer";
 

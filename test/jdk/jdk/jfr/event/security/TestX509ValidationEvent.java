@@ -128,9 +128,8 @@ public class TestX509ValidationEvent {
             switch (pos) {
                 // use public key of cert provided in TrustAnchor
                 case 1:
-                    int hash = TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode();
-                    Long id = Integer.toUnsignedLong(hash);
-                    Asserts.assertEquals(e.getLong("certificateId"), id);
+                    Asserts.assertEquals(e.getLong("certificateId"),
+                        Long.valueOf(TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode()));
                     break;
                 case 2:
                     Events.assertField(e, "certificateId")

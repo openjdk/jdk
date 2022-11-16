@@ -782,9 +782,9 @@ public class PKCS7 {
             // CMSAlgorithmProtection (RFC6211)
             DerOutputStream derAp = new DerOutputStream();
             DerOutputStream derAlgs = new DerOutputStream();
-            digAlgID.encode(derAlgs);
+            digAlgID.derEncode(derAlgs);
             DerOutputStream derSigAlg = new DerOutputStream();
-            sigAlgID.encode(derSigAlg);
+            sigAlgID.derEncode(derSigAlg);
             derAlgs.writeImplicit((byte)0xA1, derSigAlg);
             derAp.write(DerValue.tag_Sequence, derAlgs);
             authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{

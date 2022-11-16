@@ -42,6 +42,7 @@ public class TestStdDoclet {
 
     /**
      * More dummy comments.
+     * @throws DoesNotExist   oops, javadoc does not see this
      * @see DoesNotExist
      */
     void run() throws Exception {

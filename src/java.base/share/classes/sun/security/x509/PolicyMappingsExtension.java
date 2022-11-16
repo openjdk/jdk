@@ -47,8 +47,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
+ * @see CertAttrSet
  */
-public class PolicyMappingsExtension extends Extension {
+public class PolicyMappingsExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "PolicyMappings";
 

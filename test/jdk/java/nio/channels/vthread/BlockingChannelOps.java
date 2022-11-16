@@ -66,6 +66,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -106,7 +107,7 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write to sc1 when current thread blocks in sc2.read
+                // delayed write to sc1
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(() -> sc1.write(bb1));
 
@@ -129,7 +130,7 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // read from sc2 to EOF when current thread blocks in sc1.write
+                // delayed read from sc2 to EOF
                 Thread reader = runAfterParkedAsync(() -> readToEOF(sc2));
 
                 // write to sc1 should block
@@ -173,7 +174,7 @@ public class BlockingChannelOps {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
 
-                // interrupt current thread when it blocks in read
+                // delayed interrupt of current thread
                 Thread thisThread = Thread.currentThread();
                 runAfterParkedAsync(thisThread::interrupt);
 
@@ -193,26 +194,21 @@ public class BlockingChannelOps {
     @Test
     public void testSocketChannelWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
-                try (var connection = new Connection()) {
-                    SocketChannel sc = connection.channel1();
-
-                    // close sc when current thread blocks in write
-                    runAfterParkedAsync(sc::close);
-                    try {
-                        ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                        for (;;) {
-                            int n = sc.write(bb);
-                            assertTrue(n > 0);
-                            bb.clear();
-                        }
-                    } catch (AsynchronousCloseException expected) {
-                        // closed when blocked in write
-                        retry = false;
-                    } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+            try (var connection = new Connection()) {
+                SocketChannel sc = connection.channel1();
+                runAfterParkedAsync(sc::close);
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(100*1024);
+                    for (;;) {
+                        int n = sc.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
                     }
+                } catch (AsynchronousCloseException e) {
+                    // expected
+                } catch (ClosedChannelException e) {
+                    // on macOS the write loop may block more than once
+                    if (!Platform.isOSX()) throw e;
                 }
             }
         });
@@ -224,29 +220,25 @@ public class BlockingChannelOps {
     @Test
     public void testSocketChannelWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
-                try (var connection = new Connection()) {
-                    SocketChannel sc = connection.channel1();
+            try (var connection = new Connection()) {
+                SocketChannel sc = connection.channel1();
 
-                    // interrupt current thread when it blocks in write
-                    Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt);
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
 
-                    try {
-                        ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                        for (;;) {
-                            int n = sc.write(bb);
-                            assertTrue(n > 0);
-                            bb.clear();
-                        }
-                    } catch (ClosedByInterruptException e) {
-                        // closed when blocked in write
-                        assertTrue(Thread.interrupted());
-                        retry = false;
-                    } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(100*1024);
+                    for (;;) {
+                        int n = sc.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
                     }
+                } catch (ClosedByInterruptException e) {
+                    assertTrue(Thread.interrupted());
+                } catch (ClosedChannelException e) {
+                    // on macOS the write loop may block more than once
+                    if (!Platform.isOSX()) throw e;
                 }
             }
         });
@@ -274,7 +266,7 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write to sc1 when currnet thread blocks reading from sc2
+                // delayed write to sc1
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(() -> sc1.write(bb));
 
@@ -316,7 +308,7 @@ public class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc1 = SocketChannel.open();
 
-                // connect when current thread when it blocks in accept
+                // delayed connect
                 runAfterParkedAsync(() -> sc1.connect(ssc.getLocalAddress()));
 
                 // accept should block
@@ -356,7 +348,7 @@ public class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 ssc.bind(new InetSocketAddress(lh, 0));
 
-                // interrupt current thread when it blocks in accept
+                // delayed interrupt of current thread
                 Thread thisThread = Thread.currentThread();
                 runAfterParkedAsync(thisThread::interrupt);
 
@@ -393,7 +385,7 @@ public class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc = SocketChannel.open();
 
-                // interrupt current thread when it blocks in accept
+                // delayed connect
                 runAfterParkedAsync(() -> sc.connect(ssc.getLocalAddress()));
 
                 // accept should block
@@ -443,7 +435,7 @@ public class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc2.bind(new InetSocketAddress(lh, 0));
 
-                // send from dc1 when current thread blocked in dc2.receive
+                // delayed send from sc1
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(() -> dc1.send(bb1, dc2.getLocalAddress()));
 
@@ -483,7 +475,7 @@ public class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc.bind(new InetSocketAddress(lh, 0));
 
-                // interrupt current thread when it blocks in receive
+                // delayed interrupt of current thread
                 Thread thisThread = Thread.currentThread();
                 runAfterParkedAsync(thisThread::interrupt);
 
@@ -521,7 +513,7 @@ public class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc2.bind(new InetSocketAddress(lh, 0));
 
-                // send from dc1 when current thread blocks in dc2 receive
+                // delayed send from dc2
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(() -> dc1.send(bb, dc2.getLocalAddress()));
 
@@ -564,7 +556,7 @@ public class BlockingChannelOps {
                 if (timeout > 0)
                     dc.socket().setSoTimeout(timeout);
 
-                // close channel/socket when current thread blocks in receive
+                // delayed close of channel/socket
                 runAfterParkedAsync(dc::close);
 
                 assertThrows(SocketException.class, () -> dc.socket().receive(p));
@@ -600,7 +592,7 @@ public class BlockingChannelOps {
                 if (timeout > 0)
                     dc.socket().setSoTimeout(timeout);
 
-                // interrupt current thread when it blocks in receive
+                // delayed interrupt of current thread
                 Thread thisThread = Thread.currentThread();
                 runAfterParkedAsync(thisThread::interrupt);
 
@@ -648,7 +640,7 @@ public class BlockingChannelOps {
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
 
-                // write from sink when current thread blocks reading from source
+                // delayed write from sink
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(() -> sink.write(bb1));
 
@@ -671,7 +663,7 @@ public class BlockingChannelOps {
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
 
-                // read from source to EOF when current thread blocking in write
+                // delayed read from source to EOF
                 Thread reader = runAfterParkedAsync(() -> readToEOF(source));
 
                 // write to sink should block
@@ -696,8 +688,7 @@ public class BlockingChannelOps {
     public void testPipeReadAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
-            try (Pipe.SinkChannel sink = p.sink();
-                 Pipe.SourceChannel source = p.source()) {
+            try (Pipe.SourceChannel source = p.source()) {
                 runAfterParkedAsync(source::close);
                 try {
                     int n = source.read(ByteBuffer.allocate(100));
@@ -714,10 +705,9 @@ public class BlockingChannelOps {
     public void testPipeReadInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
-            try (Pipe.SinkChannel sink = p.sink();
-                 Pipe.SourceChannel source = p.source()) {
+            try (Pipe.SourceChannel source = p.source()) {
 
-                // interrupt current thread when it blocks reading from source
+                // delayed interrupt of current thread
                 Thread thisThread = Thread.currentThread();
                 runAfterParkedAsync(thisThread::interrupt);
 
@@ -737,28 +727,17 @@ public class BlockingChannelOps {
     @Test
     public void testPipeWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
-                Pipe p = Pipe.open();
-                try (Pipe.SinkChannel sink = p.sink();
-                     Pipe.SourceChannel source = p.source()) {
-
-                    // close sink when current thread blocks in write
-                    runAfterParkedAsync(sink::close);
-                    try {
-                        ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                        for (;;) {
-                            int n = sink.write(bb);
-                            assertTrue(n > 0);
-                            bb.clear();
-                        }
-                    } catch (AsynchronousCloseException e) {
-                        // closed when blocked in write
-                        retry = false;
-                    } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+            Pipe p = Pipe.open();
+            try (Pipe.SinkChannel sink = p.sink()) {
+                runAfterParkedAsync(sink::close);
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(100*1024);
+                    for (;;) {
+                        int n = sink.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
                     }
-                }
+                } catch (AsynchronousCloseException expected) { }
             }
         });
     }
@@ -769,30 +748,22 @@ public class BlockingChannelOps {
     @Test
     public void testPipeWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
-                Pipe p = Pipe.open();
-                try (Pipe.SinkChannel sink = p.sink();
-                     Pipe.SourceChannel source = p.source()) {
+            Pipe p = Pipe.open();
+            try (Pipe.SinkChannel sink = p.sink()) {
 
-                    // interrupt current thread when it blocks in write
-                    Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt);
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
 
-                    try {
-                        ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                        for (;;) {
-                            int n = sink.write(bb);
-                            assertTrue(n > 0);
-                            bb.clear();
-                        }
-                    } catch (ClosedByInterruptException expected) {
-                        // closed when blocked in write
-                        assertTrue(Thread.interrupted());
-                        retry = false;
-                    } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(100*1024);
+                    for (;;) {
+                        int n = sink.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
                     }
+                } catch (ClosedByInterruptException expected) {
+                    assertTrue(Thread.interrupted());
                 }
             }
         });

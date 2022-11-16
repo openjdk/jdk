@@ -108,15 +108,12 @@ public class ToolShiftTabTest extends UITesting {
 
     public void testFixImport() throws Exception {
         doRunTest((inputSink, out) -> {
-            inputSink.write("Frame");
-            inputSink.write(FIX + "i");
-            while (!waitOutput(out, "java.awt.Frame", "Results may be incomplete")) {
-                Thread.sleep(1000);
+            do {
+                inputSink.write("Frame");
                 inputSink.write(FIX + "i");
-            }
-            inputSink.write("1");
-            inputSink.write(".WIDTH\n");
-            waitOutput(out, "==> 1");
+                inputSink.write("1");
+                inputSink.write(".WIDTH\n");
+            } while (!waitOutput(out, "==> 1", "Results may be incomplete"));
             inputSink.write("/import\n");
             waitOutput(out, "|    import java.awt.Frame");
 

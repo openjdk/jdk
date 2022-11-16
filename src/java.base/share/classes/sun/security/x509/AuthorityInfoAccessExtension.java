@@ -59,9 +59,11 @@ import sun.security.util.DerValue;
  * </pre>
  *
  * @see Extension
+ * @see CertAttrSet
  */
 
-public class AuthorityInfoAccessExtension extends Extension {
+public class AuthorityInfoAccessExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "AuthorityInfoAccess";
 

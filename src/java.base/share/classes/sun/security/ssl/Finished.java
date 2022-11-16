@@ -1146,16 +1146,15 @@ final class Finished {
     private static void recordEvent(SSLSessionImpl session) {
         TLSHandshakeEvent event = new TLSHandshakeEvent();
         if (event.shouldCommit() || EventHelper.isLoggingSecurity()) {
-            int hash = 0;
+            int peerCertificateId = 0;
             try {
                 // use hash code for Id
-                hash = session
+                peerCertificateId = session
                         .getCertificateChain()[0]
                         .hashCode();
             } catch (SSLPeerUnverifiedException e) {
                  // not verified msg
             }
-            long peerCertificateId = Integer.toUnsignedLong(hash);
             if (event.shouldCommit()) {
                 event.peerHost = session.getPeerHost();
                 event.peerPort = session.getPeerPort();

@@ -128,15 +128,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     protected void onCancel() { }
 
     /**
-     * Called right after the userSubscriber::onSubscribe is called.
-     * @apiNote
-     * This method may be used by subclasses to perform cleanup
-     * related actions after a subscription has been succesfully
-     * accepted.
-     */
-    protected void onSubscribed() { }
-
-    /**
      * Complete the subscriber, either normally or exceptionally
      * ensure that the subscriber is completed only once.
      * @param t a throwable, or {@code null}
@@ -178,9 +169,8 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     public void onSubscribe(Flow.Subscription subscription) {
         // race condition with propagateError: we need to wait until
         // subscription is finished before calling onError;
-        boolean onSubscribed;
         synchronized (this) {
-            if ((onSubscribed = subscribed.compareAndSet(false, true))) {
+            if (subscribed.compareAndSet(false, true)) {
                 SubscriptionWrapper wrapped = new SubscriptionWrapper(subscription);
                 userSubscriber.onSubscribe(this.subscription = wrapped);
             } else {
@@ -191,7 +181,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                 assert completed.get();
             }
         }
-        if (onSubscribed) onSubscribed();
     }
 
     @Override

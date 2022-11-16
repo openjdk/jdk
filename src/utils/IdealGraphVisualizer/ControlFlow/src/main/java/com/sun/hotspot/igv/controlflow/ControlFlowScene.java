@@ -99,9 +99,6 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
             removeEdge(e);
         }
 
-        edgeLayer.removeChildren();
-        mainLayer.removeChildren();
-
         for (InputBlock b : g.getBlocks()) {
             addNode(b);
         }
@@ -121,7 +118,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         validate();
     }
 
-    private void clearSelection() {
+    public void clearSelection() {
         for (BlockWidget w : selection) {
             w.setState(w.getState().deriveSelected(false));
         }
@@ -129,7 +126,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         selectionChanged();
     }
 
-    private void selectionChanged() {
+    public void selectionChanged() {
         InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
             Set<InputNode> inputNodes = new HashSet<>();
@@ -137,18 +134,17 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
                 inputNodes.addAll(w.getBlock().getNodes());
             }
             p.clearSelectedNodes();
-            p.addSelectedNodes(inputNodes, true);
-            p.centerSelectedNodes();
+            p.addSelectedNodes(inputNodes);
         }
     }
 
-    private void addToSelection(BlockWidget widget) {
+    public void addToSelection(BlockWidget widget) {
         widget.setState(widget.getState().deriveSelected(true));
         selection.add(widget);
         selectionChanged();
     }
 
-    private void removeFromSelection(BlockWidget widget) {
+    public void removeFromSelection(BlockWidget widget) {
         widget.setState(widget.getState().deriveSelected(false));
         selection.remove(widget);
         selectionChanged();

@@ -36,8 +36,10 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  * @see java.security.cert.CRLReason
  * @see Extension
+ * @see CertAttrSet
  */
-public class CRLReasonCodeExtension extends Extension {
+public class CRLReasonCodeExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "CRLReasonCode";
 

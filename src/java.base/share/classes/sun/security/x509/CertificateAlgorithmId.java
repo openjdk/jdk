@@ -36,7 +36,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificateAlgorithmId implements DerEncoder {
+public class CertificateAlgorithmId implements CertAttrSet {
     private AlgorithmId algId;
 
     public static final String NAME = "algorithmID";

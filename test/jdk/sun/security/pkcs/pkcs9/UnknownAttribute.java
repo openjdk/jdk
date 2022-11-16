@@ -58,7 +58,7 @@ public class UnknownAttribute {
             throw new Exception();
         }
         DerOutputStream dout = new DerOutputStream();
-        p2.encode(dout);
+        p2.derEncode(dout);
         HexPrinter.simple().dest(System.err).format(dout.toByteArray());
         if (!Arrays.equals(data, dout.toByteArray())) {
             throw new Exception();
@@ -76,7 +76,7 @@ public class UnknownAttribute {
             throw new Exception();
         }
         dout = new DerOutputStream();
-        p3.encode(dout);
+        p3.derEncode(dout);
         if (!Arrays.equals(data, dout.toByteArray())) {
             throw new Exception();
         }

@@ -3335,19 +3335,19 @@ void StubGenerator::generate_libm_stubs() {
       StubRoutines::_dcos = generate_libmCos(); // from stubGenerator_x86_64_cos.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-      StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
+      StubRoutines::_dtan = generate_libmTan();
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
-      StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
+      StubRoutines::_dexp = generate_libmExp();
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
-      StubRoutines::_dpow = generate_libmPow(); // from stubGenerator_x86_64_pow.cpp
+      StubRoutines::_dpow = generate_libmPow();
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-      StubRoutines::_dlog = generate_libmLog(); // from stubGenerator_x86_64_log.cpp
+      StubRoutines::_dlog = generate_libmLog();
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
-      StubRoutines::_dlog10 = generate_libmLog10(); // from stubGenerator_x86_64_log.cpp
+      StubRoutines::_dlog10 = generate_libmLog10();
     }
   }
 }
@@ -3719,8 +3719,6 @@ void StubGenerator::generate_initial() {
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
-
-  generate_libm_stubs();
 }
 
 void StubGenerator::generate_phase1() {

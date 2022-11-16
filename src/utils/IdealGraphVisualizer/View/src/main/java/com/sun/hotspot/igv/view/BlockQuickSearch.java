@@ -94,7 +94,6 @@ public class BlockQuickSearch implements SearchProvider {
                             }
                             editor.clearSelectedNodes();
                             editor.addSelectedNodes(b.getNodes(), true);
-                            editor.centerSelectedNodes();
                             editor.requestActive();
                         },
                         "B" + b.getName() + (theGraph != null ? " in " + theGraph.getName() : ""))) {

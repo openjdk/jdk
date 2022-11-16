@@ -76,8 +76,10 @@ import sun.security.util.ObjectIdentifier;
  * @since 1.4.2
  * @see DistributionPoint
  * @see Extension
+ * @see CertAttrSet
  */
-public class CRLDistributionPointsExtension extends Extension {
+public class CRLDistributionPointsExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "CRLDistributionPoints";
 

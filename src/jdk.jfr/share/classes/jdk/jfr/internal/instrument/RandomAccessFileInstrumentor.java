@@ -153,7 +153,7 @@ final class RandomAccessFileInstrumentor {
             write(b);
             bytesWritten = b.length;
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
+            long duration = EventConfiguration.timestamp();
             if (eventConfiguration.shouldCommit(duration)) {
                 FileWriteEvent.commit(start, duration, path, bytesWritten);
             }

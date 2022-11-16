@@ -616,6 +616,13 @@ public class AVA implements DerEncoder {
         return toRFC2253CanonicalString().hashCode();
     }
 
+    /*
+     * AVAs are encoded as a SEQUENCE of two elements.
+     */
+    public void encode(DerOutputStream out) throws IOException {
+        derEncode(out);
+    }
+
     /**
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
@@ -625,8 +632,7 @@ public class AVA implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
-    @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void derEncode(DerOutputStream out) throws IOException {
         DerOutputStream         tmp = new DerOutputStream();
 
         tmp.putOID(oid);

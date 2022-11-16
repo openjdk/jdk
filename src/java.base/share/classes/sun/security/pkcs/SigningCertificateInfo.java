@@ -79,21 +79,14 @@ import sun.security.x509.SerialNumber;
  * @since 1.5
  * @author Vincent Ryan
  */
-class SigningCertificateInfo {
+public class SigningCertificateInfo {
 
-    private byte[] ber;
     private ESSCertId[] certId = null;
 
-    SigningCertificateInfo(byte[] ber) throws IOException {
+    public SigningCertificateInfo(byte[] ber) throws IOException {
         parse(ber);
-        this.ber = ber;
     }
 
-    byte[] toByteArray() {
-        return ber;
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[\n");
@@ -106,7 +99,7 @@ class SigningCertificateInfo {
         return sb.toString();
     }
 
-    private void parse(byte[] bytes) throws IOException {
+    public void parse(byte[] bytes) throws IOException {
 
         // Parse signingCertificate
         DerValue derValue = new DerValue(bytes);
@@ -129,46 +122,45 @@ class SigningCertificateInfo {
             }
         }
     }
+}
 
-    static class ESSCertId {
+class ESSCertId {
 
-        private static volatile HexDumpEncoder hexDumper;
+    private static volatile HexDumpEncoder hexDumper;
 
-        private final byte[] certHash;
-        private final GeneralNames issuer;
-        private final SerialNumber serialNumber;
+    private final byte[] certHash;
+    private final GeneralNames issuer;
+    private final SerialNumber serialNumber;
 
-        ESSCertId(DerValue certId) throws IOException {
-            // Parse certHash
-            certHash = certId.data.getDerValue().toByteArray();
+    ESSCertId(DerValue certId) throws IOException {
+        // Parse certHash
+        certHash = certId.data.getDerValue().toByteArray();
 
-            // Parse issuerSerial, if present
-            if (certId.data.available() > 0) {
-                DerValue issuerSerial = certId.data.getDerValue();
-                // Parse issuer
-                issuer = new GeneralNames(issuerSerial.data.getDerValue());
-                // Parse serialNumber
-                serialNumber = new SerialNumber(issuerSerial.data.getDerValue());
-            } else {
-                issuer = null;
-                serialNumber = null;
-            }
+        // Parse issuerSerial, if present
+        if (certId.data.available() > 0) {
+            DerValue issuerSerial = certId.data.getDerValue();
+            // Parse issuer
+            issuer = new GeneralNames(issuerSerial.data.getDerValue());
+            // Parse serialNumber
+            serialNumber = new SerialNumber(issuerSerial.data.getDerValue());
+        } else {
+            issuer = null;
+            serialNumber = null;
         }
+    }
 
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[\n\tCertificate hash (SHA-1):\n");
-            if (hexDumper == null) {
-                hexDumper = new HexDumpEncoder();
-            }
-            sb.append(hexDumper.encode(certHash));
-            if (issuer != null && serialNumber != null) {
-                sb.append("\n\tIssuer: " + issuer + "\n");
-                sb.append("\t" + serialNumber);
-            }
-            sb.append("\n]");
-            return sb.toString();
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[\n\tCertificate hash (SHA-1):\n");
+        if (hexDumper == null) {
+            hexDumper = new HexDumpEncoder();
         }
+        sb.append(hexDumper.encode(certHash));
+        if (issuer != null && serialNumber != null) {
+            sb.append("\n\tIssuer: " + issuer + "\n");
+            sb.append("\t" + serialNumber);
+        }
+        sb.append("\n]");
+        return sb.toString();
     }
 }

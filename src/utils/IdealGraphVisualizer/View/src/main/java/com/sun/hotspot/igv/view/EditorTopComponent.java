@@ -23,13 +23,12 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
+import com.sun.hotspot.igv.graph.Diagram;
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
@@ -148,7 +147,7 @@ public final class EditorTopComponent extends TopComponent {
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> {
+        diagramViewModel.getDiagramChangedEvent().addListener(model -> {
             setDisplayName(model.getGraph().getDisplayName());
             setToolTipText(model.getGroup().getDisplayName());
             graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
@@ -250,6 +249,10 @@ public final class EditorTopComponent extends TopComponent {
         return scene.getModel();
     }
 
+    private Diagram getDiagram() {
+        return getModel().getDiagram();
+    }
+
     public void setSelectionMode(boolean enable) {
         if (enable) {
             scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
@@ -323,16 +326,25 @@ public final class EditorTopComponent extends TopComponent {
         }
     }
 
-    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
-        scene.addSelectedNodes(nodes, showIfHidden);
-    }
-
-    public void centerSelectedNodes() {
-        scene.centerSelectedFigures();
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean centerSelection) {
+        Set<Integer> ids = new HashSet<>(getModel().getSelectedNodes());
+        for (InputNode n : nodes) {
+            ids.add(n.getId());
+        }
+        Set<Figure> selectedFigures = new HashSet<>();
+        for (Figure f : getDiagram().getFigures()) {
+            if (ids.contains(f.getInputNode().getId())) {
+                selectedFigures.add(f);
+            }
+        }
+        scene.setFigureSelection(selectedFigures);
+        if (centerSelection) {
+            scene.centerFigures(selectedFigures);
+        }
     }
 
     public void clearSelectedNodes() {
-        scene.clearSelectedNodes();
+        scene.setFigureSelection(Collections.emptySet());
     }
 
     public Rectangle getSceneBounds() {

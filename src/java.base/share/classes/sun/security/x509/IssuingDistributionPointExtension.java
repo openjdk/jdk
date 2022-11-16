@@ -63,7 +63,8 @@ import sun.security.util.DerValue;
  * @see DistributionPoint
  * @since 1.6
  */
-public class IssuingDistributionPointExtension extends Extension {
+public class IssuingDistributionPointExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "IssuingDistributionPoint";
 

@@ -45,11 +45,11 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     private int secondPosition;
     private List<Color> colors;
 
-    public RangeSliderModel() {
-        changedEvent = new ChangedEvent<>(this);
-        colorChangedEvent = new ChangedEvent<>(this);
-        positions = new ArrayList<>();
-        colors = new ArrayList<>();
+    public RangeSliderModel(List<String> positions) {
+        assert positions.size() > 0;
+        this.changedEvent = new ChangedEvent<>(this);
+        this.colorChangedEvent = new ChangedEvent<>(this);
+        setPositions(positions);
     }
 
     protected void setPositions(List<String> positions) {
@@ -88,12 +88,10 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     public void setPositions(int fp, int sp) {
         assert fp >= 0 && fp < positions.size();
         assert sp >= 0 && sp < positions.size();
-        if (firstPosition != fp || secondPosition != sp) {
-            firstPosition = fp;
-            secondPosition = sp;
-            ensureOrder();
-            changedEvent.fire();
-        }
+        firstPosition = fp;
+        secondPosition = sp;
+        ensureOrder();
+        changedEvent.fire();
     }
 
     private void ensureOrder() {

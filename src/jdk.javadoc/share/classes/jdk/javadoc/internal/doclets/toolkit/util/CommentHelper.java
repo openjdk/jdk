@@ -56,7 +56,6 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -67,7 +66,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
-import java.util.Optional;
 
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
@@ -127,7 +125,6 @@ public class CommentHelper {
     }
 
     Element getElement(ReferenceTree rtree) {
-        // We need to lookup type variables and other types
         Utils utils = configuration.utils;
         // likely a synthesized tree
         if (path == null) {
@@ -536,15 +533,12 @@ public class CommentHelper {
 
     private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
         Utils utils = configuration.utils;
-        var docFinder = utils.docFinder();
-        Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
-                (m -> {
-                    Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
-                    return Result.fromOptional(optional);
-                })).toOptional();
-        return inheritedDoc.isEmpty() || inheritedDoc.get().equals(ee)
+        DocFinder.Output inheritedDoc =
+                DocFinder.search(configuration,
+                        new DocFinder.Input(utils, ee));
+        return inheritedDoc.holder == ee
                 ? null
-                : utils.getCommentHelper(inheritedDoc.get()).getDocTreePath(dtree);
+                : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
     }
 
     /**

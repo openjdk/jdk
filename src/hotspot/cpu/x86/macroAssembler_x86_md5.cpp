@@ -66,18 +66,16 @@ void MacroAssembler::fast_md5(Register buf, Address state, Address ofs, Address 
   movl(rdx, Address(rdi, 12));
 
 #define FF(r1, r2, r3, r4, k, s, t)              \
-  addl(r1, t);                                   \
   movl(rsi, r3);                                 \
   addl(r1, Address(buf, k*4));                   \
   xorl(rsi, r4);                                 \
   andl(rsi, r2);                                 \
   xorl(rsi, r4);                                 \
-  addl(r1, rsi);                                 \
+  leal(r1, Address(r1, rsi, Address::times_1, t)); \
   roll(r1, s);                                   \
   addl(r1, r2);
 
 #define GG(r1, r2, r3, r4, k, s, t)              \
-  addl(r1, t);                                   \
   movl(rsi, r4);                                 \
   movl(rdi, r4);                                 \
   addl(r1, Address(buf, k*4));                   \
@@ -85,28 +83,26 @@ void MacroAssembler::fast_md5(Register buf, Address state, Address ofs, Address 
   andl(rdi, r2);                                 \
   andl(rsi, r3);                                 \
   orl(rsi, rdi);                                 \
-  addl(r1, rsi);                                 \
+  leal(r1, Address(r1, rsi, Address::times_1, t)); \
   roll(r1, s);                                   \
   addl(r1, r2);
 
 #define HH(r1, r2, r3, r4, k, s, t)              \
-  addl(r1, t);                                   \
   movl(rsi, r3);                                 \
   addl(r1, Address(buf, k*4));                   \
   xorl(rsi, r4);                                 \
   xorl(rsi, r2);                                 \
-  addl(r1, rsi);                                 \
+  leal(r1, Address(r1, rsi, Address::times_1, t)); \
   roll(r1, s);                                   \
   addl(r1, r2);
 
 #define II(r1, r2, r3, r4, k, s, t)              \
-  addl(r1, t);                                   \
   movl(rsi, r4);                                 \
   notl(rsi);                                     \
   addl(r1, Address(buf, k*4));                   \
   orl(rsi, r2);                                  \
   xorl(rsi, r3);                                 \
-  addl(r1, rsi);                                 \
+  leal(r1, Address(r1, rsi, Address::times_1, t)); \
   roll(r1, s);                                   \
   addl(r1, r2);
 

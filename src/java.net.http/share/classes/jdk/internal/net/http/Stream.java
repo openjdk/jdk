@@ -344,6 +344,7 @@ class Stream<T> extends ExchangeImpl<T> {
     Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
         Http2StreamResponseSubscriber<T> subscriber =
                 new Http2StreamResponseSubscriber<>(handler.apply(response));
+        registerResponseSubscriber(subscriber);
         return subscriber;
     }
 
@@ -1543,21 +1544,16 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        public void onSubscribed() {
-            registerResponseSubscriber(this);
-        }
-
-        @Override
         protected void complete(Throwable t) {
             try {
-                unregisterResponseSubscriber(this);
+                Stream.this.unregisterResponseSubscriber(this);
             } finally {
                 super.complete(t);
             }
         }
         @Override
         protected void onCancel() {
-            unregisterResponseSubscriber(this);
+            Stream.this.unregisterResponseSubscriber(this);
         }
     }
 

@@ -76,7 +76,8 @@ import sun.security.util.ObjectIdentifier;
  *
  * @since       1.4
  */
-public class ExtendedKeyUsageExtension extends Extension {
+public class ExtendedKeyUsageExtension extends Extension
+        implements CertAttrSet {
 
     public static final String NAME = "ExtendedKeyUsage";
 

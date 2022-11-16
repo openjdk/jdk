@@ -255,12 +255,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public int getIndex() {
-        Group group = getGroup();
-        if (group != null) {
-            return group.getGraphs().indexOf(this);
-        } else {
-            return -1;
-        }
+        return getGroup().getGraphs().indexOf(this);
     }
 
     public Collection<InputNode> getNodes() {

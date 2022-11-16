@@ -403,7 +403,8 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCallPrologue(CallingConvention cc, Object... prim) {
-        growFrame(cc.getStackSize());
+        emitGrowStack(cc.getStackSize());
+        frameSize += cc.getStackSize();
         AllocatableValue[] args = cc.getArguments();
         // Do the emission in reverse, this avoids register collisons of xmm0 - which is used a
         // scratch register when putting arguments on the stack.
@@ -426,6 +427,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCallEpilogue(CallingConvention cc) {
-        growFrame(-cc.getStackSize());
+        emitGrowStack(-cc.getStackSize());
+        frameSize -= cc.getStackSize();
     }
 }

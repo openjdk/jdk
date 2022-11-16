@@ -224,14 +224,24 @@ public abstract class TagletWriter {
     protected abstract Content getThrowsHeader();
 
     /**
-     * Returns the output for a default {@code @throws} tag.
+     * Returns the output for a {@code @throws} tag.
      *
-     * @param throwsType the type that is thrown
-     * @param content    the optional content to add as a description
+     * @param element        The element that owns the doc comment
+     * @param throwsTag      the throws tag
+     * @param substituteType instantiated type of a generic type-variable, or null
      *
      * @return the output
      */
-    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content);
+    protected abstract Content throwsTagOutput(Element element, ThrowsTree throwsTag, TypeMirror substituteType);
+
+    /**
+     * Returns the output for a default {@code @throws} tag.
+     *
+     * @param throwsType the type that is thrown
+     *
+     * @return the output
+     */
+    protected abstract Content throwsTagOutput(TypeMirror throwsType);
 
     /**
      * Returns the output for a {@code {@value}} tag.

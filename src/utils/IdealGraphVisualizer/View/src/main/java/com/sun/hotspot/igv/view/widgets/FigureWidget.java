@@ -84,7 +84,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return middleWidget.isHitAt(localLocation);
     }
 
-    public FigureWidget(final Figure f, DiagramScene scene) {
+    public FigureWidget(final Figure f, DiagramScene scene, Widget parent) {
         super(scene);
 
         assert this.getScene() != null;
@@ -93,6 +93,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.figure = f;
         this.setCheckClipping(true);
         this.diagramScene = scene;
+        parent.addChild(this);
 
         Widget outer = new Widget(scene);
         outer.setBackground(f.getColor());

@@ -123,7 +123,6 @@ public class NodeQuickSearch implements SearchProvider {
                             }
                             editor.clearSelectedNodes();
                             editor.addSelectedNodes(nodeSet, true);
-                            editor.centerSelectedNodes();
                             editor.requestActive();
                         }
                     },
@@ -153,7 +152,6 @@ public class NodeQuickSearch implements SearchProvider {
                                 }
                                 editor.clearSelectedNodes();
                                 editor.addSelectedNodes(tmpSet, true);
-                                editor.centerSelectedNodes();
                                 editor.requestActive();
                             }
                         }

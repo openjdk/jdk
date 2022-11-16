@@ -57,9 +57,10 @@ import sun.security.pkcs.PKCS9Attribute;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
+ * @see CertAttrSet
  */
 public class NameConstraintsExtension extends Extension
-        implements Cloneable {
+        implements CertAttrSet, Cloneable {
 
     public static final String NAME = "NameConstraints";
 

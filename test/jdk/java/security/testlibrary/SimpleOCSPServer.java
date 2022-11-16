@@ -1354,7 +1354,7 @@ public class SimpleOCSPServer {
                 signature = sig.sign();
                 // Rewrite signAlg, RSASSA-PSS needs some parameters.
                 sigAlgId = SignatureUtil.fromSignature(sig, signerKey);
-                sigAlgId.encode(basicORItemStream);
+                sigAlgId.derEncode(basicORItemStream);
                 basicORItemStream.putBitString(signature);
             } catch (GeneralSecurityException exc) {
                 err(exc);

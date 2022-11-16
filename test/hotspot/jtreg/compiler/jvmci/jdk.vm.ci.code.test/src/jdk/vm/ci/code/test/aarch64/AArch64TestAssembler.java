@@ -272,7 +272,8 @@ public class AArch64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCallPrologue(CallingConvention cc, Object... prim) {
-        growFrame(cc.getStackSize());
+        emitGrowStack(cc.getStackSize());
+        frameSize += cc.getStackSize();
         AllocatableValue[] args = cc.getArguments();
         for (int i = 0; i < args.length; i++) {
             emitLoad(args[i], prim[i]);
@@ -281,7 +282,8 @@ public class AArch64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCallEpilogue(CallingConvention cc) {
-        growFrame(-cc.getStackSize());
+        emitGrowStack(-cc.getStackSize());
+        frameSize -= cc.getStackSize();
     }
 
     @Override
