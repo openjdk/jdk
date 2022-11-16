@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,7 @@ public class ImageView extends View {
 
         URL reference = ((HTMLDocument)getDocument()).getBase();
         try {
+            @SuppressWarnings("deprecation")
             URL u = new URL(reference,src);
             return u;
         } catch (MalformedURLException e) {

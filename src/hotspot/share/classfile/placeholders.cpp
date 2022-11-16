@@ -50,7 +50,7 @@ class PlaceholderKey {
 };
 
 const int _placeholder_table_size = 503;   // Does this really have to be prime?
-ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
                   PlaceholderKey::hash, PlaceholderKey::equals> _placeholders;
 
 // SeenThread objects represent list of threads that are
@@ -132,7 +132,7 @@ void PlaceholderEntry::add_seen_thread(JavaThread* thread, PlaceholderTable::cla
   SeenThread* threadEntry = new SeenThread(thread);
   SeenThread* seen = actionToQueue(action);
 
-  assert(action != PlaceholderTable::LOAD_INSTANCE || seen == NULL,
+  assert(action != PlaceholderTable::LOAD_INSTANCE || !EnableWaitForParallelLoad || seen == NULL,
          "Only one LOAD_INSTANCE allowed at a time");
 
   if (seen == NULL) {

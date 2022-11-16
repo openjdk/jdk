@@ -100,7 +100,7 @@ public class CDSArchiveUtils {
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
             spOffsetCrc = wb.getCDSOffsetForName("CDSFileMapRegion::_crc");
             spUsedOffset = wb.getCDSOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
-            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_space[0]") - offsetMagic;
+            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_regions[0]") - offsetMagic;
             // constants
             staticMagic = wb.getCDSConstantForName("static_magic");
             dynamicMagic = wb.getCDSConstantForName("dynamic_magic");
