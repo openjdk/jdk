@@ -27,6 +27,7 @@
  * @summary Tests that resizing a window to which a tight loop is rendering
  *          doesn't produce artifacts or crashes
  * @run main/othervm OnScreenRenderingResizeTest
+ * @run main/othervm -Dsun.java2d.d3d=false OnScreenRenderingResizeTest
  */
 
 import java.awt.AWTException;
