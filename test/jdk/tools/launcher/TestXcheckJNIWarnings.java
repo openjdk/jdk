@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,18 @@ import java.io.IOException;
 /**
  * @test id=noagent
  * @bug 8187442
- * @summary Launching app with or without jdwp agent shouldn't produce any jni warnings.
+ * @summary Launching app shouldn't produce any jni warnings.
  * @modules jdk.compiler
  *          jdk.zipfs
- * @compile TestXcheckJNIWarnings.java
  * @run main TestXcheckJNIWarnings
  */
 
 /**
  * @test id=jdwp-agent
  * @bug 8187442
- * @summary Launching app with or without jdwp agent shouldn't produce any jni warnings.
+ * @summary Launching app with jdwp agent shouldn't produce any jni warnings.
  * @modules jdk.compiler
  *          jdk.zipfs
- * @compile TestXcheckJNIWarnings.java
  * @run main TestXcheckJNIWarnings -agentlib:jdwp=transport=dt_socket,server=y,suspend=n
  */
 public final class TestXcheckJNIWarnings extends TestHelper {
