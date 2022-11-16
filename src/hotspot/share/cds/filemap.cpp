@@ -1645,11 +1645,11 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     assert(!DynamicDumpSharedSpaces, "must be");
     // For UseCompressedOops == false:
     //     For deterministic archive contents, we pretend that the dumptime heap
-    //     always starts at 0x10000000 (see HeapShared::to_requested_address()), so
-    //     requested_base and dumptime_base are NOT the actual address used at
-    //     dumptime for this region. However, the contents of this region are
-    //     patched as if the it started there.
-    // For UseCompressedOops == false, HeapShared::to_requested_address does nothing.
+    //     always starts at 0x10000000 (see HeapShared::to_requested_address()). So
+    //     requested_base and dumptime_base are NOT the actual base used at
+    //     dumptime for this region. However, the contents of this region has already
+    //     been patched as if it started there.
+    // For UseCompressedOops == true: HeapShared::to_requested_address does nothing.
     requested_base = (char*)HeapShared::to_requested_address((address)base);
     dumptime_base = requested_base;
   } else {
