@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,27 @@
  * questions.
  */
 
-package sun.security.x509;
-
-import sun.security.util.DerOutputStream;
-
-import java.io.IOException;
-
 /**
- * This interface defines a certificate attribute that can be DER-encoded.
+ * @test
+ * @bug 8296196
+ * @summary Test getEnumConstants on bad Enums
+ * @build BadEnum1 BadEnum2
+ * @run junit BadEnumTest
  */
-public interface CertAttrSet {
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-    /**
-     * Encodes the attribute to the output stream.
-     *
-     * @param out the DerOutputStream to encode the attribute to.
-     * @exception IOException on write errors.
-     */
-    void encode(DerOutputStream out) throws IOException;
+public class BadEnumTest {
+
+    @Test
+    void testBadEnum1() {
+        assertNull(BadEnum1.class.getEnumConstants(), "Expected BadEnum1.class.getEnumConstants() to return null");
+    }
+
+    @Test
+    void testBadEnum2() {
+        assertNull(BadEnum2.class.getEnumConstants(), "Expected BadEnum2.class.getEnumConstants() to return null");
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.crypto.CipherSpi;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
-import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -50,7 +49,6 @@ import java.util.Arrays;
  *
  * @author Valerie Peng
  *
- *
  * @see AESCrypt
  * @see CipherBlockChaining
  * @see ElectronicCodeBook
@@ -58,13 +56,14 @@ import java.util.Arrays;
  * @see OutputFeedback
  */
 
-abstract class AESCipher extends CipherSpi {
+class AESCipher extends CipherSpi {
     public static final class General extends AESCipher {
         public General() {
             super(-1);
         }
     }
-    abstract static class OidImpl extends AESCipher {
+
+    static class OidImpl extends AESCipher {
         protected OidImpl(int keySize, String mode, String padding) {
             super(keySize);
             try {
@@ -76,6 +75,7 @@ abstract class AESCipher extends CipherSpi {
             }
         }
     }
+
     public static final class AES128_ECB_NoPadding extends OidImpl {
         public AES128_ECB_NoPadding() {
             super(16, "ECB", "NOPADDING");
@@ -138,7 +138,7 @@ abstract class AESCipher extends CipherSpi {
     }
 
     // utility method used by AESCipher and AESWrapCipher
-    static final void checkKeySize(Key key, int fixedKeySize)
+    static void checkKeySize(Key key, int fixedKeySize)
         throws InvalidKeyException {
         if (fixedKeySize != -1) {
             if (key == null) {
@@ -160,7 +160,7 @@ abstract class AESCipher extends CipherSpi {
     /*
      * internal CipherCore object which does the real work.
      */
-    private CipherCore core = null;
+    private final CipherCore core;
 
     /*
      * needed to support AES oids which associates a fixed key size
@@ -186,6 +186,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception NoSuchAlgorithmException if the requested cipher mode does
      * not exist
      */
+    @Override
     protected void engineSetMode(String mode)
         throws NoSuchAlgorithmException {
         core.setMode(mode);
@@ -199,6 +200,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception NoSuchPaddingException if the requested padding mechanism
      * does not exist
      */
+    @Override
     protected void engineSetPadding(String paddingScheme)
         throws NoSuchPaddingException {
         core.setPadding(paddingScheme);
@@ -210,6 +212,7 @@ abstract class AESCipher extends CipherSpi {
      * @return the block size (in bytes), or 0 if the underlying algorithm is
      * not a block cipher
      */
+    @Override
     protected int engineGetBlockSize() {
         return AESConstants.AES_BLOCK_SIZE;
     }
@@ -231,6 +234,7 @@ abstract class AESCipher extends CipherSpi {
      *
      * @return the required output buffer size (in bytes)
      */
+    @Override
     protected int engineGetOutputSize(int inputLen) {
         return core.getOutputSize(inputLen);
     }
@@ -247,6 +251,7 @@ abstract class AESCipher extends CipherSpi {
      * underlying algorithm does not use an IV, or if the IV has not yet
      * been set.
      */
+    @Override
     protected byte[] engineGetIV() {
         return core.getIV();
     }
@@ -264,6 +269,7 @@ abstract class AESCipher extends CipherSpi {
      * @return the parameters used with this cipher, or null if this cipher
      * does not use any parameters.
      */
+    @Override
     protected AlgorithmParameters engineGetParameters() {
         return core.getParameters("AES");
     }
@@ -298,6 +304,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception InvalidKeyException if the given key is inappropriate for
      * initializing this cipher
      */
+    @Override
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
         checkKeySize(key, fixedKeySize);
@@ -328,6 +335,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher
      */
+    @Override
     protected void engineInit(int opmode, Key key,
                               AlgorithmParameterSpec params,
                               SecureRandom random)
@@ -336,6 +344,7 @@ abstract class AESCipher extends CipherSpi {
         core.init(opmode, key, params, random);
     }
 
+    @Override
     protected void engineInit(int opmode, Key key,
                               AlgorithmParameters params,
                               SecureRandom random)
@@ -363,6 +372,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception IllegalStateException if this cipher is in a wrong state
      * (e.g., has not been initialized)
      */
+    @Override
     protected byte[] engineUpdate(byte[] input, int inputOffset,
                                   int inputLen) {
         return core.update(input, inputOffset, inputLen);
@@ -391,6 +401,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception ShortBufferException if the given output buffer is too small
      * to hold the result
      */
+    @Override
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
                                byte[] output, int outputOffset)
         throws ShortBufferException {
@@ -429,10 +440,10 @@ abstract class AESCipher extends CipherSpi {
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
      */
+    @Override
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException {
-        byte[] out = core.doFinal(input, inputOffset, inputLen);
-        return out;
+        return core.doFinal(input, inputOffset, inputLen);
     }
 
     /**
@@ -471,13 +482,13 @@ abstract class AESCipher extends CipherSpi {
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
      */
+    @Override
     protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
                                 byte[] output, int outputOffset)
         throws IllegalBlockSizeException, ShortBufferException,
                BadPaddingException {
-        int outLen = core.doFinal(input, inputOffset, inputLen, output,
+        return core.doFinal(input, inputOffset, inputLen, output,
                                   outputOffset);
-        return outLen;
     }
 
     /**
@@ -489,6 +500,7 @@ abstract class AESCipher extends CipherSpi {
      *
      * @exception InvalidKeyException if <code>key</code> is invalid.
      */
+    @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
         Arrays.fill(encoded, (byte)0);
@@ -515,6 +527,7 @@ abstract class AESCipher extends CipherSpi {
      * wrap the key with this cipher (e.g., a hardware protected key is
      * being passed to a software only cipher).
      */
+    @Override
     protected byte[] engineWrap(Key key)
         throws IllegalBlockSizeException, InvalidKeyException {
         return core.wrap(key);
@@ -541,6 +554,7 @@ abstract class AESCipher extends CipherSpi {
      * represent a wrapped key of type <code>wrappedKeyType</code> for
      * the <code>wrappedKeyAlgorithm</code>.
      */
+    @Override
     protected Key engineUnwrap(byte[] wrappedKey,
                                      String wrappedKeyAlgorithm,
                                      int wrappedKeyType)
