@@ -22,20 +22,22 @@
  *
  */
 #include "precompiled.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memReporter.hpp"
+#include "services/memTracker.hpp"
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
 }
 
-size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
@@ -820,3 +822,68 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
 
   out->print_cr(")\n");
  }
+
+void MemJFRReporter::sendTotalEvent() {
+  if (!MemTracker::enabled()) {
+    return;
+  }
+
+  MemBaseline usage;
+  usage.baseline(true);
+
+  const size_t malloced_memory = usage.malloc_memory_snapshot()->total();
+  const size_t reserved_memory = usage.virtual_memory_snapshot()->total_reserved();
+  const size_t committed_memory = usage.virtual_memory_snapshot()->total_committed();
+
+  const size_t reserved = malloced_memory + reserved_memory;
+  const size_t committed = malloced_memory + committed_memory;
+
+  EventTotalNativeMemoryUsage event;
+  event.set_reserved(reserved);
+  event.set_committed(committed);
+  event.commit();
+}
+
+void MemJFRReporter::sendComponentEvent(const char* component, size_t reserved, size_t committed) {
+  EventComponentNativeMemoryUsage event;
+  event.set_component(component);
+  event.set_reserved(reserved);
+  event.set_committed(committed);
+  event.commit();
+}
+
+void MemJFRReporter::sendComponentEvents() {
+  if (!MemTracker::enabled()) {
+    return;
+  }
+
+  MemBaseline usage;
+  usage.baseline(true);
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    MEMFLAGS flag = NMTUtil::index_to_flag(index);
+    MallocMemory* malloc_memory = usage.malloc_memory(flag);
+    VirtualMemory* virtual_memory = usage.virtual_memory(flag);
+
+    size_t reserved = MemReporterBase::reserved_total(malloc_memory, virtual_memory);
+    size_t committed = MemReporterBase::committed_total(malloc_memory, virtual_memory);
+
+    // Some special cases to get accounting correct
+    if (flag == mtThread) {
+      // Count thread's native stack in "Thread" category
+      if (ThreadStackTracker::track_as_vm()) {
+        VirtualMemory* thread_stack_usage = usage.virtual_memory(mtThreadStack);
+        reserved += thread_stack_usage->reserved();
+        committed += thread_stack_usage->committed();
+      } else {
+        MallocMemory* thread_stack_usage = usage.malloc_memory(mtThreadStack);
+        reserved += thread_stack_usage->malloc_size();
+        committed += thread_stack_usage->malloc_size();
+      }
+    } else if (flag == mtNMT) {
+      // Count malloc headers in "NMT" category
+      reserved += usage.malloc_memory_snapshot()->malloc_overhead();
+      committed += usage.malloc_memory_snapshot()->malloc_overhead();
+    }
+    sendComponentEvent(NMTUtil::flag_to_name(flag), reserved, committed);
+  }
+}

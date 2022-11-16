@@ -32,6 +32,8 @@
 #include "services/mallocTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 
+class MemJFRReporter;
+
 /*
  * Base class that provides helpers
 */
@@ -48,6 +50,11 @@ class MemReporterBase : public StackObj {
   MemReporterBase(outputStream* out, size_t scale = default_scale) :
     _scale(scale), _output(out)
   {}
+
+  // Helper functions
+  // Calculate total reserved and committed amount
+  static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
+  static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
 
  protected:
   inline outputStream* output() const {
@@ -72,11 +79,6 @@ class MemReporterBase : public StackObj {
     amount = (amount > 0) ? (amount + scale / 2) : (amount - scale / 2);
     return amount / scale;
   }
-
-  // Helper functions
-  // Calculate total reserved and committed amount
-  size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-  size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;
@@ -236,5 +238,14 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
+
+class MemJFRReporter : public AllStatic {
+private:
+  static void sendComponentEvent(const char* component, size_t reserved, size_t committed);
+ public:
+  static void sendTotalEvent();
+  static void sendComponentEvents();
+};
+
 
 #endif // SHARE_SERVICES_MEMREPORTER_HPP

@@ -706,6 +706,19 @@
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
+  <Event name="ComponentNativeMemoryUsage" category="Java Virtual Machine, Profiling" label="Component Native Memory Usage" description="Native memory usage for a component" stackTrace="false" thread="false"
+    startTime="false" period="everyChunk">
+    <Field type="string" name="component" label="Component" description="Component allocating the native memory" />
+    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes by this component" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes by this component" />
+  </Event>
+
+  <Event name="TotalNativeMemoryUsage" category="Java Virtual Machine, Profiling" label="Total Native Memory Usage" description="Total Native Memory Usage" stackTrace="false" thread="false"
+    startTime="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this component" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this component" />
+  </Event>
+
   <Event name="DumpReason" category="Flight Recorder" label="Recording Reason"
          description="Who requested the recording and why"
          startTime="false">

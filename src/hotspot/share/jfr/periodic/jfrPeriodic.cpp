@@ -63,6 +63,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
+#include "services/memReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -623,4 +624,12 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #else
   log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
+}
+
+TRACE_REQUEST_FUNC(ComponentNativeMemoryUsage) {
+  MemJFRReporter::sendComponentEvents();
+}
+
+TRACE_REQUEST_FUNC(TotalNativeMemoryUsage) {
+  MemJFRReporter::sendTotalEvent();
 }
