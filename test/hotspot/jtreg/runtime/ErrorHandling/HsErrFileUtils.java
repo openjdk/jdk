@@ -32,7 +32,7 @@ public class HsErrFileUtils {
     /**
      * Given the output of a java VM that crashed, extract the name of the hs-err file from the output
      */
-    static public String extractHsErrFileNameFromOutput(OutputAnalyzer output) {
+    public static String extractHsErrFileNameFromOutput(OutputAnalyzer output) {
         output.shouldMatch("# A fatal error has been detected.*");
 
         // extract hs-err file
