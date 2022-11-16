@@ -353,10 +353,12 @@ jint ShenandoahHeap::initialize() {
   }
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
+  _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
   _free_set = new ShenandoahFreeSet(this, _num_regions);
 
   {
     ShenandoahHeapLocker locker(lock());
+
 
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
@@ -369,6 +371,8 @@ jint ShenandoahHeap::initialize() {
       _marking_context->initialize_top_at_mark_start(r);
       _regions[i] = r;
       assert(!collection_set()->is_in(i), "New region should not be in collection set");
+
+      _affiliations[i] = ShenandoahRegionAffiliation::FREE;
     }
 
     // Initialize to complete
@@ -509,6 +513,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _heap_region_special(false),
   _num_regions(0),
   _regions(NULL),
+  _affiliations(NULL),
   _update_refs_iterator(this),
   _alloc_supplement_reserve(0),
   _promoted_reserve(0),
@@ -764,35 +769,6 @@ size_t ShenandoahHeap::min_capacity() const {
 
 size_t ShenandoahHeap::initial_capacity() const {
   return _initial_size;
-}
-
-bool ShenandoahHeap::is_in(const void* p) const {
-  HeapWord* heap_base = (HeapWord*) base();
-  HeapWord* last_region_end = heap_base + ShenandoahHeapRegion::region_size_words() * num_regions();
-  return p >= heap_base && p < last_region_end;
-}
-
-bool ShenandoahHeap::is_in_young(const void* p) const {
-  return is_in(p) && heap_region_containing(p)->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION;
-}
-
-bool ShenandoahHeap::is_in_old(const void* p) const {
-  return is_in(p) && heap_region_containing(p)->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION;
-}
-
-bool ShenandoahHeap::is_in_active_generation(oop obj) const {
-  if (!mode()->is_generational()) {
-    // everything is the same single generation
-    return true;
-  }
-
-  if (active_generation() == NULL) {
-    // no collection is happening, only expect this to be called
-    // when concurrent processing is active, but that could change
-    return false;
-  }
-
-  return active_generation()->contains(obj);
 }
 
 void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {

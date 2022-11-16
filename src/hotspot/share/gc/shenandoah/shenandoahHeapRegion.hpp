@@ -199,8 +199,8 @@ public:
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { return _state == _cset   || _state == _pinned_cset; }
   bool is_pinned()                 const { return _state == _pinned || _state == _pinned_cset || _state == _pinned_humongous_start; }
-  bool is_young()                  const { return _affiliation == YOUNG_GENERATION; }
-  bool is_old()                    const { return _affiliation == OLD_GENERATION; }
+  inline bool is_young() const;
+  inline bool is_old() const;
 
   // Macro-properties:
   bool is_alloc_allowed()          const { return is_empty() || is_regular() || _state == _pinned; }
@@ -257,7 +257,6 @@ private:
 
   HeapWord* volatile _update_watermark;
 
-  ShenandoahRegionAffiliation _affiliation;
   uint _age;
 
 public:
@@ -441,9 +440,7 @@ public:
   inline void set_update_watermark(HeapWord* w);
   inline void set_update_watermark_at_safepoint(HeapWord* w);
 
-  ShenandoahRegionAffiliation affiliation() const {
-    return _affiliation;
-  }
+  inline ShenandoahRegionAffiliation affiliation() const;
 
   void set_affiliation(ShenandoahRegionAffiliation new_affiliation);
 

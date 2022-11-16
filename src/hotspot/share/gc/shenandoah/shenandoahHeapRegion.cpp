@@ -76,7 +76,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
-  _affiliation(FREE),
   _age(0) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
@@ -113,7 +112,8 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahRegionAffiliation a
 // Change affiliation to YOUNG_GENERATION if _state is not _pinned_cset, _regular, or _pinned.  This implements
 // behavior previously performed as a side effect of make_regular_bypass().
 void ShenandoahHeapRegion::make_young_maybe() {
- switch (_state) {
+  shenandoah_assert_heaplocked();
+  switch (_state) {
    case _empty_uncommitted:
    case _empty_committed:
    case _cset:
@@ -407,7 +407,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
       ShouldNotReachHere();
   }
 
-  switch (_affiliation) {
+  switch (ShenandoahHeap::heap()->region_affiliation(this)) {
     case ShenandoahRegionAffiliation::FREE:
       st->print("|F");
       break;
@@ -662,6 +662,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 void ShenandoahHeapRegion::recycle() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  shenandoah_assert_heaplocked();
 
   if (affiliation() == YOUNG_GENERATION) {
     heap->young_generation()->decrease_used(used());
@@ -933,11 +934,12 @@ size_t ShenandoahHeapRegion::pin_count() const {
 void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affiliation) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  ShenandoahRegionAffiliation region_affiliation = heap->region_affiliation(this);
   {
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     log_debug(gc)("Setting affiliation of Region " SIZE_FORMAT " from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
-                  index(), affiliation_name(_affiliation), affiliation_name(new_affiliation),
+                  index(), affiliation_name(region_affiliation), affiliation_name(new_affiliation),
                   p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
   }
 
@@ -954,21 +956,21 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affil
   }
 #endif
 
-  if (_affiliation == new_affiliation) {
+  if (region_affiliation == new_affiliation) {
     return;
   }
 
   if (!heap->mode()->is_generational()) {
-    _affiliation = new_affiliation;
+    heap->set_affiliation(this, new_affiliation);
     return;
   }
 
   log_trace(gc)("Changing affiliation of region %zu from %s to %s",
-    index(), affiliation_name(_affiliation), affiliation_name(new_affiliation));
+    index(), affiliation_name(region_affiliation), affiliation_name(new_affiliation));
 
-  if (_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
+  if (region_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
     heap->young_generation()->decrement_affiliated_region_count();
-  } else if (_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
+  } else if (region_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
     heap->old_generation()->decrement_affiliated_region_count();
   }
 
@@ -987,7 +989,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affil
       ShouldNotReachHere();
       return;
   }
-  _affiliation = new_affiliation;
+  heap->set_affiliation(this, new_affiliation);
 }
 
 size_t ShenandoahHeapRegion::promote_humongous() {

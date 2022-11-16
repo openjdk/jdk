@@ -550,8 +550,100 @@ inline bool ShenandoahHeap::clear_old_evacuation_failure() {
   return _old_gen_oom_evac.try_unset();
 }
 
+bool ShenandoahHeap::is_in(const void* p) const {
+  HeapWord* heap_base = (HeapWord*) base();
+  HeapWord* last_region_end = heap_base + ShenandoahHeapRegion::region_size_words() * num_regions();
+  return p >= heap_base && p < last_region_end;
+}
+
+inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
+  if (!mode()->is_generational()) {
+    // everything is the same single generation
+    return true;
+  }
+
+  if (active_generation() == NULL) {
+    // no collection is happening, only expect this to be called
+    // when concurrent processing is active, but that could change
+    return false;
+  }
+
+  assert(is_in(obj), "only check if is in active generation for objects (" PTR_FORMAT ") in heap", p2i(obj));
+  assert((active_generation() == (ShenandoahGeneration*) old_generation()) ||
+         (active_generation() == (ShenandoahGeneration*) young_generation()) ||
+         (active_generation() == global_generation()), "Active generation must be old, young, or global");
+
+  size_t index = heap_region_containing(obj)->index();
+  switch (_affiliations[index]) {
+  case ShenandoahRegionAffiliation::FREE:
+    // Free regions are in Old, Young, Global
+    return true;
+  case ShenandoahRegionAffiliation::YOUNG_GENERATION:
+    // Young regions are in young_generation and global_generation, not in old_generation
+    return (active_generation() != (ShenandoahGeneration*) old_generation());
+  case ShenandoahRegionAffiliation::OLD_GENERATION:
+    // Old regions are in old_generation and global_generation, not in young_generation
+    return (active_generation() != (ShenandoahGeneration*) young_generation());
+  default:
+    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
+    return false;
+  }
+}
+
+inline bool ShenandoahHeap::is_in_young(const void* p) const {
+  return is_in(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahRegionAffiliation::YOUNG_GENERATION);
+}
+
+inline bool ShenandoahHeap::is_in_old(const void* p) const {
+  return is_in(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahRegionAffiliation::OLD_GENERATION);
+}
+
 inline bool ShenandoahHeap::is_old(oop obj) const {
   return is_gc_generation_young() && is_in_old(obj);
+}
+
+inline ShenandoahRegionAffiliation ShenandoahHeap::region_affiliation(const ShenandoahHeapRegion *r) {
+  return (ShenandoahRegionAffiliation) _affiliations[r->index()];
+}
+
+inline void ShenandoahHeap::assert_lock_for_affiliation(ShenandoahRegionAffiliation orig_affiliation,
+                                                        ShenandoahRegionAffiliation new_affiliation) {
+  // A lock is required when changing from FREE to NON-FREE.  Though it may be possible to elide the lock when
+  // transitioning from in-use to FREE, the current implementation uses a lock for this transition.  A lock is
+  // not required to change from YOUNG to OLD (i.e. when promoting humongous region).
+  //
+  //         new_affiliation is:     FREE   YOUNG   OLD
+  //  orig_affiliation is:  FREE      X       L      L
+  //                       YOUNG      L       X
+  //                         OLD      L       X      X
+  //  X means state transition won't happen (so don't care)
+  //  L means lock should be held
+  //  Blank means no lock required because affiliation visibility will not be required until subsequent safepoint
+  //
+  // Note: during full GC, all transitions between states are possible.  During Full GC, we should be in a safepoint.
+
+  if ((orig_affiliation == ShenandoahRegionAffiliation::FREE) || (new_affiliation == ShenandoahRegionAffiliation::FREE)) {
+    extern bool _is_at_shenandoah_safepoint();
+    shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  }
+}
+
+inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahRegionAffiliation new_affiliation) {
+#ifdef ASSERT
+  assert_lock_for_affiliation(region_affiliation(r), new_affiliation);
+#endif
+  _affiliations[r->index()] = (uint8_t) new_affiliation;
+}
+
+inline ShenandoahRegionAffiliation ShenandoahHeap::region_affiliation(size_t index) {
+  return (ShenandoahRegionAffiliation) _affiliations[index];
+}
+
+inline void ShenandoahHeap::set_affiliation(size_t index, ShenandoahRegionAffiliation new_affiliation) {
+#ifdef ASSERT
+  assert_lock_for_affiliation(region_affiliation(index), new_affiliation);
+#endif
+  _affiliations[index] = (uint8_t) new_affiliation;
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {

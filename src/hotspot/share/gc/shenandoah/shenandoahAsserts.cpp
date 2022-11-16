@@ -428,3 +428,19 @@ void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int lin
   ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
   report_vm_error(file, line, msg.buffer());
 }
+
+// unlike assert_heaplocked_or_safepoint(), this does not require current thread in safepoint to be a VM-thread
+void ShenandoahAsserts::assert_heaplocked_or_fullgc_safepoint(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
+  report_vm_error(file, line, msg.buffer());
+}

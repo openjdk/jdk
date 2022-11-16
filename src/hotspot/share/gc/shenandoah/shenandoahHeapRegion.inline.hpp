@@ -176,6 +176,10 @@ inline void ShenandoahHeapRegion::set_update_watermark_at_safepoint(HeapWord* w)
   _update_watermark = w;
 }
 
+inline ShenandoahRegionAffiliation ShenandoahHeapRegion::affiliation() const {
+  return ShenandoahHeap::heap()->region_affiliation(this);
+}
+
 inline void ShenandoahHeapRegion::clear_young_lab_flags() {
   _has_young_lab = false;
 }
@@ -186,6 +190,14 @@ inline void ShenandoahHeapRegion::set_young_lab_flag() {
 
 inline bool ShenandoahHeapRegion::has_young_lab_flag() {
   return _has_young_lab;
+}
+
+inline bool ShenandoahHeapRegion::is_young() const {
+  return ShenandoahHeap::heap()->region_affiliation(this) == YOUNG_GENERATION;
+}
+
+inline bool ShenandoahHeapRegion::is_old() const {
+  return ShenandoahHeap::heap()->region_affiliation(this) == OLD_GENERATION;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
