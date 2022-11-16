@@ -351,7 +351,7 @@ public final class ScopedValue<T> {
         }
 
         /**
-         * Calls a value returning operation with each scoped value in this mapping bound
+         * Calls a value-returning operation with each scoped value in this mapping bound
          * to its value in the current thread.
          * When the operation completes (normally or with an exception), each scoped value
          * in the mapping will revert to being unbound, or rervert to its previous value
