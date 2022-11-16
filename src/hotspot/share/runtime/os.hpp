@@ -947,7 +947,6 @@ class os: AllStatic {
   inline static bool zero_page_read_protected();
 
   static void setup_fpu();
-  static bool supports_sse();
   static juint cpu_microcode_revision();
 
   static inline jlong rdtsc();

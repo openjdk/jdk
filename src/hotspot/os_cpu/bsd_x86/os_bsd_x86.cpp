@@ -636,13 +636,6 @@ void os::Bsd::init_thread_fpu_state(void) {
 #endif // !AMD64
 }
 
-
-// Check that the bsd kernel version is 2.4 or higher since earlier
-// versions do not support SSE without patches.
-bool os::supports_sse() {
-  return true;
-}
-
 juint os::cpu_microcode_revision() {
   juint result = 0;
   char data[8];

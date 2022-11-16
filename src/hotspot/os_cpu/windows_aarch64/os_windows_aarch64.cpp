@@ -275,10 +275,6 @@ void os::print_register_info(outputStream *st, const void *context) {
 void os::setup_fpu() {
 }
 
-bool os::supports_sse() {
-  return true;
-}
-
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
   assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");

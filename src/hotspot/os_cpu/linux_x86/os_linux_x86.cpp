@@ -443,24 +443,6 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 #endif // !AMD64
 }
 
-// Check that the linux kernel version is 2.4 or higher since earlier
-// versions do not support SSE without patches.
-bool os::supports_sse() {
-#ifdef AMD64
-  return true;
-#else
-  struct utsname uts;
-  if( uname(&uts) != 0 ) return false; // uname fails?
-  char *minor_string;
-  int major = strtol(uts.release,&minor_string,10);
-  int minor = strtol(minor_string+1,NULL,10);
-  bool result = (major > 2 || (major==2 && minor >= 4));
-  log_info(os)("OS version is %d.%d, which %s support SSE/SSE2",
-               major,minor, result ? "DOES" : "does NOT");
-  return result;
-#endif // AMD64
-}
-
 juint os::cpu_microcode_revision() {
   // Note: this code runs on startup, and therefore should not be slow,
   // see JDK-8283200.
