@@ -83,15 +83,24 @@ public class TitleBarDoubleClick implements MouseListener,
         );
         robot.waitForIdle();
 
-        System.out.println("1st press:   currentTimeMillis: " + System.currentTimeMillis());
+        System.out.println("1st press:   currentTimeMillis: "
+                + System.currentTimeMillis());
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        System.out.println("1st release: currentTimeMillis: " + System.currentTimeMillis());
+
+        System.out.println("1st release: currentTimeMillis: "
+                + System.currentTimeMillis());
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        System.out.println("2nd press:   currentTimeMillis: " + System.currentTimeMillis());
+
+        System.out.println("2nd press:   currentTimeMillis: "
+                + System.currentTimeMillis());
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        System.out.println("2nd release: currentTimeMillis: " + System.currentTimeMillis());
+
+        System.out.println("2nd release: currentTimeMillis: "
+                + System.currentTimeMillis());
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        System.out.println("done:        currentTimeMillis: " + System.currentTimeMillis());
+
+        System.out.println("done:        currentTimeMillis: "
+                + System.currentTimeMillis());
 
         robot.waitForIdle();
         robot.delay(500);
@@ -110,16 +119,16 @@ public class TitleBarDoubleClick implements MouseListener,
 
     public void mouseEntered(MouseEvent e) {}
     public void mouseExited(MouseEvent e) {}
-    public void mousePressed(MouseEvent e) {fail(e);}
-    public void mouseReleased(MouseEvent e) {fail(e);}
-    public void mouseClicked(MouseEvent e) {fail(e);}
+    public void mousePressed(MouseEvent e) { fail(e); }
+    public void mouseReleased(MouseEvent e) { fail(e); }
+    public void mouseClicked(MouseEvent e) { fail(e); }
 
-    public void windowActivated(WindowEvent  e) {}
-    public void windowClosed(WindowEvent  e) {}
-    public void windowClosing(WindowEvent  e) {}
-    public void windowDeactivated(WindowEvent  e) {}
-    public void windowDeiconified(WindowEvent  e) {}
-    public void windowIconified(WindowEvent  e) {}
-    public void windowOpened(WindowEvent  e) {}
+    public void windowActivated(WindowEvent e) {}
+    public void windowClosed(WindowEvent e) {}
+    public void windowClosing(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
 
 }// class TitleBarDoubleClick
