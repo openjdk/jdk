@@ -125,7 +125,7 @@ bm_word_t* ResourceBitMap::reallocate(bm_word_t* old_map, size_t old_size_in_wor
   return pseudo_reallocate(*this, old_map, old_size_in_words, new_size_in_words);
 }
 
-CHeapBitMap::CHeapBitMap(MEMFLAGS flags, idx_t size_in_bits, bool clear)
+CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
   : GrowableBitMap<CHeapBitMap>(), _flags(flags) {
   initialize(size_in_bits, clear);
 }
