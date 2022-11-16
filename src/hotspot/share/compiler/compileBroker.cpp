@@ -37,7 +37,6 @@
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
-#include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
 #include "jvm.h"
 #include "jfr/jfrEvents.hpp"

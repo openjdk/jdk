@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Predictions.hpp"
-#include "utilities/ostream.hpp"
-
 #include "unittest.hpp"
+
+#include "utilities/ostream.hpp"
 
 static const double epsilon = 1e-6;
 

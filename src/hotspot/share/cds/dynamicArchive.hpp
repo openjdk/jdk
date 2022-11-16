@@ -67,5 +67,4 @@ public:
   static bool validate(FileMapInfo* dynamic_info);
 };
 #endif // INCLUDE_CDS
-
 #endif // SHARE_CDS_DYNAMICARCHIVE_HPP

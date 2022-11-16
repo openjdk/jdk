@@ -27,7 +27,6 @@
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 #include <limits>

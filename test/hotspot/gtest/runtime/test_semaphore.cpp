@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "runtime/semaphore.hpp"
-
 #include "unittest.hpp"
 
 static void test_semaphore_single_separate(uint count) {

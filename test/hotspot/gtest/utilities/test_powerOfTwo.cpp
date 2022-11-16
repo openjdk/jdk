@@ -25,7 +25,6 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-
 #include "unittest.hpp"
 
 #include <limits>

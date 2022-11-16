@@ -24,8 +24,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CodeCacheRemSet.hpp"
 #include "gc/g1/g1CodeRootSetTable.hpp"
-#include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 class G1CodeRootSetTest : public ::testing::Test {

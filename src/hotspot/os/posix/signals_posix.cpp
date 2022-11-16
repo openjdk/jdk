@@ -48,6 +48,7 @@
 
 #include <signal.h>
 
+
 static const char* get_signal_name(int sig, char* out, size_t outlen);
 
 // Returns address of a handler associated with the given sigaction

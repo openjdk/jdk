@@ -27,7 +27,6 @@
 #include "classfile/vmClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"

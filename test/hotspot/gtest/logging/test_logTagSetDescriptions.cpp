@@ -22,15 +22,14 @@
  *
  */
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
+#include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logTagSet.hpp"
 #include "logging/logTagSetDescriptions.hpp"
 #include "memory/resourceArea.hpp"
-#include "utilities/ostream.hpp"
-
-#include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
+#include "utilities/ostream.hpp"
 
 TEST_VM(LogTagSetDescriptions, describe) {
   for (LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {

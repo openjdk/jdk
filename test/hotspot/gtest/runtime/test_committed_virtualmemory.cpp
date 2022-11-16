@@ -27,9 +27,7 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
 #include "unittest.hpp"
-
 
 class CommittedVirtualMemoryTest {
 public:

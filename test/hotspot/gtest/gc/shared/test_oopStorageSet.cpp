@@ -30,7 +30,6 @@
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
 #include "unittest.hpp"
 
 class OopStorageSetTest : public ::testing::Test {

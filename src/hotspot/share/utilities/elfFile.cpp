@@ -26,7 +26,7 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/decoder.hpp"

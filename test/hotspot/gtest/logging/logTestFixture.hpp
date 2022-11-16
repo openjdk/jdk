@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // A fixture base class for tests that need to change the log configuration,
 // or use a log file. After each test, the fixture will automatically restore

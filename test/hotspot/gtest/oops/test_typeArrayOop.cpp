@@ -26,9 +26,8 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 TEST_VM(typeArrayOopDesc, bool_at_put) {
   char mem[100];

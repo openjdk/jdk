@@ -38,7 +38,6 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "include/jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"

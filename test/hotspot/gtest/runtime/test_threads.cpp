@@ -32,7 +32,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 #include "unittest.hpp"
 
 struct Threads::Test : public AllStatic {

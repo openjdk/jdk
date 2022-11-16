@@ -22,7 +22,6 @@
  */
 #include "precompiled.hpp"
 #include "runtime/arguments.hpp"
-
 #include "unittest.hpp"
 
 // Tests Arguments::verify_special_jvm_flags(true)

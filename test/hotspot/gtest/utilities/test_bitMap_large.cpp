@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "utilities/bitMap.inline.hpp"
-
 #include "unittest.hpp"
 
 // Bitmap size should be large enough to accept large operations.

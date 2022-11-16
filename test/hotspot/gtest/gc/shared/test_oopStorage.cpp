@@ -39,7 +39,6 @@
 #include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
-
 #include "unittest.hpp"
 
 // Access storage internals.

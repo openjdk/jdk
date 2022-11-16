@@ -25,7 +25,6 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
-
 #include "unittest.hpp"
 
 #ifndef PRODUCT

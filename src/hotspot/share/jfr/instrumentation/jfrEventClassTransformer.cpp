@@ -32,7 +32,6 @@
 #include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/verificationType.hpp"
-#include "include/jvm.h"
 #include "interpreter/bytecodes.hpp"
 #include "jvm.h"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"

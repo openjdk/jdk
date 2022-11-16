@@ -27,7 +27,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
-#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -53,6 +52,7 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+
 
 #undef REG_SP
 #undef REG_FP

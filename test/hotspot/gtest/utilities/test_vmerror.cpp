@@ -22,11 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "unittest.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "runtime/thread.hpp"
-
-#include "unittest.hpp"
 
 #ifdef ASSERT
 

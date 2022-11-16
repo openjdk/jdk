@@ -29,7 +29,6 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
-
 #include "unittest.hpp"
 
 #define TEST_FLAG(f, type, value)                                \

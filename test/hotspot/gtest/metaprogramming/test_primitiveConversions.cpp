@@ -26,9 +26,8 @@
 #include "memory/allocation.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
-#include "utilities/debug.hpp"
-
 #include "unittest.hpp"
+#include "utilities/debug.hpp"
 
 struct PrimitiveConversionsTestSupport: AllStatic {
 

@@ -30,7 +30,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-
 #include "unittest.hpp"
 
 class VerifyAndCountMarkClosure : public StackObj {

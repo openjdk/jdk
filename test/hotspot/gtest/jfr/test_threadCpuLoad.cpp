@@ -40,7 +40,6 @@
 #include "logging/log.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 namespace {

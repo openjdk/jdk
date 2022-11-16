@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "include/jni.h"
-#include "include/jvm.h"
+#include "jni.h"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -36,6 +36,7 @@
 /*
  *      Implementation of class jdk.internal.perf.Perf
  */
+
 
 #define PERF_ENTRY(result_type, header) \
   JVM_ENTRY(result_type, header)

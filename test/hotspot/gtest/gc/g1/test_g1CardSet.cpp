@@ -31,9 +31,8 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/powerOfTwo.hpp"
-
 #include "unittest.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class G1CardSetTest : public ::testing::Test {
 

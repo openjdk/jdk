@@ -24,10 +24,8 @@
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalCounter.inline.hpp"
-
 #include "threadHelper.inline.hpp"
-#include "unittest.hpp"
+#include "utilities/globalCounter.inline.hpp"
 
 constexpr const int good_value = 1337;
 constexpr const int bad_value =  4711;

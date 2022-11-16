@@ -27,7 +27,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
-
 #include "threadHelper.inline.hpp"
 
 // This file contains helper classes to run unit tests concurrently in multiple threads.

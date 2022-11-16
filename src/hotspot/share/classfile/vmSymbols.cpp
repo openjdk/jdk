@@ -36,6 +36,7 @@
 #include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
+
 Symbol* vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
 
 inline int compare_symbol(const Symbol* a, const Symbol* b) {

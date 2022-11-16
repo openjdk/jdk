@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 class TestJavaArithSupport : public AllStatic {

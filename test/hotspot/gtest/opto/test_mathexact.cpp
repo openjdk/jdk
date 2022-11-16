@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/mathexactnode.hpp"
-
 #include "unittest.hpp"
 
 TEST_VM(opto, mathexact) {

@@ -22,10 +22,9 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "utilities/json.hpp"
-
 #include "unittest.hpp"
 
 class JSON_GTest : public JSON {

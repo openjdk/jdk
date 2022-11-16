@@ -27,7 +27,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/ostream.hpp"
-
 #include "unittest.hpp"
 
 TEST_VM(ClassPrinter, print_classes) {

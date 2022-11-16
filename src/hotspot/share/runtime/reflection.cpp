@@ -30,7 +30,6 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"

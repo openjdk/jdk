@@ -46,7 +46,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "include/jvm.h"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"

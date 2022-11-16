@@ -30,7 +30,6 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
-
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 

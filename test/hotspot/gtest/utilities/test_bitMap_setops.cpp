@@ -28,7 +28,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 #include <stdlib.h>

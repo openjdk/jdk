@@ -24,9 +24,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "utilities/ostream.hpp"
-
 #include "unittest.hpp"
+#include "utilities/ostream.hpp"
 
 static const double epsilon = 0.0001;
 

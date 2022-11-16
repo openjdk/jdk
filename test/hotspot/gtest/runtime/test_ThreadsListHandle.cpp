@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-
 #include "unittest.hpp"
 
 class ThreadsListHandleTest : public ::testing::Test {

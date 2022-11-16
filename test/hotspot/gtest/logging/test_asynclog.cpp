@@ -23,12 +23,11 @@
  *
  */
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
-
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "unittest.hpp"

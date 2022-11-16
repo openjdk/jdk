@@ -26,7 +26,6 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/quickSort.hpp"
-
 #include "unittest.hpp"
 
 static int test_comparator(int a, int b) {

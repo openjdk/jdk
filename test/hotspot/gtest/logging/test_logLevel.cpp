@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "logging/logLevel.hpp"
-
 #include "unittest.hpp"
 
 TEST(LogLevel, from_string) {

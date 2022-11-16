@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/moveBits.hpp"
-
 #include "unittest.hpp"
 
 template<typename T>

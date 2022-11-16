@@ -42,7 +42,6 @@
 #include "code/dependencyContext.hpp"
 #include "code/pcDesc.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvm.h"

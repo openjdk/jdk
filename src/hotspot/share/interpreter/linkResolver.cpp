@@ -32,7 +32,6 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "include/jvm.h"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"

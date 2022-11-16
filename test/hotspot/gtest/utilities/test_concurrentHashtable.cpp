@@ -31,7 +31,6 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
-
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 

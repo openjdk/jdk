@@ -50,6 +50,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+
 class DynamicArchiveBuilder : public ArchiveBuilder {
   const char* _archive_name;
 public:

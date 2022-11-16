@@ -26,16 +26,14 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #ifdef __APPLE__
-#  include <dlfcn.h>
+#include <dlfcn.h>
 #endif
-
 #ifdef _WIN32
 #include <windows.h>
 #else

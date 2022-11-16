@@ -27,7 +27,6 @@
 
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
-
 #include "unittest.hpp"
 
 typedef struct {

@@ -29,7 +29,6 @@
 #include "memory/virtualspace.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-
 #include "unittest.hpp"
 
 class G1MapperWorkers : AllStatic {

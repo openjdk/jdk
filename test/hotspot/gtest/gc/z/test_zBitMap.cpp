@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zBitMap.inline.hpp"
-
 #include "unittest.hpp"
 
 class ZBitMapTest : public ::testing::Test {

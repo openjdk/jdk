@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/objectBitSet.inline.hpp"
-
 #include "unittest.hpp"
 
 TEST_VM(ObjectBitSet, empty) {

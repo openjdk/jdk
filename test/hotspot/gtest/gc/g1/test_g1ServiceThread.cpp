@@ -27,7 +27,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/autoRestore.hpp"
-
 #include "unittest.hpp"
 
 class CheckTask : public G1ServiceTask {

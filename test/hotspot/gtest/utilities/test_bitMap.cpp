@@ -26,7 +26,6 @@
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
-
 #include "unittest.hpp"
 
 class BitMapTest {

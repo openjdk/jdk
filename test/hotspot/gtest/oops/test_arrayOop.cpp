@@ -24,9 +24,8 @@
 #include "precompiled.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class arrayOopDescTest {
  public:

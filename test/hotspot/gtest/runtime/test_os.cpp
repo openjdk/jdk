@@ -33,11 +33,10 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "unittest.hpp"
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
-
-#include "unittest.hpp"
 
 static size_t small_page_size() {
   return os::vm_page_size();

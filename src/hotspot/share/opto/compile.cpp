@@ -35,7 +35,6 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
-#include "include/jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"

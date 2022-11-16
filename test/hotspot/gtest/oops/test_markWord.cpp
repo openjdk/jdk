@@ -33,11 +33,10 @@
 #include "runtime/os.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/synchronizer.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/ostream.hpp"
-
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // The test doesn't work for PRODUCT because it needs WizardMode
 #ifndef PRODUCT

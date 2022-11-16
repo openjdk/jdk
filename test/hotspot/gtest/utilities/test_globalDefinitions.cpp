@@ -27,7 +27,6 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 #include "unittest.hpp"
 
 #include <type_traits>

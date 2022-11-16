@@ -26,9 +26,10 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
-
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
+
+#include <new>
 
 class LockFreeStackTestElement {
   typedef LockFreeStackTestElement Element;

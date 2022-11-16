@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "utilities/macros.hpp"
-
 #include "unittest.hpp"
 
 #if INCLUDE_PARALLELGC

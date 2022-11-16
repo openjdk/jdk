@@ -24,12 +24,13 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "services/heapDumperCompression.hpp"
+
 
 char const* FileWriter::open_writer() {
   assert(_fd < 0, "Must not already be open");

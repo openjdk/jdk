@@ -22,13 +22,12 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
+#include "unittest.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include "unittest.hpp"
 
 #include <errno.h>
 

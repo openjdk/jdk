@@ -31,7 +31,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-
 #include "unittest.hpp"
 
 static void startTestThread(JavaThread* thread, const char* name) {

@@ -28,7 +28,6 @@
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
 #include "utilities/ostream.hpp"
-
 #include "unittest.hpp"
 
 // Test the default level for each tagset

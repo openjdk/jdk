@@ -27,7 +27,6 @@
 
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
 
 class GtestUtils : public AllStatic {

@@ -27,7 +27,6 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
-
 #include "unittest.hpp"
 
 #define LOG_TEST_STRING_LITERAL "a (hopefully) unique log message for testing"

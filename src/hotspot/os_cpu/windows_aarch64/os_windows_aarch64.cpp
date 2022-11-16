@@ -30,7 +30,6 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
-#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -54,12 +53,12 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here
-#include <sys/types.h>
-#include <signal.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <intrin.h>
+# include <sys/types.h>
+# include <signal.h>
+# include <errno.h>
+# include <stdlib.h>
+# include <stdio.h>
+# include <intrin.h>
 
 void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);

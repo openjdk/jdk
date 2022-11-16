@@ -72,11 +72,12 @@
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <signal.h>
-#include <errno.h>
 #ifndef _WINDOWS
-#include <poll.h>
+# include <poll.h>
 #endif
+
+# include <signal.h>
+# include <errno.h>
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;

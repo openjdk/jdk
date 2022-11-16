@@ -27,7 +27,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "include/jvm_io.h"
 #include "jfr/leakprofiler/checkpoint/objectSampleDescription.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jvm_io.h"

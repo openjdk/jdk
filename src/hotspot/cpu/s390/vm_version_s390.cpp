@@ -33,7 +33,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 
-#include <sys/sysinfo.h>
+# include <sys/sysinfo.h>
 
 bool VM_Version::_is_determine_features_test_running  = false;
 const char*   VM_Version::_model_string = "";

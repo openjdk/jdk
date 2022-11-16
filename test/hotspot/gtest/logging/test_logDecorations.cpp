@@ -25,9 +25,8 @@
 #include "logging/logDecorations.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 static const LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging, safepoint)>::tagset();
 static const LogDecorators default_decorators;

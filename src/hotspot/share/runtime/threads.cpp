@@ -41,7 +41,6 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
-#include "include/jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -98,18 +97,18 @@
 #include "utilities/macros.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
-#ifdef COMPILER2
-#include "opto/idealGraphPrinter.hpp"
-#endif
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/idealGraphPrinter.hpp"
+#endif
 #if INCLUDE_RTM_OPT
 #include "runtime/rtmLocking.hpp"
+#endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
 #endif
 
 // Initialization after module runtime initialization

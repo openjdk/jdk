@@ -23,12 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/parseInteger.hpp"
-
 #include "testutils.hpp"
 #include "unittest.hpp"
 

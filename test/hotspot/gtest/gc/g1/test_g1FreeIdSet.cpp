@@ -32,7 +32,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 

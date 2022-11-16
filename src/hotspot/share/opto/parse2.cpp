@@ -26,7 +26,6 @@
 #include "ci/ciMethodData.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
-#include "include/jvm_io.h"
 #include "interpreter/linkResolver.hpp"
 #include "jvm_io.h"
 #include "memory/resourceArea.hpp"

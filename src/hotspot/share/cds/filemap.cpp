@@ -72,8 +72,8 @@
 #include "gc/g1/heapRegion.hpp"
 #endif
 
-#include <sys/stat.h>
-#include <errno.h>
+# include <sys/stat.h>
+# include <errno.h>
 
 #ifndef O_BINARY       // if defined (Win32) use binary files.
 #define O_BINARY 0     // otherwise do nothing.

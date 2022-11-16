@@ -38,12 +38,10 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-#if defined(_AIX)
-#include "os_aix.hpp"
-#endif
 
 #include <sys/sysinfo.h>
 #if defined(_AIX)
+#include "os_aix.hpp"
 #include <libperfstat.h>
 #endif
 

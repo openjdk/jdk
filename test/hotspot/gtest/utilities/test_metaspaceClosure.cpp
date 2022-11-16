@@ -28,7 +28,6 @@
 #include "oops/array.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/javaThread.hpp"
-
 #include "unittest.hpp"
 
 class MyMetaData : public MetaspaceObj {

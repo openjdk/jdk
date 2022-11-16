@@ -27,7 +27,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/formatBuffer.hpp"
-
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 

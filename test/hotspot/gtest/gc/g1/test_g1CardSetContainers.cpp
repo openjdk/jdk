@@ -28,7 +28,6 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-
 #include "unittest.hpp"
 
 class G1CardSetContainersTest : public ::testing::Test {

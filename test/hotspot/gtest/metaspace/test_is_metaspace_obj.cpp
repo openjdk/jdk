@@ -31,7 +31,6 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-
 #include "unittest.hpp"
 
 using namespace metaspace;

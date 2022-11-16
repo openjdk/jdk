@@ -25,7 +25,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/resourceArea.hpp"
-
 #include "unittest.hpp"
 
 // Tests ClassLoader::package_from_class_name()

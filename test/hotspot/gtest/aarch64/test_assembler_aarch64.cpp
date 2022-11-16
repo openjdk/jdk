@@ -30,7 +30,6 @@
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
-
 #include "unittest.hpp"
 
 #define __ _masm.

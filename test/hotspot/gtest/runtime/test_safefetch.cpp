@@ -29,9 +29,8 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
-
-#include "testutils.hpp"
 #include "unittest.hpp"
+#include "testutils.hpp"
 
 // Note: beyond these tests, there exist additional tests testing that safefetch in error handling
 // (in the context of signal handling) works, see runtime/ErrorHandling

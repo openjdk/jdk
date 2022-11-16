@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_RUNTIMECLASSINFO_HPP
-#define SHARE_CDS_RUNTIMECLASSINFO_HPP
+#ifndef SHARED_CDS_SHAREDCLASSINFO_HPP
+#define SHARED_CDS_SHAREDCLASSINFO_HPP
 
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -260,5 +260,4 @@ class RunTimeSharedDictionary : public OffsetCompactHashtable<
   Symbol*,
   const RunTimeClassInfo*,
   RunTimeClassInfo::EQUALS> {};
-
-#endif // SHARE_CDS_RUNTIMECLASSINFO_HPP
+#endif // SHARED_CDS_SHAREDCLASSINFO_HPP

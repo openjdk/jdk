@@ -28,7 +28,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "include/jvm.h"
 #include "interpreter/linkResolver.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"

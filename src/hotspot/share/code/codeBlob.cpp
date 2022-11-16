@@ -30,7 +30,6 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
-#include "include/jvm.h"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"

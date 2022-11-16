@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/filterQueue.inline.hpp"
-
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 

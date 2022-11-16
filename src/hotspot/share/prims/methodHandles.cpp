@@ -31,7 +31,6 @@
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
-#include "include/jvm_io.h"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -61,6 +60,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/exceptions.hpp"
+
 
 /*
  * JSR 292 reference implementation: method handles

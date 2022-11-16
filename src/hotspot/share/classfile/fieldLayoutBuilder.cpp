@@ -34,6 +34,7 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
+
 LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
   _next_block(NULL),
   _prev_block(NULL),

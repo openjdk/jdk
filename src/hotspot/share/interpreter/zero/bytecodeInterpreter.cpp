@@ -28,7 +28,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "include/jvm_io.h"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"

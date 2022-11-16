@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "utilities/enumIterator.hpp"
-
 #include "unittest.hpp"
 
 #include <type_traits>

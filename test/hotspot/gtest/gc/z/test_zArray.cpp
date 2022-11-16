@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
-
 #include "unittest.hpp"
 
 TEST(ZArray, sanity) {

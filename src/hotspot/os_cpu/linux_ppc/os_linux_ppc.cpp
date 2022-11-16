@@ -30,7 +30,6 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
-#include "include/jvm.h"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -78,6 +77,7 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
+
 
 address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);

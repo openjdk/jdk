@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "utilities/utf8.hpp"
-
 #include "unittest.hpp"
 
 static void stamp(char* p, size_t len) {
