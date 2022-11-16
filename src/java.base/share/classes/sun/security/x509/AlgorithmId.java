@@ -110,7 +110,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 encodedParams = algParams.getEncoded();
             } catch (IOException ioe) {
                 throw new IllegalStateException(
-                        "AlgorithmParameters not initialized", ioe);
+                        "AlgorithmParameters not initialized or cannot be decoded",
+                        ioe);
             }
         }
     }

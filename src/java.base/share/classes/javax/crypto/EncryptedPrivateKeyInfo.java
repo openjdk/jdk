@@ -57,10 +57,12 @@ import sun.security.util.DerOutputStream;
 
 public class EncryptedPrivateKeyInfo {
 
-    // The "encryptionAlgorithm" field. If this object is created by
+    // The "encryptionAlgorithm" is stored in either the algid or
+    // the params field. Precisely, if this object is created by
     // {@link #EncryptedPrivateKeyInfo(AlgorithmParameters, byte[])}
-    // with an uninitialized params, it's stored here and algid is null.
-    // In all other case, algid is non null and params is null.
+    // with an uninitialized AlgorithmParameters, the AlgorithmParameters
+    // object is stored in the params field and algid is set to null.
+    // In all other cases, algid is non null and params is null.
     private final AlgorithmId algid;
     private final AlgorithmParameters params;
 
