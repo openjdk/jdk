@@ -798,7 +798,3 @@ java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windo
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 
-############################################################################
-
-# Loom, fibers branch
-
