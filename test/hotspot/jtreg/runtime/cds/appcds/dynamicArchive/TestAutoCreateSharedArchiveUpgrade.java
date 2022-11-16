@@ -78,7 +78,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         } else if (BOOT_JDK != null) {
             oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
         } else {
-            throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
+            throw new RuntimeException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
                                        "-XX:+AutoCreateSharedArchive");
         }
@@ -140,6 +140,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     static void assertUsedJSA(OutputAnalyzer output) {
-        output.shouldContain("Reading from archive");
+        output.shouldContain("Mapped dynamic region #0");
     }
 }
