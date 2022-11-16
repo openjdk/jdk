@@ -31,81 +31,80 @@ import java.util.Objects;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * {@link StringTemplate StringTemplates} are runtime representations of
- * Java string templates and text block templates. Libraries may produce
- * {@link StringTemplate} instances as long as they conform to the requirements
- * of this interface. Like {@link String}, instances of {@link StringTemplate}
- * implementations are considered immutable.
+ * {@link StringTemplate StringTemplates} is the run-time representation of a
+ * string template or text block template in a template expression.
  * <p>
- * Implementations of this interface must minimally implement the methods
- * {@link StringTemplate#fragments()} and {@link StringTemplate#values()}.
+ * In the source code of a Java program, a string template or text block template
+ * contains an interleaved succession of <em>fragment literals</em> and <em>embedded
+ * expressions</em>. The {@link StringTemplate#fragments()} method returns the
+ * fragment literals, and the {@link StringTemplate#values()} method returns the
+ * results of evaluating the embedded expressions. {@link StringTemplate} does not
+ * provide access to the source code of the embedded expressions themselves; it is
+ * not a compile-time representation of a string template or text block template.
  * <p>
- * The {@link StringTemplate#fragments()} method must return an immutable
- * {@code List<String>} consistent with the string template body. The list
- * contains the string of characters preceding each of the embedded expressions
- * plus the string of characters following the last embedded expression. The order
- * of the strings is left to right as they appear in the string template.
- * For example; {@snippet :
- * StringTemplate st = RAW."The \{name} and \{address} of the resident.";
- * List<String> fragments = st.fragments();
- * }
- * {@code fragments} will be equivalent to <code>List.of("The ", " and ", " of the resident.")</code>.
+ * {@link StringTemplate} is primarily used in conjunction with a template processor
+ * to produce a string or other meaningful value. Evaluation of a template expression
+ * first produces an instance of {@link StringTemplate}, representing the template
+ * of the template expression, and then passes the instance to the template processor
+ * given by the template expression.
  * <p>
- * The {@link StringTemplate#values()} method returns an immutable {@code
- * List<Object>} of values accumulated by evaluating embedded expressions prior
- * to instantiating the {@link StringTemplate}. The values are accumulated left
- * to right. The first element of the list is the result of the leftmost
- * embedded expression. The last element of the list is the result of the
- * rightmost embedded expression.
- * For example,
+ * For example, the following code contains a template expression that uses the template
+ * processor {@code RAW}, which simply yields the {@link StringTemplate} passed to it:
  * {@snippet :
  * int x = 10;
  * int y = 20;
  * StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
+ * List<String> fragments = st.fragments();
  * List<Object> values = st.values();
  * }
- * {@code values} will be the equivalent of <code>List.of(x, y, x + y)</code>.
+ * {@code fragments} will be equivalent to {@code List.of("", " + ", " = ", "")}
+ * and {@code values} will be the equivalent of {@code List.of(10, 20, 30)}.
  * <p>
- * {@link StringTemplate StringTemplates} are primarily used in conjunction
- * with {@linkplain  ValidatingProcessor template processors} to produce meaningful
- * results. For example, if a user wants string interpolation, then they can use a string template
- * expression with the standard {@link StringTemplate#STR} processor.
+ * The following code contains a template expression with the same template but a
+ * different template processor:
  * {@snippet :
  * int x = 10;
  * int y = 20;
- * String result = STR."\{x} + \{y} = \{x + y}";
+ * String s = STR."\{x} + \{y} = \{x + y}";
  * }
- * {@code result} will be equivalent to <code>"10 + 20 = 30"</code>.
+ * When the template expression is evaluated, an instance of {@link StringTemplate} is
+ * produced that returns the same lists from {@link StringTemplate#fragments()} and
+ * {@link StringTemplate#values()} as shown above. The {@code STR} template processor
+ * uses these lists to yield an interpolated string. {@code s} will be equivalent to
+ * {@code "10 + 20 = 30"}.
  * <p>
- * The {@link StringTemplate#process(ValidatingProcessor)} method supplies an
- * alternative to using string template expressions.
- * {@snippet :
- * String result = RAW."\{x} + \{y} = \{x + y}".process(STR);
- * }
- * In addition to string template expressions, the factory methods
- * {@link StringTemplate#of(String)} and {@link StringTemplate#of(List, List)}
- * can be used to construct {@link StringTemplate StringTemplates}.
- * <p>
- * The {@link StringTemplate#interpolate()} method provides a simple way to produce a
- * string interpolation of the {@link StringTemplate}.
- * <p>
- * {@linkplain ValidatingProcessor Template processors} typically use the following code
- * pattern to perform composition:
+ * The {@code interpolate()} method provides a direct way to perform string interpolation
+ * of a {@link StringTemplate}. Template processors can use the following code pattern:
  * {@snippet :
  * List<String> fragments = st.fragments();
- * List<Object> values = st.values();
- * // check or manipulate the fragments and/or values
- * ...
+ * List<Object> values    = st.values();
+ * ... check or manipulate the fragments and/or values ...
  * String result = StringTemplate.interpolate(fragments, values);
  * }
+ * The {@link StringTemplate#process(ValidatingProcessor)} method provides an
+ * alternative to using string template expressions.
+ * {@snippet :
+ * StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
+ * String result = st.process(STR);
+ * }
+ * The factory methods {@link StringTemplate#of(String)} and
+ * {@link StringTemplate#of(List, List)} can be used to construct a {@link StringTemplate}.
  *
- * @implSpec An instance of {@link StringTemplate} is immutable. Also, the
- * fragment list size must be one more than the values list size.
+ * @jls 15.8.6
  *
  * @see ValidatingProcessor
  * @see TemplateProcessor
  * @see StringProcessor
  * @see java.util.FormatProcessor
+ *
+ * @implNote Libraries may produce {@link StringTemplate} instances as long as they
+ * conform to the requirements of this interface.
+ * Implementations of {@link StringTemplate} must minimally implement the
+ * methods {@link StringTemplate#fragments()} and {@link StringTemplate#values()}.
+ * Instances of {@link StringTemplate} are considered immutable. To preserve the
+ * semantics of string templates and text block templates, the list returned by
+ * {@link StringTemplate#fragments()} must be one element larger than the list returned
+ * by {@link StringTemplate#values()}.
  *
  * @since 20
  */
@@ -121,8 +120,8 @@ public interface StringTemplate {
      * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
      * List<String> fragments = st.fragments(); // @highlight substring="fragments()"
      * }
-     * <code>fragments</code> will be equivalent to
-     * <code>List.of("The student ", " is in ", "'s class room.")</code>
+     * {@code fragments} will be equivalent to
+     * {@code List.of("The student ", " is in ", "'s class room.")}
      *
      * @return list of string fragments
      *
@@ -139,7 +138,7 @@ public interface StringTemplate {
      * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
      * List<Object> values = st.values(); // @highlight substring="values()"
      * }
-     * <code>values</code> will be equivalent to <code>List.of(student, teacher)</code>
+     * {@code values} will be equivalent to {@code List.of(student, teacher)}
      *
      * @return list of expression values
      *
@@ -157,7 +156,7 @@ public interface StringTemplate {
      * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
      * String string = st.interpolation(); // @highlight substring="interpolation()"
      * }
-     * <code>string</code> will be equivalent to <code>"The student Mary is in Johnson's class room."</code>
+     * {@code string} will be equivalent to {@code "The student Mary is in Johnson's class room."}
      *
      * @return interpolation of this {@link StringTemplate}
      */
@@ -181,7 +180,7 @@ public interface StringTemplate {
      * @param <R>  Processor's process result type.
      * @param <E>  Exception thrown type.
      *
-     * @return constructed object of type <code>R</code>
+     * @return constructed object of type {@code R}
      *
      * @throws E exception thrown by the template processor when validation fails
      * @throws NullPointerException if processor is null
@@ -217,7 +216,7 @@ public interface StringTemplate {
 
     /**
      * Returns a StringTemplate as if constructed by invoking
-     * <code>StringTemplate.of(List.of(string), List.of())</code>.
+     * {@code StringTemplate.of(List.of(string), List.of())}.
      *
      * @param string  single string fragment
      *
