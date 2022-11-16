@@ -1738,7 +1738,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   C2_MacroAssembler _masm(&cbuf);
 
   Label skip;
-  __ cmp_klass(j_rarg0, t1, t0, skip);
+  __ cmp_klass(j_rarg0, t1, t0, t2 /* call-clobbered t2 as a tmp */, skip);
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   __ bind(skip);
 
@@ -2450,17 +2450,13 @@ encode %{
 
     // Recursive lock case
     __ mv(flag, zr);
-    __ ld(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
-    __ add(tmp, tmp, 1);
-    __ sd(tmp, Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value));
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
 
     __ bnez(flag, no_count);
 
-    __ ld(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
-    __ add(tmp, tmp, 1);
-    __ sd(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
+    __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
@@ -2537,9 +2533,7 @@ encode %{
 
     __ bnez(flag, no_count);
 
-    __ ld(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
-    __ sub(tmp, tmp, 1);
-    __ sd(tmp, Address(xthread, JavaThread::held_monitor_count_offset()));
+    __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
@@ -3271,6 +3265,7 @@ operand iRegP()
   match(RegP);
   match(iRegPNoSp);
   match(iRegP_R10);
+  match(iRegP_R15);
   match(javaThread_RegP);
   op_cost(0);
   format %{ %}
@@ -4295,6 +4290,16 @@ pipe_class ldiv_reg_reg(iRegI dst, iRegI src1, iRegI src2)
 
 //------- Load pipeline operations ------------------------
 
+// Load - prefetch
+// Eg.  PREFETCH_W  mem
+pipe_class iload_prefetch(memory mem)
+%{
+  single_instruction;
+  mem    : ID(read);
+  DECODE : ID;
+  LDST   : MEM;
+%}
+
 // Load - reg, mem
 // E.g. LA    Rd, mem
 pipe_class iload_reg_mem(iRegI dst, memory mem)
@@ -5194,6 +5199,35 @@ instruct storeNKlass(iRegN src, memory mem)
   %}
 
   ins_pipe(istore_reg_mem);
+%}
+
+// ============================================================================
+// Prefetch instructions
+// Must be safe to execute with invalid address (cannot fault).
+
+instruct prefetchalloc( memory mem ) %{
+  predicate(UseZicbop);
+  match(PrefetchAllocation mem);
+
+  ins_cost(ALU_COST * 1);
+  format %{ "prefetch_w $mem\t# Prefetch for write" %}
+
+  ins_encode %{
+    if (is_imm_in_range($mem$$disp, 12, 0)) {
+      if (($mem$$disp & 0x1f) == 0) {
+        __ prefetch_w(as_Register($mem$$base), $mem$$disp);
+      } else {
+        __ addi(t0, as_Register($mem$$base), $mem$$disp);
+        __ prefetch_w(t0, 0);
+      }
+    } else {
+      __ mv(t0, $mem$$disp);
+      __ add(t0, as_Register($mem$$base), t0);
+      __ prefetch_w(t0, 0);
+    }
+  %}
+
+  ins_pipe(iload_prefetch);
 %}
 
 // ============================================================================

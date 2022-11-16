@@ -190,7 +190,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         AlgorithmId algorithmId;
         try {
             x509Cert = X509CertImpl.toImpl((X509Certificate)cert);
-            algorithmId = (AlgorithmId)x509Cert.get(X509CertImpl.SIG_ALG);
+            algorithmId = x509Cert.getSigAlg();
         } catch (CertificateException ce) {
             throw new CertPathValidatorException(ce);
         }

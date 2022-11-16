@@ -106,13 +106,13 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \
-  product(intx, UseSSE, 99,                                                 \
+  product(int, UseSSE, 4,                                                   \
           "Highest supported SSE instructions set on x86/x64")              \
-          range(0, 99)                                                      \
+          range(0, 4)                                                       \
                                                                             \
-  product(intx, UseAVX, 3,                                                  \
+  product(int, UseAVX, 3,                                                   \
           "Highest supported AVX instructions set on x86/x64")              \
-          range(0, 99)                                                      \
+          range(0, 3)                                                       \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
           "Control whether Knights platform setting should be used")        \

@@ -45,22 +45,11 @@ import sun.security.util.*;
  * </pre>
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
  * @see Extension
  */
-public class BasicConstraintsExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.BasicConstraints";
-    /**
-     * Attribute names.
-     */
+public class BasicConstraintsExtension extends Extension {
+
     public static final String NAME = "BasicConstraints";
-    public static final String IS_CA = "is_ca";
-    public static final String PATH_LEN = "path_len";
 
     // Private data members
     private boolean     ca = false;
@@ -198,48 +187,19 @@ implements CertAttrSet<String> {
          super.encode(out);
      }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(IS_CA)) {
-            if (!(obj instanceof Boolean)) {
-              throw new IOException("Attribute value should be of type Boolean.");
-            }
-            ca = ((Boolean)obj).booleanValue();
-        } else if (name.equalsIgnoreCase(PATH_LEN)) {
-            if (!(obj instanceof Integer)) {
-              throw new IOException("Attribute value should be of type Integer.");
-            }
-            pathLen = ((Integer)obj).intValue();
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:BasicConstraints.");
-        }
-        encodeThis();
+    public boolean isCa() {
+        return ca;
+    }
+
+    public int getPathLen() {
+        return pathLen;
     }
 
     /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(IS_CA)) {
-            return (Boolean.valueOf(ca));
-        } else if (name.equalsIgnoreCase(PATH_LEN)) {
-            return (Integer.valueOf(pathLen));
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:BasicConstraints.");
-        }
-    }
-
-
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }
