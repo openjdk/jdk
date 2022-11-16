@@ -28,7 +28,7 @@ package java.lang.template;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This interface simplifies declaration of
+ * This interface simplifies the declaration of
  * {@linkplain ValidatingProcessor template processors}
  * that do not throw checked exceptions. For example:
  * {@snippet :

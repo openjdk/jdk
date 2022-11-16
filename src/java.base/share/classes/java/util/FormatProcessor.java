@@ -25,21 +25,28 @@
 
 package java.util;
 
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.template.*;
-import java.util.*;
+import java.lang.template.ProcessorLinkage;
+import java.lang.template.StringProcessor;
+import java.lang.template.StringTemplate;
+import java.lang.template.ValidatingProcessor;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@linkplain ValidatingProcessor template processor} constructs a String
- * result using {@link Formatter}. Unlike {@link Formatter}, FormatProcessor uses the value from
- * the embedded expression that follows immediately after the
+ * This {@linkplain ValidatingProcessor template processor} constructs a {@link String}
+ * result using {@link Formatter}. Unlike {@link Formatter}, {@link FormatProcessor} uses
+ * the value from the embedded expression that follows immediately after the
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
- * StringTemplate expressions without a preceeding specifier, use "%s" by
+ * StringTemplate expressions without a preceding specifier, use "%s" by
  * default. Example:
  * {@snippet :
  * int x = 10;
@@ -48,12 +55,12 @@ import jdk.internal.javac.PreviewFeature;
  * }
  * result is: <code>00010 + 00020 = 00030</code>
  *
- * @implNote When used in conjunction with a compiler generated {@link
- * StringTemplate} this {@link ValidatingProcessor} will use the format
- * specifiers in the fragments and types of the values in the value list
- * to produce a more performant formatter.
+ * @implNote When used in conjunction with a runtime instances of {@link
+ * StringTemplate} representing string templates this {@link StringProcessor}
+ * will use the format specifiers in the fragments and types of the values in
+ * the value list to produce a more performant formatter.
  *
- * @implSpec Since, values are found with in the string template, argument indexing
+ * @implSpec Since, values are found within the string template, argument indexing
  * specifiers are unsupported.
  *
  * @since 20

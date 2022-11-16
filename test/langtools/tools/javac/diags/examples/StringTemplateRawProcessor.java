@@ -25,7 +25,7 @@
  // key: compiler.note.preview.recompile
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
- // key: compiler.err.raw.template.processor.type
+ // key: compiler.err.template.processor.type.cannot.be.a.raw.type
  // options: --enable-preview -source 20
 
 import java.lang.template.*;

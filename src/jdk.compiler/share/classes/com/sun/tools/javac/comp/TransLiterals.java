@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
@@ -37,7 +36,6 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
-import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -50,10 +48,6 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
 import java.util.Iterator;
-
-import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
-import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This pass translates constructed literals (string templates, ...) to conventional Java.
  *
@@ -79,14 +73,10 @@ public final class TransLiterals extends TreeTranslator {
     }
 
     private final Symtab syms;
-    private final Attr attr;
     private final Resolve rs;
     private final Types types;
-    private final Check chk;
     private final Operators operators;
     private final Names names;
-    private final Target target;
-    private final Preview preview;
     private TreeMaker make = null;
     private Env<AttrContext> env = null;
     private ClassSymbol currentClass = null;
@@ -95,15 +85,11 @@ public final class TransLiterals extends TreeTranslator {
     protected TransLiterals(Context context) {
         context.put(transLiteralsKey, this);
         syms = Symtab.instance(context);
-        attr = Attr.instance(context);
         rs = Resolve.instance(context);
         make = TreeMaker.instance(context);
         types = Types.instance(context);
-        chk = Check.instance(context);
         operators = Operators.instance(context);
         names = Names.instance(context);
-        target = Target.instance(context);
-        preview = Preview.instance(context);
     }
 
     JCExpression makeLit(Type type, Object value) {
@@ -122,66 +108,11 @@ public final class TransLiterals extends TreeTranslator {
         return exprs;
     }
 
-    Type makeListType(Type elemType) {
-         return new ClassType(syms.listType.getEnclosingType(), List.of(elemType), syms.listType.tsym);
-    }
-
     JCBinary makeBinary(JCTree.Tag optag, JCExpression lhs, JCExpression rhs) {
         JCBinary tree = make.Binary(optag, lhs, rhs);
         tree.operator = operators.resolveBinary(tree, optag, lhs.type, rhs.type);
         tree.type = tree.operator.type.getReturnType();
         return tree;
-    }
-
-    JCVariableDecl makeField(JCClassDecl cls, long flags, Name name, Type type, JCExpression init) {
-        VarSymbol sym = new VarSymbol(flags | FINAL | SYNTHETIC, name, type, cls.sym);
-        JCVariableDecl var = make.VarDef(sym, init);
-        cls.defs = cls.defs.append(var);
-        cls.sym.members().enter(var.sym);
-
-        return var;
-    }
-
-    MethodType makeMethodType(Type returnType, List<Type> argTypes) {
-        return new MethodType(argTypes, returnType, List.nil(), syms.methodClass);
-    }
-
-    JCFieldAccess makeThisFieldSelect(Type owner, JCVariableDecl field) {
-        JCFieldAccess select = make.Select(make.This(owner), field.name);
-        select.type = field.type;
-        select.sym = field.sym;
-        return select;
-    }
-
-    JCIdent makeParamIdent(List<JCVariableDecl> params, Name name) {
-        VarSymbol param = params.stream()
-                .filter(p -> p.name == name)
-                .findFirst()
-                .get().sym;
-        JCIdent ident = make.Ident(name);
-        ident.type = param.type;
-        ident.sym = param;
-        return ident;
-    }
-
-    JCFieldAccess makeSelect(Symbol sym, Name name) {
-        return make.Select(make.QualIdent(sym), name);
-    }
-
-    JCMethodInvocation makeApply(JCFieldAccess method, List<JCExpression> args) {
-        return make.Apply(List.nil(), method, args);
-    }
-
-    Symbol findMember(ClassSymbol classSym, Name name) {
-        return classSym.members().getSymbolsByName(name, NON_RECURSIVE).iterator().next();
-    }
-
-    JCFieldAccess makeFieldAccess(JCClassDecl owner, Name name) {
-        Symbol sym = findMember(owner.sym, name);
-        JCFieldAccess access = makeSelect(owner.sym, name);
-        access.type = sym.type;
-        access.sym = sym;
-        return access;
     }
 
     MethodSymbol lookupMethod(DiagnosticPosition pos, Name name, Type qual, List<Type> args) {
@@ -210,25 +141,13 @@ public final class TransLiterals extends TreeTranslator {
         }
     }
 
-    record MethodInfo(MethodType type, MethodSymbol sym, JCMethodDecl decl) {
-        void addStatement(JCStatement statement) {
-            JCBlock body = decl.body;
-            body.stats = body.stats.append(statement);
-        }
-    }
-
     final class TransStringTemplate {
-        JCStringTemplate tree;
-        JCExpression processor;
-        List<String> fragments;
-        List<JCExpression> expressions;
-        List<Type> expressionTypes;
-        boolean useValuesList;
-        JCClassDecl stringTemplateClass;
-        JCVariableDecl fragmentsVar;
-        JCVariableDecl valuesVar;
-        List<JCVariableDecl> fields;
-        MethodInfo interpolateMethod;
+        final JCStringTemplate tree;
+        final JCExpression processor;
+        final List<String> fragments;
+        final List<JCExpression> expressions;
+        final List<Type> expressionTypes;
+        final boolean useValuesList;
 
         TransStringTemplate(JCStringTemplate tree) {
             this.tree = tree;
@@ -242,23 +161,18 @@ public final class TransLiterals extends TreeTranslator {
                     .mapToInt(t -> types.isSameType(t, syms.longType) ||
                             types.isSameType(t, syms.doubleType) ? 2 : 1).sum();
             this.useValuesList = 200 < slots; // StringConcatFactory.MAX_INDY_CONCAT_ARG_SLOTS
-            this.stringTemplateClass = null;
-            this.fragmentsVar = null;
-            this.valuesVar = null;
-            this.fields = List.nil();
-            this.interpolateMethod = null;
-        }
+         }
 
         JCExpression concatExpression(List<String> fragments, List<JCExpression> expressions) {
             JCExpression expr = null;
             Iterator<JCExpression> iterator = expressions.iterator();
             for (String fragment : fragments) {
                 expr = expr == null ? makeString(fragment)
-                        : makeBinary(PLUS, expr, makeString(fragment));
+                        : makeBinary(Tag.PLUS, expr, makeString(fragment));
                 if (iterator.hasNext()) {
                     JCExpression expression = iterator.next();
                     Type expressionType = expression.type;
-                    expr = makeBinary(PLUS, expr, expression.setType(expressionType));
+                    expr = makeBinary(Tag.PLUS, expr, expression.setType(expressionType));
                 }
             }
             return expr;
@@ -306,21 +220,19 @@ public final class TransLiterals extends TreeTranslator {
                 JCNewArray fragmentArray = make.NewArray(make.Type(syms.stringType),
                         List.nil(), makeStringList(fragments));
                 fragmentArray.type = new ArrayType(syms.stringType, syms.arrayClass);
-
                 JCNewArray valuesArray = make.NewArray(make.Type(syms.objectType),
                         List.nil(), expressions);
                 valuesArray.type = new ArrayType(syms.objectType, syms.arrayClass);
-                return bsmCall(names.process, names.stringTemplateBSM, syms.stringTemplateType,
+                return bsmCall(names.process, names.newLargeStringTemplate, syms.stringTemplateType,
                         List.of(fragmentArray, valuesArray),
                         List.of(fragmentArray.type, valuesArray.type),
                         staticArgValues, staticArgsTypes);
             } else {
-                VarSymbol processorSym = (VarSymbol)TreeInfo.symbol(processor);
                 for (String fragment : fragments) {
                     staticArgValues = staticArgValues.append(LoadableConstant.String(fragment));
                     staticArgsTypes = staticArgsTypes.append(syms.stringType);
                 }
-                return bsmCall(names.process, names.stringTemplateBSM, syms.stringTemplateType,
+                return bsmCall(names.process, names.newStringTemplate, syms.stringTemplateType,
                         expressions, expressionTypes, staticArgValues, staticArgsTypes);
             }
         }
@@ -328,7 +240,6 @@ public final class TransLiterals extends TreeTranslator {
         JCExpression bsmProcessCall() {
             List<JCExpression> args = expressions.prepend(processor);
             List<Type> argTypes = expressionTypes.prepend(processor.type);
-
             VarSymbol processorSym = (VarSymbol)TreeInfo.symbol(processor);
             List<LoadableConstant> staticArgValues = List.of(processorSym.asMethodHandle(true));
             List<Type> staticArgsTypes =
@@ -338,13 +249,13 @@ public final class TransLiterals extends TreeTranslator {
                 staticArgValues = staticArgValues.append(LoadableConstant.String(fragment));
                 staticArgsTypes = staticArgsTypes.append(syms.stringType);
             }
-            return bsmCall(names.process, names.stringTemplateBSM, tree.type,
+            return bsmCall(names.process, names.processStringTemplate, tree.type,
                     args, argTypes, staticArgValues, staticArgsTypes);
         }
 
         boolean isNamedProcessor(Name name) {
             if (processor instanceof JCIdent ident && ident.sym instanceof VarSymbol varSym) {
-                if (varSym.flags() == (PUBLIC | FINAL | STATIC) &&
+                if (varSym.flags() == (Flags.PUBLIC | Flags.FINAL | Flags.STATIC) &&
                         varSym.name == name &&
                         types.isSameType(varSym.owner.type, syms.stringTemplateType)) {
                     return true;
@@ -367,9 +278,9 @@ public final class TransLiterals extends TreeTranslator {
             JCExpression result;
             make.at(tree.pos);
 
-            if (processor == null || isNamedProcessor(names.raw)) {
+            if (processor == null || isNamedProcessor(names.RAW)) {
                 result = newStringTemplate();
-            } else if (isNamedProcessor(names.str)) {
+            } else if (isNamedProcessor(names.STR)) {
                 result = concatExpression(fragments, expressions);
             } else if (isLinkageProcessor()) {
                 result = bsmProcessCall();

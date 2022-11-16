@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.List;
 
 import jdk.internal.access.JavaTemplateAccess;
-import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 

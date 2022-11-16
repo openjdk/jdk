@@ -112,7 +112,7 @@ public final class TemplateRuntime {
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
      */
-    public static CallSite stringTemplateBSM(
+    public static CallSite newLargeStringTemplate(
             MethodHandles.Lookup lookup,
             String name,
             MethodType type
@@ -137,7 +137,7 @@ public final class TemplateRuntime {
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
      */
-    public static CallSite stringTemplateBSM(
+    public static CallSite newStringTemplate(
             MethodHandles.Lookup lookup,
             String name,
             MethodType type,
@@ -168,7 +168,7 @@ public final class TemplateRuntime {
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
      */
-    public static CallSite stringTemplateBSM(
+    public static CallSite processStringTemplate(
             MethodHandles.Lookup lookup,
             String name,
             MethodType type,

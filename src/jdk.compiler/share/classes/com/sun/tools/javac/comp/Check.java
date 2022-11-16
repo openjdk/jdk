@@ -4146,7 +4146,7 @@ public class Check {
                 resultType = typeArguments.head;
             } else {
                 log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                        Errors.RawTemplateProcessorType(processorType.tsym));
+                        Errors.TemplateProcessorTypeCannotBeARawType(processorType.tsym));
             }
         } else {
             log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,

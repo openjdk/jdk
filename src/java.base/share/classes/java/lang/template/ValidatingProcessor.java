@@ -25,13 +25,7 @@
 
 package java.lang.template;
 
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -82,8 +76,9 @@ import jdk.internal.javac.PreviewFeature;
  * exception of type {@code E} if an SQL statement is a potential vulnerability.
  * <p>
  * Composing allows user control over how the result is assembled. Most often, a
- * user will construct a new string from the template string, with placeholders
- * replaced by stringified objects from the values list.
+ * user will construct a new string from the string template, with placeholders
+ * replaced by string representations of value list elements. These string
+ * representations are created as if invoking {@link String#valueOf}.
  * <p>
  * Transforming allows the processor to return something other than a string. For
  * instance, a JSON processor could return a JSON object, by parsing the string created
@@ -123,11 +118,11 @@ import jdk.internal.javac.PreviewFeature;
  * };
  * }
  * The {@link StringTemplate#interpolate()} method is available for those processors
- * that just need to work with the interpolation;
+ * that just need to work with the string interpolation;
  * {@snippet :
  * StringProcessor processor = StringTemplate::interpolate;
  * }
- * or simply transform the interpolation into something other than
+ * or simply transform the string interpolation into something other than
  * {@link String};
  * {@snippet :
  * TemplateProcessor<JSONObject> jsonProcessor = st -> new JSONObject(st.interpolate());
