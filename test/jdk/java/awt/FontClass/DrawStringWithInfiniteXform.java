@@ -41,14 +41,15 @@ public class DrawStringWithInfiniteXform {
 
     class ScheduleTask extends TimerTask {
         public void run() {
-        System.out.println("Task running at " + System.currentTimeMillis());
-        System.out.flush();
+            System.out.println("Task running at " + System.currentTimeMillis());
+            System.out.flush();
             synchronized(DrawStringWithInfiniteXform.class) {
-               System.out.println("Checking done at " + System.currentTimeMillis());
+               System.out.println(
+                   "Checking done at " + System.currentTimeMillis());
                System.out.flush();
                 if (!done) {
-                    throw new
-                    RuntimeException("drawString with InfiniteXform transform takes long time");
+                    throw new RuntimeException(
+                       "drawString with InfiniteXform transform takes long time");
                 }
             }
         }
@@ -67,10 +68,12 @@ public class DrawStringWithInfiniteXform {
         System.out.println("start at " + System.currentTimeMillis());
         System.out.flush();
         float[] vals = new float[6];
-        for (int i=0;i<6;i++) vals[i]=Float.POSITIVE_INFINITY;
+        for (int i=0; i<6; i++) {
+            vals[i] = Float.POSITIVE_INFINITY;
+        }
         AffineTransform nanTX = new AffineTransform(vals);
 
-        BufferedImage bi = new BufferedImage(1,1,BufferedImage.TYPE_INT_RGB);
+        BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bi.createGraphics();
 
         g2d.rotate(Float.POSITIVE_INFINITY);
