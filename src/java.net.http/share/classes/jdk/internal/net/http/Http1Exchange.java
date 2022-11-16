@@ -209,11 +209,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        public void onSubscribed() {
-            exchange.registerResponseSubscriber(this);
-        }
-
-        @Override
         protected void complete(Throwable t) {
             try {
                 exchange.unregisterResponseSubscriber(this);
@@ -464,6 +459,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         BodySubscriber<T> subscriber = handler.apply(response);
         Http1ResponseBodySubscriber<T> bs =
                 new Http1ResponseBodySubscriber<T>(subscriber, this);
+        registerResponseSubscriber(bs);
         return bs;
     }
 
