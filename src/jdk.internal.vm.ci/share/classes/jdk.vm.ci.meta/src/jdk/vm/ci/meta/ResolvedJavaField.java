@@ -63,4 +63,15 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
      */
     @Override
     ResolvedJavaType getDeclaringClass();
+
+    /**
+     * Gets the value of the {@code ConstantValue} attribute ({@jvms 4.7.2}) associated with this
+     * field.
+     *
+     * @return {@code null} if this field has no {@code ConstantValue} attribute
+     * @throws UnsupportedOperationException if this operation is not supported
+     */
+    default JavaConstant getConstantValue() {
+        throw new UnsupportedOperationException();
+    }
 }
