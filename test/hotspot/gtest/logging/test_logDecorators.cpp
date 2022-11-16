@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/logDecorators.hpp"
 #include "unittest.hpp"
 #include "runtime/os.hpp" // malloc

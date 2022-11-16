@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "include/jvm_io.h"
+#include "jvm_io.h"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "services/nmtPreInit.hpp"
