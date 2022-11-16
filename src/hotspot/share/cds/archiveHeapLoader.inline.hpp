@@ -34,6 +34,7 @@
 
 inline oop ArchiveHeapLoader::decode_from_archive(narrowOop v) {
   assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
+  assert(_narrow_oop_base_initialized, "relocation information must have been initialized");
   uintptr_t p = ((uintptr_t)_narrow_oop_base) + ((uintptr_t)v << _narrow_oop_shift);
   if (p >= _dumptime_base_0) {
     assert(p < _dumptime_top, "must be");
