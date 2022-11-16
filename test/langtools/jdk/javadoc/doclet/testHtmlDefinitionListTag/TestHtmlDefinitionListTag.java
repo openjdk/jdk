@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dt>Throws:</dt>
                     <dd><code>java.lang.IllegalArgumentException</code> - if the <code>owner</code>'s
                          <code>GraphicsConfiguration</code> is not from a screen device</dd>
-                    <dd><code>HeadlessException</code></dd>
+                    <dd><code>java.awt.HeadlessException</code></dd>
                     </dl>""",
                 """
                     <dl class="notes">
@@ -304,7 +304,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dt>Throws:</dt>
                     <dd><code>java.lang.IllegalArgumentException</code> - if the <code>owner</code>'s
                          <code>GraphicsConfiguration</code> is not from a screen device</dd>
-                    <dd><code>HeadlessException</code></dd>
+                    <dd><code>java.awt.HeadlessException</code></dd>
                     </dl>""",
                 """
                     <dl class="notes">
