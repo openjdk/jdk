@@ -139,7 +139,7 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for the purpose of measuring its size
         C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-        Compile::current()->output()->stub_list()->add_stub(stub);
+        Compile::current()->output()->add_stub(stub);
         slow_path = &stub->entry();
         continuation = &stub->continuation();
       }

@@ -131,7 +131,7 @@ public:
   ConstantTable& constant_table() { return _constant_table; }
 
   // Code stubs list
-  C2CodeStubList* stub_list() { return &_stub_list; }
+  void add_stub(C2CodeStub* stub) { _stub_list.add_stub(stub); }
 
   // Code emission iterator
   Block* block()   { return _block; }
