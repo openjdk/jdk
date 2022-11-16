@@ -74,11 +74,11 @@ inline VMReg as_VMReg(VMStorage vms) {
   }
 }
 
-inline VMStorage as_VMStorage(Register reg) {
+constexpr inline VMStorage as_VMStorage(Register reg) {
   return VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, reg->encoding());
 }
 
-inline VMStorage as_VMStorage(XMMRegister reg) {
+constexpr inline VMStorage as_VMStorage(XMMRegister reg) {
   return VMStorage::reg_storage(StorageType::VECTOR, XMM_MASK, reg->encoding());
 }
 

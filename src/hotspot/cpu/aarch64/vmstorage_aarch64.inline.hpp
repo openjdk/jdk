@@ -60,11 +60,11 @@ inline FloatRegister as_FloatRegister(VMStorage vms) {
   return ::as_FloatRegister(vms.index());
 }
 
-inline VMStorage as_VMStorage(Register reg) {
+constexpr inline VMStorage as_VMStorage(Register reg) {
   return VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, reg->encoding());
 }
 
-inline VMStorage as_VMStorage(FloatRegister reg) {
+constexpr inline VMStorage as_VMStorage(FloatRegister reg) {
   return VMStorage::reg_storage(StorageType::VECTOR, V128_MASK, reg->encoding());
 }
 
