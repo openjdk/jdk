@@ -175,8 +175,6 @@ Node* Parse::check_interpreter_type(Node* l, const Type* type,
     bad_type_exit->control()->add_req(bad_type_ctrl);
   }
 
-  BasicType bt_l = _gvn.type(l)->basic_type();
-  BasicType bt_t = type->basic_type();
   assert(_gvn.type(l)->higher_equal(type), "must constrain OSR typestate");
   return l;
 }
