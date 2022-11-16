@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.sjavac;
+package javacserver;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

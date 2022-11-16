@@ -23,18 +23,18 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver.server;
 
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Util;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.file.Path;
 
-import static com.sun.tools.sjavac.server.SjavacServer.LINE_TYPE_RC;
+import static javacserver.server.SjavacServer.LINE_TYPE_RC;
 
 
 /**

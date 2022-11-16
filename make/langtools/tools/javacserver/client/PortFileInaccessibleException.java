@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.client;
+package javacserver.client;
 
 import java.io.IOException;
 

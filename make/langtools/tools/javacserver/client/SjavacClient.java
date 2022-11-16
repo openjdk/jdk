@@ -23,15 +23,15 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.client;
+package javacserver.client;
 
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.PortFile;
-import com.sun.tools.sjavac.server.Sjavac;
-import com.sun.tools.sjavac.server.SjavacServer;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
+import javacserver.options.Options;
+import javacserver.server.PortFile;
+import javacserver.server.Sjavac;
+import javacserver.server.SjavacServer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -60,7 +60,7 @@ public class SjavacClient implements Sjavac {
     private PortFile portFile;
 
     // The servercmd option specifies how the server part of sjavac is spawned.
-    // It should point to a com.sun.tools.sjavac.Main that supports --startserver
+    // It should point to a javacserver.Main that supports --startserver
     private String serverCommand;
 
     // Accept 120 seconds of inactivity before quitting.

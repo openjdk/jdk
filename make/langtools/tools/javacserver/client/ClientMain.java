@@ -23,14 +23,14 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.client;
+package javacserver.client;
 
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.AutoFlushWriter;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.comp.SjavacImpl;
-import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.Sjavac;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.comp.SjavacImpl;
+import javacserver.AutoFlushWriter;
+import javacserver.options.Options;
+import javacserver.server.Sjavac;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 

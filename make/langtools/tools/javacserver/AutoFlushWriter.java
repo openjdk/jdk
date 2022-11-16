@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.sjavac;
+package javacserver;
 
 import java.io.FilterWriter;
 import java.io.IOException;

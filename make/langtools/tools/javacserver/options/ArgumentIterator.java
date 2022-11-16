@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.options;
+package javacserver.options;
 
 import java.util.Iterator;
 

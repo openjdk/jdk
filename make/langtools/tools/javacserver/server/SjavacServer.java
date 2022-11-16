@@ -23,13 +23,13 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver.server;
 
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.comp.PooledSjavac;
-import com.sun.tools.sjavac.comp.SjavacImpl;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
+import javacserver.comp.PooledSjavac;
+import javacserver.comp.SjavacImpl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;

@@ -23,14 +23,14 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.comp;
+package javacserver.comp;
 
 import com.sun.tools.javac.Main;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Util;
-import com.sun.tools.sjavac.options.Option;
-import com.sun.tools.sjavac.server.Sjavac;
+import javacserver.Util;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.options.Option;
+import javacserver.server.Sjavac;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.stream.Stream;

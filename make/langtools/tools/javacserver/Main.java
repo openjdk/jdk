@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,35 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver;
 
-import com.sun.tools.sjavac.Result;
+import javacserver.client.ClientMain;
+import javacserver.server.ServerMain;
+import java.util.Arrays;
 
-
+import static javacserver.options.Option.STARTSERVER;
 
 /**
- * Interface of the SjavacImpl, the sjavac client and all wrappers such as
- * PooledSjavac etc.
+ * The application entry point of the smart javac wrapper tool.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public interface Sjavac {
-    Result compile(String[] args);
-    void shutdown();
+public class Main {
+
+    public static void main(String... args)  {
+        System.exit(go(args));
+    }
+
+    public static int go(String[] args) {
+
+        // Server or client mode?
+        boolean serverMode = Arrays.asList(args)
+                                   .stream()
+                                   .anyMatch(arg -> arg.startsWith(STARTSERVER.arg));
+
+        return serverMode ? ServerMain.run(args) : ClientMain.run(args);
+    }
 }

@@ -23,10 +23,8 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver.server;
 
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.client.PortFileInaccessibleException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,6 +34,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
 import java.util.concurrent.Semaphore;
+import javacserver.Log;
+import javacserver.client.PortFileInaccessibleException;
 
 /**
  * The PortFile class mediates access to a short binary file containing the tcp/ip port (for the localhost)

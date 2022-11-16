@@ -23,15 +23,15 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server.log;
+package javacserver.server.log;
 
-import com.sun.tools.sjavac.Log;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javacserver.Log;
 
 public class LazyInitFileLog extends Log {
 

@@ -23,12 +23,12 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver.server;
 
-import com.sun.tools.sjavac.Log;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import javacserver.Log;
 
 /**
  * Monitors the presence of a port file and shuts down the given SjavacServer

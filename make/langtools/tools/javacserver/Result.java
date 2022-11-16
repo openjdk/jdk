@@ -1,4 +1,4 @@
-package com.sun.tools.sjavac;
+package javacserver;
 
 /** Result codes.
  */

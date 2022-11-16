@@ -23,13 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.options;
-
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+package javacserver.options;
 
 /**
  * Sjavac options can be classified as:
@@ -40,7 +34,7 @@ import java.util.List;
  *
  * This enum represents all options from (1) and (2). Note that instances of
  * this enum only entail static information about the option. For storage of
- * option values, refer to com.sun.tools.sjavac.options.Options.
+ * option values, refer to Options.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

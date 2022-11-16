@@ -23,11 +23,11 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.comp;
+package javacserver.comp;
 
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.server.Sjavac;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.server.Sjavac;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

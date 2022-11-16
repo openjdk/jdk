@@ -23,10 +23,10 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver.server;
 
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Log;
+import javacserver.Log;
+import javacserver.Result;
 import java.util.Timer;
 import java.util.TimerTask;
 

@@ -23,17 +23,17 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package javacserver.server;
 
-import com.sun.tools.sjavac.Result;
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.server.log.LazyInitFileLog;
-import com.sun.tools.sjavac.server.log.LoggingOutputStream;
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.server.log.LazyInitFileLog;
+import javacserver.server.log.LoggingOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import static com.sun.tools.sjavac.Log.Level.ERROR;
-import static com.sun.tools.sjavac.Log.Level.INFO;
+import static javacserver.Log.Level.ERROR;
+import static javacserver.Log.Level.INFO;
 
 /**
  *  <p><b>This is NOT part of any supported API.
