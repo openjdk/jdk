@@ -23,7 +23,7 @@
  */
 
 
-// Used by tests like dynamicArchive/TestAutoCreateSharedArchive.java, which
+// Used by tests like dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java, which
 // runs this class in an earlier JDK
 //
 // It should be compiled like this in the jtreg spec:
