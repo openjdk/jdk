@@ -23,22 +23,24 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "opto/output.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm.
-void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
+
+void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
   RuntimeAddress callback_addr(stub);
 
-  __ bind(entry->_stub_label);
-  InternalAddress safepoint_pc(masm.pc() - masm.offset() + entry->_safepoint_offset);
+  __ bind(entry());
+  InternalAddress safepoint_pc(masm.pc() - masm.offset() + _safepoint_offset);
 #ifdef _LP64
   __ lea(rscratch1, safepoint_pc);
   __ movptr(Address(r15_thread, JavaThread::saved_exception_pc_offset()), rscratch1);
@@ -57,4 +59,11 @@ void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointP
 #endif
   __ jump(callback_addr);
 }
+
+void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  __ jmp(continuation(), false /* maybe_short */);
+}
+
 #undef __
