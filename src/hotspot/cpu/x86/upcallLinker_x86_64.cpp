@@ -175,7 +175,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
   CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
 
-  VMStorage shuffle_reg = VMS_RBX;
+  VMStorage shuffle_reg = as_VMStorage(rbx);
   JavaCallingConvention out_conv;
   NativeCallingConvention in_conv(call_regs._arg_regs);
   ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg);
@@ -306,11 +306,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = VMS_RAX;
+        j_expected_result_reg = as_VMStorage(rax);
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = VMS_XMM0;
+          j_expected_result_reg = as_VMStorage(xmm0);
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));

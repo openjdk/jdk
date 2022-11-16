@@ -143,7 +143,7 @@ void DowncallStubGenerator::generate() {
   Register tmp1 = r9;
   Register tmp2 = r10;
 
-  VMStorage shuffle_reg = VMS_R19;
+  VMStorage shuffle_reg = as_VMStorage(r19);
   JavaCallingConvention in_conv;
   NativeCallingConvention out_conv(_input_registers);
   ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg);
@@ -222,7 +222,7 @@ void DowncallStubGenerator::generate() {
       if (reg.type() == StorageType::INTEGER) {
         __ str(as_Register(reg), Address(tmp1, offset));
         offset += 8;
-      } else if(reg.type() == StorageType::VECTOR) {
+      } else if (reg.type() == StorageType::VECTOR) {
         __ strd(as_FloatRegister(reg), Address(tmp1, offset));
         offset += 16;
       } else {
@@ -236,7 +236,7 @@ void DowncallStubGenerator::generate() {
   if (_captured_state_mask != 0) {
     __ block_comment("{ save thread local");
 
-    if(should_save_return_value) {
+    if (should_save_return_value) {
       out_reg_spiller.generate_spill(_masm, spill_offset);
     }
 
@@ -244,7 +244,7 @@ void DowncallStubGenerator::generate() {
     __ movw(c_rarg1, _captured_state_mask);
     __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::capture_state), tmp1);
 
-    if(should_save_return_value) {
+    if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, spill_offset);
     }
 

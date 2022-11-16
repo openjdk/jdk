@@ -73,7 +73,7 @@ struct CallRegs {
 class ForeignGlobals {
 private:
   template<typename T>
-  static void parse_register_array(objArrayOop jarray, int type_index, GrowableArray<T>& array, T (*converter)(int));
+  static void parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int));
 
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);

@@ -45,18 +45,18 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   ABIDescriptor abi;
 
   objArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
-  parse_register_array(inputStorage, (int) StorageType::INTEGER, abi._integer_argument_registers, as_Register);
-  parse_register_array(inputStorage, (int) StorageType::VECTOR, abi._vector_argument_registers, as_XMMRegister);
+  parse_register_array(inputStorage, StorageType::INTEGER, abi._integer_argument_registers, as_Register);
+  parse_register_array(inputStorage, StorageType::VECTOR, abi._vector_argument_registers, as_XMMRegister);
 
   objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
-  parse_register_array(outputStorage, (int) StorageType::INTEGER, abi._integer_return_registers, as_Register);
-  parse_register_array(outputStorage, (int) StorageType::VECTOR, abi._vector_return_registers, as_XMMRegister);
-  objArrayOop subarray = oop_cast<objArrayOop>(outputStorage->obj_at(((int) StorageType::X87)));
+  parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
+  parse_register_array(outputStorage, StorageType::VECTOR, abi._vector_return_registers, as_XMMRegister);
+  objArrayOop subarray = oop_cast<objArrayOop>(outputStorage->obj_at((int) StorageType::X87));
   abi._X87_return_registers_noof = subarray->length();
 
   objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  parse_register_array(volatileStorage, (int) StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
-  parse_register_array(volatileStorage, (int) StorageType::VECTOR, abi._vector_additional_volatile_registers, as_XMMRegister);
+  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
+  parse_register_array(volatileStorage, StorageType::VECTOR, abi._vector_additional_volatile_registers, as_XMMRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
   abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);

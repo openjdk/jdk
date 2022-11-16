@@ -252,11 +252,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = VMS_R0;
+        j_expected_result_reg = as_VMStorage(r0);
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = VMS_V0;
+          j_expected_result_reg = as_VMStorage(v0);
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));

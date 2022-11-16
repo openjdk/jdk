@@ -27,7 +27,6 @@
 #include <cstdint>
 
 #include "asm/register.hpp"
-#include "prims/vmstorageBase.inline.hpp"
 
 // keep in sync with jdk/internal/foreign/abi/aarch64/AArch64Architecture
 enum class StorageType : int8_t {
@@ -50,10 +49,6 @@ constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::
 
 constexpr uint16_t REG64_MASK = 0b0000000000000001;
 constexpr uint16_t V128_MASK  = 0b0000000000000001;
-
-constexpr VMStorage VMS_R0 = VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, 0);
-constexpr VMStorage VMS_R19 = VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, 19);
-constexpr VMStorage VMS_V0 = VMStorage::reg_storage(StorageType::VECTOR, V128_MASK, 0);
 
 inline Register as_Register(VMStorage vms) {
   assert(vms.type() == StorageType::INTEGER, "not the right type");
