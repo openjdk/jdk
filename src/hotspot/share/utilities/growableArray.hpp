@@ -584,9 +584,9 @@ class GrowableArrayNestingCheck {
   int _nesting;
 
 public:
-  GrowableArrayNestingCheck(bool on_stack);
+  GrowableArrayNestingCheck(bool on_resource_area);
 
-  void on_stack_alloc() const;
+  void on_resource_area_alloc() const;
 };
 
 #endif // ASSERT
@@ -652,12 +652,12 @@ public:
   }
 
   void init_checks(const GrowableArrayBase* array) const;
-  void on_stack_alloc_check() const;
+  void on_resource_area_alloc_check() const;
 #endif // ASSERT
 
-  bool on_C_heap() const { return (_bits & 1) == 1; }
-  bool on_stack () const { return _bits == 0;      }
-  bool on_arena () const { return (_bits & 1) == 0 && _bits != 0; }
+  bool on_C_heap() const        { return (_bits & 1) == 1; }
+  bool on_resource_area() const { return _bits == 0; }
+  bool on_arena() const         { return (_bits & 1) == 0 && _bits != 0; }
 
   Arena* arena() const      { return (Arena*)_bits; }
   MEMFLAGS memflags() const { return MEMFLAGS(_bits >> 1); }
@@ -702,13 +702,13 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   void init_checks() const { debug_only(_metadata.init_checks(this);) }
 
   // Where are we going to allocate memory?
-  bool on_C_heap() const { return _metadata.on_C_heap(); }
-  bool on_stack () const { return _metadata.on_stack(); }
-  bool on_arena () const { return _metadata.on_arena(); }
+  bool on_C_heap() const        { return _metadata.on_C_heap(); }
+  bool on_resource_area() const { return _metadata.on_resource_area(); }
+  bool on_arena() const         { return _metadata.on_arena(); }
 
   E* allocate() {
-    if (on_stack()) {
-      debug_only(_metadata.on_stack_alloc_check());
+    if (on_resource_area()) {
+      debug_only(_metadata.on_resource_area_alloc_check());
       return allocate(this->_capacity);
     }
 
