@@ -23,16 +23,13 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import javax.swing.Action;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
-import org.openide.util.HelpCtx;
-import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.CallableSystemAction;
 
 @ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.CenterSelectedNodesAction")
 @ActionRegistration(displayName = "#CTL_CenterSelectedNodesAction")
@@ -44,19 +41,11 @@ import org.openide.util.actions.CallableSystemAction;
         "CTL_CenterSelectedNodesAction=Center selected nodes",
         "HINT_CenterSelectedNodesAction=Center the selected nodes"
 })
-public final class CenterSelectedNodesAction extends CallableSystemAction {
-
-    public CenterSelectedNodesAction() {
-        putValue(Action.SHORT_DESCRIPTION, getDescription());
-        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
-    }
+public final class CenterSelectedNodesAction extends ModelAwareAction {
 
     @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.centerSelectedNodes();
-        }
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/centerSelectedNodes.svg"; // NOI18N
     }
 
     @Override
@@ -64,22 +53,21 @@ public final class CenterSelectedNodesAction extends CallableSystemAction {
         return NbBundle.getMessage(NextDiagramAction.class, "CTL_CenterSelectedNodesAction");
     }
 
-    private String getDescription() {
+    @Override
+    protected String getDescription() {
         return NbBundle.getMessage(NextDiagramAction.class, "HINT_CenterSelectedNodesAction");
     }
 
     @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+    public void performAction(DiagramViewModel model) {
+        EditorTopComponent editor = EditorTopComponent.findEditorForGraph(model.getGraph());
+        if (editor != null) {
+            editor.centerSelectedNodes();
+        }
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/centerSelectedNodes.svg"; // NOI18N
+    public boolean isEnabled(DiagramViewModel model) {
+        return !model.getSelectedNodes().isEmpty();
     }
 }
