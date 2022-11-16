@@ -198,7 +198,7 @@ public class BasicExp {
             // // Run tests with C1 compilations
             // compLevel = CompilerWhiteBoxTest.COMP_LEVEL_FULL_PROFILE;
 
-            compPolicySelection =  Integer.parseInt(args[0]);
+            compPolicySelection = Integer.parseInt(args[0]);
             callSystemGC = Integer.parseInt(args[1]) == 1;
             runTests();
         } catch (Throwable t) {
@@ -207,7 +207,6 @@ public class BasicExp {
     }
 
     public static void runTests() {
-        // TODO: enable
         System.out.println("$$$0 Running test cases with the following settings:");
         System.out.println("compLevel=" + compLevel);
         System.out.println("callSystemGC=" + callSystemGC);
@@ -244,6 +243,11 @@ public class BasicExp {
         new ContinuationDeepRecursionStackargs().runTestCase(3, compPolicy);
     }
 
+    // Control which frames are compiled/interpreted when calling Continuation.yield()
+    // With COMP_WINDOW the methods in the window are supposed to be compiled and others
+    // are interpreted. With DEOPT_WINDOW vice versa.
+    // The methods that are subject to the CompilationPolicy are set with setMethods().
+    // Their order has to correspond to the stack order when calling yield().
     public static class CompilationPolicy {
         public int warmupIterations;
         public Pattern methodPattern;
@@ -338,7 +342,7 @@ public class BasicExp {
         }
 
         public boolean shiftWindow() {
-            if(compWindowMode == CompWindowMode.NO_COMP_WINDOW) return false;
+            if (compWindowMode == CompWindowMode.NO_COMP_WINDOW) return false;
             if (++winPos == methods.length) {
                 winPos = 0;
                 if (compWindowMode == CompWindowMode.DEOPT_WINDOW) {
@@ -480,7 +484,7 @@ public class BasicExp {
             do {
                 try {
                     cont.run();
-                } catch(UnhandledException e) {
+                } catch (UnhandledException e) {
                     log_dontjit("Exc: " + e);
                 }
                 if (callSystemGC) System.gc();
