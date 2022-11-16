@@ -29,10 +29,9 @@ import java.nio.charset.Charset;
 import jdk.internal.io.JdkConsole;
 
 /**
- * A proxy for the Console for internal use. Providers of a Console
- * can extend jdk.internal.io.JdkConsole class
+ * Console implementation for internal use. Custom Console delegate may be
+ * provided with jdk.internal.io.JdkConsoleProvider.
  */
-
 final class ProxyingConsole extends Console {
     private final JdkConsole delegate;
 
@@ -40,44 +39,84 @@ final class ProxyingConsole extends Console {
         this.delegate = delegate;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public PrintWriter writer() {
         return delegate.writer();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Reader reader() {
         return delegate.reader();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Console format(String fmt, Object ...args) {
         delegate.format(fmt, args);
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Console printf(String format, Object ... args) {
         delegate.printf(format, args);
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String readLine(String fmt, Object ... args) {
         return delegate.readLine(fmt, args);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String readLine() {
         return delegate.readLine();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public char[] readPassword(String fmt, Object ... args) {
         return delegate.readPassword(fmt, args);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public char[] readPassword() {
         return delegate.readPassword();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void flush() {
         delegate.flush();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Charset charset() {
         return delegate.charset();
     }

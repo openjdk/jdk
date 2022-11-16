@@ -25,20 +25,23 @@
 package jdk.internal.io;
 
 /**
- * JdkConsoleProvider
- *
- * @since 20
+ * Service provider interface for JdkConsole implementations.
+ * The provider used for instantiating JdkConsole instance can be
+ * specified with the system property "jdk.console", whose value
+ * designates the module name of the implementation, and which defaults
+ * to "jdk.internal.le" (jline). If no providers is available,
+ * or instantiation failed, java.base built-in Console implementation
+ * is used.
  */
-public abstract class JdkConsoleProvider {
+public interface JdkConsoleProvider {
+    /**
+     * The default provider of JdkConsole.
+     */
+    String DEFAULT_PROVIDER = "jdk.internal.le";
+
     /**
      * {@return the Console instance, or {@code null} if not available}
      * @param isTTY indicates if the jvm is attached to a terminal
      */
-    public abstract JdkConsole console(boolean isTTY);
-
-    /**
-     * Sole constructor
-     */
-    protected JdkConsoleProvider() {
-    }
+    JdkConsole console(boolean isTTY);
 }

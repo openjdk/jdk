@@ -25,101 +25,69 @@
 
 package jdk.internal.org.jline;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+
+import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReaderBuilder;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.TerminalBuilder;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.nio.charset.Charset;
-
-import jdk.internal.io.JdkConsole;
-
 /**
- * JdkConsole impl
- *
- * @since 20
+ * JdkConsole/Provider implementations for jline
  */
-public class JdkConsoleProviderImpl extends JdkConsoleProvider {
+public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
-    @Override
+    /**
+     * {@inheritDoc}
+     */
     public JdkConsole console(boolean isTTY) {
         return isTTY ? new JdkConsoleImpl() : null;
     }
 
-    public static class JdkConsoleImpl extends JdkConsole {
-        /**
-         * {@inheritDoc}
-         */
-        @Override
+    /**
+     * An implementation of JdkConsole, which act as a delegate for the
+     * public Console class.
+     */
+    public static class JdkConsoleImpl implements JdkConsole {
         public PrintWriter writer() {
             return terminal.writer();
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public Reader reader() {
             return terminal.reader();
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public synchronized JdkConsole format(String fmt, Object ...args) {
             writer().format(fmt, args).flush();
             return this;
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public JdkConsole printf(String format, Object ... args) {
             return format(format, args);
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public synchronized String readLine(String fmt, Object ... args) {
             return jline.readLine(fmt.formatted(args));
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public String readLine() {
             return readLine("");
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public synchronized char[] readPassword(String fmt, Object ... args) {
             return jline.readLine(fmt.formatted(args), '\0').toCharArray();
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public char[] readPassword() {
             return readPassword("");
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public void flush() {
             terminal.flush();
         }
@@ -136,7 +104,7 @@ public class JdkConsoleProviderImpl extends JdkConsoleProvider {
                 terminal = TerminalBuilder.builder().build();
                 jline = LineReaderBuilder.builder().terminal(terminal).build();
             } catch (IOException ioe) {
-                throw new InternalError("should not happen, as CHARSET is guaranteed to be a valid charset");
+                throw new UncheckedIOException(ioe);
             }
         }
     }

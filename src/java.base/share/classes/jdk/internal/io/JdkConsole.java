@@ -24,21 +24,25 @@
  */
 package jdk.internal.io;
 
-import java.io.Console;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
 
-public abstract class JdkConsole {
-    public abstract PrintWriter writer();
-    public abstract Reader reader();
-    public abstract JdkConsole format(String fmt, Object ...args);
-    public abstract JdkConsole printf(String format, Object ... args);
-    public abstract String readLine(String fmt, Object ... args);
-    public abstract String readLine();
-    public abstract char[] readPassword(String fmt, Object ... args);
-    public abstract char[] readPassword();
-    public abstract void flush();
-    public abstract Charset charset();
-    protected JdkConsole() {}
+/**
+ * Delegate interface for custom Console implementations.
+ * Methods defined here are duplicating ones in Console class.
+ * Providers should implement jdk.internal.io.JdkConsoleProvider
+ * to instantiate an implementation of this interface.
+ */
+public interface JdkConsole {
+    PrintWriter writer();
+    Reader reader();
+    JdkConsole format(String fmt, Object ...args);
+    JdkConsole printf(String format, Object ... args);
+    String readLine(String fmt, Object ... args);
+    String readLine();
+    char[] readPassword(String fmt, Object ... args);
+    char[] readPassword();
+    void flush();
+    Charset charset();
 }
