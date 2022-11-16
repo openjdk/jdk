@@ -218,55 +218,6 @@ public:
 
 };
 
-int C2CodeStub::measure_stub_size(C2CodeStub& stub) {
-  Compile* const C = Compile::current();
-  BufferBlob* const blob = C->output()->scratch_buffer_blob();
-  CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
-  C2_MacroAssembler masm(&cb);
-  stub.emit(masm);
-  stub.reinit_labels();
-  return cb.insts_size();
-}
-
-int C2CodeStub::stub_size(volatile int* stub_size) {
-  int size = Atomic::load(stub_size);
-
-  if (size != 0) {
-    return size;
-  }
-
-  size = measure_stub_size(*this);
-  Atomic::store(stub_size, size);
-  return size;
-}
-
-int C2CodeStubList::measure_code_size() const {
-  int size = 0;
-  for (int i = _stubs.length() - 1; i >= 0; i--) {
-    C2CodeStub* stub = _stubs.at(i);
-    size += stub->size();
-  }
-  return size;
-}
-
-void C2CodeStubList::emit(CodeBuffer& cb) {
-  C2_MacroAssembler masm(&cb);
-  for (int i = _stubs.length() - 1; i >= 0; i--) {
-    // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
-
-    C2CodeStub* stub = _stubs.at(i);
-    stub->emit(masm);
-  }
-}
-
-volatile int C2SafepointPollStub::_stub_size = 0;
-volatile int C2EntryBarrierStub::_stub_size = 0;
-volatile int C2CheckLockStackStub::_stub_size = 0;
-
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
     _code_buffer("Compile::Fill_buffer"),

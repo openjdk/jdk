@@ -24,9 +24,7 @@
 
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
+#include "opto/c2CodeStubs.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
