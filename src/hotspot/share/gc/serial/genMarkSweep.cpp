@@ -188,8 +188,6 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     gch->full_process_roots(false, // not the adjust phase
                             GenCollectedHeap::SO_None,
-                            ClassUnloading, // only strong roots if ClassUnloading
-                                            // is enabled
                             &follow_root_closure,
                             &follow_cld_closure);
   }
@@ -264,15 +262,10 @@ void GenMarkSweep::mark_sweep_phase3() {
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  {
-    StrongRootsScope srs(0);
-
-    gch->full_process_roots(true,  // this is the adjust phase
-                            GenCollectedHeap::SO_AllCodeCache,
-                            false, // all roots
-                            &adjust_pointer_closure,
-                            &adjust_cld_closure);
-  }
+  gch->full_process_roots(true,  // this is the adjust phase
+                          GenCollectedHeap::SO_AllCodeCache,
+                          &adjust_pointer_closure,
+                          &adjust_cld_closure);
 
   gch->gen_process_weak_roots(&adjust_pointer_closure);
 

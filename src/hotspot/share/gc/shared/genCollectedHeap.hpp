@@ -338,7 +338,6 @@ public:
  public:
   void full_process_roots(bool is_adjust_phase,
                           ScanningOption so,
-                          bool only_strong_roots,
                           OopClosure* root_closure,
                           CLDClosure* cld_closure);
 
