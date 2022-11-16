@@ -101,6 +101,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @param oid the identifier for the algorithm.
      * @param algparams the associated algorithm parameters, can be null.
      * @exception IllegalStateException if algparams is not initialized
+     *                                  or cannot be encoded
      */
     public AlgorithmId(ObjectIdentifier oid, AlgorithmParameters algparams) {
         algid = oid;
@@ -158,7 +159,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @exception IOException on encoding error.
      */
     @Override
-    public void encode (DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) throws IOException {
         DerOutputStream bytes = new DerOutputStream();
 
         bytes.putOID(algid);
@@ -484,6 +485,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @param algparams the associated algorithm parameters.
      * @exception NoSuchAlgorithmException on error.
      * @exception IllegalStateException if algparams is not initialized
+     *                                  or cannot be encoded
      */
     public static AlgorithmId get(AlgorithmParameters algparams)
             throws NoSuchAlgorithmException {

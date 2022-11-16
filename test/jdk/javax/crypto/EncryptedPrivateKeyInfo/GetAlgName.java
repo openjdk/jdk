@@ -61,6 +61,8 @@ public class GetAlgName {
                 status = false;
             }
 
+            // Make sure EncryptedPrivateKeyInfo can be created with an
+            // uninitialized AlgorithmParameters.
             AlgorithmParameters ap2 = AlgorithmParameters.getInstance(ap.getAlgorithm());
             epki = new EncryptedPrivateKeyInfo(ap2, BYTES);
             if (!epki.getAlgName().equalsIgnoreCase(algo)) {
