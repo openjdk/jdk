@@ -31,27 +31,36 @@ import java.util.stream.Collectors;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode;
-import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.main.Option.PkgInfo;
-import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.List;
+
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.code.Type.*;
+
+import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
-import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
+import com.sun.tools.javac.tree.JCTree.JCBreak;
+import com.sun.tools.javac.tree.JCTree.JCCase;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
+import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This pass translates away some syntactic sugar: inner classes,
@@ -2598,7 +2607,7 @@ public class Lower extends TreeTranslator {
     /**
      * Creates an indy qualifier, helpful to be part of an indy invocation
      * @param site                the site
-     * @param tree                an expression tree
+     * @param tree                a class declaration tree
      * @param msym                the method symbol
      * @param staticArgTypes      the static argument types
      * @param staticArgValues     the static argument values
@@ -2610,7 +2619,7 @@ public class Lower extends TreeTranslator {
      */
     JCFieldAccess makeIndyQualifier(
             Type site,
-            JCTree tree,
+            JCClassDecl tree,
             MethodSymbol msym,
             List<Type> staticArgTypes,
             LoadableConstant[] staticArgValues,
@@ -2622,8 +2631,7 @@ public class Lower extends TreeTranslator {
 
         MethodType indyType = msym.type.asMethodType();
         indyType = new MethodType(
-                isStatic ? indyType.argtypes
-                         : indyType.argtypes.prepend(TreeInfo.symbol(tree).type),
+                isStatic ? List.nil() : indyType.argtypes.prepend(tree.sym.type),
                 indyType.restype,
                 indyType.thrown,
                 syms.methodClass
@@ -2865,7 +2873,6 @@ public class Lower extends TreeTranslator {
         } else {
             tree.clazz = access(c, tree.clazz, enclOp, false);
         }
-
         result = tree;
     }
 
@@ -3118,7 +3125,6 @@ public class Lower extends TreeTranslator {
         boolean havePrimitive = tree.type.isPrimitive();
         if (havePrimitive == type.isPrimitive())
             return tree;
-
         if (havePrimitive) {
             Type unboxedTarget = types.unboxedType(type);
             if (!unboxedTarget.hasTag(NONE)) {
@@ -4162,7 +4168,6 @@ public class Lower extends TreeTranslator {
      */
     public List<JCTree> translateTopLevelClass(Env<AttrContext> env, JCTree cdef, TreeMaker make) {
         ListBuffer<JCTree> translated = null;
-
         try {
             attrEnv = env;
             this.make = make;
@@ -4214,7 +4219,6 @@ public class Lower extends TreeTranslator {
             enumSwitchMap.clear();
             assertionsDisabledClassCache = null;
         }
-
         return translated.toList();
     }
 }

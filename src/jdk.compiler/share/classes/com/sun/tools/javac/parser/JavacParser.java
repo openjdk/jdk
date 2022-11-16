@@ -697,7 +697,7 @@ public class JavacParser implements Parser {
             }
             S.setPrevToken(stringToken);
         }
-        JCExpression t = F.at(pos).StringTemplate(processor, fragments, expressions);
+        JCExpression t = toP(F.at(pos).StringTemplate(processor, fragments, expressions));
         setMode(oldmode);
         return t;
     }
@@ -1712,10 +1712,7 @@ public class JavacParser implements Parser {
                         return illegal();
                     }
                     t = stringTemplate(t);
-                    typeArgs = null;
-                    // Uncomment to not allow follow on DOT
-                    // return t;
-                 } else {
+                } else {
                     List<JCAnnotation> tyannos = null;
                     if (isMode(TYPE) && token.kind == MONKEYS_AT) {
                         // is the mode check needed?
