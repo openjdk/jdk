@@ -584,7 +584,7 @@ public:
  public:
   // copying of debugging information
   void copy_scopes_pcs(PcDesc* pcs, int count);
-  void copy_scopes_data(address buffer, int size);
+  void copy_scopes_data(const u_char* buffer, int size);
 
   int orig_pc_offset() { return _orig_pc_offset; }
 

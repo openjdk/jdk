@@ -1977,7 +1977,7 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
   assert(last_pc + 1 == scopes_pcs_end(), "must match exactly");
 }
 
-void nmethod::copy_scopes_data(u_char* buffer, int size) {
+void nmethod::copy_scopes_data(const u_char* buffer, int size) {
   assert(scopes_data_size() >= size, "oob");
   memcpy(scopes_data_begin(), buffer, size);
 }

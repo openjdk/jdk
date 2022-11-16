@@ -29,7 +29,7 @@
 void check_int_encoding() {
   ResourceMark rm;
   DebugInfoWriteStream out(NULL, 100);
-  u_char* buf = out.buffer();
+  const u_char* buf = out.buffer();
 
   out.set_position(0);
   out.write_int(0);
@@ -73,7 +73,7 @@ void check_read_write() {
   }
   out.align();
 
-  u_char* buf = out.buffer();
+  const u_char* buf = out.buffer();
   CompressedSparseDataReadStream in(buf, 0);
 
   for (int i = 0; i < 1000*1000; i++) {
@@ -94,7 +94,7 @@ void check_buffer_grow() {
   out.align();
   out.write_int(1);
   out.write_int(2);
-  u_char* buf = out.buffer();
+  const u_char* buf = out.buffer();
   ASSERT_TRUE(out.position() == 102 && buf[99] == 0 && buf[100] == 0x81 && buf[101] == 0x82);
 }
 

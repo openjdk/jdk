@@ -114,23 +114,25 @@ class CompressedWriteStream : public CompressedStream {
 
 class CompressedSparseData : public ResourceObj {
 protected:
-  u_char* _buffer;
   int     _position; // current byte offset
   size_t  _bit_position {0}; // current bit offset
 
 public:
-  CompressedSparseData(u_char* buffer = NULL, int position = 0) {
-    _buffer   = buffer;
+  CompressedSparseData(int position = 0) {
     _position = position;
   }
-
-  u_char* buffer() const { return _buffer; }
 };
 
 // Modified compression algorithm for a data set in which a significant part of the data is null
 class CompressedSparseDataReadStream : public CompressedSparseData {
+protected:
+  const u_char* _buffer;
 public:
-  CompressedSparseDataReadStream(u_char* buffer, int position) : CompressedSparseData(buffer, position) {}
+  CompressedSparseDataReadStream(const u_char* buffer, int position) : CompressedSparseData(position) {
+    _buffer = buffer;
+  }
+
+  const u_char* buffer() const { return _buffer; }
 
   void set_position(int pos) {
     _bit_position = 0;
@@ -159,12 +161,16 @@ protected:
 };
 
 class CompressedSparseDataWriteStream : public CompressedSparseData {
+protected:
+  u_char* _buffer;
 public:
   CompressedSparseDataWriteStream(int initial_size) : CompressedSparseData() {
     _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
     _size     = initial_size;
     _buffer[0] = 0;
   }
+
+  const u_char* buffer() const { return _buffer; }
 
   void write_bool(jboolean value)   { write_int(value ? 1 : 0); }
   void write_byte(jbyte value)      { write_int(value); }

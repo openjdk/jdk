@@ -59,7 +59,7 @@ public:
     _length = length;
     _DIR = dir;
     unsigned int hash = 0;
-    address p = dir->stream()->buffer() + _offset;
+    const u_char* p = dir->stream()->buffer() + _offset;
     for (int i = 0; i < length; i++) {
       if (i == 6)  break;
       hash *= 127;
@@ -73,7 +73,7 @@ public:
                         DebugInformationRecorder* dir) {
     int end_index = arr->length();
     int hash = this->_hash, length = this->_length;
-    address buf = dir->stream()->buffer();
+    const u_char* buf = dir->stream()->buffer();
     for (int i = end_index; --i >= start_index; ) {
       DIR_Chunk* that = arr->at(i);
       if (hash   == that->_hash &&
@@ -98,7 +98,7 @@ public:
     if (b->_length < a->_length) {
       return -1;
     }
-    address buf = a->_DIR->stream()->buffer();
+    const u_char* buf = a->_DIR->stream()->buffer();
     return memcmp(buf + b->_offset, buf + a->_offset, a->_length);
   }
 };
