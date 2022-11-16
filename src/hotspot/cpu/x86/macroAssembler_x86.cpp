@@ -9603,14 +9603,26 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
+void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow, bool rt_check_stack) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, thread, tmp);
 
   // First we need to check if the lock-stack has room for pushing the object reference.
-  movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
-  cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
-  jcc(Assembler::greaterEqual, slow);
+  if (rt_check_stack) {
+    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
+    cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
+    jcc(Assembler::greaterEqual, slow);
+  }
+#ifdef ASSERT
+  else {
+    Label ok;
+    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
+    cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
+    jcc(Assembler::less, ok);
+    stop("Not enough room in lock stack; should have been checked in the method prologue");
+    bind(ok);
+  }
+#endif
 
   // Now we attempt to take the fast-lock.
   // Clear lowest two header bits (locked state).

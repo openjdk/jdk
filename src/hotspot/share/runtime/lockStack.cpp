@@ -53,12 +53,12 @@ void LockStack::validate(const char* msg) const {
 }
 #endif
 
-void LockStack::grow() {
+void LockStack::grow(size_t min_capacity) {
   // Grow stack.
   assert(_limit > _base, "invariant");
   size_t capacity = _limit - _base;
   size_t index = _current - _base;
-  size_t new_capacity = capacity * 2;
+  size_t new_capacity = MAX2(min_capacity, capacity * 2);
   oop* new_stack = NEW_C_HEAP_ARRAY(oop, new_capacity, mtSynchronizer);
   for (size_t i = 0; i < index; i++) {
     *(new_stack + i) = *(_base + i);
@@ -68,4 +68,18 @@ void LockStack::grow() {
   _limit = _base + new_capacity;
   _current = _base + index;
   assert(_current < _limit, "must fit after growing");
+  assert((_limit - _base) >= (ptrdiff_t) min_capacity, "must grow enough");
+}
+
+void LockStack::grow() {
+  grow((_limit - _base) + 1);
+}
+
+void LockStack::grow(oop* required_limit) {
+  grow(required_limit - _base);
+}
+
+void LockStack::ensure_lock_stack_size(oop* _required_limit) {
+  JavaThread* jt = JavaThread::current();
+  jt->lock_stack().grow(_required_limit);
 }

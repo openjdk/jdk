@@ -922,7 +922,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  int max_monitors = C->method() != NULL ? C->method()->max_monitors_depth() : 0;
+  int max_monitors = C->method() != NULL ? C->max_monitors() : 0;
   __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != NULL, max_monitors);
 
   C->output()->set_frame_complete(cbuf.insts_size());

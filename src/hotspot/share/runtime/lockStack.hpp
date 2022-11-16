@@ -35,17 +35,22 @@ class OopClosure;
 class LockStack {
   friend class VMStructs;
 private:
-  static const size_t INITIAL_CAPACITY = 4;
+  static const size_t INITIAL_CAPACITY = 1;
   oop* _base;
   oop* _limit;
   oop* _current;
 
   void grow();
+  void grow(size_t min_capacity);
+  void grow(oop* required_limit);
+
   void validate(const char* msg) const PRODUCT_RETURN;
 public:
   static ByteSize current_offset()    { return byte_offset_of(LockStack, _current); }
   static ByteSize base_offset()       { return byte_offset_of(LockStack, _base); }
   static ByteSize limit_offset()      { return byte_offset_of(LockStack, _limit); }
+
+  static void ensure_lock_stack_size(oop* _required_limit);
 
   LockStack();
   ~LockStack();

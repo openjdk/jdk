@@ -94,6 +94,10 @@ public:
   Label& continuation() { return _continuation; }
   virtual void emit(C2_MacroAssembler& masm) = 0;
   virtual int size() = 0;
+  virtual void reinit_labels() {
+    _entry.init();
+    _continuation.init();
+  }
 };
 
 class C2CodeStubList {
@@ -129,6 +133,16 @@ public:
     _guard() {}
 
   Label& guard() { return _guard; }
+
+  int size() { return stub_size(&_stub_size); }
+  void emit(C2_MacroAssembler& masm);
+};
+
+class C2CheckLockStackStub : public C2CodeStub {
+private:
+  static volatile int _stub_size;
+public:
+  C2CheckLockStackStub() : C2CodeStub() {}
 
   int size() { return stub_size(&_stub_size); }
   void emit(C2_MacroAssembler& masm);

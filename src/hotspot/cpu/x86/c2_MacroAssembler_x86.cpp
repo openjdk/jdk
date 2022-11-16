@@ -127,6 +127,19 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
   }
 #endif
 
+  if (UseFastLocking && max_monitors > 0) {
+    C2CheckLockStackStub* stub = new (Compile::current()->comp_arena()) C2CheckLockStackStub();
+    Compile::current()->output()->stub_list()->add_stub(stub);
+    assert(!is_stub, "only methods have monitors");
+    push(c_rarg0);
+    movptr(c_rarg0, Address(r15_thread, Thread::lock_stack_current_offset()));
+    addptr(c_rarg0, max_monitors * wordSize);
+    cmpptr(c_rarg0, Address(r15_thread, Thread::lock_stack_limit_offset()));
+    jcc(Assembler::greaterEqual, stub->entry());
+    bind(stub->continuation());
+    pop(c_rarg0);
+  }
+
   if (!is_stub) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
  #ifdef _LP64
@@ -149,16 +162,6 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
     bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
 #endif
-  }
-
-  if (max_monitors > 0) {
-    assert(!is_stub, "only methods have monitors");
-    push(rax);
-    movptr(rax, Address(r15_thread, Thread::lock_stack_current_offset()));
-    addptr(rax, max_monitors * wordSize);
-    cmpptr(rax, Address(r15_thread, Thread::lock_stack_limit_offset()));
-    jcc(Assembler::greaterEqual, slow);
-    pop(rax);
   }
 }
 
@@ -613,7 +616,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   if (!UseHeavyMonitors) {
     if (UseFastLocking) {
       Label slow_path;
-      fast_lock_impl(objReg, tmpReg, thread, scrReg, slow_path);
+      fast_lock_impl(objReg, tmpReg, thread, scrReg, slow_path, false);
       xorptr(rax, rax); // Set ZF = 1 (success)
       jmp(COUNT);
       bind(slow_path);

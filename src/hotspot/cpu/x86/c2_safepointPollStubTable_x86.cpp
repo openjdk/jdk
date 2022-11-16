@@ -66,4 +66,10 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ jmp(continuation(), false /* maybe_short */);
 }
 
+void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  __ call(RuntimeAddress(StubRoutines::x86::check_lock_stack()));
+  __ jmp(continuation(), false /* maybe_short */);
+}
+
 #undef __
