@@ -62,7 +62,16 @@ public class OnScreenRenderingResizeTest {
 
     private static Frame frame;
 
-    public static void main(String[] args) {
+    private static void createAndShowGUI() {
+        frame = new Frame();
+        frame.setBackground(bgColor);
+        frame.setUndecorated(true);
+        frame.setAlwaysOnTop(true);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public static void main(String[] args) throws Exception {
 
         for (String arg : args) {
             if ("-inf".equals(arg)) {
@@ -76,33 +85,11 @@ public class OnScreenRenderingResizeTest {
                                    " [-inf][-nocheck]");
             }
         }
-        frame = new Frame();
-        frame.setBackground(bgColor);
-        frame.setUndecorated(true);
-        frame.setAlwaysOnTop(true);
-        frame.pack();
-
-        GraphicsConfiguration gc = frame.getGraphicsConfiguration();
-        Rectangle gcBounds = gc.getBounds();
-        FRAME_W = (gcBounds.width / 4);
-        FRAME_H = (gcBounds.height / 4);
-        IMAGE_W = (gcBounds.width / 8);
-        IMAGE_H = (gcBounds.height / 8);
-        frame.setBounds(gcBounds.width / 4, gcBounds.height / 4,
-                        FRAME_W, FRAME_H);
-
-        BufferedImage output =
-            new BufferedImage(IMAGE_W, IMAGE_H,
-                              BufferedImage.TYPE_INT_RGB);
-        output.setAccelerationPriority(0.0f);
-        Graphics g = output.getGraphics();
-        g.setColor(renderColor);
-        g.fillRect(0, 0, IMAGE_W, IMAGE_H);
 
         try {
             EventQueue.invokeAndWait(new Runnable() {
                 public void run() {
-                    frame.setVisible(true);
+                    createAndShowGUI();
                 }
             });
             // wait for Vista's effects to complete
@@ -111,78 +98,98 @@ public class OnScreenRenderingResizeTest {
             ex.printStackTrace();
         }
 
-        int maxW = gcBounds.width / 2;
-        int maxH = gcBounds.height / 2;
-        int minW = FRAME_W;
-        int minH = FRAME_H;
-        int incW = 10, incH = 10, cnt = 0;
-        Robot robot = null;
-        if (!nocheck && gc.getColorModel().getPixelSize() > 8) {
-            try {
-                robot = new Robot();
-                robot.setAutoDelay(100);
-                robot.mouseMove(0,0);
-            } catch (AWTException ex) {
-                System.err.println("Robot creation failed, continuing.");
-            }
-        } else {
-            System.err.println("No screen rendering checks.");
-        }
+        try {
+            GraphicsConfiguration gc = frame.getGraphicsConfiguration();
+            Rectangle gcBounds = gc.getBounds();
+            FRAME_W = (gcBounds.width / 4);
+            FRAME_H = (gcBounds.height / 4);
+            IMAGE_W = (gcBounds.width / 8);
+            IMAGE_H = (gcBounds.height / 8);
+            frame.setBounds(gcBounds.width / 4, gcBounds.height / 4,
+                            FRAME_W, FRAME_H);
 
-        VolatileImage vi = gc.createCompatibleVolatileImage(IMAGE_W, IMAGE_H);
-        vi.validate(gc);
+            BufferedImage output =
+                new BufferedImage(IMAGE_W, IMAGE_H,
+                                  BufferedImage.TYPE_INT_RGB);
+            output.setAccelerationPriority(0.0f);
+            Graphics g = output.getGraphics();
+            g.setColor(renderColor);
+            g.fillRect(0, 0, IMAGE_W, IMAGE_H);
 
-        long timeStarted = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - timeStarted) < RUN_TIME) {
-
-            if (++cnt > 100) {
-                int w = frame.getWidth() + incW;
-                int h = frame.getHeight() + incH;
-                if (w < minW || w > maxW ) {
-                    incW = -incW;
+            int maxW = gcBounds.width / 2;
+            int maxH = gcBounds.height / 2;
+            int minW = FRAME_W;
+            int minH = FRAME_H;
+            int incW = 10, incH = 10, cnt = 0;
+            Robot robot = null;
+            if (!nocheck && gc.getColorModel().getPixelSize() > 8) {
+                try {
+                    robot = new Robot();
+                    robot.setAutoDelay(100);
+                    robot.mouseMove(0,0);
+                } catch (AWTException ex) {
+                    System.err.println("Robot creation failed, continuing.");
                 }
-                if (h < minH || h > maxH ) {
-                    incH = -incH;
-                }
-                frame.setSize(w, h);
-                cnt = 0;
+            } else {
+                System.err.println("No screen rendering checks.");
             }
-
-            // try to put the device into non-default state, for example,
-            // this operation below will set the transform
+            VolatileImage vi = gc.
+                createCompatibleVolatileImage(IMAGE_W, IMAGE_H);
             vi.validate(gc);
-            Graphics2D vig = (Graphics2D)vi.getGraphics();
-            vig.rotate(30.0f, IMAGE_W/2, IMAGE_H/2);
-            vig.drawImage(output, 0, 0,
-                          IMAGE_W, IMAGE_H, null);
+            long timeStarted = System.currentTimeMillis();
+            while ((System.currentTimeMillis() - timeStarted) < RUN_TIME) {
 
-            frame.getGraphics().drawImage(output, 0, 0, null);
-            if (cnt == 90 && robot != null) {
-                robot.waitForIdle();
-                // area where we blit and should be either white or green
-                Point p = frame.getLocationOnScreen();
-                p.translate(10, 10);
-                BufferedImage bi =
-                    robot.createScreenCapture(
-                        new Rectangle(p.x, p.y, (IMAGE_W / 2), (IMAGE_H / 2)));
-                int accepted1[] = {Color.white.getRGB(), Color.green.getRGB()};
-                checkBI(bi, accepted1);
+                if (++cnt > 100) {
+                    int w = frame.getWidth() + incW;
+                    int h = frame.getHeight() + incH;
+                    if (w < minW || w > maxW ) {
+                        incW = -incW;
+                    }
+                    if (h < minH || h > maxH ) {
+                        incH = -incH;
+                    }
+                    frame.setSize(w, h);
+                    cnt = 0;
+                }
+                // try to put the device into non-default state, for example,
+                // this operation below will set the transform
+                vi.validate(gc);
+                Graphics2D vig = (Graphics2D)vi.getGraphics();
+                vig.rotate(30.0f, IMAGE_W/2, IMAGE_H/2);
+                vig.drawImage(output, 0, 0,
+                              IMAGE_W, IMAGE_H, null);
 
-                // the area where we didn't render should stay white
-                robot.waitForIdle();
-                p = frame.getLocationOnScreen();
-                p.translate(10, IMAGE_H + 10);
-                bi = robot.createScreenCapture(
-                    new Rectangle(p.x, p.y,
-                                  frame.getWidth() - 20,
-                                  frame.getHeight() - 20 - (IMAGE_H)));
-                int accepted2[] = { Color.white.getRGB() };
-                checkBI(bi, accepted2);
+                frame.getGraphics().
+                    drawImage(output, 0, 0, null);
+                if (cnt == 90 && robot != null) {
+                    robot.waitForIdle();
+                    // area where we blit and should be either white or green
+                    Point p = frame.getLocationOnScreen();
+                    p.translate(10, 10);
+                    BufferedImage bi =
+                        robot.createScreenCapture(
+                            new Rectangle(p.x, p.y,
+                                          (IMAGE_W / 2), (IMAGE_H / 2)));
+                    int accepted1[] = {Color.white.getRGB(),
+                                       Color.green.getRGB()};
+                    checkBI(bi, accepted1);
+
+                    // the area where we didn't render should stay white
+                    robot.waitForIdle();
+                    p = frame.getLocationOnScreen();
+                    p.translate(10, IMAGE_H + 10);
+                    bi = robot.createScreenCapture(
+                        new Rectangle(p.x, p.y,
+                                      frame.getWidth() - 20,
+                                      frame.getHeight() - 20 - (IMAGE_H)));
+                    int accepted2[] = { Color.white.getRGB() };
+                    checkBI(bi, accepted2);
+                }
+                Thread.yield();
             }
-
-            Thread.yield();
+        } finally {
+            frame.dispose();
         }
-        frame.dispose();
         System.out.println("Test Passed");
     }
 
@@ -214,7 +221,6 @@ public class OnScreenRenderingResizeTest {
                         ImageIO.write(bi, "png", new File(name));
                         System.out.println("Screen shot file: " + name);
                     } catch (IOException ex) {}
-                    frame.dispose();
                     throw new
                         RuntimeException("Test failed at " + x + "-" + y +
                                          " rgb=0x" + Integer.
