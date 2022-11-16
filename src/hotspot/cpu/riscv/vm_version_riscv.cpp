@@ -158,7 +158,7 @@ void VM_Version::initialize() {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
-    if (FLAG_IS_DEFAULT(UseRVA20U64)) {
+    if (UseRVA20U64) {
       warning("UseRVA20U64 is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVA20U64, false);
     }
