@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeBlob.hpp"
-#include "opto/c2CodeStubs.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/compile.hpp"
 #include "opto/output.hpp"

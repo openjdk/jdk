@@ -29,7 +29,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "opto/ad.hpp"
-#include "opto/c2CodeStubs.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/phase.hpp"
 #include "runtime/vm_version.hpp"
