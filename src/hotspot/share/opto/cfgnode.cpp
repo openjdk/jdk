@@ -2782,9 +2782,8 @@ Node* CreateExNode::Identity(PhaseGVN* phase) {
   // exception oop through.
   CallNode *call = in(1)->in(0)->as_Call();
 
-  return ( in(0)->is_CatchProj() && in(0)->in(0)->in(1) == in(1) )
-    ? this
-    : call->in(TypeFunc::Parms);
+  return (in(0)->is_CatchProj() && in(0)->in(0)->is_Catch() &&
+          in(0)->in(0)->in(1) == in(1)) ? this : call->in(TypeFunc::Parms);
 }
 
 //=============================================================================
