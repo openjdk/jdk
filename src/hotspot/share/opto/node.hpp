@@ -1217,7 +1217,6 @@ public:
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
 
-  void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
@@ -1516,7 +1515,7 @@ class SimpleDUIterator : public StackObj {
 // Abstractly provides an infinite array of Node*'s, initialized to NULL.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Node_Array : public ResourceObj {
+class Node_Array : public AnyObj {
   friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in

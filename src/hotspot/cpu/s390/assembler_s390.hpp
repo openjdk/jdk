@@ -3121,6 +3121,9 @@ class Assembler : public AbstractAssembler {
   static bool is_z_algr(long x) {
     return (ALGR_ZOPC == (x & RRE_MASK));
   }
+  static bool is_z_cfi(long x) {
+    return (CFI_ZOPC == (x & RIL_MASK));
+  }
   static bool is_z_lb(long x) {
     return (LB_ZOPC == (x & LB_MASK));
   }

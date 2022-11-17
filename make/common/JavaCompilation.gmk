@@ -219,7 +219,7 @@ define SetupJavaCompilationBody
     # Use java server if it is enabled, and the user does not want a specialized
     # class path.
     ifeq ($$(ENABLE_JAVAC_SERVER)+$$($1_CLASSPATH), true+)
-      $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.sjavac.Main
+      $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_javacserver_classes javacserver.Main
 
       # Create a configuration file with the needed information for the javac
       # server to function properly.

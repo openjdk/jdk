@@ -145,6 +145,7 @@ public class WindowsPlacesBar extends JToolBar
             buttons[i].setPreferredSize(buttonSize);
             buttons[i].setMaximumSize(buttonSize);
             buttons[i].addActionListener(this);
+            buttons[i].setToolTipText(folderName);
             add(buttons[i]);
             if (i < files.length-1 && isXPStyle) {
                 add(Box.createRigidArea(new Dimension(1, 1)));
