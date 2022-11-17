@@ -882,7 +882,7 @@ class StubGenerator: public StubCodeGenerator {
   /*
    * if (is_aligned) {
    *   if (count >= 32)
-   *     goto copy_big;
+   *     goto copy32;
    *   if (count >= 8)
    *     goto copy8;
    *   goto copy_small;
@@ -1043,8 +1043,8 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ bind(copy32);
     if (is_backwards) {
-      __ addi(src, src, -wordSize*4);
-      __ addi(dst, dst, -wordSize*4);
+      __ addi(src, src, -wordSize * 4);
+      __ addi(dst, dst, -wordSize * 4);
     }
     // we first load 32 bytes, then write it, so the direction here doesn't matter
     __ ld(tmp3, Address(src));
@@ -1057,11 +1057,11 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(tmp6, Address(dst, 24));
 
     if (!is_backwards) {
-      __ addi(src, src, wordSize*4);
-      __ addi(dst, dst, wordSize*4);
+      __ addi(src, src, wordSize * 4);
+      __ addi(dst, dst, wordSize * 4);
     }
-    __ addi(tmp, cnt, -(32+wordSize*4));
-    __ addi(cnt, cnt, -wordSize*4);
+    __ addi(tmp, cnt, -(32 + wordSize * 4));
+    __ addi(cnt, cnt, -wordSize * 4);
     __ bgez(tmp, copy32); // cnt >= 32, do next loop
 
     __ beqz(cnt, done); // if that's all - done
@@ -1080,7 +1080,7 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(src, src, wordSize);
       __ addi(dst, dst, wordSize);
     }
-    __ addi(tmp, cnt, -(8+wordSize));
+    __ addi(tmp, cnt, -(8 + wordSize));
     __ addi(cnt, cnt, -wordSize);
     __ bgez(tmp, copy8); // cnt >= 8, do next loop
 
