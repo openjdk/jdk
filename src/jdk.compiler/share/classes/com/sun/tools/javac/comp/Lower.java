@@ -2770,7 +2770,8 @@ public class Lower extends TreeTranslator {
                 lambdaTranslationMap = prevLambdaTranslationMap;
             }
         }
-        if (tree.name == names.init && (tree.sym.flags_field & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0) {
+        if (tree.name == names.init && ((tree.sym.flags_field & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
+                (tree.sym.flags_field & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD))) {
             // lets find out if there is any field waiting to be initialized
             ListBuffer<VarSymbol> fields = new ListBuffer<>();
             for (Symbol sym : currentClass.getEnclosedElements()) {

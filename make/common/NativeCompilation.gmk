@@ -345,7 +345,8 @@ define SetupCompileNativeFileBody
 
     ifneq ($(DISABLE_WARNING_PREFIX), )
       $1_WARNINGS_FLAGS := $$(addprefix $(DISABLE_WARNING_PREFIX), \
-        $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)))
+        $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)) \
+        $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)_$$($1_FILENAME)))
     endif
 
     $1_BASE_CFLAGS :=  $$($$($1_BASE)_CFLAGS) $$($$($1_BASE)_EXTRA_CFLAGS) \
@@ -488,7 +489,19 @@ endef
 #   CFLAGS the compiler flags to be used, used both for C and C++.
 #   CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
 #   LDFLAGS the linker flags to be used, used both for C and C++.
+#   LDFLAGS_<toolchain> the linker flags to be used for the specified toolchain,
+#       used both for C and C++.
+#   LDFLAGS_<OS> the linker flags to be used for the specified target OS,
+#       used both for C and C++.
+#   LDFLAGS_<toolchain>_<OS> the linker flags to be used for the specified
+#       toolchain and target OS, used both for C and C++.
 #   LIBS the libraries to link to
+#   LIBS_<OS> the libraries to link to for the specified target OS,
+#       used both for C and C++.
+#   LIBS_<toolchain> the libraries to link to for the specified toolchain,
+#       used both for C and C++.
+#   LIBS_<OS>_<toolchain> the libraries to link to for the specified target
+#       OS and toolchain, used both for C and C++.
 #   ARFLAGS the archiver flags to be used
 #   OBJECT_DIR the directory where we store the object files
 #   OUTPUT_DIR the directory where the resulting binary is put
@@ -511,10 +524,20 @@ endef
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST, HIGHEST_JVM, SIZE
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
+#   DISABLED_WARNINGS_<toolchain>_<OS> Disable the given warnings for the specified
+#       toolchain and target OS
 #   DISABLED_WARNINGS_C_<toolchain> Disable the given warnings for the specified toolchain
 #       when compiling C code
+#   DISABLED_WARNINGS_C_<toolchain>_<OS> Disable the given warnings for the specified
+#       toolchain and target OS when compiling C code
 #   DISABLED_WARNINGS_CXX_<toolchain> Disable the given warnings for the specified
 #       toolchain when compiling C++ code
+#   DISABLED_WARNINGS_CXX_<toolchain>_<OS> Disable the given warnings for the specified
+#       toolchain and target OS when compiling C++ code
+#   DISABLED_WARNINGS_<toolchain>_<filename> Disable the given warnings for the specified
+#       toolchain when compiling the file specified by filename
+#   DISABLED_WARNINGS_<toolchain>_<OS>_<filename> Disable the given warnings for the specified
+#       toolchain and target OS when compiling the file specified by filename
 #   STRIP_SYMBOLS Set to false to override global strip policy and always leave
 #       symbols in the binary, if the toolchain allows for it
 #   DEBUG_SYMBOLS Set to false to disable generation of debug symbols
@@ -690,10 +713,12 @@ define SetupNativeCompilationBody
   # Sort to remove duplicates and provide a reproducible order on the input files to the linker.
   $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
 
-  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS, and/or OPENJDK_TARGET_OS plus
-  # OPENJDK_TARGET_CPU pair dependent variables for CFLAGS.
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS, TOOLCHAIN_TYPE and
+  # OPENJDK_TARGET_OS plus OPENJDK_TARGET_CPU pair dependent variables for CFLAGS.
   $1_EXTRA_CFLAGS := $$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_CFLAGS_$(TOOLCHAIN_TYPE)) \
       $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU))
+
   ifneq ($(DEBUG_LEVEL), release)
     # Pickup extra debug dependent variables for CFLAGS
     $1_EXTRA_CFLAGS += $$($1_CFLAGS_debug)
@@ -710,8 +735,11 @@ define SetupNativeCompilationBody
     $1_EXTRA_CFLAGS += $$(STATIC_LIBS_CFLAGS)
   endif
 
-  # Pickup extra OPENJDK_TARGET_OS_TYPE and/or OPENJDK_TARGET_OS dependent variables for CXXFLAGS.
-  $1_EXTRA_CXXFLAGS := $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS))
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and/or TOOLCHAIN_TYPE
+  # dependent variables for CXXFLAGS.
+  $1_EXTRA_CXXFLAGS := $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_CXXFLAGS_$(TOOLCHAIN_TYPE))
+
   ifneq ($(DEBUG_LEVEL), release)
     # Pickup extra debug dependent variables for CXXFLAGS
     $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_debug)
@@ -754,12 +782,16 @@ define SetupNativeCompilationBody
         $$(DISABLED_WARNINGS) \
         $$(DISABLED_WARNINGS_C) \
         $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
-        $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)))
+        $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)) \
+        $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)))
     $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
         $$(DISABLED_WARNINGS) \
         $$(DISABLED_WARNINGS_CXX) \
         $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
-        $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)))
+        $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)) \
+        $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)))
   endif
 
   # Check if warnings should be considered errors.
@@ -970,10 +1002,15 @@ define SetupNativeCompilationBody
     $1_REAL_MAPFILE := $$($1_MAPFILE)
   endif
 
-  # Pickup extra OPENJDK_TARGET_OS_TYPE and/or OPENJDK_TARGET_OS dependent variables
-  # for LDFLAGS and LIBS
-  $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS))
-  $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS))
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and TOOLCHAIN_TYPE
+  # dependent variables for LDFLAGS and LIBS, and additionally the pair dependent
+  # TOOLCHAIN_TYPE plus OPENJDK_TARGET_OS for LDFLAGS, or OPENJDK_TARGET_OS plus
+  # TOOLCHAIN_TYPE for LIBS
+  $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)) $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
+  $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS)) \
+      $$($1_LIBS_$(OPENJDK_TARGET_OS)_$(TOOLCHAIN_TYPE)) $$($1_LIBS_$(TOOLCHAIN_TYPE))
+
   ifneq ($$($1_REAL_MAPFILE), )
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
   endif

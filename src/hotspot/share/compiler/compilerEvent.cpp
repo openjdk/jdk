@@ -90,7 +90,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
   {
     PhaseTypeGuard guard(sync);
     if (phase_names == NULL) {
-      phase_names = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<const char*>(100, mtCompiler);
+      phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
       register_jfr_serializer = true;
     } else if (may_exist) {
       index = lookup_phase(phase_name);

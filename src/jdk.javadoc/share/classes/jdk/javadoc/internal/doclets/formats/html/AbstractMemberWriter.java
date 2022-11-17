@@ -99,9 +99,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      */
     public abstract TableHeader getSummaryTableHeader(Element member);
 
-    private Table summaryTable;
+    private Table<Element> summaryTable;
 
-    private Table getSummaryTable() {
+    private Table<Element> getSummaryTable() {
         if (summaryTable == null) {
             summaryTable = createSummaryTable();
         }
@@ -116,7 +116,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      *
      * @return the summary table
      */
-    protected abstract Table createSummaryTable();
+    protected abstract Table<Element> createSummaryTable();
 
     /**
      * Adds inherited summary label for the member.
@@ -300,7 +300,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             return;
         }
         boolean printedUseTableHeader = false;
-        Table useTable = new Table(HtmlStyle.summaryTable)
+        var useTable = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(heading)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
         for (Element element : members) {
@@ -345,7 +345,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (tElement != typeElement) {
             throw new IllegalStateException();
         }
-        Table table = getSummaryTable();
+        var table = getSummaryTable();
         List<Content> rowContents = new ArrayList<>();
         Content summaryType = new ContentBuilder();
         addSummaryType(member, summaryType);

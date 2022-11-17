@@ -23,12 +23,13 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
@@ -73,7 +74,6 @@ public final class EditorTopComponent extends TopComponent {
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
-
 
     public EditorTopComponent(InputGraph graph) {
         initComponents();
@@ -135,18 +135,19 @@ public final class EditorTopComponent extends TopComponent {
         content.add(diagramViewModel);
         associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
-        diagramViewModel.getDiagramChangedEvent().addListener(model -> {
-            setDisplayName(model.getGraph().getName());
-            setToolTipText(model.getGroup().getName());
-            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
-        });
-
         Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
         if (group.getParent() instanceof GraphDocument) {
             final GraphDocument doc = (GraphDocument) group.getParent();
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
+
+        diagramViewModel.addTitleCallback(changedGraph -> {
+            setDisplayName(changedGraph.getDisplayName());
+            setToolTipText(diagramViewModel.getGroup().getDisplayName());
+        });
+
+        diagramViewModel.getGraphChangedEvent().addListener(model -> graphChanged(model));
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
@@ -217,6 +218,10 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
+
+        JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
+        globalSelectionButton.setHideActionText(true);
+        toolBar.add(globalSelectionButton);
         toolBar.add(new JToggleButton(new SelectionModeAction()));
         toolBar.addSeparator();
         toolBar.add(new ZoomLevelAction(scene));
@@ -239,15 +244,17 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
 
-        getModel().getDiagramChangedEvent().fire();
+        graphChanged(diagramViewModel);
+    }
+
+    private void graphChanged(DiagramViewModel model) {
+        setDisplayName(model.getGraph().getDisplayName());
+        setToolTipText(model.getGroup().getDisplayName());
+        graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
     }
 
     public DiagramViewModel getModel() {
         return scene.getModel();
-    }
-
-    private Diagram getDiagram() {
-        return getModel().getDiagram();
     }
 
     public void setSelectionMode(boolean enable) {
@@ -323,33 +330,16 @@ public final class EditorTopComponent extends TopComponent {
         }
     }
 
-    public void setSelectedFigures(List<Figure> list) {
-        scene.setSelection(list);
-        scene.centerFigures(list);
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
+        scene.addSelectedNodes(nodes, showIfHidden);
     }
 
-    public void setSelectedNodes(Set<InputNode> nodes) {
-        List<Figure> list = new ArrayList<>();
-        Set<Integer> ids = new HashSet<>();
-        for (InputNode n : nodes) {
-            ids.add(n.getId());
-        }
-        for (Figure f : getDiagram().getFigures()) {
-            if (ids.contains(f.getInputNode().getId())) {
-                list.add(f);
-            }
-        }
-        setSelectedFigures(list);
+    public void centerSelectedNodes() {
+        scene.centerSelectedFigures();
     }
 
-    public void setSelectedNodes(InputBlock b) {
-        List<Figure> list = new ArrayList<>();
-        for (Figure f : getDiagram().getFigures()) {
-            if (f.getBlock().getInputBlock() == b) {
-                list.add(f);
-            }
-        }
-        setSelectedFigures(list);
+    public void clearSelectedNodes() {
+        scene.clearSelectedNodes();
     }
 
     public Rectangle getSceneBounds() {
