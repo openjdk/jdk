@@ -37,7 +37,6 @@ import java.io.File;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
 
 public class TestAutoCreateSharedArchiveUpgrade {
     // The JDK being tested
