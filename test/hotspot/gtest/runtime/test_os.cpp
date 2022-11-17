@@ -890,9 +890,7 @@ TEST_VM(os, is_first_C_frame) {
 
 TEST_VM(os, open_O_CLOEXEC) {
 #if !defined(_WIN32)
-  int err = system("touch test.txt"); // create the "test.txt" file
-  EXPECT_TRUE(err == 0);
-  int fd = os::open("test.txt", 0, O_RDONLY); // open will use O_CLOEXEC
+  int fd = os::open("test", O_RDWR | O_CREAT | O_TRUNC, 0666); // open will use O_CLOEXEC
   EXPECT_TRUE(fd > 0);
   int flags = ::fcntl(fd, F_GETFD);
   EXPECT_TRUE((flags & FD_CLOEXEC) != 0); // if O_CLOEXEC worked, then FD_CLOEXEC should be ON
