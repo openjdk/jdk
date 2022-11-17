@@ -66,7 +66,7 @@ public class TestJitRestart {
     private static boolean testWithBlobType(BlobType btype, long availableSize) throws Exception {
         Recording r = new Recording();
         r.enable(EventNames.CodeCacheFull);
-        r.enable(EventNames.JitRestart);
+        r.enable(EventNames.JITRestart);
         r.start();
         long addr = WHITE_BOX.allocateCodeBlob(availableSize, btype.id);
         WHITE_BOX.freeCodeBlob(addr);
@@ -79,7 +79,7 @@ public class TestJitRestart {
 
         for (RecordedEvent evt: events) {
             System.out.println(evt);
-            if (evt.getEventType().getName().equals("jdk.JitRestart")) {
+            if (evt.getEventType().getName().equals("jdk.JITRestart")) {
                 Events.assertField(evt, "codeCacheMaxCapacity").notEqual(0L);
                 Events.assertField(evt, "freedMemory").notEqual(0L);
                 return true;

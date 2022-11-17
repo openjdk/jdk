@@ -521,7 +521,7 @@
       <setting name="enabled" control="compiler-enabled-failure">false</setting>
     </event>
 
-    <event name="jdk.JitRestart">
+    <event name="jdk.JITRestart">
       <setting name="enabled" control="compiler-enabled">true</setting>
     </event>
 
