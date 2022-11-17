@@ -5,9 +5,9 @@ import jdk.internal.javac.PreviewFeature;
 import jdk.internal.ref.CleanerFactory;
 
 /**
- * A segment scope controls access to a memory segment.
+ * A segment scope controls access to memory segments.
  * <p>
- * A memory segment can only be accessed while its scope is {@linkplain #isAlive() alive}. Moreoever,
+ * A memory segment can only be accessed while its scope is {@linkplain #isAlive() alive}. Moreover,
  * depending on how the segment scope has been obtained, access might additionally be
  * <a href="Arena.html#thread-confinement">restricted to specific threads</a>.
  * <p>

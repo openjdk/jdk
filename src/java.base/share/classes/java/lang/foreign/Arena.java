@@ -129,7 +129,15 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * Closes this arena. If this method completes normally, the arena scope is no longer {@linkplain SegmentScope#isAlive() alive},
      * and all the memory segments associated with it can no longer be accessed. Furthermore, any off-heap region of memory backing the
      * segments associated with that scope are also released.
-     * @throws IllegalStateException if the arena has already been {@linkplain #close() closed}.
+     *
+     * @apiNote This operation is not idempotent; that is, closing an already closed arena <em>always</em> results in an
+     * exception being thrown. This reflects a deliberate design choice: arena state transitions should be
+     * manifest in the client code; a failure in any of these transitions reveals a bug in the underlying application
+     * logic.
+     *
+     * @see SegmentScope#isAlive()
+     *
+     * @throws IllegalStateException if the arena has already been closed.
      * @throws IllegalStateException if the arena scope is {@linkplain SegmentScope#whileAlive(Runnable) kept alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isCloseableBy(T) == false}.

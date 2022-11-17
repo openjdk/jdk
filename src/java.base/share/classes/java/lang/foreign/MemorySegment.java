@@ -106,7 +106,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * Finally, access operations on a memory segment are subject to the thread-confinement checks enforced by the associated
  * scope; that is, if the segment is the {@linkplain SegmentScope#global() global scope} or an {@linkplain SegmentScope#auto() automatic scope},
- * it can be accessed by multiple threads. If the segment is associatd with an arena scope, then it can only be
+ * it can be accessed by multiple threads. If the segment is associated with an arena scope, then it can only be
  * accessed compatibly with the <a href="Arena.html#thread-confinement">arena confinement characteristics</a>.
  *
  * <h2 id="segment-deref">Accessing memory segments</h2>
