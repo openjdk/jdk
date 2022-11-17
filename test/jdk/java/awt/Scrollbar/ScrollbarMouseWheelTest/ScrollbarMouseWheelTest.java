@@ -61,8 +61,8 @@ public final class ScrollbarMouseWheelTest
 
     Robot robot;
 
-    int sb1upevents, sb2upevents, pnlupevents;
-    int sb1downevents, sb2downevents, pnldownevents;
+    volatile int sb1upevents, sb2upevents, pnlupevents;
+    volatile int sb1downevents, sb2downevents, pnldownevents;
 
     public static void main(final String[] args) {
         new ScrollbarMouseWheelTest().test();
@@ -107,6 +107,9 @@ public final class ScrollbarMouseWheelTest
         testComp(sb2, true);
         // down on sb2
         testComp(sb2, false);
+
+        robot.waitForIdle();
+        robot.delay(500);
 
         frame.dispose();
 
