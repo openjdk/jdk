@@ -126,13 +126,29 @@ JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
 
 // iterate over all entries in the tag map.
 void JvmtiTagMap::entry_iterate(JvmtiTagMapEntryClosure* closure) {
-  hashmap()->entry_iterate(closure);
+  assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
+  _hashmap->entry_iterate(closure);
 }
 
 // returns true if the hashmaps are empty
 bool JvmtiTagMap::is_empty() {
   assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
-  return hashmap()->is_empty();
+  return _hashmap->is_empty();
+}
+
+jlong JvmtiTagMap::find(oop o) {
+  assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
+  return _hashmap->find(o);
+}
+
+void JvmtiTagMap::add(oop o, jlong tag) {
+  assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
+  _hashmap->add(o, tag);
+}
+
+void JvmtiTagMap::remove(oop o) {
+  assert(SafepointSynchronize::is_at_safepoint() || is_locked(), "checking");
+  _hashmap->remove(o);
 }
 
 // This checks for posting before operations that use
@@ -166,21 +182,6 @@ void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
   }
 }
 
-// Return the tag value for an object, or 0 if the object is
-// not tagged
-//
-static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
-  JvmtiTagMapEntry* entry = tag_map->hashmap()->find(o);
-  if (entry == NULL) {
-    return 0;
-  } else {
-    jlong tag = entry->tag();
-    assert(tag != 0, "should not be zero");
-    return entry->tag();
-  }
-}
-
-
 // A CallbackWrapper is a support class for querying and tagging an object
 // around a callback to a profiler. The constructor does pre-callback
 // work to get the tag value, klass tag value, ... and the destructor
@@ -191,15 +192,15 @@ static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
 //
 //   (*callback)(wrapper.klass_tag(), wrapper.obj_size(), wrapper.obj_tag_p(), ...)
 //
-// } // wrapper goes out of scope here which results in the destructor
+// }
+// wrapper goes out of scope here which results in the destructor
 //      checking to see if the object has been tagged, untagged, or the
 //      tag value has changed.
 //
 class CallbackWrapper : public StackObj {
  private:
   JvmtiTagMap* _tag_map;
-  JvmtiTagMapTable* _hashmap;
-  JvmtiTagMapEntry* _entry;
+  bool _entry_found;
   oop _o;
   jlong _obj_size;
   jlong _obj_tag;
@@ -209,8 +210,7 @@ class CallbackWrapper : public StackObj {
   JvmtiTagMap* tag_map() const      { return _tag_map; }
 
   // invoked post-callback to tag, untag, or update the tag of an object
-  void inline post_callback_tag_update(oop o, JvmtiTagMapTable* hashmap,
-                                       JvmtiTagMapEntry* entry, jlong obj_tag);
+  void inline post_callback_tag_update(oop o, jlong obj_tag);
  public:
   CallbackWrapper(JvmtiTagMap* tag_map, oop o) {
     assert(Thread::current()->is_VM_thread() || tag_map->is_locked(),
@@ -224,20 +224,18 @@ class CallbackWrapper : public StackObj {
 
     // record the context
     _tag_map = tag_map;
-    _hashmap = tag_map->hashmap();
-    _entry = _hashmap->find(_o);
+    _obj_tag = tag_map->find(_o);
 
     // get object tag
-    _obj_tag = (_entry == NULL) ? 0 : _entry->tag();
 
     // get the class and the class's tag value
     assert(vmClasses::Class_klass()->is_mirror_instance_klass(), "Is not?");
 
-    _klass_tag = tag_for(tag_map, _o->klass()->java_mirror());
+    _klass_tag = tag_map->find(_o->klass()->java_mirror());
   }
 
   ~CallbackWrapper() {
-    post_callback_tag_update(_o, _hashmap, _entry, _obj_tag);
+    post_callback_tag_update(_o, _obj_tag);
   }
 
   inline jlong* obj_tag_p()                     { return &_obj_tag; }
@@ -249,24 +247,24 @@ class CallbackWrapper : public StackObj {
 
 
 // callback post-callback to tag, untag, or update the tag of an object
-void inline CallbackWrapper::post_callback_tag_update(oop o,
-                                                      JvmtiTagMapTable* hashmap,
-                                                      JvmtiTagMapEntry* entry,
-                                                      jlong obj_tag) {
-  if (entry == NULL) {
+
+void inline CallbackWrapper::post_callback_tag_update(oop o, jlong obj_tag) {
+  jlong current_tag = _tag_map->find(o);
+  if (current_tag == 0 ) {
     if (obj_tag != 0) {
       // callback has tagged the object
       assert(Thread::current()->is_VM_thread(), "must be VMThread");
-      hashmap->add(o, obj_tag);
+      _tag_map->add(o, obj_tag);
     }
   } else {
     // object was previously tagged - the callback may have untagged
     // the object or changed the tag value
     if (obj_tag == 0) {
-      hashmap->remove(o);
+      _tag_map->remove(o);
     } else {
-      if (obj_tag != entry->tag()) {
-         entry->set_tag(obj_tag);
+      if (obj_tag != current_tag ) {
+        _tag_map->remove(o);
+        _tag_map->add(o, obj_tag);
       }
     }
   }
@@ -290,8 +288,6 @@ void inline CallbackWrapper::post_callback_tag_update(oop o,
 class TwoOopCallbackWrapper : public CallbackWrapper {
  private:
   bool _is_reference_to_self;
-  JvmtiTagMapTable* _referrer_hashmap;
-  JvmtiTagMapEntry* _referrer_entry;
   oop _referrer;
   jlong _referrer_obj_tag;
   jlong _referrer_klass_tag;
@@ -312,24 +308,19 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
     } else {
       _referrer = referrer;
       // record the context
-      _referrer_hashmap = tag_map->hashmap();
-      _referrer_entry = _referrer_hashmap->find(_referrer);
+      _referrer_obj_tag = tag_map->find(_referrer);
 
       // get object tag
-      _referrer_obj_tag = (_referrer_entry == NULL) ? 0 : _referrer_entry->tag();
       _referrer_tag_p = &_referrer_obj_tag;
 
       // get referrer class tag.
-      _referrer_klass_tag = tag_for(tag_map, _referrer->klass()->java_mirror());
+      _referrer_klass_tag = tag_map->find(_referrer->klass()->java_mirror());
     }
   }
 
   ~TwoOopCallbackWrapper() {
     if (!is_reference_to_self()){
-      post_callback_tag_update(_referrer,
-                               _referrer_hashmap,
-                               _referrer_entry,
-                               _referrer_obj_tag);
+      post_callback_tag_update(_referrer, _referrer_obj_tag);
     }
   }
 
@@ -356,15 +347,12 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
-
-  // see if the object is already tagged
-  JvmtiTagMapTable* hashmap = _hashmap;
-  JvmtiTagMapEntry* entry = hashmap->find(o);
+  jlong found_tag = _hashmap->find(o);
 
   // if the object is not already tagged then we tag it
-  if (entry == NULL) {
+  if (found_tag == 0) {
     if (tag != 0) {
-      hashmap->add(o, tag);
+      _hashmap->add(o, tag);
     } else {
       // no-op
     }
@@ -373,9 +361,10 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
     // the tag (if a new tag value has been provided)
     // or remove the object if the new tag value is 0.
     if (tag == 0) {
-      hashmap->remove(o);
+      _hashmap->remove(o);
     } else {
-      entry->set_tag(tag);
+      _hashmap->remove(o);
+      _hashmap->add(o,tag);
     }
   }
 }
@@ -392,7 +381,7 @@ jlong JvmtiTagMap::get_tag(jobject object) {
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
-  return tag_for(this, o);
+  return find(o);
 }
 
 
@@ -1183,7 +1172,7 @@ void JvmtiTagMap::remove_dead_entries_locked(GrowableArray<jlong>* objects) {
     }
     log_info(jvmti, table)("TagMap table needs cleaning%s",
                            ((objects != NULL) ? " and posting" : ""));
-    hashmap()->remove_dead_entries(objects);
+    _hashmap->remove_dead_entries(objects);
     _needs_cleaning = false;
   }
 }
@@ -1271,25 +1260,26 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
   // - if it matches then we create a JNI local reference to the object
   // and record the reference and tag value.
   //
-  void do_entry(JvmtiTagMapEntry* entry) {
+  bool do_entry(JvmtiTagMapEntry & key , jlong & value ) {
     for (int i=0; i<_tag_count; i++) {
-      if (_tags[i] == entry->tag()) {
+      if (_tags[i] == value) {
         // The reference in this tag map could be the only (implicitly weak)
         // reference to that object. If we hand it out, we need to keep it live wrt
         // SATB marking similar to other j.l.ref.Reference referents. This is
         // achieved by using a phantom load in the object() accessor.
-        oop o = entry->object();
+        oop o = key.object();
         if (o == NULL) {
           _some_dead_found = true;
           // skip this whole entry
-          return;
+          return true;
         }
         assert(o != NULL && Universe::heap()->is_in(o), "sanity check");
         jobject ref = JNIHandles::make_local(_thread, o);
         _object_results->append(ref);
-        _tag_results->append((uint64_t)entry->tag());
+        _tag_results->append(value);
       }
     }
+    return true;
   }
 
   // return the results from the collection
@@ -1662,7 +1652,7 @@ inline bool CallbackInvoker::invoke_basic_object_reference_callback(jvmtiObjectR
   if (referrer == context->last_referrer()) {
     referrer_tag = context->last_referrer_tag();
   } else {
-    referrer_tag = tag_for(tag_map(), referrer);
+    referrer_tag = tag_map()->find(referrer);
   }
 
   // do the callback
@@ -2658,7 +2648,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
   assert(threadObj != NULL, "sanity check");
 
   // only need to get the thread's tag once per thread
-  jlong thread_tag = tag_for(_tag_map, threadObj);
+  jlong thread_tag = _tag_map->find(threadObj);
 
   // also need the thread id
   jlong tid = java_lang_Thread::thread_id(threadObj);

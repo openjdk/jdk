@@ -60,10 +60,11 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   bool is_locked()                          { return lock()->is_locked(); }
   inline Monitor* lock()                    { return &_lock; }
 
-  JvmtiTagMapTable* hashmap() { return _hashmap; }
-
   // returns true if the hashmaps are empty
   bool is_empty();
+  jlong find(oop o);
+  void add(oop o, jlong tag);
+  void remove(oop o);
 
   // return tag for the given environment
   static JvmtiTagMap* tag_map_for(JvmtiEnv* env);
