@@ -881,7 +881,11 @@ class StubGenerator: public StubCodeGenerator {
   //
   /*
    * if (is_aligned) {
-   *   goto copy_8_bytes;
+   *   if (count >= 32)
+   *     goto copy_big;
+   *   if (count >= 8)
+   *     goto copy8;
+   *   goto copy_small;
    * }
    * bool is_backwards = step < 0;
    * int granularity = uabs(step);
@@ -1056,14 +1060,14 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(src, src, wordSize*4);
       __ addi(dst, dst, wordSize*4);
     }
-    __ addi(tmp4, cnt, -(32+wordSize*4));
+    __ addi(tmp, cnt, -(32+wordSize*4));
     __ addi(cnt, cnt, -wordSize*4);
-    __ bgez(tmp4, copy32); // cnt >= 32, do next loop
+    __ bgez(tmp, copy32); // cnt >= 32, do next loop
 
     __ beqz(cnt, done); // if that's all - done
 
-    __ addi(tmp4, cnt, -8); // if not - copy the reminder
-    __ bltz(tmp4, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8
+    __ addi(tmp, cnt, -8); // if not - copy the reminder
+    __ bltz(tmp, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8
 
     __ bind(copy8);
     if (is_backwards) {
@@ -1076,9 +1080,9 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(src, src, wordSize);
       __ addi(dst, dst, wordSize);
     }
-    __ addi(tmp4, cnt, -(8+wordSize));
+    __ addi(tmp, cnt, -(8+wordSize));
     __ addi(cnt, cnt, -wordSize);
-    __ bgez(tmp4, copy8); // cnt >= 8, do next loop
+    __ bgez(tmp, copy8); // cnt >= 8, do next loop
 
     __ beqz(cnt, done); // if that's all - done
 
