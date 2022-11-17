@@ -374,23 +374,22 @@ void StubGenerator::poly1305_limbs(
   }
   __ shlq(t0, 40);
   __ addq(a1, t0);
-  if (a2 == noreg) {
-    return;
+  if (a2 != noreg) {
+    __ adcq(a2, 0);
+
+    // One round of reduction
+    // Take bits above 130 in a2, multiply by 5 and add to a2:a1:a0
+    __ movq(t0, a2);
+    __ andq(t0, ~3);
+    __ andq(a2, 3);
+    __ movq(t1, t0);
+    __ shrq(t1, 2);
+    __ addq(t0, t1);
+
+    __ addq(a0, t0);
+    __ adcq(a1, 0);
+    __ adcq(a2, 0);
   }
-  __ adcq(a2, 0);
-
-  // One round of reduction
-  // Take bits above 130 in a2, multiply by 5 and add to a2:a1:a0
-  __ movq(t0, a2);
-  __ andq(t0, ~3);
-  __ andq(a2, 3);
-  __ movq(t1, t0);
-  __ shrq(t1, 2);
-  __ addq(t0, t1);
-
-  __ addq(a0, t0);
-  __ adcq(a1, 0);
-  __ adcq(a2, 0);
 }
 
 /**
