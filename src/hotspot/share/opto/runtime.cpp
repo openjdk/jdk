@@ -1018,7 +1018,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
-  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
+  if (is_sha3) fields[argp++] = TypeInt::INT; // block_size
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1040,7 +1040,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
-  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
+  if (is_sha3) fields[argp++] = TypeInt::INT; // block_size
   fields[argp++] = TypeInt::INT;     // ofs
   fields[argp++] = TypeInt::INT;     // limit
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
