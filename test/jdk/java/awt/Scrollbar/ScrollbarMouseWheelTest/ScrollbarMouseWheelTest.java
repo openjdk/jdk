@@ -21,8 +21,19 @@
  * questions.
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTException;
+import java.awt.Component;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Scrollbar;
+import java.awt.Toolkit;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 /**
  * @test
@@ -34,23 +45,28 @@ import java.awt.event.*;
 public final class ScrollbarMouseWheelTest
         implements MouseWheelListener, WindowListener {
 
-    final static String tk = Toolkit.getDefaultToolkit().getClass().getName();
+    final static boolean isWindows =
+            Toolkit.getDefaultToolkit().getClass()
+                    .getName().equals("sun.awt.windows.WToolkit");
+
     final static int REPS = 5;
     // There is a bug on Windows: 4616935.
     // Wheel events comes to every component in the hierarchy so we should
     // check a platform.
     // There are two scrollbars within one Panel and both accept 5 clicks, so
     // Panel would accept 5*2 clicks on Windows.
-    final static int PANEL_REPS = tk.equals("sun.awt.windows.WToolkit")? REPS * 2: REPS;
+    final static int PANEL_REPS = isWindows ? REPS * 2: REPS;
 
     Scrollbar sb1;
     Scrollbar sb2;
     Panel pnl;
+
     class Sema {
         boolean flag;
         boolean getVal() { return flag;}
         void setVal(boolean b) { flag = b;}
     }
+
     Sema sema = new Sema();
 
     Robot robot;
@@ -100,6 +116,7 @@ public final class ScrollbarMouseWheelTest
                 }
             }
         }
+
         // up on sb1
         testComp(sb1, true);
         // down on sb1
@@ -108,7 +125,9 @@ public final class ScrollbarMouseWheelTest
         testComp(sb2, true);
         // down on sb2
         testComp(sb2, false);
+
         frame.dispose();
+
         System.out.println("Test done.");
         if (sb1upevents == REPS &&
                 sb2upevents == 0 &&
