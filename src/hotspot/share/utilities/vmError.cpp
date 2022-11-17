@@ -1632,7 +1632,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // here would just recurse endlessly.
         // Any information (signal, context, siginfo etc) printed here should use the function
         // arguments, not the information stored in *this, since those describe the primary crash.
-        char tmp[256]; // cannot use global scratch buffer
+        static char tmp[256]; // cannot use global scratch buffer
         // Note: this string does get parsed by a number of jtreg tests,
         // see hotspot/jtreg/runtime/ErrorHandling.
         st->print("[error occurred during error reporting (%s), id 0x%x",
@@ -1650,18 +1650,23 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         }
         st->print_cr("]");
 #ifdef ASSERT
-        if (ErrorLogSecondaryErrorDetails) {
-          // Print even more information for secondary errors.
-          // This is more dangerous, therefore optional and only in debug builds.
-          if (siginfo != nullptr) {
-            st->print("[");
-            os::print_siginfo(st, siginfo);
+        {
+          static bool recursed = false;
+          if (ErrorLogSecondaryErrorDetails && !recursed) {
+            recursed = true;
+            // Print even more information for secondary errors. This may generate a lot of output
+            // and possibly disturb error reporting, therefore its optional and only available in debug builds.
+            if (siginfo != nullptr) {
+              st->print("[");
+              os::print_siginfo(st, siginfo);
+              st->print_cr("]");
+            }
+            st->print("[stack: ");
+            frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
+            print_native_stack(st, fr, _thread, false /* source info */, tmp, sizeof(tmp));
             st->print_cr("]");
+            recursed = false;
           }
-          st->print("[stack: ");
-          frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
-          print_native_stack(st, fr, _thread, true, tmp, sizeof(tmp));
-          st->print_cr("]");
         }
 #endif // ASSERT
       }
