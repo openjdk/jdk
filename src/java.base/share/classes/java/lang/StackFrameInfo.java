@@ -40,6 +40,12 @@ class StackFrameInfo implements StackFrame {
     private int bci;              // initialized by VM to >= 0
     private ContinuationScope contScope;
     private volatile StackTraceElement ste;
+    // private ResolvedMethodName method;
+    // private Class<?> clazz;
+    // private MethodType type;
+    // private String name;
+    // private int flags;
+    // save 3 fields: method, vmindex and resolution
 
     /*
      * Construct an empty StackFrameInfo object that will be filled by the VM

@@ -590,6 +590,69 @@ public final class StackWalker {
     }
 
     /**
+     * Applies the given function to the stream of {@code Class}es
+     * for the current thread, traversing from the top frame of the stack,
+     * which is the method calling this {@code walk} method.
+     *
+     * <p>This is equivalant to calling the {@link #walk(Function) walk} method
+     * with a function that first maps {@code StackFrame} to
+     * its declaring class through {@code StackFrame::getDeclaringClass} mapper
+     * and then applies the given function.
+     *
+     * <p>The {@code Class} stream will be closed when
+     * this method returns.  When a closed {@code Stream<Class<?>} object
+     * is reused, {@code IllegalStateException} will be thrown.
+     *
+     * <p>This method takes a {@code Function} accepting a {@code Stream<Class<?>},
+     * rather than returning a {@code Stream<Class<?>} and allowing the
+     * caller to directly manipulate the stream. The Java virtual machine is
+     * free to reorganize a thread's control stack, for example, via
+     * deoptimization. By taking a {@code Function} parameter, this method
+     * allows access to stack frames through a stable view of a thread's control
+     * stack.
+     *
+     * <p>Parallel execution is effectively disabled and stream pipeline
+     * execution will only occur on the current thread.
+     *
+     * @implNote The implementation stabilizes the stack by anchoring a frame
+     * specific to the stack walking and ensures that the stack walking is
+     * performed above the anchored frame. When the stream object is closed or
+     * being reused, {@code IllegalStateException} will be thrown.
+     *
+     * @param function a function that takes a stream of
+     *                 {@code Class<?>} and returns a result.
+     * @param <T> The type of the result of applying the function to the
+     *            stream of {@code Class<?>}.
+     *
+     * @return the result of applying the function to the stream of
+     *         {@code Class<?>}.
+     *
+     * @throws UnsupportedOperationException if this {@code StackWalker}
+     *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
+     *         Option.RETAIN_CLASS_REFERENCE}.
+     */
+    @CallerSensitive
+    public <T> T walkClass(Function<? super Stream<Class<?>>, ? extends T> function) {
+        if (!retainClassRef) {
+            throw new UnsupportedOperationException("This stack walker " +
+                    "does not have RETAIN_CLASS_REFERENCE access");
+        }
+
+        // Returning a Stream<Class<?> would be unsafe, as the stream could
+        // be used to access the stack frames in an uncontrolled manner.  For
+        // example, a caller might pass a Spliterator of stack frames after one
+        // or more frames had been traversed. There is no robust way to detect
+        // whether the execution point when
+        // Spliterator.tryAdvance(java.util.function.Consumer<? super T>) is
+        // invoked is the exact same execution point where the stack frame
+        // traversal is expected to resume.
+
+        Objects.requireNonNull(function);
+        return StackStreamFactory.makeClassTraverser(this, function)
+                                 .walk();
+    }
+
+    /**
      * Performs the given action on each element of {@code StackFrame} stream
      * of the current thread, traversing from the top frame of the stack,
      * which is the method calling this {@code forEach} method.

@@ -62,11 +62,12 @@ public class StackRecorderUtil implements Iterable<StackRecorderUtil.TestFrame> 
      */
     public void compareFrame(int index, StackFrame sf) {
         TestFrame tf = testFrames.get(index);
+        System.out.println(index + ": " + tf + " stack frame: " + sf);
         if (compareClasses) {
             if (!tf.declaringClass.equals(sf.getDeclaringClass())) {
                 throw new RuntimeException("Expected class: " +
                   tf.declaringClass.toString() + ", but got: " +
-                  sf.getDeclaringClass().toString());
+                  sf.getDeclaringClass().toString() + ", index: " + index);
             }
         } else {
             boolean caught = false;
@@ -84,11 +85,11 @@ public class StackRecorderUtil implements Iterable<StackRecorderUtil.TestFrame> 
 
         if (compareClassNames && !tf.className().equals(sf.getClassName())) {
             throw new RuntimeException("Expected class name: " + tf.className() +
-                    ", but got: " + sf.getClassName());
+                    ", but got: " + sf.getClassName() + ", index: " + index);
         }
         if (compareMethodNames && !tf.methodName.equals(sf.getMethodName())) {
             throw new RuntimeException("Expected method name: " + tf.methodName +
-                    ", but got: " + sf.getMethodName());
+                    ", but got: " + sf.getMethodName()  + ", index: " + index);
         }
         if (compareSTEs) {
             StackTraceElement ste = sf.toStackTraceElement();

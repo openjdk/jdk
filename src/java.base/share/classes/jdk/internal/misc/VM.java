@@ -27,10 +27,13 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
@@ -374,8 +377,27 @@ public class VM {
      * bootstrap class loader is on the stack.
      */
     public static ClassLoader latestUserDefinedLoader() {
-        ClassLoader loader = latestUserDefinedLoader0();
-        return loader != null ? loader : ClassLoader.getPlatformClassLoader();
+        return UserDefinedLoaderFinder.findFirst().orElse(ClassLoader.getPlatformClassLoader());
+    }
+
+    static class UserDefinedLoaderFinder {
+        private static final StackWalker WALKER = getWalker();
+
+        static StackWalker getWalker() {
+            PrivilegedAction<StackWalker> pa = () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            @SuppressWarnings("removal")
+            StackWalker sw = AccessController.doPrivileged(pa);
+            return sw;
+        }
+
+        static Optional<ClassLoader> findFirst() {
+            return WALKER.walkClass(s -> s.filter(UserDefinedLoaderFinder::isLatestUserDefinedLoader)
+                                          .map(Class::getClassLoader).findFirst());
+        }
+
+        static boolean isLatestUserDefinedLoader(Class<?> c) {
+            return isSystemDomainLoader(c.getClassLoader()) ? false : true;
+        }
     }
 
     /*
@@ -387,7 +409,7 @@ public class VM {
      * This method should be replaced with StackWalker::walk and then we can
      * remove the logic in the VM.
      */
-    private static native ClassLoader latestUserDefinedLoader0();
+    public static native ClassLoader latestUserDefinedLoader0();
 
     /**
      * Returns {@code true} if we are in a set UID program.

@@ -24,6 +24,8 @@ package org.openjdk.bench.java.lang;
 
 import java.lang.StackWalker.StackFrame;
 import java.util.concurrent.TimeUnit;
+
+import jdk.internal.reflect.Reflection;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,6 +37,11 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.profile.GCProfiler;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 /**
  * Benchmarks for java.lang.StackWalker
@@ -247,6 +254,48 @@ public class StackWalkBench {
         }
     }
 
+        /**
+         * Use Stackwalker.walkClass() to fetch all Class instances
+         */
+        @Benchmark
+        public void walkClass(Blackhole bh) {
+            final Blackhole localBH = bh;
+            final boolean[] done = {false};
+            new TestStack(depth, new Runnable() {
+                public void run() {
+                    WALKER_CLASS.walkClass(s -> {
+                        s.forEach(localBH::consume);
+                        return null;
+                    });
+                    done[0] = true;
+                }
+            }).start();
+            if (!done[0]) {
+                throw new RuntimeException();
+            }
+        }
+
+        /**
+         * Use Stackwalker.walk() to fetch all instances
+         */
+        @Benchmark
+        public void walkStackFrame(Blackhole bh) {
+            final Blackhole localBH = bh;
+            final boolean[] done = {false};
+            new TestStack(depth, new Runnable() {
+                public void run() {
+                    WALKER_CLASS.walk(s -> {
+                        s.forEach(localBH::consume);
+                        return null;
+                    });
+                    done[0] = true;
+                }
+            }).start();
+            if (!done[0]) {
+                throw new RuntimeException();
+            }
+        }
+
     /**
      * Use StackWalker.walk() to fetch StackTraceElements
      */
@@ -278,6 +327,24 @@ public class StackWalkBench {
         new TestStack(depth, new Runnable() {
             public void run() {
                 localBH.consume(WALKER_CLASS.getCallerClass());
+                done[0] = true;
+            }
+        }).start();
+        if (!done[0]) {
+            throw new RuntimeException();
+        }
+    }
+
+    /**
+     * Reflection.getCallerClass()
+     */
+    @Benchmark
+    public void reflect_getCallerClass(Blackhole bh) {
+        final Blackhole localBH = bh;
+        final boolean[] done = {false};
+        new TestStack(depth, new Runnable() {
+            public void run() {
+                localBH.consume(Reflection.getCallerClass());
                 done[0] = true;
             }
         }).start();

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -186,7 +187,7 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
         if (lt.is_enabled()) {
           ResourceMark rm(THREAD);
           LogStream ls(lt);
-          ls.print("  hidden method: ");
+          ls.print("  skip hidden method: ");
           method->print_short_name(&ls);
           ls.cr();
         }
