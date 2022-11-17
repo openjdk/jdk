@@ -53,6 +53,7 @@ import java.io.IOException;
 public class DrawImageBilinear extends Canvas {
 
     private static final int SIZE = 5;
+    private static final int tolerance = 5;
 
     private static boolean done;
     private BufferedImage bimg1, bimg2;
@@ -123,7 +124,19 @@ public class DrawImageBilinear extends Canvas {
         for (int y = y1; y < y2; y++) {
             for (int x = x1; x < x2; x++) {
                 int actual = bi.getRGB(x, y);
-                if ((actual != 0xfffe0000) && (actual != 0xffff0000)) {
+                int expected = Color.RED.getRGB();
+                int alpha = (actual >> 24) & 0xFF;
+                int red = (actual >> 16) & 0xFF;
+                int green = (actual >> 8) & 0xFF;
+                int blue = (actual) & 0xFF;
+                int standardAlpha = (expected >> 24) & 0xFF;
+                int standardRed = (expected >> 16) & 0xFF;
+                int standardGreen = (expected >> 8) & 0xFF;
+                int standardBlue = (expected) & 0xFF;
+                if (Math.abs(alpha - standardAlpha) > tolerance ||
+                    Math.abs(red - standardRed) > tolerance ||
+                    Math.abs(green - standardGreen) > tolerance ||
+                    Math.abs(blue - standardBlue) > tolerance) {
                     try {
                         String name = "DrawImageBilinear.png";
                         ImageIO.write(capture, "png", new File(name));
@@ -143,6 +156,7 @@ public class DrawImageBilinear extends Canvas {
         test = new DrawImageBilinear();
         frame = new Frame();
         frame.add(test);
+        frame.setBackground(Color.WHITE);
         frame.setUndecorated(true);
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
@@ -194,6 +208,11 @@ public class DrawImageBilinear extends Canvas {
             testRegion(capture, new Rectangle(80, 10, 40, 40));
             testRegion(capture, new Rectangle(150, 10, 40, 40));
         } finally {
+            try {
+                String name = "DrawImageBilinear.png";
+                ImageIO.write(capture, "png", new File(name));
+                System.out.println("Screen shot file: " + name);
+            } catch (IOException ex) {}
             frame.dispose();
         }
     }
