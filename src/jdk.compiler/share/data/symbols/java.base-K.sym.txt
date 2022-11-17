@@ -33,6 +33,9 @@ class name java/io/PrintStream
 header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
 
+class name java/io/PushbackInputStream
+method name transferTo descriptor (Ljava/io/OutputStream;)J thrownTypes java/io/IOException flags 1
+
 class name java/lang/AbstractStringBuilder
 header extends java/lang/Object implements java/lang/Appendable,java/lang/CharSequence sealed true flags 420
 innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
@@ -851,6 +854,14 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/util/zip/CRC32C
 header extends java/lang/Object implements java/util/zip/Checksum flags 31
+
+class name java/util/zip/ZipInputStream
+method name read descriptor ()I thrownTypes java/io/IOException flags 1
+method name readAllBytes descriptor ()[B thrownTypes java/io/IOException flags 1
+method name readNBytes descriptor (I)[B thrownTypes java/io/IOException flags 1
+method name readNBytes descriptor ([BII)I thrownTypes java/io/IOException flags 1
+method name skipNBytes descriptor (J)V thrownTypes java/io/IOException flags 1
+method name transferTo descriptor (Ljava/io/OutputStream;)J thrownTypes java/io/IOException flags 1
 
 class name javax/crypto/AEADBadTagException
 header extends javax/crypto/BadPaddingException flags 21
