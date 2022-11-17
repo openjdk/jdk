@@ -2336,6 +2336,23 @@ public class Types {
         };
     // </editor-fold>
 
+    /** Determine whether the given outer class strictly encloses the inner one.
+     */
+    public boolean hasOuterClass(Type innerType, Type outerType) {
+        if (!innerType.hasTag(CLASS) || !outerType.hasTag(CLASS))
+            return false;
+        innerType = erasure(innerType);
+        outerType = erasure(outerType);
+        for (Type type = innerType.getEnclosingType();
+                type != null && type.hasTag(CLASS);
+                type = type.getEnclosingType()) {
+            if (erasure(type).equalsIgnoreMetadata(outerType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // <editor-fold defaultstate="collapsed" desc="isAssignable">
     public boolean isAssignable(Type t, Type s) {
         return isAssignable(t, s, noWarnings);

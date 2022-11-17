@@ -181,47 +181,33 @@ public class TreeInfo {
         }
     }
 
-    /** Is this tree a 'this' identifier?
+    /** Is this tree an identifier, possibly qualified by an explicit reference to the
+     *  'this' instance of the class currently being compiled?
      */
-    public static boolean isThisQualifier(JCTree tree) {
+    public static boolean isIdentOrThisDotIdent(Types types, Type.ClassType currentClass, JCTree tree) {
         switch (tree.getTag()) {
             case PARENS:
-                return isThisQualifier(skipParens(tree));
-            case IDENT: {
-                JCIdent id = (JCIdent)tree;
-                return id.name == id.name.table.names._this;
-            }
-            default:
-                return false;
-        }
-    }
-
-    /** Is this tree an identifier, possibly qualified by 'this'?
-     */
-    public static boolean isIdentOrThisDotIdent(JCTree tree) {
-        switch (tree.getTag()) {
-            case PARENS:
-                return isIdentOrThisDotIdent(skipParens(tree));
+                return isIdentOrThisDotIdent(types, currentClass, skipParens(tree));
             case IDENT:
                 return true;
             case SELECT:
-                return isThisQualifier(((JCFieldAccess)tree).selected);
+                return isExplicitThisReference(types, currentClass, ((JCFieldAccess)tree).selected);
             default:
                 return false;
         }
     }
 
-    /** Check if the given tree is a reference to the 'this' instance of the class
-     *  'currentClass' which is currently being compiled. This is true if tree is:
+    /** Check if the given tree is an explicit reference to the 'this' instance of the
+     *  class currently being compiled. This is true if tree is:
      *  - An unqualified 'this' identifier
      *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
      *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
      *    but also NOT an enclosing outer class of 'currentClass'.
      */
-    public static boolean isThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+    public static boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
         switch (tree.getTag()) {
             case PARENS:
-                return isThisReference(types, currentClass, skipParens(tree));
+                return isExplicitThisReference(types, currentClass, skipParens(tree));
             case IDENT:
             {
                 JCIdent ident = (JCIdent)tree;
@@ -239,7 +225,7 @@ public class TreeInfo {
                 Names names = select.name.table.names;
                 return types.isSubtype(currentClass, selectecClassType) &&
                         (select.name == names._super ||
-                        (select.name == names._this && !currentClass.isInnerClassOf(types, selectecClassType)));
+                        (select.name == names._this && !types.hasOuterClass(currentClass, selectecClassType)));
             }
             default:
                 return false;

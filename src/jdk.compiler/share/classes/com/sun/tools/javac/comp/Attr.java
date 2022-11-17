@@ -297,7 +297,7 @@ public class Attr extends JCTree.Visitor {
             ((v.flags() & HASINIT) != 0
              ||
              !((base == null ||
-               TreeInfo.isThisQualifier(base)) &&
+               TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.sym.type, base)) &&
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
                 log.error(pos, Errors.TryResourceMayNotBeAssigned(v));

@@ -2884,7 +2884,7 @@ public class Flow {
         }
 
         public void visitAssign(JCAssign tree) {
-            if (!TreeInfo.isIdentOrThisDotIdent(tree.lhs))
+            if (!TreeInfo.isIdentOrThisDotIdent(types, (Type.ClassType)classDef.sym.type, tree.lhs))
                 scanExpr(tree.lhs);
             scanExpr(tree.rhs);
             letInit(tree.lhs);
@@ -2896,7 +2896,7 @@ public class Flow {
             super.visitSelect(tree);
             if (classDef != null &&
                 tree.sym.kind == VAR &&
-                TreeInfo.isThisReference(types, (Type.ClassType)classDef.sym.type, tree.selected)) {
+                TreeInfo.isExplicitThisReference(types, (Type.ClassType)classDef.sym.type, tree.selected)) {
                 checkInit(tree.pos(), (VarSymbol)tree.sym);
             }
         }
