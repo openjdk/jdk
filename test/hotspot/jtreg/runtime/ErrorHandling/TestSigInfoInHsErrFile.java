@@ -67,7 +67,7 @@ public class TestSigInfoInHsErrFile {
     patterns.add(Pattern.compile("# *Problematic frame.*"));
     patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
 
-    // Crash address: see VMError::_segfault_address - carefully choosen to give us a SEGV_MAPERR
+    // Crash address: see VMError::_segfault_address
     String crashAddress = Platform.isAix() ? "0x0*1400" : "0x0*400";
     patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_.*\\), si_addr: " + crashAddress + ".*"));
 
