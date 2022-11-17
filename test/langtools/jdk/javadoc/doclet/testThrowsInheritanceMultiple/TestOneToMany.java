@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8067757 6509045
+ * @bug 8067757 6509045 8295277
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -563,5 +563,179 @@ public class TestOneToMany extends JavadocTester {
                      * @throws MyRuntimeException "{@inheritDoc}"
                        ^
                        """);
+    }
+
+    @Test
+    public void testDeeperError(Path base) throws Exception {
+        var src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package x;
+
+                public class MyRuntimeException extends RuntimeException { }
+                """, """
+                package x;
+
+                public interface I {
+
+                    /**
+                     * @throws MyRuntimeException sometimes
+                     * @throws MyRuntimeException rarely
+                     */
+                    void m();
+                }
+                """, """
+                package x;
+
+                public interface I1 extends I {
+
+                    /**
+                     * @throws MyRuntimeException "{@inheritDoc}"
+                     */
+                    @Override
+                    void m();
+                }
+                """, """
+                package x;
+
+                public interface I2 extends I1 {
+
+                    /**
+                     * @throws MyRuntimeException '{@inheritDoc}'
+                     */
+                    @Override
+                    void m();
+                }
+                """);
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                "x");
+        checkExit(Exit.ERROR);
+        new OutputChecker(Output.OUT)
+                .setExpectFound(true)
+                .checkAnyOf(
+                        """
+                        I2.java:6: error: @inheritDoc cannot be used within this tag
+                             * @throws MyRuntimeException '{@inheritDoc}'
+                               ^""",
+                        """
+                        I1.java:6: error: @inheritDoc cannot be used within this tag
+                             * @throws MyRuntimeException "{@inheritDoc}"
+                               ^""");
+    }
+
+    @Test
+    public void testFullExpansion(Path base) throws Exception {
+        var src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package x;
+
+                public class MyRuntimeException extends RuntimeException { }
+                """, """
+                package x;
+
+                public interface Child extends Parent {
+
+                    /**
+                     * @throws MyRuntimeException child 1
+                     * @throws MyRuntimeException {@inheritDoc}
+                     */
+                    @Override void m();
+                }
+                """, """
+                package x;
+
+                public interface Parent extends GrandParent {
+
+                    /**
+                     * @throws MyRuntimeException parent 1
+                     * @throws MyRuntimeException {@inheritDoc}
+                     */
+                    @Override void m();
+                }
+                """, """
+                package x;
+
+                public interface GrandParent {
+
+                    /**
+                     * @throws MyRuntimeException grandparent 1
+                     * @throws MyRuntimeException grandparent 2
+                     */
+                    void m();
+                }
+                """);
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                "x");
+        checkExit(Exit.OK);
+        checkOutput("x/Child.html", true, """
+                <dl class="notes">
+                <dt>Specified by:</dt>
+                <dd><code><a href="GrandParent.html#m()">m</a></code>&nbsp;in interface&nbsp;<code><a href="GrandParent.html" title="interface in x">GrandParent</a></code></dd>
+                <dt>Specified by:</dt>
+                <dd><code><a href="Parent.html#m()">m</a></code>&nbsp;in interface&nbsp;<code><a href="Parent.html" title="interface in x">Parent</a></code></dd>
+                <dt>Throws:</dt>
+                <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - child 1</dd>
+                <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - parent 1</dd>
+                <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - grandparent 1</dd>
+                <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - grandparent 2</dd>
+                </dl>
+                </section>
+                """);
+    }
+
+    @Test
+    public void testChainEmbeddedInheritDoc(Path base) throws Exception {
+        var src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package x;
+
+                public class MyRuntimeException extends RuntimeException { }
+                """, """
+                package x;
+
+                public interface Child extends Parent {
+
+                    /**
+                     * @throws MyRuntimeException "{@inheritDoc}"
+                     */
+                    @Override void m();
+                }
+                """, """
+                package x;
+
+                public interface Parent extends GrandParent {
+
+                    /**
+                     * @throws MyRuntimeException '{@inheritDoc}'
+                     */
+                    @Override void m();
+                }
+                """, """
+                package x;
+
+                public interface GrandParent {
+
+                    /**
+                     * @throws MyRuntimeException grandparent
+                     */
+                    void m();
+                }
+                """);
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                "x");
+        checkExit(Exit.OK);
+        checkOutput("x/Child.html", true, """
+                <dl class="notes">
+                <dt>Specified by:</dt>
+                <dd><code><a href="GrandParent.html#m()">m</a></code>&nbsp;in interface&nbsp;<code><a href="GrandParent.html" title="interface in x">GrandParent</a></code></dd>
+                <dt>Specified by:</dt>
+                <dd><code><a href="Parent.html#m()">m</a></code>&nbsp;in interface&nbsp;<code><a href="Parent.html" title="interface in x">Parent</a></code></dd>
+                <dt>Throws:</dt>
+                <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - "'grandparent'"</dd>
+                </dl>
+                </section>
+                """);
     }
 }

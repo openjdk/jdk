@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
@@ -38,6 +37,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -190,7 +190,7 @@ void DynamicArchiveBuilder::init_header() {
 
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    _header->set_base_region_crc(i, base_info->space_crc(i));
+    _header->set_base_region_crc(i, base_info->region_crc(i));
   }
 }
 
@@ -426,7 +426,7 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    if (dynamic_header->base_region_crc(i) != base_info->space_crc(i)) {
+    if (dynamic_header->base_region_crc(i) != base_info->region_crc(i)) {
       FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }
