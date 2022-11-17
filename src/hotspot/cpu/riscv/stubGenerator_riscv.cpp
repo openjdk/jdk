@@ -882,9 +882,9 @@ class StubGenerator: public StubCodeGenerator {
   /*
    * if (is_aligned) {
    *   if (count >= 32)
-   *     goto copy32;
+   *     goto copy32_loop;
    *   if (count >= 8)
-   *     goto copy8;
+   *     goto copy8_loop;
    *   goto copy_small;
    * }
    * bool is_backwards = step < 0;
@@ -907,8 +907,8 @@ class StubGenerator: public StubCodeGenerator {
    * }
    *
    * copy_big:
-   * if the amount to copy is more than (or equal to) 32 bytes goto copy32
-   *  else goto copy8
+   * if the amount to copy is more than (or equal to) 32 bytes goto copy32_loop
+   *  else goto copy8_loop
    * copy_small:
    *   load element one by one;
    * done;
@@ -972,7 +972,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
 
     Label same_aligned;
-    Label copy_big, copy32, copy8, copy_small, done;
+    Label copy_big, copy32_loop, copy8_loop, copy_small, done;
 
     copy_insn ld_arr = NULL, st_arr = NULL;
     switch (granularity) {
@@ -1008,9 +1008,9 @@ class StubGenerator: public StubCodeGenerator {
 
     if (is_aligned) {
       __ addi(tmp, cnt, -32);
-      __ bgez(tmp, copy32);
+      __ bgez(tmp, copy32_loop);
       __ addi(tmp, cnt, -8);
-      __ bgez(tmp, copy8);
+      __ bgez(tmp, copy8_loop);
       __ j(copy_small);
     } else {
       __ mv(tmp, 16);
@@ -1039,9 +1039,9 @@ class StubGenerator: public StubCodeGenerator {
 
       __ bind(copy_big);
       __ mv(tmp, 32);
-      __ blt(cnt, tmp, copy8);
+      __ blt(cnt, tmp, copy8_loop);
     }
-    __ bind(copy32);
+    __ bind(copy32_loop);
     if (is_backwards) {
       __ addi(src, src, -wordSize * 4);
       __ addi(dst, dst, -wordSize * 4);
@@ -1062,14 +1062,14 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ addi(tmp, cnt, -(32 + wordSize * 4));
     __ addi(cnt, cnt, -wordSize * 4);
-    __ bgez(tmp, copy32); // cnt >= 32, do next loop
+    __ bgez(tmp, copy32_loop); // cnt >= 32, do next loop
 
     __ beqz(cnt, done); // if that's all - done
 
     __ addi(tmp, cnt, -8); // if not - copy the reminder
-    __ bltz(tmp, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8
+    __ bltz(tmp, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8_loop
 
-    __ bind(copy8);
+    __ bind(copy8_loop);
     if (is_backwards) {
       __ addi(src, src, -wordSize);
       __ addi(dst, dst, -wordSize);
@@ -1082,7 +1082,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ addi(tmp, cnt, -(8 + wordSize));
     __ addi(cnt, cnt, -wordSize);
-    __ bgez(tmp, copy8); // cnt >= 8, do next loop
+    __ bgez(tmp, copy8_loop); // cnt >= 8, do next loop
 
     __ beqz(cnt, done); // if that's all - done
 
