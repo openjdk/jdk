@@ -5297,7 +5297,7 @@ bool LibraryCallKit::inline_arraycopy() {
 AllocateArrayNode*
 LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return NULL;  // no fast path
-  if (C->AliasLevel() == 0)  return NULL;  // no MergeMems around
+  if (!C->do_aliasing())     return NULL;  // no MergeMems around
 
   AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr, &_gvn);
   if (alloc == NULL)  return NULL;
