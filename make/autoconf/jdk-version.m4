@@ -74,12 +74,12 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # is pretty convenient...
 
   # Outer [ ] to quote m4.
-  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  [ DEFAULT_USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
 
   # Setup username (for use in adhoc version strings etc)
   UTIL_ARG_WITH(NAME: build-user, TYPE: string,
     RESULT: USERNAME,
-    DEFAULT: $USERNAME,
+    DEFAULT: $DEFAULT_USERNAME,
     DESC: [build username to use in version strings],
     IF_GIVEN: [
       if test "x$USERNAME" = x; then
@@ -123,7 +123,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Only set VENDOR_URL if '--with-vendor-url' was used and is not empty.
   # Otherwise we will use the value from "branding.conf" included above.
   UTIL_ARG_WITH(NAME: vendor-url, TYPE: string,
-    DEFAULT: $VENDOR_URL,
+    DEFAULT: $DEFAULT_VENDOR_URL,
     DESC: [Set the 'java.vendor.url' system property],
     DEFAULT_DESC: [not specified],
     IF_GIVEN: [
@@ -140,7 +140,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Otherwise we will use the value from "branding.conf" included above.
   UTIL_ARG_WITH(NAME: vendor-bug-url, TYPE: string,
     RESULT: VENDOR_URL_BUG,
-    DEFAULT: $VENDOR_URL_BUG,
+    DEFAULT: $DEFAULT_VENDOR_URL_BUG,
     DESC: [Set the 'java.vendor.url.bug' system property],
     DEFAULT_DESC: [not specified],
     IF_GIVEN: [
@@ -157,7 +157,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Otherwise we will use the value from "branding.conf" included above.
   UTIL_ARG_WITH(NAME: vendor-vm-bug-url, TYPE: string,
     RESULT: VENDOR_URL_VM_BUG,
-    DEFAULT: $VENDOR_URL_VM_BUG,
+    DEFAULT: $DEFAULT_VENDOR_URL_VM_BUG,
     DESC: [Sets the bug URL which will be displayed when the VM crashes],
     DEFAULT_DESC: [not specified],
     IF_GIVEN: [
@@ -304,16 +304,15 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   fi
 
-  if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-    # Default is to get value from version-numbers.conf
-    VERSION_FEATURE="$DEFAULT_VERSION_FEATURE"
+  # If NO_DEFAULT_VERSION_PARTS is true, VERSION_FEATURE already has a value we want, so
+  # set DEFAULT_VERSION_FEATURE to that instead
+  if test "x$NO_DEFAULT_VERSION_PARTS" = xtrue; then
+    DEFAULT_VERSION_FEATURE="$VERSION_FEATURE"
   fi
 
-  # VERSION_FEATURE is used as its own DEFAULT instead of DEFAULT_VERSION_FEATURE since
-  # the former may already be set to a value different from the latter by the options
-  # above
+  # Default is to get value from version-numbers.conf
   UTIL_ARG_WITH(NAME: version-feature, TYPE: string,
-    DEFAULT: $VERSION_FEATURE,
+    DEFAULT: $DEFAULT_VERSION_FEATURE,
     DESC: [Set version 'FEATURE' field (first number)],
     DEFAULT_DESC: [current source value])
   JDKVER_CHECK_AND_SET_NUMBER(VERSION_FEATURE, $VERSION_FEATURE)
@@ -492,7 +491,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 
   # The version date
   UTIL_ARG_WITH(NAME: version-date, TYPE: string,
-    RESULT: VERSION_DATE,
     DEFAULT: $DEFAULT_VERSION_DATE,
     DESC: [Set version date],
     DEFAULT_DESC: [current source value],
@@ -522,7 +520,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 
   # Set the MACOSX Bundle Name base
   UTIL_ARG_WITH(NAME: macosx-bundle-name-base, TYPE: string,
-    DEFAULT: $MACOSX_BUNDLE_NAME_BASE,
+    DEFAULT: $DEFAULT_MACOSX_BUNDLE_NAME_BASE,
     DESC: [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.],
     DEFAULT_DESC: [not specified],
     IF_GIVEN: [
@@ -537,12 +535,12 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # If using the default value, append the VERSION_PRE if there is one
   # to make it possible to tell official builds apart from developer builds
   if test "x$VERSION_PRE" != x; then
-    MACOSX_BUNDLE_ID_BASE="$MACOSX_BUNDLE_ID_BASE-$VERSION_PRE"
+    DEFAULT_MACOSX_BUNDLE_ID_BASE="$DEFAULT_MACOSX_BUNDLE_ID_BASE-$VERSION_PRE"
   fi
 
   # Set the MACOSX Bundle ID base
   UTIL_ARG_WITH(NAME: macosx-bundle-id-base, TYPE: string,
-    DEFAULT: $MACOSX_BUNDLE_ID_BASE,
+    DEFAULT: $DEFAULT_MACOSX_BUNDLE_ID_BASE,
     DESC: [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.],
     DEFAULT_DESC: [not specified],
     IF_GIVEN: [
@@ -555,19 +553,19 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
   if test "x$VERSION_BUILD" != x; then
-    MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
+    DEFAULT_MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
   else
-    MACOSX_BUNDLE_BUILD_VERSION=0
+    DEFAULT_MACOSX_BUNDLE_BUILD_VERSION=0
   fi
 
   # If VERSION_OPT consists of only numbers and periods, add it.
   if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
-    MACOSX_BUNDLE_BUILD_VERSION="$MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"
+    DEFAULT_MACOSX_BUNDLE_BUILD_VERSION="$DEFAULT_MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"
   fi
 
   # Set the MACOSX CFBundleVersion field
   UTIL_ARG_WITH(NAME: macosx-bundle-build-version, TYPE: string,
-    DEFAULT: $MACOSX_BUNDLE_BUILD_VERSION,
+    DEFAULT: $DEFAULT_MACOSX_BUNDLE_BUILD_VERSION,
     DESC: [Set the MacOSX Bundle CFBundleVersion field. This key is a machine-readable
       string composed of one to three period-separated integers and should represent the
       build version. Defaults to the build number.],
