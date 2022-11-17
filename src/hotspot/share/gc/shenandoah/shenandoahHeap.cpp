@@ -479,7 +479,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _memory_pool(NULL),
   _stw_memory_manager("Shenandoah Pauses", "end of GC pause"),
   _cycle_memory_manager("Shenandoah Cycles", "end of GC cycle"),
-  _gc_timer(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
+  _gc_timer(new ConcurrentGCTimer()),
   _soft_ref_policy(),
   _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(_max_workers, 1U))),

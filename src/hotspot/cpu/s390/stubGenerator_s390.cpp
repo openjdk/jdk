@@ -28,6 +28,7 @@
 #include "registerSaver_s390.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -2857,6 +2858,47 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_nmethod_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    address start = __ pc();
+
+    int nbytes_volatile = (8 + 5) * BytesPerWord;
+
+    // VM-Call Prologue
+    __ save_return_pc();
+    __ push_frame_abi160(nbytes_volatile);
+    __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+
+    // Prep arg for VM call
+    // Create ptr to stored return_pc in caller frame.
+    __ z_la(Z_ARG1, _z_abi(return_pc) + frame::z_abi_160_size + nbytes_volatile, Z_R0, Z_SP);
+
+    // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    __ z_ltr(Z_R0_scratch, Z_RET);
+
+    // VM-Call Epilogue
+    __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+    __ pop_frame();
+    __ restore_return_pc();
+
+    // Check return val of VM-Call
+    __ z_bcr(Assembler::bcondZero, Z_R14);
+
+    // Pop frame built in prologue.
+    // Required so wrong_method_stub can deduce caller.
+    __ pop_frame();
+    __ restore_return_pc();
+
+    // VM-Call indicates deoptimization required
+    __ load_const_optimized(Z_R1_scratch, SharedRuntime::get_handle_wrong_method_stub());
+    __ z_br(Z_R1_scratch);
+
+    return start;
+  }
+
   address generate_cont_thaw(bool return_barrier, bool exception) {
     if (!Continuations::enabled()) return nullptr;
     Unimplemented();
@@ -2996,6 +3038,12 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSHA512Intrinsics) {
       StubRoutines::_sha512_implCompress   = generate_SHA512_stub(false, "SHA512_singleBlock");
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(true,  "SHA512_multiBlock");
+    }
+
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
     }
 
 #ifdef COMPILER2

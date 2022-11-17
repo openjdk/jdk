@@ -260,7 +260,9 @@ class SynthParser extends DefaultHandler {
             return _classResourceBase.getResource(path);
         } else {
             try {
-                return new URL(_urlResourceBase, path);
+                @SuppressWarnings("deprecation")
+                var result = new URL(_urlResourceBase, path);
+                return result;
             } catch (MalformedURLException mue) {
                 return null;
             }
