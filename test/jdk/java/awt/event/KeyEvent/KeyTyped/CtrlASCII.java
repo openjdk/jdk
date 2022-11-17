@@ -26,9 +26,10 @@
   @key headful
   @bug  6497426
   @summary Tests that pressing of Ctrl+ascii mostly fires KEY_TYPED with a Unicode control symbols
-  @run main CtrlASCII
+  @run main/timeout=600 CtrlASCII
  */
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Point;
@@ -52,8 +53,8 @@ public class CtrlASCII extends Frame implements KeyListener
 {
     // Declare things used in the test, like buttons and labels here
     static final HashMap<Character, Integer> KEYCHAR_MAP = new HashMap<>();
-    static boolean testFailed = false;
-    //Frame frame;
+    static volatile boolean testFailed = false;
+
     TextField tf;
     Robot robot;
 
@@ -160,24 +161,23 @@ public class CtrlASCII extends Frame implements KeyListener
         //keycharHash.put(char) 0x1c, KeyEvent.VK_|);                /*124,x7c*/ /* no VK, cannot test*/
         KEYCHAR_MAP.put((char) 0x7d, KeyEvent.VK_BRACERIGHT);        /*125,x7d*/ /*'}' la */
         //keycharHash.put((char) 0x1e, KeyEvent.VK_~);               /*126,x7e*/ /* no VK, cannot test*/
-
-
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AWTException {
         CtrlASCII test = new CtrlASCII();
         test.init();
         test.start();
     }
 
-    public void init()
-    {
+    public void init() throws AWTException {
         fillHash();
-        this.setLayout (new BorderLayout ());
-    }//End  init()
 
-    public void start ()
-    {
+        robot = new Robot();
+        robot.setAutoWaitForIdle(true);
+        robot.setAutoDelay(100);
+
+        setLayout (new BorderLayout ());
+
         setSize(400,300);
         setLocationRelativeTo(null);
         setVisible(true);
@@ -188,21 +188,20 @@ public class CtrlASCII extends Frame implements KeyListener
         tf.addKeyListener(this);
         validate();
 
+        robot.waitForIdle();
+        robot.delay(1000);
+
+        this.requestFocus();
+        tf.requestFocusInWindow();
+
+        robot.waitForIdle();
+    }//End  init()
+
+    public void start () {
         try {
-            robot = new Robot();
-            robot.setAutoWaitForIdle(true);
-            robot.setAutoDelay(100);
-
-            robot.waitForIdle();
-
-            // wait for focus, etc.  (Hack.)
-            robot.delay(2000);
-            this.requestFocus();
-            tf.requestFocusInWindow();
-
             Point pt = getLocationOnScreen();
             robot.mouseMove( pt.x+100, pt.y+100 );
-            robot.delay(2000);
+            robot.delay(1000);
             robot.mousePress( InputEvent.BUTTON1_DOWN_MASK );
             robot.mouseRelease( InputEvent.BUTTON1_DOWN_MASK );
 
@@ -211,23 +210,30 @@ public class CtrlASCII extends Frame implements KeyListener
             robot.delay(500);
         } catch (Exception e) {
             throw new RuntimeException("The test was not completed.\n\n" + e);
+        } finally {
+            dispose();
         }
-        if( testFailed ) {
+        if (testFailed) {
             throw new RuntimeException("The test failed.\n\n");
         }
         System.out.println("Success\n");
 
     }// start()
 
-    public void punchCtrlKey(int keyCode ) {
-        robot.keyPress(KeyEvent.VK_CONTROL);
+    public void punchCtrlKey(int keyCode) {
         try {
+            robot.keyPress(KeyEvent.VK_CONTROL);
             robot.keyPress(keyCode);
-            robot.keyRelease(keyCode);
         } catch (IllegalArgumentException iae) {
             System.err.println("skip probably invalid keyCode " + keyCode);
+        } finally {
+            try {
+                robot.keyRelease(keyCode);
+            } catch (IllegalArgumentException iae) {
+                System.err.println("skip probably invalid keyCode " + keyCode);
+            }
+            robot.keyRelease(KeyEvent.VK_CONTROL);
         }
-        robot.keyRelease(KeyEvent.VK_CONTROL);
         robot.delay(200);
     }
 
