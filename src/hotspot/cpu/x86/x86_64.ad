@@ -1022,7 +1022,7 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
       C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
-      C->output()->stub_list()->add_stub(stub);
+      C->output()->add_stub(stub);
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);

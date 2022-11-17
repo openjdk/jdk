@@ -29,6 +29,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "opto/ad.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/phase.hpp"
 #include "runtime/vm_version.hpp"
@@ -71,81 +72,6 @@ public:
     _const(0),
     _reloc(0)
   { };
-};
-
-class C2CodeStub : public ArenaObj {
-private:
-  Label _entry;
-  Label _continuation;
-
-protected:
-  C2CodeStub() :
-    _entry(),
-    _continuation() {}
-
-  // A helper to determine the size of a stub implementation.
-  // It is recommended to call this only once and cache the
-  // result in a static field.
-  static int measure_stub_size(C2CodeStub& stub);
-
-  int stub_size(volatile int* stub_size);
-public:
-  Label& entry()        { return _entry; }
-  Label& continuation() { return _continuation; }
-  virtual void emit(C2_MacroAssembler& masm) = 0;
-  virtual int size() = 0;
-  virtual void reinit_labels() {
-    _entry.init();
-    _continuation.init();
-  }
-};
-
-class C2CodeStubList {
-private:
-  GrowableArray<C2CodeStub*> _stubs;
-public:
-  C2CodeStubList() :
-    _stubs() {}
-
-  void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
-  int  measure_code_size() const;
-  void emit(CodeBuffer& cb);
-};
-
-class C2SafepointPollStub : public C2CodeStub {
-private:
-  static volatile int _stub_size;
-  uintptr_t _safepoint_offset;
-public:
-  C2SafepointPollStub(uintptr_t safepoint_offset) :
-    _safepoint_offset(safepoint_offset) {}
-  int size() { return stub_size(&_stub_size); }
-  void emit(C2_MacroAssembler& masm);
-};
-
-// We move non-hot code of the nmethod entry barrier to an out-of-line stub
-class C2EntryBarrierStub: public C2CodeStub {
-  static volatile int _stub_size;
-  Label _guard; // Used on AArch64 and RISCV
-
-public:
-  C2EntryBarrierStub() : C2CodeStub(),
-    _guard() {}
-
-  Label& guard() { return _guard; }
-
-  int size() { return stub_size(&_stub_size); }
-  void emit(C2_MacroAssembler& masm);
-};
-
-class C2CheckLockStackStub : public C2CodeStub {
-private:
-  static volatile int _stub_size;
-public:
-  C2CheckLockStackStub() : C2CodeStub() {}
-
-  int size() { return stub_size(&_stub_size); }
-  void emit(C2_MacroAssembler& masm);
 };
 
 class PhaseOutput : public Phase {
@@ -205,7 +131,7 @@ public:
   ConstantTable& constant_table() { return _constant_table; }
 
   // Code stubs list
-  C2CodeStubList* stub_list() { return &_stub_list; }
+  void add_stub(C2CodeStub* stub) { _stub_list.add_stub(stub); }
 
   // Code emission iterator
   Block* block()   { return _block; }

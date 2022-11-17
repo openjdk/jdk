@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,36 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
+#include "opto/c2_MacroAssembler.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm.
-void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
+
+void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
   RuntimeAddress callback_addr(stub);
 
-  __ bind(entry->_stub_label);
-  InternalAddress safepoint_pc(masm.pc() - masm.offset() + entry->_safepoint_offset);
+  __ bind(entry());
+  InternalAddress safepoint_pc(masm.pc() - masm.offset() + _safepoint_offset);
   __ adr(rscratch1, safepoint_pc);
   __ str(rscratch1, Address(rthread, JavaThread::saved_exception_pc_offset()));
   __ far_jump(callback_addr);
 }
+
+void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+  __ blr(rscratch1);
+  __ b(continuation());
+
+  __ bind(guard());
+  __ relocate(entry_guard_Relocation::spec());
+  __ emit_int32(0);   // nmethod guard value
+}
+
 #undef __
