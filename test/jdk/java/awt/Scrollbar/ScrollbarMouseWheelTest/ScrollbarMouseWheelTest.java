@@ -32,8 +32,6 @@ import java.awt.Scrollbar;
 import java.awt.Toolkit;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 
 /**
  * @test
@@ -43,7 +41,7 @@ import java.awt.event.WindowListener;
  */
 
 public final class ScrollbarMouseWheelTest
-        implements MouseWheelListener, WindowListener {
+        implements MouseWheelListener {
 
     final static boolean isWindows =
             Toolkit.getDefaultToolkit().getClass()
@@ -61,14 +59,6 @@ public final class ScrollbarMouseWheelTest
     Scrollbar sb2;
     Panel pnl;
 
-    class Sema {
-        boolean flag;
-        boolean getVal() { return flag;}
-        void setVal(boolean b) { flag = b;}
-    }
-
-    Sema sema = new Sema();
-
     Robot robot;
 
     int sb1upevents, sb2upevents, pnlupevents;
@@ -85,15 +75,13 @@ public final class ScrollbarMouseWheelTest
         } catch (AWTException e) {
             System.out.println("Problem creating Robot.  FAIL.");
             throw new RuntimeException("Problem creating Robot.  FAIL.");
-
         }
 
-        robot.setAutoDelay(500);
+        robot.setAutoDelay(250);
         robot.setAutoWaitForIdle(true);
 
         // Show test Frame
         Frame frame = new Frame("ScrollbarMouseWheelTest");
-        frame.addWindowListener(this);
         pnl = new Panel();
         pnl.setLayout(new GridLayout(1, 2));
         pnl.addMouseWheelListener(this);
@@ -108,14 +96,8 @@ public final class ScrollbarMouseWheelTest
         frame.setVisible(true);
         frame.toFront();
 
-        // When Frame is active, start testing (handled in windowActivated())
-        while (true) {
-            synchronized (sema) {
-                if (sema.getVal()) {
-                    break;
-                }
-            }
-        }
+        robot.waitForIdle();
+        robot.delay(1000);
 
         // up on sb1
         testComp(sb1, true);
@@ -185,17 +167,4 @@ public final class ScrollbarMouseWheelTest
             System.out.println("weird wheel rotation");
         }
     }
-
-    public void windowActivated(WindowEvent we) {
-        synchronized (sema) {
-            sema.setVal(true);
-        }
-    }
-
-    public void windowClosed(WindowEvent we) {}
-    public void windowClosing(WindowEvent we) {}
-    public void windowDeactivated(WindowEvent we) {}
-    public void windowDeiconified(WindowEvent we) {}
-    public void windowIconified(WindowEvent we) {}
-    public void windowOpened(WindowEvent we) {}
 }// class ScrollbarMouseWheelTest
