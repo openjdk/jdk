@@ -1320,7 +1320,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
               cast_to_ptr_type(ptr)->
               with_offset(offset);
     }
-  } else if (ta) {
+  } else if (ta && do_aliasing()) {
     // For arrays indexed by constant indices, we flatten the alias
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
