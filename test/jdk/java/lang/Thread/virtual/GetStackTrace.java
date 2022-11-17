@@ -26,8 +26,9 @@
  * @summary Test Thread.getStackTrace to examine the stack trace of a virtual
  *     thread and its carrier
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} GetStackTrace.java
- * @run testng/othervm --enable-preview GetStackTrace
+ * @enablePreview
+ * @compile GetStackTrace.java
+ * @run testng/othervm GetStackTrace
  */
 
 import java.util.Objects;

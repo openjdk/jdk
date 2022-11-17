@@ -24,8 +24,9 @@
 /**
  * @test
  * @summary Test that virtual threads are GC'ed
- * @compile --enable-preview -source ${jdk.version} Collectable.java
- * @run testng/othervm --enable-preview Collectable
+ * @enablePreview
+ * @compile Collectable.java
+ * @run testng/othervm Collectable
  */
 
 import java.lang.ref.WeakReference;

@@ -26,8 +26,9 @@
  * @summary Test virtual threads using a custom scheduler
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} CustomScheduler.java
- * @run testng/othervm --enable-preview CustomScheduler
+ * @enablePreview
+ * @compile CustomScheduler.java
+ * @run testng/othervm CustomScheduler
  */
 
 import java.lang.reflect.Field;

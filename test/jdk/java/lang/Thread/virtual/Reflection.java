@@ -26,8 +26,9 @@
  * @summary Test virtual threads using core reflection
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} Reflection.java
- * @run testng/othervm --enable-preview Reflection
+ * @enablePreview
+ * @compile Reflection.java
+ * @run testng/othervm Reflection
  */
 
 import java.lang.reflect.Constructor;

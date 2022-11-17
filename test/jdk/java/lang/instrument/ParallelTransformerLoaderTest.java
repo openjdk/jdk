@@ -34,7 +34,7 @@
  * @requires vm.continuations
  * @library /test/lib
  * @run build TestClass1 TestClass2 TestClass3
- * @compile --enable-preview -source ${jdk.version} ParallelTransformerLoaderTest.java
+  * @compile --enable-preview -source ${jdk.version} ParallelTransformerLoaderTest.java
  * @run driver jdk.test.lib.util.JavaAgentBuilder ParallelTransformerLoaderAgent ParallelTransformerLoaderAgent.jar
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar Test.jar TestClass1 TestClass2 TestClass3
  * @run clean ParallelTransformerLoaderAgent TestClass1 TestClass2 TestClass3

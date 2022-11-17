@@ -28,9 +28,10 @@
  * @requires vm.continuations
  * @modules java.management
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} StackTraces.java
- * @run testng/othervm --enable-preview StackTraces
- * @run testng/othervm --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
+ * @enablePreview
+ * @compile StackTraces.java
+ * @run testng/othervm StackTraces
+ * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
  */
 
 import java.lang.management.ManagementFactory;

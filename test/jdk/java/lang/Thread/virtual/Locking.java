@@ -25,8 +25,9 @@
  * @test
  * @summary Test virtual threads using java.util.concurrent locks
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} Locking.java
- * @run testng/othervm --enable-preview Locking
+ * @enablePreview
+ * @compile Locking.java
+ * @run testng/othervm Locking
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
