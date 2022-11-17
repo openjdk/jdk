@@ -28,29 +28,36 @@ package java.lang.template;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This interface simplifies the declaration of
- * {@linkplain ValidatingProcessor template processors}
- * that do not throw checked exceptions. For example:
+ * This interface is used to implement template processors that do not throw checked
+ * exceptions. Any implementation must supply a
+ * {@link TemplateProcessor#process(StringTemplate)} method that constructs a result
+ * from the information provided by the supplied {@link StringTemplate} instance.
+ * <p>
+ * For example:
  * {@snippet :
- * TemplateProcessor<String> processor = st -> {
- *     List<String> fragments = st.fragments();
- *     List<Object> values = st.values();
- *     // check or manipulate the fragments and/or values
- *     ...
- *     return StringTemplate.interpolate(fragments, values);
+ * TemplateProcessor<Integer> processor = st -> {
+ *     String interpolation = st.interpolate();
+ *     return Integer.valueOf(interpolation);
  * };
  * }
  *
  * @param <R>  Processor's process result type.
  *
+ * @see java.lang.template.ValidatingProcessor
+ * @see java.lang.template.StringProcessor
+ * @see java.lang.template.StringTemplate
+ *
  * @since 20
+ *
+ * @implNote It is recommended that {@link StringProcessor} be used instead of
+ * {@code TemplateProcessor<String>} when the result type is {@link String}.
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
 public interface TemplateProcessor<R> extends ValidatingProcessor<R, RuntimeException> {
     /**
      * Constructs a result based on the template fragments and values in the
-     * supplied {@link StringTemplate stringTemplate} object.
+     * supplied {@link StringTemplate stringTemplate} instance.
      *
      * @param stringTemplate  a {@link StringTemplate} instance
      *

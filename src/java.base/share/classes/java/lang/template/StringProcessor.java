@@ -28,14 +28,25 @@ package java.lang.template;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This interface simplifies the declaration of
- * {@linkplain ValidatingProcessor template processors}
- * that do not throw checked exceptions and have a result type of {@link String}. For example:
+ * This interface is used to implement template processors that only produce {@link String}
+ * results. Any implementation must supply a
+ * {@link StringProcessor#process(StringTemplate)} method that constructs a result
+ * from the information provided by the supplied {@link StringTemplate} instance.
+ * <p>
+ * For example:
  * {@snippet :
- * StringProcessor processor = st -> st.interpolate();
+ * StringProcessor processor = st -> st.interpolate().toUpperCase();
  * }
  *
+ * @see java.lang.template.ValidatingProcessor
+ * @see java.lang.template.TemplateProcessor
+ * @see java.lang.template.StringTemplate
+ *
  * @since 20
+ *
+ * @implNote Implementations using {@link StringProcessor} are equivalent to implementations using
+ * {@code TemplateProcessor<String>} or {@code ValidatingProcessor<String, RuntimeException>},
+ * however the dominance of {@link String} producing template processors supercedes the redundancy.
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface

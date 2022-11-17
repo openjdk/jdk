@@ -132,9 +132,9 @@ import jdk.internal.javac.PreviewFeature;
  * @param <R>  Processor's process result type
  * @param <E>  Exception thrown type
  *
- * @see java.lang.template.StringTemplate
  * @see java.lang.template.TemplateProcessor
  * @see java.lang.template.StringProcessor
+ * @see java.lang.template.StringTemplate
  * @see java.util.FormatProcessor
  *
  * @since 20

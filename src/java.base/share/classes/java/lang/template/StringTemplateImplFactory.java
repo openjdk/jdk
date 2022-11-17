@@ -30,24 +30,24 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatException;
 import java.lang.invoke.StringConcatFactory;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
+import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.JavaTemplateAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
-import static java.lang.invoke.MethodType.methodType;
-
 /**
  * This class synthesizes {@link StringTemplate StringTemplates} based on
- * fragments and bootstrap method type.
+ * fragments and bootstrap method type. Usage is primarily from
+ * {@link java.lang.runtime.TemplateRuntime} via {@code SharedSecrets.getJavaTemplateAccess()}.
  *
  * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class StringTemplateImplFactory implements JavaTemplateAccess {
+
+    private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
 
     /**
      * Private constructor.
@@ -69,12 +69,12 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-            MethodType mt = methodType(void.class, int.class, int.class, List.class,
+            MethodType mt = MethodType.methodType(void.class, int.class, int.class, List.class,
                     MethodHandle.class, MethodHandle.class);
             CONSTRUCTOR = lookup.findConstructor(StringTemplateImpl.class, mt)
                     .asType(mt.changeReturnType(Carriers.CarrierObject.class));
 
-            mt = methodType(List.class, Object[].class);
+            mt = MethodType.methodType(List.class, Object[].class);
             TO_LIST = lookup.findStatic(StringTemplateImplFactory.class, "toList", mt);
         } catch(ReflectiveOperationException ex) {
             throw new AssertionError("carrier static init fail", ex);
@@ -113,13 +113,13 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
             throw new RuntimeException("constructing internal string template", ex);
         }
         interpolateMH = MethodHandles.filterArguments(interpolateMH, 0, components);
-        mt = methodType(String.class, StringTemplateImpl.class);
+        mt = MethodType.methodType(String.class, StringTemplateImpl.class);
         interpolateMH = MethodHandles.permuteArguments(interpolateMH, mt, permute);
 
-        mt = methodType(List.class, ptypes);
+        mt = MethodType.methodType(List.class, ptypes);
         MethodHandle valuesMH = TO_LIST.asCollector(Object[].class, components.length).asType(mt);
         valuesMH = MethodHandles.filterArguments(valuesMH, 0, components);
-        mt = methodType(List.class, StringTemplateImpl.class);
+        mt = MethodType.methodType(List.class, StringTemplateImpl.class);
         valuesMH = MethodHandles.permuteArguments(valuesMH, mt, permute);
 
         MethodHandle constructor = MethodHandles.insertArguments(CONSTRUCTOR,0,
@@ -127,7 +127,7 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
                 fragments, valuesMH, interpolateMH);
         constructor = MethodHandles.foldArguments(elements.initializer(), 0, constructor);
 
-        mt = methodType(StringTemplate.class, ptypes);
+        mt = MethodType.methodType(StringTemplate.class, ptypes);
         constructor = constructor.asType(mt);
 
         return constructor;
@@ -188,17 +188,14 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
 
     /**
      * Collect nullable elements from an array into a unmodifiable list.
+     * Elements are guaranteed to be safe.
      *
      * @param elements  elements to place in list
      *
      * @return unmodifiable list.
-     *
-     * @param <E>  type of elements
      */
-    @SafeVarargs
-    @SuppressWarnings({"unchecked", "varargs"})
-    private static <E> List<E> toList(E... elements) {
-        return Collections.unmodifiableList(Arrays.asList(elements));
+    private static List<Object> toList(Object[] elements) {
+        return JUCA.listFromTrustedArrayNullsAllowed(elements);
     }
 
 }

@@ -48,16 +48,15 @@ import jdk.internal.javac.PreviewFeature;
  * by Java compiler implementations to implement the bodies of methods for {@link StringTemplate}
  * objects.
  * <p>
- * Bootstraps in the form of {@code (Lookup, String, MethodType)(String[], Object[])} are used
- * to create {@link StringTemplate StringTemplates} that have more than
+ * The {@link TemplateRuntime#newLargeStringTemplate} bootstrap method is used to create
+ * {@link StringTemplate StringTemplates} that have more than
  * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS} values.
  * <p>
- * Bootstraps in the form of {@code (Lookup, String, MethodType, String...)(...)} are used to create
- * optimized {@link StringTemplate StringTemplates} based on StringTemplateImpl.
+ * The {@link TemplateRuntime#newStringTemplate} bootstrap method is used to create
+ * optimized {@link StringTemplate StringTemplates}.
  * <p>
- * Bootstraps in the for of (Lookup, String, MethodType, MethodHandle, String...)
- * (VerifyingProcessor, ...) are used to implement specialized processors for
- * {@link ProcessorLinkage} implementing processors.
+ * The {@link TemplateRuntime#newLargeStringTemplate} bootstrap method is used
+ * to bind to specialized processors that implement {@link ProcessorLinkage}.
  *
  * @since 20
  */
@@ -112,11 +111,9 @@ public final class TemplateRuntime {
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
      */
-    public static CallSite newLargeStringTemplate(
-            MethodHandles.Lookup lookup,
-            String name,
-            MethodType type
-    ) throws Throwable {
+    public static CallSite newLargeStringTemplate(MethodHandles.Lookup lookup,
+                                                  String name,
+                                                  MethodType type) throws Throwable {
         Objects.requireNonNull(lookup, "lookup is null");
         Objects.requireNonNull(name, "name is null");
         Objects.requireNonNull(type, "type is null");
@@ -137,12 +134,10 @@ public final class TemplateRuntime {
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
      */
-    public static CallSite newStringTemplate(
-            MethodHandles.Lookup lookup,
-            String name,
-            MethodType type,
-            String... fragments
-    ) throws Throwable {
+    public static CallSite newStringTemplate(MethodHandles.Lookup lookup,
+                                             String name,
+                                             MethodType type,
+                                             String... fragments) throws Throwable {
         Objects.requireNonNull(lookup, "lookup is null");
         Objects.requireNonNull(name, "name is null");
         Objects.requireNonNull(type, "type is null");
@@ -168,13 +163,11 @@ public final class TemplateRuntime {
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
      */
-    public static CallSite processStringTemplate(
-            MethodHandles.Lookup lookup,
-            String name,
-            MethodType type,
-            MethodHandle processorGetter,
-            String... fragments
-    ) throws Throwable {
+    public static CallSite processStringTemplate(MethodHandles.Lookup lookup,
+                                                 String name,
+                                                 MethodType type,
+                                                 MethodHandle processorGetter,
+                                                 String... fragments) throws Throwable {
         Objects.requireNonNull(lookup, "lookup is null");
         Objects.requireNonNull(name, "name is null");
         Objects.requireNonNull(type, "type is null");

@@ -48,7 +48,7 @@ public interface FormatConcatItem {
      * Insert content into buffer prior to the current length.
      *
      * @param lengthCoder current value of the length + coder
-     * @param buffer      buffer to right into
+     * @param buffer      buffer to append to
      *
      * @return adjusted value of the length + coder
      *

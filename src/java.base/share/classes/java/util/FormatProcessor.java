@@ -87,8 +87,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      *          If a format string contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
      *          insufficient arguments given the format string, or other
-     *          illegal conditions.  For specification of all possible
-     *          formatting errors.
+     *          illegal conditions.
      * @see java.util.Formatter
      */
     @Override
@@ -106,8 +105,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      *          If a format string contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
      *          insufficient arguments given the format string, or other
-     *          illegal conditions.  For specification of all possible
-     *          formatting errors.
+     *          illegal conditions.
      * @see java.util.Formatter
      */
     @Override
@@ -158,7 +156,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
     }
 
     /**
-     * Convert a {@link StringTemplate} fragments, containing format specifications,
+     * Convert {@link StringTemplate} fragments, containing format specifications,
      * to a form that can be passed on to {@link Formatter}. The method scans each fragment,
      * matching up formatter specifications with the following expression. If no
      * specification is found, the method inserts "%s".
