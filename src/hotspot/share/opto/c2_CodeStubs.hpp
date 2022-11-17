@@ -28,8 +28,8 @@
 #include "opto/c2_MacroAssembler.hpp"
 #include "utilities/growableArray.hpp"
 
-#ifndef SHARE_OPTO_C2CODESTUBS_HPP
-#define SHARE_OPTO_C2CODESTUBS_HPP
+#ifndef SHARE_OPTO_C2_CODESTUBS_HPP
+#define SHARE_OPTO_C2_CODESTUBS_HPP
 
 class C2CodeStub : public ArenaObj {
 private:
@@ -101,4 +101,4 @@ public:
   }
 };
 
-#endif // SHARE_OPTO_C2CODESTUBS_HPP
+#endif // SHARE_OPTO_C2_CODESTUBS_HPP
