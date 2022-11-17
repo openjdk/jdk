@@ -50,7 +50,7 @@ class PlaceholderKey {
 };
 
 const int _placeholder_table_size = 503;   // Does this really have to be prime?
-ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
                   PlaceholderKey::hash, PlaceholderKey::equals> _placeholders;
 
 // SeenThread objects represent list of threads that are
