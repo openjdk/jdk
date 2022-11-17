@@ -708,7 +708,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing Java version string")
     report_vm_version(st, buf, sizeof(buf));
 
-  STEP_IF("printing problematic frame", _context)
+  STEP_IF("printing problematic frame", _context != nullptr)
     // Print current frame if we have a context (i.e. it's a crash)
     st->print_cr("# Problematic frame:");
     st->print("# ");
@@ -769,7 +769,8 @@ void VMError::report(outputStream* st, bool _verbose) {
     }
     st->cr();
 
-  STEP_IF("printing current compile task", _verbose && _thread && _thread->is_Compiler_thread())
+  STEP_IF("printing current compile task",
+      _verbose && _thread != nullptr && _thread->is_Compiler_thread())
     CompilerThread* t = (CompilerThread*)_thread;
     if (t->task()) {
         st->cr();
@@ -831,7 +832,8 @@ void VMError::report(outputStream* st, bool _verbose) {
       print_stack_trace(st, JavaThread::cast(_thread), buf, sizeof(buf));
     }
 
-  STEP_IF("printing target Java thread stack", _verbose && _thread && (_thread->is_Named_thread()))
+  STEP_IF("printing target Java thread stack",
+      _verbose && _thread != nullptr && (_thread->is_Named_thread()))
     // printing Java thread stack trace if it is involved in GC crash
     Thread* thread = ((NamedThread *)_thread)->processed_thread();
     if (thread != NULL && thread->is_Java_thread()) {
@@ -840,24 +842,24 @@ void VMError::report(outputStream* st, bool _verbose) {
       print_stack_trace(st, jt, buf, sizeof(buf), true);
     }
 
-  STEP_IF("printing siginfo", _verbose && _siginfo)
+  STEP_IF("printing siginfo", _verbose && _siginfo != nullptr)
     // signal no, signal code, address that caused the fault
     st->cr();
     os::print_siginfo(st, _siginfo);
     st->cr();
 
-  STEP_IF("CDS archive access warning", _verbose && _siginfo)
+  STEP_IF("CDS archive access warning", _verbose && _siginfo != nullptr)
     // Print an explicit hint if we crashed on access to the CDS archive.
     check_failing_cds_access(st, _siginfo);
     st->cr();
 
-  STEP_IF("printing registers", _verbose && _context)
+  STEP_IF("printing registers", _verbose && _context != nullptr)
     // printing registers
     os::print_context(st, _context);
     st->cr();
 
   STEP_IF("printing register info",
-      _verbose && _context && _thread && Universe::is_fully_initialized())
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
     // decode register contents if possible
     ResourceMark rm(_thread);
     os::print_register_info(st, _context);
@@ -872,7 +874,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("inspecting top of stack",
-      _verbose && _context && _thread && Universe::is_fully_initialized())
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
     // decode stack contents if possible
     frame fr = os::fetch_frame_from_context(_context);
     const int slots = 8;
@@ -933,7 +935,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       }
     }
 
-  STEP_IF("printing VM operation", _verbose && _thread && _thread->is_VM_thread())
+  STEP_IF("printing VM operation", _verbose && _thread != nullptr && _thread->is_VM_thread())
     VMThread* t = (VMThread*)_thread;
     VM_Operation* op = t->vm_operation();
     if (op) {
