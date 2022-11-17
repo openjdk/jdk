@@ -583,15 +583,6 @@ void VMError::report(outputStream* st, bool _verbose) {
       TestCrashInErrorHandler);
     controlled_crash(TestCrashInErrorHandler);
 
-  STEP_IF("test secondary crash in step condition",
-    _verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH &&
-    [&](){
-      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
-        TestCrashInErrorHandler);
-      controlled_crash(TestCrashInErrorHandler);
-      return true;
-    }())
-
   STEP_IF("test missing ResourceMark does not crash", _verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH)
     stringStream message;
     message.print("This is a message with no ResourceMark");
