@@ -92,7 +92,7 @@ import jdk.internal.reflect.Reflection;
  * Java code. This includes shutdown hooks as well as daemon and non-daemon threads. The
  * threads' current methods do not complete normally or abruptly.
  * {@linkplain Thread.UncaughtExceptionHandler Uncaught exception handlers} are not run,
- * no {@code finally} clause of any method is executed, and try-with-resource
+ * no {@code finally} clause of any method is executed, and try-with-resources
  * blocks do not {@linkplain AutoCloseable close} their resources.
  *
  * @implNote
@@ -280,7 +280,7 @@ public class Runtime {
      * This method should be used with extreme caution. Using it may circumvent or disrupt
      * any cleanup actions intended to be performed by shutdown hooks,
      * {@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers},
-     * finally blocks, or try-with-resource blocks. This can lead to data corruption.
+     * finally blocks, or try-with-resources blocks. This can lead to data corruption.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code
