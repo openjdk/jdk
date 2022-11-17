@@ -93,7 +93,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: jdk-rc-name, TYPE: string,
     DEFAULT: [$PRODUCT_NAME $JDK_RC_PLATFORM_NAME],
     DESC: [Set JDK RC name. This is used for FileDescription and ProductName
-       properties of MS Windows binaries. @<:@not specified@:>@],
+       properties of MS Windows binaries.],
+    DEFAULT_DESC: [not specified],
     IF_GIVEN: [
       if test "x$JDK_RC_NAME" = x; then
         AC_MSG_ERROR([--with-jdk-rc-name cannot be empty])
@@ -123,7 +124,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Otherwise we will use the value from "branding.conf" included above.
   UTIL_ARG_WITH(NAME: vendor-url, TYPE: string,
     DEFAULT: $VENDOR_URL,
-    DESC: [Set the 'java.vendor.url' system property @<:@not specified@:>@],
+    DESC: [Set the 'java.vendor.url' system property],
+    DEFAULT_DESC: [not specified],
     IF_GIVEN: [
       if test "x$VENDOR_URL" = x; then
         AC_MSG_ERROR([--with-vendor-url must have a value])
@@ -139,7 +141,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: vendor-bug-url, TYPE: string,
     RESULT: VENDOR_URL_BUG,
     DEFAULT: $VENDOR_URL_BUG,
-    DESC: [Set the 'java.vendor.url.bug' system property @<:@not specified@:>@],
+    DESC: [Set the 'java.vendor.url.bug' system property],
+    DEFAULT_DESC: [not specified],
     IF_GIVEN: [
       if test "x$VENDOR_URL_BUG" = x; then
         AC_MSG_ERROR([--with-vendor-bug-url must have a value])
@@ -155,7 +158,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: vendor-vm-bug-url, TYPE: string,
     RESULT: VENDOR_URL_VM_BUG,
     DEFAULT: $VENDOR_URL_VM_BUG,
-    DESC: [Sets the bug URL which will be displayed when the VM crashes @<:@not specified@:>@],
+    DESC: [Sets the bug URL which will be displayed when the VM crashes],
+    DEFAULT_DESC: [not specified],
     IF_GIVEN: [
       if test "x$VENDOR_URL_VM_BUG" = x; then
         AC_MSG_ERROR([--with-vendor-vm-bug-url must have a value])
@@ -171,7 +175,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # override parts with more specific flags, since these are processed later.
   UTIL_ARG_WITH(NAME: version-string, TYPE: string,
     DEFAULT: [],
-    DESC: [Set version string @<:@calculated@:>@])
+    DESC: [Set version string],
+    DEFAULT_DESC: [calculated])
 
   if test "x$VERSION_STRING" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
@@ -309,7 +314,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # above
   UTIL_ARG_WITH(NAME: version-feature, TYPE: string,
     DEFAULT: $VERSION_FEATURE,
-    DESC: [Set version 'FEATURE' field (first number) @<:@current source value@:>@])
+    DESC: [Set version 'FEATURE' field (first number)],
+    DEFAULT_DESC: [current source value])
   JDKVER_CHECK_AND_SET_NUMBER(VERSION_FEATURE, $VERSION_FEATURE)
 
   AC_ARG_WITH(version-interim, [AS_HELP_STRING([--with-version-interim],
@@ -488,7 +494,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: version-date, TYPE: string,
     RESULT: VERSION_DATE,
     DEFAULT: $DEFAULT_VERSION_DATE,
-    DESC: [Set version date @<:@current source value@:>@],
+    DESC: [Set version date],
+    DEFAULT_DESC: [current source value],
     IF_GIVEN: [
       if test "x$VERSION_DATE" = x; then
         AC_MSG_ERROR([--with-version-date cannot be empty])
@@ -504,7 +511,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: vendor-version-string, TYPE: string,
     DEFAULT: [],
     OPTIONAL: true,
-    DESC: [Set vendor version string @<:@not specified@:>@])
+    DESC: [Set vendor version string],
+    DEFAULT_DESC: [not specified])
 
   if test "x$VENDOR_VERSION_STRING_ENABLED" = xtrue; then
     if [ ! [[ $VENDOR_VERSION_STRING =~ ^[[:graph:]]*$ ]] ]; then
@@ -515,8 +523,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Set the MACOSX Bundle Name base
   UTIL_ARG_WITH(NAME: macosx-bundle-name-base, TYPE: string,
     DEFAULT: $MACOSX_BUNDLE_NAME_BASE,
-    DESC: [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.
-      @<:@not specified@:>@],
+    DESC: [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.],
+    DEFAULT_DESC: [not specified],
     IF_GIVEN: [
       if test "x$MACOSX_BUNDLE_NAME_BASE" = x; then
         AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
@@ -535,8 +543,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Set the MACOSX Bundle ID base
   UTIL_ARG_WITH(NAME: macosx-bundle-id-base, TYPE: string,
     DEFAULT: $MACOSX_BUNDLE_ID_BASE,
-    DESC: [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.
-      @<:@not specified@:>@],
+    DESC: [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.],
+    DEFAULT_DESC: [not specified],
     IF_GIVEN: [
       if test "x$MACOSX_BUNDLE_ID_BASE" = x; then
         AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
