@@ -316,7 +316,7 @@ ongoing efforts to loosen this strict coupling between compiler and operating
 system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
 will likely be a very long time before this goal can be realized.
 
-| Operating system   |    Supported toolchain    |
+| Operating system   | Supported toolchain       |
 | ------------------ | ------------------------- |
 | Linux              | gcc, clang                |
 | macOS              | Apple Xcode (using clang) |
