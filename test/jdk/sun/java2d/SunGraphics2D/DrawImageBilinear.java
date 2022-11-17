@@ -30,7 +30,6 @@
  * @run main/othervm -Dsun.java2d.uiScale=2.5 -Dsun.java2d.d3d=false DrawImageBilinear
  */
 
-import javax.imageio.ImageIO;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -47,8 +46,6 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
 import java.awt.image.VolatileImage;
-import java.io.File;
-import java.io.IOException;
 
 public class DrawImageBilinear extends Canvas {
 
@@ -137,11 +134,6 @@ public class DrawImageBilinear extends Canvas {
                     Math.abs(red - standardRed) > tolerance ||
                     Math.abs(green - standardGreen) > tolerance ||
                     Math.abs(blue - standardBlue) > tolerance) {
-                    try {
-                        String name = "DrawImageBilinear.png";
-                        ImageIO.write(capture, "png", new File(name));
-                        System.out.println("Screen shot file: " + name);
-                    } catch (IOException ex) {}
                     throw new RuntimeException("Test failed at x="+x+" y="+y+
                                                " (expected=0xffff0000"+
                                                " actual=0x"+
@@ -194,11 +186,6 @@ public class DrawImageBilinear extends Canvas {
             // Test background color
             int pixel = capture.getRGB(5, 5);
             if (pixel != 0xffffffff) {
-                try {
-                    String name = "DrawImageBilinear.png";
-                    ImageIO.write(capture, "png", new File(name));
-                    System.out.println("Screen shot file: " + name);
-                } catch (IOException ex) {}
                 throw new RuntimeException("Failed: Incorrect color for " +
                                            "background");
             }
@@ -208,11 +195,6 @@ public class DrawImageBilinear extends Canvas {
             testRegion(capture, new Rectangle(80, 10, 40, 40));
             testRegion(capture, new Rectangle(150, 10, 40, 40));
         } finally {
-            try {
-                String name = "DrawImageBilinear.png";
-                ImageIO.write(capture, "png", new File(name));
-                System.out.println("Screen shot file: " + name);
-            } catch (IOException ex) {}
             frame.dispose();
         }
     }
