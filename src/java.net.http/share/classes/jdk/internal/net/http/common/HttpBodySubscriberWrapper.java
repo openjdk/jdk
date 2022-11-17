@@ -135,7 +135,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     protected void onCancel() { }
 
     /**
-     * Called right after the userSubscriber::onSubscribe is called.
+     * Called right before the userSubscriber::onSubscribe is called.
      * @apiNote
      * This method may be used by subclasses to perform cleanup
      * related actions after a subscription has been succesfully
