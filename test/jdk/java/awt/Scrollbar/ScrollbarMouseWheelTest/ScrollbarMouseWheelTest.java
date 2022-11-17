@@ -108,7 +108,6 @@ public final class ScrollbarMouseWheelTest
         // down on sb2
         testComp(sb2, false);
 
-        robot.waitForIdle();
         robot.delay(500);
 
         frame.dispose();
