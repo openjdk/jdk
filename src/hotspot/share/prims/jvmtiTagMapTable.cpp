@@ -113,13 +113,18 @@ JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) 
 }
 
 JvmtiTagMapEntry* JvmtiTagMapTable::find(oop obj) {
+#if 0
   if (obj->fast_no_hash_check()) {
     // Objects in the table all have a hashcode.
     return NULL;
   }
+#endif
+  WeakHandle w(JvmtiExport::weak_tag_storage(), obj);
   unsigned int hash = compute_hash(obj);
   int index = hash_to_index(hash);
-  return find(index, hash, obj);
+  JvmtiTagMapEntry* entry = find(index, hash, obj);
+  w.release(JvmtiExport::weak_tag_storage());
+  return entry;
 }
 
 JvmtiTagMapEntry* JvmtiTagMapTable::add(oop obj, jlong tag) {
