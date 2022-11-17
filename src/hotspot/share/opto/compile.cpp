@@ -1289,6 +1289,7 @@ bool Compile::allow_range_check_smearing() const {
 
 //------------------------------flatten_alias_type-----------------------------
 const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
+  assert(do_aliasing(), "Aliasing should be enabled");
   int offset = tj->offset();
   TypePtr::PTR ptr = tj->ptr();
 
@@ -1320,7 +1321,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
               cast_to_ptr_type(ptr)->
               with_offset(offset);
     }
-  } else if (ta && do_aliasing()) {
+  } else if (ta) {
     // For arrays indexed by constant indices, we flatten the alias
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
@@ -1391,7 +1392,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Oop pointers need some flattening
   const TypeInstPtr *to = tj->isa_instptr();
-  if (to && do_aliasing() && to != TypeOopPtr::BOTTOM) {
+  if (to && to != TypeOopPtr::BOTTOM) {
     ciInstanceKlass* ik = to->instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (ik != ciEnv::current()->Class_klass() ||
@@ -1493,11 +1494,6 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   if (tj->base() == Type::AnyPtr)
     tj = TypePtr::BOTTOM;      // An error, which the caller must check for.
-
-  // Flatten all to bottom for now
-  if (!do_aliasing()) {
-    tj = TypePtr::BOTTOM;
-  }
 
   offset = tj->offset();
   assert( offset != Type::OffsetTop, "Offset has fallen from constant" );
