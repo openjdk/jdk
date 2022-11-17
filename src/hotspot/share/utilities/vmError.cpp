@@ -583,7 +583,8 @@ void VMError::report(outputStream* st, bool _verbose) {
       TestCrashInErrorHandler);
     controlled_crash(TestCrashInErrorHandler);
 
-  STEP_IF("test missing ResourceMark does not crash", _verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH)
+  STEP_IF("test missing ResourceMark does not crash",
+      _verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH)
     stringStream message;
     message.print("This is a message with no ResourceMark");
     tty->print_cr("%s", message.as_string());
@@ -592,14 +593,16 @@ void VMError::report(outputStream* st, bool _verbose) {
   // Step to global timeout ratio is 4:1, so in order to be absolutely sure we hit the
   // global timeout, let's execute the timeout step five times.
   // See corresponding test in test/runtime/ErrorHandling/TimeoutInErrorHandlingTest.java
-  STEP_IF("setup for test unresponsive error reporting step", _verbose && TestUnresponsiveErrorHandler)
+  STEP_IF("setup for test unresponsive error reporting step",
+      _verbose && TestUnresponsiveErrorHandler)
     // We record reporting_start_time for this test here because we
     // care about the time spent executing TIMEOUT_TEST_STEP and not
     // about the time it took us to get here.
     tty->print_cr("Recording reporting_start_time for TestUnresponsiveErrorHandler.");
     record_reporting_start_time();
 
-  #define TIMEOUT_TEST_STEP STEP_IF("test unresponsive error reporting step", _verbose && TestUnresponsiveErrorHandler) \
+  #define TIMEOUT_TEST_STEP STEP_IF("test unresponsive error reporting step", \
+      _verbose && TestUnresponsiveErrorHandler) \
     os::infinite_sleep();
   TIMEOUT_TEST_STEP
   TIMEOUT_TEST_STEP
@@ -853,7 +856,8 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_context(st, _context);
     st->cr();
 
-  STEP_IF("printing register info", _verbose && _context && _thread && Universe::is_fully_initialized())
+  STEP_IF("printing register info",
+      _verbose && _context && _thread && Universe::is_fully_initialized())
     // decode register contents if possible
     ResourceMark rm(_thread);
     os::print_register_info(st, _context);
@@ -867,7 +871,8 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_tos_pc(st, _context);
     st->cr();
 
-  STEP_IF("inspecting top of stack", _verbose && _context && _thread && Universe::is_fully_initialized())
+  STEP_IF("inspecting top of stack",
+      _verbose && _context && _thread && Universe::is_fully_initialized())
     // decode stack contents if possible
     frame fr = os::fetch_frame_from_context(_context);
     const int slots = 8;
@@ -976,7 +981,8 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_owned_locks_on_error(st);
     st->cr();
 
-  STEP_IF("printing number of OutOfMemoryError and StackOverflow exceptions", _verbose && Exceptions::has_exception_counts())
+  STEP_IF("printing number of OutOfMemoryError and StackOverflow exceptions",
+      _verbose && Exceptions::has_exception_counts())
     st->print_cr("OutOfMemory and StackOverflow Exception counts:");
     Exceptions::print_exception_counts_on_error(st);
     st->cr();
