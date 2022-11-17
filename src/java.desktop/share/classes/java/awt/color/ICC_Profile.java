@@ -82,6 +82,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * directions.
  *
  * @see ICC_ColorSpace
+ * @sealedGraph
  */
 public sealed class ICC_Profile implements Serializable
     permits ICC_ProfileGray,

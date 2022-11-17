@@ -38,6 +38,7 @@ import java.util.Arrays;
  *
  * @author Nicholas Talian, Vincent Hardy, Jim Graham, Jerry Evans
  * @since 1.6
+ * @sealedGraph
  */
 public abstract sealed class MultipleGradientPaint implements Paint
     permits LinearGradientPaint,
