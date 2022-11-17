@@ -1280,11 +1280,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code srcSegment} is not
      * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code srcSegment().isAccessibleBy(T) == false}.
+     * such that {@code srcSegment.scope().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code dstSegment} is not
      * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code dstSegment().isAccessibleBy(T) == false}.
+     * such that {@code dstSegment.scope().isAccessibleBy(T) == false}.
      * @throws IndexOutOfBoundsException if {@code srcOffset + bytes > srcSegment.byteSize()} or if
      * {@code dstOffset + bytes > dstSegment.byteSize()}, or if either {@code srcOffset}, {@code dstOffset}
      * or {@code bytes} are {@code < 0}.
@@ -1327,11 +1327,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code srcSegment} is not
      * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code srcSegment().isAccessibleBy(T) == false}.
+     * such that {@code srcSegment().scope().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code dstSegment} is not
      * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code dstSegment().isAccessibleBy(T) == false}.
+     * such that {@code dstSegment().scope().isAccessibleBy(T) == false}.
      * @throws IndexOutOfBoundsException if {@code srcOffset + (elementCount * S) > srcSegment.byteSize()} or if
      * {@code dstOffset + (elementCount * S) > dstSegment.byteSize()}, where {@code S} is the byte size
      * of the element layouts, or if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}.
@@ -2212,11 +2212,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code srcSegment} is not
      * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code srcSegment().isAccessibleBy(T) == false}.
+     * such that {@code srcSegment.scope().isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code dstSegment} is not
      * {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code dstSegment().isAccessibleBy(T) == false}.
+     * such that {@code dstSegment.scope().isAccessibleBy(T) == false}.
      * @throws IndexOutOfBoundsException if {@code srcFromOffset < 0}, {@code srcToOffset < srcFromOffset} or
      * {@code srcToOffset > srcSegment.byteSize()}
      * @throws IndexOutOfBoundsException if {@code dstFromOffset < 0}, {@code dstToOffset < dstFromOffset} or
