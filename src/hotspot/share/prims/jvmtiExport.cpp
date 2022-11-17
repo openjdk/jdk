@@ -384,7 +384,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
     if (!java_lang_VirtualThread ::notify_jvmti_events()) {
       java_lang_VirtualThread::set_notify_jvmti_events(true);
-      if (Thread::current_or_null() != NULL) { // need this for attached threads only 
+      if (Thread::current_or_null() != NULL) { // need this for attached threads only
         ThreadInVMfromNative tiv(JavaThread::current());
         java_lang_VirtualThread::init_static_notify_jvmti_events();
       }
