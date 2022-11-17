@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,19 @@
   @test
   @key headful
   @bug  6497426
-  @summary ests that pressing of Ctrl+ascii mostly fires KEY_TYPED with a Unicode control symbols
+  @summary Tests that pressing of Ctrl+ascii mostly fires KEY_TYPED with a Unicode control symbols
   @run main CtrlASCII
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.TextField;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.HashMap;
 
 //
 // In this test, a key listener for KEY_TYPED checks if a character typed has
@@ -51,7 +57,7 @@ public class CtrlASCII extends Frame implements KeyListener
     TextField tf;
     Robot robot;
 
-    static void fillHash( boolean isMSWindows ) {
+    static void fillHash() {
         KEYCHAR_MAP.put((char) 0x20, KeyEvent.VK_SPACE);             /*32,x20*/ /*' ' */
         KEYCHAR_MAP.put((char) 0x21, KeyEvent.VK_EXCLAMATION_MARK);  /*33,x21*/ /*'!' fr*/
         KEYCHAR_MAP.put((char) 0x22, KeyEvent.VK_QUOTEDBL);          /*34,x22*/ /*'"' fr*/
@@ -157,6 +163,7 @@ public class CtrlASCII extends Frame implements KeyListener
 
 
     }
+
     public static void main(String[] args) {
         CtrlASCII test = new CtrlASCII();
         test.init();
@@ -165,9 +172,8 @@ public class CtrlASCII extends Frame implements KeyListener
 
     public void init()
     {
-        fillHash( false );
+        fillHash();
         this.setLayout (new BorderLayout ());
-
     }//End  init()
 
     public void start ()
@@ -200,7 +206,7 @@ public class CtrlASCII extends Frame implements KeyListener
             robot.mousePress( InputEvent.BUTTON1_DOWN_MASK );
             robot.mouseRelease( InputEvent.BUTTON1_DOWN_MASK );
 
-            KEYCHAR_MAP.forEach((k,v) -> punchCtrlKey(robot, v));
+            KEYCHAR_MAP.forEach((k,v) -> punchCtrlKey(v));
 
             robot.delay(500);
         } catch (Exception e) {
@@ -212,40 +218,37 @@ public class CtrlASCII extends Frame implements KeyListener
         System.out.println("Success\n");
 
     }// start()
-    public void punchCtrlKey( Robot ro, int keyCode ) {
-        ro.keyPress(KeyEvent.VK_CONTROL);
+
+    public void punchCtrlKey(int keyCode ) {
+        robot.keyPress(KeyEvent.VK_CONTROL);
         try {
-            ro.keyPress(keyCode);
-            ro.keyRelease(keyCode);
-        }catch(IllegalArgumentException iae) {
-            System.err.println("skip probably invalid keyCode "+keyCode);
+            robot.keyPress(keyCode);
+            robot.keyRelease(keyCode);
+        } catch (IllegalArgumentException iae) {
+            System.err.println("skip probably invalid keyCode " + keyCode);
         }
-        ro.keyRelease(KeyEvent.VK_CONTROL);
-        ro.delay(200);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+        robot.delay(200);
     }
-    public void keyPressed(KeyEvent evt)
-    {
+
+    public void keyPressed(KeyEvent evt) {
         //printKey(evt);
     }
 
-    public void keyTyped(KeyEvent evt)
-    {
+    public void keyTyped(KeyEvent evt) {
         printKey(evt);
         char keych = evt.getKeyChar();
         if( !KEYCHAR_MAP.containsKey( keych ) ) {
-            System.out.println("Unexpected keychar: "+keych);
             System.out.println("Unexpected keychar: "+keych);
             testFailed = true;
         }
     }
 
-    public void keyReleased(KeyEvent evt)
-    {
+    public void keyReleased(KeyEvent evt) {
         //printKey(evt);
     }
 
-    protected void printKey(KeyEvent evt)
-    {
+    protected void printKey(KeyEvent evt) {
         switch(evt.getID())
         {
           case KeyEvent.KEY_TYPED:
@@ -254,11 +257,9 @@ public class CtrlASCII extends Frame implements KeyListener
             break;
           default:
             System.out.println("Other Event ");
-            System.out.println("Other Event ");
             return;
         }
-        System.out.print(" 0x"+ Integer.toHexString(evt.getKeyChar()));
-        System.out.println    (" 0x"+ Integer.toHexString(evt.getKeyChar()));
+        System.out.println(" 0x" + Integer.toHexString(evt.getKeyChar()));
     }
 
 }// class CtrlASCII
