@@ -3683,9 +3683,9 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       continue;
     }
 
-    if (incr2->in(1)->is_ConstraintCast() && !incr2->in(1)->in(0)->is_RangeCheck()) {
+    if (incr2->in(1)->is_ConstraintCast() && 
+        !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
       // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
-      // to reflect changes in LibraryCallKit::inline_preconditions_checkIndex
       continue;
     }
     // Check for parallel induction variable (parallel to trip counter)
