@@ -69,7 +69,7 @@ public class TestSigInfoInHsErrFile {
 
     // Crash address: see VMError::_segfault_address - carefully choosen to give us a SEGV_MAPERR
     String crashAddress = Platform.isAix() ? "0x0*1400" : "0x0*400";
-    patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_MAPERR\\), si_addr: " + crashAddress + ".*"));
+    patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_.*\\), si_addr: " + crashAddress + ".*"));
 
     HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);
 
