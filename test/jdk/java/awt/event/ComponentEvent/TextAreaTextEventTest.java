@@ -56,7 +56,6 @@ public class TextAreaTextEventTest {
             robot.setAutoWaitForIdle(true);
 
             robot.waitForIdle();
-
             EventQueue.invokeAndWait(() -> {
                 textAreaAt = textArea.getLocationOnScreen();
                 textAreaSize = textArea.getSize();
@@ -69,7 +68,7 @@ public class TextAreaTextEventTest {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
             typeKey(KeyEvent.VK_T);
-
+            robot.waitForIdle();
             if (!textChanged) {
                 throw new RuntimeException(
                     "FAIL: TextEvent not triggered when key 'T' typed on TextArea");
@@ -82,6 +81,7 @@ public class TextAreaTextEventTest {
             robot.waitForIdle();
             textChanged = false;
             typeKey(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
 
             if (!textChanged) {
                 throw new RuntimeException(
@@ -98,7 +98,7 @@ public class TextAreaTextEventTest {
                 robot.mouseMove(textAreaAt.x + 4 + i, textAreaAt.y + 10);
             }
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
+            robot.waitForIdle();
             if (textChanged) {
                 throw new RuntimeException(
                     "FAIL: TextEvent triggered when text is selected on TextArea!");
@@ -107,7 +107,7 @@ public class TextAreaTextEventTest {
             robot.waitForIdle();
             textChanged = false;
             typeKey(KeyEvent.VK_F3);
-
+            robot.waitForIdle();
             if (textChanged) {
                 throw new RuntimeException(
                     "FAIL: TextEvent triggered when special key F3 is pressed on TextArea!");
@@ -135,7 +135,6 @@ public class TextAreaTextEventTest {
     public static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
-            frame = null;
         }
     }
 
