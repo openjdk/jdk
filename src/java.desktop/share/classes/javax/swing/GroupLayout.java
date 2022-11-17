@@ -1478,7 +1478,6 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createSequentialGroup
      * @see #createParallelGroup
      * @since 1.6
-     * @sealedGraph
      */
     public abstract sealed class Group extends Spring
         permits ParallelGroup,
