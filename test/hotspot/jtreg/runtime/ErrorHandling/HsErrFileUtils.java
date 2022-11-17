@@ -50,7 +50,7 @@ public class HsErrFileUtils {
      * @param output
      * @return
      */
-    static public File openHsErrFileFromOutput(OutputAnalyzer output) {
+    public static File openHsErrFileFromOutput(OutputAnalyzer output) {
         String name = extractHsErrFileNameFromOutput(output);
         File f = new File(name);
         if (!f.exists()) {
@@ -63,7 +63,7 @@ public class HsErrFileUtils {
      * Given an open hs-err file, read it line by line and check for pattern. Pattern
      * need to appear in order, but not necessarily uninterrupted.
      */
-    static public void checkHsErrFileContent(File f, Pattern[] patterns, boolean verbose) throws IOException {
+    public static void checkHsErrFileContent(File f, Pattern[] patterns, boolean verbose) throws IOException {
 
         FileInputStream fis = new FileInputStream(f);
         BufferedReader br = new BufferedReader(new InputStreamReader(fis));
