@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8181157 8202537 8234347 8236548 8261279
+ * @bug 8181157 8202537 8234347 8236548 8261279 8293834
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at runtime
  * @run testng/othervm -Djava.locale.providers=CLDR TimeZoneNamesTest
@@ -102,6 +102,24 @@ public class TimeZoneNamesTest {
                                                     "UTC+04:00",
                                                     "heure : Astrakhan",
                                                     "UTC+04:00"},
+            {"Europe/Kyiv",             Locale.US, "Eastern European Standard Time",
+                                                    "GMT+02:00",
+                                                    "Eastern European Summer Time",
+                                                    "GMT+03:00",
+                                                    "Eastern European Time",
+                                                    "GMT+02:00"},
+            {"Europe/Kyiv",             Locale.FRANCE, "heure normale d\u2019Europe de l\u2019Est",
+                                                    "UTC+02:00",
+                                                    "heure d\u2019\u00e9t\u00e9 d\u2019Europe de l\u2019Est",
+                                                    "UTC+03:00",
+                                                    "heure d\u2019Europe de l\u2019Est",
+                                                    "UTC+02:00"},
+            {"Europe/Kyiv",             Locale.GERMANY, "Osteurop\u00e4ische Normalzeit",
+                                                    "OEZ",
+                                                    "Osteurop\u00e4ische Sommerzeit",
+                                                    "OESZ",
+                                                    "Osteurop\u00e4ische Zeit",
+                                                    "OEZ"},
             {"Europe/Saratov",          Locale.US, "Saratov Standard Time",
                                                     "GMT+04:00",
                                                     "Saratov Daylight Time",
