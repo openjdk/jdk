@@ -13553,6 +13553,13 @@ void Assembler::vzeroupper() {
   emit_copy(code_section(), vzup_code, vzup_len);
 }
 
+void Assembler::vzeroall() {
+  assert(VM_Version::supports_avx(), "requires AVX");
+  InstructionAttr attributes(AVX_256bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  (void)vex_prefix_and_encode(0, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x77);
+}
+
 void Assembler::pushq(Address src) {
   InstructionMark im(this);
   emit_int16(get_prefixq(src), (unsigned char)0xFF);

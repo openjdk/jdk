@@ -479,7 +479,7 @@ void StubGenerator::poly1305_limbs_out(
 //  lower-case variables are scalar numbers in 3×44-bit limbs (in gprs)
 //  upper-case variables are 8&16-element vector numbers in 3×44-bit limbs (in zmm registers)
 //
-//    C = a       // [0 0 0 0 0 0 0 a]
+//    CL = a       // [0 0 0 0 0 0 0 a]
 //    AL = poly1305_limbs_avx512(input)
 //    AH = poly1305_limbs_avx512(input+8)
 //    AL = AL + C
@@ -493,17 +493,17 @@ void StubGenerator::poly1305_limbs_out(
 //    r = a*r
 //  r^4 = a
 //
-//    T = r^4 || r^3 || r^2 || r
-//    B = limbs(T)           // [r^4  0  r^3  0  r^2  0  r^1  0 ]
-//    C = B >> 1             // [ 0  r^4  0  r^3  0  r^2  0  r^1]
-//    R = r^4 || r^4 || ..   // [r^4 r^4 r^4 r^4 r^4 r^4 r^4 r^4]
-//    B = B×R                // [r^8  0  r^7  0  r^6  0  r^5  0 ]
-//    B = B | C              // [r^8 r^4 r^7 r^3 r^6 r^2 r^5 r^1]
-//    push(B)
-//    R = r^8 || r^8 || ..   // [r^8 r^8 r^8 r^8 r^8 r^8 r^8 r^8]
-//    B = B × R              // [r^16 r^12 r^15 r^11 r^14 r^10 r^13 r^9]
-//    push(B)
-//    R = r^16 || r^16 || .. // [r^16 r^16 r^16 r^16 r^16 r^16 r^16 r^16]
+//    T  = r^4 || r^3 || r^2 || r
+//    B  = limbs(T)           // [r^4  0  r^3  0  r^2  0  r^1  0 ]
+//    CL = B >> 1             // [ 0  r^4  0  r^3  0  r^2  0  r^1]
+//    R  = r^4 || r^4 || ..   // [r^4 r^4 r^4 r^4 r^4 r^4 r^4 r^4]
+//    B  = B×R                // [r^8  0  r^7  0  r^6  0  r^5  0 ]
+//    B  = B | CL             // [r^8 r^4 r^7 r^3 r^6 r^2 r^5 r^1]
+//    CL = B
+//    R  = r^8 || r^8 || ..   // [r^8 r^8 r^8 r^8 r^8 r^8 r^8 r^8]
+//    B  = B × R              // [r^16 r^12 r^15 r^11 r^14 r^10 r^13 r^9]
+//    CH = B
+//    R = r^16 || r^16 || ..  // [r^16 r^16 r^16 r^16 r^16 r^16 r^16 r^16]
 //
 // for (;length>=16; input+=16, length-=16)
 //     BL = poly1305_limbs_avx512(input)
@@ -513,10 +513,8 @@ void StubGenerator::poly1305_limbs_out(
 //     AL = AL + BL
 //     AH = AH + BH
 //
-//  B = pop()
-//  R = pop()
-//  AL = AL × R
-//  AH = AH × B
+//  AL = AL × CL
+//  AH = AH × CH
 //  A = AL + AH // 16->8 blocks
 //  T = A >> 4  // 8 ->4 blocks
 //  A = A + T
@@ -546,13 +544,13 @@ void StubGenerator::poly1305_limbs_out(
 //   mulq(rax, rdx) in poly1305_multiply_scalar
 //
 // ZMMs:
-//   TMP: xmm6
-//   C: xmm7-9
-//   D: xmm2-4
-//   T: xmm0-5
-//   A: xmm13-18
-//   B: xmm19-24
-//   R: xmm25-29
+//   D: xmm0-1
+//   TMP: xmm2
+//   T: xmm3-8
+//   A: xmm9-14
+//   B: xmm15-20
+//   C: xmm21-26
+//   R: xmm27-31
 void StubGenerator::poly1305_process_blocks_avx512(
     const Register input, const Register length,
     const Register a0, const Register a1, const Register a2,
@@ -566,44 +564,43 @@ void StubGenerator::poly1305_process_blocks_avx512(
   const Register mulql = rax;
   const Register mulqh = rdx;
 
-  const XMMRegister TMP = xmm6;
+  const XMMRegister D0 = xmm0;
+  const XMMRegister D1 = xmm1;
+  const XMMRegister TMP = xmm2;
 
-  const XMMRegister D0 = xmm2;
-  const XMMRegister D1 = xmm3;
-  const XMMRegister D2 = xmm4;
+  const XMMRegister T0 = xmm3;
+  const XMMRegister T1 = xmm4;
+  const XMMRegister T2 = xmm5;
+  const XMMRegister T3 = xmm6;
+  const XMMRegister T4 = xmm7;
+  const XMMRegister T5 = xmm8;
 
-  const XMMRegister C0 = xmm7;
-  const XMMRegister C1 = xmm8;
-  const XMMRegister C2 = xmm9;
+  const XMMRegister A0 = xmm9;
+  const XMMRegister A1 = xmm10;
+  const XMMRegister A2 = xmm11;
+  const XMMRegister A3 = xmm12;
+  const XMMRegister A4 = xmm13;
+  const XMMRegister A5 = xmm14;
 
-  const XMMRegister T0 = xmm0;
-  const XMMRegister T1 = xmm1;
-  const XMMRegister T2 = xmm2;
-  const XMMRegister T3 = xmm3;
-  const XMMRegister T4 = xmm4;
-  const XMMRegister T5 = xmm5;
+  const XMMRegister B0 = xmm15;
+  const XMMRegister B1 = xmm16;
+  const XMMRegister B2 = xmm17;
+  const XMMRegister B3 = xmm18;
+  const XMMRegister B4 = xmm19;
+  const XMMRegister B5 = xmm20;
 
-  const XMMRegister A0 = xmm13;
-  const XMMRegister A1 = xmm14;
-  const XMMRegister A2 = xmm15;
-  const XMMRegister A3 = xmm16;
-  const XMMRegister A4 = xmm17;
-  const XMMRegister A5 = xmm18;
+  const XMMRegister C0 = xmm21;
+  const XMMRegister C1 = xmm22;
+  const XMMRegister C2 = xmm23;
+  const XMMRegister C3 = xmm24;
+  const XMMRegister C4 = xmm25;
+  const XMMRegister C5 = xmm26;
 
-  const XMMRegister B0 = xmm19;
-  const XMMRegister B1 = xmm20;
-  const XMMRegister B2 = xmm21;
-  const XMMRegister B3 = xmm22;
-  const XMMRegister B4 = xmm23;
-  const XMMRegister B5 = xmm24;
-
-  const XMMRegister R0 = xmm25;
-  const XMMRegister R1 = xmm26;
-  const XMMRegister R2 = xmm27;
-  const XMMRegister R1P = xmm28;
-  const XMMRegister R2P = xmm29;
-
-  __ subq(rsp, (512/8)*6); // Make room to store 6 zmm registers (powers of R)
+  const XMMRegister R0 = xmm27;
+  const XMMRegister R1 = xmm28;
+  const XMMRegister R2 = xmm29;
+  const XMMRegister R1P = xmm30;
+  const XMMRegister R2P = xmm31;
 
   // Spread accumulator into 44-bit limbs in quadwords C0,C1,C2
   __ movq(t0, a0);
@@ -646,12 +643,12 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ lea(input, Address(input,16*16));
 
   // Compute the powers of R^1..R^4 and form 44-bit limbs of each
-  // D0 to have bits 0-127 in 4 quadword pairs
-  // D1 to have bits 128-129 in alternating 8 qwords
-  __ vpxorq(D1, D1, D1, Assembler::AVX_512bit);
-  __ movq(D2, r0);
-  __ vpinsrq(D2, D2, r1, 1);
-  __ vinserti32x4(D0, D0, D2, 3);
+  // T0 to have bits 0-127 in 4 quadword pairs
+  // T1 to have bits 128-129 in alternating 8 qwords
+  __ vpxorq(T1, T1, T1, Assembler::AVX_512bit);
+  __ movq(T2, r0);
+  __ vpinsrq(T2, T2, r1, 1);
+  __ vinserti32x4(T0, T0, T2, 3);
 
   // Calculate R^2
   __ movq(a0, r0);
@@ -661,44 +658,44 @@ void StubGenerator::poly1305_process_blocks_avx512(
                            r0, r1, c1, true,
                            t0, t1, t2, mulql, mulqh);
 
-  __ movq(D2, a0);
-  __ vpinsrq(D2, D2, a1, 1);
-  __ vinserti32x4(D0, D0, D2, 2);
-  __ movq(D2, a2);
-  __ vinserti32x4(D1, D1, D2, 2);
+  __ movq(T2, a0);
+  __ vpinsrq(T2, T2, a1, 1);
+  __ vinserti32x4(T0, T0, T2, 2);
+  __ movq(T2, a2);
+  __ vinserti32x4(T1, T1, T2, 2);
 
   // Calculate R^3
   poly1305_multiply_scalar(a0, a1, a2,
                            r0, r1, c1, false,
                            t0, t1, t2, mulql, mulqh);
 
-  __ movq(D2, a0);
-  __ vpinsrq(D2, D2, a1, 1);
-  __ vinserti32x4(D0, D0, D2, 1);
-  __ movq(D2, a2);
-  __ vinserti32x4(D1, D1, D2, 1);
+  __ movq(T2, a0);
+  __ vpinsrq(T2, T2, a1, 1);
+  __ vinserti32x4(T0, T0, T2, 1);
+  __ movq(T2, a2);
+  __ vinserti32x4(T1, T1, T2, 1);
 
   // Calculate R^4
   poly1305_multiply_scalar(a0, a1, a2,
                            r0, r1, c1, false,
                            t0, t1, t2, mulql, mulqh);
 
-  __ movq(D2, a0);
-  __ vpinsrq(D2, D2, a1, 1);
-  __ vinserti32x4(D0, D0, D2, 0);
-  __ movq(D2, a2);
-  __ vinserti32x4(D1, D1, D2, 0);
+  __ movq(T2, a0);
+  __ vpinsrq(T2, T2, a1, 1);
+  __ vinserti32x4(T0, T0, T2, 0);
+  __ movq(T2, a2);
+  __ vinserti32x4(T1, T1, T2, 0);
 
   // Interleave the powers of R^1..R^4 to form 44-bit limbs (half-empty)
   // B0 to have bits 0-43 of all 4 blocks in alternating 8 qwords
   // B1 to have bits 87-44 of all 4 blocks in alternating 8 qwords
   // B2 to have bits 127-88 of all 4 blocks in alternating 8 qwords
-  __ vpxorq(D2, D2, D2, Assembler::AVX_512bit);
-  poly1305_limbs_avx512(D0, D2, B0, B1, B2, false, TMP, rscratch);
+  __ vpxorq(T2, T2, T2, Assembler::AVX_512bit);
+  poly1305_limbs_avx512(T0, T2, B0, B1, B2, false, TMP, rscratch);
 
-  // D1 contains the 2 highest bits of the powers of R
-  __ vpsllq(D1, D1, 40, Assembler::AVX_512bit);
-  __ evporq(B2, B2, D1, Assembler::AVX_512bit);
+  // T1 contains the 2 highest bits of the powers of R
+  __ vpsllq(T1, T1, 40, Assembler::AVX_512bit);
+  __ evporq(B2, B2, T1, Assembler::AVX_512bit);
 
   // Broadcast 44-bit limbs of R^4 into R0,R1,R2
   __ mov(t0, a0);
@@ -739,6 +736,11 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ evporq(B1, B1, C1, Assembler::AVX_512bit);
   __ evporq(B2, B2, C2, Assembler::AVX_512bit);
 
+  // Store R^8-R for later use
+  __ evmovdquq(C0, B0, Assembler::AVX_512bit);
+  __ evmovdquq(C1, B1, Assembler::AVX_512bit);
+  __ evmovdquq(C2, B2, Assembler::AVX_512bit);
+
   // Broadcast R^8
   __ vpbroadcastq(R0, B0, Assembler::AVX_512bit);
   __ vpbroadcastq(R1, B1, Assembler::AVX_512bit);
@@ -752,20 +754,15 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ vpsllq(R1P, R1P, 2, Assembler::AVX_512bit);     // 4*5*R^8
   __ vpsllq(R2P, R2P, 2, Assembler::AVX_512bit);
 
-  // Store R^8-R for later use
-  __ evmovdquq(Address(rsp, 64*0), B0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*1), B1, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*2), B2, Assembler::AVX_512bit);
-
   // Calculate R^16-R^9
   poly1305_multiply8_avx512(B0, B1, B2,            // ACC=R^8..R^1
                             R0, R1, R2, R1P, R2P,  // R^8..R^8, 4*5*R^8
                             T0, T1, T2, T3, T4, T5, TMP, rscratch);
 
   // Store R^16-R^9 for later use
-  __ evmovdquq(Address(rsp, 64*3), B0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*4), B1, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*5), B2, Assembler::AVX_512bit);
+  __ evmovdquq(C3, B0, Assembler::AVX_512bit);
+  __ evmovdquq(C4, B1, Assembler::AVX_512bit);
+  __ evmovdquq(C5, B2, Assembler::AVX_512bit);
 
   // Broadcast R^16
   __ vpbroadcastq(R0, B0, Assembler::AVX_512bit);
@@ -816,36 +813,28 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ bind(L_process256LoopDone);
 
   // Tail processing: Need to multiply ACC by R^16..R^1 and add it all up into a single scalar value
-  // Read R^16-R^9
-  __ evmovdquq(B0, Address(rsp, 64*3), Assembler::AVX_512bit);
-  __ evmovdquq(B1, Address(rsp, 64*4), Assembler::AVX_512bit);
-  __ evmovdquq(B2, Address(rsp, 64*5), Assembler::AVX_512bit);
-  // Read R^8-R
-  __ evmovdquq(R0, Address(rsp, 64*0), Assembler::AVX_512bit);
-  __ evmovdquq(R1, Address(rsp, 64*1), Assembler::AVX_512bit);
-  __ evmovdquq(R2, Address(rsp, 64*2), Assembler::AVX_512bit);
-
   // Generate 4*5*[R^16..R^9] (ignore lowest limb)
-  __ vpsllq(D0, B1, 2, Assembler::AVX_512bit);
-  __ vpaddq(B3, B1, D0, Assembler::AVX_512bit); // R1' (R1*5)
-  __ vpsllq(D0, B2, 2, Assembler::AVX_512bit);
-  __ vpaddq(B4, B2, D0, Assembler::AVX_512bit); // R2' (R2*5)
-  __ vpsllq(B3, B3, 2, Assembler::AVX_512bit);  // 4*5*R
-  __ vpsllq(B4, B4, 2, Assembler::AVX_512bit);
+  // Use D0 ~ R1P, D1 ~ R2P for higher powers
+  __ vpsllq(R1P, C4, 2, Assembler::AVX_512bit);
+  __ vpsllq(R2P, C5, 2, Assembler::AVX_512bit);
+  __ vpaddq(R1P, R1P, C4, Assembler::AVX_512bit);    // 5*R^8
+  __ vpaddq(R2P, R2P, C5, Assembler::AVX_512bit);
+  __ vpsllq(D0, R1P, 2, Assembler::AVX_512bit);      // 4*5*R^8
+  __ vpsllq(D1, R2P, 2, Assembler::AVX_512bit);
 
   // Generate 4*5*[R^8..R^1] (ignore lowest limb)
-  __ vpsllq(D0, R1, 2, Assembler::AVX_512bit);
-  __ vpaddq(R1P, R1, D0, Assembler::AVX_512bit); // R1' (R1*5)
-  __ vpsllq(D0, R2, 2, Assembler::AVX_512bit);
-  __ vpaddq(R2P, R2, D0, Assembler::AVX_512bit); // R2' (R2*5)
-  __ vpsllq(R1P, R1P, 2, Assembler::AVX_512bit); // 4*5*R
+  __ vpsllq(R1P, C1, 2, Assembler::AVX_512bit);
+  __ vpsllq(R2P, C2, 2, Assembler::AVX_512bit);
+  __ vpaddq(R1P, R1P, C1, Assembler::AVX_512bit);    // 5*R^8
+  __ vpaddq(R2P, R2P, C2, Assembler::AVX_512bit);
+  __ vpsllq(R1P, R1P, 2, Assembler::AVX_512bit);     // 4*5*R^8
   __ vpsllq(R2P, R2P, 2, Assembler::AVX_512bit);
 
   poly1305_multiply8_avx512(A0, A1, A2,            // MSG/ACC 16 blocks
-                            B0, B1, B2, B3, B4,    // R^16-R^9, R1P, R2P
+                            C3, C4, C5, D0, D1,    // R^16-R^9, R1P, R2P
                             T0, T1, T2, T3, T4, T5, TMP, rscratch);
   poly1305_multiply8_avx512(A3, A4, A5,            // MSG/ACC 16 blocks
-                            R0, R1, R2, R1P, R2P,  // R^8-R, R1P, R2P
+                            C0, C1, C2, R1P, R2P,  // R^8-R, R1P, R2P
                             T0, T1, T2, T3, T4, T5, TMP, rscratch);
 
   // Add all blocks (horizontally)
@@ -855,32 +844,32 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ vpaddq(A2, A2, A5, Assembler::AVX_512bit);
 
   // 8 -> 4 blocks
-  __ vextracti64x4(D0, A0, 1);
-  __ vextracti64x4(D1, A1, 1);
-  __ vextracti64x4(D2, A2, 1);
-  __ vpaddq(A0, A0, D0, Assembler::AVX_256bit);
-  __ vpaddq(A1, A1, D1, Assembler::AVX_256bit);
-  __ vpaddq(A2, A2, D2, Assembler::AVX_256bit);
+  __ vextracti64x4(T0, A0, 1);
+  __ vextracti64x4(T1, A1, 1);
+  __ vextracti64x4(T2, A2, 1);
+  __ vpaddq(A0, A0, T0, Assembler::AVX_256bit);
+  __ vpaddq(A1, A1, T1, Assembler::AVX_256bit);
+  __ vpaddq(A2, A2, T2, Assembler::AVX_256bit);
 
   // 4 -> 2 blocks
-  __ vextracti32x4(D0, A0, 1);
-  __ vextracti32x4(D1, A1, 1);
-  __ vextracti32x4(D2, A2, 1);
-  __ vpaddq(A0, A0, D0, Assembler::AVX_128bit);
-  __ vpaddq(A1, A1, D1, Assembler::AVX_128bit);
-  __ vpaddq(A2, A2, D2, Assembler::AVX_128bit);
+  __ vextracti32x4(T0, A0, 1);
+  __ vextracti32x4(T1, A1, 1);
+  __ vextracti32x4(T2, A2, 1);
+  __ vpaddq(A0, A0, T0, Assembler::AVX_128bit);
+  __ vpaddq(A1, A1, T1, Assembler::AVX_128bit);
+  __ vpaddq(A2, A2, T2, Assembler::AVX_128bit);
 
   // 2 -> 1 blocks
-  __ vpsrldq(D0, A0, 8, Assembler::AVX_128bit);
-  __ vpsrldq(D1, A1, 8, Assembler::AVX_128bit);
-  __ vpsrldq(D2, A2, 8, Assembler::AVX_128bit);
+  __ vpsrldq(T0, A0, 8, Assembler::AVX_128bit);
+  __ vpsrldq(T1, A1, 8, Assembler::AVX_128bit);
+  __ vpsrldq(T2, A2, 8, Assembler::AVX_128bit);
 
   // Finish folding and clear second qword
   __ mov64(t0, 0xfd);
   __ kmovql(k1, t0);
-  __ evpaddq(A0, k1, A0, D0, false, Assembler::AVX_512bit);
-  __ evpaddq(A1, k1, A1, D1, false, Assembler::AVX_512bit);
-  __ evpaddq(A2, k1, A2, D2, false, Assembler::AVX_512bit);
+  __ evpaddq(A0, k1, A0, T0, false, Assembler::AVX_512bit);
+  __ evpaddq(A1, k1, A1, T1, false, Assembler::AVX_512bit);
+  __ evpaddq(A2, k1, A2, T2, false, Assembler::AVX_512bit);
 
   // Carry propagation
   __ vpsrlq(D0, A0, 44, Assembler::AVX_512bit);
@@ -913,38 +902,11 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ adcq(a2, 0);
 
   // Cleanup
-  __ vpxorq(xmm0, xmm0, xmm0, Assembler::AVX_512bit);
-  __ vpxorq(xmm1, xmm1, xmm1, Assembler::AVX_512bit);
-  __ vpxorq(D0, D0, D0, Assembler::AVX_512bit);
-  __ vpxorq(D1, D1, D1, Assembler::AVX_512bit);
-  __ vpxorq(D2, D2, D2, Assembler::AVX_512bit);
-  __ vpxorq(C0, C0, C0, Assembler::AVX_512bit);
-  __ vpxorq(C1, C1, C1, Assembler::AVX_512bit);
-  __ vpxorq(C2, C2, C2, Assembler::AVX_512bit);
-  __ vpxorq(A0, A0, A0, Assembler::AVX_512bit);
-  __ vpxorq(A1, A1, A1, Assembler::AVX_512bit);
-  __ vpxorq(A2, A2, A2, Assembler::AVX_512bit);
-  __ vpxorq(A3, A3, A3, Assembler::AVX_512bit);
-  __ vpxorq(A4, A4, A4, Assembler::AVX_512bit);
-  __ vpxorq(A5, A5, A5, Assembler::AVX_512bit);
-  __ vpxorq(B0, B0, B0, Assembler::AVX_512bit);
-  __ vpxorq(B1, B1, B1, Assembler::AVX_512bit);
-  __ vpxorq(B2, B2, B2, Assembler::AVX_512bit);
-  __ vpxorq(B3, B3, B3, Assembler::AVX_512bit);
-  __ vpxorq(B4, B4, B4, Assembler::AVX_512bit);
-  __ vpxorq(B5, B5, B5, Assembler::AVX_512bit);
-  __ vpxorq(R0, R0, R0, Assembler::AVX_512bit);
-  __ vpxorq(R1, R1, R1, Assembler::AVX_512bit);
-  __ vpxorq(R2, R2, R2, Assembler::AVX_512bit);
-  __ vpxorq(R1P, R1P, R1P, Assembler::AVX_512bit);
-  __ vpxorq(R2P, R2P, R2P, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*3), A0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*4), A0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*5), A0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*0), A0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*1), A0, Assembler::AVX_512bit);
-  __ evmovdquq(Address(rsp, 64*2), A0, Assembler::AVX_512bit);
-  __ addq(rsp, 512/8*6); // (powers of R)
+  // Zero out zmm0-zmm31.
+  __ vzeroall();
+  for (XMMRegister rxmm = xmm16; rxmm->is_valid(); rxmm = rxmm->successor()) {
+    __ vpxorq(rxmm, rxmm, rxmm, Assembler::AVX_512bit);
+  }
 }
 
 // This function consumes as many whole 16-byte blocks as available in input

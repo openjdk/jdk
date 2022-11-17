@@ -2769,6 +2769,8 @@ private:
   // runtime code and native libraries.
   void vzeroupper();
 
+  void vzeroall();
+
   // Vector double compares
   void vcmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
   void evcmppd(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
