@@ -49,8 +49,7 @@ import java.util.HashMap;
 // produce a unicode character, so there will be no KEY_TYPED and no problem.
 // Test doesn't try to verify Ctrl+deadkey behavior.
 //
-public class CtrlASCII extends Frame implements KeyListener
-{
+public class CtrlASCII extends Frame implements KeyListener {
     // Declare things used in the test, like buttons and labels here
     static final HashMap<Character, Integer> KEYCHAR_MAP = new HashMap<>();
     static volatile boolean testFailed = false;
@@ -176,9 +175,9 @@ public class CtrlASCII extends Frame implements KeyListener
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(100);
 
-        setLayout (new BorderLayout ());
+        setLayout(new BorderLayout());
 
-        setSize(400,300);
+        setSize(400, 300);
         setLocationRelativeTo(null);
         setVisible(true);
 
@@ -197,15 +196,15 @@ public class CtrlASCII extends Frame implements KeyListener
         robot.waitForIdle();
     }//End  init()
 
-    public void start () {
+    public void start() {
         try {
             Point pt = getLocationOnScreen();
-            robot.mouseMove( pt.x+100, pt.y+100 );
+            robot.mouseMove(pt.x + 100, pt.y + 100);
             robot.delay(1000);
-            robot.mousePress( InputEvent.BUTTON1_DOWN_MASK );
-            robot.mouseRelease( InputEvent.BUTTON1_DOWN_MASK );
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            KEYCHAR_MAP.forEach((k,v) -> punchCtrlKey(v));
+            KEYCHAR_MAP.forEach((k, v) -> punchCtrlKey(v));
 
             robot.delay(500);
         } catch (Exception e) {
@@ -244,8 +243,8 @@ public class CtrlASCII extends Frame implements KeyListener
     public void keyTyped(KeyEvent evt) {
         printKey(evt);
         char keych = evt.getKeyChar();
-        if( !KEYCHAR_MAP.containsKey( keych ) ) {
-            System.out.println("Unexpected keychar: "+keych);
+        if (!KEYCHAR_MAP.containsKey(keych)) {
+            System.out.println("Unexpected keychar: " + keych);
             testFailed = true;
         }
     }
@@ -255,15 +254,14 @@ public class CtrlASCII extends Frame implements KeyListener
     }
 
     protected void printKey(KeyEvent evt) {
-        switch(evt.getID())
-        {
-          case KeyEvent.KEY_TYPED:
-          case KeyEvent.KEY_PRESSED:
-          case KeyEvent.KEY_RELEASED:
-            break;
-          default:
-            System.out.println("Other Event ");
-            return;
+        switch (evt.getID()) {
+            case KeyEvent.KEY_TYPED:
+            case KeyEvent.KEY_PRESSED:
+            case KeyEvent.KEY_RELEASED:
+                break;
+            default:
+                System.out.println("Other Event ");
+                return;
         }
         System.out.println(" 0x" + Integer.toHexString(evt.getKeyChar()));
     }
