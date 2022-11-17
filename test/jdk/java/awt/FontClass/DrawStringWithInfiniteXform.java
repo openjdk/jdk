@@ -43,7 +43,7 @@ public class DrawStringWithInfiniteXform {
         public void run() {
             System.out.println("Task running at " + System.currentTimeMillis());
             System.out.flush();
-            synchronized(DrawStringWithInfiniteXform.class) {
+            synchronized (DrawStringWithInfiniteXform.class) {
                System.out.println(
                    "Checking done at " + System.currentTimeMillis());
                System.out.flush();
