@@ -1670,7 +1670,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;
-  Handle *group_objs  = NULL;
+  objArrayHandle group_objs;
   jint nthreads = 0;
   jint ngroups = 0;
   int hidden_threads = 0;
