@@ -61,11 +61,11 @@ public final class ZoomResetAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomResetAction");
+        return NbBundle.getMessage(ZoomResetAction.class, "CTL_ZoomResetAction");
     }
 
     private String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomResetAction");
+        return NbBundle.getMessage(ZoomResetAction.class, "HINT_ZoomResetAction");
     }
 
     @Override
