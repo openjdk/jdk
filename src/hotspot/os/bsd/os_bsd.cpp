@@ -23,13 +23,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -836,9 +836,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
-
 static int local_dladdr(const void* addr, Dl_info* info) {
 #ifdef __APPLE__
   if (addr == (void*)-1) {

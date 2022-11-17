@@ -55,12 +55,12 @@ public final class ShowAllAction extends ModelAwareAction {
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ShowAllAction");
+        return NbBundle.getMessage(ShowAllAction.class, "HINT_ShowAllAction");
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ShowAllAction");
+        return NbBundle.getMessage(ShowAllAction.class, "CTL_ShowAllAction");
     }
 
     @Override

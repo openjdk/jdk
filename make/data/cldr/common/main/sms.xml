@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="sms"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar" draft="unconfirmed">arabia</language>
+			<language type="bn" draft="unconfirmed">bengal</language>
+			<language type="cs" draft="unconfirmed">čekk-ǩiõll</language>
+			<language type="da" draft="unconfirmed">danskk-ǩiõll</language>
+			<language type="de" draft="unconfirmed">sakslaǩiõl</language>
+			<language type="en" draft="unconfirmed">eŋgglõsǩiõll</language>
+			<language type="en_AU" draft="unconfirmed">australiaeŋgglõsǩiõll</language>
+			<language type="en_CA" draft="unconfirmed">kanadaeŋgglõsǩiõll</language>
+			<language type="en_GB" draft="unconfirmed">britanneŋgglõsǩiõll</language>
+			<language type="en_US" draft="unconfirmed">aʹmmriikkeŋgglõsǩiõll</language>
+			<language type="es" draft="unconfirmed">espaanǩiõll</language>
+			<language type="et" draft="unconfirmed">eeʹstt</language>
+			<language type="fi" draft="unconfirmed">lääʹddǩiõll</language>
+			<language type="fr" draft="unconfirmed">franskk-kiõll</language>
+			<language type="fr_CA" draft="unconfirmed">kanadafranskk-ǩiõll</language>
+			<language type="fr_CH" draft="unconfirmed">sveiccfranskk-ǩiõll</language>
+			<language type="hi" draft="unconfirmed">hindiǩiõll</language>
+			<language type="hu" draft="unconfirmed">uŋŋar</language>
+			<language type="id" draft="unconfirmed">indonesia</language>
+			<language type="it" draft="unconfirmed">italia</language>
+			<language type="ja" draft="unconfirmed">jaappanǩiõll</language>
+			<language type="ko" draft="unconfirmed">koreaǩiõll</language>
+			<language type="lv" draft="unconfirmed">latviaǩiõll</language>
+			<language type="nl" draft="unconfirmed">hollanttǩiõll</language>
+			<language type="nl_BE" draft="unconfirmed">flaamǩiõll</language>
+			<language type="pl" draft="unconfirmed">puolaǩiõll</language>
+			<language type="pt" draft="unconfirmed">portugalkiõll</language>
+			<language type="ru" draft="unconfirmed">ruõšš</language>
+			<language type="sms" draft="unconfirmed">sääʹmǩiõll</language>
+			<language type="sv" draft="unconfirmed">ruõccǩiõll</language>
+			<language type="th" draft="unconfirmed">thaiǩiõll</language>
+			<language type="zh" draft="unconfirmed">ǩiinaǩiõll</language>
+			<language type="zh_Hans" draft="unconfirmed">pråstjum ǩiinaǩiõll</language>
+			<language type="zh_Hant" draft="unconfirmed">äʹrbbvuõđlaž ǩiinǩiõll</language>
+		</languages>
+		<territories>
+			<territory type="001" draft="unconfirmed">Skääđsuâl</territory>
+			<territory type="002" draft="unconfirmed">Afrikk</territory>
+			<territory type="003" draft="unconfirmed">Taʹvv-Amerikk</territory>
+			<territory type="005" draft="unconfirmed">Saujj-Amerikk</territory>
+			<territory type="009" draft="unconfirmed">Oseania</territory>
+			<territory type="011" draft="unconfirmed">Viõstâr-Afrikk</territory>
+			<territory type="013" draft="unconfirmed">Kõskk-Amerikk</territory>
+			<territory type="014" draft="unconfirmed">Nuõrti-Afrikk</territory>
+			<territory type="015" draft="unconfirmed">Tâʹvv-Afrikk</territory>
+			<territory type="017" draft="unconfirmed">Kõskk-Afrikk</territory>
+			<territory type="019" draft="unconfirmed">Amerikk</territory>
+			<territory type="029" draft="unconfirmed">Karibia</territory>
+			<territory type="030" draft="unconfirmed">Nuõrti-Aasia</territory>
+			<territory type="034" draft="unconfirmed">Saujj-Aasia</territory>
+			<territory type="035" draft="unconfirmed">Ooʹbbdneǩ-Aasia</territory>
+			<territory type="039" draft="unconfirmed">Saujj-Europp</territory>
+			<territory type="054" draft="unconfirmed">Melanesia</territory>
+			<territory type="061" draft="unconfirmed">Polynesia</territory>
+			<territory type="142" draft="unconfirmed">Aasia</territory>
+			<territory type="143" draft="unconfirmed">Kõskk-Aasia</territory>
+			<territory type="145" draft="unconfirmed">Viõstâr-Aasia</territory>
+			<territory type="150" draft="unconfirmed">Europp</territory>
+			<territory type="151" draft="unconfirmed">Nuõrti-Europp</territory>
+			<territory type="154" draft="unconfirmed">Tâʹvv-Europp</territory>
+			<territory type="155" draft="unconfirmed">Viõstâr-Europp</territory>
+			<territory type="AD" draft="unconfirmed">Andorra</territory>
+			<territory type="AG" draft="unconfirmed">Antigua da Bardudasuõllu</territory>
+			<territory type="AI" draft="unconfirmed">Aŋguillasuõllu</territory>
+			<territory type="AL" draft="unconfirmed">Albania</territory>
+			<territory type="AT" draft="unconfirmed">Nuõrtiväʹldd</territory>
+			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="AX" draft="unconfirmed">Ålandd</territory>
+			<territory type="BA" draft="unconfirmed">Bosnia da Hertsegovinajânnam</territory>
+			<territory type="BB" draft="unconfirmed">Barbados</territory>
+			<territory type="BE" draft="unconfirmed">Belgia</territory>
+			<territory type="BF" draft="unconfirmed">Burkina Fasojânnam</territory>
+			<territory type="BG" draft="unconfirmed">Bulgaria</territory>
+			<territory type="BJ" draft="unconfirmed">Beninjânnam</territory>
+			<territory type="BL" draft="unconfirmed">Saint-Barthélemysuâl</territory>
+			<territory type="BM" draft="unconfirmed">Bermuda</territory>
+			<territory type="BO" draft="unconfirmed">Bolivia</territory>
+			<territory type="BQ" draft="unconfirmed">Karibia Vueʹlljânnam</territory>
+			<territory type="BR" draft="unconfirmed">Brasilla</territory>
+			<territory type="BS" draft="unconfirmed">Bahammasuõllu</territory>
+			<territory type="BY" draft="unconfirmed">Belarus</territory>
+			<territory type="BZ" draft="unconfirmed">Belizejânnam</territory>
+			<territory type="CA" draft="unconfirmed">Kanada</territory>
+			<territory type="CH" draft="unconfirmed">Šveiccjânnam</territory>
+			<territory type="CO" draft="unconfirmed">Kolumbia</territory>
+			<territory type="CU" draft="unconfirmed">Kuubajânnam</territory>
+			<territory type="CV" draft="unconfirmed">Kap Verdesuõllu</territory>
+			<territory type="CW" draft="unconfirmed">Curacaosuâl</territory>
+			<territory type="CZ" draft="unconfirmed">Tšekk</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Tšekk täʹssväʹldd</territory>
+			<territory type="DE" draft="unconfirmed">Saksslajânnam</territory>
+			<territory type="DK" draft="unconfirmed">Danskk</territory>
+			<territory type="DM" draft="unconfirmed">Dominica</territory>
+			<territory type="DO" draft="unconfirmed">Dominikaallaž tääʹssväʹldd</territory>
+			<territory type="DZ" draft="unconfirmed">Algeria</territory>
+			<territory type="EA" draft="unconfirmed">Ceuta da Melill</territory>
+			<territory type="EC" draft="unconfirmed">Ecuador</territory>
+			<territory type="EE" draft="unconfirmed">Viro</territory>
+			<territory type="EG" draft="unconfirmed">Egyptt</territory>
+			<territory type="EH" draft="unconfirmed">Viõstâr-Sahara</territory>
+			<territory type="ES" draft="unconfirmed">Espanja</territory>
+			<territory type="EU" draft="unconfirmed">Euroopp Union</territory>
+			<territory type="FI" draft="unconfirmed">Lääʹddjânnam</territory>
+			<territory type="FO" draft="unconfirmed">Färsuõllu</territory>
+			<territory type="FR" draft="unconfirmed">Franskkjânnam</territory>
+			<territory type="GD" draft="unconfirmed">Grenada</territory>
+			<territory type="GG" draft="unconfirmed">Guernseysuâl</territory>
+			<territory type="GH" draft="unconfirmed">Ghana</territory>
+			<territory type="GI" draft="unconfirmed">Gibraltar</territory>
+			<territory type="GL" draft="unconfirmed">Ruânnjânnam</territory>
+			<territory type="GM" draft="unconfirmed">Gambia</territory>
+			<territory type="GN" draft="unconfirmed">Guineajânnam</territory>
+			<territory type="GP" draft="unconfirmed">Guadeloupesuõllu</territory>
+			<territory type="GR" draft="unconfirmed">Greikk</territory>
+			<territory type="GT" draft="unconfirmed">Guatemala</territory>
+			<territory type="GW" draft="unconfirmed">Guinea-Bissaujânnam</territory>
+			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HR" draft="unconfirmed">Kroatia</territory>
+			<territory type="HT" draft="unconfirmed">Haitisuâl</territory>
+			<territory type="HU" draft="unconfirmed">Uŋŋar</territory>
+			<territory type="IC" draft="unconfirmed">Kanariasuõllu</territory>
+			<territory type="IE" draft="unconfirmed">Irlantt</territory>
+			<territory type="IM" draft="unconfirmed">Mansuâl</territory>
+			<territory type="IS" draft="unconfirmed">Islantt</territory>
+			<territory type="IT" draft="unconfirmed">Italia</territory>
+			<territory type="JE" draft="unconfirmed">Jerseysuâl</territory>
+			<territory type="JM" draft="unconfirmed">Jamaikka</territory>
+			<territory type="KN" draft="unconfirmed">Saint Kitts da Nevissuõllu</territory>
+			<territory type="KY" draft="unconfirmed">Caymansuõllu</territory>
+			<territory type="LC" draft="unconfirmed">Saint Luciasuâl</territory>
+			<territory type="LI" draft="unconfirmed">Liechtensteinjânnam</territory>
+			<territory type="LR" draft="unconfirmed">Liberia</territory>
+			<territory type="LT" draft="unconfirmed">Liettua</territory>
+			<territory type="LU" draft="unconfirmed">Luxemburg</territory>
+			<territory type="LV" draft="unconfirmed">Latviajânnam</territory>
+			<territory type="LY" draft="unconfirmed">Libya</territory>
+			<territory type="MA" draft="unconfirmed">Marokkojânnam</territory>
+			<territory type="MC" draft="unconfirmed">Monacojânnam</territory>
+			<territory type="MD" draft="unconfirmed">Moldova</territory>
+			<territory type="MF" draft="unconfirmed">Saint-Martiin</territory>
+			<territory type="MG" draft="unconfirmed">Madagaskaar</territory>
+			<territory type="ML" draft="unconfirmed">Malijânnam</territory>
+			<territory type="MQ" draft="unconfirmed">Martiniikk</territory>
+			<territory type="MR" draft="unconfirmed">Mauritania</territory>
+			<territory type="MS" draft="unconfirmed">Montserratsuâl</territory>
+			<territory type="MU" draft="unconfirmed">Mauritiussuâl</territory>
+			<territory type="MW" draft="unconfirmed">Malaw</territory>
+			<territory type="MX" draft="unconfirmed">Meksikk</territory>
+			<territory type="MZ" draft="unconfirmed">Mosambikk</territory>
+			<territory type="NE" draft="unconfirmed">Nigeeʹr</territory>
+			<territory type="NG" draft="unconfirmed">Nigeria</territory>
+			<territory type="NI" draft="unconfirmed">Nicaragua</territory>
+			<territory type="NL" draft="unconfirmed">Vueʹlljânnam</territory>
+			<territory type="NO" draft="unconfirmed">Taarr</territory>
+			<territory type="PA" draft="unconfirmed">Panama</territory>
+			<territory type="PE" draft="unconfirmed">Perujânnam</territory>
+			<territory type="PL" draft="unconfirmed">Puola</territory>
+			<territory type="PR" draft="unconfirmed">Puerto Rico suâl</territory>
+			<territory type="RE" draft="unconfirmed">Réunionsuâl</territory>
+			<territory type="RO" draft="unconfirmed">Romania</territory>
+			<territory type="RU" draft="unconfirmed">Ruõššjânnam</territory>
+			<territory type="RW" draft="unconfirmed">Ruanda</territory>
+			<territory type="SD" draft="unconfirmed">Sudaan</territory>
+			<territory type="SE" draft="unconfirmed">Ruõcc</territory>
+			<territory type="SH" draft="unconfirmed">Saint Helena suâl</territory>
+			<territory type="SJ" draft="unconfirmed">Svalbaard da Jan Mayen suõllu</territory>
+			<territory type="SK" draft="unconfirmed">Slovakia</territory>
+			<territory type="SL" draft="unconfirmed">Sierra Leoon</territory>
+			<territory type="SN" draft="unconfirmed">Senegal</territory>
+			<territory type="SO" draft="unconfirmed">Somalia</territory>
+			<territory type="SR" draft="unconfirmed">Surinaam</territory>
+			<territory type="SV" draft="unconfirmed">El Salvador</territory>
+			<territory type="SX" draft="unconfirmed">Sint Maarten</territory>
+			<territory type="TG" draft="unconfirmed">Togojânnam</territory>
+			<territory type="TN" draft="unconfirmed">Tunisia</territory>
+			<territory type="TT" draft="unconfirmed">Trinidad da Tobagosuâl</territory>
+			<territory type="UA" draft="unconfirmed">Ukraina</territory>
+			<territory type="UN" draft="unconfirmed">Õhttõõvvâm meerkååʹdd</territory>
+			<territory type="US" draft="unconfirmed">Õhttõsvaldia</territory>
+			<territory type="UY" draft="unconfirmed">Uruguayjânnam</territory>
+			<territory type="VE" draft="unconfirmed">Venezuela</territory>
+			<territory type="ZM" draft="unconfirmed">Sambia</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a â å ä b c č d đ e f g ǧ ǥ h i j k ǩ l m n ŋ o õ p r s š t u v z ž ʒ ǯ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ö q w x y]</exemplarCharacters>
+		<exemplarCharacters type="index">[A Â Å Ä B C Č D Đ E F G Ǧ Ǥ H I J K Ǩ L M N Ŋ O Õ P R S Š T U V Z Ž Ʒ Ǯ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \\ \&amp; #]</exemplarCharacters>
+	</characters>
+</ldml>

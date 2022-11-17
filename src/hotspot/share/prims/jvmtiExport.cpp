@@ -719,6 +719,8 @@ void JvmtiExport::post_vm_initialized() {
 void JvmtiExport::post_vm_death() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_DEATH, ("Trg VM death event triggered" ));
 
+  JvmtiTagMap::flush_all_object_free_events();
+
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_DEATH)) {
@@ -3122,7 +3124,7 @@ JvmtiDynamicCodeEventCollector::~JvmtiDynamicCodeEventCollector() {
 // register a stub
 void JvmtiDynamicCodeEventCollector::register_stub(const char* name, address start, address end) {
  if (_code_blobs == NULL) {
-   _code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(1, mtServiceability);
+   _code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(1, mtServiceability);
  }
  _code_blobs->append(new JvmtiCodeBlobDesc(name, start, end));
 }
@@ -3151,7 +3153,7 @@ void JvmtiObjectAllocEventCollector::generate_call_for_allocated() {
 void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   assert(is_enabled(), "Object alloc event collector is not enabled");
   if (_allocated == NULL) {
-    _allocated = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
+    _allocated = new (mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
   }
   _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }

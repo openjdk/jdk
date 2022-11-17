@@ -56,28 +56,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} a el {1}</intervalFormatFallback>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="M" draft="contributed">d 'de' MMM 'al' d 'de' MMM</greatestDifference>
@@ -87,18 +87,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="contributed">E d 'de' MMM 'al' E d 'de' MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM 'de' y</greatestDifference>
@@ -135,16 +135,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="M" draft="contributed">d 'de' MMM 'al' d 'de' MMM</greatestDifference>
@@ -157,18 +157,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="contributed">y 'al' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="y" draft="contributed">MMM 'de' y 'a' MMM 'de' y</greatestDifference>
@@ -186,29 +186,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
+			</field>
+		</fields>
 	</dates>
 	<numbers>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one" draft="contributed">¤0K</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 0K</pattern>
 					<pattern type="1000" count="other" draft="contributed">¤0K</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 0K</pattern>
 					<pattern type="10000" count="one" draft="contributed">¤00K</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 00K</pattern>
 					<pattern type="10000" count="other" draft="contributed">¤00K</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 00K</pattern>
 					<pattern type="100000" count="one" draft="contributed">¤000K</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 000K</pattern>
 					<pattern type="100000" count="other" draft="contributed">¤000K</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 000K</pattern>
 					<pattern type="1000000" count="one" draft="contributed">¤0M</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 0M</pattern>
 					<pattern type="1000000" count="other" draft="contributed">¤0M</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 0M</pattern>
 					<pattern type="10000000" count="one" draft="contributed">¤00M</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 00M</pattern>
 					<pattern type="10000000" count="other" draft="contributed">¤00M</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 00M</pattern>
 					<pattern type="100000000" count="one" draft="contributed">¤000M</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 000M</pattern>
 					<pattern type="100000000" count="other" draft="contributed">¤000M</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 000M</pattern>
 					<pattern type="1000000000" count="one" draft="contributed">¤0000M</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 0000M</pattern>
 					<pattern type="1000000000" count="other" draft="contributed">¤0000M</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 0000M</pattern>
 					<pattern type="10000000000" count="one" draft="contributed">¤00MRD</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 00MRD</pattern>
 					<pattern type="10000000000" count="other" draft="contributed">¤00MRD</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 00MRD</pattern>
 					<pattern type="100000000000" count="one" draft="contributed">¤000MRD</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="contributed">¤ 000MRD</pattern>
 					<pattern type="100000000000" count="other" draft="contributed">¤000MRD</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 000MRD</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one" draft="contributed">{1} {0}</unitPattern>

@@ -26,9 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
@@ -78,20 +76,9 @@ import sun.security.util.ObjectIdentifier;
  *
  * @since       1.4
  */
-public class ExtendedKeyUsageExtension extends Extension
-implements CertAttrSet<String> {
+public class ExtendedKeyUsageExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.ExtendedKeyUsage";
-
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "ExtendedKeyUsage";
-    public static final String USAGES = "usages";
 
     /**
      * Vector of KeyUsages for this object.
@@ -198,79 +185,31 @@ implements CertAttrSet<String> {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.ExtendedKeyUsage_Id;
           critical = false;
           encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**
-     * Set the attribute value.
+     * Get the keyUsages value.
      */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(USAGES)) {
-            if (!(obj instanceof Vector)) {
-                throw new IOException("Attribute value should be of type Vector.");
-            }
-            this.keyUsages = (Vector<ObjectIdentifier>)obj;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:ExtendedKeyUsageExtension.");
-        }
-        encodeThis();
+    public Vector<ObjectIdentifier> getUsages() {
+        return keyUsages;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public Vector<ObjectIdentifier> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(USAGES)) {
-            //XXXX May want to consider cloning this
-            return keyUsages;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:ExtendedKeyUsageExtension.");
-        }
-    }
+
 
     /**
-     * Delete the attribute value.
+     * Return the name of this extension.
      */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(USAGES)) {
-            keyUsages = null;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:ExtendedKeyUsageExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(USAGES);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     public List<String> getExtendedKeyUsage() {
