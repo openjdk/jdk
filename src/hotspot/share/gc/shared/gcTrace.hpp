@@ -102,6 +102,7 @@ class GCTracer {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
+  void report_gc_reference_process_time(const double total_time) const;
   void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
@@ -117,6 +118,7 @@ class GCTracer {
   void send_meta_space_summary_event(GCWhen::Type when, const MetaspaceSummary& meta_space_summary) const;
   void send_metaspace_chunk_free_list_summary(GCWhen::Type when, Metaspace::MetadataType mdtype, const MetaspaceChunkFreeListSummary& summary) const;
   void send_reference_stats_event(ReferenceType type, size_t count) const;
+  void send_reference_process_time_event(const double total_time) const;
   void send_phase_events(TimePartitions* time_partitions) const;
   void send_cpu_time_event(double user_time, double system_time, double real_time) const;
 };

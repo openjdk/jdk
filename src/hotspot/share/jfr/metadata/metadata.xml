@@ -390,6 +390,12 @@
     <Field type="ulong" name="count" label="Total Count" />
   </Event>
 
+  <Event name="GCReferenceProcessTime" category="Java Virtual Machine, GC, Reference" label="GC Reference Process Time" startTime="false"
+    description="Total processing time of processed references during GC">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" contentType="nanos" name="totalTime" label="Total Reference Processing Time" />
+  </Event>
+
   <Type name="CopyFailed">
     <Field type="ulong" name="objectCount" label="Object Count" />
     <Field type="ulong" contentType="bytes" name="firstSize" label="First Failed Object Size" />

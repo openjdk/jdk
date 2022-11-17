@@ -74,6 +74,10 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
   send_reference_stats_event(REF_PHANTOM, rps.phantom_count());
 }
 
+void GCTracer::report_gc_reference_process_time(const double total_time) const {
+  send_reference_process_time_event(total_time);
+}
+
 #if INCLUDE_SERVICES
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;

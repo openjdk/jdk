@@ -61,8 +61,6 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
 
   double phase_time_ms(ReferenceProcessor::RefProcPhases phase) const;
 
-  double total_time_ms() const { return _total_time_ms; }
-
   double balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const;
 
   void print_reference(ReferenceType ref_type, uint base_indent) const;
@@ -82,6 +80,7 @@ public:
   void set_phase_time_ms(ReferenceProcessor::RefProcPhases phase, double par_phase_time_ms);
 
   void set_total_time_ms(double total_time_ms) { _total_time_ms = total_time_ms; }
+  double total_time_ms() const { return _total_time_ms; }
 
   void add_ref_dropped(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
