@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
@@ -43,6 +42,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -71,7 +71,7 @@
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -1406,6 +1406,11 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
 
   // cannot assert on lack of success here; see above comment
   return the_owner;
+}
+
+JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
+  address owner = (address)monitor->owner();
+  return owning_thread_from_monitor_owner(t_list, owner);
 }
 
 class PrintOnClosure : public ThreadClosure {

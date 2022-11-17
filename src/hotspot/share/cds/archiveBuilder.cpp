@@ -58,9 +58,9 @@ ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   ArchiveBuilder::alloc_stats()->record_other_type(int(newtop - _oldtop), true);
 }
 
-ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(16 * K) {
+ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(16 * K, mtClassShared) {
   _total_bytes = 0;
-  _objs = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<SourceObjInfo*>(128 * K, mtClassShared);
+  _objs = new (mtClassShared) GrowableArray<SourceObjInfo*>(128 * K, mtClassShared);
 }
 
 ArchiveBuilder::SourceObjList::~SourceObjList() {
@@ -155,6 +155,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _buffer_to_requested_delta(0),
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
+  _ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
@@ -164,9 +165,9 @@ ArchiveBuilder::ArchiveBuilder() :
   _estimated_metaspaceobj_bytes(0),
   _estimated_hashtable_bytes(0)
 {
-  _klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
-  _symbols = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
-  _special_refs = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<SpecialRefInfo>(24 * K, mtClassShared);
+  _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
+  _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
+  _special_refs = new (mtClassShared) GrowableArray<SpecialRefInfo>(24 * K, mtClassShared);
 
   assert(_current == NULL, "must be");
   _current = this;
@@ -1221,8 +1222,8 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
                                         GrowableArray<MemRegion>* closed_heap_regions,
                                         GrowableArray<MemRegion>* open_heap_regions) {
   // Print statistics of all the regions
-  const size_t bitmap_used = mapinfo->space_at(MetaspaceShared::bm)->used();
-  const size_t bitmap_reserved = mapinfo->space_at(MetaspaceShared::bm)->used_aligned();
+  const size_t bitmap_used = mapinfo->region_at(MetaspaceShared::bm)->used();
+  const size_t bitmap_reserved = mapinfo->region_at(MetaspaceShared::bm)->used_aligned();
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
                                 bitmap_reserved +
                                 _total_closed_heap_region_size +
