@@ -356,6 +356,7 @@ bool ConnectionGraph::compute_escape() {
   // 5. Separate memory graph for scalar replaceable allcations.
   bool has_scalar_replaceable_candidates = (alloc_worklist.length() > 0);
   if (has_scalar_replaceable_candidates && EliminateAllocations) {
+    assert(C->do_aliasing(), "Aliasing should be enabled");
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
     split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
