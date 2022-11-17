@@ -627,6 +627,8 @@ class ArrayAllocator : public AllStatic {
   static E* allocate_malloc(size_t length, MEMFLAGS flags);
   static E* allocate_mmap(size_t length, MEMFLAGS flags);
 
+  static E* reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags);
+
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
@@ -656,6 +658,7 @@ class MallocArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
   static E* allocate(size_t length, MEMFLAGS flags);
+  static E* reallocate(E* addr, size_t new_length, MEMFLAGS flags);
   static void free(E* addr);
 };
 
