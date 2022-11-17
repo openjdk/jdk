@@ -598,7 +598,7 @@ public class TagletManager {
 
         addStandardTaglet(new ParamTaglet());
         addStandardTaglet(new ReturnTaglet());
-        addStandardTaglet(new ThrowsTaglet(), EXCEPTION);
+        addStandardTaglet(new ThrowsTaglet(configuration), EXCEPTION);
         addStandardTaglet(
                 new SimpleTaglet(SINCE, resources.getText("doclet.Since"),
                     EnumSet.allOf(Location.class), !nosince));

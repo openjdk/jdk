@@ -5915,6 +5915,11 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       }
     }
   }
+  // Don't extend live ranges of raw oops
+  if (least != early && n->is_ConstraintCast() && n->in(1)->bottom_type()->isa_rawptr() &&
+      !n->bottom_type()->isa_rawptr()) {
+    least = early;
+  }
 
 #ifdef ASSERT
   // If verifying, verify that 'verify_me' has a legal location
