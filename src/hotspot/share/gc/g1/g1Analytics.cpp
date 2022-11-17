@@ -83,7 +83,6 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _cost_per_byte_copied_ms_seq(TruncatedSeqLength),
     _pending_cards_seq(TruncatedSeqLength),
     _rs_length_seq(TruncatedSeqLength),
-    _rs_length_diff_seq(TruncatedSeqLength),
     _constant_other_time_ms_seq(TruncatedSeqLength),
     _young_other_cost_per_region_ms_seq(TruncatedSeqLength),
     _non_young_other_cost_per_region_ms_seq(TruncatedSeqLength),
@@ -105,7 +104,6 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   _card_scan_to_merge_ratio_seq.set_initial(young_card_scan_to_merge_ratio_defaults[index]);
   _cost_per_card_scan_ms_seq.set_initial(young_only_cost_per_card_scan_ms_defaults[index]);
   _rs_length_seq.set_initial(0);
-  _rs_length_diff_seq.set_initial(0.0);
   _cost_per_byte_copied_ms_seq.set_initial(cost_per_byte_ms_defaults[index]);
 
   _constant_other_time_ms_seq.add(constant_other_time_ms_defaults[index]);
@@ -192,10 +190,6 @@ void G1Analytics::report_card_scan_to_merge_ratio(double merge_to_scan_ratio, bo
   _card_scan_to_merge_ratio_seq.add(merge_to_scan_ratio, for_young_only_phase);
 }
 
-void G1Analytics::report_rs_length_diff(double rs_length_diff, bool for_young_only_phase) {
-  _rs_length_diff_seq.add(rs_length_diff, for_young_only_phase);
-}
-
 void G1Analytics::report_cost_per_byte_ms(double cost_per_byte_ms, bool for_young_only_phase) {
   _cost_per_byte_copied_ms_seq.add(cost_per_byte_ms, for_young_only_phase);
 }
@@ -277,8 +271,7 @@ double G1Analytics::predict_cleanup_time_ms() const {
 }
 
 size_t G1Analytics::predict_rs_length(bool for_young_only_phase) const {
-  return predict_size(&_rs_length_seq, for_young_only_phase) +
-    predict_size(&_rs_length_diff_seq, for_young_only_phase);
+  return predict_size(&_rs_length_seq, for_young_only_phase);
 }
 
 size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
