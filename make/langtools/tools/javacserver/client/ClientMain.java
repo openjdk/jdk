@@ -25,14 +25,15 @@
 
 package javacserver.client;
 
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+
+import javacserver.AutoFlushWriter;
 import javacserver.Log;
 import javacserver.Result;
 import javacserver.comp.SjavacImpl;
-import javacserver.AutoFlushWriter;
 import javacserver.options.Options;
 import javacserver.server.Sjavac;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 
 /**
  *  <p><b>This is NOT part of any supported API.

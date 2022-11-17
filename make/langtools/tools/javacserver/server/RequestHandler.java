@@ -25,14 +25,15 @@
 
 package javacserver.server;
 
-import javacserver.Log;
-import javacserver.Result;
-import javacserver.Util;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.file.Path;
+
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
 
 import static javacserver.server.SjavacServer.LINE_TYPE_RC;
 

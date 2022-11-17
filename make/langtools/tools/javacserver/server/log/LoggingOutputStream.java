@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import javacserver.Log;
 
 public class LoggingOutputStream extends FilterOutputStream {

@@ -25,13 +25,14 @@
 
 package javacserver.comp;
 
-import javacserver.Log;
-import javacserver.Result;
-import javacserver.server.Sjavac;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.server.Sjavac;
 
 /**
  * An sjavac implementation that limits the number of concurrent calls by

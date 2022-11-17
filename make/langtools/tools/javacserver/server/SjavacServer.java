@@ -25,11 +25,6 @@
 
 package javacserver.server;
 
-import javacserver.Log;
-import javacserver.Result;
-import javacserver.Util;
-import javacserver.comp.PooledSjavac;
-import javacserver.comp.SjavacImpl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -41,6 +36,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
+import javacserver.comp.PooledSjavac;
+import javacserver.comp.SjavacImpl;
 
 /**
  * The JavacServer class contains methods both to setup a server that responds to requests and methods to connect to this server.

@@ -25,13 +25,6 @@
 
 package javacserver.client;
 
-import javacserver.Log;
-import javacserver.Result;
-import javacserver.Util;
-import javacserver.options.Options;
-import javacserver.server.PortFile;
-import javacserver.server.Sjavac;
-import javacserver.server.SjavacServer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,6 +39,14 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
+import javacserver.options.Options;
+import javacserver.server.PortFile;
+import javacserver.server.Sjavac;
+import javacserver.server.SjavacServer;
 
 /**
  * Sjavac implementation that delegates requests to a SjavacServer.

@@ -25,10 +25,11 @@
 
 package javacserver.server;
 
-import javacserver.Log;
-import javacserver.Result;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import javacserver.Log;
+import javacserver.Result;
 
 /**
  * An sjavac implementation that keeps track of idleness and shuts down the

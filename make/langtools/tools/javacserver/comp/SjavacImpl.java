@@ -25,15 +25,17 @@
 
 package javacserver.comp;
 
-import com.sun.tools.javac.Main;
-import javacserver.Util;
-import javacserver.Log;
-import javacserver.Result;
-import javacserver.options.Option;
-import javacserver.server.Sjavac;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.stream.Stream;
+
+import com.sun.tools.javac.Main;
+
+import javacserver.Log;
+import javacserver.Result;
+import javacserver.Util;
+import javacserver.options.Option;
+import javacserver.server.Sjavac;
 
 /**
  * The sjavac implementation that interacts with javac and performs the actual

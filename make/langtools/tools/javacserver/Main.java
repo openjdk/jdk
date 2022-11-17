@@ -25,9 +25,10 @@
 
 package javacserver;
 
+import java.util.Arrays;
+
 import javacserver.client.ClientMain;
 import javacserver.server.ServerMain;
-import java.util.Arrays;
 
 import static javacserver.options.Option.STARTSERVER;
 

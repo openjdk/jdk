@@ -25,12 +25,13 @@
 
 package javacserver.server;
 
+import java.io.IOException;
+import java.io.PrintStream;
+
 import javacserver.Log;
 import javacserver.Result;
 import javacserver.server.log.LazyInitFileLog;
 import javacserver.server.log.LoggingOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 
 import static javacserver.Log.Level.ERROR;
 import static javacserver.Log.Level.INFO;

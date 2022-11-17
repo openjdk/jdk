@@ -27,7 +27,6 @@ package javacserver.server;
 
 import javacserver.Result;
 
-
 /**
  * Interface of the SjavacImpl, the sjavac client and all wrappers such as
  * PooledSjavac etc.
