@@ -111,7 +111,7 @@ public class AuthorityKeyIdentifierExtension extends Extension {
     public AuthorityKeyIdentifierExtension(KeyIdentifier kid, GeneralNames names,
                                            SerialNumber sn)
             throws IOException {
-        if (kid == null && names == null && serialNum == null) {
+        if (kid == null && names == null && sn == null) {
             throw new IllegalArgumentException(
                     "AuthorityKeyIdentifierExtension cannot be empty");
         }
