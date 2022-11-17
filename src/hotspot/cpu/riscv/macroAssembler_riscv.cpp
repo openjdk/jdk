@@ -4215,9 +4215,9 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
 #ifdef ASSERT
   {
     Label L;
-    andi(t0, len, BytesPerInt - 1);
+    andi(t0, len, BytesPerWord - 1);
     beqz(t0, L);
-    stop("len is not a multiple of BytesPerInt");
+    stop("len is not a multiple of BytesPerWord");
     bind(L);
   }
 #endif // ASSERT
