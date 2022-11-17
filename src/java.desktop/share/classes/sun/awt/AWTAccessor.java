@@ -1311,16 +1311,16 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.SequencedEvent class.
      */
     public static SequencedEventAccessor getSequencedEventAccessor() {
-        var acceess = sequencedEventAccessor;
-        if (acceess == null) {
+        var access = sequencedEventAccessor;
+        if (access == null) {
             try {
                 ensureClassInitialized(
                         Class.forName("java.awt.SequencedEvent"));
             } catch (ClassNotFoundException ignore) {
             }
-            acceess = sequencedEventAccessor;
+            access = sequencedEventAccessor;
         }
-        return acceess;
+        return access;
     }
 
     /*
