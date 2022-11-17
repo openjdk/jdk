@@ -31,18 +31,7 @@
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestSigInfoInHsErrFile segv
- */
-
-/*
- * @test fpe
- * @summary Test that for a given crash situation we see the correct siginfo in the hs-err file
- * @library /test/lib
- * @requires vm.debug
- * @requires os.family != "windows"
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver TestSigInfoInHsErrFile fpe
+ * @run driver TestSigInfoInHsErrFile
  */
 
 import jdk.test.lib.Platform;
@@ -55,48 +44,6 @@ import java.util.regex.Pattern;
 public class TestSigInfoInHsErrFile {
 
   public static void main(String[] args) throws Exception {
-    if (args.length != 1) {
-      throw new IllegalArgumentException("missing argument");
-    } else if (args[0].equals("segv")) {
-      testWithSEGV();
-    } else if (args[0].equals("fpe")) {
-      testWithFPE();
-    } else {
-      throw new IllegalArgumentException("unknown argument");
-    }
-  }
-
-  static void testWithFPE() throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-Xmx100M",
-            "-XX:-CreateCoredumpOnCrash",
-            "-XX:ErrorHandlerTest=15",
-            "-version");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotHaveExitValue(0);
-
-    // we should have crashed with a SIGFPE
-    output.shouldMatch("#.+SIGFPE.*");
-
-    // extract hs-err file
-    File f = HsErrFileUtils.openHsErrFileFromOutput(output);
-
-    ArrayList<Pattern> patterns = new ArrayList<>();
-    patterns.add(Pattern.compile("# A fatal error has been detected.*"));
-    patterns.add(Pattern.compile("# *SIGFPE.*"));
-    patterns.add(Pattern.compile("# *Problematic frame.*"));
-    patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
-
-    patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGFPE\\), si_code: \\d+ \\(FPE_INTDIV\\).*"));
-
-    HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);
-
-  }
-
-  static void testWithSEGV() throws Exception {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
@@ -108,7 +55,7 @@ public class TestSigInfoInHsErrFile {
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotHaveExitValue(0);
 
-    // we should have crashed with a SIGFPE
+    // we should have crashed with a SIGSEGV
     output.shouldMatch("#.+SIGSEGV.*");
 
     // extract hs-err file
@@ -122,7 +69,7 @@ public class TestSigInfoInHsErrFile {
 
     // Crash address: see VMError::_segfault_address
     String crashAddress = Platform.isAix() ? "0x0*1400" : "0x0*400";
-    patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_MAPERR\\), si_addr: " + crashAddress + ".*"));
+    patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_.*\\), si_addr: " + crashAddress + ".*"));
 
     HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);
 
