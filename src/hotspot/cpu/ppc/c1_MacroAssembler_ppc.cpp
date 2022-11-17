@@ -361,6 +361,16 @@ void C1_MacroAssembler::allocate_array(
   const Register index = t3;
   addi(base, obj, base_offset_in_bytes);               // compute address of first element
   addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
+
+  // Elements are not dword aligned. Zero out leading word.
+  if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
+    assert(is_aligned(base_offset_in_bytes, BytesPerInt), "weird alignment");
+    li(t1, 0);
+    stw(t1, 0, base);
+    addi(base, base, BytesPerInt);
+    // Note: initialize_body will align index down, no need to correct it here.
+  }
+
   initialize_body(base, index);
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
