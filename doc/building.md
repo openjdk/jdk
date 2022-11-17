@@ -311,7 +311,10 @@ Build Wiki page for details about which versions of AIX are supported.
 Large portions of the JDK consists of native code, that needs to be compiled to
 be able to run on the target platform. In theory, toolchain and operating
 system should be independent factors, but in practice there's more or less a
-one-to-one correlation between target operating system and toolchain.
+one-to-one correlation between target operating system and toolchain. There are
+ongoing efforts to loosen this strict coupling between compiler and operating
+system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
+will likely be a very long time before this goal can be realized.
 
  Operating system   Supported toolchain
  ------------------ -------------------------
@@ -1330,12 +1333,12 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using sjavac
+### Using the javac server
 
-To speed up compilation of Java code, especially during incremental compilations,
-the sjavac server is automatically enabled in the configuration step by default.
-To explicitly enable or disable sjavac, use either `--enable-javac-server`
-or `--disable-javac-server`.
+To speed up compilation of Java code, especially during incremental
+compilations, the javac server is automatically enabled in the configuration
+step by default. To explicitly enable or disable the javac server, use either
+`--enable-javac-server` or `--disable-javac-server`.
 
 ### Building the Right Target
 

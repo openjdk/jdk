@@ -89,7 +89,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
     ClearRetainedRegionBitmaps,
-    CLDClearClaimedMarks,
     ResetMarkingState,
     NoteStartOfMark,
     GCParPhasesSentinel
@@ -200,8 +199,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
-
-  double _recorded_preserve_cm_referents_time_ms;
 
   double _recorded_start_new_cset_time_ms;
 
@@ -355,10 +352,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_cset_choice_time_ms(double time_ms) {
     _recorded_non_young_cset_choice_time_ms = time_ms;
-  }
-
-  void record_preserve_cm_referents_time_ms(double time_ms) {
-    _recorded_preserve_cm_referents_time_ms = time_ms;
   }
 
   void record_start_new_cset_time_ms(double time_ms) {

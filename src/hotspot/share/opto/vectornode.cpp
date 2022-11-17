@@ -476,6 +476,10 @@ bool VectorNode::is_convert_opcode(int opc) {
   }
 }
 
+bool VectorNode::is_minmax_opcode(int opc) {
+  return opc == Op_MinI || opc == Op_MaxI;
+}
+
 bool VectorNode::is_shift(Node* n) {
   return is_shift_opcode(n->Opcode());
 }

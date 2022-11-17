@@ -1788,31 +1788,32 @@ bool LibraryCallKit::inline_math_pow() {
 
 //------------------------------inline_math_native-----------------------------
 bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
-#define FN_PTR(f) CAST_FROM_FN_PTR(address, f)
   switch (id) {
-    // These intrinsics are not properly supported on all hardware
   case vmIntrinsics::_dsin:
     return StubRoutines::dsin() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dsin),   "SIN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dsin),   "SIN");
   case vmIntrinsics::_dcos:
     return StubRoutines::dcos() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dcos),   "COS");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dcos),   "COS");
   case vmIntrinsics::_dtan:
     return StubRoutines::dtan() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan), "TAN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN");
+  case vmIntrinsics::_dexp:
+    return StubRoutines::dexp() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp),  "EXP");
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog),   "LOG");
   case vmIntrinsics::_dlog10:
     return StubRoutines::dlog10() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10");
 
-    // These intrinsics are supported on all hardware
   case vmIntrinsics::_roundD: return Matcher::match_rule_supported(Op_RoundD) ? inline_double_math(id) : false;
   case vmIntrinsics::_ceil:
   case vmIntrinsics::_floor:
@@ -1825,12 +1826,6 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_fabs:   return Matcher::match_rule_supported(Op_AbsF)   ? inline_math(id) : false;
   case vmIntrinsics::_iabs:   return Matcher::match_rule_supported(Op_AbsI)   ? inline_math(id) : false;
   case vmIntrinsics::_labs:   return Matcher::match_rule_supported(Op_AbsL)   ? inline_math(id) : false;
-
-  case vmIntrinsics::_dexp:
-    return StubRoutines::dexp() != NULL ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
-#undef FN_PTR
 
   case vmIntrinsics::_dpow:      return inline_math_pow();
   case vmIntrinsics::_dcopySign: return inline_double_math(id);
@@ -5302,7 +5297,7 @@ bool LibraryCallKit::inline_arraycopy() {
 AllocateArrayNode*
 LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return NULL;  // no fast path
-  if (C->AliasLevel() == 0)  return NULL;  // no MergeMems around
+  if (!C->do_aliasing())     return NULL;  // no MergeMems around
 
   AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr, &_gvn);
   if (alloc == NULL)  return NULL;
@@ -7006,7 +7001,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, ofs, src_elem);
   Node* state = NULL;
-  Node* digest_length = NULL;
+  Node* block_size = NULL;
   address stubAddr;
   const char *stubName;
 
@@ -7040,8 +7035,8 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
     state = get_state_from_digest_object(digestBase_obj, T_BYTE);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
-    digest_length = get_digest_length_from_digest_object(digestBase_obj);
-    if (digest_length == NULL) return false;
+    block_size = get_block_size_from_digest_object(digestBase_obj);
+    if (block_size == NULL) return false;
     break;
   default:
     fatal_unexpected_iid(id);
@@ -7054,14 +7049,14 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
 
   // Call the stub.
   Node* call;
-  if (digest_length == NULL) {
+  if (block_size == NULL) {
     call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state);
   } else {
     call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
-                             src_start, state, digest_length);
+                             src_start, state, block_size);
   }
 
   return true;
@@ -7173,15 +7168,15 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
   Node* state = get_state_from_digest_object(digest_obj, elem_type);
   if (state == NULL) return false;
 
-  Node* digest_length = NULL;
+  Node* block_size = NULL;
   if (strcmp("sha3_implCompressMB", stubName) == 0) {
-    digest_length = get_digest_length_from_digest_object(digest_obj);
-    if (digest_length == NULL) return false;
+    block_size = get_block_size_from_digest_object(digest_obj);
+    if (block_size == NULL) return false;
   }
 
   // Call the stub.
   Node* call;
-  if (digest_length == NULL) {
+  if (block_size == NULL) {
     call = make_runtime_call(RC_LEAF|RC_NO_FP,
                              OptoRuntime::digestBase_implCompressMB_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
@@ -7190,7 +7185,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
      call = make_runtime_call(RC_LEAF|RC_NO_FP,
                              OptoRuntime::digestBase_implCompressMB_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
-                             src_start, state, digest_length, ofs, limit);
+                             src_start, state, block_size, ofs, limit);
   }
 
   // return ofs (int)
@@ -7347,11 +7342,11 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicTy
   return state;
 }
 
-//------------------------------get_digest_length_from_sha3_object----------------------------------
-Node * LibraryCallKit::get_digest_length_from_digest_object(Node *digest_object) {
-  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I");
-  assert (digest_length != NULL, "sanity");
-  return digest_length;
+//------------------------------get_block_size_from_sha3_object----------------------------------
+Node * LibraryCallKit::get_block_size_from_digest_object(Node *digest_object) {
+  Node* block_size = load_field_from_object(digest_object, "blockSize", "I");
+  assert (block_size != NULL, "sanity");
+  return block_size;
 }
 
 //----------------------------inline_digestBase_implCompressMB_predicate----------------------------

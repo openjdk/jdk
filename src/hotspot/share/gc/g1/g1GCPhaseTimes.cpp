@@ -159,7 +159,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("NonYoungFreeCSet", "Non-Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[RebuildFreeList] = new WorkerDataArray<double>("RebuildFreeList", "Parallel Rebuild Free List (ms):", max_gc_threads);
 
-  _gc_par_phases[CLDClearClaimedMarks] = new WorkerDataArray<double>("CLDClearClaimedMarks", "Clear Claimed Marks (ms):", max_gc_threads);
   _gc_par_phases[ResetMarkingState] = new WorkerDataArray<double>("ResetMarkingState", "Reset Marking State (ms):", max_gc_threads);
   _gc_par_phases[NoteStartOfMark] = new WorkerDataArray<double>("NoteStartOfMark", "Note Start Of Mark (ms):", max_gc_threads);
 
@@ -186,7 +185,6 @@ void G1GCPhaseTimes::reset() {
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
-  _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_start_new_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _recorded_total_rebuild_freelist_time_ms = 0.0;
@@ -384,8 +382,7 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
-  const double pre_concurrent_start_ms = average_time_ms(CLDClearClaimedMarks) +
-                                         average_time_ms(ResetMarkingState) +
+  const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
   const double sum_ms = _root_region_scan_wait_time_ms +
@@ -410,7 +407,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   debug_time("Prepare Heap Roots", _recorded_prepare_heap_roots_time_ms);
 
   if (pre_concurrent_start_ms > 0.0) {
-    debug_phase(_gc_par_phases[CLDClearClaimedMarks]);
     debug_phase(_gc_par_phases[ResetMarkingState]);
     debug_phase(_gc_par_phases[NoteStartOfMark]);
   }
@@ -466,7 +462,6 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
-                        _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
                         _cur_post_evacuate_cleanup_1_time_ms +

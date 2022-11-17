@@ -380,6 +380,7 @@ public abstract class FileChannel
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -395,6 +396,7 @@ public abstract class FileChannel
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -410,6 +412,7 @@ public abstract class FileChannel
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -426,12 +429,10 @@ public abstract class FileChannel
      * behaves exactly as specified by the {@link WritableByteChannel}
      * interface. </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
-     *
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -447,12 +448,10 @@ public abstract class FileChannel
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
-     *
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -468,12 +467,10 @@ public abstract class FileChannel
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
-     *
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
