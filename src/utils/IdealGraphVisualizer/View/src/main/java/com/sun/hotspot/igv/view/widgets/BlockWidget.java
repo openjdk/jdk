@@ -83,7 +83,7 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
             if (!additiveSelection) {
                 graphProvider.clearSelectedNodes();
             }
-            graphProvider.addSelectedNodes(blockWidget.blockNode.getNodes());
+            graphProvider.addSelectedNodes(blockWidget.blockNode.getNodes(), false);
         }
     }
 

@@ -45,7 +45,6 @@
 <li><a href="#apple-xcode">Apple Xcode</a></li>
 <li><a href="#microsoft-visual-studio">Microsoft Visual Studio</a></li>
 <li><a href="#ibm-xl-cc">IBM XL C/C++</a></li>
-<li><a href="#support-for-checking-standards-conforming-code">Support for checking standards conforming code</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements">Boot JDK Requirements</a><ul>
 <li><a href="#getting-jdk-binaries">Getting JDK binaries</a></li>
@@ -91,7 +90,7 @@
 <li><a href="#ccache">Ccache</a></li>
 <li><a href="#precompiled-headers">Precompiled Headers</a></li>
 <li><a href="#icecc-icecream">Icecc / icecream</a></li>
-<li><a href="#using-sjavac">Using sjavac</a></li>
+<li><a href="#using-the-javac-server">Using the javac server</a></li>
 <li><a href="#building-the-right-target">Building the Right Target</a></li>
 </ul></li>
 <li><a href="#troubleshooting">Troubleshooting</a><ul>
@@ -310,8 +309,6 @@
 <p>If you have Visual Studio installed but <code>configure</code> fails to detect it, it may be because of <a href="#spaces-in-path">spaces in path</a>.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
 <p>Please consult the AIX section of the <a href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
-<h3 id="support-for-checking-standards-conforming-code">Support for checking standards conforming code</h3>
-<p>The make system has a strict mode that enforces conforming code based on the standard that is used by the build, which can be useful to ensure that native code behaves strictly according to said standard. This option can by enabled by passing <code>--enable-conforming-compilation</code> during configure, but is off by default. If you just want to compile a working JDK it is not recommended that you set this flag, as it is mainly meant to aid developers that are working with native code.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is called the &quot;boot JDK&quot;. The boot JDK does not, however, have to be a JDK built directly from the source code available in the OpenJDK Community. If you are porting the JDK to a new platform, chances are that there already exists another JDK for that platform that is usable as boot JDK.</p>
 <p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be a JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, the JDK should be able to &quot;build itself&quot;, so an up-to-date build of the current JDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you've got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
@@ -822,8 +819,8 @@ ls build/linux-aarch64-server-release/</code></pre></li>
 <h3 id="icecc-icecream">Icecc / icecream</h3>
 <p><a href="http://github.com/icecc/icecream">icecc/icecream</a> is a simple way to setup a distributed compiler network. If you have multiple machines available for building the JDK, you can drastically cut individual build times by utilizing it.</p>
 <p>To use, setup an icecc network, and install icecc on the build machine. Then run <code>configure</code> using <code>--enable-icecc</code>.</p>
-<h3 id="using-sjavac">Using sjavac</h3>
-<p>To speed up compilation of Java code, especially during incremental compilations, the sjavac server is automatically enabled in the configuration step by default. To explicitly enable or disable sjavac, use either <code>--enable-javac-server</code> or <code>--disable-javac-server</code>.</p>
+<h3 id="using-the-javac-server">Using the javac server</h3>
+<p>To speed up compilation of Java code, especially during incremental compilations, the javac server is automatically enabled in the configuration step by default. To explicitly enable or disable the javac server, use either <code>--enable-javac-server</code> or <code>--disable-javac-server</code>.</p>
 <h3 id="building-the-right-target">Building the Right Target</h3>
 <p>Selecting the proper target to build can have dramatic impact on build time. For normal usage, <code>jdk</code> or the default target is just fine. You only need to build <code>images</code> for shipping, or if your tests require it.</p>
 <p>See also <a href="#using-fine-grained-make-targets">Using Fine-Grained Make Targets</a> on how to build an even smaller subset of the product.</p>

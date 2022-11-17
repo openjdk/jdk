@@ -50,7 +50,7 @@ public:
                        Register dst,
                        Address src,
                        Register tmp1,
-                       Register tmp_thread);
+                       Register tmp2);
 
 #ifdef ASSERT
   virtual void store_at(MacroAssembler* masm,
