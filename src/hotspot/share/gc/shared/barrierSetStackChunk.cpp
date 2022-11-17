@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSetStackChunk.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/globals.hpp"
