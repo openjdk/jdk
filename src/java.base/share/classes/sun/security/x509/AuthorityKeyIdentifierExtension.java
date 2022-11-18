@@ -50,23 +50,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class AuthorityKeyIdentifierExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.AuthorityKeyIdentifier";
-    /**
-     * Attribute names.
-     */
+public class AuthorityKeyIdentifierExtension extends Extension {
+
     public static final String NAME = "AuthorityKeyIdentifier";
-    public static final String KEY_ID = "key_id";
-    public static final String AUTH_NAME = "auth_name";
-    public static final String SERIAL_NUMBER = "serial_number";
 
     // Private data members
     private static final byte TAG_ID = 0;
@@ -226,59 +213,25 @@ implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(KEY_ID)) {
-            if (!(obj instanceof KeyIdentifier)) {
-              throw new IOException("Attribute value should be of " +
-                                    "type KeyIdentifier.");
-            }
-            id = (KeyIdentifier)obj;
-        } else if (name.equalsIgnoreCase(AUTH_NAME)) {
-            if (!(obj instanceof GeneralNames)) {
-              throw new IOException("Attribute value should be of " +
-                                    "type GeneralNames.");
-            }
-            names = (GeneralNames)obj;
-        } else if (name.equalsIgnoreCase(SERIAL_NUMBER)) {
-            if (!(obj instanceof SerialNumber)) {
-              throw new IOException("Attribute value should be of " +
-                                    "type SerialNumber.");
-            }
-            serialNum = (SerialNumber)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:AuthorityKeyIdentifier.");
-        }
-        encodeThis();
+    public KeyIdentifier getKeyIdentifier() {
+        return id;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(KEY_ID)) {
-            return (id);
-        } else if (name.equalsIgnoreCase(AUTH_NAME)) {
-            return (names);
-        } else if (name.equalsIgnoreCase(SERIAL_NUMBER)) {
-            return (serialNum);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:AuthorityKeyIdentifier.");
-        }
+    public GeneralNames getAuthName() {
+        return names;
+    }
+
+    public SerialNumber getSerialNumber() {
+        return serialNum;
     }
 
 
-
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     /**
