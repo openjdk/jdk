@@ -1300,9 +1300,9 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      * <li> its {@code public}, {@code private} and {@code protected}
      *      modifiers are the same as those of its component type
-     * <li> its {@code final} modifier is always
+     * <li> its {@code final} and {@code abstract} modifiers are always
      *      {@code true}
-     * <li> its interface modifier is always {@code false}, event when
+     * <li> its interface modifier is always {@code false}, even when
      *      the component type is an interface
      * </ul>
      * If this {@code Class} object represents a primitive type or

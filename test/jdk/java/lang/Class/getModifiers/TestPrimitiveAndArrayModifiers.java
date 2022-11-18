@@ -38,9 +38,9 @@ public class TestPrimitiveAndArrayModifiers {
      * <ul>
      * <li> its {@code public}, {@code private} and {@code protected}
      *      modifiers are the same as those of its component type
-     * <li> its {@code final} modifier is always
+     * <li> its {@code final} and {@code abstract} modifiers are always
      *      {@code true}
-     * <li> its interface modifier is always {@code false}, event when
+     * <li> its interface modifier is always {@code false}, even when
      *      the component type is an interface
      * </ul>
      */
@@ -70,9 +70,9 @@ public class TestPrimitiveAndArrayModifiers {
             Class<?> arrayClass = testCase.arrayType();
             int actualModifiers = arrayClass.getModifiers();
             if (expectedModifiers != actualModifiers) {
-                System.out.println("Expected " + Modifier.toString(expectedModifiers) +
-                                   ", but got " + Modifier.toString(actualModifiers));
-                throw new RuntimeException();
+                throw new RuntimeException("Expected " + Modifier.toString(expectedModifiers) +
+                                           "on " + testCase.getCanonicalName() +
+                                           ", but got " + Modifier.toString(actualModifiers));
             }
         }
     }
@@ -122,9 +122,9 @@ public class TestPrimitiveAndArrayModifiers {
             int actualModifiers = testCase.getModifiers();
             if ((Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL) !=
                 actualModifiers) {
-                System.out.println("Bad modifiers " + Modifier.toString(actualModifiers) +
-                                   " on primitive type " + testCase);
-                throw new RuntimeException();
+                throw new RuntimeException("Bad modifiers " +
+                                           Modifier.toString(actualModifiers) +
+                                           " on primitive type " + testCase);
             }
         }
     }
