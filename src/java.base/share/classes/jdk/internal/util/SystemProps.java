@@ -67,8 +67,6 @@ public final class SystemProps {
         Raw raw = new Raw();
         HashMap<String, String> props = raw.cmdProperties();
 
-        customTmpdir = props.get("java.io.tmpdir");
-
         String javaHome = props.get("java.home");
         assert javaHome != null : "java.home not set";
 
@@ -110,6 +108,8 @@ public final class SystemProps {
         putIfAbsent(props, "line.separator", raw.propDefault(Raw._line_separator_NDX));
         putIfAbsent(props, "file.separator", raw.propDefault(Raw._file_separator_NDX));
         putIfAbsent(props, "path.separator", raw.propDefault(Raw._path_separator_NDX));
+
+        customTmpdir = props.get("java.io.tmpdir");
         putIfAbsent(props, "java.io.tmpdir", raw.propDefault(Raw._java_io_tmpdir_NDX));
         putIfAbsent(props, "http.proxyHost", raw.propDefault(Raw._http_proxyHost_NDX));
         putIfAbsent(props, "http.proxyPort", raw.propDefault(Raw._http_proxyPort_NDX));

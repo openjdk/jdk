@@ -37,7 +37,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TempDirectoryNotExisting {
+public class TempDirDoesNotExist {
     final static String ioWarningMsg = "WARNING: java.io.tmpdir directory does not exist";
 
     public static void main(String... args) throws Exception {
@@ -60,17 +60,6 @@ public class TempDirectoryNotExisting {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (arg.equals("io-nio")) {
-                try {
-                    File.createTempFile("prefix", ".suffix");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Files.createTempFile("prefix", ".suffix");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             } else {
                 throw new Exception("unknown case: " + arg);
             }
@@ -78,33 +67,33 @@ public class TempDirectoryNotExisting {
 
         if (args.length == 0) {
             // standard test with default setting for java.io.tmpdir
-            testMessageNotExist(0, ioWarningMsg, "TempDirectoryNotExisting", "io");
-            testMessageNotExist(0, ioWarningMsg, "TempDirectoryNotExisting", "nio");
+            testMessageNotExist(0, ioWarningMsg, "TempDirDoesNotExist", "io");
+            testMessageNotExist(0, ioWarningMsg, "TempDirDoesNotExist", "nio");
 
             // valid custom java.io.tmpdir
             testMessageNotExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + userDir,
-                    "TempDirectoryNotExisting", "io");
+                    "TempDirDoesNotExist", "io");
             testMessageNotExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + userDir,
-                    "TempDirectoryNotExisting", "nio");
+                    "TempDirDoesNotExist", "nio");
 
             // invalid custom java.io.tmpdir
             testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir,
-                    "TempDirectoryNotExisting", "io");
+                    "TempDirDoesNotExist", "io");
             testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir,
-                    "TempDirectoryNotExisting", "nio");
+                    "TempDirDoesNotExist", "nio");
 
             // test with security manager
             testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir
                             + " -Djava.security.manager",
-                    "TempDirectoryNotExisting", "io");
+                    "TempDirDoesNotExist", "io");
 
             testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir
                             + " -Djava.security.manager",
-                    "TempDirectoryNotExisting", "nio");
+                    "TempDirDoesNotExist", "nio");
 
             // error message printed only once
             testMessageCounter(0, "-Djava.io.tmpdir=" + tempDir,
-                    "TempDirectoryNotExisting", "io-nio");
+                    "TempDirDoesNotExist", "io", "nio");
         }
     }
 
