@@ -486,15 +486,18 @@ public enum AccessFlag {
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not support for the location in question
+     * positions not supported for the location in question
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
         Set<AccessFlag> result = java.util.EnumSet.noneOf(AccessFlag.class);
         for (var accessFlag : LocationToFlags.locationToFlags.get(location)) {
             int accessMask = accessFlag.mask();
-            if ((mask &  accessMask) != 0) {
+            if ((mask & accessMask) != 0) {
                 result.add(accessFlag);
                 mask = mask & ~accessMask;
+                if (mask == 0) {
+                    break;      // no more mask bits
+                }
             }
         }
         if (mask != 0) {
@@ -504,6 +507,35 @@ public enum AccessFlag {
         }
         return Collections.unmodifiableSet(result);
     }
+
+    /**
+     * {@return an unmodifiable set of access flags for the given mask value
+     * appropriate for the class file format version and location}
+     * Mask bits not supported for the location are ignored.
+     *
+     * @param mask bit mask of access flags
+     * @param location context to interpret mask value
+     * @param cffv the class file format version
+     */
+    public static Set<AccessFlag> maskToAccessFlags(int mask, Location location,
+                                                    ClassFileFormatVersion cffv) {
+        Set<AccessFlag> result = java.util.EnumSet.noneOf(AccessFlag.class);
+        for (var accessFlag : AccessFlag.values()) {
+            int accessMask = accessFlag.mask();
+            if ((mask & accessMask) != 0) {
+                var locations = accessFlag.locations(cffv);
+                if (locations.contains(location)) {
+                    result.add(accessFlag);
+                    mask = mask & ~accessMask;
+                    if (mask == 0) {
+                        break;      // no more mask bits
+                    }
+                }
+            }
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
 
     /**
      * A location within a class file where flags can be applied.

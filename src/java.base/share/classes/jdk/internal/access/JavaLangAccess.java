@@ -537,4 +537,10 @@ public interface JavaLangAccess {
     StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                        ContinuationScope contScope,
                                        Continuation continuation);
+
+    /**
+     * Returns the class file format version of the class.
+     */
+    int classFileFormatVersion(Class<?> klass);
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,13 +214,21 @@ class Field extends AccessibleObject implements Member {
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag
      * access flags} for this field, possibly empty}
+     * The {@code AccessFlags} are the access flags of the field
+     * that are specified for the class file format version of the class;
+     * any unspecified flags are omitted.
+     *
      * @see #getModifiers()
      * @jvms 4.5 Fields
      * @since 20
      */
     @Override
     public Set<AccessFlag> accessFlags() {
-        return AccessFlag.maskToAccessFlags(getModifiers(), AccessFlag.Location.FIELD);
+        int major = SharedSecrets.getJavaLangAccess().classFileFormatVersion(getDeclaringClass()) & 0xffff;
+        var cffv = ClassFileFormatVersion.fromMajor(major);
+        return AccessFlag.maskToAccessFlags(getModifiers(),
+                AccessFlag.Location.FIELD,
+                cffv);
     }
 
     /**

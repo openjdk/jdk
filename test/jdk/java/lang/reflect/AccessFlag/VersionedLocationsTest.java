@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 8289106 8293627
+ * @compile VersionedLocationsClass_50.jasm VersionedLocationsClass_51.jasm
  * @summary Tests of AccessFlag.locations(ClassFileFormatVersion)
+ * @run main VersionedLocationsTest
  */
 
 import java.lang.reflect.AccessFlag;
@@ -77,6 +79,7 @@ public class VersionedLocationsTest {
         testStepFunctionAccessFlags();
         testTwoStepAccessFlags();
         testSynthetic();
+        testVersionedSyntheticClass();
         testStrict();
         testLatestMatch();
     }
@@ -256,7 +259,44 @@ public class VersionedLocationsTest {
                         default        -> SYNTHETIC.locations();
                     };
             }
-        compareLocations(expected, SYNTHETIC, cffv);
+            compareLocations(expected, SYNTHETIC, cffv);
+        }
+    }
+
+    private record VersionedSyntheticTC(String label, boolean expectSynthetic,
+                                        Set<AccessFlag> accessFlags) {};
+
+    private static void testVersionedSyntheticClass() throws Exception{
+        final Class<?> syn51 = Class.forName("VersionedLocationsClass_51");
+        final Class<?> syn50 = Class.forName("VersionedLocationsClass_50");
+
+        VersionedSyntheticTC[] testCases = {
+                new VersionedSyntheticTC("clazz.accessFlags() - v51", true,
+                        syn51.accessFlags()),
+
+                new VersionedSyntheticTC("synMethod.accessFlags() - v51", true,
+                        syn51.getDeclaredMethod("synMethod").accessFlags()),
+
+                new VersionedSyntheticTC("synField.accessFlags() - v51", true,
+                        syn51.getDeclaredField("synField").accessFlags()),
+
+                new VersionedSyntheticTC("clazz.accessFlags() - v50", false,
+                        syn50.accessFlags()),
+
+                new VersionedSyntheticTC("synMethod.accessFlags() - v50", false,
+                        syn50.getDeclaredMethod("synMethod").accessFlags()),
+
+                new VersionedSyntheticTC("synField.accessFlags() - v50", false,
+                        syn50.getDeclaredField("synField").accessFlags()),
+        };
+
+        for (VersionedSyntheticTC testcase : testCases) {
+            final boolean hasSynthetic = testcase.accessFlags.contains(SYNTHETIC);
+            if (testcase.expectSynthetic != hasSynthetic) {
+                String err = testcase.expectSynthetic ? "missing" : "unexpected";
+                throw new RuntimeException(testcase.label + ": " + err +
+                        " SYNTHETIC in accessFlags: " + testcase.accessFlags);
+            }
         }
     }
 

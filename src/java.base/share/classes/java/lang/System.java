@@ -2637,6 +2637,10 @@ public final class System {
                                                       Continuation continuation) {
                 return StackWalker.newInstance(options, null, contScope, continuation);
             }
+
+            public int classFileFormatVersion(Class<?> clazz) {
+                return clazz.getClassFileVersion();
+            }
         });
     }
 }
