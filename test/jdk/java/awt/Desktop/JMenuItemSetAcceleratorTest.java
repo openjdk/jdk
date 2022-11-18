@@ -77,11 +77,6 @@ public class JMenuItemSetAcceleratorTest {
 
     public static void main(String args[]) throws Exception {
         try {
-            if (!Desktop.isDesktopSupported()) {
-                System.out.println("Test skipped as Desktop is not supported.");
-                return;
-            }
-
             SwingUtilities
                 .invokeAndWait(JMenuItemSetAcceleratorTest::createAndShow);
 
