@@ -41,8 +41,6 @@ protected:
     _entry(),
     _continuation() {}
 
-  virtual ~C2CodeStub() {}
-
   // A helper to determine the size of a stub implementation.
   // It is recommended to call this only once and cache the
   // result in a static field.
