@@ -51,7 +51,7 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestRemoteDump {
 
-    private final static MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
+    private static final MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
 
     @Name("RemoteDumpTest")
     static class DumpEvent extends Event {
