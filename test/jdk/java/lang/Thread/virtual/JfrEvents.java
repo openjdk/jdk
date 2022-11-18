@@ -27,7 +27,6 @@
  * @requires vm.continuations
  * @modules jdk.jfr java.base/java.lang:+open
  * @enablePreview
- * @compile JfrEvents.java
  * @run testng/othervm JfrEvents
  */
 
