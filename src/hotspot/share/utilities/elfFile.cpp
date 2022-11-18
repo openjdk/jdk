@@ -1201,7 +1201,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
     return false;
   }
 
-  if (!_reader.read_sbyte(&_header._line_base)) {
+  if (!_reader.read_byte(&_header._line_base)) {
     return false;
   }
 
@@ -1607,19 +1607,15 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   // We do not need to restore the position afterwards as this is the last step of parsing from the file for this compilation unit.
   _reader.set_position(_header._file_names_offset);
   uint32_t current_index = 1; // file_names start at index 1
-  const size_t dwarf_filename_len = 1024;
-  char dwarf_filename[dwarf_filename_len]; // Store the filename read from DWARF which is then copied to 'filename'.
+  size_t current_length;
   while (_reader.has_bytes_left()) {
-    if (!_reader.read_string(dwarf_filename, dwarf_filename_len)) {
-      // Either an error while reading or we have reached the end of the file_names. Both should not happen.
-      return false;
-    }
-
     if (current_index == file_index) {
       // Found correct file.
-      strip_path_prefix(dwarf_filename, dwarf_filename_len);
-      copy_dwarf_filename_to_filename(dwarf_filename, dwarf_filename_len, filename, filename_len);
-      return true;
+      return read_filename(filename, filename_len);
+    } else if (!_reader.read_string()) { // We don't care about this filename string. Read and ignore it.
+      // Either an error while reading or we have reached the end of the file_names section before reaching the file_index.
+      // Both should not happen.
+      return false;
     }
 
     // We don't care about these values.
@@ -1634,27 +1630,62 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   return false;
 }
 
-// Remove everything before the last slash including the slash itself to get the actual filename. This is required, for
-// example, for Clang debug builds which emit a relative path while GCC only emits the filename.
-void DwarfFile::LineNumberProgram::strip_path_prefix(char* filename, const size_t filename_len) {
-  char* last_slash = strrchr(filename, *os::file_separator());
-  if (last_slash != nullptr) {
-    uint16_t index_after_slash = (uint16_t)(last_slash + 1 - filename);
-    // Copy filename to beginning of buffer.
-    int bytes_written = jio_snprintf(filename, filename_len - index_after_slash, "%s", filename + index_after_slash);
-    assert(bytes_written > 0, "could not strip path prefix");
-    // Add null terminator.
-    filename[bytes_written] = '\0';
+// Read the filename into the provided 'filename' buffer. If it does not fit, an alternative smaller tag will be emitted
+// in order to let the DWARF parser succeed. The line number with a function name will almost always be sufficient to get
+// to the actual source code location.
+bool DwarfFile::LineNumberProgram::read_filename(char* filename, const size_t filename_len) {
+  char next_char;
+  if (!_reader.read_non_null_char(&next_char)) {
+    // Either error while reading or read an empty string which indicates the end of the file_names section.
+    // Both should not happen.
+    return false;
   }
+
+  filename[0] = next_char;
+  size_t index = 1;
+  bool overflow_filename = false; // Is the currently read filename overflowing the provided 'filename' buffer?
+  while (next_char != '\0' && _reader.has_bytes_left()) {
+    if (!_reader.read_byte(&next_char)) {
+      return false;
+    }
+    if (next_char == *os::file_separator()) {
+      // Skip file separator to get to the actual filename and reset the buffer and overflow flag. GCC does not emit
+      // file separators while Clang does.
+      index = 0;
+      overflow_filename = false;
+    } else if (index == filename_len) {
+      // Just keep reading as we could read another file separator and reset the buffer again. But don't bother to store
+      // the additionally read characters as it would not fit into the buffer anyway.
+      overflow_filename = true;
+    } else {
+      assert(!overflow_filename, "sanity check");
+      filename[index] = next_char;
+      index++;
+    }
+  }
+
+  if (overflow_filename) {
+    // 'filename' buffer overflow. Store either a generic overflow message or a minimal filename.
+    write_filename_for_overflow(filename, filename_len);
+  }
+  return true;
 }
 
-// Copy the read filename from the DWARF file stored in 'src' to the provided output buffer 'dst'.
-void DwarfFile::LineNumberProgram::copy_dwarf_filename_to_filename(char* src, const size_t src_len,
-                                                                   char* dst, const size_t dst_len) {
-  const size_t count = MIN(src_len, dst_len);
-  int bytes_written = jio_snprintf(dst, count, "%s", src);
-  // Add null terminator.
-  dst[count - 1] = '\0';
+// Try to write a generic overflow message to the provided buffer. If it does not fit, store the minimal filename "L"
+// which always fits to get the source information in the form "L:line_number".
+void DwarfFile::LineNumberProgram::write_filename_for_overflow(char* filename, const size_t filename_len) {
+  DWARF_LOG_ERROR("DWARF filename string is too large to fit into the provided buffer of size %zu.", filename_len);
+  const size_t filename_overflow_message_length = strlen(overflow_filename) + 1;
+  if (filename_overflow_message_length <= filename_len) {
+    jio_snprintf(filename, filename_overflow_message_length, "%s", overflow_filename);
+    DWARF_LOG_ERROR("Use overflow filename: %s", overflow_filename);
+  } else {
+    // Buffer too small of generic overflow message.
+    DWARF_LOG_ERROR("Too small for overflow filename, use minimal filename: %c", minimal_overflow_filename);
+    assert(filename_len > 1, "sanity check");
+    filename[0] = minimal_overflow_filename;
+    filename[1] = '\0';
+  }
 }
 
 void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
@@ -1727,12 +1758,7 @@ bool DwarfFile::MarkedDwarfFileReader::move_position(const long offset) {
   return set_position(_current_pos + offset);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_sbyte(int8_t* result) {
-  _current_pos++;
-  return read(result, 1);
-}
-
-bool DwarfFile::MarkedDwarfFileReader::read_byte(uint8_t* result) {
+bool DwarfFile::MarkedDwarfFileReader::read_byte(void* result) {
   _current_pos++;
   return read(result, 1);
 }
@@ -1801,13 +1827,8 @@ bool DwarfFile::MarkedDwarfFileReader::read_sleb128(int64_t* result, const int8_
 
 // If result is a nullptr, we do not care about the content of the string being read.
 bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t result_len) {
-  uint8_t next_byte;
-  if (!read_byte(&next_byte)) {
-    return false;
-  }
-
-  if (next_byte == 0) {
-    // Strings must contain at least one non-null byte.
+  char first_char;
+  if (!read_non_null_char(&first_char)) {
     return false;
   }
 
@@ -1816,9 +1837,10 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
       // Strings must contain at least one non-null byte and a null byte terminator.
       return false;
     }
-    result[0] = (char)next_byte;
+    result[0] = first_char;
   }
 
+  uint8_t next_byte;
   size_t char_index = 1;
   bool exceeded_buffer = false;
   while (has_bytes_left()) {
@@ -1846,6 +1868,13 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
     }
   }
   return false;
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_non_null_char(char* result) {
+  if (!read_byte(result)) {
+    return false;
+  }
+  return *result != '\0';
 }
 
 #endif // !_WINDOWS && !__APPLE__

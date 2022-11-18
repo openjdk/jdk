@@ -128,7 +128,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    # -gdwarf-4 and -gdwarf-aranges was introduced in clang 5.0
+    # -gdwarf-4 and -gdwarf-aranges were introduced in clang 5.0
     GDWARF_FLAGS="-gdwarf-4 -gdwarf-aranges"
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
