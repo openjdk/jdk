@@ -75,8 +75,8 @@ void GCTracer::send_reference_stats_event(ReferenceType type, size_t count) cons
   }
 }
 
-void GCTracer::send_reference_process_time_event(const double total_time) const {
-  EventGCReferenceProcessTime e;
+void GCTracer::send_reference_processing_time_event(const double total_time) const {
+  EventGCReferenceProcessingTime e;
   if (e.should_commit()) {
       e.set_gcId(GCId::current());
       e.set_totalTime((size_t)(total_time * NANOSECS_PER_MILLISEC));

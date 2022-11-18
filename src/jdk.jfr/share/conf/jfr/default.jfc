@@ -426,7 +426,7 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
-    <event name="jdk.GCReferenceProcessTime">
+    <event name="jdk.GCReferenceProcessingTime">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 

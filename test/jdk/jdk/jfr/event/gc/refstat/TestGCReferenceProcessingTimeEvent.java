@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC jdk.jfr.event.gc.refstat.TestGCReferenceProcessTimeEvent
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC jdk.jfr.event.gc.refstat.TestGCReferenceProcessingTimeEvent
  */
 
 /**
@@ -49,7 +49,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC jdk.jfr.event.gc.refstat.TestGCReferenceProcessTimeEvent
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC jdk.jfr.event.gc.refstat.TestGCReferenceProcessingTimeEvent
  */
 
 /**
@@ -60,11 +60,11 @@ import jdk.test.lib.jfr.GCHelper;
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC jdk.jfr.event.gc.refstat.TestGCReferenceProcessTimeEvent
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC jdk.jfr.event.gc.refstat.TestGCReferenceProcessingTimeEvent
  */
 
-public class TestGCReferenceProcessTimeEvent {
-    private static final String EVENT_NAME = EventNames.GCReferenceProcessTime;
+public class TestGCReferenceProcessingTimeEvent {
+    private static final String EVENT_NAME = EventNames.GCReferenceProcessingTime;
 
     public static void main(String[] args) throws Exception {
 
