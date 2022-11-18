@@ -45,10 +45,8 @@ import java.io.IOException;
  *
  * @author Xuelei Fan
  * @see Extension
- * @see CertAttrSet
  */
-public class OCSPNoCheckExtension extends Extension
-        implements CertAttrSet {
+public class OCSPNoCheckExtension extends Extension {
 
     public static final String NAME = "OCSPNoCheck";
 

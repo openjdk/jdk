@@ -57,8 +57,8 @@ void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
 
 void ClassPrelinker::initialize() {
   assert(_vm_classes == NULL, "must be");
-  _vm_classes = new (ResourceObj::C_HEAP, mtClass)ClassesTable();
-  _processed_classes = new (ResourceObj::C_HEAP, mtClass)ClassesTable();
+  _vm_classes = new (mtClass)ClassesTable();
+  _processed_classes = new (mtClass)ClassesTable();
   for (auto id : EnumRange<vmClassID>{}) {
     add_one_vm_class(vmClasses::klass_at(id));
   }
