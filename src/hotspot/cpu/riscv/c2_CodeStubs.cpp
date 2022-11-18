@@ -24,25 +24,53 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
+#include "opto/c2_CodeStubs.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm.
-void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
+
+void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
   RuntimeAddress callback_addr(stub);
 
-  __ bind(entry->_stub_label);
-  InternalAddress safepoint_pc(__ pc() - __ offset() + entry->_safepoint_offset);
+  __ bind(entry());
+  InternalAddress safepoint_pc(__ pc() - __ offset() + _safepoint_offset);
   __ relocate(safepoint_pc.rspec(), [&] {
     __ la(t0, safepoint_pc.target());
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
   __ far_jump(callback_addr);
 }
+
+void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
+  IncompressibleRegion ir(&masm); // Fixed length
+
+  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
+  int alignment_bytes = __ align(4);
+
+  __ bind(entry());
+
+  int32_t offset = 0;
+  __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+  __ jalr(ra, t0, offset);
+  __ j(continuation());
+
+  __ bind(guard());
+  __ relocate(entry_guard_Relocation::spec());
+  __ assert_alignment(pc());
+  __ emit_int32(0);  // nmethod guard value
+  // make sure the stub with a fixed code size
+  if (alignment_bytes == 2) {
+    assert(UseRVC, "bad alignment");
+    __ c_nop();
+  } else {
+    assert(alignment_bytes == 0, "bad alignment");
+    __ nop();
+  }
+}
+
 #undef __
