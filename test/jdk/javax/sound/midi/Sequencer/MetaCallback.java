@@ -62,13 +62,15 @@ public class MetaCallback implements MetaEventListener {
 
     public static int TOTAL_COUNT = 100;
 
-    int metaCount = 0;
-    boolean finished = false;
+    volatile int metaCount = 0;
+    volatile boolean finished = false;
     // On M1 Mac sometimes system notifies listener about the same message twice
     static List<MetaMessage> received = Collections.synchronizedList(new ArrayList<>());
+    long startTimeMs;
 
     MetaCallback() throws Exception {
 
+        startTimeMs = System.currentTimeMillis();
         sequencer=MidiSystem.getSequencer();
         sequence=new Sequence(Sequence.PPQ,240);
         track=sequence.createTrack();
@@ -115,8 +117,19 @@ public class MetaCallback implements MetaEventListener {
         System.out.println(""+metaCount+": got "+msg);
         if (msg.getType() == 0x2F) {
             finished = true;
-        } else if (msg.getData().length > 0 && msg.getType() == 1 && !received.contains(msg)) {
-            received.add(msg);
+        } else if (msg.getData().length > 0 && msg.getType() == 1) {
+            if (!received.contains(msg)) {
+                received.add(msg);
+            } else {
+                // Add some additional debug output for the case of duplicate meta message
+                // The test will fail anyway at the end
+                System.out.println("Duplicate message received after getting "
+                        + received.size() + " messages.");
+                System.out.println("Sequencer in use: " + sequencer);
+                System.out.println("Time from test start: " +
+                        (System.currentTimeMillis() - startTimeMs) + "ms");
+                Thread.dumpStack();
+            }
             metaCount++;
         }
     }
