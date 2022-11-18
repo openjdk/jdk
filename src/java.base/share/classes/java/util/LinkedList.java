@@ -269,7 +269,7 @@ public class LinkedList<E>
      */
     public E getMiddle() {
 	Node<E> f = first;
-	if (f == null || size == 1 || size == 2)
+	if (f == null || size < 3)
 	    throw new NoSuchElementException();
 	else
         {
