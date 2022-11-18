@@ -87,9 +87,6 @@ class JarVerifier {
     /** the manifest name this JarVerifier is created upon */
     final String manifestName;
 
-    /** controls eager signature validation */
-    boolean eagerValidation;
-
     /** makes code source singleton instances unique to us */
     private Object csdomain = new Object();
 
@@ -343,9 +340,9 @@ class JarVerifier {
         return mapSignersToCertArray(getCodeSigners(name));
     }
 
-    public java.security.cert.Certificate[] getCerts(JarFile jar, JarEntry entry)
+    public java.security.cert.Certificate[] getCerts(JarEntry entry)
     {
-        return mapSignersToCertArray(getCodeSigners(jar, entry));
+        return mapSignersToCertArray(getCodeSigners(entry));
     }
 
     /**
@@ -358,26 +355,9 @@ class JarVerifier {
         return verifiedSigners.get(name);
     }
 
-    public CodeSigner[] getCodeSigners(JarFile jar, JarEntry entry)
+    public CodeSigner[] getCodeSigners(JarEntry entry)
     {
-        String name = entry.getName();
-        if (eagerValidation && sigFileSigners.get(name) != null) {
-            /*
-             * Force a read of the entry data to generate the
-             * verification hash.
-             */
-            try {
-                InputStream s = jar.getInputStream(entry);
-                byte[] buffer = new byte[1024];
-                int n = buffer.length;
-                while (n != -1) {
-                    n = s.read(buffer, 0, buffer.length);
-                }
-                s.close();
-            } catch (IOException e) {
-            }
-        }
-        return getCodeSigners(name);
+        return getCodeSigners(entry.getName());
     }
 
     /*
@@ -516,76 +496,7 @@ class JarVerifier {
     private Map<CodeSigner[], CodeSource> signerToCodeSource = new HashMap<>();
     private URL lastURL;
     private Map<CodeSigner[], CodeSource> lastURLMap;
-
-    /*
-     * Create a unique mapping from codeSigner cache entries to CodeSource.
-     * In theory, multiple URLs origins could map to a single locally cached
-     * and shared JAR file although in practice there will be a single URL in use.
-     */
-    private synchronized CodeSource mapSignersToCodeSource(URL url, CodeSigner[] signers) {
-        Map<CodeSigner[], CodeSource> map;
-        if (url == lastURL) {
-            map = lastURLMap;
-        } else {
-            map = urlToCodeSourceMap.get(url);
-            if (map == null) {
-                map = new HashMap<>();
-                urlToCodeSourceMap.put(url, map);
-            }
-            lastURLMap = map;
-            lastURL = url;
-        }
-        CodeSource cs = map.get(signers);
-        if (cs == null && (cs = signerToCodeSource.get(signers)) == null) {
-            cs = new VerifierCodeSource(csdomain, url, signers);
-            signerToCodeSource.put(signers, cs);
-        }
-        return cs;
-    }
-
-    private CodeSource[] mapSignersToCodeSources(URL url, List<CodeSigner[]> signers, boolean unsigned) {
-        List<CodeSource> sources = new ArrayList<>();
-
-        for (CodeSigner[] signer : signers) {
-            sources.add(mapSignersToCodeSource(url, signer));
-        }
-        if (unsigned) {
-            sources.add(mapSignersToCodeSource(url, null));
-        }
-        return sources.toArray(new CodeSource[sources.size()]);
-    }
     private CodeSigner[] emptySigner = new CodeSigner[0];
-
-    /*
-     * Match CodeSource to a CodeSigner[] in the signer cache.
-     */
-    private CodeSigner[] findMatchingSigners(CodeSource cs) {
-        if (cs instanceof VerifierCodeSource vcs) {
-            if (vcs.isSameDomain(csdomain)) {
-                return vcs.getPrivateSigners();
-            }
-        }
-
-        /*
-         * In practice signers should always be optimized above
-         * but this handles a CodeSource of any type, just in case.
-         */
-        CodeSource[] sources = mapSignersToCodeSources(cs.getLocation(), getJarCodeSigners(), true);
-        List<CodeSource> sourceList = new ArrayList<>();
-        for (CodeSource source : sources) {
-            sourceList.add(source);
-        }
-        int j = sourceList.indexOf(cs);
-        if (j != -1) {
-            CodeSigner[] match;
-            match = ((VerifierCodeSource) sourceList.get(j)).getPrivateSigners();
-            if (match == null) {
-                match = emptySigner;
-            }
-            return match;
-        }
-        return null;
-    }
 
     /*
      * Instances of this class hold uncopied references to internal
@@ -675,66 +586,6 @@ class JarVerifier {
             signerMap.putAll(sigFileSigners);
         }
         return signerMap;
-    }
-
-    public synchronized Enumeration<String> entryNames(JarFile jar, final CodeSource[] cs) {
-        final Map<String, CodeSigner[]> map = signerMap();
-        final Iterator<Map.Entry<String, CodeSigner[]>> itor = map.entrySet().iterator();
-        boolean matchUnsigned = false;
-
-        /*
-         * Grab a single copy of the CodeSigner arrays. Check
-         * to see if we can optimize CodeSigner equality test.
-         */
-        List<CodeSigner[]> req = new ArrayList<>(cs.length);
-        for (CodeSource c : cs) {
-            CodeSigner[] match = findMatchingSigners(c);
-            if (match != null) {
-                if (match.length > 0) {
-                    req.add(match);
-                } else {
-                    matchUnsigned = true;
-                }
-            } else {
-                matchUnsigned = true;
-            }
-        }
-
-        final List<CodeSigner[]> signersReq = req;
-        final Enumeration<String> enum2 = matchUnsigned ? unsignedEntryNames(jar) : Collections.emptyEnumeration();
-
-        return new Enumeration<>() {
-
-            String name;
-
-            public boolean hasMoreElements() {
-                if (name != null) {
-                    return true;
-                }
-
-                while (itor.hasNext()) {
-                    Map.Entry<String, CodeSigner[]> e = itor.next();
-                    if (signersReq.contains(e.getValue())) {
-                        name = e.getKey();
-                        return true;
-                    }
-                }
-                while (enum2.hasMoreElements()) {
-                    name = enum2.nextElement();
-                    return true;
-                }
-                return false;
-            }
-
-            public String nextElement() {
-                if (hasMoreElements()) {
-                    String value = name;
-                    name = null;
-                    return value;
-                }
-                throw new NoSuchElementException();
-            }
-        };
     }
 
     /*
@@ -842,27 +693,6 @@ class JarVerifier {
             jarCodeSigners.addAll(set);
         }
         return jarCodeSigners;
-    }
-
-    public synchronized CodeSource[] getCodeSources(JarFile jar, URL url) {
-        boolean hasUnsigned = unsignedEntryNames(jar).hasMoreElements();
-
-        return mapSignersToCodeSources(url, getJarCodeSigners(), hasUnsigned);
-    }
-
-    public CodeSource getCodeSource(URL url, String name) {
-        CodeSigner[] signers;
-
-        signers = signerMap().get(name);
-        return mapSignersToCodeSource(url, signers);
-    }
-
-    public CodeSource getCodeSource(URL url, JarFile jar, JarEntry je) {
-        return mapSignersToCodeSource(url, getCodeSigners(jar, je));
-    }
-
-    public void setEagerValidation(boolean eager) {
-        eagerValidation = eager;
     }
 
     public synchronized List<Object> getManifestDigests() {

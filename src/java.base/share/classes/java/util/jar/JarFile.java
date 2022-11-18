@@ -658,7 +658,7 @@ public class JarFile extends ZipFile {
                 throw new RuntimeException(e);
             }
             if (certs == null && jv != null) {
-                certs = jv.getCerts(JarFile.this, realEntry());
+                certs = jv.getCerts(realEntry());
             }
             return certs == null ? null : certs.clone();
         }
@@ -671,7 +671,7 @@ public class JarFile extends ZipFile {
                 throw new RuntimeException(e);
             }
             if (signers == null && jv != null) {
-                signers = jv.getCodeSigners(JarFile.this, realEntry());
+                signers = jv.getCodeSigners(realEntry());
             }
             return signers == null ? null : signers.clone();
         }
@@ -1102,30 +1102,6 @@ public class JarFile extends ZipFile {
         return new JarFileEntry(name);
     }
 
-    Enumeration<String> entryNames(CodeSource[] cs) {
-        ensureInitialization();
-        if (jv != null) {
-            return jv.entryNames(this, cs);
-        }
-
-        /*
-         * JAR file has no signed content. Is there a non-signing
-         * code source?
-         */
-        boolean includeUnsigned = false;
-        for (CodeSource c : cs) {
-            if (c.getCodeSigners() == null) {
-                includeUnsigned = true;
-                break;
-            }
-        }
-        if (includeUnsigned) {
-            return unsignedEntryNames();
-        } else {
-            return Collections.emptyEnumeration();
-        }
-    }
-
     /**
      * Returns an enumeration of the zip file entries
      * excluding internal JAR mechanism entries and including
@@ -1170,24 +1146,6 @@ public class JarFile extends ZipFile {
         };
     }
 
-    CodeSource[] getCodeSources(URL url) {
-        ensureInitialization();
-        if (jv != null) {
-            return jv.getCodeSources(this, url);
-        }
-
-        /*
-         * JAR file has no signed content. Is there a non-signing
-         * code source?
-         */
-        Enumeration<String> unsigned = unsignedEntryNames();
-        if (unsigned.hasMoreElements()) {
-            return new CodeSource[]{JarVerifier.getUnsignedCS(url)};
-        } else {
-            return null;
-        }
-    }
-
     private Enumeration<String> unsignedEntryNames() {
         final Enumeration<JarEntry> entries = entries();
         return new Enumeration<>() {
@@ -1224,37 +1182,6 @@ public class JarFile extends ZipFile {
                 throw new NoSuchElementException();
             }
         };
-    }
-
-    CodeSource getCodeSource(URL url, String name) {
-        ensureInitialization();
-        if (jv != null) {
-            if (jv.eagerValidation) {
-                CodeSource cs;
-                JarEntry je = getJarEntry(name);
-                if (je != null) {
-                    cs = jv.getCodeSource(url, this, je);
-                } else {
-                    cs = jv.getCodeSource(url, name);
-                }
-                return cs;
-            } else {
-                return jv.getCodeSource(url, name);
-            }
-        }
-
-        return JarVerifier.getUnsignedCS(url);
-    }
-
-    void setEagerValidation(boolean eager) {
-        try {
-            maybeInstantiateVerifier();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        if (jv != null) {
-            jv.setEagerValidation(eager);
-        }
     }
 
     List<Object> getManifestDigests() {
