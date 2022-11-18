@@ -33,6 +33,7 @@ import java.nio.charset.Charset;
 
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.org.jline.reader.EndOfFileException;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReaderBuilder;
 import jdk.internal.org.jline.terminal.Terminal;
@@ -47,7 +48,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      * {@inheritDoc}
      */
     public JdkConsole console(boolean isTTY) {
-        return isTTY ? new JdkConsoleImpl() : null;
+        return new JdkConsoleImpl();
     }
 
     /**
@@ -73,7 +74,11 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         public synchronized String readLine(String fmt, Object ... args) {
-            return jline.readLine(fmt.formatted(args));
+            try {
+                return jline.readLine(fmt.formatted(args));
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
         }
 
         public String readLine() {
@@ -81,7 +86,11 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         public synchronized char[] readPassword(String fmt, Object ... args) {
-            return jline.readLine(fmt.formatted(args), '\0').toCharArray();
+            try {
+                return jline.readLine(fmt.formatted(args), '\0').toCharArray();
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
         }
 
         public char[] readPassword() {
