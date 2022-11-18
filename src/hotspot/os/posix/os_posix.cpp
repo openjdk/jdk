@@ -724,7 +724,7 @@ void os::dll_unload(void *lib) {
   LINUX_ONLY(
     l_path = os::Linux::dll_path(lib);
     if (l_path != NULL) {
-      l_path = l_pathdup = os::strdup(l_path)
+      l_path = l_pathdup = os::strdup(l_path);
     }
   );
   if (l_path == NULL) {
