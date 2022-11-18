@@ -188,7 +188,7 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
-  assert_at_safepoint();
+  assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   bool for_young_only_phase = collector_state()->in_young_only_phase();
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
                              _analytics->predict_rs_length(for_young_only_phase),
@@ -227,7 +227,6 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
 // - sizer min/max bounds on young gen
 // - pause time goal for whole young gen evacuation
 // - MMU goal influencing eden to make GCs spaced apart.
-// - a minimum one eden region length.
 //
 // We may enter with already allocated eden and survivor regions, that may be
 // higher than the maximum, or the above goals may result in a desired value
@@ -256,6 +255,10 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // young length we might have exceeded absolute min length or absolute_max_length,
   // so adjust the result accordingly.
   uint absolute_max_young_length = MAX2(max_young_length_by_sizer, absolute_min_young_length);
+
+  // The absolute minimum young gen length (as provided by the young gen sizer) ensures
+  // that we desire at least one young gen region.
+  assert(absolute_min_young_length > 0, "must be");
 
   uint desired_eden_length_by_mmu = 0;
   uint desired_eden_length_by_pause = 0;

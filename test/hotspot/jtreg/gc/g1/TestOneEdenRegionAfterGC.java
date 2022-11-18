@@ -28,8 +28,6 @@ package gc.g1;
  * @bug 8297186
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.g1.TestOneEdenRegionAfterGC
  * @summary Test that on a very small heap g1 with very little data (smaller than region size)
  *          will use at least one eden region after gc to avoid full gcs.
@@ -37,15 +35,13 @@ package gc.g1;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.whitebox.WhiteBox;
 
 public class TestOneEdenRegionAfterGC {
-  private static long YoungGenSize  = 32 * 1024 * 1024;
+  private static long YoungGenSize = 32 * 1024 * 1024;
 
   private static OutputAnalyzer run() throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
       "-Xbootclasspath/a:.",
-      "-XX:+UnlockDiagnosticVMOptions",
       "-Xmn" + YoungGenSize,
       "-Xmx512M",
       "-Xms512M",
