@@ -229,10 +229,15 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   char what[20];
   st = st ? st : tty;
 
-  if (_indy_index != -1)
-    os::snprintf(what, sizeof(what), "indy#%d", decode_indy_index());
-  else
-    os::snprintf(what, sizeof(what), "condy");
+  if (_indy_index != -1) {
+    int printed_len = os::snprintf(what, sizeof(what), "indy#%d", decode_indy_index());
+    assert(printed_len > 0, "error occurs at os::snprintf");
+    assert(printed_len < sizeof(what), "what buf overflow");
+  } else {
+    int printed_len = os::snprintf(what, sizeof(what), "condy");
+    assert(printed_len > 0, "error occurs at os::snprintf");
+    assert(printed_len < sizeof(what), "what buf overflow");
+  }
   bool have_msg = (msg != NULL && strlen(msg) > 0);
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",
                 (have_msg ? msg : ""), (have_msg ? " " : ""),
@@ -248,14 +253,24 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   if (_argc > 0) {
     char argbuf[80];
     argbuf[0] = 0;
+    int pos = 0;
     for (int i = 0; i < _argc; i++) {
-      int pos = (int) strlen(argbuf);
       if (pos + 20 > (int)sizeof(argbuf)) {
-        os::snprintf(argbuf + pos, sizeof(argbuf) - pos, "...");
+        int remaining_len = sizeof(argbuf) - pos;
+        int printed_len = os::snprintf(argbuf + pos, remaining_len, "...");
+        assert(printed_len > 0, "error occurs at os::snprintf");
+        assert(printed_len < remaining_len, "argbuf overflow");
+        pos += printed_len;
         break;
       }
-      if (i > 0)  argbuf[pos++] = ',';
-      os::snprintf(argbuf+pos, sizeof(argbuf) - pos, "%d", arg_index(i));
+      if (i > 0) {
+          argbuf[pos++] = ',';
+      }
+      int remaining_len = sizeof(argbuf) - pos;
+      int printed_len = os::snprintf(argbuf+pos, remaining_len, "%d", arg_index(i));
+      assert(printed_len > 0, "error occurs at os::snprintf");
+      assert(printed_len < remaining_len, "argbuf overflow");
+      pos += printed_len;
     }
     st->print_cr("  argument indexes: {%s}", argbuf);
   }

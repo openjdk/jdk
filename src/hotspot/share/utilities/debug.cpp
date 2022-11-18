@@ -446,7 +446,9 @@ extern "C" JNIEXPORT void disnm(intptr_t p) {
 
 extern "C" JNIEXPORT void printnm(intptr_t p) {
   char buffer[256];
-  os::snprintf(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
+  int printed_len = os::snprintf(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
+  assert(printed_len > 0, "error occurs at os::snprintf");
+  assert(printed_len < sizeof(buffer), "buffer overflow");
   Command c(buffer);
   CodeBlob* cb = CodeCache::find_blob((address) p);
   if (cb->is_nmethod()) {

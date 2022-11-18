@@ -778,7 +778,9 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
       }
     } else {
       char xn[12];
-      os::snprintf(xn, sizeof(xn), "x%d", j);
+      int printed_len = os::snprintf(xn, sizeof(xn), "x%d", j);
+      assert(printed_len > 0, "error occurs at os::snprintf");
+      assert(printed_len < sizeof(xn), "xn buf overflow");
       if (arg.is_oop()) {
         xtty->object(xn, Handle(thread, arg.oop_value()));
       } else {

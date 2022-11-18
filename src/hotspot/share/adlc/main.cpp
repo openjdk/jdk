@@ -466,7 +466,9 @@ static char *base_plus_suffix(const char* base, const char *suffix)
   int len = (int)strlen(base) + (int)strlen(suffix) + 1;
 
   char* fname = new char[len];
-  snprintf(fname,len,"%s%s",base,suffix);
+  int printed_len = snprintf(fname,len,"%s%s",base,suffix);
+  assert(printed_len > 0, "error occurs at snprintf");
+  assert(printed_len < len, "insufficient fname buf");
   return fname;
 }
 

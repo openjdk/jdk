@@ -2524,14 +2524,24 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  size_t buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  int printed_len = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  assert(printed_len > 0, "error occurs at os::snprintf");
+  assert(printed_len < buf_size, "insufficient buf");
+  size_t buf_off = printed_len;
 
   // Print module information
   if (module_name != NULL) {
+    int remaining_len = buf_size - buf_off;
     if (module_version != NULL) {
-      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
-    } else {
-      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s@%s/", module_name, module_version);
+      assert(printed_len > 0, "error occurs at snprintf");
+      assert(printed_len < remaining_len, "buf overflow");
+      buf_off += printed_len;
+    } else {;
+      int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s/", module_name);
+      assert(printed_len > 0, "error occurs at snprintf");
+      assert(printed_len < remaining_len, "buf overflow");
+      buf_off += printed_len;
     }
   }
 
@@ -2544,19 +2554,34 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     if (line_number == -2) {
       strcat(buf, "Native Method)");
     } else {
+      int remaining_len = buf_size - buf_off;
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s:%d)", source_file_name, line_number);
+        assert(printed_len > 0, "error occurs at snprintf");
+        assert(printed_len < remaining_len, "buf overflow");
+        buf_off += printed_len;
       } else if (source_file_name != NULL) {
         // Just sourcename
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s)", source_file_name);
+        assert(printed_len > 0, "error occurs at snprintf");
+        assert(printed_len < remaining_len, "buf overflow");
+        buf_off += printed_len;
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        int printed_len = os::snprintf(buf + buf_off, remaining_len, "Unknown Source)");
+        assert(printed_len > 0, "error occurs at snprintf");
+        assert(printed_len < remaining_len, "buf overflow");
+        buf_off += printed_len;
       }
+
       CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
-        os::snprintf(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        remaining_len = buf_size - buf_off;
+        int printed_len = os::snprintf(buf + buf_off, remaining_len, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        assert(printed_len > 0, "error occurs at snprintf");
+        assert(printed_len < remaining_len, "buf overflow");
+        buf_off += printed_len;
       }
     }
   }

@@ -932,7 +932,9 @@ void CompileBroker::init_compiler_threads() {
     // for JVMCI compiler which can create further ones on demand.
     JVMCI_ONLY(if (!UseJVMCICompiler || !UseDynamicNumberOfCompilerThreads || i == 0) {)
     // Create a name for our thread.
-    os::snprintf(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
+    int printed_len = os::snprintf(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
+    assert(printed_len > 0, "error occurs at os::snprintf");
+    assert(printed_len < sizeof(name_buffer), "name_buffer overflow");
     Handle thread_oop = create_thread_oop(name_buffer, CHECK);
     thread_handle = JNIHandles::make_global(thread_oop);
     JVMCI_ONLY(})
@@ -954,7 +956,9 @@ void CompileBroker::init_compiler_threads() {
 
   for (int i = 0; i < _c1_count; i++) {
     // Create a name for our thread.
-    os::snprintf(name_buffer, sizeof(name_buffer), "C1 CompilerThread%d", i);
+    int printed_len = os::snprintf(name_buffer, sizeof(name_buffer), "C1 CompilerThread%d", i);
+    assert(printed_len > 0, "error occurs at os::snprintf");
+    assert(printed_len < sizeof(name_buffer), "name_buffer overflow");
     Handle thread_oop = create_thread_oop(name_buffer, CHECK);
     jobject thread_handle = JNIHandles::make_global(thread_oop);
     _compiler1_objects[i] = thread_handle;
@@ -1018,7 +1022,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         // transitions if we bind them to new JavaThreads.
         if (!THREAD->can_call_java()) break;
         char name_buffer[256];
-        os::snprintf(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
+        int printed_len = os::snprintf(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
+        assert(printed_len > 0, "error occurs at os::snprintf");
+        assert(printed_len < sizeof(name_buffer), "name_buffer overflow");
         Handle thread_oop;
         {
           // We have to give up the lock temporarily for the Java calls.
@@ -2600,7 +2606,9 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     char tier_name[256];
     for (int tier = CompLevel_simple; tier <= CompilationPolicy::highest_compile_level(); tier++) {
       CompilerStatistics* stats = &_stats_per_level[tier-1];
-      os::snprintf(tier_name, sizeof(tier_name), "Tier%d", tier);
+      int printed_len = os::snprintf(tier_name, sizeof(tier_name), "Tier%d", tier);
+      assert(printed_len > 0, "error occurs at os::snprintf");
+      assert(printed_len < sizeof(tier_name), "tier_name buf overflow");
       print_times(tier_name, stats);
     }
   }

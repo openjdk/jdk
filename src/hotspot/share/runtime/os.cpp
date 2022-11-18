@@ -1273,7 +1273,9 @@ char* os::format_boot_path(const char* format_string,
 FILE* os::fopen(const char* path, const char* mode) {
   char modified_mode[20];
   assert(strlen(mode) + 1 < sizeof(modified_mode), "mode chars plus one extra must fit in buffer");
-  os::snprintf(modified_mode, sizeof(modified_mode), "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
+  int printed_len = os::snprintf(modified_mode, sizeof(modified_mode), "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
+  assert(printed_len > 0, "error occurs at os::snprintf");
+  assert(printed_len < sizeof(modified_mode), "modified_mode buf overflow");
   FILE* file = ::fopen(path, modified_mode);
 
 #if !(defined LINUX || defined BSD || defined _WINDOWS)

@@ -174,7 +174,9 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
     if (arg) {
       arg->value_as_str(buf, sizeof(buf));
     } else {
-      os::snprintf(buf, sizeof(buf), "<null>");
+      int printed_len = os::snprintf(buf, sizeof(buf), "<null>");
+      assert(printed_len > 0, "error occurs at os::snprintf");
+      assert(printed_len < sizeof(buf), "insufficient buf");
     }
     oop parsedValue = java_lang_String::create_oop_from_str(buf, CHECK_NULL);
     returnvalue_array_ah->obj_at_put(i*2+1, parsedValue);

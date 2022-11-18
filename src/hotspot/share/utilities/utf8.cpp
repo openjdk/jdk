@@ -518,7 +518,7 @@ void UNICODE::as_quoted_ascii(const T* base, int length, char* buf, int buflen) 
       *p++ = (char)c;
     } else {
       if (p + 6 >= end) break;      // string is truncated
-      os::snprintf(p, 7, "\\u%04x", c);
+      os::snprintf(p, 7, "\\u%04x", c);    // counting terminating zero in
       p += 6;
     }
   }

@@ -2596,7 +2596,9 @@ const char* Deoptimization::trap_reason_name(int reason) {
   if ((uint)reason < Reason_LIMIT)
     return _trap_reason_name[reason];
   static char buf[20];
-  os::snprintf(buf, sizeof(buf), "reason%d", reason);
+  int printed_len = os::snprintf(buf, sizeof(buf), "reason%d", reason);
+  assert(printed_len > 0, "error occurs at os::snprintf");
+  assert(printed_len < sizeof(buf), "insufficient buf");
   return buf;
 }
 const char* Deoptimization::trap_action_name(int action) {
@@ -2606,7 +2608,9 @@ const char* Deoptimization::trap_action_name(int action) {
   if ((uint)action < Action_LIMIT)
     return _trap_action_name[action];
   static char buf[20];
-  os::snprintf(buf, sizeof(buf), "action%d", action);
+  int printed_len = os::snprintf(buf, sizeof(buf), "action%d", action);
+  assert(printed_len > 0, "error occurs at os::snprintf");
+  assert(printed_len < sizeof(buf), "insufficient buf");
   return buf;
 }
 
@@ -2727,12 +2731,15 @@ void Deoptimization::print_statistics() {
           if (counter != 0) {
             char name[1*K];
             Bytecodes::Code bc = (Bytecodes::Code)(counter & LSB_MASK);
-            if (bc_case == BC_CASE_LIMIT && (int)bc == 0)
+            if (bc_case == BC_CASE_LIMIT && (int)bc == 0) {
               bc = Bytecodes::_illegal;
-            os::snprintf(name, sizeof(name), "%s/%s/%s",
+            }
+            int printed_len = os::snprintf(name, sizeof(name), "%s/%s/%s",
                     trap_reason_name(reason),
                     trap_action_name(action),
                     Bytecodes::is_defined(bc)? Bytecodes::name(bc): "other");
+            assert(printed_len > 0, "error occurs at os::snprintf");
+            assert(printed_len < sizeof(name), "name buffer overflow");
             juint r = counter >> LSB_BITS;
             tty->print_cr("  %40s: " UINT32_FORMAT " (%.1f%%)", name, r, (r * 100.0) / total);
             account -= r;
