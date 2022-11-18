@@ -1006,32 +1006,59 @@ struct ShenandoahRegionChunk {
   size_t _chunk_size;            // HeapWordSize qty
 };
 
+// ShenandoahRegionChunkIterator divides the total remembered set scanning effort into assignments (ShenandoahRegionChunks)
+// that are assigned one at a time to worker threads.  Note that the effort required to scan a range of memory is not
+// necessarily a linear function of the size of the range.  Some memory ranges hold only a small number of live objects.
+// Some ranges hold primarily primitive (non-pointer data).  We start with larger assignment sizes because larger assignments
+// can be processed with less coordination effort.  We expect that the GC worker threads that receive more difficult assignments
+// will work longer on those assignments.  Meanwhile, other worker will threads repeatedly accept and complete multiple
+// easier assignments.  As the total amount of work remaining to be completed decreases, we decrease the size of assignments
+// given to individual threads.  This reduces the likelihood that significant imbalance between worker thread assignments
+// will be introduced when there is less meaningful work to be performed by the remaining worker threads while they wait for
+// worker threads with difficult assignments to finish.
+
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
-  // smallest_chunk_size is 64 words per card *
-  // ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster.
+  // The largest chunk size is 4 MiB, measured in words.  Otherwise, remembered set scanning may become too unbalanced.
+  // If the largest chunk size is too small, there is too much overhead sifting out assignments to individual worker threads.
+  static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
+
+  static const size_t _clusters_in_smallest_chunk = 4;
+  static const size_t _assumed_words_in_card = 64;
+
+  // smallest_chunk_size is 4 clusters (i.e. 128 KiB).  Note that there are 64 words per card and there are 64 cards per
+  // cluster.  Each cluster spans 128 KiB.
   // This is computed from CardTable::card_size_in_words() *
   //      ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
   // We can't perform this computation here, because of encapsulation and initialization constraints.  We paste
   // the magic number here, and assert that this number matches the intended computation in constructor.
-  static const size_t _smallest_chunk_size = 64 * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  static const size_t _smallest_chunk_size_words = (_clusters_in_smallest_chunk * _assumed_words_in_card *
+                                                    ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster);
 
   // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
-  // The chunks of assigned work are divided into groups, where the size of each group (_group_size) is 4 * the number of
-  // worker tasks.  All of the assignments within a group represent the same amount of memory to be scanned.  Each of the
-  // assignments within the first group are of size _first_group_chunk_size (typically the ShenandoahHeapRegion size, but
-  // possibly smaller.  Each of the assignments within each subsequent group are half the size of the assignments in the
-  // preceding group.  The last group may be larger than the others.  Because no group is allowed to have smaller assignments
-  // than _smallest_chunk_size, which is 32 KB.
+  // The chunks of assigned work are divided into groups, where the size of the typical group (_regular_group_size) is half the
+  // total number of regions.  The first group may be larger than
+  // _regular_group_size in the case that the first group's chunk
+  // size is less than the region size.  The last group may be larger
+  // than _regular_group_size because no group is allowed to
+  // have smaller assignments than _smallest_chunk_size, which is 128 KB.
 
   // Under normal circumstances, no configuration needs more than _maximum_groups (default value of 16).
+  // The first group "effectively" processes chunks of size 1 MiB (or smaller for smaller region sizes).
+  // The last group processes chunks of size 128 KiB.  There are four groups total.
 
-  static const size_t _maximum_groups = 16;
+  // group[0] is 4 MiB chunk size (_maximum_chunk_size_words)
+  // group[1] is 2 MiB chunk size
+  // group[2] is 1 MiB chunk size
+  // group[3] is 512 KiB chunk size
+  // group[4] is 256 KiB chunk size
+  // group[5] is 128 Kib shunk size (_smallest_chunk_size_words = 4 * 64 * 64
+  static const size_t _maximum_groups = 6;
 
   const ShenandoahHeap* _heap;
 
-  const size_t _group_size;                        // Number of chunks in each group, equals worker_threads * 8
-  const size_t _first_group_chunk_size;
+  const size_t _regular_group_size;                        // Number of chunks in each group
+  const size_t _first_group_chunk_size_b4_rebalance;
   const size_t _num_groups;                        // Number of groups in this configuration
   const size_t _total_chunks;
 
@@ -1039,23 +1066,24 @@ private:
   volatile size_t _index;
   shenandoah_padding(1);
 
-  size_t _region_index[_maximum_groups];
-  size_t _group_offset[_maximum_groups];
-
+  size_t _region_index[_maximum_groups];           // The region index for the first region spanned by this group
+  size_t _group_offset[_maximum_groups];           // The offset at which group begins within first region spanned by this group
+  size_t _group_chunk_size[_maximum_groups];       // The size of each chunk within this group
+  size_t _group_entries[_maximum_groups];          // Total chunks spanned by this group and the ones before it.
 
   // No implicit copying: iterators should be passed by reference to capture the state
   NONCOPYABLE(ShenandoahRegionChunkIterator);
 
   // Makes use of _heap.
-  size_t calc_group_size();
+  size_t calc_regular_group_size();
 
-  // Makes use of _group_size, which must be initialized before call.
-  size_t calc_first_group_chunk_size();
+  // Makes use of _regular_group_size, which must be initialized before call.
+  size_t calc_first_group_chunk_size_b4_rebalance();
 
-  // Makes use of _group_size and _first_group_chunk_size, both of which must be initialized before call.
+  // Makes use of _regular_group_size and _first_group_chunk_size_b4_rebalance, both of which must be initialized before call.
   size_t calc_num_groups();
 
-  // Makes use of _group_size, _first_group_chunk_size, which must be initialized before call.
+  // Makes use of _regular_group_size, _first_group_chunk_size_b4_rebalance, which must be initialized before call.
   size_t calc_total_chunks();
 
 public:

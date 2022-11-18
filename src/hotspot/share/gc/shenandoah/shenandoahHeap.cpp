@@ -1132,7 +1132,7 @@ HeapWord* ShenandoahHeap::allocate_new_plab(size_t min_size,
 }
 
 // is_promotion is true iff this allocation is known for sure to hold the result of young-gen evacuation
-// to old-gen.  plab allocates arre not known as such, since they may hold old-gen evacuations.
+// to old-gen.  plab allocates are not known as such, since they may hold old-gen evacuations.
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool is_promotion) {
   intptr_t pacer_epoch = 0;
   bool in_new_region = false;
