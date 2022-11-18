@@ -522,6 +522,7 @@ private:
   void set_vthread(oop p);
   oop scopedValueCache() const;
   void set_scopedValueCache(oop p);
+  void clear_scopedValueBindings();
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
 

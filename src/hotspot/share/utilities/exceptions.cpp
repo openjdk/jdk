@@ -161,12 +161,9 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   }
 
   if (h_exception->is_a(vmClasses::VirtualMachineError_klass())) {
-    // Remove the ScopedValue cache in case we got a virtual machine
+    // Remove the ScopedValue bindings in case we got a virtual machine
     // Error while we were trying to manipulate ScopedValue bindings.
-    thread->set_scopedValueCache(NULL);
-    // And the ScopedValue bindings too.
-    oop threadObj = thread->vthread();
-    java_lang_Thread::clear_scopedValueBindings(threadObj);
+    thread->clear_scopedValueBindings();
 
     if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
       count_out_of_memory_exceptions(h_exception);

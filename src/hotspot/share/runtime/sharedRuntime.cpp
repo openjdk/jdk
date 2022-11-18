@@ -886,12 +886,10 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
   }
-  // Remove the ScopedValue cache in case we got a StackOverflowError
-  // while we were trying to remove ScopedValue bindings.
-  current->set_scopedValueCache(NULL);
-  // And the ScopedValue bindings too.
-  oop threadObj = current->vthread();
-  java_lang_Thread::clear_scopedValueBindings(threadObj);
+  // Remove the ScopedValue bindings in case we got a
+  // StackOverflowError while we were trying to remove ScopedValue
+  // bindings.
+  current->clear_scopedValueBindings();
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(current, exception);

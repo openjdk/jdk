@@ -198,6 +198,13 @@ void JavaThread::set_scopedValueCache(oop p) {
   }
 }
 
+void JavaThread::clear_scopedValueBindings() {
+  set_scopedValueCache(NULL);
+  oop threadObj = vthread();
+  assert(threadObj != NULL, "must be");
+  java_lang_Thread::clear_scopedValueBindings(threadObj);
+}
+
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
                                     bool daemon, TRAPS) {
   assert(thread_group.not_null(), "thread group should be specified");
@@ -1071,11 +1078,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   // We cannot call Exceptions::_throw(...) here because we cannot block
   set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-  // Clear any scoped-value bindings
-  set_scopedValueCache(NULL);
-  oop threadOop = threadObj();
-  assert(threadOop != NULL, "must be");
-  java_lang_Thread::clear_scopedValueBindings(threadOop);
+  clear_scopedValueBindings();
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
