@@ -375,7 +375,7 @@ public final class ScopedValue<T> {
          */
         public <R> R call(Callable<? extends R> op) throws Exception {
             Objects.requireNonNull(op);
-            ScopedValue.Cache.invalidate(bitmask);
+            Cache.invalidate(bitmask);
             var prevSnapshot = scopedValueBindings();
             var newSnapshot = new Snapshot(this, prevSnapshot);
             return runWith(newSnapshot, op);
@@ -396,7 +396,7 @@ public final class ScopedValue<T> {
             } finally {
                 Reference.reachabilityFence(newSnapshot);
                 JLA.setScopedValueBindings(newSnapshot.prev);
-                ScopedValue.Cache.invalidate(bitmask);
+                Cache.invalidate(bitmask);
             }
         }
 
@@ -586,15 +586,21 @@ public final class ScopedValue<T> {
      * {@return {@code true} if this scoped value is bound in the current thread}
      */
     public boolean isBound() {
-        // ??? Do we want to search cache for this? In most cases we don't expect
-        // this {@link ScopedValue} to be bound, so it's not worth it. But I may
-        // be wrong about that.
-/*
-        if (Cache.find(this) != Snapshot.NIL) {
-            return true;
+        Object[] objects = scopedValueCache();
+        if (objects != null) {
+            int n = (hash & Cache.SLOT_MASK) * 2;
+            if (objects[n] == this) {
+                return true;
+            }
+            n = ((hash >>> Cache.INDEX_BITS) & Cache.SLOT_MASK) * 2;
+            if (objects[n] == this) {
+                return true;
+            }
         }
- */
-        return findBinding() != Snapshot.NIL;
+        var value = findBinding();
+        boolean result = (value != Snapshot.NIL);
+        if (result)  Cache.put(this, value);
+        return result;
     }
 
     /**

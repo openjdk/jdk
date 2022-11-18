@@ -285,6 +285,8 @@ public class Thread implements Runnable {
      */
     private Object scopedValueBindings;
 
+    private static final Object NEW_THREAD_BINDINGS = Thread.class;
+
     static Object scopedValueBindings() {
         return currentThread().scopedValueBindings;
     }
@@ -741,7 +743,7 @@ public class Thread implements Runnable {
         }
 
         // special value to mean a new thread
-        this.scopedValueBindings = Thread.class;
+        this.scopedValueBindings = NEW_THREAD_BINDINGS;
     }
 
     /**
