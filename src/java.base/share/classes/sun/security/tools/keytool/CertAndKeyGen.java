@@ -337,9 +337,9 @@ public final class CertAndKeyGen {
 
             if (signerFlag) {
                 // use signer's private key to sign
-                cert = X509CertImpl.signNew(info, signerPrivateKey, sigAlg);
+                cert = X509CertImpl.newSigned(info, signerPrivateKey, sigAlg);
             } else {
-                cert = X509CertImpl.signNew(info, privateKey, sigAlg);
+                cert = X509CertImpl.newSigned(info, privateKey, sigAlg);
             }
 
             return cert;

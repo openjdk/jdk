@@ -116,7 +116,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     /**
      * Constructor simply setting all (non-cache) fields. Only used in
-     * {@link #signNew}.
+     * {@link #newSigned}.
      */
     public X509CertImpl(X509CertInfo info, AlgorithmId algId, byte[] signature,
                         byte[] signedCert) {
@@ -441,10 +441,10 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @exception SignatureException on signature errors.
      * @exception CertificateException on encoding errors.
      */
-    public static X509CertImpl signNew(X509CertInfo info, PrivateKey key, String algorithm)
+    public static X509CertImpl newSigned(X509CertInfo info, PrivateKey key, String algorithm)
             throws CertificateException, NoSuchAlgorithmException,
             InvalidKeyException, NoSuchProviderException, SignatureException {
-        return signNew(info, key, algorithm, null);
+        return newSigned(info, key, algorithm, null);
     }
 
     /**
@@ -465,7 +465,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @exception SignatureException on signature errors.
      * @exception CertificateException on encoding errors.
      */
-    public static X509CertImpl signNew(X509CertInfo info, PrivateKey key, String algorithm, String provider)
+    public static X509CertImpl newSigned(X509CertInfo info, PrivateKey key, String algorithm, String provider)
             throws CertificateException, NoSuchAlgorithmException,
             InvalidKeyException, NoSuchProviderException, SignatureException {
         try {

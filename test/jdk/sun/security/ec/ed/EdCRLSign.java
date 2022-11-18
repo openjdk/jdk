@@ -79,7 +79,7 @@ public class EdCRLSign {
         System.out.printf("Case Algo:%s, Param:%s, Intitiate with random:%s%n",
                 name, param, initWithRandom);
         KeyPair kp = genKeyPair(provider, name, param, initWithRandom);
-        X509CRLImpl crl = X509CRLImpl.signNew(
+        X509CRLImpl crl = X509CRLImpl.newSigned(
                 new X509CRLImpl.TBSCertList(new X500Name("CN=Issuer"),
                         new Date(), new Date()),
                 kp.getPrivate(), name);

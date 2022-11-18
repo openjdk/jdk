@@ -205,7 +205,7 @@ public class V3Certificate {
         cert.setExtensions(exts);
 
         // Generate and sign X509CertImpl
-        X509CertImpl crt = X509CertImpl.signNew(cert, privateKey, sigAlg);
+        X509CertImpl crt = X509CertImpl.newSigned(cert, privateKey, sigAlg);
         crt.verify(publicKey);
 
         try (FileOutputStream fos = new FileOutputStream(new File(V3_FILE));

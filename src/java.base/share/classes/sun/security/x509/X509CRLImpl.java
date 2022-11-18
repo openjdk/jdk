@@ -359,7 +359,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
 
     /**
      * Constructor simply setting all (non-cache) fields. Only used in
-     * {@link #signNew}.
+     * {@link #newSigned}.
      */
     public X509CRLImpl(TBSCertList info, AlgorithmId sigAlgId, byte[] signature,
                        byte[] tbsCertList, byte[] signedCRL) {
@@ -581,10 +581,10 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * @exception SignatureException on signature errors.
      * @exception CRLException if any mandatory data was omitted.
      */
-    public static X509CRLImpl signNew(TBSCertList info, PrivateKey key, String algorithm)
+    public static X509CRLImpl newSigned(TBSCertList info, PrivateKey key, String algorithm)
             throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
                    NoSuchProviderException, SignatureException {
-        return signNew(info, key, algorithm, null);
+        return newSigned(info, key, algorithm, null);
     }
 
     /**
@@ -602,7 +602,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * @exception SignatureException on signature errors.
      * @exception CRLException if any mandatory data was omitted.
      */
-    public static X509CRLImpl signNew(TBSCertList info, PrivateKey key, String algorithm, String provider)
+    public static X509CRLImpl newSigned(TBSCertList info, PrivateKey key, String algorithm, String provider)
             throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
                    NoSuchProviderException, SignatureException {
         try {
