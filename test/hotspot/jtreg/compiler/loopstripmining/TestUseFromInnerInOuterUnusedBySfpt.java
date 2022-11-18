@@ -54,7 +54,7 @@ public class TestUseFromInnerInOuterUnusedBySfpt {
 
     public static void main(String[] strArr) {
         TestUseFromInnerInOuterUnusedBySfpt _instance = new TestUseFromInnerInOuterUnusedBySfpt();
-        for (int i = 0; i < 10; i++ ) {
+        for (int i = 0; i < 10; i++) {
             _instance.dMeth(-12L, -50242, 20);
         }
     }
