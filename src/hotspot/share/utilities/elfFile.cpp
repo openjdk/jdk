@@ -1607,7 +1607,6 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   // We do not need to restore the position afterwards as this is the last step of parsing from the file for this compilation unit.
   _reader.set_position(_header._file_names_offset);
   uint32_t current_index = 1; // file_names start at index 1
-  size_t current_length;
   while (_reader.has_bytes_left()) {
     if (current_index == file_index) {
       // Found correct file.
