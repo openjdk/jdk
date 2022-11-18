@@ -1300,7 +1300,7 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      * <li> its {@code public}, {@code private} and {@code protected}
      *      modifiers are the same as those of its component type
-     * <li> its {@code final} and {@code abstract} modifiers are always
+     * <li> its {@code abstract} and {@code final} modifiers are always
      *      {@code true}
      * <li> its interface modifier is always {@code false}, even when
      *      the component type is an interface
@@ -1337,13 +1337,13 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      * <li> its {@code PUBLIC}, {@code PRIVATE} and {@code PROTECTED}
      *      access flags are the same as those of its component type
-     * <li> its {@code FINAL} and {@code ABSTRACT} flags are present
+     * <li> its {@code ABSTRACT} and {@code FINAL} flags are present
      * <li> its {@code INTERFACE} flag is absent, even when the
      *      component type is an interface
      * </ul>
-     *  If this {@code Class} object represents a primitive type or
-     *  void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
-     *  {@code FINAL}.
+     * If this {@code Class} object represents a primitive type or
+     * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
+     * {@code FINAL}.
      * For {@code Class} objects representing void, primitive types, and
      * arrays, access flags are absent other than as specified above.
      *
