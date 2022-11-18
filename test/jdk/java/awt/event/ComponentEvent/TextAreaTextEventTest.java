@@ -53,21 +53,18 @@ public class TextAreaTextEventTest {
 
             robot = new Robot();
             robot.setAutoDelay(100);
-            robot.setAutoWaitForIdle(true);
 
             robot.waitForIdle();
             EventQueue.invokeAndWait(() -> {
                 textAreaAt = textArea.getLocationOnScreen();
                 textAreaSize = textArea.getSize();
             });
-
             robot.mouseMove(textAreaAt.x + textAreaSize.width / 2,
                 textAreaAt.y + textAreaSize.height / 2);
-
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
             typeKey(KeyEvent.VK_T);
+
             robot.waitForIdle();
             if (!textChanged) {
                 throw new RuntimeException(
@@ -78,17 +75,15 @@ public class TextAreaTextEventTest {
             typeKey(KeyEvent.VK_S);
             typeKey(KeyEvent.VK_T);
 
-            robot.waitForIdle();
             textChanged = false;
             typeKey(KeyEvent.VK_ENTER);
-            robot.waitForIdle();
 
+            robot.waitForIdle();
             if (!textChanged) {
                 throw new RuntimeException(
                     "FAIL: TextEvent not triggered when Enter pressed on TextArea");
             }
 
-            robot.waitForIdle();
             textChanged = false;
             robot.mouseMove(textAreaAt.x + 4, textAreaAt.y + 10);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -98,15 +93,16 @@ public class TextAreaTextEventTest {
                 robot.mouseMove(textAreaAt.x + 4 + i, textAreaAt.y + 10);
             }
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
             robot.waitForIdle();
             if (textChanged) {
                 throw new RuntimeException(
                     "FAIL: TextEvent triggered when text is selected on TextArea!");
             }
 
-            robot.waitForIdle();
             textChanged = false;
             typeKey(KeyEvent.VK_F3);
+
             robot.waitForIdle();
             if (textChanged) {
                 throw new RuntimeException(
