@@ -70,4 +70,12 @@ void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
   __ jmp(continuation(), false /* maybe_short */);
 }
 
+void C2FastLockEnterStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  // Un-push object from lock-stack before diving into runtime.
+  __ subptr(Address(r15_thread, Thread::lock_stack_current_offset()), oopSize);
+  __ testptr(r15_thread, r15_thread); // Un-set ZF
+  __ jmp(continuation(), false /* maybe_short */);
+}
+
 #undef __

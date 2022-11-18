@@ -62,9 +62,7 @@ class C2CodeStubList {
 private:
   GrowableArray<C2CodeStub*> _stubs;
 public:
-  C2CodeStubList() :
-    _stubs() {}
-
+  C2CodeStubList();
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
   int  measure_code_size() const;
   void emit(CodeBuffer& cb);
@@ -106,6 +104,16 @@ private:
   static volatile int _stub_size;
 public:
   C2CheckLockStackStub() : C2CodeStub() {}
+
+  int size() { return stub_size(&_stub_size); }
+  void emit(C2_MacroAssembler& masm);
+};
+
+class C2FastLockEnterStub : public C2CodeStub {
+private:
+  static volatile int _stub_size;
+public:
+  C2FastLockEnterStub() : C2CodeStub() {}
 
   int size() { return stub_size(&_stub_size); }
   void emit(C2_MacroAssembler& masm);

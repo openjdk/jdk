@@ -613,15 +613,13 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
   jccb(Assembler::notZero, IsInflated);
 
+  C2FastLockEnterStub* stub = NULL;
   if (!UseHeavyMonitors) {
     if (UseFastLocking) {
-      Label slow_path;
-      fast_lock_impl(objReg, tmpReg, thread, scrReg, slow_path, false);
-      xorptr(rax, rax); // Set ZF = 1 (success)
+      stub = new (Compile::current()->comp_arena()) C2FastLockEnterStub();
+      Compile::current()->output()->add_stub(stub);
+      fast_lock_impl(objReg, tmpReg, thread, scrReg, stub->entry(), false);
       jmp(COUNT);
-      bind(slow_path);
-      // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
-      testptr(objReg, objReg);
     } else {
       // Attempt stack-locking ...
       orptr (tmpReg, markWord::unlocked_value);
@@ -741,6 +739,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   xorl(tmpReg, tmpReg); // Set ZF == 1
 
   bind(NO_COUNT);
+  if (!UseHeavyMonitors && UseFastLocking) {
+    assert(stub != NULL, "need slow stub here");
+    bind(stub->continuation());
+  }
 
   // At NO_COUNT the icc ZFlag is set as follows ...
   // fast_unlock uses the same protocol.
