@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
+#include "jvm.h"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"

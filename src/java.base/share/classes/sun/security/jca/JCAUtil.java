@@ -110,6 +110,7 @@ public final class JCAUtil {
             String keyType = pKey.getAlgorithm();
             int length = KeyUtil.getKeySize(pKey);
             int hashCode = x509.hashCode();
+            long certifcateId = Integer.toUnsignedLong(hashCode);
             long beginDate = x509.getNotBefore().getTime();
             long endDate = x509.getNotAfter().getTime();
             if (X509CertificateEvent.isTurnedOn()) {
@@ -120,7 +121,7 @@ public final class JCAUtil {
                 xce.issuer = issuer;
                 xce.keyType = keyType;
                 xce.keyLength = length;
-                xce.certificateId = hashCode;
+                xce.certificateId = certifcateId;
                 xce.validFrom = beginDate;
                 xce.validUntil = endDate;
                 xce.commit();
@@ -132,7 +133,7 @@ public final class JCAUtil {
                         issuer,
                         keyType,
                         length,
-                        hashCode,
+                        certifcateId,
                         beginDate,
                         endDate);
             }
