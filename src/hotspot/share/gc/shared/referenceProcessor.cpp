@@ -224,7 +224,8 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   ReferenceProcessorStats stats(phase_times.ref_discovered(REF_SOFT),
                                 phase_times.ref_discovered(REF_WEAK),
                                 phase_times.ref_discovered(REF_FINAL),
-                                phase_times.ref_discovered(REF_PHANTOM));
+                                phase_times.ref_discovered(REF_PHANTOM),
+                                phase_times.total_time_ms());
   return stats;
 }
 

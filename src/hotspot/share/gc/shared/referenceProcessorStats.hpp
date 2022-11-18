@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,15 @@ class ReferenceProcessorStats {
   size_t _weak_count;
   size_t _final_count;
   size_t _phantom_count;
+  double _total_process_time;
 
  public:
   ReferenceProcessorStats() :
     _soft_count(0),
     _weak_count(0),
     _final_count(0),
-    _phantom_count(0) {}
+    _phantom_count(0),
+    _total_process_time(0.0) {}
 
   ReferenceProcessorStats(size_t soft_count,
                           size_t weak_count,
@@ -51,7 +53,20 @@ class ReferenceProcessorStats {
     _soft_count(soft_count),
     _weak_count(weak_count),
     _final_count(final_count),
-    _phantom_count(phantom_count)
+    _phantom_count(phantom_count),
+    _total_process_time(0.0)
+  {}
+
+  ReferenceProcessorStats(size_t soft_count,
+                          size_t weak_count,
+                          size_t final_count,
+                          size_t phantom_count,
+                          double total_process_time) :
+    _soft_count(soft_count),
+    _weak_count(weak_count),
+    _final_count(final_count),
+    _phantom_count(phantom_count),
+    _total_process_time(total_process_time)
   {}
 
   size_t soft_count() const {
@@ -68,6 +83,10 @@ class ReferenceProcessorStats {
 
   size_t phantom_count() const {
     return _phantom_count;
+  }
+
+  double total_process_time() const{
+    return _total_process_time;
   }
 };
 #endif // SHARE_GC_SHARED_REFERENCEPROCESSORSTATS_HPP

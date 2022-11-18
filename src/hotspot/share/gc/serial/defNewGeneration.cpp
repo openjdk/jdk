@@ -592,7 +592,6 @@ void DefNewGeneration::collect(bool   full,
   SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
   const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
   _gc_tracer->report_gc_reference_stats(stats);
-  _gc_tracer->report_gc_reference_process_time(pt.total_time_ms());
   _gc_tracer->report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 

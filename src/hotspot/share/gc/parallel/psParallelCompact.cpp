@@ -2038,7 +2038,6 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     stats = ref_processor()->process_discovered_references(task, pt);
 
     gc_tracer->report_gc_reference_stats(stats);
-    gc_tracer->report_gc_reference_process_time(pt.total_time_ms());
     pt.print_all_references();
   }
 

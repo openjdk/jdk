@@ -942,7 +942,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   ReferenceProcessorStats stats = rp->process_discovered_references(task, pt);
 
   gc_tracer_stw()->report_gc_reference_stats(stats);
-  gc_tracer_stw()->report_gc_reference_process_time(pt.total_time_ms());
 
   _g1h->make_pending_list_reachable();
 
