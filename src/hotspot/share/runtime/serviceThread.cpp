@@ -262,9 +262,17 @@ void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
-void ServiceThread::add_oop_handle_release(OopHandle handle) {
+#define ENQUEUE(handle) \
+  do { \
+    OopHandleList* new_head = new OopHandleList(handle, _oop_handle_list); \
+    _oop_handle_list = new_head; \
+  } while (0)
+
+void ServiceThread::add_oop_handle_release_for(JavaThread* jt) {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  OopHandleList* new_head = new OopHandleList(handle, _oop_handle_list);
-  _oop_handle_list = new_head;
+  ENQUEUE(jt->_threadObj);
+  ENQUEUE(jt->_vthread);
+  ENQUEUE(jt->_jvmti_vthread);
+  ENQUEUE(jt->_extentLocalCache);
   Service_lock->notify_all();
 }

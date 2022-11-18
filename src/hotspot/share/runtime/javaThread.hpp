@@ -81,9 +81,11 @@ class JavaThread: public Thread {
   friend class HandshakeState;
   friend class Continuation;
   friend class Threads;
+  friend class ServiceThread; // for OopHandle access
  private:
   bool           _in_asgct;                      // Is set when this JavaThread is handling ASGCT call
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
+
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
