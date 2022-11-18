@@ -2156,9 +2156,9 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
   }
 }
 
-static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const IdealLoopTree* outer_loop,
-                                    const Node_List &old_new, Unique_Node_List& wq, PhaseIdealLoop* phase,
-                                    bool check_old_new) {
+static void collect_nodes_in_outer_loop_not_reachable_from_sfpt(Node* n, const IdealLoopTree *loop, const IdealLoopTree* outer_loop,
+                                                                const Node_List &old_new, Unique_Node_List& wq, PhaseIdealLoop* phase,
+                                                                bool check_old_new) {
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == NULL, "shouldn't have been cloned");
@@ -2296,17 +2296,17 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     Unique_Node_List wq;
     for (uint i = 0; i < extra_data_nodes.size(); i++) {
       Node* old = extra_data_nodes.at(i);
-      clone_outer_loop_helper(old, loop, outer_loop, old_new, wq, this, true);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(old, loop, outer_loop, old_new, wq, this, true);
     }
 
     for (uint i = 0; i < loop->_body.size(); i++) {
       Node* old = loop->_body.at(i);
-      clone_outer_loop_helper(old, loop, outer_loop, old_new, wq, this, true);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(old, loop, outer_loop, old_new, wq, this, true);
     }
 
     Node* inner_out = sfpt->in(0);
     if (inner_out->outcnt() > 1) {
-      clone_outer_loop_helper(inner_out, loop, outer_loop, old_new, wq, this, true);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(inner_out, loop, outer_loop, old_new, wq, this, true);
     }
 
     Node* new_ctrl = cl->outer_loop_exit();
@@ -2317,7 +2317,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       if (n->in(0) != NULL) {
         _igvn.replace_input_of(n, 0, new_ctrl);
       }
-      clone_outer_loop_helper(n, loop, outer_loop, old_new, wq, this, false);
+      collect_nodes_in_outer_loop_not_reachable_from_sfpt(n, loop, outer_loop, old_new, wq, this, false);
     }
   } else {
     Node *newhead = old_new[loop->_head->_idx];
