@@ -47,12 +47,12 @@ import javax.swing.JMenuItem;
 
 public class JMenuItemSetAcceleratorTest {
     private static JFrame frame;
-    private volatile static CountDownLatch actionPerformLatch =
+    private final static CountDownLatch actionPerformLatch =
         new CountDownLatch(1);
     private static Robot robot;
 
     private static void createAndShow() {
-        frame = new JFrame("Test Frame");
+        frame = new JFrame("JMenuItem.setAccelerator");
         frame.setLayout(new FlowLayout());
 
         JMenuBar bar = new JMenuBar();
@@ -77,10 +77,8 @@ public class JMenuItemSetAcceleratorTest {
 
     public static void main(String args[]) throws Exception {
         try {
-            if (!Desktop.isDesktopSupported()
-                || !Desktop.getDesktop().isSupported(Action.APP_MENU_BAR)) {
-                System.out.println(
-                    "Test skipped as Desktop or Action.APP_MENU_BAR is not supported.");
+            if (!Desktop.isDesktopSupported()) {
+                System.out.println("Test skipped as Desktop is not supported.");
                 return;
             }
 
