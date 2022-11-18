@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,51 +24,50 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.DiagramViewModel;
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.NbBundle;
-import org.openide.util.NbBundle.Messages;
 
-
-/**
- * @author Thomas Wuerthinger
- */
-@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ExtractAction")
-@ActionRegistration(displayName = "#CTL_ExtractAction")
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.CenterSelectedNodesAction")
+@ActionRegistration(displayName = "#CTL_CenterSelectedNodesAction")
 @ActionReferences({
-        @ActionReference(path = "Menu/View", position = 350),
-        @ActionReference(path = "Shortcuts", name = "D-X")
+        @ActionReference(path = "Menu/View", position = 600),
+        @ActionReference(path = "Shortcuts", name = "D-9")
 })
-@Messages({
-        "CTL_ExtractAction=Extract action",
-        "HINT_ExtractAction=Extract current set of selected nodes"
+@NbBundle.Messages({
+        "CTL_CenterSelectedNodesAction=Center selected nodes",
+        "HINT_CenterSelectedNodesAction=Center the selected nodes"
 })
-public final class ExtractAction extends ModelAwareAction {
+public final class CenterSelectedNodesAction extends ModelAwareAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/extract.gif"; // NOI18N
-    }
-
-    @Override
-    protected String getDescription() {
-        return NbBundle.getMessage(ExtractAction.class, "HINT_ExtractAction");
+        return "com/sun/hotspot/igv/view/images/centerSelectedNodes.svg"; // NOI18N
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(ExtractAction.class, "CTL_ExtractAction");
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_CenterSelectedNodesAction");
+    }
+
+    @Override
+    protected String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_CenterSelectedNodesAction");
     }
 
     @Override
     public void performAction(DiagramViewModel model) {
-        model.showOnly(model.getSelectedNodes());
+        EditorTopComponent editor = EditorTopComponent.findEditorForGraph(model.getGraph());
+        if (editor != null) {
+            editor.centerSelectedNodes();
+        }
     }
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
-        return model != null && !model.getSelectedNodes().isEmpty();
+        return !model.getSelectedNodes().isEmpty();
     }
 }
