@@ -25,12 +25,7 @@
 
 package sun.security.x509;
 
-import java.io.BufferedReader;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
@@ -79,10 +74,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     public static final String NAME = "x509";
 
-    // when we sign and decode we set this to true
-    // this is our means to make certificates immutable
-    private boolean readOnly = false;
-
     // Certificate data, and its envelope
     private byte[]              signedCert = null;
     protected X509CertInfo      info = null;
@@ -124,9 +115,16 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     private boolean verificationResult;
 
     /**
-     * Default constructor.
+     * Constructor simply setting all (non-cache) fields. Only used in
+     * {@link #newSigned}.
      */
-    public X509CertImpl() { }
+    public X509CertImpl(X509CertInfo info, AlgorithmId algId, byte[] signature,
+                        byte[] signedCert) {
+        this.info = info;
+        this.algId = algId;
+        this.signature = signature;
+        this.signedCert = Objects.requireNonNull(signedCert);
+    }
 
     /**
      * Unmarshals a certificate from its encoded form, parsing the
@@ -144,13 +142,28 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         try {
             parse(new DerValue(certData));
         } catch (IOException e) {
-            signedCert = null;
             throw new CertificateException("Unable to initialize, " + e, e);
         }
     }
 
     /**
-     * unmarshals an X.509 certificate from an input stream.  If the
+     * Unmarshals a certificate from its encoded form, parsing a DER value.
+     * This form of constructor is used by agents which need to examine
+     * and use certificate contents.
+     *
+     * @param derVal the der value containing the encoded cert.
+     * @exception CertificateException on parsing and initialization errors.
+     */
+    public X509CertImpl(DerValue derVal) throws CertificateException {
+        try {
+            parse(derVal);
+        } catch (IOException e) {
+            throw new CertificateException("Unable to initialize, " + e, e);
+        }
+    }
+
+    /**
+     * Unmarshals an X.509 certificate from an input stream.  If the
      * certificate is RFC1421 hex-encoded, then it must begin with
      * the line X509Factory.BEGIN_CERT and end with the line
      * X509Factory.END_CERT.
@@ -235,37 +248,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         return der;
     }
 
-    /**
-     * Construct an initialized X509 Certificate. The certificate is stored
-     * in raw form and has to be signed to be useful.
-     *
-     * The ALGORITHM_ID attribute will be rewritten when signed. The initial
-     * value is ignored.
-     *
-     * @param certInfo the X509CertificateInfo which the Certificate is to be
-     *             created from.
-     */
-    public X509CertImpl(X509CertInfo certInfo) {
-        this.info = certInfo;
-    }
-
-    /**
-     * Unmarshal a certificate from its encoded form, parsing a DER value.
-     * This form of constructor is used by agents which need to examine
-     * and use certificate contents.
-     *
-     * @param derVal the der value containing the encoded cert.
-     * @exception CertificateException on parsing and initialization errors.
-     */
-    public X509CertImpl(DerValue derVal) throws CertificateException {
-        try {
-            parse(derVal);
-        } catch (IOException e) {
-            signedCert = null;
-            throw new CertificateException("Unable to initialize, " + e, e);
-        }
-    }
-
     // helper method to record certificate, if necessary, after construction
     public static X509CertImpl newX509CertImpl(byte[] certData) throws CertificateException {
         var cert = new X509CertImpl(certData);
@@ -283,8 +265,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     @Override
     public void encode(DerOutputStream out) throws IOException {
-        if (signedCert == null)
-            throw new IOException("Null certificate to encode");
         out.write(signedCert.clone());
     }
 
@@ -306,10 +286,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * code.
      */
     public byte[] getEncodedInternal() throws CertificateEncodingException {
-        if (signedCert == null) {
-            throw new CertificateEncodingException(
-                          "Null certificate to encode");
-        }
         return signedCert;
     }
 
@@ -367,9 +343,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 }
             }
         }
-        if (signedCert == null) {
-            throw new CertificateEncodingException("Uninitialized certificate");
-        }
         // Verify the signature ...
         Signature sigVerf;
         String sigName = algId.getName();
@@ -421,9 +394,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public synchronized void verify(PublicKey key, Provider sigProvider)
             throws CertificateException, NoSuchAlgorithmException,
             InvalidKeyException, SignatureException {
-        if (signedCert == null) {
-            throw new CertificateEncodingException("Uninitialized certificate");
-        }
         // Verify the signature ...
         Signature sigVerf;
         String sigName = algId.getName();
@@ -455,13 +425,15 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * Creates an X.509 certificate, and signs it using the given key
+     * Creates a new X.509 certificate, which is signed using the given key
      * (associating a signature algorithm and an X.500 name).
      * This operation is used to implement the certificate generation
      * functionality of a certificate authority.
      *
+     * @param info the X509CertInfo to sign
      * @param key the private key used for signing.
      * @param algorithm the name of the signature algorithm used.
+     * @return the newly signed certificate
      *
      * @exception InvalidKeyException on incorrect key.
      * @exception NoSuchAlgorithmException on unsupported signature algorithms.
@@ -469,21 +441,23 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @exception SignatureException on signature errors.
      * @exception CertificateException on encoding errors.
      */
-    public void sign(PrivateKey key, String algorithm)
+    public static X509CertImpl newSigned(X509CertInfo info, PrivateKey key, String algorithm)
             throws CertificateException, NoSuchAlgorithmException,
             InvalidKeyException, NoSuchProviderException, SignatureException {
-        sign(key, algorithm, null);
+        return newSigned(info, key, algorithm, null);
     }
 
     /**
-     * Creates an X.509 certificate, and signs it using the given key
+     * Creates a new X.509 certificate, which is signed using the given key
      * (associating a signature algorithm and an X.500 name).
      * This operation is used to implement the certificate generation
      * functionality of a certificate authority.
      *
+     * @param info the X509CertInfo to sign
      * @param key the private key used for signing.
      * @param algorithm the name of the signature algorithm used.
      * @param provider (optional) the name of the provider.
+     * @return the newly signed certificate
      *
      * @exception NoSuchAlgorithmException on unsupported signature algorithms.
      * @exception InvalidKeyException on incorrect key.
@@ -491,17 +465,13 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @exception SignatureException on signature errors.
      * @exception CertificateException on encoding errors.
      */
-    public void sign(PrivateKey key, String algorithm, String provider)
+    public static X509CertImpl newSigned(X509CertInfo info, PrivateKey key, String algorithm, String provider)
             throws CertificateException, NoSuchAlgorithmException,
             InvalidKeyException, NoSuchProviderException, SignatureException {
         try {
-            if (readOnly) {
-                throw new CertificateEncodingException(
-                        "cannot over-write existing certificate");
-            }
             Signature sigEngine = SignatureUtil.fromKey(
                     algorithm, key, provider);
-            algId = SignatureUtil.fromSignature(sigEngine, key);
+            AlgorithmId algId = SignatureUtil.fromSignature(sigEngine, key);
 
             DerOutputStream out = new DerOutputStream();
             DerOutputStream tmp = new DerOutputStream();
@@ -516,14 +486,14 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
             // Create and encode the signature itself.
             sigEngine.update(rawCert, 0, rawCert.length);
-            signature = sigEngine.sign();
+            byte[] signature = sigEngine.sign();
             tmp.putBitString(signature);
 
             // Wrap the signed data in a SEQUENCE { data, algorithm, sig }
             out.write(DerValue.tag_Sequence, tmp);
-            signedCert = out.toByteArray();
-            readOnly = true;
+            byte[] signedCert = out.toByteArray();
 
+            return new X509CertImpl(info, algId, signature, signedCert);
         } catch (IOException e) {
             throw new CertificateEncodingException(e.toString());
         }
@@ -1160,7 +1130,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     @Override
     public synchronized List<String> getExtendedKeyUsage()
         throws CertificateParsingException {
-        if (readOnly && extKeyUsage != null) {
+        if (extKeyUsage != null) {
             return extKeyUsage;
         }
         ExtendedKeyUsageExtension ext = (ExtendedKeyUsageExtension)
@@ -1351,7 +1321,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public synchronized Collection<List<?>> getSubjectAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
-        if (readOnly && subjectAlternativeNames != null)  {
+        if (subjectAlternativeNames != null) {
             return cloneAltNames(subjectAlternativeNames);
         }
         SubjectAlternativeNameExtension subjectAltNameExt =
@@ -1403,7 +1373,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public synchronized Collection<List<?>> getIssuerAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
-        if (readOnly && issuerAlternativeNames != null) {
+        if (issuerAlternativeNames != null) {
             return cloneAltNames(issuerAlternativeNames);
         }
         IssuerAlternativeNameExtension issuerAltNameExt =
@@ -1463,11 +1433,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * parts away for later verification.
      */
     private void parse(DerValue val)
-    throws CertificateException, IOException {
+            throws CertificateException, IOException {
         // check if we can overwrite the certificate
-        if (readOnly)
-            throw new CertificateParsingException(
-                      "cannot over-write existing certificate");
 
         if (val.data == null || val.tag != DerValue.tag_Sequence)
             throw new CertificateParsingException(
@@ -1504,7 +1471,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         AlgorithmId infoSigAlg = info.getAlgorithmId().getAlgId();
         if (! algId.equals(infoSigAlg))
             throw new CertificateException("Signature algorithm mismatch");
-        readOnly = true;
     }
 
     /**

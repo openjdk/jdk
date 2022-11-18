@@ -1536,8 +1536,8 @@ public final class Main {
                 subjectPubKey,
                 signerSubjectKeyId);
         info.setExtensions(ext);
-        X509CertImpl cert = new X509CertImpl(info);
-        cert.sign(privateKey, sigAlgName);
+        X509CertImpl cert = X509CertImpl
+                .newSigned(info, privateKey, sigAlgName);
         dumpCert(cert, out);
         for (Certificate ca: keyStore.getCertificateChain(alias)) {
             if (ca instanceof X509Certificate xca) {
@@ -1589,8 +1589,9 @@ public final class Main {
                 badCerts[i] = new X509CRLEntryImpl(new BigInteger(ids.get(i)), firstDate);
             }
         }
-        X509CRLImpl crl = new X509CRLImpl(owner, firstDate, lastDate, badCerts);
-        crl.sign(privateKey, sigAlgName);
+        X509CRLImpl crl = X509CRLImpl.newSigned(
+                new X509CRLImpl.TBSCertList(owner, firstDate, lastDate, badCerts),
+                privateKey, sigAlgName);
         if (rfc) {
             out.println("-----BEGIN X509 CRL-----");
             out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(crl.getEncodedInternal()));
@@ -3228,8 +3229,8 @@ public final class Main {
                 null);
         certInfo.setExtensions(ext);
         // Sign the new certificate
-        X509CertImpl newCert = new X509CertImpl(certInfo);
-        newCert.sign(privKey, sigAlgName);
+        X509CertImpl newCert = X509CertImpl.newSigned(
+                certInfo, privKey, sigAlgName);
 
         // Store the new certificate as a single-element certificate chain
         keyStore.setKeyEntry(alias, privKey,
