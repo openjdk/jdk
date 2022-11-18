@@ -2598,7 +2598,7 @@ const char* Deoptimization::trap_reason_name(int reason) {
   static char buf[20];
   int printed_len = os::snprintf(buf, sizeof(buf), "reason%d", reason);
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert(printed_len < sizeof(buf), "insufficient buf");
+  assert((size_t)printed_len < sizeof(buf), "insufficient buf");
   return buf;
 }
 const char* Deoptimization::trap_action_name(int action) {
@@ -2610,7 +2610,7 @@ const char* Deoptimization::trap_action_name(int action) {
   static char buf[20];
   int printed_len = os::snprintf(buf, sizeof(buf), "action%d", action);
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert(printed_len < sizeof(buf), "insufficient buf");
+  assert((size_t)printed_len < sizeof(buf), "insufficient buf");
   return buf;
 }
 
@@ -2739,7 +2739,7 @@ void Deoptimization::print_statistics() {
                     trap_action_name(action),
                     Bytecodes::is_defined(bc)? Bytecodes::name(bc): "other");
             assert(printed_len > 0, "error occurs at os::snprintf");
-            assert(printed_len < sizeof(name), "name buffer overflow");
+            assert((size_t)printed_len < sizeof(name), "name buffer overflow");
             juint r = counter >> LSB_BITS;
             tty->print_cr("  %40s: " UINT32_FORMAT " (%.1f%%)", name, r, (r * 100.0) / total);
             account -= r;

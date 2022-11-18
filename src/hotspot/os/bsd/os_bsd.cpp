@@ -381,7 +381,7 @@ void os::init_system_properties_values() {
     char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
     int printed_len = os::snprintf(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < ld_library_path_size, "insufficient ld_library_path buf");
+    assert((size_t)printed_len < ld_library_path_size, "insufficient ld_library_path buf");
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
@@ -389,7 +389,7 @@ void os::init_system_properties_values() {
   // Extensions directories.
   int printed_len = os::snprintf(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert(printed_len < bufsize, "insufficient buf");
+  assert((size_t)printed_len < bufsize, "insufficient buf");
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -479,7 +479,7 @@ void os::init_system_properties_values() {
     int printed_len = os::snprintf(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < ld_library_path_size, "insufficient ld_library_path buf");
+    assert((size_t)printed_len < ld_library_path_size, "insufficient ld_library_path buf");
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
@@ -492,7 +492,7 @@ void os::init_system_properties_values() {
   int printed_len = os::snprintf(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
           user_home_dir, Arguments::get_java_home());
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert(printed_len < bufsize, "insufficient buf");
+  assert((size_t)printed_len < bufsize, "insufficient buf");
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);

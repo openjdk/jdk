@@ -232,11 +232,11 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   if (_indy_index != -1) {
     int printed_len = os::snprintf(what, sizeof(what), "indy#%d", decode_indy_index());
     assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < sizeof(what), "what buf overflow");
+    assert((size_t)printed_len < sizeof(what), "what buf overflow");
   } else {
     int printed_len = os::snprintf(what, sizeof(what), "condy");
     assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < sizeof(what), "what buf overflow");
+    assert((size_t)printed_len < sizeof(what), "what buf overflow");
   }
   bool have_msg = (msg != NULL && strlen(msg) > 0);
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",

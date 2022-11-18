@@ -2526,7 +2526,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   // Print stack trace line in buffer
   int printed_len = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert(printed_len < buf_size, "insufficient buf");
+  assert((size_t)printed_len < buf_size, "insufficient buf");
   size_t buf_off = printed_len;
 
   // Print module information

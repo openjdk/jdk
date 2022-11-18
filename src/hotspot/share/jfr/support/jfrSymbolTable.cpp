@@ -261,7 +261,7 @@ static const char* create_hidden_klass_symbol(const InstanceKlass* ik, uintptr_t
   char hash_buf[40];
   int printed_len = os::snprintf(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, hash);
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert(printed_len < sizeof(hash_buf), "hash_buf overflow");
+  assert((size_t)printed_len < sizeof(hash_buf), "hash_buf overflow");
   const size_t hash_len = strlen(hash_buf);
   const size_t result_len = ik->name()->utf8_length();
   hidden_symbol = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);

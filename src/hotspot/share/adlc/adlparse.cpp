@@ -215,7 +215,7 @@ void ADLParser::instr_parse(void) {
           char* buf = (char*) AdlAllocateHeap(buf_size);
           int printed_len = snprintf(buf, buf_size, "%s_%d", instr->_ident, match_rules_cnt++);
           assert(printed_len > 0, "error occurs at snprintf");
-          assert(printed_len < buf_size, "insufficient buf");
+          assert((size_t)printed_len < buf_size, "insufficient buf");
           rule->_result = buf;
           // Check for commutative operations with tree operands.
           matchrule_clone_and_swap(rule, instr->_ident, match_rules_cnt);
@@ -2883,7 +2883,7 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   char* ec_name = (char*) AdlAllocateHeap(ec_name_size);
   int printed_len = snprintf(ec_name, ec_name_size, "%s%s", prefix, inst._ident);
   assert(printed_len > 0, "error occurs at snprintf");
-  assert(printed_len < ec_name_size, "insufficient ec_name buf");
+  assert((size_t)printed_len < ec_name_size, "insufficient ec_name buf");
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
   EncClass* encoding = _AD._encode->add_EncClass(ec_name);
   encoding->_linenum = linenum();
@@ -3356,7 +3356,7 @@ void ADLParser::constant_parse(InstructForm& inst) {
   char* ec_name = (char*) AdlAllocateHeap(ec_name_size);
   int printed_len = snprintf(ec_name, ec_name_size, "%s%s", prefix, inst._ident);
   assert(printed_len > 0, "error occurs at snprintf");
-  assert(printed_len < ec_name_size, "insufficient ec_name buf");
+  assert((size_t)printed_len < ec_name_size, "insufficient ec_name buf");
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
   EncClass* encoding = _AD._encode->add_EncClass(ec_name);
   encoding->_linenum = linenum();
@@ -4678,7 +4678,7 @@ char *ADLParser::get_ident_or_literal_constant(const char* description) {
       char* buf = (char*) AdlAllocateHeap(buf_size);
       int printed_len = snprintf(buf, buf_size, "(%s)", param);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < buf_size, "insufficient buf");
+      assert((size_t)printed_len < buf_size, "insufficient buf");
       param = buf;
     }
     assert(is_literal_constant(param),
@@ -5289,7 +5289,7 @@ char* ADLParser::get_line_string(int linenum) {
   char* location = (char *)AdlAllocateHeap(location_size);
   int printed_len = snprintf(location, location_size, "\n#line %d \"%s\"\n", line, file);
   assert(printed_len > 0, "error occurs at snprintf");
-  assert(printed_len < location_size, "insufficient location buf");
+  assert((size_t)printed_len < location_size, "insufficient location buf");
   return location;
 }
 

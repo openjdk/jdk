@@ -103,7 +103,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
   else {
     int printed_len = os::snprintf(_name, _name_size, "%s.%s", prefix, name);
     assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < _name_size, "_name buf overflow");
+    assert((size_t)printed_len < _name_size, "_name buf overflow");
     // set the F_Supported flag based on the given namespace.
     if (PerfDataManager::is_stable_supported(ns) ||
         PerfDataManager::is_unstable_supported(ns)) {
@@ -369,7 +369,7 @@ char* PerfDataManager::counter_name(const char* ns, const char* name) {
    char* result = NEW_RESOURCE_ARRAY(char, len);
    int printed_len = os::snprintf(result, len, "%s.%s", ns, name);
    assert(printed_len > 0, "error occurs at os::snprintf");
-   assert(printed_len < len, "result buf overflow");
+   assert((size_t)printed_len < len, "result buf overflow");
    return result;
 }
 

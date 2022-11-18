@@ -312,7 +312,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
     char* name_buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, name_buf_size);
     int printed_len = os::snprintf(name_buf, name_buf_size, "%s::%s", vmField.typeName, vmField.fieldName);
     assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < name_buf_size, "name_buf overflow");
+    assert((size_t)printed_len < name_buf_size, "name_buf overflow");
     CSTRING_TO_JSTRING(name, name_buf);
     CSTRING_TO_JSTRING(type, vmField.typeString);
     JVMCIObject box;

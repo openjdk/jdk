@@ -1535,10 +1535,10 @@ Predicate *InstructForm::build_predicate() {
         s += strlen(s);
       }
       // Add predicate to working buffer
-      int remaining_len = remaining_buflen(buf, s);
+      size_t remaining_len = remaining_buflen(buf, s);
       int printed_len =  snprintf(s, remaining_len, "/*%s*/(",(char*)i._key);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "insufficient buf");
+      assert((size_t)printed_len < remaining_len, "insufficient buf");
       s += strlen(s);
       mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);

@@ -359,7 +359,7 @@ static int pipeline_res_cycles_initializer(
       max_cycles = res_cycles[i];
     templen = snprintf(temp, sizeof(temp), "%d", res_cycles[i]);
     assert(templen > 0, "error occurs at snprintf");
-    assert(templen < sizeof(temp), "insufficient temp buf");
+    assert((size_t)templen < sizeof(temp), "insufficient temp buf");
     if (cyclelen < templen)
       cyclelen = templen;
     commentlen += (int)strlen(pipeline->_reslist.name(i));
