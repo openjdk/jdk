@@ -786,7 +786,7 @@ public class Thread implements Runnable {
         }
 
         // special value to mean a new thread
-        this.scopedValueBindings = Thread.class;
+        this.scopedValueBindings = NEW_THREAD_BINDINGS;
 
         // create a FieldHolder object, needed when bound to an OS thread
         if (bound) {
@@ -1617,6 +1617,9 @@ public class Thread implements Runnable {
 
     @Hidden
     @ForceInline
+    // The VM recognizes this method as special, so any changes to the
+    // name or signature require corresponding changes in
+    // JVM_FindScopedValueBindings().
     private void runWith(Object bindings, Runnable op) {
         ensureMaterializedForStackWalk(bindings);
         op.run();

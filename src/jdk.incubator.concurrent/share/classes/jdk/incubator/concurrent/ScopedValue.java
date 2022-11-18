@@ -717,7 +717,7 @@ public final class ScopedValue<T> {
     // A small fixed-size key-value cache. When an scoped value's get() method
     // is invoked, we record the result of the lookup in this per-thread cache
     // for fast access in future.
-    private static class Cache {
+    private static final class Cache {
         static final int INDEX_BITS = 4;  // Must be a power of 2
         static final int TABLE_SIZE = 1 << INDEX_BITS;
         static final int TABLE_MASK = TABLE_SIZE - 1;
@@ -746,27 +746,27 @@ public final class ScopedValue<T> {
             SLOT_MASK = cacheSize - 1;
         }
 
-        static final int primaryIndex(ScopedValue<?> key) {
+        static int primaryIndex(ScopedValue<?> key) {
             return key.hash & TABLE_MASK;
         }
 
-        static final int secondaryIndex(ScopedValue<?> key) {
+        static int secondaryIndex(ScopedValue<?> key) {
             return (key.hash >> INDEX_BITS) & TABLE_MASK;
         }
 
-        private static final int primarySlot(ScopedValue<?> key) {
+        private static int primarySlot(ScopedValue<?> key) {
             return key.hashCode() & SLOT_MASK;
         }
 
-        private static final int secondarySlot(ScopedValue<?> key) {
+        private static int secondarySlot(ScopedValue<?> key) {
             return (key.hash >> INDEX_BITS) & SLOT_MASK;
         }
 
-        static final int primarySlot(int hash) {
+        static int primarySlot(int hash) {
             return hash & SLOT_MASK;
         }
 
-        static final int secondarySlot(int hash) {
+        static int secondarySlot(int hash) {
             return (hash >> INDEX_BITS) & SLOT_MASK;
         }
 
@@ -819,10 +819,6 @@ public final class ScopedValue<T> {
         private static boolean chooseVictim() {
             int r = THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
             return (r & 15) >= 5;
-        }
-
-        public static void invalidate() {
-            setScopedValueCache(null);
         }
 
         // Null a set of cache entries, indicated by the 1-bits given
