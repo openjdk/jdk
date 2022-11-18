@@ -222,7 +222,7 @@ import jdk.internal.misc.ThreadFlock;
  *   scope "B" is the parent of the nested task scope "C".
  * </ul>
  *
- * The <i>descendants</i> of a task scope that are child task scopes that it is a parent
+ * The <i>descendants</i> of a task scope are the child task scopes that it is a parent
  * of, plus the descendants of the child task scopes, recursively.
  *
  * <p> The tree structure supports:
