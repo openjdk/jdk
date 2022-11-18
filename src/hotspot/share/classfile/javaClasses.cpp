@@ -2531,16 +2531,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
 
   // Print module information
   if (module_name != NULL) {
-    int remaining_len = buf_size - buf_off;
+    size_t remaining_len = buf_size - buf_off;
     if (module_version != NULL) {
       int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s@%s/", module_name, module_version);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "buf overflow");
+      assert((size_t)printed_len < remaining_len, "buf overflow");
       buf_off += printed_len;
     } else {;
       int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s/", module_name);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "buf overflow");
+      assert((size_t)printed_len < remaining_len, "buf overflow");
       buf_off += printed_len;
     }
   }
@@ -2554,24 +2554,24 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     if (line_number == -2) {
       strcat(buf, "Native Method)");
     } else {
-      int remaining_len = buf_size - buf_off;
+      size_t remaining_len = buf_size - buf_off;
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
         int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s:%d)", source_file_name, line_number);
         assert(printed_len > 0, "error occurs at snprintf");
-        assert(printed_len < remaining_len, "buf overflow");
+        assert((size_t)printed_len < remaining_len, "buf overflow");
         buf_off += printed_len;
       } else if (source_file_name != NULL) {
         // Just sourcename
         int printed_len = os::snprintf(buf + buf_off, remaining_len, "%s)", source_file_name);
         assert(printed_len > 0, "error occurs at snprintf");
-        assert(printed_len < remaining_len, "buf overflow");
+        assert((size_t)printed_len < remaining_len, "buf overflow");
         buf_off += printed_len;
       } else {
         // Neither sourcename nor linenumber
         int printed_len = os::snprintf(buf + buf_off, remaining_len, "Unknown Source)");
         assert(printed_len > 0, "error occurs at snprintf");
-        assert(printed_len < remaining_len, "buf overflow");
+        assert((size_t)printed_len < remaining_len, "buf overflow");
         buf_off += printed_len;
       }
 
@@ -2580,7 +2580,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
         remaining_len = buf_size - buf_off;
         int printed_len = os::snprintf(buf + buf_off, remaining_len, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
         assert(printed_len > 0, "error occurs at snprintf");
-        assert(printed_len < remaining_len, "buf overflow");
+        assert((size_t)printed_len < remaining_len, "buf overflow");
         buf_off += printed_len;
       }
     }
