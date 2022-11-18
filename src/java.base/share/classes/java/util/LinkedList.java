@@ -268,19 +268,15 @@ public class LinkedList<E>
      * @throws NoSuchElementException if this list is empty
      */
     public E getMiddle() {
-         Node<E> f  = first;
-
-        if (f == null)
-            throw new NoSuchElementException();
-
-        if(f!=null)
+	Node<E> f = first;
+	if (f == null || size == 1 || size == 2)
+	    throw new NoSuchElementException();
+	else
         {
          for(int i=0; i< size/2; i++)
-	 f=f.next;
-
-        }
+		f=f.next;
+	}
 	return f.item;
-
     }
 
 
