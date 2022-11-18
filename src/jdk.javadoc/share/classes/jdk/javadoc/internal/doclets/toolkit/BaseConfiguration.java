@@ -475,7 +475,7 @@ public abstract class BaseConfiguration {
                  * and real world examples with ':' in the tag name, we cannot simply use
                  * String.split(regex);  instead, we tokenize the string, allowing
                  * special characters to be escaped with '\'. */
-                List<String> tokens = tokenize(args.get(1),3);
+                List<String> tokens = tokenize(args.get(1), 3);
                 switch (tokens.size()) {
                     case 1 -> {
                         String tagName = args.get(1);
