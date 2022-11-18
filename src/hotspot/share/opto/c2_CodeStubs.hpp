@@ -62,8 +62,7 @@ class C2CodeStubList {
 private:
   GrowableArray<C2CodeStub*> _stubs;
 public:
-  C2CodeStubList() :
-    _stubs() {}
+  C2CodeStubList();
 
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
   int  measure_code_size() const;

@@ -55,6 +55,9 @@ int C2CodeStub::stub_size(volatile int* stub_size) {
   return size;
 }
 
+C2CodeStubList::C2CodeStubList() :
+  _stubs(Compile::current()->comp_arena(), 2, 0, NULL) {}
+
 int C2CodeStubList::measure_code_size() const {
   int size = 0;
   for (int i = _stubs.length() - 1; i >= 0; i--) {
