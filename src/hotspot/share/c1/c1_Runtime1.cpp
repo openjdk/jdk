@@ -690,7 +690,7 @@ JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* current, int i
   char message[2 * jintAsStringSize + len];
   int printed_len = os::snprintf(message, sizeof(message), "Index %d out of bounds for length %d", index, a->length());
   assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < sizeof(sizeof(message)), "message buf overflow");
+  assert((size_t)printed_len < sizeof(message), "message buf overflow");
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
 JRT_END
 
