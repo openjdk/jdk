@@ -46,7 +46,7 @@ public:
 };
 
 void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
-  oop cl = cld->class_loader();
+  oop cl = cld->class_loader_no_keepalive();
 
   // The hashtable key is the ClassLoader oop since we want to account
   // for "real" classes and hidden classes together
@@ -161,7 +161,7 @@ void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
 
 void ClassLoaderStatsVMOperation::doit() {
   ClassLoaderStatsClosure clsc (_out);
-  ClassLoaderDataGraph::loaded_cld_do(&clsc);
+  ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&clsc);
   clsc.print();
 }
 
