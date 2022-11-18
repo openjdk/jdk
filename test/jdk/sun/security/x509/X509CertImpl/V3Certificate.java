@@ -57,6 +57,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import sun.security.util.BitArray;
+import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
 
@@ -204,15 +205,16 @@ public class V3Certificate {
         cert.setExtensions(exts);
 
         // Generate and sign X509CertImpl
-        X509CertImpl crt = new X509CertImpl(cert);
-        crt.sign(privateKey, sigAlg);
+        X509CertImpl crt = X509CertImpl.newSigned(cert, privateKey, sigAlg);
         crt.verify(publicKey);
 
         try (FileOutputStream fos = new FileOutputStream(new File(V3_FILE));
                 FileOutputStream fos_b64
                 = new FileOutputStream(new File(V3_B64_FILE));
                 PrintWriter pw = new PrintWriter(fos_b64)) {
-            crt.encode((OutputStream) fos);
+            DerOutputStream dos = new DerOutputStream();
+            crt.encode(dos);
+            fos.write(dos.toByteArray());
             fos.flush();
 
             // Certificate boundaries/

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "jimage.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
@@ -45,6 +44,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
@@ -255,7 +255,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
     int file_handle = os::open(path, 0, 0);
     if (file_handle != -1) {
       // read contents into resource array
-      u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
+      u1* buffer = NEW_RESOURCE_ARRAY_IN_THREAD(current, u1, st.st_size);
       size_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
       // close file
       ::close(file_handle);
@@ -264,7 +264,11 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
-        FREE_RESOURCE_ARRAY(char, path, path_len);
+#ifdef ASSERT
+        // Freeing path is a no-op here as buffer prevents it from being reclaimed. But we keep it for
+        // debug builds so that we guard against use-after-free bugs.
+        FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
+#endif
         // Resource allocated
         return new ClassFileStream(buffer,
                                    st.st_size,
@@ -273,7 +277,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
       }
     }
   }
-  FREE_RESOURCE_ARRAY(char, path, path_len);
+  FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
   return NULL;
 }
 
@@ -571,7 +575,7 @@ void ClassLoader::setup_patch_mod_entries() {
   int num_of_entries = patch_mod_args->length();
 
   // Set up the boot loader's _patch_mod_entries list
-  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
+  _patch_mod_entries = new (mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (patch_mod_args->at(i))->module_name();
@@ -1508,7 +1512,7 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
     // done before loading any classes, by the same thread that will
     // subsequently do the first class load. So, no lock is needed for this.
     assert(_exploded_entries == NULL, "Should only get initialized once");
-    _exploded_entries = new (ResourceObj::C_HEAP, mtModule)
+    _exploded_entries = new (mtModule)
       GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, mtModule);
     add_to_exploded_build_list(current, vmSymbols::java_base());
   }

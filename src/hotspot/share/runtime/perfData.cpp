@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -564,12 +564,12 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
 
 PerfDataList::PerfDataList(int length) {
 
-  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(length, mtInternal);
+  _set = new (mtInternal) PerfDataArray(length, mtInternal);
 }
 
 PerfDataList::PerfDataList(PerfDataList* p) {
 
-  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(p->length(), mtInternal);
+  _set = new (mtInternal) PerfDataArray(p->length(), mtInternal);
 
   _set->appendAll(p->get_impl());
 }
