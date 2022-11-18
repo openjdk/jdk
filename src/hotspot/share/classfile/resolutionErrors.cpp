@@ -54,7 +54,7 @@ class ResolutionErrorKey {
   }
 };
 
-ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry, 107, AnyObj::C_HEAP, mtClass,
+ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
                   ResolutionErrorKey::equals> _resolution_error_table;
 
@@ -67,7 +67,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
   assert(!pool.is_null() && error != NULL, "adding NULL obj");
 
   ResolutionErrorKey key(pool(), cp_index);
-  ResolutionErrorEntry entry(error, message, cause, cause_msg);
+  ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
   _resolution_error_table.put(key, entry);
 }
 
@@ -79,7 +79,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
   assert(!pool.is_null() && message != NULL, "adding NULL obj");
 
   ResolutionErrorKey key(pool(), cp_index);
-  ResolutionErrorEntry entry(message);
+  ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
   _resolution_error_table.put(key, entry);
 }
 
@@ -87,8 +87,8 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle& pool, int cp_index) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   ResolutionErrorKey key(pool(), cp_index);
-  ResolutionErrorEntry* entry = _resolution_error_table.get(key);
-  return entry == nullptr ? nullptr : entry;
+  ResolutionErrorEntry** entry = _resolution_error_table.get(key);
+  return entry == nullptr ? nullptr : *entry;
 }
 
 ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, Symbol* message,
@@ -124,8 +124,13 @@ public:
   ResolutionErrorDeleteIterate(ConstantPool* pool):
     p(pool) {};
 
-  bool do_entry(const ResolutionErrorKey& key, const ResolutionErrorEntry& value){
-    return (key.cpool() == p);
+  bool do_entry(const ResolutionErrorKey& key, ResolutionErrorEntry* value){
+    if (key.cpool() == p) {
+      delete value;
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 
@@ -139,9 +144,14 @@ void ResolutionErrorTable::delete_entry(ConstantPool* c) {
 
 class ResolutionIteratePurgeErrors : StackObj {
 public:
-  bool do_entry(const ResolutionErrorKey& key, const ResolutionErrorEntry& value){
+  bool do_entry(const ResolutionErrorKey& key, ResolutionErrorEntry* value){
     ConstantPool* pool = key.cpool();
-    return !(pool->pool_holder()->is_loader_alive());
+    if (!(pool->pool_holder()->is_loader_alive())) {
+      delete value;
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 

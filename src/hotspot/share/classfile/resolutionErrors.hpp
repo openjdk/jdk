@@ -73,6 +73,8 @@ class ResolutionErrorEntry : public CHeapObj<mtClass> {
   Symbol*           _cause_msg;
   const char*       _nest_host_error;
 
+  NONCOPYABLE(ResolutionErrorEntry);
+
  public:
     ResolutionErrorEntry(Symbol* error, Symbol* message, Symbol* cause, Symbol* cause_msg);
 
