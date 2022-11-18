@@ -232,7 +232,7 @@ final class DCmdStart extends AbstractDCmd {
     }
 
     private LinkedHashMap<String, String> configureStandard(String[] settings) throws DCmdException {
-        LinkedHashMap<String, String> s = new LinkedHashMap<>();
+        LinkedHashMap<String, String> s = LinkedHashMap.newLinkedHashMap(settings.length);
         for (String configName : settings) {
             try {
                 s.putAll(JFC.createKnown(configName).getSettings());

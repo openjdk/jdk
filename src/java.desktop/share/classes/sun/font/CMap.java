@@ -577,7 +577,7 @@ abstract class CMap {
             /*
              * CMAP format4 defines several fields for optimized search of
              * the segment list (entrySelector, searchRange, rangeShift).
-             * However, benefits are neglible and some fonts have incorrect
+             * However, benefits are negligible and some fonts have incorrect
              * data - so we use straightforward binary search (see bug 6247425)
              */
             int left = 0, right = startCount.length;

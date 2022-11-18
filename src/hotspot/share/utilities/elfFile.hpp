@@ -485,15 +485,20 @@ class DwarfFile : public ElfFile {
     MarkedDwarfFileReader _reader;
     uint32_t _section_start_address;
 
+    // a calculated end position
+    long _entry_end;
+
     bool read_section_header();
     bool read_set_header(DebugArangesSetHeader& header);
     bool read_address_descriptors(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
                                   uint32_t offset_in_library, bool& found_matching_set);
     bool read_address_descriptor(AddressDescriptor& descriptor);
     static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
-    static bool is_terminating_entry(const AddressDescriptor& descriptor);
+    bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                              const AddressDescriptor& descriptor);
    public:
-    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _section_start_address(0) {}
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()),
+                                          _section_start_address(0), _entry_end(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
 
   };

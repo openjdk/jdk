@@ -23,15 +23,9 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.data.InputBlock;
-import com.sun.hotspot.igv.data.InputBlockEdge;
-import com.sun.hotspot.igv.data.InputEdge;
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.Properties.StringPropertyMatcher;
+import com.sun.hotspot.igv.data.*;
 import java.awt.Font;
-import java.awt.Color;
 import java.util.*;
 
 /**
@@ -41,31 +35,18 @@ import java.util.*;
 public class Diagram {
 
     private List<Figure> figures;
-    private Map<InputBlock, Block> blocks;
-    private InputGraph graph;
-    private int curId;
-    private String nodeText;
-    private String shortNodeText;
-    private String tinyNodeText;
-    private final Font font;
-    private final Font slotFont;
-    private final Font boldFont;
+    private final Map<InputBlock, Block> blocks;
+    private final String nodeText;
+    private final String shortNodeText;
+    private final String tinyNodeText;
+    public static final Font FONT = new Font("Arial", Font.PLAIN, 12);
+    public static final Font SLOT_FONT = new Font("Arial", Font.PLAIN, 10);
+    public static final Font BOLD_FONT = FONT.deriveFont(Font.BOLD);
+
     // Whether widgets derived from this diagram should be adapted for the
     // control-flow graph view.
     private boolean cfg;
     private final Set<BlockConnection> blockConnections;
-
-    public Font getFont() {
-        return font;
-    }
-
-    public Font getSlotFont() {
-        return slotFont;
-    }
-
-    public Font getBoldFont() {
-        return boldFont;
-    }
 
     public boolean isCFG() {
         return cfg;
@@ -75,21 +56,68 @@ public class Diagram {
         this.cfg = cfg;
     }
 
-    private Diagram(InputGraph graph, String nodeText, String shortNodeText,
-                    String tinyNodeText) {
-        figures = new ArrayList<>();
-        blocks = new LinkedHashMap<>(8);
-        this.nodeText = "";
-        this.shortNodeText = "";
-        this.font = new Font("Arial", Font.PLAIN, 12);
-        this.slotFont = new Font("Arial", Font.PLAIN, 10);
-        this.boldFont = this.font.deriveFont(Font.BOLD);
-        this.cfg = false;
-        this.blockConnections = new HashSet<>();
-        this.graph = graph;
+    public Diagram(InputGraph graph, String nodeText, String shortNodeText,
+                   String tinyNodeText) {
+        assert graph != null;
+
         this.nodeText = nodeText;
         this.shortNodeText = shortNodeText;
         this.tinyNodeText = tinyNodeText;
+        this.figures = new ArrayList<>();
+        this.blocks = new LinkedHashMap<>(8);
+        this.blockConnections = new HashSet<>();
+        this.cfg = false;
+        int curId = 0;
+
+        for (InputBlock b : graph.getBlocks()) {
+            blocks.put(b, new Block(b, this));
+        }
+
+        Collection<InputNode> nodes = graph.getNodes();
+        Hashtable<Integer, Figure> figureHash = new Hashtable<>();
+        for (InputNode n : nodes) {
+            Figure f = new Figure(this, curId, n);
+            curId++;
+            f.getProperties().add(n.getProperties());
+            f.setBlock(blocks.get(graph.getBlock(n)));
+            figureHash.put(n.getId(), f);
+            this.figures.add(f);
+        }
+
+        for (InputEdge e : graph.getEdges()) {
+            int from = e.getFrom();
+            int to = e.getTo();
+            Figure fromFigure = figureHash.get(from);
+            Figure toFigure = figureHash.get(to);
+
+            if(fromFigure == null || toFigure == null) continue;
+
+            int fromIndex = e.getFromIndex();
+            while (fromFigure.getOutputSlots().size() <= fromIndex) {
+                fromFigure.createOutputSlot();
+            }
+            OutputSlot outputSlot = fromFigure.getOutputSlots().get(fromIndex);
+
+            int toIndex = e.getToIndex();
+            while (toFigure.getInputSlots().size() <= toIndex) {
+                toFigure.createInputSlot();
+            }
+            InputSlot inputSlot = toFigure.getInputSlots().get(toIndex);
+
+            FigureConnection c = createConnection(inputSlot, outputSlot, e.getLabel());
+
+            if (e.getState() == InputEdge.State.NEW) {
+                c.setStyle(Connection.ConnectionStyle.BOLD);
+            } else if (e.getState() == InputEdge.State.DELETED) {
+                c.setStyle(Connection.ConnectionStyle.DASHED);
+            }
+        }
+
+        for (InputBlockEdge e : graph.getBlockEdges()) {
+            Block p = getBlock(e.getFrom());
+            Block s = getBlock(e.getTo());
+            blockConnections.add(new BlockConnection(p, s, e.getLabel()));
+        }
     }
 
     public Block getBlock(InputBlock b) {
@@ -113,27 +141,16 @@ public class Diagram {
         return tinyNodeText;
     }
 
-    public void updateBlocks() {
-        blocks.clear();
-        for (InputBlock b : graph.getBlocks()) {
-            Block curBlock = new Block(b, this);
-            blocks.put(b, curBlock);
-        }
-    }
-
     public Collection<Block> getBlocks() {
         return Collections.unmodifiableCollection(blocks.values());
     }
 
-    public List<Figure> getFigures() {
-        return Collections.unmodifiableList(figures);
+    public Collection<InputBlock> getInputBlocks() {
+        return Collections.unmodifiableCollection(blocks.keySet());
     }
 
-    public Figure createFigure() {
-        Figure f = new Figure(this, curId);
-        curId++;
-        this.figures.add(f);
-        return f;
+    public List<Figure> getFigures() {
+        return Collections.unmodifiableList(figures);
     }
 
     public FigureConnection createConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
@@ -142,88 +159,11 @@ public class Diagram {
         return new FigureConnection(inputSlot, outputSlot, label);
     }
 
-    public Map<InputNode, Set<Figure>> calcSourceToFigureRelation() {
-        Map<InputNode, Set<Figure>> map = new HashMap<>();
-
-        for(InputNode node : this.getGraph().getNodes()) {
-            map.put(node, new HashSet<Figure>());
-        }
-
-        for(Figure f : this.getFigures()) {
-            for(InputNode node : f.getSource().getSourceNodes()) {
-                map.get(node).add(f);
-            }
-        }
-
-        return map;
-    }
-
-    public static Diagram createDiagram(InputGraph graph, String nodeText,
-                                        String shortNodeText,
-                                        String tinyNodeText) {
-        if (graph == null) {
-            return null;
-        }
-
-        Diagram d = new Diagram(graph, nodeText, shortNodeText, tinyNodeText);
-        d.updateBlocks();
-
-        Collection<InputNode> nodes = graph.getNodes();
-        Hashtable<Integer, Figure> figureHash = new Hashtable<>();
-        for (InputNode n : nodes) {
-            Figure f = d.createFigure();
-            f.getSource().addSourceNode(n);
-            f.getProperties().add(n.getProperties());
-            f.setSubgraphs(n.getSubgraphs());
-            f.setBlock(graph.getBlock(n));
-            figureHash.put(n.getId(), f);
-        }
-
-        for (InputEdge e : graph.getEdges()) {
-
-            int from = e.getFrom();
-            int to = e.getTo();
-            Figure fromFigure = figureHash.get(from);
-            Figure toFigure = figureHash.get(to);
-
-            if(fromFigure == null || toFigure == null) continue;
-            assert fromFigure != null && toFigure != null;
-
-            int fromIndex = e.getFromIndex();
-            while (fromFigure.getOutputSlots().size() <= fromIndex) {
-                fromFigure.createOutputSlot();
-            }
-            OutputSlot outputSlot = fromFigure.getOutputSlots().get(fromIndex);
-
-            int toIndex = e.getToIndex();
-            while (toFigure.getInputSlots().size() <= toIndex) {
-                toFigure.createInputSlot();
-            }
-            InputSlot inputSlot = toFigure.getInputSlots().get(toIndex);
-
-            FigureConnection c = d.createConnection(inputSlot, outputSlot, e.getLabel());
-
-            if (e.getState() == InputEdge.State.NEW) {
-                c.setStyle(Connection.ConnectionStyle.BOLD);
-            } else if (e.getState() == InputEdge.State.DELETED) {
-                c.setStyle(Connection.ConnectionStyle.DASHED);
-            }
-        }
-
-        for (InputBlockEdge e : graph.getBlockEdges()) {
-            Block p = d.getBlock(e.getFrom());
-            Block s = d.getBlock(e.getTo());
-            d.blockConnections.add(new BlockConnection(p, s, e.getLabel()));
-        }
-
-        return d;
-    }
-
     public void removeAllBlocks(Set<Block> blocksToRemove) {
         Set<Figure> figuresToRemove = new HashSet<>();
         for (Block b : blocksToRemove) {
             for (Figure f : getFigures()) {
-                if (f.getBlock() == b.getInputBlock()) {
+                if (f.getBlock() == b) {
                     figuresToRemove.add(f);
                 }
             }
@@ -273,14 +213,6 @@ public class Diagram {
         this.figures.remove(succ);
     }
 
-    public String getName() {
-        return graph.getName();
-    }
-
-    public InputGraph getGraph() {
-        return graph;
-    }
-
     public Set<FigureConnection> getConnections() {
         Set<FigureConnection> connections = new HashSet<>();
         for (Figure f : figures) {
@@ -300,24 +232,6 @@ public class Diagram {
             }
         }
         return connections;
-    }
-
-    public Figure getRootFigure() {
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
-        Figure root = selector.selectSingle(new StringPropertyMatcher("name", "Root"));
-        if (root == null) {
-            root = selector.selectSingle(new StringPropertyMatcher("name", "Start"));
-        }
-        if (root == null) {
-            List<Figure> rootFigures = getRootFigures();
-            if (rootFigures.size() > 0) {
-                root = rootFigures.get(0);
-            } else if (figures.size() > 0) {
-                root = figures.get(0);
-            }
-        }
-
-        return root;
     }
 
     public void printStatistics() {
@@ -355,13 +269,13 @@ public class Diagram {
         System.out.println("=============================================================");
     }
 
-    public List<Figure> getRootFigures() {
-        ArrayList<Figure> rootFigures = new ArrayList<>();
-        for (Figure f : figures) {
-            if (f.getPredecessors().size() == 0) {
-                rootFigures.add(f);
-            }
+    public Figure getRootFigure() {
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
+        Figure root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Root"));
+        if (root == null) {
+            root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Start"));
         }
-        return rootFigures;
+        return root;
     }
+
 }

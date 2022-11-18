@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "jvm.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -53,6 +52,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -277,9 +277,7 @@ JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, 
   }
   JfrEventId typed_event_id = (JfrEventId)type;
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
-  if (periodMillis > 0) {
-    JfrEventSetting::set_enabled(typed_event_id, true); // ensure sampling event is enabled
-  }
+  JfrEventSetting::set_enabled(typed_event_id, periodMillis > 0);
   if (EventExecutionSample::eventId == type) {
     JfrThreadSampling::set_java_sample_period(periodMillis);
   } else {
