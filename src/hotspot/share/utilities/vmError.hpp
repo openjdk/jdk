@@ -67,6 +67,14 @@ class VMError : public AllStatic {
   static int         _current_step;
   static const char* _current_step_info;
 
+  // used for reentrant reentry logic
+  static const size_t _reentrant_reentries_stack_headroom;
+  static const size_t _global_reentrant_reentries_limit;
+  static size_t       _global_reentrant_reentries;
+  static const size_t _default_step_reentrant_reentries_limit;
+  static size_t       _step_reentrant_reentries_limit;
+  static size_t       _step_reentrant_reentries;
+
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
   static volatile intptr_t _first_error_tid;
@@ -123,6 +131,9 @@ class VMError : public AllStatic {
   static bool should_submit_bug_report(unsigned int id) {
     return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
   }
+
+  DEBUG_ONLY(static void reenterant_test_hit_stack_limit());
+  static bool should_stop_reenterant_entry(const char* &reason);
 
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
