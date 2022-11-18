@@ -1296,17 +1296,21 @@ public final class Class<T> implements java.io.Serializable,
      * {@code abstract} and {@code interface}; they should be decoded
      * using the methods of class {@code Modifier}.
      *
-     * <p> If the underlying class is an array class, then its
-     * {@code public}, {@code private} and {@code protected}
-     * modifiers are the same as those of its component type.  If this
-     * {@code Class} object represents a primitive type or void, its
-     * {@code public} modifier is always {@code true}, and its
-     * {@code protected} and {@code private} modifiers are always
-     * {@code false}. If this {@code Class} object represents an array class, a
-     * primitive type or void, then its {@code final} modifier is always
-     * {@code true} and its interface modifier is always
-     * {@code false}. The values of its other modifiers are not determined
-     * by this specification.
+     * <p> If the underlying class is an array class:
+     * <ul>
+     * <li> its {@code public}, {@code private} and {@code protected}
+     *      modifiers are the same as those of its component type
+     * <li> its {@code final} modifier is always
+     *      {@code true}
+     * <li> its interface modifier is always {@code false}, event when
+     *      the component type is an interface
+     * </ul>
+     * If this {@code Class} object represents a primitive type or
+     * void, its {@code public}, {@code abstract}, and {@code final}
+     * modifiers are always {@code true}.
+     * For class objects representing void, primitive types, and
+     * arrays, the values of other modifiers are {@code false} other
+     * than as specified above.
      *
      * <p> The modifier encodings are defined in section {@jvms 4.1}
      * of <cite>The Java Virtual Machine Specification</cite>.
@@ -1320,6 +1324,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
      * @jls 9.1.1. Interface Modifiers
+     * @jvms 4.1 The {@code ClassFile} Structure
      */
     @IntrinsicCandidate
     public native int getModifiers();
