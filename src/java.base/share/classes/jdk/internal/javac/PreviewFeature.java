@@ -68,7 +68,7 @@ public @interface PreviewFeature {
         SWITCH_PATTERN_MATCHING(),
         @JEP(number=405, title="Record Patterns")
         RECORD_PATTERNS,
-        @JEP(number=425, title="Virtual Threads")
+        @JEP(number=436, title="Virtual Threads", status="Second Preview")
         VIRTUAL_THREADS,
         @JEP(number=424, title="Foreign Function & Memory API")
         FOREIGN,
