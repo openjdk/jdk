@@ -156,7 +156,7 @@ import sun.security.action.GetPropertyAction;
  * should minimize the number of bound scoped values in use. For
  * example, if it is necessary to pass a number of values in this way,
  * it makes sense to create a record class to hold those values, and
- * then bind a single `ScopedValue` to an instance of that record.
+ * then bind a single {@code ScopedValue} to an instance of that record.
  *
  * <p>For this incubator release, the reference implementation
  * provides some system properties to tune the performance of scoped
@@ -184,7 +184,7 @@ import sun.security.action.GetPropertyAction;
  * memory saving, but each virtual thread's scoped-value cache would
  * have to be regenerated after a blocking operation.
  *
- * @param <T> the type of the value
+ * @param <T> the type of the object bound to this {@code ScopedValue}
  * @since 20
  */
 public final class ScopedValue<T> {
@@ -417,7 +417,7 @@ public final class ScopedValue<T> {
         }
 
         /**
-         * Execute the action with a set of ScopedValue bindings.
+         * Execute the action with a set of {@code ScopedValue} bindings.
          *
          * The VM recognizes this method as special, so any changes to the
          * name or signature require corresponding changes in
@@ -479,7 +479,7 @@ public final class ScopedValue<T> {
      *     ScopedValue.where(key, value).call(op);
      * }
      *
-     * @param key the ScopedValue
+     * @param key the {@code ScopedValue}
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
      * @param <R> the result type
@@ -514,7 +514,7 @@ public final class ScopedValue<T> {
      *     ScopedValue.where(key, value).run(op);
      * }
      *
-     * @param key the ScopedValue
+     * @param key the {@code ScopedValue}
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
      * @param op the operation to call
