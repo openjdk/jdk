@@ -29,6 +29,7 @@
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -37,44 +38,45 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class TempDirectoryNotExisting {
-    final static String ioWarningMsg = "WARNING: java.io.tmpdir location does not exist";
+    final static String ioWarningMsg = "WARNING: java.io.tmpdir directory does not exist";
 
     public static void main(String... args) throws Exception {
 
         String userDir = System.getProperty("user.home");
-        String timeStamp = System.currentTimeMillis() + "";
+        String timeStamp = java.time.Instant.now().toString();
         String tempDir = Path.of(userDir,"non-existing-", timeStamp).toString();
-
-        if (args.length != 0) {
-            if (args[0].equals("io")) {
+        System.out.println("args length:"+args.length);
+        for (String arg : args) {
+            System.out.println("args value:" + arg);
+            if (arg.equals("io")) {
                 try {
                     File.createTempFile("prefix", ".suffix");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else {
-
-                if (args[0].equals("nio")) {
-                    try {
-                        Files.createTempFile("prefix", ".suffix");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        File.createTempFile("prefix", ".suffix");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        Files.createTempFile("prefix", ".suffix");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            } else if (arg.equals("nio")) {
+                try {
+                    Files.createTempFile("prefix", ".suffix");
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+            } else if (arg.equals("io-nio")) {
+                try {
+                    File.createTempFile("prefix", ".suffix");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    Files.createTempFile("prefix", ".suffix");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                throw new Exception("unknown case: " + arg);
             }
-        } else {
+        }
 
+        if (args.length == 0) {
             // standard test with default setting for java.io.tmpdir
             testMessageNotExist(0, ioWarningMsg, "TempDirectoryNotExisting", "io");
             testMessageNotExist(0, ioWarningMsg, "TempDirectoryNotExisting", "nio");
@@ -116,10 +118,11 @@ public class TempDirectoryNotExisting {
     }
 
     private static void testMessageCounter(int exitValue,String... options) throws Exception {
-        List<String> list = ProcessTools.executeTestJvm(options).shouldHaveExitValue(exitValue)
-                .asLines().stream()
-                .filter(line -> line.equalsIgnoreCase(ioWarningMsg))
-                .collect(Collectors.toList());
-        if (list.size() != 1) throw new Exception("counter of messages is not one, but " + list.size());
+        OutputAnalyzer originalOutput = ProcessTools.executeTestJvm(options);
+        List<String> list = originalOutput.asLines().stream().filter(line
+                -> line.equalsIgnoreCase(ioWarningMsg)).collect(Collectors.toList());
+        if (list.size() != 1 || originalOutput.getExitValue() != exitValue)
+            throw new Exception("counter of messages is not one, but " + list.size()
+                    + "\n" + originalOutput.asLines().toString());
     }
 }

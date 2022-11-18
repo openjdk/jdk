@@ -41,15 +41,15 @@ public final class SystemProps {
     // no instances
     private SystemProps() {}
 
-    // custom java.io.tmpdir via command line
+    // Custom java.io.tmpdir via command line.
     private static String customTmpdir;
 
     /**
-     * check if warning for custom java.io.tmpdir is required
+     * Check if warning for custom java.io.tmpdir is required.
      *
      * @return a boolean value
      */
-    public static boolean checkIfWarningRequired() {
+    public static boolean checkIoTmpdir() {
         return customTmpdir != null && !(new File(customTmpdir).isDirectory());
     }
 
