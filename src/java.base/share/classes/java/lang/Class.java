@@ -1308,7 +1308,7 @@ public final class Class<T> implements java.io.Serializable,
      * If this {@code Class} object represents a primitive type or
      * void, its {@code public}, {@code abstract}, and {@code final}
      * modifiers are always {@code true}.
-     * For class objects representing void, primitive types, and
+     * For {@code Class} objects representing void, primitive types, and
      * arrays, the values of other modifiers are {@code false} other
      * than as specified above.
      *
@@ -1333,17 +1333,19 @@ public final class Class<T> implements java.io.Serializable,
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
      * flags} for this class, possibly empty}
      *
-     * <p> If the underlying class is an array class, then its
-     * {@code PUBLIC}, {@code PRIVATE} and {@code PROTECTED}
-     * access flags are the same as those of its component type.  If this
-     * {@code Class} object represents a primitive type or void, the
-     * {@code PUBLIC} access flag is present, and the
-     * {@code PROTECTED} and {@code PRIVATE} access flags are always
-     * absent. If this {@code Class} object represents an array class, a
-     * primitive type or void, then the {@code FINAL} access flag is always
-     * present and the interface access flag is always
-     * absent. The values of its other access flags are not determined
-     * by this specification.
+     * <p> If the underlying class is an array class:
+     * <ul>
+     * <li> its {@code PUBLIC}, {@code PRIVATE} and {@code PROTECTED}
+     *      access flags are the same as those of its component type
+     * <li> its {@code FINAL} and {@code ABSTRACT} flags are present
+     * <li> its {@code INTERFACE} flag is absent, even when the
+     *      component type is an interface
+     * </ul>
+     *  If this {@code Class} object represents a primitive type or
+     *  void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
+     *  {@code FINAL}.
+     * For {@code Class} objects representing void, primitive types, and
+     * arrays, access flags are absent other than as specified above.
      *
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure
