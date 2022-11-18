@@ -158,6 +158,21 @@ void DowncallStubGenerator::generate() {
   allocated_frame_size += _abi._shadow_space_bytes;
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
+  // when we don't use a return buffer we need to spill the return value around our slow path calls
+  bool should_save_return_value = !_needs_return_buffer;
+  RegSpiller out_reg_spiller(_output_registers);
+  int spill_rsp_offset = -1;
+
+  if (should_save_return_value) {
+    spill_rsp_offset = 0;
+    // spill area can be shared with shadow space and out args,
+    // since they are only used before the call,
+    // and spill area is only used after.
+    allocated_frame_size = out_reg_spiller.spill_size_bytes() > allocated_frame_size
+      ? out_reg_spiller.spill_size_bytes()
+      : allocated_frame_size;
+  }
+
   StubLocations locs;
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch1);
   if (_needs_return_buffer) {
@@ -169,18 +184,6 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += BytesPerWord;
   }
 
-  // when we don't use a return buffer we need to spill the return value around our slow path calls
-  bool should_save_return_value = !_needs_return_buffer;
-  RegSpiller out_reg_spiller(_output_registers);
-  int spill_rsp_offset = -1;
-
-  if (should_save_return_value) {
-    spill_rsp_offset = 0;
-    // spill area can be shared with the above, so we take the max of the 2
-    allocated_frame_size = out_reg_spiller.spill_size_bytes() > allocated_frame_size
-      ? out_reg_spiller.spill_size_bytes()
-      : allocated_frame_size;
-  }
   allocated_frame_size = align_up(allocated_frame_size, 16);
   _frame_size_slots += framesize_base + (allocated_frame_size >> LogBytesPerInt);
   assert(is_even(_frame_size_slots/2), "sp not 16-byte aligned");

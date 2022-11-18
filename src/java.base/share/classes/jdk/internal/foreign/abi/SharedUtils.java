@@ -110,17 +110,18 @@ public final class SharedUtils {
      * @param cDesc the function descriptor of the native function (with actual return layout)
      * @return the adapted handle
      */
-    public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc) {
+    public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc, CallingSequence sequence) {
         if (handle.type().returnType() != void.class)
             throw new IllegalArgumentException("return expected to be void for in memory returns: " + handle.type());
-        if (handle.type().parameterType(2) != MemorySegment.class)
+        int imrAddrIdx = sequence.numLeadingParams();
+        if (handle.type().parameterType(imrAddrIdx) != MemorySegment.class)
             throw new IllegalArgumentException("MemorySegment expected as third param: " + handle.type());
         if (cDesc.returnLayout().isEmpty())
             throw new IllegalArgumentException("Return layout needed: " + cDesc);
 
         MethodHandle ret = identity(MemorySegment.class); // (MemorySegment) MemorySegment
         handle = collectArguments(ret, 1, handle); // (MemorySegment, MemorySegment, SegmentAllocator, MemorySegment, ...) MemorySegment
-        handle = mergeArguments(handle, 0, 3);  // (MemorySegment, MemorySegment, SegmentAllocator, ...) MemorySegment
+        handle = mergeArguments(handle, 0, 1 + imrAddrIdx);  // (MemorySegment, MemorySegment, SegmentAllocator, ...) MemorySegment
         handle = collectArguments(handle, 0, insertArguments(MH_ALLOC_BUFFER, 1, cDesc.returnLayout().get())); // (SegmentAllocator, MemorySegment, SegmentAllocator, ...) MemorySegment
         handle = mergeArguments(handle, 0, 2);  // (SegmentAllocator, MemorySegment, ...) MemorySegment
         handle = swapArguments(handle, 0, 1); // (MemorySegment, SegmentAllocator, ...) MemorySegment

@@ -125,7 +125,7 @@ public class CallArranger {
         MethodHandle handle = new DowncallLinker(CWindows, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
-            handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
+            handle = SharedUtils.adaptDowncallForIMR(handle, cDesc, bindings.callingSequence);
         }
 
         return handle;

@@ -35,15 +35,20 @@ import org.testng.annotations.Test;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.StructLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.assertEquals;
 
 public class TestCaptureCallState extends NativeTestHelper {
@@ -57,19 +62,23 @@ public class TestCaptureCallState extends NativeTestHelper {
         }
     }
 
-    private record SaveValuesCase(String nativeTarget, String threadLocalName) {}
+    private record SaveValuesCase(String nativeTarget, FunctionDescriptor nativeDesc, String threadLocalName, Consumer<Object> resultCheck) {}
 
     @Test(dataProvider = "cases")
     public void testSavedThreadLocal(SaveValuesCase testCase) throws Throwable {
         Linker.Option.CaptureCallState stl = Linker.Option.captureCallState(testCase.threadLocalName());
-        MethodHandle handle = downcallHandle(testCase.nativeTarget(), FunctionDescriptor.ofVoid(JAVA_INT), stl);
+        MethodHandle handle = downcallHandle(testCase.nativeTarget(), testCase.nativeDesc(), stl);
 
         VarHandle errnoHandle = stl.layout().varHandle(groupElement(testCase.threadLocalName()));
 
         try (Arena arena = Arena.openConfined()) {
             MemorySegment saveSeg = arena.allocate(stl.layout());
             int testValue = 42;
-            handle.invoke(saveSeg, testValue);
+            boolean needsAllocator = testCase.nativeDesc().returnLayout().map(StructLayout.class::isInstance).orElse(false);
+            Object result = needsAllocator
+                ? handle.invoke(arena, saveSeg, testValue)
+                : handle.invoke(saveSeg, testValue);
+            testCase.resultCheck().accept(result);
             int savedErrno = (int) errnoHandle.get(saveSeg);
             assertEquals(savedErrno, testValue);
         }
@@ -79,13 +88,43 @@ public class TestCaptureCallState extends NativeTestHelper {
     public static Object[][] cases() {
         List<SaveValuesCase> cases = new ArrayList<>();
 
-        cases.add(new SaveValuesCase("set_errno", "errno"));
+        cases.add(new SaveValuesCase("set_errno_V", FunctionDescriptor.ofVoid(JAVA_INT), "errno", o -> {}));
+        cases.add(new SaveValuesCase("set_errno_I", FunctionDescriptor.of(JAVA_INT, JAVA_INT), "errno", o -> assertEquals((int) o, 42)));
+        cases.add(new SaveValuesCase("set_errno_D", FunctionDescriptor.of(JAVA_DOUBLE, JAVA_INT), "errno", o -> assertEquals((double) o, 42.0)));
+
+        cases.add(structCase("SL",  Map.of(JAVA_LONG.withName("x"), 42L)));
+        cases.add(structCase("SLL", Map.of(JAVA_LONG.withName("x"), 42L,
+                                           JAVA_LONG.withName("y"), 42L)));
+        cases.add(structCase("SLLL", Map.of(JAVA_LONG.withName("x"), 42L,
+                                            JAVA_LONG.withName("y"), 42L,
+                                            JAVA_LONG.withName("z"), 42L)));
+        cases.add(structCase("SD",  Map.of(JAVA_DOUBLE.withName("x"), 42D)));
+        cases.add(structCase("SDD", Map.of(JAVA_DOUBLE.withName("x"), 42D,
+                                           JAVA_DOUBLE.withName("y"), 42D)));
+        cases.add(structCase("SDDD", Map.of(JAVA_DOUBLE.withName("x"), 42D,
+                                            JAVA_DOUBLE.withName("y"), 42D,
+                                            JAVA_DOUBLE.withName("z"), 42D)));
+
         if (IS_WINDOWS) {
-            cases.add(new SaveValuesCase("SetLastError", "GetLastError"));
-            cases.add(new SaveValuesCase("WSASetLastError", "WSAGetLastError"));
+            cases.add(new SaveValuesCase("SetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "GetLastError", o -> {}));
+            cases.add(new SaveValuesCase("WSASetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "WSAGetLastError", o -> {}));
         }
 
         return cases.stream().map(tc -> new Object[] {tc}).toArray(Object[][]::new);
+    }
+
+    static SaveValuesCase structCase(String name, Map<MemoryLayout, Object> fields) {
+        StructLayout layout = MemoryLayout.structLayout(fields.keySet().toArray(MemoryLayout[]::new));
+
+        Consumer<Object> check = o -> {};
+        for (var field : fields.entrySet()) {
+            MemoryLayout fieldLayout = field.getKey();
+            VarHandle fieldHandle = layout.varHandle(MemoryLayout.PathElement.groupElement(fieldLayout.name().get()));
+            Object value = field.getValue();
+            check = check.andThen(o -> assertEquals(fieldHandle.get(o), value));
+        }
+
+        return new SaveValuesCase("set_errno_" + name, FunctionDescriptor.of(layout, JAVA_INT), "errno", check);
     }
 
 }

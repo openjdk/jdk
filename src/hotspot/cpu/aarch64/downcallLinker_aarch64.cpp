@@ -161,6 +161,20 @@ void DowncallStubGenerator::generate() {
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on AArch64");
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
+  bool should_save_return_value = !_needs_return_buffer;
+  RegSpiller out_reg_spiller(_output_registers);
+  int spill_offset = -1;
+
+  if (should_save_return_value) {
+    spill_offset = 0;
+    // spill area can be shared with shadow space and out args,
+    // since they are only used before the call,
+    // and spill area is only used after.
+    allocated_frame_size = out_reg_spiller.spill_size_bytes() > allocated_frame_size
+      ? out_reg_spiller.spill_size_bytes()
+      : allocated_frame_size;
+  }
+
   StubLocations locs;
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch1);
   if (_needs_return_buffer) {
@@ -170,18 +184,6 @@ void DowncallStubGenerator::generate() {
   if (_captured_state_mask != 0) {
     locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
     allocated_frame_size += BytesPerWord;
-  }
-
-  bool should_save_return_value = !_needs_return_buffer;
-  RegSpiller out_reg_spiller(_output_registers);
-  int spill_offset = -1;
-
-  if (should_save_return_value) {
-    spill_offset = 0;
-    // spill area can be shared with the above, so we take the max of the 2
-    allocated_frame_size = out_reg_spiller.spill_size_bytes() > allocated_frame_size
-      ? out_reg_spiller.spill_size_bytes()
-      : allocated_frame_size;
   }
 
   _frame_size_slots = align_up(framesize + (allocated_frame_size >> LogBytesPerInt), 4);

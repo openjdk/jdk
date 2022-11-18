@@ -191,6 +191,10 @@ public class CallingSequence {
                 .reduce(0, (a, b) -> a | b);
     }
 
+    public int numLeadingParams() {
+        return 2 + (linkerOptions.hasCapturedCallState() ? 1 : 0); // 2 for addr, allocator
+    }
+
     public String asString() {
         StringBuilder sb = new StringBuilder();
 

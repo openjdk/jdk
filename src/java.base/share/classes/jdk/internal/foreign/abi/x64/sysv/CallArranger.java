@@ -126,7 +126,7 @@ public class CallArranger {
         handle = MethodHandles.insertArguments(handle, handle.type().parameterCount() - 1, bindings.nVectorArgs);
 
         if (bindings.isInMemoryReturn) {
-            handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
+            handle = SharedUtils.adaptDowncallForIMR(handle, cDesc, bindings.callingSequence);
         }
 
         return handle;

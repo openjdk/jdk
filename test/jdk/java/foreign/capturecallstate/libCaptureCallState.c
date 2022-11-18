@@ -29,6 +29,94 @@
 #define EXPORT
 #endif
 
-EXPORT void set_errno(int value) {
+EXPORT void set_errno_V(int value) {
     errno = value;
+}
+
+EXPORT int set_errno_I(int value) {
+    errno = value;
+    return 42;
+}
+
+EXPORT double set_errno_D(int value) {
+    errno = value;
+    return 42.0;
+}
+
+struct SL {
+    long long x;
+};
+
+EXPORT struct SL set_errno_SL(int value) {
+    errno = value;
+    struct SL s;
+    s.x = 42;
+    return s;
+}
+
+struct SLL {
+    long long x;
+    long long y;
+};
+
+EXPORT struct SLL set_errno_SLL(int value) {
+    errno = value;
+    struct SLL s;
+    s.x = 42;
+    s.y = 42;
+    return s;
+}
+
+struct SLLL {
+    long long x;
+    long long y;
+    long long z;
+};
+
+EXPORT struct SLLL set_errno_SLLL(int value) {
+    errno = value;
+    struct SLLL s;
+    s.x = 42;
+    s.y = 42;
+    s.z = 42;
+    return s;
+}
+
+struct SD {
+    double x;
+};
+
+EXPORT struct SD set_errno_SD(int value) {
+    errno = value;
+    struct SD s;
+    s.x = 42.0;
+    return s;
+}
+
+struct SDD {
+    double x;
+    double y;
+};
+
+EXPORT struct SDD set_errno_SDD(int value) {
+    errno = value;
+    struct SDD s;
+    s.x = 42.0;
+    s.y = 42.0;
+    return s;
+}
+
+struct SDDD {
+    double x;
+    double y;
+    double z;
+};
+
+EXPORT struct SDDD set_errno_SDDD(int value) {
+    errno = value;
+    struct SDDD s;
+    s.x = 42.0;
+    s.y = 42.0;
+    s.z = 42.0;
+    return s;
 }
