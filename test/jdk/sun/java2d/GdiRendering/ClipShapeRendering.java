@@ -500,8 +500,8 @@ class CaptureFrame extends Frame {
    public CaptureFrame(String title,  Image clientPixels) {
        super("Capture Frame: " + title);
        this.clientPixels = clientPixels;
-       int w = clientPixels.getWidth(null),
-           h = clientPixels.getHeight(null);
+       int w = clientPixels.getWidth(null);
+       int h = clientPixels.getHeight(null);
        setSize(w, h + 30);
        setLocation(x, y);
        x += w;
