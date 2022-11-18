@@ -71,6 +71,28 @@ public class ScopedValues {
         bh.consume(result);
     }
 
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandIsBoundQueries(Blackhole bh) throws Exception {
+        var result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            result += ScopedValuesData.sl1.isBound() ? 1 : 0;
+        }
+        return result;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandMaybeGets(Blackhole bh) throws Exception {
+        int result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            if (ScopedValuesData.sl1.isBound()) {
+                result += ScopedValuesData.sl1.get();
+            }
+        }
+        return result;
+    }
+
     // Test 2: stress the ScopedValue cache.
     // The idea here is to use a bunch of bound values cyclically, which
     // stresses the ScopedValue cache.
