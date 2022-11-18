@@ -205,8 +205,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
     }
   } else {
     // Traditional Shenandoah (non-generational)
-    size_t max_cset    = (size_t) (heap->get_young_evac_reserve() / ShenandoahEvacWaste);
-    size_t cur_cset = 0;
+    size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
+    size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
     size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
     size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
@@ -214,16 +214,19 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
                          byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
                          byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
+    size_t cur_cset = 0;
+    size_t cur_garbage = 0;
+
     for (size_t idx = 0; idx < size; idx++) {
       ShenandoahHeapRegion* r = data[idx]._region;
       size_t new_cset = cur_cset + r->get_live_data_bytes();
       size_t region_garbage = r->garbage();
-      size_t new_garbage = cur_young_garbage + region_garbage;
+      size_t new_garbage = cur_garbage + region_garbage;
       bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
       if ((new_cset <= max_cset) && (add_regardless || (region_garbage > garbage_threshold))) {
         cset->add_region(r);
         cur_cset = new_cset;
-        cur_young_garbage = new_garbage;
+        cur_garbage = new_garbage;
       }
     }
   }
