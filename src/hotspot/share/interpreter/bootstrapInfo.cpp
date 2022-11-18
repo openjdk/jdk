@@ -256,20 +256,20 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     int pos = 0;
     for (int i = 0; i < _argc; i++) {
       if (pos + 20 > (int)sizeof(argbuf)) {
-        int remaining_len = sizeof(argbuf) - pos;
+        size_t remaining_len = sizeof(argbuf) - pos;
         int printed_len = os::snprintf(argbuf + pos, remaining_len, "...");
         assert(printed_len > 0, "error occurs at os::snprintf");
-        assert(printed_len < remaining_len, "argbuf overflow");
+        assert((size_t)printed_len < remaining_len, "argbuf overflow");
         pos += printed_len;
         break;
       }
       if (i > 0) {
           argbuf[pos++] = ',';
       }
-      int remaining_len = sizeof(argbuf) - pos;
+      size_t remaining_len = sizeof(argbuf) - pos;
       int printed_len = os::snprintf(argbuf+pos, remaining_len, "%d", arg_index(i));
       assert(printed_len > 0, "error occurs at os::snprintf");
-      assert(printed_len < remaining_len, "argbuf overflow");
+      assert((size_t)printed_len < remaining_len, "argbuf overflow");
       pos += printed_len;
     }
     st->print_cr("  argument indexes: {%s}", argbuf);

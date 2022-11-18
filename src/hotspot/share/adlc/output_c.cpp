@@ -214,13 +214,13 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
   while ( (paramname = pipeclass->_parameters.iter()) != NULL ) {
     const PipeClassOperandForm *tmppipeopnd =
         (const PipeClassOperandForm *)pipeclass->_localUsage[paramname];
-    int remaining_len = operand_stages_size - templen;
+    size_t remaining_len = operand_stages_size - templen;
     int printed_len = snprintf(&operand_stages[templen],
         remaining_len, "  stage_%s%c\n",
         tmppipeopnd ? tmppipeopnd->_stage : "undefined",
         (++i < paramcount ? ',' : ' ') );
     assert(printed_len > 0, "error occurs at snprintf");
-    assert(printed_len < remaining_len, "insufficient operand_stages buf");
+    assert((size_t)printed_len < remaining_len, "insufficient operand_stages buf");
     templen += printed_len;
   }
 
@@ -293,14 +293,14 @@ static int pipeline_res_stages_initializer(
   for (i = 0; i < pipeline->_rescount; i++) {
     const char * const resname =
       res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i]-1);
-    int remaining_len = resource_stages_size - templen;
+    size_t remaining_len = resource_stages_size - templen;
     int printed_len = snprintf(&resource_stages[templen],
         remaining_len, "  stage_%s%-*s // %s\n",
         resname, max_stage - (int)strlen(resname) + 1,
         (i < pipeline->_rescount-1) ? "," : "",
         pipeline->_reslist.name(i));
     assert(printed_len > 0, "error occurs at snprintf");
-    assert(printed_len < remaining_len, "insufficient resource_stages buf");
+    assert((size_t)printed_len < remaining_len, "insufficient resource_stages buf");
     templen += printed_len;
   }
 
@@ -374,12 +374,12 @@ static int pipeline_res_cycles_initializer(
   templen = 0;
 
   for (i = 0; i < pipeline->_rescount; i++) {
-    int remaining_len = resource_cycles_size - templen;
+    size_t remaining_len = resource_cycles_size - templen;
     int printed_len = snprintf(&resource_cycles[templen], remaining_len,
         "  %*d%c // %s\n", cyclelen, res_cycles[i],
         (i < pipeline->_rescount-1) ? ',' : ' ', pipeline->_reslist.name(i));
     assert(printed_len > 0, "error occurs at snprintf");
-    assert(printed_len < remaining_len, "insufficient resource_cycles buf");
+    assert((size_t)printed_len < remaining_len, "insufficient resource_cycles buf");
     templen += printed_len;
   }
 
@@ -477,7 +477,7 @@ static int pipeline_res_mask_initializer(
       resources_used_exclusively |= used_mask;
     }
 
-    int remaining_len = resource_mask_size - templen;
+    size_t remaining_len = resource_mask_size - templen;
     int formatlen = snprintf(&resource_mask[templen],
         remaining_len, "  %s(0x%0*x, %*d, %*d, %s %s(",
         pipeline_use_element,
@@ -486,7 +486,7 @@ static int pipeline_res_mask_initializer(
         ((used_mask & (used_mask-1)) != 0) ? "true, " : "false,",
         pipeline_use_cycle_mask);
     assert(formatlen > 0, "error occurs at snprintf");
-    assert(formatlen < remaining_len, "insufficient resource_mask buf");
+    assert((size_t)formatlen < remaining_len, "insufficient resource_mask buf");
     templen += formatlen;
 
     memset(res_mask, 0, cyclemasksize * sizeof(uint));
@@ -523,7 +523,7 @@ static int pipeline_res_mask_initializer(
       formatlen = snprintf(&resource_mask[templen],
           remaining_len, "0x%08x%s", res_mask[j], j > 0 ? ", " : "");
       assert(formatlen > 0, "error occurs at snprintf");
-      assert(formatlen < remaining_len, "insufficient resource_mask buf");
+      assert((size_t)formatlen < remaining_len, "insufficient resource_mask buf");
       templen += formatlen;
     }
 
@@ -1096,11 +1096,11 @@ static void build_instruction_index_mapping( FILE *fp, FormDict &globals, PeepMa
         char inst_prefix[]  = "instXXXX_";
         int printed_len = snprintf(inst_prefix, sizeof(inst_prefix), "inst%d_",   inst_position);
         assert(printed_len > 0, "error occurs at snprintf");
-        assert(printed_len < sizeof(inst_prefix), "inst_prefix buf overflow");
+        assert((size_t)printed_len < sizeof(inst_prefix), "inst_prefix buf overflow");
         char receiver[]     = "instXXXX->";
         printed_len = snprintf(receiver, sizeof(receiver), "inst%d->", inst_position);
         assert(printed_len > 0, "error occurs at snprintf");
-        assert(printed_len < sizeof(receiver), "receiver buf overflow");
+        assert((size_t)printed_len < sizeof(receiver), "receiver buf overflow");
         inst->index_temps( fp, globals, inst_prefix, receiver );
       }
     }
@@ -1196,7 +1196,7 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
           // Must have index into operands
           int printed_len = snprintf(left_reg_index, sizeof(left_reg_index), ",inst%u_idx%u", (unsigned)left_index, (unsigned)left_op_index);
           assert(printed_len > 0, "error occurs at snprintf");
-          assert(printed_len < sizeof(left_reg_index), "left_reg_index buf overflow");
+          assert((size_t)printed_len < sizeof(left_reg_index), "left_reg_index buf overflow");
         } else {
           strcpy(left_reg_index, "");
         }
@@ -1210,7 +1210,7 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
             // Must have index into operands
             int printed_len = snprintf(right_reg_index, sizeof(right_reg_index), ",inst%u_idx%u", (unsigned)right_index, (unsigned)right_op_index);
             assert(printed_len > 0, "error occurs at snprintf");
-            assert(printed_len < sizeof(right_reg_index), "right_reg_index buf overflow");
+            assert((size_t)printed_len < sizeof(right_reg_index), "right_reg_index buf overflow");
           } else {
             strcpy(right_reg_index, "");
           }
@@ -2599,19 +2599,19 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
     const char* arg_name = ins_encode->rep_var_name(inst, param_no);
     int idx = inst.operand_position_format(arg_name);
     if (strcmp(arg_name, "constanttablebase") == 0) {
-      int remaining_len = remaining_buflen(idxbuf, ib);
+      size_t remaining_len = remaining_buflen(idxbuf, ib);
       int printed_len = snprintf(ib, remaining_len,
           "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
           name, type, arg_name);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "ib buf overflow");
+      assert((size_t)printed_len < remaining_len, "ib buf overflow");
       ib += printed_len;
 
       remaining_len = remaining_buflen(nbuf, nb);
       printed_len = snprintf(nb, remaining_len,
           "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "nb buf overflow");
+      assert((size_t)printed_len < remaining_len, "nb buf overflow");
       nb += printed_len;
       // There is no operand for the constanttablebase.
     } else if (inst.is_noninput_operand(idx)) {
@@ -2619,26 +2619,26 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
                            "In %s: you can not pass the non-input %s to a postalloc expand encoding.\n",
                            inst._ident, arg_name);
     } else {
-      int remaining_len = remaining_buflen(idxbuf, ib);
+      size_t remaining_len = remaining_buflen(idxbuf, ib);
       int printed_len = snprintf(ib, remaining_len,
           "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
           name, idx, type, arg_name);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "ib buf overflow");
+      assert((size_t)printed_len < remaining_len, "ib buf overflow");
       ib += printed_len;
 
       remaining_len = remaining_buflen(nbuf, nb);
       printed_len = snprintf(nb, remaining_len,
           "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "nb buf overflow");
+      assert((size_t)printed_len < remaining_len, "nb buf overflow");
       nb += printed_len;
 
       remaining_len = remaining_buflen(opbuf, ob);
       printed_len = snprintf(ob, remaining_len,
           "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
       assert(printed_len > 0, "error occurs at snprintf");
-      assert(printed_len < remaining_len, "ob buf overflow");
+      assert((size_t)printed_len < remaining_len, "ob buf overflow");
       ob += printed_len;
     }
     param_no++;
