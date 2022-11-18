@@ -277,8 +277,9 @@ public class Runtime {
      * to finish if it is already in progress. This method never returns normally.
      *
      * @apiNote
-     * This method should be used with extreme caution. Using it may circumvent or disrupt
-     * any cleanup actions intended to be performed by shutdown hooks,
+     * This method should be used with extreme caution &mdash; halting all threads
+     * can have many unexpected results. For instance, it may circumvent cleanup
+     * actions intended to be performed by shutdown hooks,
      * {@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers},
      * finally blocks, or try-with-resources blocks. This can lead to data corruption.
      *
