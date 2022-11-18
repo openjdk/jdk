@@ -41,6 +41,7 @@ private:
   uint16_t _segment_mask_or_size;
   uint32_t _index_or_offset; // stack offset in bytes for stack storage
 
+  friend unsigned hash(const VMStorage& vms);
   friend bool operator==(const VMStorage& a, const VMStorage& b);
 
   constexpr inline static bool is_reg(StorageType type);
@@ -88,6 +89,12 @@ public:
 
   void print_on(outputStream* os) const;
 };
+
+inline unsigned hash(const VMStorage& vms) {
+  return static_cast<unsigned int>(vms._type)
+    ^ vms._index_or_offset
+    ^ vms._segment_mask_or_size;
+}
 
 inline bool operator==(const VMStorage& a, const VMStorage& b) {
   return a._type == b._type
