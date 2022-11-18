@@ -47,14 +47,14 @@ public class CRLNumberMissing {
         var pk = KeyPairGenerator.getInstance("Ed25519")
                 .generateKeyPair().getPrivate();
 
-        var crlWithoutNum = X509CRLImpl.signNew(
+        var crlWithoutNum = X509CRLImpl.newSigned(
                 new X509CRLImpl.TBSCertList(
                         new X500Name("CN=CRL"), new Date(), new Date()),
                 pk, "Ed25519");
 
         var exts = new CRLExtensions();
         exts.setExtension("CRLNumber", new CRLNumberExtension(1));
-        var crlWithNum = X509CRLImpl.signNew(
+        var crlWithNum = X509CRLImpl.newSigned(
                 new X509CRLImpl.TBSCertList(
                         new X500Name("CN=CRL"), new Date(), new Date(),
                         null, exts),
