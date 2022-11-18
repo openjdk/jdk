@@ -304,7 +304,7 @@ public interface StringTemplate {
      * @throws NullPointerException if stringTemplates is null or if any of the elements are null
      *
      * @implNote If zero {@link StringTemplate} arguments are provided then a
-     * {@link StringTemplate} with an empty frament and no values is returned, as if invoking
+     * {@link StringTemplate} with an empty fragment and no values is returned, as if invoking
      * <code>StringTemplate.of("")</code> . If only one {@link StringTemplate} argument is provided
      * then it is returned unchanged.
      */
