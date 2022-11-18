@@ -201,13 +201,14 @@ public final class ScopedValue<T> {
      * <p> Unless otherwise specified, passing a {@code null} argument to a constructor
      * or method in this class will cause a {@link NullPointerException} to be thrown.
      */
-    static sealed class Snapshot permits EmptySnapshot {
+    static final class Snapshot {
         final Snapshot prev;
         final Carrier bindings;
         final int bitmask;
 
         private static final Object NIL = new Object();
 
+        static final Snapshot EMPTY_SNAPSHOT = new Snapshot();
         Snapshot(Carrier bindings, Snapshot prev) {
             this.prev = prev;
             this.bindings = bindings;
@@ -235,19 +236,6 @@ public final class ScopedValue<T> {
                 }
             }
             return NIL;
-        }
-    }
-
-    static final class EmptySnapshot extends Snapshot {
-
-        private EmptySnapshot() {
-            super();
-        }
-
-        private static final Snapshot SINGLETON = new EmptySnapshot();
-
-        static final Snapshot getInstance() {
-            return SINGLETON;
         }
     }
 
@@ -388,6 +376,8 @@ public final class ScopedValue<T> {
          * name or signature require corresponding changes in
          * JVM_FindScopedValueBindings().
          */
+        @Hidden
+        @ForceInline
         private <R> R runWith(Snapshot newSnapshot, Callable<R> op) throws Exception {
             try {
                 JLA.setScopedValueBindings(newSnapshot);
@@ -658,6 +648,10 @@ public final class ScopedValue<T> {
         JLA.setScopedValueCache(cache);
     }
 
+    // special value to indicate this is a newly-created Thread
+    // Note that his must match the declaration in j.l.Thread.
+    private static final Object NEW_THREAD_BINDINGS = Thread.class;
+
     private static Snapshot scopedValueBindings() {
         // Bindings can be in one of four states:
         //
@@ -671,16 +665,16 @@ public final class ScopedValue<T> {
         // the stack to find them.
 
         Object bindings = JLA.scopedValueBindings();
-        if (bindings == Thread.class) {
+        if (bindings == NEW_THREAD_BINDINGS) {
             // This must be a new thread
-           return EmptySnapshot.getInstance();
+           return Snapshot.EMPTY_SNAPSHOT;
         }
         if (bindings == null) {
             // Search the stack
             bindings = JLA.findScopedValueBindings();
             if (bindings == null) {
                 // Nothing on the stack.
-                bindings = EmptySnapshot.getInstance();
+                bindings = Snapshot.EMPTY_SNAPSHOT;
             }
         }
         assert (bindings != null);

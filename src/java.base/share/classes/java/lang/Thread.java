@@ -285,6 +285,8 @@ public class Thread implements Runnable {
      */
     private Object scopedValueBindings;
 
+    // special value to indicate this is a newly-created Thread
+    // Note that his must match the declaration in ScopedValue.
     private static final Object NEW_THREAD_BINDINGS = Thread.class;
 
     static Object scopedValueBindings() {
@@ -742,7 +744,7 @@ public class Thread implements Runnable {
             }
         }
 
-        // special value to mean a new thread
+        // special value to indicate this is a newly-created Thread
         this.scopedValueBindings = NEW_THREAD_BINDINGS;
     }
 
