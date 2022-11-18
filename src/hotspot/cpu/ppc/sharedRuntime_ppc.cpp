@@ -1800,7 +1800,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 #endif
 
     // Read interpreter arguments into registers (this is an ad-hoc i2c adapter)
-    __ ld(reg_cont_obj,   Interpreter::stackElementSize*3, R15_esp);
+    __ ld(reg_cont_obj,    Interpreter::stackElementSize*3, R15_esp);
     __ lwz(reg_is_cont,    Interpreter::stackElementSize*2, R15_esp);
     __ lwz(reg_is_virtual, Interpreter::stackElementSize*1, R15_esp);
 

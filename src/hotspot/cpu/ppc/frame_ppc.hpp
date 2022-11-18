@@ -367,7 +367,7 @@
   };
 
   union {
-    intptr_t*  _fp; // frame pointer
+    intptr_t* _fp;  // frame pointer
     int _offset_fp; // relative frame pointer for use in stack-chunk frames
   };
 

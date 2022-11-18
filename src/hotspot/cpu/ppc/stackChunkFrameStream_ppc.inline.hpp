@@ -189,9 +189,9 @@ inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops() const
   frame f = to_frame();
   f.interpreted_frame_oop_map(&mask);
   return  mask.num_oops()
-        + 1 // for the mirror oop
-        + ((intptr_t*)f.interpreter_frame_monitor_begin()
-            - (intptr_t*)f.interpreter_frame_monitor_end())/BasicObjectLock::size();
+          + 1 // for the mirror oop
+          + ((intptr_t*)f.interpreter_frame_monitor_begin()
+             - (intptr_t*)f.interpreter_frame_monitor_end())/BasicObjectLock::size();
 }
 
 template<>

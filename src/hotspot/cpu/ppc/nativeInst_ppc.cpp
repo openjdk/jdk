@@ -445,7 +445,7 @@ bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
   return nm->verified_entry_point() != code_pos;
 }
 
-// Inserts an undefined instruction at a given pc
+// Inserts an instruction which is specified to cause a SIGILL at a given pc
 void NativeDeoptInstruction::insert(address code_pos) {
   ResourceMark rm;
   int code_size = 1 * BytesPerInstWord;
