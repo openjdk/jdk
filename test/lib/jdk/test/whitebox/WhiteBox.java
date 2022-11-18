@@ -121,6 +121,8 @@ public class WhiteBox {
 
   public native void forceSafepoint();
 
+  public native void forceClassLoaderStatsSafepoint();
+
   private native long getConstantPool0(Class<?> aClass);
   public         long getConstantPool(Class<?> aClass) {
     Objects.requireNonNull(aClass);
