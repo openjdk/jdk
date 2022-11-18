@@ -80,7 +80,6 @@ void GCTracer::send_reference_process_time_event(const double total_time) const 
   if (e.should_commit()) {
       e.set_gcId(GCId::current());
       e.set_totalTime((size_t)(total_time * NANOSECS_PER_MILLISEC));
-//      e.set_totalTime(total_time);
       e.commit();
   }
 }
