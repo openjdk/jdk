@@ -121,11 +121,11 @@ public interface StringTemplate {
      * In the example: {@snippet :
      * String student = "Mary";
      * String teacher = "Johnson";
-     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
+     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s classroom.";
      * List<String> fragments = st.fragments(); // @highlight substring="fragments()"
      * }
      * {@code fragments} will be equivalent to
-     * {@code List.of("The student ", " is in ", "'s class room.")}
+     * {@code List.of("The student ", " is in ", "'s classroom.")}
      *
      * @return list of string fragments
      */
@@ -137,7 +137,7 @@ public interface StringTemplate {
      * {@snippet :
      * String student = "Mary";
      * String teacher = "Johnson";
-     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
+     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s classroom.";
      * List<Object> values = st.values(); // @highlight substring="values()"
      * }
      * {@code values} will be equivalent to {@code List.of(student, teacher)}
@@ -156,10 +156,10 @@ public interface StringTemplate {
      * {@snippet :
      * String student = "Mary";
      * String teacher = "Johnson";
-     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s class room.";
+     * StringTemplate st = RAW."The student \{student} is in \{teacher}'s classroom.";
      * String result = st.interpolate(); // @highlight substring="interpolate()"
      * }
-     * {@code result} will be equivalent to {@code "The student Mary is in Johnson's class room."}
+     * {@code result} will be equivalent to {@code "The student Mary is in Johnson's classroom."}
      *
      * @return interpolation of this {@link StringTemplate}
      */
@@ -173,10 +173,10 @@ public interface StringTemplate {
      * {@snippet :
      * String student = "Mary";
      * String teacher = "Johnson";
-     * String result1 = STR."The student \{student} is in \{teacher}'s class room.";
-     * String result2 = RAW."The student \{student} is in \{teacher}'s class room.".process(STR); // @highlight substring="process"
+     * String result1 = STR."The student \{student} is in \{teacher}'s classroom.";
+     * String result2 = RAW."The student \{student} is in \{teacher}'s classroom.".process(STR); // @highlight substring="process"
      * }
-     * produces an equivalent result for both {@code result1} and {@code result2}.
+     * Produces an equivalent result for both {@code result1} and {@code result2}.
      *
      * @param processor the {@link ValidatingProcessor} instance to process
      *
@@ -188,8 +188,7 @@ public interface StringTemplate {
      * @throws E exception thrown by the template processor when validation fails
      * @throws NullPointerException if processor is null
      *
-     * @implNote The default implementation invokes the processor's process
-     * method {@code processor.process(this)}.
+     * @implNote The default implementation invokes {@code processor.process(this)}.
      */
     default <R, E extends Throwable> R
     process(ValidatingProcessor<? extends R, ? extends E> processor) throws E {
@@ -285,7 +284,8 @@ public interface StringTemplate {
     }
 
     /**
-     * Combine one or more {@link StringTemplate StringTemplates} into a single {@link StringTemplate}.
+     * Combine zero or more {@link StringTemplate StringTemplates} into a single
+     * {@link StringTemplate}.
      * {@snippet :
      * StringTemplate st = StringTemplate.combine(RAW."\{a}", RAW."\{b}", RAW."\{c}");
      * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
@@ -301,8 +301,12 @@ public interface StringTemplate {
      *
      * @return combined {@link StringTemplate}
      *
-     * @throws NullPointerException if sts is null or if any of the elements are null
-     * @throws RuntimeException if sts has zero elements
+     * @throws NullPointerException if stringTemplates is null or if any of the elements are null
+     *
+     * @implNote If zero {@link StringTemplate} arguments are provided then a
+     * {@link StringTemplate} with an empty frament and no values is returned, as if invoking
+     * <code>StringTemplate.of("")</code> . If only one {@link StringTemplate} argument is provided
+     * then it is returned unchanged.
      */
     static StringTemplate combine(StringTemplate... stringTemplates) {
         return TemplateSupport.combine(stringTemplates);
@@ -310,8 +314,7 @@ public interface StringTemplate {
 
     /**
      * The {@link StringProcessor} instance conventionally used for the string interpolation
-     * of a supplied {@link StringTemplate}. In order to make use easier, {@link StringTemplate#STR}
-     * is implicitly statically imported into every Java source. No other declaration is required.
+     * of a supplied {@link StringTemplate}.
      * <p>
      * For better visibility and when practical, it is recommended that users use the
      * {@link StringTemplate#STR} processor instead of invoking the
@@ -321,7 +324,8 @@ public interface StringTemplate {
      * int y = 20;
      * String result = STR."\{x} + \{y} = \{x + y}"; // @highlight substring="STR"
      * }
-     * @implNote The result of interpolation is not interned.
+     * @implNote {@link StringTemplate#STR} is statically imported implicitly into every
+     * Java compilation unit.<p>The result of interpolation is not interned.
      */
     static final StringProcessor STR = StringTemplate::interpolate;
 
@@ -332,10 +336,14 @@ public interface StringTemplate {
      * {@link StringTemplate#process(ValidatingProcessor)} or
      * {@link ValidatingProcessor#process(StringTemplate)} methods.
      * {@snippet :
+     * import static java.lang.template.StringTemplate.RAW;
+     * ...
      * StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
      * ...other steps...
      * String result = STR.process(st);
      * }
+     * @implNote Unlike {@link StringTemplate#STR}, {@link StringTemplate#RAW} must be
+     * statically imported explicitly.
      */
     static final TemplateProcessor<StringTemplate> RAW = st -> st;
 
