@@ -371,6 +371,7 @@ xcode-select --install
 
 When updating Xcode, it is advisable to keep an older version for building the JDK.
 To use a specific version of Xcode you have multiple options:
+
   * Use `xcode-select -s` before running `configure`, e.g. `xcode-select -s /Applications/Xcode13.1.app`. The drawback is that the setting
     is system wide and you may have to revert it after an OpenJDK build.
   * Use configure option `--with-xcode-path`, e.g. `configure --with-xcode-path=/Applications/Xcode13.1.app`
