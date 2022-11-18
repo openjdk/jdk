@@ -700,8 +700,6 @@ tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
-com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
-
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
 com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
