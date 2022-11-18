@@ -769,9 +769,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       ShenandoahCodeRoots::arm_nmethods();
       ShenandoahStackWatermark::change_epoch_id();
 
-      // Notify JVMTI that oops are changed.
-      JvmtiTagMap::set_needs_rehashing();
-
       if (heap->mode()->is_generational()) {
         // Calculate the temporary evacuation allowance supplement to young-gen memory capacity (for allocations
         // and young-gen evacuations).

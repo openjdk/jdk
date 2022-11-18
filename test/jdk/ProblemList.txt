@@ -124,7 +124,6 @@ java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-al
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
-java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
 javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
@@ -224,7 +223,6 @@ java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/MultiPaintEventTest/MultiPaintEventTest.java 8284825 windows-all
-sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
@@ -243,7 +241,6 @@ java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.java 8017454 macosx-all
 java/awt/Frame/MiscUndecorated/RepaintTest.java 8266244 macosx-aarch64
-java/awt/Robot/ModifierRobotKey/ModifierRobotKeyTest.java 8157173 generic-all
 java/awt/Modal/FileDialog/FileDialogAppModal1Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal2Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal3Test.java 7186009 macosx-all
@@ -508,7 +505,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
-java/io/File/GetXSpace.java                                     8291911 windows-all
 
 ############################################################################
 
@@ -617,6 +613,13 @@ sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 gene
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
+sun/security/tools/keytool/NssTest.java                         8295343 linux-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 linux-all
+sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
+sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
+sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+
 ############################################################################
 
 # jdk_sound
@@ -689,6 +692,11 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
 ############################################################################
 
+# core_svc
+tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
+
+############################################################################
+
 # jdk_jdi
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
@@ -749,7 +757,7 @@ jdk/jfr/startupargs/TestStartName.java                          8214685 windows-
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
-jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 linux-x64,macosx-x64
+jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 generic-all
 
 ############################################################################
 

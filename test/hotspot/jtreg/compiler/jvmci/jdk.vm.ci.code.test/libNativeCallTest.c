@@ -189,6 +189,39 @@ JNIEXPORT jfloat JNICALL Java_jdk_vm_ci_code_test_NativeCallTest__1L32SDILDS(JNI
                    a,   b,   c,   d,   e,   f);
 }
 
+jint JNICALL I32I(jint i00, jint i01, jint i02, jint i03, jint i04, jint i05, jint i06, jint i07,
+                  jint i08, jint i09, jint i0a, jint i0b, jint i0c, jint i0d, jint i0e, jint i0f,
+                  jint i10, jint i11, jint i12, jint i13, jint i14, jint i15, jint i16, jint i17,
+                  jint i18, jint i19, jint i1a, jint i1b, jint i1c, jint i1d, jint i1e, jint i1f,
+                  jint a) {
+  return i00 + i01 + i02 + i03 + i04 + i05 + i06 + i07 +
+         i08 + i09 + i0a + i0b + i0c + i0d + i0e + i0f +
+         i10 + i11 + i12 + i13 + i14 + i15 + i16 + i17 +
+         i18 + i19 + i1a + i1b + i1c + i1d + i1e + i1f +
+         a;
+}
+
+JNIEXPORT jlong JNICALL Java_jdk_vm_ci_code_test_NativeCallTest_getI32I(JNIEnv *env, jclass clazz) {
+  return (jlong) (intptr_t) I32I;
+}
+
+JNIEXPORT jint JNICALL Java_jdk_vm_ci_code_test_NativeCallTest__1I32I(JNIEnv *env, jclass clazz,
+                                                                      jint i00, jint i01, jint i02, jint i03,
+                                                                      jint i04, jint i05, jint i06, jint i07,
+                                                                      jint i08, jint i09, jint i0a, jint i0b,
+                                                                      jint i0c, jint i0d, jint i0e, jint i0f,
+                                                                      jint i10, jint i11, jint i12, jint i13,
+                                                                      jint i14, jint i15, jint i16, jint i17,
+                                                                      jint i18, jint i19, jint i1a, jint i1b,
+                                                                      jint i1c, jint i1d, jint i1e, jint i1f,
+                                                                      jint a) {
+  return I32I(i00, i01, i02, i03, i04, i05, i06, i07,
+              i08, i09, i0a, i0b, i0c, i0d, i0e, i0f,
+              i10, i11, i12, i13, i14, i15, i16, i17,
+              i18, i19, i1a, i1b, i1c, i1d, i1e, i1f,
+              a);
+}
+
 #ifdef __cplusplus
 }
 #endif

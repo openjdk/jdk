@@ -38,6 +38,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -385,6 +387,8 @@ class StubGenerator: public StubCodeGenerator {
       __ BIND(L);
     }
 #endif
+
+    __ pop_cont_fastpath(xthread);
 
     // restore callee-save registers
     __ fld(f27, f27_save);
@@ -1786,7 +1790,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(t0, dst);
+      __ load_klass(t0, dst, t1);
       __ beqz(t0, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
@@ -3770,7 +3774,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif // ASSERT
     __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
-
     // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub* stub =
       RuntimeStub::new_runtime_stub(name,
@@ -3782,28 +3785,152 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+#undef __
+#define __ _masm->
+
+  address generate_cont_thaw(Continuation::thaw_kind kind) {
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    address start = __ pc();
+
+    if (return_barrier) {
+      __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    if (return_barrier) {
+      // preserve possible return value from a method returning to the return barrier
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    __ mvw(c_rarg1, (return_barrier ? 1 : 0));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    Label thaw_success;
+    // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
+    __ bnez(t1, thaw_success);
+    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ jr(t0);
+    __ bind(thaw_success);
+
+    // make room for the thawed frames
+    __ sub(t0, sp, t1);
+    __ andi(sp, t0, -16); // align
+
+    if (return_barrier) {
+      // save original return value -- again
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    // If we want, we can templatize thaw by kind, and have three different entries
+    __ mvw(c_rarg1, (uint32_t)kind);
+
+    __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 is the sp of the yielding frame
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    } else {
+      __ mv(x10, zr); // return 0 (success) from doYield
+    }
+
+    // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
+    __ mv(fp, t1);
+    __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
+
+    if (return_barrier_exception) {
+      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
+      __ verify_oop(x10);
+      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
+
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
+
+      // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
+
+      __ mv(x11, x10); // the exception handler
+      __ mv(x10, x9); // restore return value contaning the exception oop
+      __ verify_oop(x10);
+
+      __ leave();
+      __ mv(x13, ra);
+      __ jr(x11); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret();
+    }
+
+    return start;
+  }
+
   address generate_cont_thaw() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "Cont thaw");
+    address start = __ pc();
+    generate_cont_thaw(Continuation::thaw_top);
+    return start;
   }
 
   address generate_cont_returnBarrier() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    // TODO: will probably need multiple return barriers depending on return type
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier);
+
+    return start;
   }
 
   address generate_cont_returnBarrier_exception() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
   }
 
 #if INCLUDE_JFR
-
-#undef __
-#define __ _masm->
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
     __ set_last_Java_frame(sp, fp, the_pc, t0);
@@ -3859,9 +3986,9 @@ class StubGenerator: public StubCodeGenerator {
     return stub;
   }
 
-#undef __
-
 #endif // INCLUDE_JFR
+
+#undef __
 
   // Initialization
   void generate_initial() {
@@ -3899,15 +4026,15 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub == nullptr ? nullptr
-                                                    : StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
   void generate_all() {
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {
-      StubRoutines::_verify_oop_subroutine_entry   = generate_verify_oop();
+      StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
     }
+
     StubRoutines::_throw_AbstractMethodError_entry =
       generate_throw_exception("AbstractMethodError throw_exception",
                                CAST_FROM_FN_PTR(address,
@@ -3981,8 +4108,6 @@ class StubGenerator: public StubCodeGenerator {
       generate_all();
     }
   }
-
-  ~StubGenerator() {}
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 8

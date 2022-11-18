@@ -46,7 +46,6 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
 AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
 [
   ## Setup strip.
-  # FIXME: we should really only export STRIPFLAGS from here, not POST_STRIP_CMD.
   if test "x$STRIP" != x; then
     AC_MSG_CHECKING([how to run strip])
 
@@ -134,4 +133,3 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
 
   AC_SUBST($2JVM_ASFLAGS)
 ])
-

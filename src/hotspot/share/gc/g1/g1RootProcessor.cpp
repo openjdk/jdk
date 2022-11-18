@@ -85,7 +85,6 @@ public:
   StrongRootsClosures(OopClosure* roots, CLDClosure* clds, CodeBlobClosure* blobs) :
       _roots(roots), _clds(clds), _blobs(blobs) {}
 
-  OopClosure* weak_oops()   { return NULL; }
   OopClosure* strong_oops() { return _roots; }
 
   CLDClosure* weak_clds()        { return NULL; }
@@ -116,7 +115,6 @@ public:
   AllRootsClosures(OopClosure* roots, CLDClosure* clds) :
       _roots(roots), _clds(clds) {}
 
-  OopClosure* weak_oops() { return _roots; }
   OopClosure* strong_oops() { return _roots; }
 
   // By returning the same CLDClosure for both weak and strong CLDs we ensure

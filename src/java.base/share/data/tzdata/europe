@@ -527,9 +527,6 @@ Zone	Europe/London	-0:01:15 -	LMT	1847 Dec  1
 			 1:00	-	BST	1971 Oct 31  2:00u
 			 0:00	GB-Eire	%s	1996
 			 0:00	EU	GMT/BST
-Link	Europe/London	Europe/Jersey
-Link	Europe/London	Europe/Guernsey
-Link	Europe/London	Europe/Isle_of_Man
 
 # From Paul Eggert (2018-02-15):
 # In January 2018 we discovered that the negative SAVE values in the
@@ -902,6 +899,8 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 			3:00	-	+03
 
 # Belgium
+# Luxembourg
+# Netherlands
 #
 # From Michael Deckers (2019-08-25):
 # The exposition in the web page
@@ -984,11 +983,6 @@ Zone	Europe/Brussels	0:17:30 -	LMT	1880
 			1:00	C-Eur	CE%sT	1944 Sep  3
 			1:00	Belgium	CE%sT	1977
 			1:00	EU	CE%sT
-Link Europe/Brussels Europe/Amsterdam
-Link Europe/Brussels Europe/Luxembourg
-
-# Bosnia and Herzegovina
-# See Europe/Belgrade.
 
 # Bulgaria
 #
@@ -1015,13 +1009,11 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 			2:00	E-Eur	EE%sT	1997
 			2:00	EU	EE%sT
 
-# Croatia
-# See Europe/Belgrade.
-
 # Cyprus
 # Please see the 'asia' file for Asia/Nicosia.
 
-# Czech Republic / Czechia
+# Czech Republic (Czechia)
+# Slovakia
 #
 # From Paul Eggert (2018-04-15):
 # The source for Czech data is: Kdy začíná a končí letní čas. 2018-04-15.
@@ -1048,15 +1040,14 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # End of rearguard section.
 			1:00	Czech	CE%sT	1979
 			1:00	EU	CE%sT
-Link Europe/Prague Europe/Bratislava
 
-
-# Denmark, Faroe Islands, and Greenland
-# For Denmark see Europe/Berlin.
-
+# Faroe Is
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 			 0:00	-	WET	1981
 			 0:00	EU	WE%sT
+
+# Greenland
 #
 # From Paul Eggert (2004-10-31):
 # During World War II, Germany maintained secret manned weather stations in
@@ -1282,11 +1273,8 @@ Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 			2:00	Finland	EE%sT	1983
 			2:00	EU	EE%sT
 
-# Åland Is
-Link	Europe/Helsinki	Europe/Mariehamn
-
-
 # France
+# Monaco
 
 # From Ciro Discepolo (2000-12-20):
 #
@@ -1423,9 +1411,11 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 16
 			0:00	France	WE%sT	1945 Sep 16  3:00
 			1:00	France	CE%sT	1977
 			1:00	EU	CE%sT
-Link Europe/Paris Europe/Monaco
 
+# Denmark
 # Germany
+# Norway
+# Sweden
 
 # From Markus Kuhn (1998-09-29):
 # The German time zone web site by the Physikalisch-Technische
@@ -1443,6 +1433,53 @@ Link Europe/Paris Europe/Monaco
 # However, Moscow did not observe daylight saving in 1945, so
 # this was equivalent to UT +03, not +04.
 
+# Svalbard & Jan Mayen
+
+# From Steffen Thorsen (2001-05-01):
+# Although I could not find it explicitly, it seems that Jan Mayen and
+# Svalbard have been using the same time as Norway at least since the
+# time they were declared as parts of Norway.  Svalbard was declared
+# as a part of Norway by law of 1925-07-17 no 11, section 4 and Jan
+# Mayen by law of 1930-02-27 no 2, section 2. (From
+# <http://www.lovdata.no/all/nl-19250717-011.html> and
+# <http://www.lovdata.no/all/nl-19300227-002.html>).  The law/regulation
+# for normal/standard time in Norway is from 1894-06-29 no 1 (came
+# into operation on 1895-01-01) and Svalbard/Jan Mayen seem to be a
+# part of this law since 1925/1930. (From
+# <http://www.lovdata.no/all/nl-18940629-001.html>) I have not been
+# able to find if Jan Mayen used a different time zone (e.g. -0100)
+# before 1930. Jan Mayen has only been "inhabited" since 1921 by
+# Norwegian meteorologists and maybe used the same time as Norway ever
+# since 1921.  Svalbard (Arctic/Longyearbyen) has been inhabited since
+# before 1895, and therefore probably changed the local time somewhere
+# between 1895 and 1925 (inclusive).
+
+# From Paul Eggert (2013-09-04):
+#
+# Actually, Jan Mayen was never occupied by Germany during World War II,
+# so it must have diverged from Oslo time during the war, as Oslo was
+# keeping Berlin time.
+#
+# <https://www.jan-mayen.no/history.htm> says that the meteorologists
+# burned down their station in 1940 and left the island, but returned in
+# 1941 with a small Norwegian garrison and continued operations despite
+# frequent air attacks from Germans.  In 1943 the Americans established a
+# radiolocating station on the island, called "Atlantic City".  Possibly
+# the UT offset changed during the war, but I think it unlikely that
+# Jan Mayen used German daylight-saving rules.
+#
+# Svalbard is more complicated, as it was raided in August 1941 by an
+# Allied party that evacuated the civilian population to England (says
+# <http://www.bartleby.com/65/sv/Svalbard.html>).  The Svalbard FAQ
+# <http://www.svalbard.com/SvalbardFAQ.html> says that the Germans were
+# expelled on 1942-05-14.  However, small parties of Germans did return,
+# and according to Wilhelm Dege's book "War North of 80" (1954)
+# http://www.ucalgary.ca/UofC/departments/UP/1-55238/1-55238-110-2.html
+# the German armed forces at the Svalbard weather station code-named
+# Haudegen did not surrender to the Allies until September 1945.
+#
+# All these events predate our cutoff date of 1970, so use Europe/Berlin
+# for these regions.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Germany	1946	only	-	Apr	14	2:00s	1:00	S
@@ -1467,11 +1504,6 @@ Zone	Europe/Berlin	0:53:28 -	LMT	1893 Apr
 			1:00 SovietZone	CE%sT	1946
 			1:00	Germany	CE%sT	1980
 			1:00	EU	CE%sT
-Link Europe/Berlin Arctic/Longyearbyen
-Link Europe/Berlin Europe/Copenhagen
-Link Europe/Berlin Europe/Oslo
-Link Europe/Berlin Europe/Stockholm
-
 
 # Georgia
 # Please see the "asia" file for Asia/Tbilisi.
@@ -1590,10 +1622,9 @@ Zone	Europe/Budapest	1:16:20 -	LMT	1890 Nov  1
 			1:00	Hungary	CE%sT	1984
 			1:00	EU	CE%sT
 
-# Iceland
-# See Africa/Abidjan.
-
 # Italy
+# San Marino
+# Vatican City
 #
 # From Paul Eggert (2001-03-06):
 # Sicily and Sardinia each had their own time zones from 1866 to 1893,
@@ -1712,13 +1743,6 @@ Zone	Europe/Rome	0:49:56 -	LMT	1866 Dec 12
 			1:00	C-Eur	CE%sT	1944 Jun  4
 			1:00	Italy	CE%sT	1980
 			1:00	EU	CE%sT
-Link Europe/Rome Europe/Vatican
-Link Europe/Rome Europe/San_Marino
-
-
-# Kosovo
-# See Europe/Belgrade.
-
 
 # Latvia
 
@@ -1802,10 +1826,6 @@ Zone	Europe/Riga	1:36:34	-	LMT	1880
 			2:00	-	EET	2001 Jan  2
 			2:00	EU	EE%sT
 
-# Liechtenstein
-# See Europe/Zurich.
-
-
 # Lithuania
 
 # From Paul Eggert (2016-03-18):
@@ -1857,12 +1877,6 @@ Zone	Europe/Vilnius	1:41:16	-	LMT	1880
 			1:00	EU	CE%sT	1999 Oct 31  1:00u
 			2:00	-	EET	2003 Jan  1
 			2:00	EU	EE%sT
-
-# Luxembourg
-# See Europe/Brussels.
-
-# North Macedonia
-# See Europe/Belgrade.
 
 # Malta
 #
@@ -1958,67 +1972,6 @@ Zone	Europe/Chisinau	1:55:20 -	LMT	1880
 			2:00	E-Eur	EE%sT	1997
 # See Romania commentary for the guessed 1997 transition to EU rules.
 			2:00	Moldova	EE%sT
-
-# Monaco
-# See Europe/Paris.
-
-# Montenegro
-# See Europe/Belgrade.
-
-# Netherlands
-# See Europe/Brussels.
-
-# Norway
-# See Europe/Berlin.
-
-# Svalbard & Jan Mayen
-
-# From Steffen Thorsen (2001-05-01):
-# Although I could not find it explicitly, it seems that Jan Mayen and
-# Svalbard have been using the same time as Norway at least since the
-# time they were declared as parts of Norway.  Svalbard was declared
-# as a part of Norway by law of 1925-07-17 no 11, section 4 and Jan
-# Mayen by law of 1930-02-27 no 2, section 2. (From
-# <http://www.lovdata.no/all/nl-19250717-011.html> and
-# <http://www.lovdata.no/all/nl-19300227-002.html>).  The law/regulation
-# for normal/standard time in Norway is from 1894-06-29 no 1 (came
-# into operation on 1895-01-01) and Svalbard/Jan Mayen seem to be a
-# part of this law since 1925/1930. (From
-# <http://www.lovdata.no/all/nl-18940629-001.html>) I have not been
-# able to find if Jan Mayen used a different time zone (e.g. -0100)
-# before 1930. Jan Mayen has only been "inhabited" since 1921 by
-# Norwegian meteorologists and maybe used the same time as Norway ever
-# since 1921.  Svalbard (Arctic/Longyearbyen) has been inhabited since
-# before 1895, and therefore probably changed the local time somewhere
-# between 1895 and 1925 (inclusive).
-
-# From Paul Eggert (2013-09-04):
-#
-# Actually, Jan Mayen was never occupied by Germany during World War II,
-# so it must have diverged from Oslo time during the war, as Oslo was
-# keeping Berlin time.
-#
-# <https://www.jan-mayen.no/history.htm> says that the meteorologists
-# burned down their station in 1940 and left the island, but returned in
-# 1941 with a small Norwegian garrison and continued operations despite
-# frequent air attacks from Germans.  In 1943 the Americans established a
-# radiolocating station on the island, called "Atlantic City".  Possibly
-# the UT offset changed during the war, but I think it unlikely that
-# Jan Mayen used German daylight-saving rules.
-#
-# Svalbard is more complicated, as it was raided in August 1941 by an
-# Allied party that evacuated the civilian population to England (says
-# <http://www.bartleby.com/65/sv/Svalbard.html>).  The Svalbard FAQ
-# <http://www.svalbard.com/SvalbardFAQ.html> says that the Germans were
-# expelled on 1942-05-14.  However, small parties of Germans did return,
-# and according to Wilhelm Dege's book "War North of 80" (1954)
-# http://www.ucalgary.ca/UofC/departments/UP/1-55238/1-55238-110-2.html
-# the German armed forces at the Svalbard weather station code-named
-# Haudegen did not surrender to the Allies until September 1945.
-#
-# All these events predate our cutoff date of 1970, so use Europe/Berlin
-# for these regions.
-
 
 # Poland
 
@@ -3301,11 +3254,13 @@ Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
 			11:00	Russia	+11/+12	2011 Mar 27  2:00s
 			12:00	-	+12
 
-
-# San Marino
-# See Europe/Rome.
-
+# Bosnia & Herzegovina
+# Croatia
+# Kosovo
+# Montenegro
+# North Macedonia
 # Serbia
+# Slovenia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 			1:00	-	CET	1941 Apr 18 23:00
@@ -3317,17 +3272,6 @@ Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 # Shanks & Pottenger don't give as much detail, so go with Koželj.
 			1:00	-	CET	1982 Nov 27
 			1:00	EU	CE%sT
-Link Europe/Belgrade Europe/Ljubljana	# Slovenia
-Link Europe/Belgrade Europe/Podgorica	# Montenegro
-Link Europe/Belgrade Europe/Sarajevo	# Bosnia and Herzegovina
-Link Europe/Belgrade Europe/Skopje	# North Macedonia
-Link Europe/Belgrade Europe/Zagreb	# Croatia
-
-# Slovakia
-# See Europe/Prague.
-
-# Slovenia
-# See Europe/Belgrade.
 
 # Spain
 #
@@ -3434,10 +3378,11 @@ Zone	Atlantic/Canary	-1:01:36 -	LMT	1922 Mar # Las Palmas de Gran C.
 # IATA SSIM (1996-09) says the Canaries switch at 2:00u, not 1:00u.
 # Ignore this for now, as the Canaries are part of the EU.
 
-# Sweden
-# See Europe/Berlin.
 
+# Germany (Busingen enclave)
+# Liechtenstein
 # Switzerland
+#
 # From Howse:
 # By the end of the 18th century clocks and watches became commonplace
 # and their performance improved enormously.  Communities began to keep
@@ -3550,9 +3495,6 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 			0:29:46	-	BMT	1894 Jun    # Bern Mean Time
 			1:00	Swiss	CE%sT	1981
 			1:00	EU	CE%sT
-Link Europe/Zurich Europe/Busingen
-Link Europe/Zurich Europe/Vaduz
-
 
 # Turkey
 
@@ -3757,7 +3699,6 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	1:00	EEST	2015 Nov  8  1:00u
 			2:00	EU	EE%sT	2016 Sep  7
 			3:00	-	+03
-Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
 # Ukraine
 #
@@ -3859,9 +3800,6 @@ Zone Europe/Kyiv	2:02:04 -	LMT	1880
 			2:00	1:00	EEST	1991 Sep 29  3:00
 			2:00	C-Eur	EE%sT	1996 May 13
 			2:00	EU	EE%sT
-
-# Vatican City
-# See Europe/Rome.
 
 ###############################################################################
 
