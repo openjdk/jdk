@@ -17,13 +17,19 @@
 // collector in ways that are not compatible with a normal collection run.
 // If these tests take longer than the minimum time between gc intervals -
 // or, more likely, if you have them paused in a debugger longer than this
-// interval - you can expect trouble.
-
+// interval - you can expect trouble. These tests will also not run in a build
+// with asserts enabled because they use APIs that expect to run on a safepoint.
+#ifdef ASSERT
+#define SKIP_IF_NOT_SHENANDOAH()           \
+  tty->print_cr("skipped (debug build)" ); \
+  return;
+#else
 #define SKIP_IF_NOT_SHENANDOAH() \
     if (!UseShenandoahGC) {      \
       tty->print_cr("skipped");  \
       return;                    \
     }
+#endif
 
 class ShenandoahResetRegions : public ShenandoahHeapRegionClosure {
  public:
@@ -45,9 +51,13 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
   ShenandoahCollectionSet* _collection_set;
 
   ShenandoahOldHeuristicTest()
-    : _heap(ShenandoahHeap::heap()),
-      _heuristics(_heap->old_heuristics()),
-      _collection_set(_heap->collection_set()) {
+    : _heap(nullptr),
+      _heuristics(nullptr),
+      _collection_set(nullptr) {
+    SKIP_IF_NOT_SHENANDOAH();
+    _heap = ShenandoahHeap::heap();
+    _heuristics = _heap->old_heuristics();
+    _collection_set = _heap->collection_set();
     ShenandoahHeapLocker locker(_heap->lock());
     ShenandoahResetRegions reset;
     _heap->heap_region_iterate(&reset);

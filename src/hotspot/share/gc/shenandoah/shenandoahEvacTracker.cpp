@@ -21,7 +21,9 @@
  * questions.
  *
  */
+#include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"

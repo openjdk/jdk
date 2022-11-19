@@ -91,13 +91,13 @@ void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
     ResourceMark rm;
     LogStream ls(lt);
 
-    ls.print_cr("%li %li %lu %lu %lu",
+    ls.print_cr(JLONG_FORMAT " " JLONG_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT,
             ts->get_value(), status->get_value(), num_regions, region_size, protocol_version);
     if (num_regions > 0) {
-      ls.print("%li", regions[0]->get_value());
+      ls.print(JLONG_FORMAT, regions[0]->get_value());
     }
     for (uint i = 1; i < num_regions; ++i) {
-      ls.print(" %li", regions[i]->get_value());
+      ls.print(" " JLONG_FORMAT, regions[i]->get_value());
     }
     ls.cr();
   }

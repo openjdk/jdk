@@ -832,9 +832,9 @@ void ShenandoahHeap::report_promotion_failure(Thread* thread, size_t size) {
   // We squelch excessive reports to reduce noise in logs.  Squelch enforcement is not "perfect" because
   // this same code can be in-lined in multiple contexts, and each context will have its own copy of the static
   // last_report_epoch and this_epoch_report_count variables.
-  const uint MaxReportsPerEpoch = 4;
-  static uint last_report_epoch = 0;
-  static uint epoch_report_count = 0;
+  const size_t MaxReportsPerEpoch = 4;
+  static size_t last_report_epoch = 0;
+  static size_t epoch_report_count = 0;
 
   size_t promotion_reserve;
   size_t promotion_expended;
@@ -857,7 +857,7 @@ void ShenandoahHeap::report_promotion_failure(Thread* thread, size_t size) {
                        size, plab == nullptr? "no": "yes",
                        words_remaining, promote_enabled, promotion_reserve, promotion_expended);
     if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
-      log_info(gc, ergo)("Squelching additional promotion failure reports for epoch %d", last_report_epoch);
+      log_info(gc, ergo)("Squelching additional promotion failure reports for epoch " SIZE_FORMAT, last_report_epoch);
     } else if (gc_id != last_report_epoch) {
       last_report_epoch = gc_id;;
       epoch_report_count = 1;
