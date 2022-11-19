@@ -28,7 +28,9 @@ package java.util.jar;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
-import java.security.*;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.zip.ZipEntry;
 
@@ -329,18 +331,7 @@ class JarVerifier {
         }
     }
 
-    /**
-     * Return an array of java.security.cert.Certificate objects for
-     * the given file in the jar.
-     * @deprecated
-     */
-    @Deprecated
-    public java.security.cert.Certificate[] getCerts(String name)
-    {
-        return mapSignersToCertArray(getCodeSigners(name));
-    }
-
-    public java.security.cert.Certificate[] getCerts(JarEntry entry)
+    public Certificate[] getCerts(JarEntry entry)
     {
         return mapSignersToCertArray(getCodeSigners(entry));
     }
@@ -364,11 +355,11 @@ class JarVerifier {
      * Convert an array of signers into an array of concatenated certificate
      * arrays.
      */
-    private static java.security.cert.Certificate[] mapSignersToCertArray(
+    private static Certificate[] mapSignersToCertArray(
         CodeSigner[] signers) {
 
         if (signers != null) {
-            ArrayList<java.security.cert.Certificate> certChains = new ArrayList<>();
+            ArrayList<Certificate> certChains = new ArrayList<>();
             for (CodeSigner signer : signers) {
                 certChains.addAll(
                     signer.getSignerCertPath().getCertificates());
@@ -376,7 +367,7 @@ class JarVerifier {
 
             // Convert into a Certificate[]
             return certChains.toArray(
-                    new java.security.cert.Certificate[certChains.size()]);
+                    new Certificate[certChains.size()]);
         }
         return null;
     }
@@ -508,7 +499,7 @@ class JarVerifier {
 
         URL vlocation;
         CodeSigner[] vsigners;
-        java.security.cert.Certificate[] vcerts;
+        Certificate[] vcerts;
         @SuppressWarnings("serial") // Not statically typed as Serializable
         Object csdomain;
 
@@ -519,7 +510,7 @@ class JarVerifier {
             vsigners = signers; // from signerCache
         }
 
-        VerifierCodeSource(Object csdomain, URL location, java.security.cert.Certificate[] certs) {
+        VerifierCodeSource(Object csdomain, URL location, Certificate[] certs) {
             super(location, certs);
             this.csdomain = csdomain;
             vlocation = location;
@@ -568,7 +559,7 @@ class JarVerifier {
             return vsigners;
         }
 
-        private java.security.cert.Certificate[] getPrivateCertificates() {
+        private Certificate[] getPrivateCertificates() {
             return vcerts;
         }
     }
@@ -700,7 +691,7 @@ class JarVerifier {
     }
 
     static CodeSource getUnsignedCS(URL url) {
-        return new VerifierCodeSource(null, url, (java.security.cert.Certificate[]) null);
+        return new VerifierCodeSource(null, url, (Certificate[]) null);
     }
 
     /**

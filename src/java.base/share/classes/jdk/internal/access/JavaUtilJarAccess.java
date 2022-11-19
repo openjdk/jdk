@@ -26,10 +26,6 @@
 package jdk.internal.access;
 
 import java.io.IOException;
-import java.net.URL;
-import java.security.CodeSource;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -37,8 +33,6 @@ import java.util.jar.Manifest;
 
 public interface JavaUtilJarAccess {
     public boolean jarFileHasClassPathAttribute(JarFile jar) throws IOException;
-    public Enumeration<JarEntry> entries2(JarFile jar);
-    public List<Object> getManifestDigests(JarFile jar);
     public Attributes getTrustedAttributes(Manifest man, String name);
     public void ensureInitialization(JarFile jar);
     public boolean isInitializing();

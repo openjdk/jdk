@@ -26,26 +26,12 @@
 package java.util.jar;
 
 import java.io.IOException;
-import java.net.URL;
-import java.security.CodeSource;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import jdk.internal.access.JavaUtilJarAccess;
 
 class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
     public boolean jarFileHasClassPathAttribute(JarFile jar) throws IOException {
         return jar.hasClassPathAttribute();
-    }
-
-    public Enumeration<JarEntry> entries2(JarFile jar) {
-        return jar.entries2();
-    }
-
-    public List<Object> getManifestDigests(JarFile jar) {
-        return jar.getManifestDigests();
     }
 
     public Attributes getTrustedAttributes(Manifest man, String name) {
