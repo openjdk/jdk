@@ -196,6 +196,10 @@ class Universe: AllStatic {
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
 
+#if INCLUDE_CDS_JAVA_HEAP
+  static int _archived_mirror_indices[T_VOID+1];
+#endif
+
  public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
 
@@ -236,7 +240,11 @@ class Universe: AllStatic {
   static OopHandle _mirrors[T_VOID+1];
 
   static oop java_mirror(BasicType t);
-  static void replace_mirror(BasicType t, oop obj);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static void set_archived_mirror_index(BasicType t, int index);
+  static void update_archived_mirrors();
+#endif
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);

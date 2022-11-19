@@ -89,6 +89,9 @@ Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
 Klass* Universe::_objectArrayKlassObj                 = NULL;
 Klass* Universe::_fillerArrayKlassObj                 = NULL;
 OopHandle Universe::_mirrors[T_VOID+1];
+#if INCLUDE_CDS_JAVA_HEAP
+int Universe::_archived_mirror_indices[T_VOID+1];
+#endif
 
 OopHandle Universe::_main_thread_group;
 OopHandle Universe::_system_thread_group;
@@ -195,11 +198,6 @@ oop Universe::java_mirror(BasicType t) {
   return check_mirror(_mirrors[t].resolve());
 }
 
-// Used by CDS dumping
-void Universe::replace_mirror(BasicType t, oop new_mirror) {
-  Universe::_mirrors[t].replace(new_mirror);
-}
-
 void Universe::basic_type_classes_do(KlassClosure *closure) {
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
     closure->do_klass(_typeArrayKlassObjs[i]);
@@ -236,29 +234,38 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
   _do_stack_walk_cache->metaspace_pointers_do(it);
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+void Universe::set_archived_mirror_index(BasicType t, int index) {
+  _archived_mirror_indices[t] = index;
+}
+
+void Universe::update_archived_mirrors() {
+  if (ArchiveHeapLoader::are_archived_mirrors_available()) {
+    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+      int index = _archived_mirror_indices[i];
+      if (index >= 0) {
+        oop mirror_oop = HeapShared::get_root(index);
+        assert(mirror_oop != NULL, "must be");          
+        _mirrors[i] = OopHandle(vm_global(), mirror_oop);
+      }
+    }
+  }
+}
+#endif
+
+
 // Serialize metadata and pointers to primitive type mirrors in and out of CDS archive
 void Universe::serialize(SerializeClosure* f) {
 
 #if INCLUDE_CDS_JAVA_HEAP
-  {
-    oop mirror_oop;
-    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-      if (f->reading()) {
-        f->do_oop(&mirror_oop); // read from archive
-        assert(oopDesc::is_oop_or_null(mirror_oop), "is oop");
-        // Only create an OopHandle for non-null mirrors
-        if (mirror_oop != NULL) {
-          _mirrors[i] = OopHandle(vm_global(), mirror_oop);
-        }
-      } else {
-        if (HeapShared::can_write()) {
-          mirror_oop = _mirrors[i].resolve();
-        } else {
-          mirror_oop = NULL;
-        }
-        f->do_oop(&mirror_oop); // write to archive
-      }
+  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+    if (f->writing() && !HeapShared::can_write()) {
+      _archived_mirror_indices[i] = -1;
     }
+
+    f->do_u4((u4*)&_archived_mirror_indices[i]);
+    // Can't call HeapShared::get_root() yet, as the heap contents may need to be
+    // relocated. _mirrors[i] will be updated later in Universe::update_archived_mirrors().
   }
 #endif
 

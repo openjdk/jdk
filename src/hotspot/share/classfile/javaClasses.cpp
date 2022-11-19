@@ -1138,7 +1138,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
         "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
         type2name(bt), p2i(m), p2i(archived_m));
 
-      Universe::replace_mirror(bt, archived_m);
+      Universe::set_archived_mirror_index(bt, HeapShared::append_root(archived_m));
     }
   }
 }
