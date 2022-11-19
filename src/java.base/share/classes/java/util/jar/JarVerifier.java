@@ -30,6 +30,8 @@ import java.net.URL;
 import java.util.*;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.zip.ZipEntry;
