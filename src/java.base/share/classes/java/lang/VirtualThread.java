@@ -270,10 +270,11 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     private void run(Runnable task) {
         assert state == RUNNING;
+        boolean notifyJvmti = notifyJvmtiEvents;
 
         // first mount
         mount();
-        if (notifyJvmtiEvents) notifyJvmtiMountEnd(true);
+        if (notifyJvmti) notifyJvmtiMountEnd(true);
 
         // emit JFR event if enabled
         if (VirtualThreadStartEvent.isTurnedOn()) {
@@ -301,7 +302,7 @@ final class VirtualThread extends BaseVirtualThread {
 
             } finally {
                 // last unmount
-                if (notifyJvmtiEvents) notifyJvmtiUnmountBegin(true);
+                if (notifyJvmti) notifyJvmtiUnmountBegin(true);
                 unmount();
 
                 // final state
