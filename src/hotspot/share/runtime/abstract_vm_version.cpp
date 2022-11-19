@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "compiler/compilerDefinitions.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"

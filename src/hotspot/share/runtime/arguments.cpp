@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
@@ -36,6 +35,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
@@ -2941,7 +2941,7 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, 
 
   // Create GrowableArray lazily, only if --patch-module has been specified
   if (_patch_mod_prefix == NULL) {
-    _patch_mod_prefix = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<ModulePatchPath*>(10, mtArguments);
+    _patch_mod_prefix = new (mtArguments) GrowableArray<ModulePatchPath*>(10, mtArguments);
   }
 
   _patch_mod_prefix->push(new ModulePatchPath(module_name, path));

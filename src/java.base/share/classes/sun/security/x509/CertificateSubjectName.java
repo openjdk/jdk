@@ -37,9 +37,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateSubjectName implements CertAttrSet {
+public class CertificateSubjectName implements DerEncoder {
 
     public static final String NAME = "subject";
 

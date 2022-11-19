@@ -24,8 +24,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

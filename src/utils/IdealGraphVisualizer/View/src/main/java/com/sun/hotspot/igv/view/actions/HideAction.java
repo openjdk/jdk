@@ -56,12 +56,12 @@ public final class HideAction extends ModelAwareAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_HideAction");
+        return NbBundle.getMessage(HideAction.class, "CTL_HideAction");
     }
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_HideAction");
+        return NbBundle.getMessage(HideAction.class, "HINT_HideAction");
     }
 
     @Override
