@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
  * @test
  * @bug 8023213
  * @summary Font/Text APIs should not crash/takes long time
- *          if transform includes INIFINITY
+ *          if transform includes INFINITY
  * @run main DrawStringWithInfiniteXform
  */
-import java.awt.*;
-import java.awt.font.*;
-import java.awt.geom.*;
-import java.awt.image.*;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -41,15 +41,22 @@ public class DrawStringWithInfiniteXform {
 
     class ScheduleTask extends TimerTask {
         public void run() {
-            if (!done) {
-                throw new
-                RuntimeException("drawString with InfiniteXform transform takes long time");
+            System.out.println("Task running at " + System.currentTimeMillis());
+            System.out.flush();
+            synchronized (DrawStringWithInfiniteXform.class) {
+               System.out.println(
+                   "Checking done at " + System.currentTimeMillis());
+               System.out.flush();
+                if (!done) {
+                    throw new RuntimeException(
+                       "drawString with InfiniteXform transform takes long time");
+                }
             }
         }
     }
     public DrawStringWithInfiniteXform() {
         timer = new Timer();
-        timer.schedule(new ScheduleTask(), 20000);
+        timer.schedule(new ScheduleTask(), 30000);
     }
 
     public static void main(String [] args) {
@@ -58,11 +65,15 @@ public class DrawStringWithInfiniteXform {
     }
 
     private void start() {
+        System.out.println("start at " + System.currentTimeMillis());
+        System.out.flush();
         float[] vals = new float[6];
-        for (int i=0;i<6;i++) vals[i]=Float.POSITIVE_INFINITY;
+        for (int i=0; i<6; i++) {
+            vals[i] = Float.POSITIVE_INFINITY;
+        }
         AffineTransform nanTX = new AffineTransform(vals);
 
-        BufferedImage bi = new BufferedImage(1,1,BufferedImage.TYPE_INT_RGB);
+        BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bi.createGraphics();
 
         g2d.rotate(Float.POSITIVE_INFINITY);
@@ -73,8 +84,12 @@ public class DrawStringWithInfiniteXform {
             g2d.setFont(xfiniteFont);
             g2d.drawString("abc", 20, 20);
         }
-        done = true;
-        timer.cancel();
+        System.out.println("Loop done at " + System.currentTimeMillis());
+        System.out.flush();
+        synchronized (DrawStringWithInfiniteXform.class) {
+            done = true;
+            timer.cancel();
+        }
         System.out.println("Test passed");
     }
 }

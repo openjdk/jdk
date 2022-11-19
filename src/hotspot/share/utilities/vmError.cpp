@@ -24,13 +24,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "jvm.h"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"

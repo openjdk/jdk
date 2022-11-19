@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Test to stress directory listings
  * @library /test/lib
- * @run testng/othervm StressDirListings
+ * @run testng/othervm/timeout=180 StressDirListings
  */
 
 import java.io.IOException;
@@ -57,11 +57,20 @@ public class StressDirListings {
 
     static final boolean ENABLE_LOGGING = false;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
+    static final long start = System.nanoTime();
+    public static String now() {
+        long now = System.nanoTime() - start;
+        long secs = now / 1000_000_000;
+        long mill = (now % 1000_000_000) / 1000_000;
+        long nan = now % 1000_000;
+        return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
+    }
 
     HttpServer simpleFileServer;
 
     @BeforeTest
     public void setup() throws IOException {
+        out.println(now() + " creating server");
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -70,11 +79,14 @@ public class StressDirListings {
         }
         simpleFileServer = SimpleFileServer.createFileServer(LOOPBACK_ADDR, CWD, OutputLevel.VERBOSE);
         simpleFileServer.start();
+        out.println(now() + " server started");
     }
 
     @AfterTest
     public void teardown() {
+        out.println(now() + " stopping server");
         simpleFileServer.stop(0);
+        out.println(now() + " server stopped");
     }
 
     // Enough to trigger FileSystemException: Too many open files (machine dependent)
@@ -88,6 +100,7 @@ public class StressDirListings {
      */
     @Test
     public void testDirListings() throws Exception {
+        out.println(now() + " starting test");
         var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
         var request = HttpRequest.newBuilder(uri(simpleFileServer)).build();
         for (int i=0; i<TIMES; i++) {
@@ -96,7 +109,11 @@ public class StressDirListings {
             if (i % 100 == 0) {
                 out.print(" " + i + " ");
             }
+            if (i % 1000 == 0) {
+                out.println(now());
+            }
         }
+        out.println(now() + " test finished");
     }
 
     static URI uri(HttpServer server) {

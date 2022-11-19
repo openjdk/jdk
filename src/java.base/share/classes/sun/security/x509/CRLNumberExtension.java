@@ -41,10 +41,8 @@ import sun.security.util.*;
  *
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLNumberExtension extends Extension
-        implements CertAttrSet {
+public class CRLNumberExtension extends Extension {
 
     public static final String NAME = "CRLNumber";
 

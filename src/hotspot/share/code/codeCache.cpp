@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -40,6 +39,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"

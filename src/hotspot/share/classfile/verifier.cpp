@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -37,6 +36,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
