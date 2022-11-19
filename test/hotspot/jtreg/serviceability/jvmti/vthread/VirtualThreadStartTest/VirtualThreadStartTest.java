@@ -33,24 +33,23 @@
 import com.sun.tools.attach.VirtualMachine;
 
 public class VirtualThreadStartTest {
+    private static final String AGENT_LIB = "VirtualThreadStartTest";
+    private static final int THREAD_CNT = 10;
+
     private static native int getAndResetStartedThreads();
 
     public static void main(String[] args) throws Exception {
         VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
-        vm.loadAgentLibrary("VirtualThreadStartTest");
-        Thread.ofVirtual().start(() -> {}).join(); // start ForkJoinPool worker
+        vm.loadAgentLibrary(AGENT_LIB);
         getAndResetStartedThreads();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < THREAD_CNT; i++) {
             Thread.ofVirtual().start(() -> {}).join();
-        }
-        for (int i = 0; i < 5; i++) {
-            Thread.ofPlatform().start(() -> {}).join();
         }
 
         int startedThreads = getAndResetStartedThreads();
-        System.out.println("ThreadStart event count: " + startedThreads + ", expected: 15");
-        if (startedThreads != 15) {
+        System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + THREAD_CNT);
+        if (startedThreads != THREAD_CNT) {
             throw new RuntimeException("Failed: wrong ThreadStart event count");
         }
     }

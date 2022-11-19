@@ -32,7 +32,7 @@ static jvmtiEnv *jvmti;
 static int started_thread_cnt = 0;
 static jrawMonitorID agent_event_lock = NULL;
 
-void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   RawMonitorLocker agent_start_locker(jvmti, jni, agent_event_lock);
   started_thread_cnt++;
 }
@@ -59,8 +59,7 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
   memset(&callbacks, 0, sizeof(callbacks));
 
   caps.can_support_virtual_threads = 1;
-  callbacks.ThreadStart = &ThreadStart;
-  callbacks.VirtualThreadStart = &ThreadStart;
+  callbacks.VirtualThreadStart = &VirtualThreadStart;
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
@@ -71,12 +70,6 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
   err = jvmti->SetEventCallbacks(&callbacks, (jint)sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
     LOG("Agent init: error in JVMTI AddCapabilities: %s (%d)\n", TranslateError(err), err);
-    return JNI_ERR;
-  }
-
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
