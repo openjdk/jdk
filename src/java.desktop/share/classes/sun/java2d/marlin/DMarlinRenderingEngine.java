@@ -1082,7 +1082,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
 
     /**
      * Returns the minimum pen width that the antialiasing rasterizer
-     * can represent without dropouts occuring.
+     * can represent without dropouts occurring.
      * @since 1.7
      */
     @Override

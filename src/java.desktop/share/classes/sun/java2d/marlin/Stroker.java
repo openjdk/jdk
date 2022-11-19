@@ -594,7 +594,6 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
                     return;
                 }
             }
-
             this.cOutCode = outcode1;
         }
 
@@ -1155,7 +1154,6 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
                     return;
                 }
             }
-
             this.cOutCode = outcode3;
         }
         _curveTo(x1, y1, x2, y2, x3, y3, outcode0);
@@ -1302,7 +1300,6 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
                     return;
                 }
             }
-
             this.cOutCode = outcode2;
         }
         _quadTo(x1, y1, x2, y2, outcode0);
