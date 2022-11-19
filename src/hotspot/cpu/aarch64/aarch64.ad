@@ -3670,7 +3670,6 @@ encode %{
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
-    _masm.clear_inst_mark();
     __ post_call_nop();
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();

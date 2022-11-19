@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -404,8 +404,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // Generate SEGV here (reference through NULL)
     // and check upper YMM/ZMM bits after it.
     //
-    intx saved_useavx = UseAVX;
-    intx saved_usesse = UseSSE;
+    int saved_useavx = UseAVX;
+    int saved_usesse = UseSSE;
 
     // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
@@ -854,9 +854,6 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 #endif
-  // If the OS doesn't support SSE, we can't use this feature even if the HW does
-  if (!os::supports_sse())
-    _features &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
 
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
@@ -900,7 +897,7 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseSSE)) {
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
   } else if (UseSSE > use_sse_limit) {
-    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", (int) UseSSE, use_sse_limit);
+    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", UseSSE, use_sse_limit);
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
   }
 
@@ -930,9 +927,9 @@ void VM_Version::get_processor_features() {
   }
   if (UseAVX > use_avx_limit) {
     if (UseSSE < 4) {
-      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", (int) UseAVX);
+      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
     } else {
-      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
+      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", UseAVX, use_avx_limit);
     }
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
   }
@@ -1860,9 +1857,9 @@ void VM_Version::get_processor_features() {
     log->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
     log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    log->print("UseSSE=%d", (int) UseSSE);
+    log->print("UseSSE=%d", UseSSE);
     if (UseAVX > 0) {
-      log->print("  UseAVX=%d", (int) UseAVX);
+      log->print("  UseAVX=%d", UseAVX);
     }
     if (UseAES) {
       log->print("  UseAES=1");
