@@ -494,8 +494,7 @@ TEST_VM(os_linux, glibc_mallinfo_wrapper) {
   // We should see total allocation values > 0
   ASSERT_GE((mi.uordblks + mi.hblkhd), 2 * K);
 
-  // These values also should not beyond reasonable size, otherwise this indicates bad type
-  // conversion
+  // These values also should exceed some reasonable size.
   ASSERT_LT(mi.fordblks, 2 * G);
   ASSERT_LT(mi.uordblks, 2 * G);
   ASSERT_LT(mi.hblkhd, 2 * G);

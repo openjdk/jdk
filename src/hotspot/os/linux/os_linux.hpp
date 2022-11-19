@@ -405,8 +405,8 @@ class os::Linux {
   // mallinfo2() is functionally equivalent to legacy mallinfo but returns sizes as
   // 64-bit on 64-bit platforms. Legacy mallinfo uses 32-bit fields. However, legacy
   // mallinfo is still perfectly fine to use if we know the sizes cannot have wrapped.
-  // For example, if the process virtual size does not exceed 4G, we cannot hav
-  // e malloc'ed more than 4G, so the results from legacy mallinfo() can still be used.
+  // For example, if the process virtual size does not exceed 4G, we cannot have
+  // malloc'ed more than 4G, so the results from legacy mallinfo() can still be used.
   //
   // os::Linux::get_mallinfo() will always prefer mallinfo2() if found, but will fall back
   // to legacy mallinfo() if only that is available. In that case, it will return true
