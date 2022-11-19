@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import javax.management.MBeanServerConnection;
 
 import jdk.jfr.Event;
 import jdk.jfr.Name;
@@ -50,6 +51,8 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestRemoteDump {
 
+    private static final MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
+
     @Name("RemoteDumpTest")
     static class DumpEvent extends Event {
     }
@@ -64,7 +67,7 @@ public class TestRemoteDump {
 
     private static void testUnstarted() throws Exception {
         Path path = Path.of("recording.jfr");
-        var rs = new RecordingStream();
+        var rs = new RemoteRecordingStream(CONNECTION);
         rs.setMaxAge(Duration.ofHours(1));
         try {
             rs.dump(path);
@@ -76,7 +79,7 @@ public class TestRemoteDump {
 
     private static void testClosed() throws Exception {
         Path path = Path.of("recording.jfr");
-        var rs = new RecordingStream();
+        var rs = new RemoteRecordingStream(CONNECTION);
         rs.setMaxAge(Duration.ofHours(1));
         rs.startAsync();
         rs.close();
@@ -90,8 +93,7 @@ public class TestRemoteDump {
 
     private static void testMultipleDumps() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        var conn = ManagementFactory.getPlatformMBeanServer();
-        try (var rs = new RemoteRecordingStream(conn)) {
+        try (var rs = new RemoteRecordingStream(CONNECTION)) {
             rs.setMaxAge(Duration.ofHours(1));
             rs.onEvent(e -> {
                 latch.countDown();
@@ -128,8 +130,7 @@ public class TestRemoteDump {
 
     private static void testOneDump() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        var conn = ManagementFactory.getPlatformMBeanServer();
-        try (var rs = new RemoteRecordingStream(conn)) {
+        try (var rs = new RemoteRecordingStream(CONNECTION)) {
             rs.setMaxSize(5_000_000);
             rs.onEvent(e -> {
                 latch.countDown();
@@ -150,7 +151,7 @@ public class TestRemoteDump {
 
     private static void testEventAfterDump() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        try (var rs = new RecordingStream()) {
+        try (var rs = new RemoteRecordingStream(CONNECTION)) {
             rs.setMaxAge(Duration.ofHours(1));
             rs.onEvent(e -> {
                 latch.countDown();

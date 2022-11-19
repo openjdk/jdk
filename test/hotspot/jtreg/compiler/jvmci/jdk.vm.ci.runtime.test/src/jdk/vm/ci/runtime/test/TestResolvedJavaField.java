@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
- * @ignore 8249621
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          java.base/jdk.internal.misc
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaField
  */
@@ -37,6 +37,8 @@ package jdk.vm.ci.runtime.test;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -46,6 +48,7 @@ import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -54,6 +57,9 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -117,6 +123,54 @@ public class TestResolvedJavaField extends FieldUniverse {
         }
     }
 
+    @Test
+    public void getDeclaringClassTest() {
+        for (Map.Entry<Field, ResolvedJavaField> e : fields.entrySet()) {
+            ResolvedJavaField field = e.getValue();
+            ResolvedJavaType actual = field.getDeclaringClass();
+            ResolvedJavaType expect = metaAccess.lookupJavaType(e.getKey().getDeclaringClass());
+            assertEquals(field.toString(), expect, actual);
+        }
+    }
+
+    @Test
+    public void getOffsetTest() {
+        for (Map.Entry<Field, ResolvedJavaField> e : fields.entrySet()) {
+            Field javaField = e.getKey();
+            ResolvedJavaField field = e.getValue();
+            int actual = field.getOffset();
+            long expect = field.isStatic() ? unsafe.staticFieldOffset(javaField) : unsafe.objectFieldOffset(javaField);
+            assertEquals(field.toString(), expect, actual);
+        }
+    }
+
+    @Test
+    public void isFinalTest() {
+        for (Map.Entry<Field, ResolvedJavaField> e : fields.entrySet()) {
+            ResolvedJavaField field = e.getValue();
+            boolean actual = field.isFinal();
+            boolean expect = Modifier.isFinal(e.getKey().getModifiers());
+            assertEquals(field.toString(), expect, actual);
+        }
+    }
+
+    @Test
+    public void isInternalTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            for (ResolvedJavaField field : type.getInstanceFields(false)) {
+                if (field.isInternal()) {
+                    try {
+                        c.getDeclaredField(field.getName());
+                        throw new AssertionError("got reflection object for internal field: " + field);
+                    } catch (NoSuchFieldException e) {
+                        // expected
+                    }
+                }
+            }
+        }
+    }
+
     private Method findTestMethod(Method apiMethod) {
         String testName = apiMethod.getName() + "Test";
         for (Method m : getClass().getDeclaredMethods()) {
@@ -129,10 +183,6 @@ public class TestResolvedJavaField extends FieldUniverse {
 
     // @formatter:off
     private static final String[] untestedApiMethods = {
-        "getDeclaringClass",
-        "getOffset",
-        "isInternal",
-        "isFinal"
     };
     // @formatter:on
 
@@ -231,6 +281,70 @@ public class TestResolvedJavaField extends FieldUniverse {
             field.toString();
             field.getAnnotations();
         }
+    }
+
+    @Test
+    public void getConstantValueTest() {
+        ConstantReflectionProvider cr = constantReflection;
+        Map<String, JavaConstant> expects = Map.of(
+                        "INT", JavaConstant.forInt(42),
+                        "SHORT", JavaConstant.forInt(43),
+                        "CHAR", JavaConstant.forInt(44),
+                        "BYTE", JavaConstant.forInt(45),
+                        "FLOAT", JavaConstant.forFloat(46.46F),
+                        "LONG", JavaConstant.forLong(47L),
+                        "DOUBLE", JavaConstant.forDouble(48.48D));
+        ResolvedJavaType type = metaAccess.lookupJavaType(FieldsWithConstantValueAttributes.class);
+        for (ResolvedJavaField field : type.getStaticFields()) {
+            JavaConstant actual = field.getConstantValue();
+            String name = field.getName();
+            if (name.endsWith("2")) {
+                assertNull(field.toString(), actual);
+            } else if (name.equals("STRING")) {
+                JavaConstant expect = cr.forString("STRING_VALUE");
+                assertEquals(field.toString(), expect, actual);
+
+                // String ConstantValues are interned so should not
+                // be identical to a newly allocated String
+                expect = cr.forString(new String("STRING_VALUE"));
+                assertNotEquals(field.toString(), expect, actual);
+            } else {
+                JavaConstant expect = expects.get(name);
+                assertEquals(field.toString(), expect, actual);
+            }
+        }
+    }
+}
+
+class FieldsWithConstantValueAttributes {
+    public static final String STRING = "STRING_VALUE";
+    public static final int INT = 42;
+    public static final short SHORT = 43;
+    public static final char CHAR = 44;
+    public static final byte BYTE = 45;
+    public static final float FLOAT = 46.46F;
+    public static final long LONG = 47L;
+    public static final double DOUBLE = 48.48D;
+
+    public static final String STRING2;
+    public static final int INT2;
+    public static final short SHORT2;
+    public static final char CHAR2;
+    public static final byte BYTE2;
+    public static final float FLOAT2;
+    public static final long LONG2;
+    public static final double DOUBLE2;
+
+    static {
+        JVMCIError.shouldNotReachHere("should not be initialized");
+        STRING2 = STRING;
+        INT2 = INT;
+        SHORT2 = SHORT;
+        BYTE2 = BYTE;
+        CHAR2 = CHAR;
+        FLOAT2 = FLOAT;
+        LONG2 = LONG;
+        DOUBLE2 = DOUBLE;
     }
 }
 

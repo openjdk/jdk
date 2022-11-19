@@ -24,9 +24,9 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
-#include "jvm_io.h"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jvm_io.h"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"

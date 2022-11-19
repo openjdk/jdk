@@ -670,96 +670,6 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::nop() {
-  addi(x0, x0, 0);
-}
-
-void MacroAssembler::mv(Register Rd, Register Rs) {
-  if (Rd != Rs) {
-    addi(Rd, Rs, 0);
-  }
-}
-
-void MacroAssembler::notr(Register Rd, Register Rs) {
-  xori(Rd, Rs, -1);
-}
-
-void MacroAssembler::neg(Register Rd, Register Rs) {
-  sub(Rd, x0, Rs);
-}
-
-void MacroAssembler::negw(Register Rd, Register Rs) {
-  subw(Rd, x0, Rs);
-}
-
-void MacroAssembler::sext_w(Register Rd, Register Rs) {
-  addiw(Rd, Rs, 0);
-}
-
-void MacroAssembler::zext_b(Register Rd, Register Rs) {
-  andi(Rd, Rs, 0xFF);
-}
-
-void MacroAssembler::seqz(Register Rd, Register Rs) {
-  sltiu(Rd, Rs, 1);
-}
-
-void MacroAssembler::snez(Register Rd, Register Rs) {
-  sltu(Rd, x0, Rs);
-}
-
-void MacroAssembler::sltz(Register Rd, Register Rs) {
-  slt(Rd, Rs, x0);
-}
-
-void MacroAssembler::sgtz(Register Rd, Register Rs) {
-  slt(Rd, x0, Rs);
-}
-
-void MacroAssembler::fmv_s(FloatRegister Rd, FloatRegister Rs) {
-  if (Rd != Rs) {
-    fsgnj_s(Rd, Rs, Rs);
-  }
-}
-
-void MacroAssembler::fabs_s(FloatRegister Rd, FloatRegister Rs) {
-  fsgnjx_s(Rd, Rs, Rs);
-}
-
-void MacroAssembler::fneg_s(FloatRegister Rd, FloatRegister Rs) {
-  fsgnjn_s(Rd, Rs, Rs);
-}
-
-void MacroAssembler::fmv_d(FloatRegister Rd, FloatRegister Rs) {
-  if (Rd != Rs) {
-    fsgnj_d(Rd, Rs, Rs);
-  }
-}
-
-void MacroAssembler::fabs_d(FloatRegister Rd, FloatRegister Rs) {
-  fsgnjx_d(Rd, Rs, Rs);
-}
-
-void MacroAssembler::fneg_d(FloatRegister Rd, FloatRegister Rs) {
-  fsgnjn_d(Rd, Rs, Rs);
-}
-
-void MacroAssembler::vmnot_m(VectorRegister vd, VectorRegister vs) {
-  vmnand_mm(vd, vs, vs);
-}
-
-void MacroAssembler::vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm) {
-  vnsrl_wx(vd, vs, x0, vm);
-}
-
-void MacroAssembler::vneg_v(VectorRegister vd, VectorRegister vs) {
-  vrsub_vx(vd, vs, x0);
-}
-
-void MacroAssembler::vfneg_v(VectorRegister vd, VectorRegister vs) {
-  vfsgnjn_vv(vd, vs, vs);
-}
-
 void MacroAssembler::baseOffset32(Register Rd, const Address &adr, int32_t &offset) {
   assert(Rd != noreg, "Rd must not be empty register!");
   guarantee(Rd != adr.base(), "should use different registers!");
@@ -1625,21 +1535,6 @@ void MacroAssembler::reinit_heapbase() {
   }
 }
 
-void MacroAssembler::mv(Register Rd, Address dest) {
-  assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
-  relocate(dest.rspec(), [&] {
-    movptr(Rd, dest.target());
-  });
-}
-
-void MacroAssembler::mv(Register Rd, RegisterOrConstant src) {
-  if (src.is_register()) {
-    mv(Rd, src.as_register());
-  } else {
-    mv(Rd, src.as_constant());
-  }
-}
-
 void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset) {
   int64_t imm64 = (int64_t)addr;
 #ifndef PRODUCT
@@ -1667,16 +1562,6 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset) {
 
   // This offset will be used by following jalr/ld.
   offset = imm64 & 0x3f;
-}
-
-void MacroAssembler::movptr(Register Rd, uintptr_t imm64) {
-  movptr(Rd, (address)imm64);
-}
-
-void MacroAssembler::movptr(Register Rd, address addr) {
-  int offset = 0;
-  movptr(Rd, addr, offset);
-  addi(Rd, Rd, offset);
 }
 
 void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register temp) {
@@ -2061,7 +1946,11 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
     _masm->la_patchable(t0, target, offset);
     _masm->lbu(t0, Address(t0, offset));
   });
-  _masm->beqz(t0, _label);
+  if (value) {
+    _masm->bnez(t0, _label);
+  } else {
+    _masm->beqz(t0, _label);
+  }
 }
 
 SkipIfEqual::~SkipIfEqual() {
@@ -3353,8 +3242,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 void MacroAssembler::compute_index(Register haystack, Register trailing_zeros,
                                    Register match_mask, Register result,
                                    Register ch2, Register tmp,
-                                   bool haystack_isL)
-{
+                                   bool haystack_isL) {
   int haystack_chr_shift = haystack_isL ? 0 : 1;
   srl(match_mask, match_mask, trailing_zeros);
   srli(match_mask, match_mask, 1);
@@ -3375,8 +3263,7 @@ void MacroAssembler::compute_index(Register haystack, Register trailing_zeros,
 // - 0x8000800080008000 (UTF16)
 // -   3   2   1   0    (match index)
 void MacroAssembler::compute_match_mask(Register src, Register pattern, Register match_mask,
-                                        Register mask1, Register mask2)
-{
+                                        Register mask1, Register mask2) {
   xorr(src, pattern, src);
   sub(match_mask, src, mask1);
   orr(src, src, mask2);
@@ -3460,24 +3347,21 @@ void MacroAssembler::cad(Register dst, Register src1, Register src2, Register ca
 }
 
 // add two input with carry
-void MacroAssembler::adc(Register dst, Register src1, Register src2, Register carry)
-{
+void MacroAssembler::adc(Register dst, Register src1, Register src2, Register carry) {
   assert_different_registers(dst, carry);
   add(dst, src1, src2);
   add(dst, dst, carry);
 }
 
 // add two unsigned input with carry and output carry
-void MacroAssembler::cadc(Register dst, Register src1, Register src2, Register carry)
-{
+void MacroAssembler::cadc(Register dst, Register src1, Register src2, Register carry) {
   assert_different_registers(dst, src2);
   adc(dst, src1, src2, carry);
   sltu(carry, dst, src2);
 }
 
 void MacroAssembler::add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
-                                     Register src1, Register src2, Register carry)
-{
+                                     Register src1, Register src2, Register carry) {
   cad(dest_lo, dest_lo, src1, carry);
   add(dest_hi, dest_hi, carry);
   cad(dest_lo, dest_lo, src2, carry);
@@ -3490,8 +3374,7 @@ void MacroAssembler::add2_with_carry(Register final_dest_hi, Register dest_hi, R
 void MacroAssembler::multiply_32_x_32_loop(Register x, Register xstart, Register x_xstart,
                                            Register y, Register y_idx, Register z,
                                            Register carry, Register product,
-                                           Register idx, Register kdx)
-{
+                                           Register idx, Register kdx) {
   // jlong carry, x[], y[], z[];
   // for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx--, kdx--) {
   //     long product = y[idx] * x[xstart] + carry;
@@ -3527,8 +3410,7 @@ void MacroAssembler::multiply_32_x_32_loop(Register x, Register xstart, Register
 void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
                                            Register y, Register y_idx, Register z,
                                            Register carry, Register product,
-                                           Register idx, Register kdx)
-{
+                                           Register idx, Register kdx) {
   //
   //  jlong carry, x[], y[], z[];
   //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx--, kdx--) {
@@ -3592,8 +3474,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
                                              Register idx, Register jdx,
                                              Register yz_idx1, Register yz_idx2,
                                              Register tmp, Register tmp3, Register tmp4,
-                                             Register tmp6, Register product_hi)
-{
+                                             Register tmp6, Register product_hi) {
   //   jlong carry, x[], y[], z[];
   //   int kdx = xstart+1;
   //   for (int idx=ystart-2; idx >= 0; idx -= 2) { // Third loop
@@ -3728,8 +3609,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
                                      Register z, Register zlen,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                                     Register tmp5, Register tmp6, Register product_hi)
-{
+                                     Register tmp5, Register tmp6, Register product_hi) {
   assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
 
   const Register idx = tmp1;
@@ -3893,8 +3773,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 // Count bits of trailing zero chars from lsb to msb until first non-zero element.
 // For LL case, one byte for one element, so shift 8 bits once, and for other case,
 // shift 16 bits once.
-void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1, Register tmp2)
-{
+void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1, Register tmp2) {
   if (UseZbb) {
     assert_different_registers(Rd, Rs, tmp1);
     int step = isLL ? 8 : 16;
@@ -3903,6 +3782,7 @@ void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1
     sub(Rd, Rd, tmp1);
     return;
   }
+
   assert_different_registers(Rd, Rs, tmp1, tmp2);
   Label Loop;
   int step = isLL ? 8 : 16;
@@ -3920,13 +3800,12 @@ void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1
 // inflate into a register, for example:
 // Rs: A7A6A5A4A3A2A1A0
 // Rd: 00A300A200A100A0
-void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Register tmp2)
-{
+void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
+
   mv(tmp1, 0xFF);
   mv(Rd, zr);
-  for (int i = 0; i <= 3; i++)
-  {
+  for (int i = 0; i <= 3; i++) {
     andr(tmp2, Rs, tmp1);
     if (i) {
       slli(tmp2, tmp2, i * 8);
@@ -3942,13 +3821,12 @@ void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Regis
 // inflate into a register, for example:
 // Rs: A7A6A5A4A3A2A1A0
 // Rd: 00A700A600A500A4
-void MacroAssembler::inflate_hi32(Register Rd, Register Rs, Register tmp1, Register tmp2)
-{
+void MacroAssembler::inflate_hi32(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
+
   mv(tmp1, 0xFF00000000);
   mv(Rd, zr);
-  for (int i = 0; i <= 3; i++)
-  {
+  for (int i = 0; i <= 3; i++) {
     andr(tmp2, Rs, tmp1);
     orr(Rd, Rd, tmp2);
     srli(Rd, Rd, 8);
@@ -3971,13 +3849,13 @@ const int MacroAssembler::zero_words_block_size = 8;
 // cnt:   Count in HeapWords.
 //
 // ptr, cnt, and t0 are clobbered.
-address MacroAssembler::zero_words(Register ptr, Register cnt)
-{
+address MacroAssembler::zero_words(Register ptr, Register cnt) {
   assert(is_power_of_2(zero_words_block_size), "adjust this");
   assert(ptr == x28 && cnt == x29, "mismatch in register usage");
   assert_different_registers(cnt, t0);
 
   BLOCK_COMMENT("zero_words {");
+
   mv(t0, zero_words_block_size);
   Label around, done, done16;
   bltu(cnt, t0, around);
@@ -4013,6 +3891,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
     sd(zr, Address(ptr, 0));
     bind(l);
   }
+
   BLOCK_COMMENT("} zero_words");
   postcond(pc() != badAddress);
   return pc();
@@ -4022,8 +3901,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 
 // base:  Address of a buffer to be zeroed, 8 bytes aligned.
 // cnt:   Immediate count in HeapWords.
-void MacroAssembler::zero_words(Register base, uint64_t cnt)
-{
+void MacroAssembler::zero_words(Register base, uint64_t cnt) {
   assert_different_registers(base, t0, t1);
 
   BLOCK_COMMENT("zero_words {");
@@ -4061,8 +3939,7 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
 // cnt:    Count in 8-byte unit.
 // value:  Value to be filled with.
 // base will point to the end of the buffer after filling.
-void MacroAssembler::fill_words(Register base, Register cnt, Register value)
-{
+void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 //  Algorithm:
 //
 //    t0 = cnt & 7
@@ -4409,6 +4286,7 @@ void MacroAssembler::object_move(OopMap* map,
                                  bool is_receiver,
                                  int* receiver_offset) {
   assert_cond(map != NULL && receiver_offset != NULL);
+
   // must pass a handle. First figure out the location we use as a handle
   Register rHandle = dst.first()->is_stack() ? t1 : dst.first()->as_Register();
 
