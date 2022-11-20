@@ -34,7 +34,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.util.zip.ZipEntry;
 
 import jdk.internal.util.jar.JarIndex;
 import sun.security.util.ManifestDigester;
@@ -484,13 +483,6 @@ class JarVerifier {
     }
 
     // Extended JavaUtilJarAccess CodeSource API Support
-
-    private Map<URL, Map<CodeSigner[], CodeSource>> urlToCodeSourceMap = new HashMap<>();
-    private Map<CodeSigner[], CodeSource> signerToCodeSource = new HashMap<>();
-    private URL lastURL;
-    private Map<CodeSigner[], CodeSource> lastURLMap;
-    private CodeSigner[] emptySigner = new CodeSigner[0];
-
     /*
      * Instances of this class hold uncopied references to internal
      * signing data that can be compared by object reference identity.
@@ -565,131 +557,10 @@ class JarVerifier {
             return vcerts;
         }
     }
-    private Map<String, CodeSigner[]> signerMap;
-
-    private synchronized Map<String, CodeSigner[]> signerMap() {
-        if (signerMap == null) {
-            /*
-             * Snapshot signer state so it doesn't change on us. We care
-             * only about the asserted signatures. Verification of
-             * signature validity happens via the JarEntry apis.
-             */
-            signerMap = HashMap.newHashMap(verifiedSigners.size() + sigFileSigners.size());
-            signerMap.putAll(verifiedSigners);
-            signerMap.putAll(sigFileSigners);
-        }
-        return signerMap;
-    }
-
-    /*
-     * Like entries() but screens out internal JAR mechanism entries
-     * and includes signed entries with no ZIP data.
-     */
-    public Enumeration<JarEntry> entries2(final JarFile jar, Enumeration<JarEntry> e) {
-        final Map<String, CodeSigner[]> map = new HashMap<>();
-        map.putAll(signerMap());
-        final Enumeration<JarEntry> enum_ = e;
-        return new Enumeration<>() {
-
-            Enumeration<String> signers = null;
-            JarEntry entry;
-
-            public boolean hasMoreElements() {
-                if (entry != null) {
-                    return true;
-                }
-                while (enum_.hasMoreElements()) {
-                    JarEntry je = enum_.nextElement();
-                    if (JarVerifier.isSigningRelated(je.getName())) {
-                        continue;
-                    }
-                    entry = jar.newEntry(je);
-                    return true;
-                }
-                if (signers == null) {
-                    signers = Collections.enumeration(map.keySet());
-                }
-                while (signers.hasMoreElements()) {
-                    String name = signers.nextElement();
-                    entry = jar.newEntry(name);
-                    return true;
-                }
-
-                // Any map entries left?
-                return false;
-            }
-
-            public JarEntry nextElement() {
-                if (hasMoreElements()) {
-                    JarEntry je = entry;
-                    map.remove(je.getName());
-                    entry = null;
-                    return je;
-                }
-                throw new NoSuchElementException();
-            }
-        };
-    }
 
     // true if file is part of the signature mechanism itself
     static boolean isSigningRelated(String name) {
         return SignatureFileVerifier.isSigningRelated(name);
-    }
-
-    private Enumeration<String> unsignedEntryNames(JarFile jar) {
-        final Map<String, CodeSigner[]> map = signerMap();
-        final Enumeration<JarEntry> entries = jar.entries();
-        return new Enumeration<>() {
-
-            String name;
-
-            /*
-             * Grab entries from ZIP directory but screen out
-             * metadata.
-             */
-            public boolean hasMoreElements() {
-                if (name != null) {
-                    return true;
-                }
-                while (entries.hasMoreElements()) {
-                    String value;
-                    ZipEntry e = entries.nextElement();
-                    value = e.getName();
-                    if (e.isDirectory() || isSigningRelated(value)) {
-                        continue;
-                    }
-                    if (map.get(value) == null) {
-                        name = value;
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            public String nextElement() {
-                if (hasMoreElements()) {
-                    String value = name;
-                    name = null;
-                    return value;
-                }
-                throw new NoSuchElementException();
-            }
-        };
-    }
-    private List<CodeSigner[]> jarCodeSigners;
-
-    private synchronized List<CodeSigner[]> getJarCodeSigners() {
-        if (jarCodeSigners == null) {
-            HashSet<CodeSigner[]> set = new HashSet<>();
-            set.addAll(signerMap().values());
-            jarCodeSigners = new ArrayList<>();
-            jarCodeSigners.addAll(set);
-        }
-        return jarCodeSigners;
-    }
-
-    public synchronized List<Object> getManifestDigests() {
-        return Collections.unmodifiableList(manifestDigests);
     }
 
     static CodeSource getUnsignedCS(URL url) {
