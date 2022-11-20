@@ -576,7 +576,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return result;
     }
 
-    HotSpotResolvedJavaField createField(JavaType type, long offset, int rawFlags, int index) {
+    HotSpotResolvedJavaField createField(JavaType type, int offset, int rawFlags, int index) {
         return new HotSpotResolvedJavaFieldImpl(this, type, offset, rawFlags, index);
     }
 
@@ -689,6 +689,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             return readFieldSlot(config().fieldInfoSignatureIndexOffset);
         }
 
+        private int getConstantValueIndex() {
+            return readFieldSlot(config().fieldInfoConstantValueIndexOffset);
+        }
+
         public int getOffset() {
             HotSpotVMConfig config = config();
             final int lowPacked = readFieldSlot(config.fieldInfoLowPackedOffset);
@@ -722,6 +726,19 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         public String getSignature() {
             final int signatureIndex = getSignatureIndex();
             return isInternal() ? config().symbolAt(signatureIndex) : getConstantPool().lookupUtf8(signatureIndex);
+        }
+
+        /**
+         * Gets the {@link JavaConstant} for the {@code ConstantValue} attribute of this field.
+         *
+         * @return {@code null} if this field has no {@code ConstantValue} attribute
+         */
+        public JavaConstant getConstantValue() {
+            int cvIndex = getConstantValueIndex();
+            if (cvIndex == 0) {
+                return null;
+            }
+            return constantPool.getStaticFieldConstantValue(cvIndex);
         }
 
         public JavaType getType() {
@@ -979,11 +996,28 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaMethod[] getDeclaredConstructors() {
+        link();
+        return runtime().compilerToVm.getDeclaredConstructors(this);
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredConstructors(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
         return runtime().compilerToVm.getDeclaredConstructors(this);
     }
 
     @Override
     public ResolvedJavaMethod[] getDeclaredMethods() {
+        return getDeclaredMethods(true);
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
         return runtime().compilerToVm.getDeclaredMethods(this);
     }
 

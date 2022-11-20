@@ -35,6 +35,9 @@
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
 
+#include "testutils.hpp"
+#include "unittest.hpp"
+
 namespace {
   static void small_page_write(void* addr, size_t size) {
     size_t page_size = os::vm_page_size();
@@ -476,4 +479,28 @@ TEST_VM(os_linux, decoder_get_source_info_invalid) {
   }
 }
 #endif // NOT PRODUCT
+
+#ifdef __GLIBC__
+TEST_VM(os_linux, glibc_mallinfo_wrapper) {
+  // Very basic test. Call it. That proves that resolution and invocation works.
+  os::Linux::glibc_mallinfo mi;
+  bool did_wrap = false;
+
+  os::Linux::get_mallinfo(&mi, &did_wrap);
+
+  void* p = os::malloc(2 * K, mtTest);
+  ASSERT_NOT_NULL(p);
+
+  // We should see total allocation values > 0
+  ASSERT_GE((mi.uordblks + mi.hblkhd), 2 * K);
+
+  // These values also should exceed some reasonable size.
+  ASSERT_LT(mi.fordblks, 2 * G);
+  ASSERT_LT(mi.uordblks, 2 * G);
+  ASSERT_LT(mi.hblkhd, 2 * G);
+
+  os::free(p);
+}
+#endif // __GLIBC__
+
 #endif // LINUX

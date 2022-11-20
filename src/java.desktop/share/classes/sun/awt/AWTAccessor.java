@@ -905,11 +905,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.Component class.
      */
     public static ComponentAccessor getComponentAccessor() {
-        if (componentAccessor == null) {
+        var access = componentAccessor;
+        if (access == null) {
             ensureClassInitialized(Component.class);
+            access = componentAccessor;
         }
-
-        return componentAccessor;
+        return access;
     }
 
     /*
@@ -923,11 +924,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.Container class.
      */
     public static ContainerAccessor getContainerAccessor() {
-        if (containerAccessor == null) {
+        var access = containerAccessor;
+        if (access == null) {
             ensureClassInitialized(Container.class);
+            access = containerAccessor;
         }
-
-        return containerAccessor;
+        return access;
     }
 
     /*
@@ -941,10 +943,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.Window class.
      */
     public static WindowAccessor getWindowAccessor() {
-        if (windowAccessor == null) {
+        var access = windowAccessor;
+        if (access == null) {
             ensureClassInitialized(Window.class);
+            access = windowAccessor;
         }
-        return windowAccessor;
+        return access;
     }
 
     /*
@@ -958,10 +962,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.AWTEvent class.
      */
     public static AWTEventAccessor getAWTEventAccessor() {
-        if (awtEventAccessor == null) {
+        var access = awtEventAccessor;
+        if (access == null) {
             ensureClassInitialized(AWTEvent.class);
+            access = awtEventAccessor;
         }
-        return awtEventAccessor;
+        return access;
     }
 
     /*
@@ -975,10 +981,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.event.InputEvent class.
      */
     public static InputEventAccessor getInputEventAccessor() {
-        if (inputEventAccessor == null) {
+        var access = inputEventAccessor;
+        if (access == null) {
             ensureClassInitialized(InputEvent.class);
+            access = inputEventAccessor;
         }
-        return inputEventAccessor;
+        return access;
     }
 
     /*
@@ -992,10 +1000,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.event.MouseEvent class.
      */
     public static MouseEventAccessor getMouseEventAccessor() {
-        if (mouseEventAccessor == null) {
+        var access = mouseEventAccessor;
+        if (access == null) {
             ensureClassInitialized(MouseEvent.class);
+            access = mouseEventAccessor;
         }
-        return mouseEventAccessor;
+        return access;
     }
 
     /*
@@ -1009,10 +1019,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.Frame class.
      */
     public static FrameAccessor getFrameAccessor() {
-        if (frameAccessor == null) {
+        var access = frameAccessor;
+        if (access == null) {
             ensureClassInitialized(Frame.class);
+            access = frameAccessor;
         }
-        return frameAccessor;
+        return access;
     }
 
     /*
@@ -1026,10 +1038,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.KeyboardFocusManager class.
      */
     public static KeyboardFocusManagerAccessor getKeyboardFocusManagerAccessor() {
-        if (kfmAccessor == null) {
+        var access = kfmAccessor;
+        if (access == null) {
             ensureClassInitialized(KeyboardFocusManager.class);
+            access = kfmAccessor;
         }
-        return kfmAccessor;
+        return access;
     }
 
     /*
@@ -1043,10 +1057,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.MenuComponent class.
      */
     public static MenuComponentAccessor getMenuComponentAccessor() {
-        if (menuComponentAccessor == null) {
+        var access = menuComponentAccessor;
+        if (access == null) {
             ensureClassInitialized(MenuComponent.class);
+            access = menuComponentAccessor;
         }
-        return menuComponentAccessor;
+        return access;
     }
 
     /*
@@ -1060,10 +1076,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.EventQueue class.
      */
     public static EventQueueAccessor getEventQueueAccessor() {
-        if (eventQueueAccessor == null) {
+        var access = eventQueueAccessor;
+        if (access == null) {
             ensureClassInitialized(EventQueue.class);
+            access = eventQueueAccessor;
         }
-        return eventQueueAccessor;
+        return access;
     }
 
     /*
@@ -1077,10 +1095,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.PopupMenu class.
      */
     public static PopupMenuAccessor getPopupMenuAccessor() {
-        if (popupMenuAccessor == null) {
+        var access = popupMenuAccessor;
+        if (access == null) {
             ensureClassInitialized(PopupMenu.class);
+            access = popupMenuAccessor;
         }
-        return popupMenuAccessor;
+        return access;
     }
 
     /*
@@ -1094,10 +1114,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.FileDialog class.
      */
     public static FileDialogAccessor getFileDialogAccessor() {
-        if (fileDialogAccessor == null) {
+        var access = fileDialogAccessor;
+        if (access == null) {
             ensureClassInitialized(FileDialog.class);
+            access = fileDialogAccessor;
         }
-        return fileDialogAccessor;
+        return access;
     }
 
     /*
@@ -1112,10 +1134,12 @@ public final class AWTAccessor {
      * class.
      */
     public static ScrollPaneAdjustableAccessor getScrollPaneAdjustableAccessor() {
-        if (scrollPaneAdjustableAccessor == null) {
+        var access = scrollPaneAdjustableAccessor;
+        if (access == null) {
             ensureClassInitialized(ScrollPaneAdjustable.class);
+            access = scrollPaneAdjustableAccessor;
         }
-        return scrollPaneAdjustableAccessor;
+        return access;
     }
 
     /**
@@ -1129,10 +1153,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.CheckboxMenuItem class.
      */
     public static CheckboxMenuItemAccessor getCheckboxMenuItemAccessor() {
-        if (checkboxMenuItemAccessor == null) {
+        var access = checkboxMenuItemAccessor;
+        if (access == null) {
             ensureClassInitialized(CheckboxMenuItemAccessor.class);
+            access = checkboxMenuItemAccessor;
         }
-        return checkboxMenuItemAccessor;
+        return access;
     }
 
     /**
@@ -1146,10 +1172,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.Cursor class.
      */
     public static CursorAccessor getCursorAccessor() {
-        if (cursorAccessor == null) {
+        var access = cursorAccessor;
+        if (access == null) {
             ensureClassInitialized(CursorAccessor.class);
+            access = cursorAccessor;
         }
-        return cursorAccessor;
+        return access;
     }
 
     /**
@@ -1163,10 +1191,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.MenuBar class.
      */
     public static MenuBarAccessor getMenuBarAccessor() {
-        if (menuBarAccessor == null) {
+        var access = menuBarAccessor;
+        if (access == null) {
             ensureClassInitialized(MenuBarAccessor.class);
+            access = menuBarAccessor;
         }
-        return menuBarAccessor;
+        return access;
     }
 
     /**
@@ -1180,10 +1210,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.MenuItem class.
      */
     public static MenuItemAccessor getMenuItemAccessor() {
-        if (menuItemAccessor == null) {
+        var access = menuItemAccessor;
+        if (access == null) {
             ensureClassInitialized(MenuItemAccessor.class);
+            access = menuItemAccessor;
         }
-        return menuItemAccessor;
+        return access;
     }
 
     /**
@@ -1197,10 +1229,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.Menu class.
      */
     public static MenuAccessor getMenuAccessor() {
-        if (menuAccessor == null) {
+        var access = menuAccessor;
+        if (access == null) {
             ensureClassInitialized(MenuAccessor.class);
+            access = menuAccessor;
         }
-        return menuAccessor;
+        return access;
     }
 
     /**
@@ -1214,10 +1248,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.event.KeyEvent class.
      */
     public static KeyEventAccessor getKeyEventAccessor() {
-        if (keyEventAccessor == null) {
+        var access = keyEventAccessor;
+        if (access == null) {
             ensureClassInitialized(KeyEventAccessor.class);
+            access = keyEventAccessor;
         }
-        return keyEventAccessor;
+        return access;
     }
 
     /**
@@ -1231,10 +1267,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the javax.swing.ClientPropertyKey class.
      */
     public static ClientPropertyKeyAccessor getClientPropertyKeyAccessor() {
-        if (clientPropertyKeyAccessor == null) {
+        var access = clientPropertyKeyAccessor;
+        if (access == null) {
             ensureClassInitialized(ClientPropertyKeyAccessor.class);
+            access = clientPropertyKeyAccessor;
         }
-        return clientPropertyKeyAccessor;
+        return access;
     }
 
     /**
@@ -1248,10 +1286,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.SystemTray class.
      */
     public static SystemTrayAccessor getSystemTrayAccessor() {
-        if (systemTrayAccessor == null) {
+        var access = systemTrayAccessor;
+        if (access == null) {
             ensureClassInitialized(SystemTrayAccessor.class);
+            access = systemTrayAccessor;
         }
-        return systemTrayAccessor;
+        return access;
     }
 
     /**
@@ -1265,10 +1305,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.TrayIcon class.
      */
     public static TrayIconAccessor getTrayIconAccessor() {
-        if (trayIconAccessor == null) {
+        var access = trayIconAccessor;
+        if (access == null) {
             ensureClassInitialized(TrayIconAccessor.class);
+            access = trayIconAccessor;
         }
-        return trayIconAccessor;
+        return access;
     }
 
     /**
@@ -1282,10 +1324,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.DefaultKeyboardFocusManager class.
      */
     public static DefaultKeyboardFocusManagerAccessor getDefaultKeyboardFocusManagerAccessor() {
-        if (defaultKeyboardFocusManagerAccessor == null) {
+        var access = defaultKeyboardFocusManagerAccessor;
+        if (access == null) {
             ensureClassInitialized(DefaultKeyboardFocusManagerAccessor.class);
+            access = defaultKeyboardFocusManagerAccessor;
         }
-        return defaultKeyboardFocusManagerAccessor;
+        return access;
     }
     /*
      * Set an accessor object for the java.awt.SequencedEvent class.
@@ -1298,14 +1342,16 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.SequencedEvent class.
      */
     public static SequencedEventAccessor getSequencedEventAccessor() {
-        if (sequencedEventAccessor == null) {
+        var access = sequencedEventAccessor;
+        if (access == null) {
             try {
                 ensureClassInitialized(
                         Class.forName("java.awt.SequencedEvent"));
             } catch (ClassNotFoundException ignore) {
             }
+            access = sequencedEventAccessor;
         }
-        return sequencedEventAccessor;
+        return access;
     }
 
     /*
@@ -1319,11 +1365,12 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.Toolkit class.
      */
     public static ToolkitAccessor getToolkitAccessor() {
-        if (toolkitAccessor == null) {
+        var access = toolkitAccessor;
+        if (access == null) {
             ensureClassInitialized(Toolkit.class);
+            access = toolkitAccessor;
         }
-
-        return toolkitAccessor;
+        return access;
     }
 
     /*
@@ -1344,11 +1391,12 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.SystemColor class.
      */
     public static SystemColorAccessor getSystemColorAccessor() {
-        if (systemColorAccessor == null) {
+        var access = systemColorAccessor;
+        if (access == null) {
             ensureClassInitialized(SystemColor.class);
+            access = systemColorAccessor;
         }
-
-        return systemColorAccessor;
+        return access;
     }
 
      /*
@@ -1362,10 +1410,12 @@ public final class AWTAccessor {
      * Get the accessor object for the javax.accessibility.AccessibleContext class.
      */
     public static AccessibleContextAccessor getAccessibleContextAccessor() {
-        if (accessibleContextAccessor == null) {
+        var access = accessibleContextAccessor;
+        if (access == null) {
             ensureClassInitialized(AccessibleContext.class);
+            access = accessibleContextAccessor;
         }
-        return accessibleContextAccessor;
+        return access;
     }
 
    /*
@@ -1379,10 +1429,12 @@ public final class AWTAccessor {
      * Get the accessor object for the javax.accessibility.AccessibleBundle class.
      */
     public static AccessibleBundleAccessor getAccessibleBundleAccessor() {
-        if (accessibleBundleAccessor == null) {
+        var access = accessibleBundleAccessor;
+        if (access == null) {
             ensureClassInitialized(AccessibleBundle.class);
+            access = accessibleBundleAccessor;
         }
-        return accessibleBundleAccessor;
+        return access;
     }
 
    /*
@@ -1396,10 +1448,12 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.dnd.DragSourceContext class.
      */
     public static DragSourceContextAccessor getDragSourceContextAccessor() {
-        if (dragSourceContextAccessor == null) {
+        var access = dragSourceContextAccessor;
+        if (access == null) {
             ensureClassInitialized(DragSourceContext.class);
+            access = dragSourceContextAccessor;
         }
-        return dragSourceContextAccessor;
+        return access;
     }
 
     /*
@@ -1413,10 +1467,12 @@ public final class AWTAccessor {
      * Get the accessor object for the java.awt.dnd.DropTargetContext class.
      */
     public static DropTargetContextAccessor getDropTargetContextAccessor() {
-        if (dropTargetContextAccessor == null) {
+        var access = dropTargetContextAccessor;
+        if (access == null) {
             ensureClassInitialized(DropTargetContext.class);
+            access = dropTargetContextAccessor;
         }
-        return dropTargetContextAccessor;
+        return access;
     }
 
     /*
