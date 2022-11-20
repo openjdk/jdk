@@ -45,7 +45,7 @@ public class VirtualThreadStartTest {
         System.out.println("loading " + AGENT_LIB + " lib");
 
         if (args.length > 0 && args[0].equals("attach")) { // agent loaded into running VM case
-            String arg = args.length == 2 ? args[1] : ""; 
+            String arg = args.length == 2 ? args[1] : "";
             VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
             vm.loadAgentLibrary(AGENT_LIB, arg);
         } else {
