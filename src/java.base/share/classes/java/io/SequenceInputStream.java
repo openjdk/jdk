@@ -80,7 +80,7 @@ public class SequenceInputStream extends InputStream {
      * @param   s2   the second input stream to read.
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
-        e = Collections.enumeration(List.of(s1, s2));
+        e = Collections.enumeration(s2 == null ? List.of(s1) : List.of(s1, s2));
         peekNextStream();
     }
 
