@@ -888,10 +888,12 @@ public final class AWTAccessor {
      * Retrieve the accessor object for the java.awt.color.ICC_Profile class.
      */
     public static ICC_ProfileAccessor getICC_ProfileAccessor() {
-        if (iccProfileAccessor == null) {
+        var access = iccProfileAccessor;
+        if (access == null) {
             ensureClassInitialized(ICC_Profile.class);
+            access = iccProfileAccessor;
         }
-        return iccProfileAccessor;
+        return access;
     }
 
     /*
