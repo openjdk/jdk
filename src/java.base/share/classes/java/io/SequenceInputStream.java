@@ -25,9 +25,9 @@
 
 package java.io;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -80,7 +80,10 @@ public class SequenceInputStream extends InputStream {
      * @param   s2   the second input stream to read.
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
-        e = Collections.enumeration(s2 == null ? List.of(s1) : List.of(s1, s2));
+        var list = new ArrayList<InputStream>(2);
+        list.add(s1);
+        list.add(s2);
+        e = Collections.enumeration(list);
         peekNextStream();
     }
 
