@@ -47,7 +47,7 @@ import static org.testng.Assert.assertTrue;
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run testng/othervm/timeout=180 TransferTo
- * @bug 8296431
+ * @bug 8297298
  * @summary Tests whether java.io.SequenceInputStream.transferTo conforms to the
  *          InputStream.transferTo specification
  * @key randomness
