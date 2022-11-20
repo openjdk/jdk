@@ -23,11 +23,14 @@
 
 /**
  * @test
- * @summary Verifies JVMTI can_support_virtual_threads works with agents loaded into running VM
+ * @summary Verifies JVMTI can_support_virtual_threads works for agents loaded at startup and into running VM
  * @requires vm.jvmti
  * @requires vm.continuations
  * @enablePreview
- * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest
+ * @run main/othervm/native -agentlib:VirtualThreadStartTest VirtualThreadStartTest
+ * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads VirtualThreadStartTest
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach can_support_virtual_threads
  */
 
 import com.sun.tools.attach.VirtualMachine;
@@ -39,12 +42,19 @@ public class VirtualThreadStartTest {
     private static native int getAndResetStartedThreads();
 
     public static void main(String[] args) throws Exception {
-        VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
-        vm.loadAgentLibrary(AGENT_LIB);
+        System.out.println("loading " + AGENT_LIB + " lib");
+
+        if (args.length > 0 && args[0].equals("attach")) { // agent loaded into running VM case
+            String arg = args.length == 2 ? args[1] : ""; 
+            VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
+            vm.loadAgentLibrary(AGENT_LIB, arg);
+        } else {
+            System.loadLibrary(AGENT_LIB);
+        }
         getAndResetStartedThreads();
 
         for (int i = 0; i < THREAD_CNT; i++) {
-            Thread.ofVirtual().start(() -> {}).join();
+            Thread.ofVirtual().name("Tested-VT-" + i).start(() -> {}).join();
         }
 
         int startedThreads = getAndResetStartedThreads();

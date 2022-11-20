@@ -31,10 +31,46 @@ extern "C" {
 static jvmtiEnv *jvmti;
 static int started_thread_cnt = 0;
 static jrawMonitorID agent_event_lock = NULL;
+static const char* TESTED_TNAME_START = "Tested-VT";
+static const size_t TESTED_TNAME_START_LEN = strlen(TESTED_TNAME_START);
+static bool can_support_vt_enabled = false;
+
+void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  char* tname = get_thread_name(jvmti, jni, thread);
+
+  RawMonitorLocker agent_start_locker(jvmti, jni, agent_event_lock);
+
+  if (tname != NULL && strncmp(tname, TESTED_TNAME_START, TESTED_TNAME_START_LEN) == 0) {
+    jboolean is_virtual = jni->IsVirtualThread(thread);
+    if (!is_virtual) {
+      fatal(jni, "Failed: tested thread expected to be virtual");
+    }
+    if (can_support_vt_enabled) {
+      fatal(jni, "Failed: expected VirtualThreadStart instead of ThreadStart event");
+    }
+    printf("ThreadStart event: %s\n", tname);
+    started_thread_cnt++;
+  }
+  deallocate(jvmti, jni, (void*)tname);
+}
 
 void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  char* tname = get_thread_name(jvmti, jni, thread);
+
   RawMonitorLocker agent_start_locker(jvmti, jni, agent_event_lock);
-  started_thread_cnt++;
+
+  if (tname != NULL && strncmp(tname, TESTED_TNAME_START, TESTED_TNAME_START_LEN) == 0) {
+    jboolean is_virtual = jni->IsVirtualThread(thread);
+    if (!is_virtual) {
+      fatal(jni, "Failed: tested thread expected to be virtual");
+    }
+    if (!can_support_vt_enabled) {
+      fatal(jni, "Failed: expected ThreadStart instead of VirtualThreadStart event");
+    }
+    printf("VirtualThreadStart event: %s\n", tname);
+    started_thread_cnt++;
+  }
+  deallocate(jvmti, jni, (void*)tname);
 }
 
 JNIEXPORT jint JNICALL
@@ -51,31 +87,41 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
 
-  LOG("Agent_OnLoad started\n");
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
     return JNI_ERR;
   }
   memset(&caps, 0, sizeof(caps));
   memset(&callbacks, 0, sizeof(callbacks));
-
-  caps.can_support_virtual_threads = 1;
+  callbacks.ThreadStart = &ThreadStart;
   callbacks.VirtualThreadStart = &VirtualThreadStart;
 
-  err = jvmti->AddCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Agent init: error in JVMTI AddCapabilities: %s (%d)\n", TranslateError(err), err);
-    return JNI_ERR;
+  if (options != NULL && strcmp(options, "can_support_virtual_threads") == 0) {
+    can_support_vt_enabled = true;
+    caps.can_support_virtual_threads = 1;
+
+    err = jvmti->AddCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG("Agent init: error in JVMTI AddCapabilities: %s (%d)\n", TranslateError(err), err);
+      return JNI_ERR;
+    }
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
+      return JNI_ERR;
+    }
+  } else {
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
+      return JNI_ERR;
+    }
   }
+  printf("agent_init: can_support_virtual_threads capability: %d\n",
+         caps.can_support_virtual_threads);
 
   err = jvmti->SetEventCallbacks(&callbacks, (jint)sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
     LOG("Agent init: error in JVMTI AddCapabilities: %s (%d)\n", TranslateError(err), err);
-    return JNI_ERR;
-  }
-
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
   agent_event_lock = create_raw_monitor(jvmti, "agent_event_lock");
@@ -85,11 +131,13 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  LOG("Agent_OnLoad started\n");
   return agent_init(jvm, options, reserved);
 }
 
 JNIEXPORT jint JNICALL
 Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
+  LOG("Agent_OnAttach started\n");
   return agent_init(jvm, options, reserved);
 }
 
