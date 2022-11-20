@@ -28,17 +28,19 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.util.*;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ParamTree;
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -62,48 +64,34 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        Utils utils = input.utils;
-        if (input.tagId == null) {
-            var tag = (ParamTree) input.docTreeInfo.docTree();
-            input.isTypeVariableParamTag = tag.isTypeParameter();
-            ExecutableElement ee = (ExecutableElement) input.docTreeInfo.element();
-            CommentHelper ch = utils.getCommentHelper(ee);
-            List<? extends Element> parameters = input.isTypeVariableParamTag
-                    ? ee.getTypeParameters()
-                    : ee.getParameters();
-            String target = ch.getParameterName(tag);
-            for (int i = 0; i < parameters.size(); i++) {
-                Element e = parameters.get(i);
-                String candidate = input.isTypeVariableParamTag
-                        ? utils.getTypeName(e.asType(), false)
-                        : utils.getSimpleName(e);
-                if (candidate.equals(target)) {
-                    input.tagId = Integer.toString(i);
-                    break;
-                }
-            }
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert owner.getKind() == ElementKind.METHOD;
+        assert tag.getKind() == DocTree.Kind.PARAM;
+        var method = (ExecutableElement) owner;
+        var param = (ParamTree) tag;
+        // find the position of an owner parameter described by the given tag
+        List<? extends Element> parameterElements;
+        if (param.isTypeParameter()) {
+            parameterElements = method.getTypeParameters();
+        } else {
+            parameterElements = method.getParameters();
         }
-        if (input.tagId == null)
-            return;
-        int position = Integer.parseInt(input.tagId);
-        ExecutableElement ee = (ExecutableElement) input.element;
-        CommentHelper ch = utils.getCommentHelper(ee);
-        List<ParamTree> tags = input.isTypeVariableParamTag
-                ? utils.getTypeParamTrees(ee)
-                : utils.getParamTrees(ee);
-        List<? extends Element> parameters = input.isTypeVariableParamTag
-                ? ee.getTypeParameters()
-                : ee.getParameters();
-        Map<String, Integer> positionOfName = mapNameToPosition(utils, parameters);
-        for (ParamTree tag : tags) {
-            String paramName = ch.getParameterName(tag);
-            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(position)) {
-                output.holder = input.element;
-                output.holderTag = tag;
-                output.inlineTags = ch.getBody(tag);
-                return;
-            }
+        Map<String, Integer> stringIntegerMap = mapNameToPosition(configuration.utils, parameterElements);
+        CommentHelper ch = configuration.utils.getCommentHelper(owner);
+        Integer position = stringIntegerMap.get(ch.getParameterName(param));
+        if (position == null) {
+            return new Output(null, null, List.of(), true);
+        }
+        // try to inherit description of the respective parameter in an overridden method
+        try {
+            var docFinder = configuration.utils.docFinder();
+            var r = docFinder.trySearch(method,
+                            m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
+                    .toOptional();
+            return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
+                    .orElseGet(() -> new Output(null, null, List.of(), true));
+        } catch (DocFinder.NoOverriddenMethodsFound e) {
+            return new Output(null, null, List.of(), false);
         }
     }
 
@@ -239,19 +227,33 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                              boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
-                Integer.toString(position), kind == ParamKind.TYPE_PARAMETER);
-        DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-        if (!inheritedDoc.inlineTags.isEmpty()) {
+        var r = utils.docFinder().search((ExecutableElement) holder,
+                        m -> Result.fromOptional(extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER)))
+                .toOptional();
+        if (r.isPresent()) {
             String name = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)
                     : utils.getTypeName(param.asType(), false);
-            Content content = convertParam(inheritedDoc.holder, kind, writer,
-                    (ParamTree) inheritedDoc.holderTag,
-                    name, isFirst);
+            Content content = convertParam(r.get().method, kind, writer,
+                    r.get().paramTree, name, isFirst);
             result.add(content);
         }
         return result;
+    }
+
+    private record Documentation(ParamTree paramTree, ExecutableElement method) { }
+
+    private static Optional<Documentation> extract(Utils utils, ExecutableElement method, Integer position, boolean typeParam) {
+        var ch = utils.getCommentHelper(method);
+        List<ParamTree> tags = typeParam
+                ? utils.getTypeParamTrees(method)
+                : utils.getParamTrees(method);
+        List<? extends Element> parameters = typeParam
+                ? method.getTypeParameters()
+                : method.getParameters();
+        var positionOfName = mapNameToPosition(utils, parameters);
+        return tags.stream().filter(t -> position.equals(positionOfName.get(ch.getParameterName(t))))
+                .map(t -> new Documentation(t, method)).findAny();
     }
 
     /**

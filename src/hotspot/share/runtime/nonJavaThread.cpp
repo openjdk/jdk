@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"

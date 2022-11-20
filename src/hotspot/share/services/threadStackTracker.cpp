@@ -35,7 +35,7 @@ SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack
 
 bool ThreadStackTracker::initialize(NMT_TrackingLevel level) {
   if (level == NMT_detail && !track_as_vm()) {
-    _simple_thread_stacks = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
+    _simple_thread_stacks = new (std::nothrow, mtNMT)
       SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>();
     return (_simple_thread_stacks != NULL);
   }
