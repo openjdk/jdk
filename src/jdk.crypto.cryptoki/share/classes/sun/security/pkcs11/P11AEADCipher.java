@@ -739,8 +739,8 @@ final class P11AEADCipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
-             var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
+        try (var inGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
+             var outGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;

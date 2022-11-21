@@ -276,7 +276,7 @@ final class P11Mac extends MacSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
                 token.p11.C_SignUpdate(session.id(), addr + ofs, null, 0, len);
             }
             byteBuffer.position(ofs + len);

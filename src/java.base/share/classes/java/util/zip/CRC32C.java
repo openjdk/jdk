@@ -174,7 +174,7 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(buffer)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(buffer)) {
                 crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
                         pos, limit);
             } finally {

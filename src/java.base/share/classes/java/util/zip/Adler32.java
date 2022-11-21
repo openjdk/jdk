@@ -99,7 +99,7 @@ public class Adler32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(buffer)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(buffer)) {
                 adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
             } finally {
                 Reference.reachabilityFence(buffer);

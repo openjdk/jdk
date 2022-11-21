@@ -779,10 +779,11 @@ public abstract sealed class Buffer
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
 
-                // We are not using a lambda here because this would create a circular dependency with lambda factories.
+                // We are not using a lambda here because this would create
+                // a circular dependency with lambda factories.
                 static final JavaNioAccess.SessionAcquisition NO_OP_CLOSE = new JavaNioAccess.SessionAcquisition() {
                     @Override
-                    public void close() throws RuntimeException {}
+                    public void close() {}
                 };
 
                 @Override

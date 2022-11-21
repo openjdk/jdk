@@ -629,7 +629,7 @@ final class P11PSSSignature extends SignatureSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
                 if (mode == M_SIGN) {
                     if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate

@@ -594,7 +594,7 @@ final class P11Signature extends SignatureSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
                 if (mode == M_SIGN) {
                     token.p11.C_SignUpdate
                         (session.id(), addr + ofs, null, 0, len);

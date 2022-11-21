@@ -917,8 +917,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
-                try (var srcAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(src);
-                     var dstAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
+                try (var srcGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(src);
+                     var dstGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
 
                     // Get the current memory address for the given ByteBuffers
                     long srcaddr = dsrc.address();
@@ -1595,7 +1595,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     int ofs = dst.arrayOffset() + dst.position();
                     Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
                 } else {
-                    try (var acquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
+                    try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
                         Unsafe.getUnsafe().setMemory(((DirectBuffer) dst).address(),
                                 len + dst.position(), (byte) 0);
                     }

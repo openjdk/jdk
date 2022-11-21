@@ -561,8 +561,8 @@ final class P11KeyWrapCipher extends CipherSpi {
 
         boolean doCancel = true;
         int k = 0;
-        try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
-             var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
+        try (var inGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
+             var outGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;

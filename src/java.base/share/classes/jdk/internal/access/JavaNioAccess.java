@@ -110,7 +110,7 @@ public interface JavaNioAccess {
      * A valid close handler is always returned (if the buffer has no scope, or acquiring is not
      * required to guarantee safety, a noop close handler is returned).
      * {@snippet lang = java:
-     * try (var handler = acquireSessionAsAutoCloseable(buffer)) {
+     * try (var guard = acquireSessionAsAutoCloseable(buffer)) {
      *     performOperation(buffer);
      * }
      *}
@@ -158,6 +158,6 @@ public interface JavaNioAccess {
     interface SessionAcquisition extends AutoCloseable {
 
         @Override
-        void close() throws RuntimeException;
+        void close();
     }
 }

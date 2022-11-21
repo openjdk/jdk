@@ -692,8 +692,8 @@ final class P11Cipher extends CipherSpi {
             throw new ShortBufferException();
         }
         int origPos = inBuffer.position();
-        try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
-             var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
+        try (var inGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
+             var outGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;
@@ -893,7 +893,7 @@ final class P11Cipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        try (var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
+        try (var outGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long outAddr = 0;

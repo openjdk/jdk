@@ -180,7 +180,7 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (dst instanceof sun.nio.ch.DirectBuffer buf) {
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
                 long address = buf.address() + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
@@ -244,7 +244,7 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof sun.nio.ch.DirectBuffer buf) {
-            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(src)) {
+            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(src)) {
                 long address = buf.address() + pos;
                 write(name, address, rem);
                 src.position(pos + rem);

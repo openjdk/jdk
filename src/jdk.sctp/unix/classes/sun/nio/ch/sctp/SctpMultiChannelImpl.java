@@ -588,7 +588,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                         int rem,
                                         int pos)
             throws IOException {
-        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+        try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
             int n = receive0(fd, resultContainer, ((DirectBuffer) bb).address() + pos, rem);
             if (n > 0)
                 bb.position(pos + n);
@@ -916,7 +916,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+        try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
             int written = send0(fd, ((DirectBuffer) bb).address() + pos, rem, addr,
                     port, assocId, streamNumber, unordered, ppid);
             if (written > 0)
