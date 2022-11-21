@@ -36,7 +36,7 @@ package gc.epsilon;
  *                   gc.epsilon.TestMemoryMXBeans
  *                   -1 256
  *
- * @run main/othervm -Xmx256m -Xmx256m
+ * @run main/othervm -Xms256m -Xmx256m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   gc.epsilon.TestMemoryMXBeans
  *                   256 256
