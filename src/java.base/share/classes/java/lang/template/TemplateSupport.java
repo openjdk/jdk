@@ -110,7 +110,7 @@ final class TemplateSupport {
      * assert st.interpolate().equals("\{a}\{b}\{c}");
      * }
      *
-     * @param sts  one or more {@link StringTemplate}
+     * @param sts  zero or more {@link StringTemplate}
      *
      * @return combined {@link StringTemplate}
      *

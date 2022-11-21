@@ -33,6 +33,7 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * {@link StringTemplate} is the run-time representation of a string template or
  * text block template in a template expression.
+ *
  * <p>
  * In the source code of a Java program, a string template or text block template
  * contains an interleaved succession of <em>fragment literals</em> and <em>embedded
@@ -93,8 +94,6 @@ import jdk.internal.javac.PreviewFeature;
  * The factory methods {@link StringTemplate#of(String)} and
  * {@link StringTemplate#of(List, List)} can be used to construct a {@link StringTemplate}.
  *
- * @jls 15.8.6
- *
  * @see ValidatingProcessor
  * @see TemplateProcessor
  * @see StringProcessor
@@ -108,11 +107,13 @@ import jdk.internal.javac.PreviewFeature;
  * by {@link StringTemplate#values()}.
  *
  * @since 20
+ *
+ * @jls 15.8.6 Process Template Expressions
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public interface StringTemplate {
     /**
-     * Returns s list of fragment literals for this {@link StringTemplate}.
+     * Returns a list of fragment literals for this {@link StringTemplate}.
      * The fragment literals are the character sequences preceding each of the embedded
      * expressions in source code, plus the character sequence following the last
      * embedded expression. Such character sequences may be zero-length if an embedded
@@ -150,9 +151,9 @@ public interface StringTemplate {
      * Returns the string interpolation of the fragments and values for this
      * {@link StringTemplate}.
      * <p>
-     * For better visibility and when practical, it is recommended that users use the
+     * For better visibility and when practical, it is recommended to use the
      * {@link StringTemplate#STR} processor instead of invoking the
-     * {@link StringTemplate#interpolate()} method directly.
+     * {@link StringTemplate#interpolate()} method.
      * {@snippet :
      * String student = "Mary";
      * String teacher = "Johnson";
@@ -203,7 +204,7 @@ public interface StringTemplate {
      *
      * @param stringTemplate  the {@link StringTemplate} to represent
      *
-     * @return diagnostic string representing the supplied templated string
+     * @return diagnostic string representing the supplied string template
      *
      * @throws NullPointerException if stringTemplate is null
      */
@@ -297,7 +298,7 @@ public interface StringTemplate {
      * n is the total of number of values across all the supplied
      * {@link StringTemplate StringTemplates}.
      *
-     * @param stringTemplates  one or more {@link StringTemplate}
+     * @param stringTemplates  zero or more {@link StringTemplate}
      *
      * @return combined {@link StringTemplate}
      *
@@ -313,7 +314,7 @@ public interface StringTemplate {
     }
 
     /**
-     * The {@link StringProcessor} instance conventionally used for the string interpolation
+     * This {@link StringProcessor} instance is conventionally used for the string interpolation
      * of a supplied {@link StringTemplate}.
      * <p>
      * For better visibility and when practical, it is recommended that users use the
@@ -330,7 +331,7 @@ public interface StringTemplate {
     static final StringProcessor STR = StringTemplate::interpolate;
 
     /**
-     * The {@link TemplateProcessor} instance conventionally used to indicate that the
+     * This {@link TemplateProcessor} instance is conventionally used to indicate that the
      * processing of the {@link StringTemplate} is to be deferred to a later time. Deferred
      * processing can be resumed by invoking the
      * {@link StringTemplate#process(ValidatingProcessor)} or

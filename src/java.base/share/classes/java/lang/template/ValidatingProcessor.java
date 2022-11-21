@@ -33,6 +33,7 @@ import jdk.internal.javac.PreviewFeature;
  * This interface describes the methods provided by a generalized string template processor. The
  * primary method {@link ValidatingProcessor#process(StringTemplate)} is used to validate
  * and compose a result using a {@link StringTemplate StringTemplate's} fragments and values lists.
+ *
  * For example:
  * {@snippet :
  * class MyProcessor implements ValidatingProcessor<String, IllegalArgumentException> {
@@ -138,6 +139,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see java.util.FormatProcessor
  *
  * @since 20
+ *
+ * @jls 15.8.6 Process Template Expressions
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface

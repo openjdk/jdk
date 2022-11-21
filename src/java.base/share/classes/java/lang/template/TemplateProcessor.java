@@ -51,6 +51,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @implNote It is recommended that {@link StringProcessor} be used instead of
  * {@code TemplateProcessor<String>} when the result type is {@link String}.
+ *
+ * @jls 15.8.6 Process Template Expressions
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 @FunctionalInterface
