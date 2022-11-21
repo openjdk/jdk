@@ -543,7 +543,7 @@ class ConstantPoolCache: public MetaspaceObj {
   void record_gc_epoch();
   uint64_t gc_epoch() { return _gc_epoch; }
 
-  void set_dynamic_call(const CallInfo &call_info, int index);
+  oop set_dynamic_call(const CallInfo &call_info, int index);
 
   // Printing
   void print_on(outputStream* st) const;

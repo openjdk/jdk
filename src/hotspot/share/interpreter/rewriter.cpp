@@ -325,7 +325,7 @@ void Rewriter::patch_invokedynamic_bytecodes() {
       Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index + delta));
 
       // invokedynamic resolved references map also points to cp cache and must
-      // add delta to each.
+      // add delta to each.+
       int resolved_index = _patch_invokedynamic_refs->at(i);
         assert(_invokedynamic_references_map.at(resolved_index) == cache_index,
              "should be the same index");

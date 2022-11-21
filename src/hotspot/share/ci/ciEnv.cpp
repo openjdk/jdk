@@ -873,14 +873,15 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   assert(accessor != NULL, "need origin of access");
   if (bc == Bytecodes::_invokedynamic) {
     if (UseNewCode) {
-      //int indy_index = (index && 0xffff0000) >> 16;
-      tty->print_cr("get_method_by_index: %d", index);
-      Method* adapter = cpool->cache()->resolved_invokedynamic_info_element(cpool->decode_invokedynamic_index(index))->method();
-      if (adapter != nullptr) {
-        return get_method(adapter);
+      tty->print_cr("Indy array len %d", cpool->cache()->resolved_invokedynamicinfo_length());
+      if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_invokedynamicinfo_length()) {
+        tty->print_cr("get_method_by_index: %d", index);
+        Method* adapter = cpool->cache()->resolved_invokedynamic_info_element(cpool->decode_invokedynamic_index(index))->method();
+        if (adapter != nullptr) {
+          return get_method(adapter);
+        }
       }
     } else {
-      if (UseNewCode) {tty->print_cr("get_method_by_index: %d", index);}
       ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
       bool is_resolved = !cpce->is_f1_null();
       // FIXME: code generation could allow for null (unlinked) call site
@@ -1642,6 +1643,7 @@ void ciEnv::find_dynamic_call_sites() {
                          bcs.bci());
             if (opcode == Bytecodes::_invokedynamic) {
               int index = bcs.get_index_u4();
+              if (UseNewCode) {tty->print_cr("find_dynamic_callsites index: %d", index);}
               process_invokedynamic(pool, index, thread);
             } else {
               assert(opcode == Bytecodes::_invokehandle, "new switch label added?");
