@@ -500,9 +500,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
       const TypeInstPtr  *toop = t->isa_instptr();
       const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-      if ((toop != NULL && toop->is_interface()) || (tkls != NULL && tkls->is_interface())) {
-        s2.print("  Interface:");
-      } else if (toop) {
+      if (toop) {
         s2.print("  Oop:");
       } else if (tkls) {
         s2.print("  Klass:");

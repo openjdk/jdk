@@ -23,13 +23,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_bsd.hpp"
@@ -634,13 +634,6 @@ void os::Bsd::init_thread_fpu_state(void) {
   // Set fpu to 53 bit precision. This happens too early to use a stub.
   fixcw();
 #endif // !AMD64
-}
-
-
-// Check that the bsd kernel version is 2.4 or higher since earlier
-// versions do not support SSE without patches.
-bool os::supports_sse() {
-  return true;
 }
 
 juint os::cpu_microcode_revision() {

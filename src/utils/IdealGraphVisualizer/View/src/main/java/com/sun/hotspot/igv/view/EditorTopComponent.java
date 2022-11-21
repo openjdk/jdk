@@ -75,7 +75,6 @@ public final class EditorTopComponent extends TopComponent {
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
 
-
     public EditorTopComponent(InputGraph graph) {
         initComponents();
 
@@ -148,11 +147,7 @@ public final class EditorTopComponent extends TopComponent {
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> {
-            setDisplayName(model.getGraph().getDisplayName());
-            setToolTipText(model.getGroup().getDisplayName());
-            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
-        });
+        diagramViewModel.getGraphChangedEvent().addListener(model -> graphChanged(model));
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
@@ -223,6 +218,10 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
+
+        JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
+        globalSelectionButton.setHideActionText(true);
+        toolBar.add(globalSelectionButton);
         toolBar.add(new JToggleButton(new SelectionModeAction()));
         toolBar.addSeparator();
         toolBar.add(new ZoomLevelAction(scene));
@@ -244,6 +243,14 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
+
+        graphChanged(diagramViewModel);
+    }
+
+    private void graphChanged(DiagramViewModel model) {
+        setDisplayName(model.getGraph().getDisplayName());
+        setToolTipText(model.getGroup().getDisplayName());
+        graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
     }
 
     public DiagramViewModel getModel() {
