@@ -72,6 +72,9 @@ import jdk.internal.vm.annotation.DontInline;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
 
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time
     static final boolean FILE    = true;
@@ -84,6 +87,10 @@ public class Fuzz implements Runnable {
     static final Path TEST_DIR = Path.of(System.getProperty("test.src", "."));
 
     public static void main(String[] args) {
+        if (Platform.isSlowDebugBuild() && Platform.isOSX() && Platform.isAArch64()) {
+            throw new SkippedException("Test is unstable with slowdebug bits "
+                                       + "on macosx-aarch64");
+        }
         warmup();
         for (int compileLevel : new int[]{4}) {
             for (boolean compileRun : new boolean[]{true}) {
