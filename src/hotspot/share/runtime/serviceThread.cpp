@@ -73,7 +73,7 @@ class OopHandleList : public CHeapObj<mtInternal> {
   }
   ~OopHandleList() {
     assert(_index == _count, "usage error");
-    for (int i = 0; i < _count; i++) {
+    for (int i = 0; i < _index; i++) {
       _handles[i].release(JavaThread::thread_oop_storage());
     }
   }
