@@ -72,7 +72,7 @@ public abstract sealed class MemorySessionImpl
     static {
         try {
             STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
     }
