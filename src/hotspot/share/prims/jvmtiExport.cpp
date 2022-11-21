@@ -60,7 +60,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/keepStackGCProcessed.hpp" 
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
