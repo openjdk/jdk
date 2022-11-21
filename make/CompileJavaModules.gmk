@@ -121,8 +121,8 @@ TARGETS += $($(MODULE))
 # Since the other modules are declared in different invocations of this file,
 # use the macro to find the correct target file to depend on.
 # Only the javac compilation actually depends on other modules so limit
-# dependency declaration to that by using the *_COMPILE_TARGET variable.
-$($(MODULE)_COMPILE_TARGET): $(foreach d, $(call FindDepsForModule, $(MODULE)), \
+# dependency declaration to that by using the *_MODFILELIST variable.
+$($(MODULE)_MODFILELIST): $(foreach d, $(call FindDepsForModule, $(MODULE)), \
     $(call SetupJavaCompilationApiTarget, $d, \
         $(if $($d_BIN), $($d_BIN), $(JDK_OUTPUTDIR)/modules/$d)))
 

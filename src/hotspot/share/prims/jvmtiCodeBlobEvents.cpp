@@ -173,7 +173,7 @@ void CodeBlobCollector::collect() {
   assert(_global_code_blobs == NULL, "checking");
 
   // create the global list
-  _global_code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
+  _global_code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
 
   // iterate over the stub code descriptors and put them in the list first.
   for (StubCodeDesc* desc = StubCodeDesc::first(); desc != NULL; desc = StubCodeDesc::next(desc)) {
@@ -234,7 +234,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
       // Save events to the queue for posting outside the CodeCache_lock.
       MutexLocker mu(java_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // Iterate over non-profiled and profiled nmethods
-      NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+      NMethodIterator iter(NMethodIterator::only_not_unloading);
       while(iter.next()) {
         nmethod* current = iter.method();
         current->post_compiled_method_load_event(state);

@@ -50,7 +50,7 @@ enum X509Authentication implements SSLAuthentication {
 
     // Require rsaEncryption or RSASSA-PSS public key
     //
-    // Note that this is a specifical scheme for TLS 1.2. (EC)DHE_RSA cipher
+    // Note that this is a specific scheme for TLS 1.2. (EC)DHE_RSA cipher
     // suites of TLS 1.2 can use either rsaEncryption or RSASSA-PSS public
     // key for authentication and handshake.
     RSA_OR_PSS  ("RSA_OR_PSS",  "RSA", "RSASSA-PSS"),
@@ -66,8 +66,8 @@ enum X509Authentication implements SSLAuthentication {
     final String keyAlgorithm;
     final String[] keyTypes;
 
-    private X509Authentication(String keyAlgorithm,
-            String... keyTypes) {
+    X509Authentication(String keyAlgorithm,
+                       String... keyTypes) {
         this.keyAlgorithm = keyAlgorithm;
         this.keyTypes = keyTypes;
     }
@@ -322,7 +322,7 @@ enum X509Authentication implements SSLAuthentication {
                 continue;
             }
 
-            // For TLS 1.2 and prior versions, the public key of a EC cert
+            // For TLS 1.2 and prior versions, the public key of an EC cert
             // MUST use a curve and point format supported by the client.
             // But for TLS 1.3, signature algorithms are negotiated
             // independently via the "signature_algorithms" extension.

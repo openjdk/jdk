@@ -47,15 +47,13 @@
 #define SECURITY_WIN32
 #include <sspi.h>
 
-#pragma comment(lib, "secur32.lib")
-
 // Otherwise an exception will be thrown
 #define new new (std::nothrow)
 
 // A debugging macro
 #define PP(fmt, ...) \
         if (trace) { \
-            fprintf(stderr, "[SSPI:%ld] "fmt"\n", __LINE__, ##__VA_ARGS__); \
+            fprintf(stderr, "[SSPI:%ld] " fmt "\n", __LINE__, ##__VA_ARGS__); \
             fflush(stderr); \
         }
 #define SEC_SUCCESS(status) ((*minor_status = (status)), (status) >= SEC_E_OK)
@@ -895,7 +893,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     gss_buffer_desc tn;
     gss_display_name(&minor, target_name, &tn, NULL);
     int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)tn.value, (int)tn.length,
-            outName, sizeof(outName) - 1);
+            outName, (sizeof(outName) / sizeof(outName[0])) - 1);
     if (len == 0) {
         goto err;
     }

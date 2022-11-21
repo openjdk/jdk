@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ import javax.swing.text.*;
  * &nbsp;
  * </code></pre>
  * <p>
- * The semantics for when a CSS style should overide visual attributes
+ * The semantics for when a CSS style should override visual attributes
  * defined by an element are not well defined. For example, the html
  * <code>&lt;body bgcolor=red&gt;</code> makes the body have a red
  * background. But if the html file also contains the CSS rule
@@ -343,7 +343,7 @@ public class StyleSheet extends StyleContext {
      *  location of the stream and may be null.  All relative
      *  URLs specified in the stream will be based upon this
      *  parameter.
-     * @throws java.io.IOException if I/O error occured.
+     * @throws java.io.IOException if I/O error occurred.
      */
     public void loadRules(Reader in, URL ref) throws IOException {
         CssParser parser = new CssParser();
@@ -1359,12 +1359,11 @@ public class StyleSheet extends StyleContext {
                            Vector<SelectorMapping> styles,
                            String[] tags, String[] ids, String[] classes,
                            int index, int numElements,
-                           Hashtable<SelectorMapping, SelectorMapping> alreadyChecked) {
-        // Avoid desending the same mapping twice.
-        if (alreadyChecked.contains(parentMapping)) {
+                           HashSet<SelectorMapping> alreadyChecked) {
+        // Avoid descending the same mapping twice.
+        if (!alreadyChecked.add(parentMapping)) {
             return;
         }
-        alreadyChecked.put(parentMapping, parentMapping);
         Style style = parentMapping.getStyle();
         if (style != null) {
             addSortedStyle(parentMapping, styles);
@@ -1422,8 +1421,7 @@ public class StyleSheet extends StyleContext {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
         @SuppressWarnings("unchecked")
         Vector<SelectorMapping> tempVector = sb.getVector();
-        @SuppressWarnings("unchecked")
-        Hashtable<SelectorMapping, SelectorMapping> tempHashtable = sb.getHashtable();
+        HashSet<SelectorMapping> alreadyChecked = sb.getHashSet();
         // Determine all the Styles that are appropriate, placing them
         // in tempVector
         try {
@@ -1434,7 +1432,7 @@ public class StyleSheet extends StyleContext {
                                                    tagString, false);
             if (childMapping != null) {
                 getStyles(childMapping, tempVector, tags, ids, classes, 1,
-                          numElements, tempHashtable);
+                          numElements, alreadyChecked);
             }
             if (classes[0] != null) {
                 String className = classes[0];
@@ -1442,13 +1440,13 @@ public class StyleSheet extends StyleContext {
                                        tagString + "." + className, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes, 1,
-                              numElements, tempHashtable);
+                              numElements, alreadyChecked);
                 }
                 childMapping = mapping.getChildSelectorMapping(
                                        "." + className, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashtable);
+                              1, numElements, alreadyChecked);
                 }
             }
             if (ids[0] != null) {
@@ -1457,13 +1455,13 @@ public class StyleSheet extends StyleContext {
                                        tagString + "#" + idName, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashtable);
+                              1, numElements, alreadyChecked);
                 }
                 childMapping = mapping.getChildSelectorMapping(
                                        "#" + idName, false);
                 if (childMapping != null) {
                     getStyles(childMapping, tempVector, tags, ids, classes,
-                              1, numElements, tempHashtable);
+                              1, numElements, alreadyChecked);
                 }
             }
             // Create a new Style that will delegate to all the matching
@@ -1754,7 +1752,7 @@ public class StyleSheet extends StyleContext {
         // A set of temporary variables that can be used in whatever way.
         Vector vector = null;
         StringBuffer stringBuffer = null;
-        Hashtable hashtable = null;
+        HashSet<SelectorMapping> hashSet = null;
 
         /**
          * Returns an instance of SearchBuffer. Be sure and issue
@@ -1797,11 +1795,11 @@ public class StyleSheet extends StyleContext {
             return vector;
         }
 
-        Hashtable getHashtable() {
-            if (hashtable == null) {
-                hashtable = new Hashtable();
+        HashSet<SelectorMapping> getHashSet() {
+            if (hashSet == null) {
+                hashSet = new HashSet<>();
             }
-            return hashtable;
+            return hashSet;
         }
 
         void empty() {
@@ -1811,14 +1809,12 @@ public class StyleSheet extends StyleContext {
             if (vector != null) {
                 vector.removeAllElements();
             }
-            if (hashtable != null) {
-                hashtable.clear();
+            if (hashSet != null) {
+                hashSet.clear();
             }
         }
     }
 
-
-    static final Border noBorder = new EmptyBorder(0,0,0,0);
 
     /**
      * Class to carry out some of the duties of
@@ -2109,11 +2105,13 @@ public class StyleSheet extends StyleContext {
                         tmpstr = st.nextToken();
                     if (st.hasMoreTokens())
                         tmpstr = st.nextToken();
+                    @SuppressWarnings("deprecation")
                     URL u = new URL(tmpstr);
                     img = new ImageIcon(u);
                 } catch (MalformedURLException e) {
                     if (tmpstr != null && ss != null && ss.getBase() != null) {
                         try {
+                            @SuppressWarnings("deprecation")
                             URL u = new URL(ss.getBase(), tmpstr);
                             img = new ImageIcon(u);
                         } catch (MalformedURLException murle) {
@@ -2244,7 +2242,7 @@ public class StyleSheet extends StyleContext {
                 name != HTML.Tag.LI) {
                 return;
             }
-            // deside on what side draw bullets, etc.
+            // decide on what side draw bullets, etc.
             isLeftToRight =
                 host.getComponentOrientation().isLeftToRight();
 
@@ -2519,7 +2517,6 @@ public class StyleSheet extends StyleContext {
         private boolean checkedForStart;
         private int start;
         private CSS.Value type;
-        URL imageurl;
         private StyleSheet ss = null;
         Icon img = null;
         private int bulletgap = 5;
@@ -2821,17 +2818,18 @@ public class StyleSheet extends StyleContext {
         }
 
         Object doGetAttribute(Object key) {
-            if (key == CSS.Attribute.FONT_SIZE && !isDefined(key)) {
+            Object retValue = super.getAttribute(key);
+            if (retValue != null) {
+                return retValue;
+            }
+
+            if (key == CSS.Attribute.FONT_SIZE) {
                 // CSS.FontSize represents a specified value and we need
                 // to inherit a computed value so don't resolve percentage
                 // value from parent.
                 return fontSizeInherit();
             }
 
-            Object retValue = super.getAttribute(key);
-            if (retValue != null) {
-                return retValue;
-            }
             // didn't find it... try parent if it's a css attribute
             // that is inherited.
             if (key instanceof CSS.Attribute) {
@@ -2846,7 +2844,7 @@ public class StyleSheet extends StyleContext {
         }
 
         /**
-         * If not overriden, the resolving parent defaults to
+         * If not overridden, the resolving parent defaults to
          * the parent element.
          *
          * @return the attributes from the parent
@@ -3222,8 +3220,6 @@ public class StyleSheet extends StyleContext {
 
     // ---- Variables ---------------------------------------------
 
-    static final int DEFAULT_FONT_SIZE = 3;
-
     private transient Object fontSizeInherit;
 
     private CSS css;
@@ -3354,7 +3350,7 @@ public class StyleSheet extends StyleContext {
                     // base that style sheet was loaded from. For the time
                     // being, this maps for LIST_STYLE_IMAGE, which appear
                     // to be the only one that currently matters. A more
-                    // general mechanism is definately needed.
+                    // general mechanism is definitely needed.
                     if (cssKey == CSS.Attribute.LIST_STYLE_IMAGE) {
                         if (value != null && !value.equals("none")) {
                             URL url = CSS.getURL(base, value);

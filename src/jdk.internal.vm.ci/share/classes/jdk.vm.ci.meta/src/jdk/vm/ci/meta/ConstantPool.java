@@ -50,6 +50,24 @@ public interface ConstantPool {
     void loadReferencedType(int cpi, int opcode);
 
     /**
+     * Ensures that the type referenced by the specified constant pool entry is loaded. This can be
+     * used to compile time resolve a type. It works for field, method, or type constant pool
+     * entries.
+     *
+     * @param cpi the index of the constant pool entry that references the type
+     * @param opcode the opcode of the instruction that references the type
+     * @param initialize if {@code true}, the referenced type is either guaranteed to be initialized
+     *            upon return or an initialization exception is thrown
+     */
+    default void loadReferencedType(int cpi, int opcode, boolean initialize) {
+        if (initialize) {
+            loadReferencedType(cpi, opcode);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Looks up the type referenced by the constant pool entry at {@code cpi} as referenced by the
      * {@code opcode} bytecode instruction.
      *
@@ -85,7 +103,26 @@ public interface ConstantPool {
      * @return a reference to the method at {@code cpi} in this pool
      * @throws ClassFormatError if the entry at {@code cpi} is not a method
      */
-    JavaMethod lookupMethod(int cpi, int opcode);
+    default JavaMethod lookupMethod(int cpi, int opcode) {
+        return lookupMethod(cpi, opcode, null);
+    }
+
+    /**
+     * Looks up a reference to a method. If {@code opcode} is non-negative, then resolution checks
+     * specific to the bytecode it denotes are performed if the method is already resolved. Should
+     * any of these checks fail, an unresolved method reference is returned.
+     *
+     * @param cpi the constant pool index
+     * @param opcode the opcode of the instruction for which the lookup is being performed or
+     *            {@code -1}
+     * @param caller if non-null, do access checks in the context of {@code caller} calling the
+     *            looked up method
+     * @return a reference to the method at {@code cpi} in this pool
+     * @throws ClassFormatError if the entry at {@code cpi} is not a method
+     * @throws IllegalAccessError if {@code caller} is non-null and it cannot link against the
+     *             looked up method
+     */
+    JavaMethod lookupMethod(int cpi, int opcode, ResolvedJavaMethod caller);
 
     /**
      * The details for invoking a bootstrap method associated with a {@code CONSTANT_Dynamic_info}

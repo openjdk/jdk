@@ -101,6 +101,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
                                                          "ALL_UNNAMED_MODULE_SET", // A
                                                          "EVERYONE_MODULE",        // A
                                                          "EVERYONE_SET");          // A
+
+  // This is the same as java/util/ImmutableCollections::EMPTY_SET, which is archived
+  ADD_EXCL("java/lang/reflect/AccessFlag$Location",      "EMPTY_SET");             // E
+
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
   ADD_EXCL("java/lang/VersionProps",                     "VENDOR_URL_BUG",         // C
                                                          "VENDOR_URL_VM_BUG",      // C
@@ -124,7 +128,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   // This just points to an empty Map
   ADD_EXCL("jdk/internal/reflect/Reflection",            "methodFilterMap");       // E
-  ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING");         // C
+  ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING",          // C
+                                                 "JAVA_LOCALE_USE_OLD_ISO_CODES"); // C
 
   // Integer for 0 and 1 are in java/lang/Integer$IntegerCache and are archived
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E

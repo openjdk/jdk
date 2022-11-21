@@ -38,6 +38,7 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -2146,7 +2147,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     Label no_block, sync;
 
     // Force this write out before the read below.
-    __ fence();
+    if (!UseSystemMemoryBarrier) {
+      __ fence();
+    }
 
     Register sync_state_addr = r_temp_4;
     Register sync_state      = r_temp_5;

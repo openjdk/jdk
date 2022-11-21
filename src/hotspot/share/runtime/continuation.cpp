@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -133,12 +135,17 @@ bool Continuation::is_continuation_entry_frame(const frame& f, const RegisterMap
   return m != nullptr && m->intrinsic_id() == vmIntrinsics::_Continuation_enter;
 }
 
+// The parameter `sp` should be the actual sp and not the unextended sp because at
+// least on PPC64 unextended_sp < sp is possible as interpreted frames are trimmed
+// to the actual size of the expression stack before calls. The problem there is
+// that even unextended_sp < entry_sp < sp is possible for an interpreted frame.
 static inline bool is_sp_in_continuation(const ContinuationEntry* entry, intptr_t* const sp) {
+  // entry_sp() returns the unextended_sp which is always greater or equal to the actual sp
   return entry->entry_sp() > sp;
 }
 
 bool Continuation::is_frame_in_continuation(const ContinuationEntry* entry, const frame& f) {
-  return is_sp_in_continuation(entry, f.unextended_sp());
+  return is_sp_in_continuation(entry, f.sp());
 }
 
 ContinuationEntry* Continuation::get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp) {
@@ -158,7 +165,7 @@ ContinuationEntry* Continuation::get_continuation_entry_for_entry_frame(JavaThre
 }
 
 bool Continuation::is_frame_in_continuation(JavaThread* thread, const frame& f) {
-  return f.is_heap_frame() || (get_continuation_entry_for_sp(thread, f.unextended_sp()) != nullptr);
+  return f.is_heap_frame() || (get_continuation_entry_for_sp(thread, f.sp()) != nullptr);
 }
 
 static frame continuation_top_frame(const ContinuationWrapper& cont, RegisterMap* map) {
@@ -232,7 +239,7 @@ frame Continuation::continuation_parent_frame(RegisterMap* map) {
 
   map->set_stack_chunk(nullptr);
 
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   frame sender(cont.entrySP(), cont.entryFP(), cont.entryPC());
 #else
   frame sender = frame();
@@ -294,9 +301,8 @@ bool Continuation::unpin(JavaThread* current) {
 
 frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& callee, intptr_t* sender_sp) {
   assert (thread != nullptr, "");
-  ContinuationEntry* ce = get_continuation_entry_for_sp(thread,
-        callee.is_interpreted_frame() ? callee.interpreter_frame_last_sp() : callee.unextended_sp());
-  assert(ce != nullptr, "callee.unextended_sp(): " INTPTR_FORMAT, p2i(callee.unextended_sp()));
+  ContinuationEntry* ce = get_continuation_entry_for_sp(thread, callee.sp());
+  assert(ce != nullptr, "callee.sp(): " INTPTR_FORMAT, p2i(callee.sp()));
 
   log_develop_debug(continuations)("continuation_bottom_sender: [" JLONG_FORMAT "] [%d] callee: " INTPTR_FORMAT
     " sender_sp: " INTPTR_FORMAT,
@@ -420,50 +426,8 @@ void Continuations::init() {
 }
 
 // While virtual threads are in Preview, there are some VM mechanisms we disable if continuations aren't used
-// See NMethodSweeper::do_stack_scanning and nmethod::is_not_on_continuation_stack
 bool Continuations::enabled() {
   return VMContinuations && Arguments::enable_preview();
-}
-
-// We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle
-// subtracts the value by 2, and the type is unsigned. We don't want underflow.
-//
-// Odd values mean that marking is in progress, and even values mean that no
-// marking is currently active.
-uint64_t Continuations::_gc_epoch = 2;
-
-uint64_t Continuations::gc_epoch() {
-  return _gc_epoch;
-}
-
-bool Continuations::is_gc_marking_cycle_active() {
-  // Odd means that marking is active
-  return (_gc_epoch % 2) == 1;
-}
-
-uint64_t Continuations::previous_completed_gc_marking_cycle() {
-  if (is_gc_marking_cycle_active()) {
-    return _gc_epoch - 2;
-  } else {
-    return _gc_epoch - 1;
-  }
-}
-
-void Continuations::on_gc_marking_cycle_start() {
-  assert(!is_gc_marking_cycle_active(), "Previous marking cycle never ended");
-  ++_gc_epoch;
-}
-
-void Continuations::on_gc_marking_cycle_finish() {
-  assert(is_gc_marking_cycle_active(), "Marking cycle started before last one finished");
-  ++_gc_epoch;
-}
-
-void Continuations::arm_all_nmethods() {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != NULL) {
-    bs_nm->arm_all_nmethods();
-  }
 }
 
 #define CC (char*)  /*cast a literal from (const char*)*/

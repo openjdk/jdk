@@ -256,11 +256,23 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         if (opcode == Bytecodes.INVOKEDYNAMIC) {
             index = rawIndex;
             // See: ConstantPool::is_invokedynamic_index
-            assert index < 0 : "not an invokedynamic constant pool index " + index;
+            if (index >= 0) {
+                throw new IllegalArgumentException("not an invokedynamic constant pool index " + index);
+            }
         } else {
-            assert opcode == Bytecodes.GETFIELD || opcode == Bytecodes.PUTFIELD || opcode == Bytecodes.GETSTATIC || opcode == Bytecodes.PUTSTATIC || opcode == Bytecodes.INVOKEINTERFACE ||
-                            opcode == Bytecodes.INVOKEVIRTUAL || opcode == Bytecodes.INVOKESPECIAL || opcode == Bytecodes.INVOKESTATIC : "unexpected invoke opcode " + opcode;
-            index = rawIndex + config().constantPoolCpCacheIndexTag;
+            if (opcode == Bytecodes.GETFIELD ||
+                            opcode == Bytecodes.PUTFIELD ||
+                            opcode == Bytecodes.GETSTATIC ||
+                            opcode == Bytecodes.PUTSTATIC ||
+                            opcode == Bytecodes.INVOKEINTERFACE ||
+                            opcode == Bytecodes.INVOKEVIRTUAL ||
+                            opcode == Bytecodes.INVOKESPECIAL ||
+                            opcode == Bytecodes.INVOKESTATIC) {
+                index = rawIndex + config().constantPoolCpCacheIndexTag;
+            } else {
+                throw new IllegalArgumentException("unexpected opcode " + opcode);
+
+            }
         }
         return index;
     }
@@ -292,7 +304,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * See {@code ConstantPool::decode_invokedynamic_index}.
      */
     private static int decodeInvokedynamicIndex(int i) {
-        assert isInvokedynamicIndex(i) : i;
+        if (!isInvokedynamicIndex(i)) {
+            throw new IllegalArgumentException("not an invokedynamic index: " + i);
+        }
         return ~i;
     }
 
@@ -315,7 +329,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return constant pool tag
      */
     private JvmConstant getTagAt(int index) {
-        assert checkBounds(index);
+        checkBounds(index);
         HotSpotVMConfig config = config();
         final long metaspaceConstantPoolTags = UNSAFE.getAddress(getConstantPoolPointer() + config.constantPoolTagsOffset);
         final int tag = UNSAFE.getByteVolatile(null, metaspaceConstantPoolTags + config.arrayU1DataOffset + index);
@@ -332,7 +346,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return constant pool entry
      */
     long getEntryAt(int index) {
-        assert checkBounds(index);
+        checkBounds(index);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getAddress(getConstantPoolPointer() + config().constantPoolSize + offset);
     }
@@ -344,7 +358,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return integer constant pool entry at index
      */
     private int getIntAt(int index) {
-        assert checkTag(index, constants.jvmInteger);
+        checkTag(index, constants.jvmInteger);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getInt(getConstantPoolPointer() + config().constantPoolSize + offset);
     }
@@ -356,7 +370,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return long constant pool entry
      */
     private long getLongAt(int index) {
-        assert checkTag(index, constants.jvmLong);
+        checkTag(index, constants.jvmLong);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getLong(getConstantPoolPointer() + config().constantPoolSize + offset);
     }
@@ -368,7 +382,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return float constant pool entry
      */
     private float getFloatAt(int index) {
-        assert checkTag(index, constants.jvmFloat);
+        checkTag(index, constants.jvmFloat);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getFloat(getConstantPoolPointer() + config().constantPoolSize + offset);
     }
@@ -380,7 +394,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return float constant pool entry
      */
     private double getDoubleAt(int index) {
-        assert checkTag(index, constants.jvmDouble);
+        checkTag(index, constants.jvmDouble);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getDouble(getConstantPoolPointer() + config().constantPoolSize + offset);
     }
@@ -392,7 +406,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return {@code JVM_CONSTANT_NameAndType} constant pool entry
      */
     private int getNameAndTypeAt(int index) {
-        assert checkTag(index, constants.jvmNameAndType);
+        checkTag(index, constants.jvmNameAndType);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         return UNSAFE.getInt(getConstantPoolPointer() + config().constantPoolSize + offset);
     }
@@ -474,7 +488,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return klass reference index
      */
     private int getUncachedKlassRefIndexAt(int index) {
-        assert checkTagIsFieldOrMethod(index);
+        checkTagIsFieldOrMethod(index);
         int offset = index * runtime().getHostJVMCIBackend().getTarget().wordSize;
         final int refIndex = UNSAFE.getInt(getConstantPoolPointer() + config().constantPoolSize + offset);
         // klass ref index is in the low 16-bits.
@@ -485,11 +499,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * Checks that the constant pool index {@code index} is in the bounds of the constant pool.
      *
      * @param index constant pool index
-     * @throws AssertionError if the check fails
+     * @throws IndexOutOfBoundsException if the check fails
      */
-    private boolean checkBounds(int index) {
-        assert 0 <= index && index < length() : "index " + index + " not between 0 and " + length();
-        return true;
+    private void checkBounds(int index) {
+        if (index < 1 || index >= length()) {
+            throw new IndexOutOfBoundsException("index " + index + " not between 1 and " + length());
+        }
     }
 
     /**
@@ -497,12 +512,13 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      *
      * @param index constant pool index
      * @param tag expected tag
-     * @throws AssertionError if the check fails
+     * @throws IllegalArgumentException if the check fails
      */
-    private boolean checkTag(int index, JvmConstant tag) {
+    private void checkTag(int index, JvmConstant tag) {
         final JvmConstant tagAt = getTagAt(index);
-        assert tagAt == tag : "constant pool tag at index " + index + " is " + tagAt + " but expected " + tag;
-        return true;
+        if (tagAt != tag) {
+            throw new IllegalArgumentException("constant pool tag at index " + index + " is " + tagAt + " but expected " + tag);
+        }
     }
 
     /**
@@ -511,12 +527,13 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * {@link JvmConstants#jvmInterfaceMethodref}.
      *
      * @param index constant pool index
-     * @throws AssertionError if the check fails
+     * @throws IllegalArgumentException if the check fails
      */
-    private boolean checkTagIsFieldOrMethod(int index) {
+    private void checkTagIsFieldOrMethod(int index) {
         final JvmConstant tagAt = getTagAt(index);
-        assert tagAt == constants.jvmFieldref || tagAt == constants.jvmMethodref || tagAt == constants.jvmInterfaceMethodref : tagAt;
-        return true;
+        if (tagAt != constants.jvmFieldref && tagAt != constants.jvmMethodref && tagAt != constants.jvmInterfaceMethodref) {
+            throw new IllegalArgumentException("constant pool tag at index " + index + " is " + tagAt);
+        }
     }
 
     @Override
@@ -619,9 +636,29 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         }
     }
 
+    /**
+     * Gets the {@link JavaConstant} for the {@code ConstantValue} attribute of a field.
+     */
+    JavaConstant getStaticFieldConstantValue(int cpi) {
+        final JvmConstant tag = getTagAt(cpi);
+        switch (tag.name) {
+            case "Integer":
+                return JavaConstant.forInt(getIntAt(cpi));
+            case "Long":
+                return JavaConstant.forLong(getLongAt(cpi));
+            case "Float":
+                return JavaConstant.forFloat(getFloatAt(cpi));
+            case "Double":
+                return JavaConstant.forDouble(getDoubleAt(cpi));
+            case "String":
+                return compilerToVM().getUncachedStringInPool(this, cpi);
+            default:
+                throw new IllegalArgumentException("Illegal entry for a ConstantValue attribute:" + tag);
+        }
+    }
+
     @Override
     public Object lookupConstant(int cpi) {
-        assert cpi != 0;
         final JvmConstant tag = getTagAt(cpi);
         switch (tag.name) {
             case "Integer":
@@ -658,7 +695,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public String lookupUtf8(int cpi) {
-        assert checkTag(cpi, constants.jvmUtf8);
+        checkTag(cpi, constants.jvmUtf8);
         return compilerToVM().getSymbol(getEntryAt(cpi));
     }
 
@@ -669,7 +706,10 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public JavaConstant lookupAppendix(int cpi, int opcode) {
-        assert Bytecodes.isInvoke(opcode);
+        if (!Bytecodes.isInvoke(opcode)) {
+            throw new IllegalArgumentException("expected an invoke bytecode at " + cpi + ", got " + opcode);
+        }
+
         final int index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
         return compilerToVM().lookupAppendixInPool(this, index);
     }
@@ -689,9 +729,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     @Override
-    public JavaMethod lookupMethod(int cpi, int opcode) {
+    public JavaMethod lookupMethod(int cpi, int opcode, ResolvedJavaMethod caller) {
         final int index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, index, (byte) opcode);
+        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, index, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
         if (method != null) {
             return method;
         } else {
@@ -801,10 +841,14 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     public int rawIndexToConstantPoolIndex(int rawIndex, int opcode) {
         int index;
         if (isInvokedynamicIndex(rawIndex)) {
-            assert opcode == Bytecodes.INVOKEDYNAMIC;
+            if (opcode != Bytecodes.INVOKEDYNAMIC) {
+                throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
+            }
             index = decodeInvokedynamicIndex(rawIndex) + config().constantPoolCpCacheIndexTag;
         } else {
-            assert opcode != Bytecodes.INVOKEDYNAMIC;
+            if (opcode == Bytecodes.INVOKEDYNAMIC) {
+                throw new IllegalArgumentException("unexpected INVOKEDYNAMIC at " + rawIndex);
+            }
             index = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
         }
         return compilerToVM().constantPoolRemapInstructionOperandFromCache(this, index);
@@ -815,6 +859,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         loadReferencedType(cpi, opcode, true /* initialize */);
     }
 
+    @Override
     @SuppressWarnings("fallthrough")
     public void loadReferencedType(int cpi, int opcode, boolean initialize) {
         int index;
@@ -876,7 +921,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                 if (tag == constants.jvmMethodref) {
                     if (Bytecodes.isInvokeHandleAlias(opcode) && isSignaturePolymorphicHolder(type)) {
                         final int methodRefCacheIndex = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-                        assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
+                        checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
                         compilerToVM().resolveInvokeHandleInPool(this, methodRefCacheIndex);
                     }
                 }
@@ -928,7 +973,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     public boolean isResolvedDynamicInvoke(int cpi, int opcode) {
         if (Bytecodes.isInvokeHandleAlias(opcode)) {
             final int methodRefCacheIndex = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-            assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
+            checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
             int op = compilerToVM().isResolvedInvokeHandleInPool(this, methodRefCacheIndex);
             return op == opcode;
         }

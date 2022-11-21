@@ -29,6 +29,7 @@
 #include "runtime/handles.hpp"
 
 class BasicLock;
+class frame;
 class RegisterMap;
 class ScopeValue;
 

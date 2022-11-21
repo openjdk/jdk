@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -127,6 +128,7 @@ public class HttpClient extends NetworkClient {
      *  0: the server specified no keep alive headers
      * -1: the server provided "Connection: keep-alive" but did not specify a
      *     a particular time in a "Keep-Alive:" headers
+     * -2: the server provided "Connection: keep-alive" and timeout=0
      * Positive values are the number of seconds specified by the server
      * in a "Keep-Alive" header
      */
@@ -900,7 +902,23 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
-                        keepAliveTimeout = p.findInt("timeout", -1);
+                        if (keepAliveConnections < 0) {
+                            keepAliveConnections = usingProxy?50:5;
+                        }
+                        OptionalInt timeout = p.findInt("timeout");
+                        if (timeout.isEmpty()) {
+                            keepAliveTimeout = -1;
+                        } else {
+                            keepAliveTimeout = timeout.getAsInt();
+                            if (keepAliveTimeout < 0) {
+                                // if the server specified a negative (invalid) value
+                                // then we set to -1, which is equivalent to no value
+                                keepAliveTimeout = -1;
+                            } else if (keepAliveTimeout == 0) {
+                                // handled specially to mean close connection immediately
+                                keepAliveTimeout = -2;
+                            }
+                        }
                     }
                 } else if (b[7] != '0') {
                     /*
@@ -960,7 +978,21 @@ public class HttpClient extends NetworkClient {
             code = Integer.parseInt(resp, ind, ind + 3, 10);
         } catch (Exception e) {}
 
-        if (code == HTTP_CONTINUE && ignoreContinue) {
+        if (code == 101) {
+            // We don't support protocol upgrade through the "Upgrade:" request header, so if a
+            // server still unexpectedly sends a 101 response, we consider that a protocol violation
+            // and close the connection.
+            closeServer();
+            logFinest("Closed connection due to unexpected 101 response");
+            // clear off the response headers so that they don't get propagated
+            // to the application
+            responses.reset();
+            throw new ProtocolException("Unexpected 101 response from server");
+        }
+        // ignore interim informational responses and continue to wait for final response.
+        if ((code == HTTP_CONTINUE && ignoreContinue)
+                || (code >= 102 && code <= 199)) {
+            logFinest("Ignoring interim informational 1xx response: " + code);
             responses.reset();
             return parseHTTPHeader(responses, pi, httpuc);
         }

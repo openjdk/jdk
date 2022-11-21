@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -36,6 +35,8 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm_io.h"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -406,7 +407,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::remove_useless_nodes(Unique_Node_List &useful) {
+void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -429,7 +430,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
-      record_for_igvn(n->unique_out());
+      worklist->push(n->unique_out());
     }
   }
 
@@ -440,6 +441,11 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
+#ifdef ASSERT
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove_useless_nodes(useful.member_set());
+  }
+#endif
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
@@ -556,7 +562,9 @@ void Compile::print_ideal_ir(const char* phase_name) {
                phase_name);
   }
   if (_output == nullptr) {
-    root()->dump(9999);
+    tty->print_cr("AFTER: %s", phase_name);
+    // Print out all nodes in ascending order of index.
+    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$");
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling();
@@ -630,7 +638,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _print_inlining_stream(NULL),
+                  _print_inlining_stream(new (mtCompiler) stringStream()),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
@@ -686,8 +694,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     method()->ensure_method_data();
   }
 
-  Init(::AliasLevel);
-
+  Init(/*do_aliasing=*/ true);
 
   print_compile_messages();
 
@@ -903,7 +910,7 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _print_inlining_stream(NULL),
+    _print_inlining_stream(new (mtCompiler) stringStream()),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
@@ -930,7 +937,7 @@ Compile::Compile( ciEnv* ci_env,
   set_has_irreducible_loop(false); // no loops
 
   CompileWrapper cw(this);
-  Init(/*AliasLevel=*/ 0);
+  Init(/*do_aliasing=*/ false);
   init_tf((*generator)());
 
   {
@@ -952,7 +959,8 @@ Compile::Compile( ciEnv* ci_env,
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
-void Compile::Init(int aliaslevel) {
+void Compile::Init(bool aliasing) {
+  _do_aliasing = aliasing;
   _unique  = 0;
   _regalloc = NULL;
 
@@ -1017,7 +1025,6 @@ void Compile::Init(int aliaslevel) {
   set_use_cmove(UseCMoveUnconditionally /* || do_vector_loop()*/); //TODO: consider do_vector_loop() mandate use_cmove unconditionally
   NOT_PRODUCT(if (use_cmove() && Verbose && has_method()) {tty->print("Compile::Init: use CMove without profitability tests for method %s\n",  method()->name()->as_quoted_ascii());})
 
-  set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
   _max_node_limit = _directive->MaxNodeLimitOption;
 
@@ -1046,16 +1053,6 @@ void Compile::Init(int aliaslevel) {
     set_default_node_notes(Node_Notes::make(this));
   }
 
-  // // -- Initialize types before each compile --
-  // // Update cached type information
-  // if( _method && _method->constants() )
-  //   Type::update_loaded_types(_method, _method->constants());
-
-  // Init alias_type map.
-  if (!do_escape_analysis() && aliaslevel == 3) {
-    aliaslevel = 2;  // No unique types without escape analysis
-  }
-  _AliasLevel = aliaslevel;
   const int grow_ats = 16;
   _max_alias_types = grow_ats;
   _alias_types   = NEW_ARENA_ARRAY(comp_arena(), AliasType*, grow_ats);
@@ -1292,6 +1289,7 @@ bool Compile::allow_range_check_smearing() const {
 
 //------------------------------flatten_alias_type-----------------------------
 const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
+  assert(do_aliasing(), "Aliasing should be enabled");
   int offset = tj->offset();
   TypePtr::PTR ptr = tj->ptr();
 
@@ -1323,7 +1321,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
               cast_to_ptr_type(ptr)->
               with_offset(offset);
     }
-  } else if( ta && _AliasLevel >= 2 ) {
+  } else if (ta) {
     // For arrays indexed by constant indices, we flatten the alias
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
@@ -1394,7 +1392,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Oop pointers need some flattening
   const TypeInstPtr *to = tj->isa_instptr();
-  if( to && _AliasLevel >= 2 && to != TypeOopPtr::BOTTOM ) {
+  if (to && to != TypeOopPtr::BOTTOM) {
     ciInstanceKlass* ik = to->instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (ik != ciEnv::current()->Class_klass() ||
@@ -1496,31 +1494,6 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   if (tj->base() == Type::AnyPtr)
     tj = TypePtr::BOTTOM;      // An error, which the caller must check for.
-
-  // Flatten all to bottom for now
-  switch( _AliasLevel ) {
-  case 0:
-    tj = TypePtr::BOTTOM;
-    break;
-  case 1:                       // Flatten to: oop, static, field or array
-    switch (tj->base()) {
-    //case Type::AryPtr: tj = TypeAryPtr::RANGE;    break;
-    case Type::RawPtr:   tj = TypeRawPtr::BOTTOM;   break;
-    case Type::AryPtr:   // do not distinguish arrays at all
-    case Type::InstPtr:  tj = TypeInstPtr::BOTTOM;  break;
-    case Type::KlassPtr:
-    case Type::AryKlassPtr:
-    case Type::InstKlassPtr: tj = TypeInstKlassPtr::OBJECT; break;
-    case Type::AnyPtr:   tj = TypePtr::BOTTOM;      break;  // caller checks it
-    default: ShouldNotReachHere();
-    }
-    break;
-  case 2:                       // No collapsing at level 2; keep all splits
-  case 3:                       // No collapsing at level 3; keep all splits
-    break;
-  default:
-    Unimplemented();
-  }
 
   offset = tj->offset();
   assert( offset != Type::OffsetTop, "Offset has fallen from constant" );
@@ -1628,8 +1601,9 @@ void Compile::grow_alias_types() {
 
 //--------------------------------find_alias_type------------------------------
 Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create, ciField* original_field) {
-  if (_AliasLevel == 0)
+  if (!do_aliasing()) {
     return alias_type(AliasIdxBot);
+  }
 
   AliasCacheEntry* ace = probe_alias_cache(adr_type);
   if (ace->_adr_type == adr_type) {
@@ -2970,6 +2944,8 @@ void Compile::Code_Gen() {
       cfg.set_loop_alignment();
     }
     cfg.fixup_flow();
+    cfg.remove_unreachable_blocks();
+    cfg.verify_dominator_tree();
   }
 
   // Apply peephole optimizations
@@ -3078,7 +3054,7 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
 
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
-void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
+void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
 
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
@@ -3129,9 +3105,9 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 #endif
   // Count FPU ops and common calls, implements item (3)
-  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop);
+  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);
   if (!gc_handled) {
-    final_graph_reshaping_main_switch(n, frc, nop);
+    final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
   }
 
   // Collect CFG split points
@@ -3140,7 +3116,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 }
 
-void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop) {
+void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
   case Op_AddF:
@@ -3237,11 +3213,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_StoreB:
   case Op_StoreC:
-  case Op_StorePConditional:
   case Op_StoreI:
   case Op_StoreL:
-  case Op_StoreIConditional:
-  case Op_StoreLConditional:
   case Op_CompareAndSwapB:
   case Op_CompareAndSwapS:
   case Op_CompareAndSwapI:
@@ -3281,7 +3254,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadNKlass:
   case Op_LoadL:
   case Op_LoadL_unaligned:
-  case Op_LoadPLocked:
   case Op_LoadP:
   case Op_LoadN:
   case Op_LoadRange:
@@ -3766,22 +3738,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       // that input may be a chain of Phis. If those phis have no
       // other use, then the MemBarAcquire keeps them alive and
       // register allocation can be confused.
-      ResourceMark rm;
-      Unique_Node_List wq;
-      wq.push(n->in(MemBarNode::Precedent));
+      dead_nodes.push(n->in(MemBarNode::Precedent));
       n->set_req(MemBarNode::Precedent, top());
-      while (wq.size() > 0) {
-        Node* m = wq.pop();
-        if (m->outcnt() == 0 && m != top()) {
-          for (uint j = 0; j < m->req(); j++) {
-            Node* in = m->in(j);
-            if (in != NULL) {
-              wq.push(in);
-            }
-          }
-          m->disconnect_inputs(this);
-        }
-      }
     }
     break;
   }
@@ -3854,7 +3812,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc ) {
+void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
   Unique_Node_List sfpt;
 
   frc._visited.set(root->_idx); // first, mark node as visited
@@ -3880,7 +3838,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
       }
     } else {
       // Now do post-visit work
-      final_graph_reshaping_impl( n, frc );
+      final_graph_reshaping_impl(n, frc, dead_nodes);
       if (nstack.is_empty())
         break;             // finished
       n = nstack.node();   // Get node from stack
@@ -3980,7 +3938,8 @@ bool Compile::final_graph_reshaping() {
   // Visit everybody reachable!
   // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
   Node_Stack nstack(live_nodes() >> 1);
-  final_graph_reshaping_walk(nstack, root(), frc);
+  Unique_Node_List dead_nodes;
+  final_graph_reshaping_walk(nstack, root(), frc, dead_nodes);
 
   // Check for unreachable (from below) code (i.e., infinite loops).
   for( uint i = 0; i < frc._tests.size(); i++ ) {
@@ -4014,11 +3973,13 @@ bool Compile::final_graph_reshaping() {
             // exception. There is no fall-through projection of this CatchNode .
             assert(call->is_CallStaticJava(), "static call expected");
             assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-            Node* valid_length_test = call->in(call->req()-1);
-            call->del_req(call->req()-1);
+            uint valid_length_test_input = call->req() - 1;
+            Node* valid_length_test = call->in(valid_length_test_input);
+            call->del_req(valid_length_test_input);
             if (valid_length_test->find_int_con(1) == 0) {
               required_outcnt--;
             }
+            dead_nodes.push(valid_length_test);
             assert(n->outcnt() == required_outcnt, "malformed control flow");
             continue;
           }
@@ -4035,7 +3996,9 @@ bool Compile::final_graph_reshaping() {
           call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
         assert(call->is_CallStaticJava(), "static call expected");
         assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-        call->del_req(call->req()-1); // valid length test useless now
+        uint valid_length_test_input = call->req() - 1;
+        dead_nodes.push(call->in(valid_length_test_input));
+        call->del_req(valid_length_test_input); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
@@ -4052,6 +4015,19 @@ bool Compile::final_graph_reshaping() {
       IfNode* init_iff = n->as_If();
       Node* iff = new IfNode(init_iff->in(0), init_iff->in(1), init_iff->_prob, init_iff->_fcnt);
       n->subsume_by(iff, this);
+    }
+  }
+
+  while (dead_nodes.size() > 0) {
+    Node* m = dead_nodes.pop();
+    if (m->outcnt() == 0 && m != top()) {
+      for (uint j = 0; j < m->req(); j++) {
+        Node* in = m->in(j);
+        if (in != NULL) {
+          dead_nodes.push(in);
+        }
+      }
+      m->disconnect_inputs(this);
     }
   }
 
@@ -4223,14 +4199,69 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 }
 
 #ifndef PRODUCT
+//------------------------------verify_bidirectional_edges---------------------
+// For each input edge to a node (ie - for each Use-Def edge), verify that
+// there is a corresponding Def-Use edge.
+void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
+  // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
+  uint stack_size = live_nodes() >> 4;
+  Node_List nstack(MAX2(stack_size, (uint)OptoNodeListSize));
+  nstack.push(_root);
+
+  while (nstack.size() > 0) {
+    Node* n = nstack.pop();
+    if (visited.member(n)) {
+      continue;
+    }
+    visited.push(n);
+
+    // Walk over all input edges, checking for correspondence
+    uint length = n->len();
+    for (uint i = 0; i < length; i++) {
+      Node* in = n->in(i);
+      if (in != NULL && !visited.member(in)) {
+        nstack.push(in); // Put it on stack
+      }
+      if (in != NULL && !in->is_top()) {
+        // Count instances of `next`
+        int cnt = 0;
+        for (uint idx = 0; idx < in->_outcnt; idx++) {
+          if (in->_out[idx] == n) {
+            cnt++;
+          }
+        }
+        assert(cnt > 0, "Failed to find Def-Use edge.");
+        // Check for duplicate edges
+        // walk the input array downcounting the input edges to n
+        for (uint j = 0; j < length; j++) {
+          if (n->in(j) == in) {
+            cnt--;
+          }
+        }
+        assert(cnt == 0, "Mismatched edge count.");
+      } else if (in == NULL) {
+        assert(i == 0 || i >= n->req() ||
+               n->is_Region() || n->is_Phi() || n->is_ArrayCopy() ||
+               (n->is_Unlock() && i == (n->req() - 1)) ||
+               (n->is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
+              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
+      } else {
+        assert(in->is_top(), "sanity");
+        // Nothing to check.
+      }
+    }
+  }
+}
+
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
 void Compile::verify_graph_edges(bool no_dead_code) {
   if (VerifyGraphEdges) {
     Unique_Node_List visited;
-    // Call recursive graph walk to check edges
-    _root->verify_edges(visited);
+
+    // Call graph walk to check edges
+    verify_bidirectional_edges(visited);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;
@@ -4405,13 +4436,6 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
   return phase->transform(new ConvI2LNode(value, ltype));
 }
 
-void Compile::print_inlining_stream_free() {
-  if (_print_inlining_stream != NULL) {
-    _print_inlining_stream->~stringStream();
-    _print_inlining_stream = NULL;
-  }
-}
-
 // The message about the current inlining is accumulated in
 // _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
@@ -4423,17 +4447,14 @@ void Compile::print_inlining_stream_free() {
 void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
     // print_inlining_init is actually called several times.
-    print_inlining_stream_free();
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
 
 void Compile::print_inlining_reinit() {
   if (print_inlining() || print_intrinsics()) {
-    print_inlining_stream_free();
-    // Re allocate buffer when we change ResourceMark
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
   }
 }
 
@@ -4515,7 +4536,7 @@ void Compile::process_print_inlining() {
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->as_string());
+      ss.print("%s", pib->ss()->freeze());
       delete pib;
       DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
@@ -4523,10 +4544,10 @@ void Compile::process_print_inlining() {
     // It is on the arena, so it will be freed when the arena is reset.
     _print_inlining_list = NULL;
     // _print_inlining_stream won't be used anymore, either.
-    print_inlining_stream_free();
+    print_inlining_reset();
     size_t end = ss.size();
     _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
-    strncpy(_print_inlining_output, ss.base(), end+1);
+    strncpy(_print_inlining_output, ss.freeze(), end+1);
     _print_inlining_output[end] = 0;
   }
 }
@@ -4586,6 +4607,35 @@ void Compile::dump_inline_data(outputStream* out) {
   if (inl_tree != NULL) {
     out->print(" inline %d", inl_tree->count());
     inl_tree->dump_replay_data(out);
+  }
+}
+
+void Compile::dump_inline_data_reduced(outputStream* out) {
+  assert(ReplayReduce, "");
+
+  InlineTree* inl_tree = ilt();
+  if (inl_tree == NULL) {
+    return;
+  }
+  // Enable iterative replay file reduction
+  // Output "compile" lines for depth 1 subtrees,
+  // simulating that those trees were compiled
+  // instead of inlined.
+  for (int i = 0; i < inl_tree->subtrees().length(); ++i) {
+    InlineTree* sub = inl_tree->subtrees().at(i);
+    if (sub->inline_level() != 1) {
+      continue;
+    }
+
+    ciMethod* method = sub->method();
+    int entry_bci = -1;
+    int comp_level = env()->task()->comp_level();
+    out->print("compile ");
+    method->dump_name_as_ascii(out);
+    out->print(" %d %d", entry_bci, comp_level);
+    out->print(" inline %d", sub->count());
+    sub->dump_replay_data(out, -1);
+    out->cr();
   }
 }
 

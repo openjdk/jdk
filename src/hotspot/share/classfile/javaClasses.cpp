@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -44,6 +44,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
@@ -55,6 +56,7 @@
 #include "oops/klass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -894,7 +896,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -963,11 +965,11 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
   GrowableArray<Klass*>* mirror_list =
-    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, mtClass);
+    new (mtClass) GrowableArray<Klass*>(40, mtClass);
   set_fixup_mirror_list(mirror_list);
 
   GrowableArray<Klass*>* module_list =
-    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, mtModule);
+    new (mtModule) GrowableArray<Klass*>(500, mtModule);
   set_fixup_module_field_list(module_list);
 }
 
@@ -1115,21 +1117,6 @@ class ResetMirrorField: public FieldClosure {
   }
 };
 
-static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass* k) {
-  assert(java_lang_Class::is_instance(mirror_obj), "must be");
-  // this is the copy of k in the output buffer
-  Klass* copy = ArchiveBuilder::get_relocated_klass(k);
-
-  // This is the address of k, if the archive is loaded at the requested location
-  Klass* def = ArchiveBuilder::current()->to_requested(copy);
-
-  log_debug(cds, heap, mirror)(
-      "Relocate mirror metadata field at %d from " PTR_FORMAT " ==> " PTR_FORMAT,
-      offset, p2i(k), p2i(def));
-
-  mirror_obj->metadata_field_put(offset, def);
-}
-
 void java_lang_Class::archive_basic_type_mirrors() {
   assert(HeapShared::can_write(), "must be");
 
@@ -1140,11 +1127,6 @@ void java_lang_Class::archive_basic_type_mirrors() {
       // Update the field at _array_klass_offset to point to the relocated array klass.
       oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
-      Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
-      assert(ak != NULL || t == T_VOID, "should not be NULL");
-      if (ak != NULL) {
-        set_klass_field_in_archived_mirror(archived_m, _array_klass_offset, ak);
-      }
 
       // Clear the fields. Just to be safe
       Klass *k = m->klass();
@@ -1258,46 +1240,8 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   set_class_loader(archived_mirror, NULL);
   set_module(archived_mirror, NULL);
 
-  // The archived mirror's field at _klass_offset is still pointing to the original
-  // klass. Updated the field in the archived mirror to point to the relocated
-  // klass in the archive.
-  set_klass_field_in_archived_mirror(archived_mirror, _klass_offset, as_Klass(mirror));
-
-  // The field at _array_klass_offset is pointing to the original one dimension
-  // higher array klass if exists. Relocate the pointer.
-  Klass *arr = array_klass_acquire(mirror);
-  if (arr != NULL) {
-    set_klass_field_in_archived_mirror(archived_mirror, _array_klass_offset, arr);
-  }
   return archived_mirror;
 }
-
-void java_lang_Class::update_archived_primitive_mirror_native_pointers(oop archived_mirror) {
-  if (MetaspaceShared::relocation_delta() != 0) {
-    assert(archived_mirror->metadata_field(_klass_offset) == NULL, "must be for primitive class");
-
-    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
-    if (ak != NULL) {
-      archived_mirror->metadata_field_put(_array_klass_offset,
-          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
-    }
-  }
-}
-
-void java_lang_Class::update_archived_mirror_native_pointers(oop archived_mirror) {
-  assert(MetaspaceShared::relocation_delta() != 0, "must be");
-
-  Klass* k = ((Klass*)archived_mirror->metadata_field(_klass_offset));
-  archived_mirror->metadata_field_put(_klass_offset,
-      (Klass*)(address(k) + MetaspaceShared::relocation_delta()));
-
-  Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
-  if (ak != NULL) {
-    archived_mirror->metadata_field_put(_array_klass_offset,
-        (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
-  }
-}
-
 
 // Returns true if the mirror is updated, false if no archived mirror
 // data is present. After the archived mirror object is restored, the
@@ -1321,7 +1265,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  if (HeapShared::is_mapped()) {
+  if (ArchiveHeapLoader::is_mapped()) {
     assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
   }
   assert(as_Klass(m) == k, "must be");
@@ -1640,7 +1584,6 @@ void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
 int java_lang_Thread_FieldHolder::_group_offset;
 int java_lang_Thread_FieldHolder::_priority_offset;
 int java_lang_Thread_FieldHolder::_stackSize_offset;
-int java_lang_Thread_FieldHolder::_stillborn_offset;
 int java_lang_Thread_FieldHolder::_daemon_offset;
 int java_lang_Thread_FieldHolder::_thread_status_offset;
 
@@ -1648,7 +1591,6 @@ int java_lang_Thread_FieldHolder::_thread_status_offset;
   macro(_group_offset,         k, vmSymbols::group_name(),    threadgroup_signature, false); \
   macro(_priority_offset,      k, vmSymbols::priority_name(), int_signature,         false); \
   macro(_stackSize_offset,     k, "stackSize",                long_signature,        false); \
-  macro(_stillborn_offset,     k, "stillborn",                bool_signature,        false); \
   macro(_daemon_offset,        k, vmSymbols::daemon_name(),   bool_signature,        false); \
   macro(_thread_status_offset, k, "threadStatus",             int_signature,         false)
 
@@ -1679,14 +1621,6 @@ void java_lang_Thread_FieldHolder::set_priority(oop holder, ThreadPriority prior
 
 jlong java_lang_Thread_FieldHolder::stackSize(oop holder) {
   return holder->long_field(_stackSize_offset);
-}
-
-bool java_lang_Thread_FieldHolder::is_stillborn(oop holder) {
-  return holder->bool_field(_stillborn_offset) != 0;
-}
-
-void java_lang_Thread_FieldHolder::set_stillborn(oop holder) {
-  holder->bool_field_put(_stillborn_offset, true);
 }
 
 bool java_lang_Thread_FieldHolder::is_daemon(oop holder) {
@@ -1852,21 +1786,6 @@ oop java_lang_Thread::threadGroup(oop java_thread) {
 }
 
 
-bool java_lang_Thread::is_stillborn(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != NULL, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::is_stillborn(holder);
-}
-
-
-// We never have reason to turn the stillborn bit off
-void java_lang_Thread::set_stillborn(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != NULL, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_stillborn(holder);
-}
-
-
 bool java_lang_Thread::is_alive(oop java_thread) {
   JavaThread* thr = java_lang_Thread::thread(java_thread);
   return (thr != NULL);
@@ -1957,11 +1876,12 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     GrowableArray<int>*     _bcis;
 
     GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false) {
-      // Pick some initial length
-      int init_length = MaxJavaStackTraceDepth / 2;
-      _methods = new GrowableArray<Method*>(init_length);
-      _bcis = new GrowableArray<int>(init_length);
+        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+        _methods(nullptr), _bcis(nullptr) {
+    }
+    ~GetStackTraceClosure() {
+      delete _methods;
+      delete _bcis;
     }
 
     bool read_reset_retry() {
@@ -1997,6 +1917,11 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
+
+      // Pick minimum length that will cover most cases
+      int init_length = 64;
+      _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
+      _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
@@ -2070,10 +1995,6 @@ int java_lang_ThreadGroup::_parent_offset;
 int java_lang_ThreadGroup::_name_offset;
 int java_lang_ThreadGroup::_maxPriority_offset;
 int java_lang_ThreadGroup::_daemon_offset;
-int java_lang_ThreadGroup::_ngroups_offset;
-int java_lang_ThreadGroup::_groups_offset;
-int java_lang_ThreadGroup::_nweaks_offset;
-int java_lang_ThreadGroup::_weaks_offset;
 
 oop  java_lang_ThreadGroup::parent(oop java_thread_group) {
   assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
@@ -2101,37 +2022,11 @@ bool java_lang_ThreadGroup::is_daemon(oop java_thread_group) {
   return java_thread_group->bool_field(_daemon_offset) != 0;
 }
 
-int java_lang_ThreadGroup::ngroups(oop java_thread_group) {
-  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
-  return java_thread_group->int_field(_ngroups_offset);
-}
-
-objArrayOop java_lang_ThreadGroup::groups(oop java_thread_group) {
-  oop groups = java_thread_group->obj_field(_groups_offset);
-  assert(groups == NULL || groups->is_objArray(), "just checking"); // Todo: Add better type checking code
-  return objArrayOop(groups);
-}
-
-int java_lang_ThreadGroup::nweaks(oop java_thread_group) {
-  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
-  return java_thread_group->int_field(_nweaks_offset);
-}
-
-objArrayOop java_lang_ThreadGroup::weaks(oop java_thread_group) {
-  oop weaks = java_thread_group->obj_field(_weaks_offset);
-  assert(weaks == NULL || weaks->is_objArray(), "just checking");
-  return objArrayOop(weaks);
-}
-
 #define THREADGROUP_FIELDS_DO(macro) \
   macro(_parent_offset,      k, vmSymbols::parent_name(),      threadgroup_signature,         false); \
   macro(_name_offset,        k, vmSymbols::name_name(),        string_signature,              false); \
   macro(_maxPriority_offset, k, vmSymbols::maxPriority_name(), int_signature,                 false); \
-  macro(_daemon_offset,      k, vmSymbols::daemon_name(),      bool_signature,                false); \
-  macro(_ngroups_offset,     k, vmSymbols::ngroups_name(),     int_signature,                 false); \
-  macro(_groups_offset,      k, vmSymbols::groups_name(),      threadgroup_array_signature,   false); \
-  macro(_nweaks_offset,      k, vmSymbols::nweaks_name(),      int_signature,                 false); \
-  macro(_weaks_offset,       k, vmSymbols::weaks_name(),       weakreference_array_signature, false);
+  macro(_daemon_offset,      k, vmSymbols::daemon_name(),      bool_signature,                false);
 
 void java_lang_ThreadGroup::compute_offsets() {
   assert(_parent_offset == 0, "offsets should be initialized only once");
@@ -3921,7 +3816,9 @@ oop java_lang_boxing_object::initialize_and_allocate(BasicType type, TRAPS) {
   Klass* k = vmClasses::box_klass(type);
   if (k == NULL)  return NULL;
   InstanceKlass* ik = InstanceKlass::cast(k);
-  if (!ik->is_initialized())  ik->initialize(CHECK_NULL);
+  if (!ik->is_initialized()) {
+    ik->initialize(CHECK_NULL);
+  }
   return ik->allocate_instance(THREAD);
 }
 

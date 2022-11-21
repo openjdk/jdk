@@ -32,7 +32,6 @@
 
 class CodeCacheUnloadingTask {
 
-  CodeCache::UnloadingScope _unloading_scope;
   const bool                _unloading_occurred;
   const uint                _num_workers;
 
@@ -41,7 +40,7 @@ class CodeCacheUnloadingTask {
   CompiledMethod* volatile _claimed_nmethod;
 
 public:
-  CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred);
+  CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred);
   ~CodeCacheUnloadingTask();
 
 private:

@@ -957,7 +957,9 @@ class LoadStorePairOp(InstructionWithModes):
 class FloatInstruction(Instruction):
 
     def aname(self):
-        if (self._name.endswith("s") | self._name.endswith("d")):
+        if (self._name in ["fcvtsh", "fcvths"]):
+            return self._name[:len(self._name)-2]
+        elif (self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -1012,6 +1014,8 @@ class SVEVectorOp(Instruction):
         elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
+        elif name == "revb":
+            self._width = RegVariant(1, 3)
         else:
             self._width = RegVariant(0, 3)
 
@@ -1458,7 +1462,7 @@ generate(FourRegFloatOp,
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
-          ["fcvts", "ds"],
+          ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
           ["fcvtd", "sd"],
           ])
@@ -1613,6 +1617,8 @@ generate(ThreeRegNEONOp,
           ["cmge", "cmge", "2D"],
           ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
           ["fcmge", "fcmge", "2D"],
+          ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
+          ["facgt", "facgt", "2D"],
           ])
 
 generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
@@ -1822,6 +1828,12 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["compact",  "__ sve_compact(z16, __ S, z16, p1);",                "compact\tz16.s, p1, z16.s"],
                         ["compact",  "__ sve_compact(z16, __ D, z16, p1);",                "compact\tz16.d, p1, z16.d"],
                         ["ext",      "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ H, p2, z4, z5);",   "facgt\tp1.h, p2/z, z4.h, z5.h"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ S, p2, z4, z5);",   "facgt\tp1.s, p2/z, z4.s, z5.s"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ D, p2, z4, z5);",   "facgt\tp1.d, p2/z, z4.d, z5.d"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ H, p2, z4, z5);",   "facge\tp1.h, p2/z, z4.h, z5.h"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ S, p2, z4, z5);",   "facge\tp1.s, p2/z, z4.s, z5.s"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ D, p2, z4, z5);",   "facge\tp1.d, p2/z, z4.d, z5.d"],
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
@@ -1910,6 +1922,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bic", "ZZZ"],
                        ["uzp1", "ZZZ"],
                        ["uzp2", "ZZZ"],
+                       ["fabd", "ZPZ", "m", "dn"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],

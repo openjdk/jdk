@@ -206,8 +206,11 @@ class methodHandle;
   do_intrinsic(_dsqrt_strict,             java_lang_StrictMath,   sqrt_name,          double_double_signature,   F_SN)  \
                                                                                                                         \
   do_intrinsic(_floatIsInfinite,          java_lang_Float,        isInfinite_name,    float_bool_signature,      F_S)   \
-   do_name(     isInfinite_name,                                 "isInfinite")                                          \
+   do_name(     isInfinite_name,                                  "isInfinite")                                         \
+  do_intrinsic(_floatIsFinite,            java_lang_Float,        isFinite_name,      float_bool_signature,      F_S)   \
+   do_name(     isFinite_name,                                    "isFinite")                                           \
   do_intrinsic(_doubleIsInfinite,         java_lang_Double,       isInfinite_name,    double_bool_signature,     F_S)   \
+  do_intrinsic(_doubleIsFinite,           java_lang_Double,       isFinite_name,      double_bool_signature,     F_S)   \
                                                                                                                         \
   do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_SN)  \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \
@@ -221,6 +224,12 @@ class methodHandle;
    do_name(     doubleToLongBits_name,                           "doubleToLongBits")                                    \
   do_intrinsic(_longBitsToDouble,         java_lang_Double,       longBitsToDouble_name,    long_double_signature, F_SN)\
    do_name(     longBitsToDouble_name,                           "longBitsToDouble")                                    \
+  do_intrinsic(_float16ToFloat,           java_lang_Float,        float16ToFloat_name,      f16_float_signature, F_S)   \
+   do_name(     float16ToFloat_name,                             "float16ToFloat")                                      \
+   do_signature(f16_float_signature,                             "(S)F")                                                \
+  do_intrinsic(_floatToFloat16,           java_lang_Float,        floatToFloat16_name,      float_f16_signature, F_S)   \
+   do_name(     floatToFloat16_name,                             "floatToFloat16")                                      \
+   do_signature(float_f16_signature,                             "(F)S")                                                \
                                                                                                                         \
   do_intrinsic(_compareUnsigned_i,        java_lang_Integer,      compareUnsigned_name,     int2_int_signature,  F_S)   \
   do_intrinsic(_compareUnsigned_l,        java_lang_Long,         compareUnsigned_name,     long2_int_signature, F_S)   \
@@ -246,6 +255,9 @@ class methodHandle;
   do_intrinsic(_expand_i,                 java_lang_Integer,      expand_name,              int2_int_signature,   F_S)  \
   do_intrinsic(_expand_l,                 java_lang_Long,         expand_name,              long2_long_signature, F_S)  \
                                                                                                                         \
+  do_intrinsic(_reverse_i,                java_lang_Integer,      reverse_name,             int_int_signature,   F_S)   \
+   do_name(     reverse_name,                                    "reverse")                                             \
+  do_intrinsic(_reverse_l,                java_lang_Long,         reverse_name,             long_long_signature, F_S)   \
   do_intrinsic(_reverseBytes_i,           java_lang_Integer,      reverseBytes_name,        int_int_signature,   F_S)   \
    do_name(     reverseBytes_name,                               "reverseBytes")                                        \
   do_intrinsic(_reverseBytes_l,           java_lang_Long,         reverseBytes_name,        long_long_signature, F_S)   \
@@ -547,7 +559,7 @@ class methodHandle;
    do_signature(continuationEnterSpecial_signature,               "(Ljdk/internal/vm/Continuation;ZZ)V")                \
   do_signature(continuationGetStacks_signature,                   "(III)V")                                             \
   do_alias(continuationOnPinned_signature,      int_void_signature)                                                     \
-  do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_S) \
+  do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_SN) \
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
                                                                                                                         \
   /* support for UnsafeConstants */                                                                                     \
@@ -1166,6 +1178,18 @@ class methodHandle;
                                       "Ljdk/internal/vm/vector/VectorSupport$CompressExpandOperation;)"                                        \
                                       "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                  \
    do_name(vector_compress_expand_op_name,     "compressExpandOp")                                                                             \
+                                                                                                                                               \
+  do_intrinsic(_IndexVector, jdk_internal_vm_vector_VectorSupport, index_vector_op_name, index_vector_op_sig, F_S)                             \
+    do_signature(index_vector_op_sig, "(Ljava/lang/Class;"                                                                                     \
+                                       "Ljava/lang/Class;"                                                                                     \
+                                       "I"                                                                                                     \
+                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                         \
+                                       "I"                                                                                                     \
+                                       "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                  \
+                                       "Ljdk/internal/vm/vector/VectorSupport$IndexOperation;)"                                                \
+                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
+    do_name(index_vector_op_name, "indexVector")                                                                                               \
+                                                                                                                                               \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
@@ -1274,7 +1298,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _VectorCompressExpand,
+  LAST_COMPILER_INLINE = _IndexVector,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,

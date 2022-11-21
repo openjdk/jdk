@@ -141,7 +141,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                         (packet.get(pos + 1) & 0xFF) + (isShort ? 2 : 3);
 
             } else {
-                // Gobblygook!
+                // Gobbledygook!
                 throw new SSLException(
                         "Unrecognized SSL message, plaintext connection?");
             }
@@ -352,7 +352,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
     }
 
     private Plaintext[] handleUnknownRecord(ByteBuffer packet)
-            throws IOException, BadPaddingException {
+            throws IOException {
         //
         // The packet should be a complete record.
         //

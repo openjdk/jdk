@@ -253,8 +253,6 @@ class java_lang_Class : AllStatic {
                             Handle protection_domain, Handle classData, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
-  static void update_archived_primitive_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
-  static void update_archived_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -379,9 +377,6 @@ class java_lang_Thread : AllStatic {
   static void set_priority(oop java_thread, ThreadPriority priority);
   // Thread group
   static oop  threadGroup(oop java_thread);
-  // Stillborn
-  static bool is_stillborn(oop java_thread);
-  static void set_stillborn(oop java_thread);
   // Alive (NOTE: this is not really a field, but provides the correct
   // definition without doing a Java call)
   static bool is_alive(oop java_thread);
@@ -434,7 +429,6 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static int _group_offset;
   static int _priority_offset;
   static int _stackSize_offset;
-  static int _stillborn_offset;
   static int _daemon_offset;
   static int _thread_status_offset;
 
@@ -449,9 +443,6 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static void set_priority(oop holder, ThreadPriority priority);
 
   static jlong stackSize(oop holder);
-
-  static bool is_stillborn(oop holder);
-  static void set_stillborn(oop holder);
 
   static bool is_daemon(oop holder);
   static void set_daemon(oop holder);
@@ -488,13 +479,7 @@ class java_lang_ThreadGroup : AllStatic {
   static int _maxPriority_offset;
   static int _daemon_offset;
 
-  static int _ngroups_offset;
-  static int _groups_offset;
-  static int _nweaks_offset;
-  static int _weaks_offset;
-
   static void compute_offsets();
-
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
@@ -506,15 +491,6 @@ class java_lang_ThreadGroup : AllStatic {
   static ThreadPriority maxPriority(oop java_thread_group);
   // Daemon
   static bool is_daemon(oop java_thread_group);
-
-  // Number of strongly reachable thread groups
-  static int ngroups(oop java_thread_group);
-  // Strongly reachable thread groups
-  static objArrayOop groups(oop java_thread_group);
-  // Number of weakly reachable thread groups
-  static int nweaks(oop java_thread_group);
-  // Weakly reachable thread groups
-  static objArrayOop weaks(oop java_thread_group);
 
   // Debugging
   friend class JavaClasses;
@@ -988,6 +964,8 @@ class java_lang_ref_Reference: AllStatic {
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
+  static inline bool is_weak(oop ref);
+  static inline bool is_soft(oop ref);
 
   static int referent_offset()    { CHECK_INIT(_referent_offset); }
   static int queue_offset()       { CHECK_INIT(_queue_offset); }

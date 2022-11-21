@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ public class AddressException extends RuntimeException {
     this.addr = addr;
   }
 
-  public AddressException(String detail, long addr) {
-    super(detail);
+  public AddressException(String message, long addr) {
+    super(message);
     this.addr = addr;
   }
 
@@ -41,6 +41,11 @@ public class AddressException extends RuntimeException {
   }
 
   public String getMessage() {
-    return Long.toHexString(addr);
+    String msg = super.getMessage();
+    if (msg != null) {
+      return msg;
+    } else {
+      return Long.toHexString(addr);
+    }
   }
 }

@@ -40,9 +40,7 @@ inline HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
         "addr: " PTR_FORMAT " end: " PTR_FORMAT, p2i(addr), p2i(heap_end()));
   assert(addr >= heap_bottom(),
         "addr: " PTR_FORMAT " bottom: " PTR_FORMAT, p2i(addr), p2i(heap_bottom()));
-
-  HeapRegion* hr = _regions.get_by_address(addr);
-  return hr;
+  return _regions.get_by_address(addr);
 }
 
 inline HeapRegion* HeapRegionManager::at(uint index) const {

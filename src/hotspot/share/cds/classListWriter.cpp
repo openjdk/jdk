@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -39,7 +40,7 @@ void ClassListWriter::init() {
   // For -XX:DumpLoadedClassList=<file> option
   if (DumpLoadedClassList != NULL) {
     const char* list_name = make_log_name(DumpLoadedClassList, NULL);
-    _classlist_file = new(ResourceObj::C_HEAP, mtInternal)
+    _classlist_file = new(mtInternal)
                          fileStream(list_name);
     _classlist_file->print_cr("# NOTE: Do not modify this file.");
     _classlist_file->print_cr("#");
@@ -66,7 +67,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
 class ClassListWriter::IDTable : public ResourceHashtable<
   const InstanceKlass*, int,
   15889, // prime number
-  ResourceObj::C_HEAP> {};
+  AnyObj::C_HEAP> {};
 
 ClassListWriter::IDTable* ClassListWriter::_id_table = NULL;
 int ClassListWriter::_total_ids = 0;
@@ -74,7 +75,7 @@ int ClassListWriter::_total_ids = 0;
 int ClassListWriter::get_id(const InstanceKlass* k) {
   assert_locked();
   if (_id_table == NULL) {
-    _id_table = new (ResourceObj::C_HEAP, mtClass)IDTable();
+    _id_table = new (mtClass)IDTable();
   }
   bool created;
   int* v = _id_table->put_if_absent(k, &created);

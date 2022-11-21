@@ -245,7 +245,7 @@ void G1YoungCollector::wait_for_root_region_scanning() {
   // root regions as it's the only way to ensure that all the
   // objects on them have been correctly scanned before we start
   // moving them during the GC.
-  bool waited = concurrent_mark()->root_regions()->wait_until_scan_finished();
+  bool waited = concurrent_mark()->wait_until_root_region_scan_finished();
   Tickspan wait_time;
   if (waited) {
     wait_time = (Ticks::now() - start);
@@ -290,7 +290,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1SegmentedArrayMemoryStats _card_set_stats;
+    G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
@@ -383,7 +383,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
       uint index = hr->hrm_index();
       if (humongous_region_is_candidate(hr)) {
-        _g1h->register_humongous_region_with_region_attr(index);
+        _g1h->register_humongous_candidate_region_with_region_attr(index);
         _worker_humongous_candidates++;
         // We will later handle the remembered sets of these regions.
       } else {
@@ -404,7 +404,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1SegmentedArrayMemoryStats card_set_stats() const {
+    G1MonotonicArenaMemoryStats card_set_stats() const {
       return _card_set_stats;
     }
   };
@@ -414,7 +414,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
-  G1SegmentedArrayMemoryStats _all_card_set_stats;
+  G1MonotonicArenaMemoryStats _all_card_set_stats;
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
@@ -448,7 +448,7 @@ public:
     return _humongous_total;
   }
 
-  const G1SegmentedArrayMemoryStats all_card_set_stats() const {
+  const G1MonotonicArenaMemoryStats all_card_set_stats() const {
     return _all_card_set_stats;
   }
 };
@@ -467,6 +467,16 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
+void G1YoungCollector::flush_dirty_card_queues() {
+  Ticks start = Ticks::now();
+  G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+  size_t old_cards = qset.num_cards();
+  qset.concatenate_logs();
+  size_t added_cards = qset.num_cards() - old_cards;
+  Tickspan concat_time = Ticks::now() - start;
+  policy()->record_concatenate_dirty_card_logs(concat_time, added_cards);
+}
+
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
@@ -483,18 +493,11 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
     phase_times()->record_prepare_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
-  {
-    // Flush dirty card queues to qset, so later phases don't need to account
-    // for partially filled per-thread queues and such.
-    Ticks start = Ticks::now();
-    G1BarrierSet::dirty_card_queue_set().concatenate_logs();
-    Tickspan dt = Ticks::now() - start;
-    phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
-  }
+  // Flush dirty card queues to qset, so later phases don't need to account
+  // for partially filled per-thread queues and such.
+  flush_dirty_card_queues();
 
-  // Disable the hot card cache.
   hot_card_cache()->reset_hot_cache_claimed_index();
-  hot_card_cache()->set_use_cache(false);
 
   // Initialize the GC alloc regions.
   allocator()->init_gc_alloc_regions(evacuation_info);
@@ -810,7 +813,7 @@ public:
     assert(obj != NULL, "the caller should have filtered out NULL values");
 
     const G1HeapRegionAttr region_attr =_g1h->region_attr(obj);
-    if (!region_attr.is_in_cset_or_humongous()) {
+    if (!region_attr.is_in_cset_or_humongous_candidate()) {
       return;
     }
     if (region_attr.is_in_cset()) {
@@ -818,7 +821,7 @@ public:
       *p = obj->forwardee();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
-      assert(region_attr.is_humongous(),
+      assert(region_attr.is_humongous_candidate(),
              "Only allowed G1HeapRegionAttr state is IsHumongous, but is %d", region_attr.type());
      _g1h->set_humongous_is_live(obj);
     }
@@ -846,7 +849,7 @@ public:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
 
-    if (_g1h->is_in_cset_or_humongous(obj)) {
+    if (_g1h->is_in_cset_or_humongous_candidate(obj)) {
       // If the referent object has been forwarded (either copied
       // to a new location or to itself in the event of an
       // evacuation failure) then we need to update the reference
@@ -1023,11 +1026,9 @@ public:
   }
 };
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
-                                   double target_pause_time_ms) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
-  _target_pause_time_ms(target_pause_time_ms),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {
@@ -1072,7 +1073,7 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    calculate_collection_set(jtm.evacuation_info(), _target_pause_time_ms);
+    calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
 
     G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
     G1PreservedMarksSet preserved_marks_set(workers()->active_workers());

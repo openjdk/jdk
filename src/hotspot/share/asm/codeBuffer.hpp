@@ -31,6 +31,8 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/linkedlist.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -203,43 +205,43 @@ class CodeSection {
   }
 
   // Code emission
-  void emit_int8(int8_t x1) {
+  void emit_int8(uint8_t x1) {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x1;
     set_end(curr);
   }
 
-  void emit_int16(int16_t x) { *((int16_t*) end()) = x; set_end(end() + sizeof(int16_t)); }
-  void emit_int16(int8_t x1, int8_t x2) {
+  void emit_int16(uint16_t x) { *((uint16_t*) end()) = x; set_end(end() + sizeof(uint16_t)); }
+  void emit_int16(uint8_t x1, uint8_t x2) {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
     set_end(curr);
   }
 
-  void emit_int24(int8_t x1, int8_t x2, int8_t x3)  {
+  void emit_int24(uint8_t x1, uint8_t x2, uint8_t x3)  {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
-    *((int8_t*)  curr++) = x3;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x3;
     set_end(curr);
   }
 
-  void emit_int32(int32_t x) {
+  void emit_int32(uint32_t x) {
     address curr = end();
-    *((int32_t*) curr) = x;
-    set_end(curr + sizeof(int32_t));
+    *((uint32_t*) curr) = x;
+    set_end(curr + sizeof(uint32_t));
   }
-  void emit_int32(int8_t x1, int8_t x2, int8_t x3, int8_t x4)  {
+  void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
-    *((int8_t*)  curr++) = x3;
-    *((int8_t*)  curr++) = x4;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x3;
+    *((uint8_t*)  curr++) = x4;
     set_end(curr);
   }
 
-  void emit_int64( int64_t x)  { *((int64_t*) end()) = x; set_end(end() + sizeof(int64_t)); }
+  void emit_int64( uint64_t x)  { *((uint64_t*) end()) = x; set_end(end() + sizeof(uint64_t)); }
 
   void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
   void emit_double(jdouble x)  { *((jdouble*) end()) = x; set_end(end() + sizeof(jdouble)); }
@@ -255,18 +257,13 @@ class CodeSection {
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
   void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
-  static int alignment(int section);
-  int alignment() { return alignment(_index); }
+  int alignment() const;
 
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
-  csize_t align_at_start(csize_t off, int section) const {
-    return (csize_t) align_up(off, alignment(section));
-  }
-
   csize_t align_at_start(csize_t off) const {
-    return (csize_t) align_up(off, alignment(_index));
+    return (csize_t) align_up(off, alignment());
   }
 
   // Ensure there's enough space left in the current section.
@@ -383,7 +380,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // CodeBuffers must be allocated on the stack except for a single
   // special case during expansion which is handled internally.  This
   // is done to guarantee proper cleanup of resources.
-  void* operator new(size_t size) throw() { return ResourceObj::operator new(size); }
+  void* operator new(size_t size) throw() { return resource_allocate_bytes(size); }
   void  operator delete(void* p)          { ShouldNotCallThis(); }
 
  public:
@@ -397,6 +394,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_STUBS,               // Outbound trampolines for supporting call sites.
     SECT_LIMIT, SECT_NONE = -1
   };
+
+  typedef LinkedListImpl<int> Offsets;
+  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
 
  private:
   enum {
@@ -424,7 +424,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
+
+  int          _const_section_alignment;
 
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
@@ -445,6 +448,15 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _last_insn       = NULL;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = NULL;
+    _shared_trampoline_requests = NULL;
+
+    _consts.initialize_outer(this, SECT_CONSTS);
+    _insts.initialize_outer(this,  SECT_INSTS);
+    _stubs.initialize_outer(this,  SECT_STUBS);
+
+    // Default is to align on 8 bytes. A compiler can change this
+    // if larger alignment (e.g., 32-byte vector masks) is required.
+    _const_section_alignment = (int) sizeof(jdouble);
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -460,9 +472,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   void initialize(address code_start, csize_t code_size) {
-    _consts.initialize_outer(this,  SECT_CONSTS);
-    _insts.initialize_outer(this,   SECT_INSTS);
-    _stubs.initialize_outer(this,   SECT_STUBS);
     _total_start = code_start;
     _total_size  = code_size;
     // Initialize the main section:
@@ -702,6 +711,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Request for a shared stub to the interpreter
   void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);
 
+  void set_const_section_alignment(int align) {
+    _const_section_alignment = align_up(align, HeapWordSize);
+  }
+
 #ifndef PRODUCT
  public:
   // Printing / Decoding
@@ -737,21 +750,6 @@ class SharedStubToInterpRequest : public ResourceObj {
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }
   return false;
-}
-
-inline int CodeSection::alignment(int section) {
-  if (section == CodeBuffer::SECT_CONSTS) {
-    return (int) sizeof(jdouble);
-  }
-  if (section == CodeBuffer::SECT_INSTS) {
-    return (int) CodeEntryAlignment;
-  }
-  if (CodeBuffer::SECT_STUBS) {
-    // CodeBuffer installer expects sections to be HeapWordSize aligned
-    return HeapWordSize;
-  }
-  ShouldNotReachHere();
-  return 0;
 }
 
 #endif // SHARE_ASM_CODEBUFFER_HPP

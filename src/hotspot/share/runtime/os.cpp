@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -33,8 +32,8 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "logging/log.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -474,9 +473,6 @@ void os::initialize_jdk_signal_support(TRAPS) {
     JavaThread::vm_exit_on_osthread_failure(thread);
 
     JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
-
-    // Handle ^BREAK
-    os::signal(SIGBREAK, os::user_handler());
   }
 }
 
@@ -658,6 +654,11 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
+  // Check for overflow.
+  if (outer_size < size) {
+    return NULL;
+  }
+
   ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == NULL) {
     return NULL;
@@ -703,21 +704,61 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
-  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
+  if (MemTracker::enabled()) {
+    // NMT realloc handling
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock);
+    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
 
-  ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
-  if (new_outer_ptr == NULL) {
-    return NULL;
+    // Handle size overflow.
+    if (new_outer_size < size) {
+      return NULL;
+    }
+
+    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
+
+    // De-account the old block from NMT *before* calling the real realloc(3) since it
+    // may invalidate old block including its header. This will also perform integrity checks
+    // on the old block (e.g. overwriters) and mark the old header as dead.
+    void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+    // the real realloc
+    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
+
+    if (new_outer_ptr == NULL) {
+      // If realloc(3) failed, the old block still exists. We must re-instantiate the old
+      // NMT header then, since we marked it dead already. Otherwise subsequent os::realloc()
+      // or os::free() calls would trigger block integrity asserts.
+      void* p = MemTracker::record_malloc(old_outer_ptr, old_size, memflags, stack);
+      assert(p == memblock, "sanity");
+      return NULL;
+    }
+
+    // After a successful realloc(3), we re-account the resized block with its new size
+    // to NMT. This re-instantiates the NMT header.
+    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+
+#ifdef ASSERT
+    if (old_size < size) {
+      // We also zap the newly extended region.
+      ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
+    }
+#endif
+
+    rc = new_inner_ptr;
+
+  } else {
+
+    // NMT disabled.
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
+    if (rc == NULL) {
+      return NULL;
+    }
+
   }
 
-  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+  DEBUG_ONLY(break_if_ptr_caught(rc);)
 
-  DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
-
-  return new_inner_ptr;
+  return rc;
 }
 
 void  os::free(void *memblock) {
@@ -938,6 +979,11 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
 }
 
+void os::print_tos(outputStream* st, address sp) {
+  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
+}
+
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
   print_hex_dump(st, pc - 256, pc + 256, unitsize);
@@ -1079,7 +1125,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if addr points into a code blob.
-  CodeBlob* b = CodeCache::find_blob_unsafe(addr);
+  CodeBlob* b = CodeCache::find_blob(addr);
   if (b != NULL) {
     b->dump_for_addr(addr, st, verbose);
     return;
@@ -1904,17 +1950,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -1923,7 +1969,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }

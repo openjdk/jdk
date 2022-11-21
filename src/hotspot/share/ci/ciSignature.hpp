@@ -34,7 +34,7 @@
 // ciSignature
 //
 // This class represents the signature of a method.
-class ciSignature : public ResourceObj {
+class ciSignature : public ArenaObj {
 private:
   ciSymbol* _symbol;
   ciKlass*  _accessing_klass;
@@ -62,6 +62,8 @@ public:
   int       count() const                        { return _types.length(); }
 
   int       arg_size_for_bc(Bytecodes::Code bc)  { return size() + (Bytecodes::has_receiver(bc) ? 1 : 0); }
+
+  bool has_unloaded_classes();
 
   bool equals(ciSignature* that);
 

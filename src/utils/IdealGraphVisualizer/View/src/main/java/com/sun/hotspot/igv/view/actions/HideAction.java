@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,52 +23,57 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.Event;
-import java.awt.event.KeyEvent;
-import javax.swing.Action;
-import javax.swing.KeyStroke;
-import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
-import org.openide.util.Utilities;
+import com.sun.hotspot.igv.view.DiagramViewModel;
+import java.util.HashSet;
+import java.util.Set;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
+
 
 /**
- *
  * @author Thomas Wuerthinger
  */
-public final class HideAction extends CallableSystemAction {
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.HideAction")
+@ActionRegistration(displayName = "#CTL_HideAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 400),
+        @ActionReference(path = "Shortcuts", name = "D-H")
+})
+@Messages({
+        "CTL_HideAction=Hide nodes",
+        "HINT_HideAction=Hide selected nodes"
+})
+public final class HideAction extends ModelAwareAction {
 
     @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.hideNodes();
-        }
-    }
-
-    public HideAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Hide selected nodes");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-H"));
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/hide.gif"; // NOI18N
     }
 
     @Override
     public String getName() {
-        return "Hide";
+        return NbBundle.getMessage(HideAction.class, "CTL_HideAction");
     }
 
     @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+    protected String getDescription() {
+        return NbBundle.getMessage(HideAction.class, "HINT_HideAction");
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
+    public void performAction(DiagramViewModel model) {
+        Set<Integer> selectedNodes = model.getSelectedNodes();
+        HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
+        nodes.addAll(selectedNodes);
+        model.setHiddenNodes(nodes);
     }
 
     @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/hide.gif";
+    public boolean isEnabled(DiagramViewModel model) {
+        return model != null && !model.getSelectedNodes().isEmpty();
     }
 }

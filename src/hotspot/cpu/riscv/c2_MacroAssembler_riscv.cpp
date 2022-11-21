@@ -27,7 +27,9 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -240,6 +242,37 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 }
 
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  IncompressibleRegion ir(this);  // Fixed length: see C2_MacroAssembler::entry_barrier_stub_size()
+
+  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
+  int alignment_bytes = align(4);
+
+  bind(stub->slow_path());
+
+  int32_t offset = 0;
+  movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+  jalr(ra, t0, offset);
+  j(stub->continuation());
+
+  bind(stub->guard());
+  relocate(entry_guard_Relocation::spec());
+  assert_alignment(pc());
+  emit_int32(0);  // nmethod guard value
+  // make sure the stub with a fixed code size
+  if (alignment_bytes == 2) {
+    assert(UseRVC, "bad alignment");
+    c_nop();
+  } else {
+    assert(alignment_bytes == 0, "bad alignment");
+    nop();
+  }
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 8 * 4 + 4; // 4 bytes for alignment margin
+}
 
 // Search for needle in haystack and return index or -1
 // x10: result
@@ -815,7 +848,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   bind(L);
 
   // A very short string
-  li(t0, minCharsInWord);
+  mv(t0, minCharsInWord);
   ble(cnt2, t0, SHORT_STRING);
 
   // Compare longwords
@@ -826,7 +859,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       ld(tmp1, Address(str1));
       beq(str1, str2, DONE);
       ld(tmp2, Address(str2));
-      li(t0, STUB_THRESHOLD);
+      mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
       sub(cnt2, cnt2, minCharsInWord);
       beqz(cnt2, TAIL_CHECK);
@@ -840,7 +873,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     } else if (isLU) { // LU case
       lwu(tmp1, Address(str1));
       ld(tmp2, Address(str2));
-      li(t0, STUB_THRESHOLD);
+      mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
       addi(cnt2, cnt2, -4);
       add(str1, str1, cnt2);
@@ -854,7 +887,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     } else { // UL case
       ld(tmp1, Address(str1));
       lwu(tmp2, Address(str2));
-      li(t0, STUB_THRESHOLD);
+      mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
       addi(cnt2, cnt2, -4);
       slli(t0, cnt2, 1);
@@ -1030,7 +1063,7 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, cnt1, t0, t1, tmp3, tmp4, tmp5, tmp6);
-  li(elem_per_word, wordSize / elem_size);
+  mv(elem_per_word, wordSize / elem_size);
 
   BLOCK_COMMENT("arrays_equals {");
 
@@ -1175,8 +1208,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
     andi(t0, cnt1, 1);
     beqz(t0, SAME);
     {
-      lbu(tmp1, a1, 0);
-      lbu(tmp2, a2, 0);
+      lbu(tmp1, Address(a1, 0));
+      lbu(tmp2, Address(a2, 0));
       bne(tmp1, tmp2, DONE);
     }
   }
@@ -1197,24 +1230,24 @@ typedef void (MacroAssembler::*float_conditional_branch_insn)(FloatRegister op1,
 static conditional_branch_insn conditional_branches[] =
 {
   /* SHORT branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgt,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgt,
   NULL, // BoolTest::overflow
-  (conditional_branch_insn)&Assembler::blt,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::ble,
+  (conditional_branch_insn)&MacroAssembler::blt,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::ble,
   NULL, // BoolTest::no_overflow
-  (conditional_branch_insn)&Assembler::bge,
+  (conditional_branch_insn)&MacroAssembler::bge,
 
   /* UNSIGNED branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgtu,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgtu,
   NULL,
-  (conditional_branch_insn)&Assembler::bltu,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::bleu,
+  (conditional_branch_insn)&MacroAssembler::bltu,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::bleu,
   NULL,
-  (conditional_branch_insn)&Assembler::bgeu
+  (conditional_branch_insn)&MacroAssembler::bgeu
 };
 
 static float_conditional_branch_insn float_conditional_branches[] =
@@ -1641,8 +1674,55 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 
   bind(L_NaN);
   vfmv_s_f(tmp2, src1);
-  vfredsum_vs(tmp1, src2, tmp2);
+  vfredusum_vs(tmp1, src2, tmp2);
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);
+}
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != NULL) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+
+void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
+                                            Register src1, VectorRegister src2,
+                                            BasicType bt, int opc) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  vsetvli(t0, x0, sew);
+
+  vmv_s_x(tmp, src1);
+
+  switch (opc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+      vredsum_vs(tmp, src2, tmp);
+      break;
+    case Op_AndReductionV:
+      vredand_vs(tmp, src2, tmp);
+      break;
+    case Op_OrReductionV:
+      vredor_vs(tmp, src2, tmp);
+      break;
+    case Op_XorReductionV:
+      vredxor_vs(tmp, src2, tmp);
+      break;
+    case Op_MaxReductionV:
+      vredmax_vs(tmp, src2, tmp);
+      break;
+    case Op_MinReductionV:
+      vredmin_vs(tmp, src2, tmp);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  vmv_x_s(dst, tmp);
 }

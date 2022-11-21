@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,15 @@ class VMError : public AllStatic {
 
   // public for use by the internal non-product debugger.
   NOT_PRODUCT(public:)
-  static void print_native_stack(outputStream* st, frame fr, Thread* t,
+  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
                                  char* buf, int buf_size);
   NOT_PRODUCT(private:)
+
+  static const char* get_filename_only() {
+    char separator = os::file_separator()[0];
+    const char* p = strrchr(_filename, separator);
+    return p ? p+1 : _filename;
+  }
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
@@ -181,9 +187,8 @@ public:
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // Address which is guaranteed to generate a fault on read, for test purposes,
-  // which is not NULL and contains bits in every word.
-  static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+  // Non-NULL address guaranteed to generate a SEGV mapping error on read, for test purposes.
+  static constexpr intptr_t segfault_address = (1 * K) AIX_ONLY(+ (4 * K));
 
   // Max value for the ErrorLogPrintCodeLimit flag.
   static const int max_error_log_print_code = 10;

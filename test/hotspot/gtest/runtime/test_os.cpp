@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -34,6 +34,9 @@
 #include "unittest.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/threads.hpp"
+#ifdef _WIN32
+#include "os_windows.hpp"
+#endif
 
 static size_t small_page_size() {
   return os::vm_page_size();
@@ -887,6 +890,30 @@ TEST_VM(os, is_first_C_frame) {
   EXPECT_FALSE(os::is_first_C_frame(&cur_frame));
 #endif // _WIN32
 }
+
+#ifdef __GLIBC__
+TEST_VM(os, trim_native_heap) {
+  EXPECT_TRUE(os::can_trim_native_heap());
+  os::size_change_t sc;
+  sc.before = sc.after = (size_t)-1;
+  EXPECT_TRUE(os::trim_native_heap(&sc));
+  tty->print_cr(SIZE_FORMAT "->" SIZE_FORMAT, sc.before, sc.after);
+  // Regardless of whether we freed memory, both before and after
+  // should be somewhat believable numbers (RSS).
+  const size_t min = 5 * M;
+  const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
+  ASSERT_LE(min, sc.before);
+  ASSERT_GT(max, sc.before);
+  ASSERT_LE(min, sc.after);
+  ASSERT_GT(max, sc.after);
+  // Should also work
+  EXPECT_TRUE(os::trim_native_heap());
+}
+#else
+TEST_VM(os, trim_native_heap) {
+  EXPECT_FALSE(os::can_trim_native_heap());
+}
+#endif // __GLIBC__
 
 TEST_VM(os, open_O_CLOEXEC) {
 #if !defined(_WIN32)

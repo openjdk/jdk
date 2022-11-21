@@ -324,8 +324,7 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
         }
     }
 
-    private List<ListenerInfo> listenerList =
-        new CopyOnWriteArrayList<ListenerInfo>();
+    private List<ListenerInfo> listenerList = new CopyOnWriteArrayList<>();
 
     // since 1.6
     private final Executor executor;

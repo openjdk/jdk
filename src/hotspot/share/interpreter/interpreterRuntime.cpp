@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -34,10 +33,12 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/templateTable.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -776,11 +777,7 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(current, current->vm_result());
   assert(exception() != NULL, "vm result should be set");
   current->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
-    exception = get_preinitialized_exception(
-                       vmClasses::IllegalMonitorStateException_klass(),
-                       CATCH);
-  }
+  exception = get_preinitialized_exception(vmClasses::IllegalMonitorStateException_klass(), CATCH);
   current->set_vm_result(exception());
 JRT_END
 
@@ -1282,8 +1279,8 @@ void SignatureHandlerLibrary::initialize() {
                                       SignatureHandlerLibrary::buffer_size);
   _buffer = bb->code_begin();
 
-  _fingerprints = new(ResourceObj::C_HEAP, mtCode)GrowableArray<uint64_t>(32, mtCode);
-  _handlers     = new(ResourceObj::C_HEAP, mtCode)GrowableArray<address>(32, mtCode);
+  _fingerprints = new (mtCode) GrowableArray<uint64_t>(32, mtCode);
+  _handlers     = new (mtCode) GrowableArray<address>(32, mtCode);
 }
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
@@ -1513,7 +1510,7 @@ JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intpt
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be an interpreted frame");
   methodHandle mh(current, last_frame.method());
-  BytecodeTracer::trace(mh, last_frame.bcp(), tos, tos2);
+  BytecodeTracer::trace_interpreter(mh, last_frame.bcp(), tos, tos2);
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT

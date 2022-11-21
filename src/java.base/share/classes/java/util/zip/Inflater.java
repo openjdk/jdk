@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import sun.nio.ch.DirectBuffer;
  * This class inflates sequences of ZLIB compressed bytes. The input byte
  * sequence is provided in either byte array or byte buffer, via one of the
  * {@code setInput()} methods. The output byte sequence is written to the
- * output byte array or byte buffer passed to the {@code deflate()} methods.
+ * output byte array or byte buffer passed to the {@code inflate()} methods.
  * <p>
  * The following code fragment demonstrates a trivial compression
  * and decompression of a string using {@code Deflater} and
@@ -101,6 +101,7 @@ public class Inflater {
     private byte[] inputArray;
     private int inputPos, inputLim;
     private boolean finished;
+    private boolean pendingOutput;
     private boolean needDict;
     private long bytesRead;
     private long bytesWritten;
@@ -415,6 +416,11 @@ public class Inflater {
             if ((result >>> 62 & 1) != 0) {
                 finished = true;
             }
+            if (written == len && !finished) {
+                pendingOutput = true;
+            } else {
+                pendingOutput = false;
+            }
             if ((result >>> 63 & 1) != 0) {
                 needDict = true;
             }
@@ -709,6 +715,10 @@ public class Inflater {
         assert Thread.holdsLock(zsRef);
         if (zsRef.address() == 0)
             throw new NullPointerException("Inflater has been closed");
+    }
+
+    boolean hasPendingOutput() {
+        return pendingOutput;
     }
 
     private static native void initIDs();

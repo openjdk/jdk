@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ public class DependTest {
         test.testModules();
         test.testAnnotations();
         test.testRecords();
+        test.testImports();
+        test.testModifiers();
     }
 
     public void testMethods() throws Exception {
@@ -145,13 +147,91 @@ public class DependTest {
                        "@SuppressWarnings(\"any\")\n" +
                        "public class Test {\n" +
                        "}",
-                       false);
+                       false,
+                       true); //Tree hash does not tolerate undocumented annotations
         doOrdinaryTest("package test;" +
                        "public class Test {\n" +
                        "}",
                        "package test;" +
                        "@Deprecated\n" +
                        "public class Test {\n" +
+                       "}",
+                       true);
+    }
+
+    public void testImports() throws Exception {
+        doOrdinaryTest("package test;" +
+                       "public class Test {\n" +
+                       "}",
+                       "package test;" +
+                       "import java.util.List;\n" +
+                       "public class Test {\n" +
+                       "    private List l;\n" +
+                       "}",
+                       false);
+        doOrdinaryTest("package test;" +
+                       "public class Test {\n" +
+                       "}",
+                       "package test;" +
+                       "import java.util.List;\n" +
+                       "public class Test {\n" +
+                       "    public List l;\n" +
+                       "}",
+                       true);
+        doOrdinaryTest("package test;" +
+                       "public class Test {\n" +
+                       "}",
+                       "package test;" +
+                       "import java.util.List;\n" +
+                       "public class Test {\n" +
+                       "    List l;\n" +
+                       "}",
+                       false,
+                       true);
+        doOrdinaryTest("package test;" +
+                       "import java.util.*;\n" +
+                       "public abstract class Test implements List {\n" +
+                       "}\n" +
+                       "class H {\n" +
+                       "    public interface List {}\n" +
+                       "}",
+                       "package test;" +
+                       "import java.util.*;\n" +
+                       "import test.H.List;\n" +
+                       "public abstract class Test implements List {\n" +
+                       "}\n" +
+                       "class H {\n" +
+                       "    public interface List {}\n" +
+                       "}",
+                       true);
+        doOrdinaryTest("package test;" +
+                       "public class Test {\n" +
+                       "}",
+                       "package test;" +
+                       "import java.util.*;\n" +
+                       "public class Test {\n" +
+                       "}",
+                       false,
+                       true);
+        doOrdinaryTest("package test;" +
+                       "import java.util.*;\n" +
+                       "public class Test {\n" +
+                       "}",
+                       "package test;" +
+                       "public class Test {\n" +
+                       "}",
+                       false,
+                       true);
+    }
+
+    public void testModifiers() throws Exception {
+        doOrdinaryTest("package test;" +
+                       "public class Test {\n" +
+                       "    String l;\n" +
+                       "}",
+                       "package test;" +
+                       "public class Test {\n" +
+                       "    public String l;\n" +
                        "}",
                        true);
     }
@@ -199,11 +279,13 @@ public class DependTest {
         doOrdinaryTest("package test; public record Test (int x, int y) { }",
                        "package test; public record Test (int x, int y) {" +
                                "public Test { } }",  // compact ctr
-                       false);
+                       false,
+                       true);
         doOrdinaryTest("package test; public record Test (int x, int y) { }",
                        "package test; public record Test (int x, int y) {" +
                                "public Test (int x, int y) { this.x=x; this.y=y;} }",  // canonical ctr
-                       false);
+                       false,
+                       true);
         doOrdinaryTest("package test; public record Test (int x, int y) { }",
                        "package test; public record Test (int y, int x) { }",  // reverse
                        true);
@@ -227,6 +309,7 @@ public class DependTest {
     private Path scratchServices;
     private Path scratchClasses;
     private Path apiHash;
+    private Path treeHash;
 
     private void setupClass() throws IOException {
         depend = Paths.get(Depend.class.getProtectionDomain().getCodeSource().getLocation().getPath());
@@ -244,34 +327,53 @@ public class DependTest {
         Files.createDirectories(scratchClasses);
 
         apiHash = scratch.resolve("api");
+        treeHash = scratch.resolve("tree");
     }
 
     private void doOrdinaryTest(String codeBefore, String codeAfter, boolean hashChangeExpected) throws Exception {
+        doOrdinaryTest(codeBefore, codeAfter, hashChangeExpected, hashChangeExpected);
+    }
+
+    private void doOrdinaryTest(String codeBefore, String codeAfter, boolean apiHashChangeExpected, boolean treeHashChangeExpected) throws Exception {
         List<String> options =
                 Arrays.asList("-d", scratchClasses.toString(),
                               "-processorpath", depend.toString() + File.pathSeparator + scratchServices.toString(),
-                              "-Xplugin:depend " + apiHash.toString());
+                              "-Xplugin:depend " + apiHash.toString() + " " + treeHash.toString(),
+                              "-XDmodifiedInputs=build-all");
         List<TestJavaFileObject> beforeFiles =
                 Arrays.asList(new TestJavaFileObject("module-info", "module m { exports test; }"),
                               new TestJavaFileObject("test.Test", codeBefore));
         compiler.getTask(null, null, null, options, null, beforeFiles).call();
-        byte[] originalHash = Files.readAllBytes(apiHash);
+        byte[] originalApiHash = Files.readAllBytes(apiHash);
+        byte[] originalTreeHash = Files.readAllBytes(treeHash);
         List<TestJavaFileObject> afterFiles =
                 Arrays.asList(new TestJavaFileObject("module-info", "module m { exports test; }"),
                               new TestJavaFileObject("test.Test", codeAfter));
         compiler.getTask(null, null, null, options, null, afterFiles).call();
-        byte[] newHash = Files.readAllBytes(apiHash);
+        byte[] newApiHash = Files.readAllBytes(apiHash);
+        byte[] newTreeHash = Files.readAllBytes(treeHash);
 
-        if (Arrays.equals(originalHash, newHash) ^ !hashChangeExpected) {
-            throw new AssertionError("Unexpected hash state.");
+        if (Arrays.equals(originalApiHash, newApiHash) ^ !apiHashChangeExpected) {
+            throw new AssertionError("Unexpected API hash state.");
+        }
+
+        if (Arrays.equals(originalTreeHash, newTreeHash) ^ !treeHashChangeExpected) {
+            throw new AssertionError("Unexpected Tree hash state, " +
+                                     "original: " + new String(originalTreeHash) +
+                                     ", new: " + new String(newTreeHash));
         }
     }
 
     private void doModuleTest(String codeBefore, String codeAfter, boolean hashChangeExpected) throws Exception {
+        doModuleTest(codeBefore, codeAfter, hashChangeExpected, hashChangeExpected);
+    }
+
+    private void doModuleTest(String codeBefore, String codeAfter, boolean apiHashChangeExpected, boolean treeHashChangeExpected) throws Exception {
         List<String> options =
                 Arrays.asList("-d", scratchClasses.toString(),
                               "-processorpath", depend.toString() + File.pathSeparator + scratchServices.toString(),
-                              "-Xplugin:depend " + apiHash.toString());
+                              "-Xplugin:depend " + apiHash.toString() + " " + treeHash.toString(),
+                              "-XDmodifiedInputs=build-all");
         List<TestJavaFileObject> beforeFiles =
                 Arrays.asList(new TestJavaFileObject("module-info", codeBefore),
                               new TestJavaFileObject("test.Test1", "package test; public interface Test1 {}"),
@@ -279,7 +381,8 @@ public class DependTest {
                               new TestJavaFileObject("test.TestImpl1", "package test; public class TestImpl1 implements Test1, Test2 {}"),
                               new TestJavaFileObject("test.TestImpl2", "package test; public class TestImpl2 implements Test1, Test2 {}"));
         compiler.getTask(null, null, null, options, null, beforeFiles).call();
-        byte[] originalHash = Files.readAllBytes(apiHash);
+        byte[] originalApiHash = Files.readAllBytes(apiHash);
+        byte[] originalTreeHash = Files.readAllBytes(treeHash);
         List<TestJavaFileObject> afterFiles =
                 Arrays.asList(new TestJavaFileObject("module-info", codeAfter),
                               new TestJavaFileObject("test.Test1", "package test; public interface Test1 {}"),
@@ -287,10 +390,17 @@ public class DependTest {
                               new TestJavaFileObject("test.TestImpl1", "package test; public class TestImpl1 implements Test1, Test2 {}"),
                               new TestJavaFileObject("test.TestImpl2", "package test; public class TestImpl2 implements Test1, Test2 {}"));
         compiler.getTask(null, null, null, options, null, afterFiles).call();
-        byte[] newHash = Files.readAllBytes(apiHash);
+        byte[] newApiHash = Files.readAllBytes(apiHash);
+        byte[] newTreeHash = Files.readAllBytes(treeHash);
 
-        if (Arrays.equals(originalHash, newHash) ^ !hashChangeExpected) {
-            throw new AssertionError("Unexpected hash state.");
+        if (Arrays.equals(originalApiHash, newApiHash) ^ !apiHashChangeExpected) {
+            throw new AssertionError("Unexpected API hash state.");
+        }
+
+        if (Arrays.equals(originalTreeHash, newTreeHash) ^ !treeHashChangeExpected) {
+            throw new AssertionError("Unexpected Tree hash state, " +
+                                     "original: " + new String(originalTreeHash) +
+                                     ", new: " + new String(newTreeHash));
         }
     }
 

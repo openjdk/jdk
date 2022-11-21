@@ -136,6 +136,10 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread;
   oop vthread_oop = NULL;
+
+  if (vthread == NULL) {
+    vthread = (jthread)JNIHandles::make_local(current_thread, JvmtiEnvBase::get_vthread_or_thread_oop(current_thread));
+  }
   jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), vthread, &java_thread, &vthread_oop);
   if (err != JVMTI_ERROR_NONE) {
     // We got an error code so we don't have a JavaThread *, but
@@ -166,8 +170,8 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 // event. The function and the event are registered here.
 //
 void JvmtiExtensions::register_extensions() {
-  _ext_functions = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiExtensionFunctionInfo*>(1, mtServiceability);
-  _ext_events = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiExtensionEventInfo*>(1, mtServiceability);
+  _ext_functions = new (mtServiceability) GrowableArray<jvmtiExtensionFunctionInfo*>(1, mtServiceability);
+  _ext_events = new (mtServiceability) GrowableArray<jvmtiExtensionEventInfo*>(1, mtServiceability);
 
   // Register our extension functions.
   static jvmtiParamInfo func_params0[] = {

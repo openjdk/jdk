@@ -2822,8 +2822,6 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
                u->Opcode() == Op_Rethrow ||
                u->Opcode() == Op_Return ||
                u->Opcode() == Op_SafePoint ||
-               u->Opcode() == Op_StoreIConditional ||
-               u->Opcode() == Op_StoreLConditional ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->uncommon_trap_request() != 0) ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->_entry_point == OptoRuntime::rethrow_stub()) ||
                u->Opcode() == Op_CallLeaf, "%s", u->Name());

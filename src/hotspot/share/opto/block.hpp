@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ struct Tarjan;
 // Abstractly provides an infinite array of Block*'s, initialized to NULL.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Block_Array : public ResourceObj {
+class Block_Array : public ArenaObj {
   friend class VMStructs;
   uint _size;                   // allocated size, as opposed to formal limit
   debug_only(uint _limit;)      // limit to formal domain
@@ -89,7 +89,7 @@ public:
 };
 
 
-class CFGElement : public ResourceObj {
+class CFGElement : public AnyObj {
   friend class VMStructs;
  public:
   double _freq; // Execution frequency (estimate)
@@ -320,6 +320,9 @@ public:
   void find_remove( const Node *n );
   // Check whether the node is in the block.
   bool contains (const Node *n) const;
+
+  // Whether the block is not root-like and does not have any predecessors.
+  bool is_trivially_unreachable() const;
 
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
@@ -610,6 +613,10 @@ class PhaseCFG : public Phase {
   void remove_empty_blocks();
   Block *fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext);
   void fixup_flow();
+  // Remove all blocks that are transitively unreachable. Such blocks can be
+  // found e.g. after PhaseCFG::convert_NeverBranch_to_Goto(). This function
+  // assumes post-fixup_flow() block indices (Block::_pre_order, Block::_rpo).
+  void remove_unreachable_blocks();
 
   // Insert a node into a block at index and map the node to the block
   void insert(Block *b, uint idx, Node *n) {
@@ -636,6 +643,8 @@ class PhaseCFG : public Phase {
   // Check that block b is in the home loop (or an ancestor) of n, if n is a
   // memory writer.
   void verify_memory_writer_placement(const Block* b, const Node* n) const NOT_DEBUG_RETURN;
+  // Check local dominator tree invariants.
+  void verify_dominator_tree() const NOT_DEBUG_RETURN;
   void verify() const NOT_DEBUG_RETURN;
 };
 

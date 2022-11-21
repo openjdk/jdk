@@ -22,11 +22,8 @@
  *
  */
 
-
-#include "jvm.h"
-#ifdef LINUX
 #include "classfile/classLoader.hpp"
-#endif
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -51,6 +48,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -137,7 +137,7 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
         success = false;
         break;
       default:
-        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / 1024);
+        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
         success = true;
         break;
     }
@@ -478,14 +478,14 @@ static void print_rlimit(outputStream* st, const char* msg,
     // soft limit
     if (rlim.rlim_cur == RLIM_INFINITY) { st->print("infinity"); }
     else {
-      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024); }
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / K); }
       else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur)); }
     }
     // hard limit
     st->print("/");
     if (rlim.rlim_max == RLIM_INFINITY) { st->print("infinity"); }
     else {
-      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / 1024); }
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / K); }
       else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_max)); }
     }
   }
@@ -554,7 +554,7 @@ void os::Posix::print_umask(outputStream* st, mode_t umsk) {
   st->print((umsk & S_IXOTH) ? "x" : "-");
 }
 
-void os::Posix::print_user_info(outputStream* st) {
+void os::print_user_info(outputStream* st) {
   unsigned id = (unsigned) ::getuid();
   st->print("uid  : %u ", id);
   id = (unsigned) ::geteuid();
@@ -568,13 +568,13 @@ void os::Posix::print_user_info(outputStream* st) {
   mode_t umsk = ::umask(0);
   ::umask(umsk);
   st->print("umask: %04o (", (unsigned) umsk);
-  print_umask(st, umsk);
+  os::Posix::print_umask(st, umsk);
   st->print_cr(")");
   st->cr();
 }
 
 // Print all active locale categories, one line each
-void os::Posix::print_active_locale(outputStream* st) {
+void os::print_active_locale(outputStream* st) {
   st->print_cr("Active Locale:");
   // Posix is quiet about how exactly LC_ALL is implemented.
   // Just print it out too, in case LC_ALL is held separately
@@ -599,6 +599,14 @@ void os::Posix::print_active_locale(outputStream* st) {
     st->print_cr("%s=%s", categories[i].name,
                  ((locale != NULL) ? locale : "<unknown>"));
   }
+}
+
+void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
+  // no prefix required
+}
+
+void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
+  // no suffix required
 }
 
 bool os::get_host_name(char* buf, size_t buflen) {
@@ -888,7 +896,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   LINUX_ONLY(stack_size -= guard_size);
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
-    stack_size / 1024, guard_size / 1024,
+    stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
 }
@@ -1120,8 +1128,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
                       "enabled executable stack (see man page execstack(8))");
 
   } else {
-#if !defined(AIX) && !defined(__APPLE__)
-    // bsd and aix don't have this
+#ifdef LINUX
+    // This only works with os::Linux::manually_expand_stack()
 
     // Accessing stack address below sp may cause SEGV if current
     // thread has MAP_GROWSDOWN stack. This should only happen when
@@ -1139,7 +1147,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     }
 #else
     tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
-#endif // AIX or BSD
+#endif // LINUX
   }
   return false;
 }
@@ -1997,8 +2005,12 @@ void os::die() {
   if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
+    ::raise(SIGKILL);
   } else {
     ::abort();
   }
 }
+
+const char* os::file_separator() { return "/"; }
+const char* os::line_separator() { return "\n"; }
+const char* os::path_separator() { return ":"; }

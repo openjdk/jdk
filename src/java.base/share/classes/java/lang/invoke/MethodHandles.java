@@ -6780,7 +6780,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                     loopReturnType + ")");
         }
 
-        if (!pred.stream().filter(Objects::nonNull).findFirst().isPresent()) {
+        if (pred.stream().noneMatch(Objects::nonNull)) {
             throw newIllegalArgumentException("no predicate found", pred);
         }
         if (pred.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).

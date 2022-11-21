@@ -545,7 +545,9 @@ protected:
   void set_vtable_length(int len) { _vtable_len= len; }
 
   vtableEntry* start_of_vtable() const;
+#if INCLUDE_CDS
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+#endif
  public:
   Method* method_at_vtable(int index);
 
@@ -554,6 +556,7 @@ protected:
     return byte_offset_of(Klass, _vtable_len);
   }
 
+#if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
@@ -569,6 +572,7 @@ protected:
       return true;
     }
   }
+#endif // INCLUDE_CDS
 
  public:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP

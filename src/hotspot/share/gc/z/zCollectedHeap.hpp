@@ -74,8 +74,6 @@ public:
   virtual bool is_in(const void* p) const;
   virtual bool requires_barriers(stackChunkOop obj) const;
 
-  virtual uint32_t hash_oop(oop obj) const;
-
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
@@ -102,7 +100,6 @@ public:
 
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nmethod);
 
   virtual WorkerThreads* safepoint_workers();

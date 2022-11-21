@@ -2,7 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8269146 8269113
  * @summary Verify errors related to pattern switches.
- * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
+ * @enablePreview
+ * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {
@@ -152,12 +153,6 @@ public class SwitchErrors {
         switch (o) {
             case default:
             case String s: break;
-        }
-    }
-    void nullAfterTotal(Object o) {
-        switch (o) {
-            case Object obj: break;
-            case null: break;
         }
     }
     void sealedNonAbstract(SealedNonAbstract obj) {

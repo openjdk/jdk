@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,13 @@ class DumpTimeLambdaProxyClassInfo {
 public:
   GrowableArray<InstanceKlass*>* _proxy_klasses;
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(NULL) {}
+  DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src);
+  DumpTimeLambdaProxyClassInfo& operator=(const DumpTimeLambdaProxyClassInfo&) = delete;
+  ~DumpTimeLambdaProxyClassInfo();
+
   void add_proxy_klass(InstanceKlass* proxy_klass) {
     if (_proxy_klasses == NULL) {
-      _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
+      _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
     }
     assert(_proxy_klasses != NULL, "sanity");
     _proxy_klasses->append(proxy_klass);
@@ -121,7 +125,6 @@ public:
       it->push(_proxy_klasses->adr_at(i));
     }
   }
-  DumpTimeLambdaProxyClassInfo clone(); // copy ctor will cause implicitly-declared
 };
 
 class RunTimeLambdaProxyClassInfo {
@@ -157,7 +160,7 @@ class DumpTimeLambdaProxyClassDictionary
   : public ResourceHashtable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
                              137, // prime number
-                             ResourceObj::C_HEAP,
+                             AnyObj::C_HEAP,
                              mtClassShared,
                              LambdaProxyClassKey::DUMPTIME_HASH,
                              LambdaProxyClassKey::DUMPTIME_EQUALS> {

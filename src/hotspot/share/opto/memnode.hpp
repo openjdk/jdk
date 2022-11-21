@@ -285,9 +285,9 @@ public:
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
-  ControlDependency control_dependency() {return _control_dependency; }
-
-  bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
+  ControlDependency control_dependency() const { return _control_dependency; }
+  bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
+  bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -785,7 +785,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
+           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
            "bad oop alias idx");
   }
   virtual int Opcode() const;
@@ -794,19 +794,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual BasicType memory_type() const { return T_VOID; } // unspecific
   int oop_alias_idx() const { return _oop_alias_idx; }
-};
-
-//------------------------------LoadPLockedNode---------------------------------
-// Load-locked a pointer from memory (either object or array).
-// On Sparc & Intel this is implemented as a normal pointer load.
-// On PowerPC and friends it's a real load-locked.
-class LoadPLockedNode : public LoadPNode {
-public:
-  LoadPLockedNode(Node *c, Node *mem, Node *adr, MemOrd mo)
-    : LoadPNode(c, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, mo) {}
-  virtual int Opcode() const;
-  virtual int store_Opcode() const { return Op_StorePConditional; }
-  virtual bool depends_only_on_test() const { return true; }
 };
 
 //------------------------------SCMemProjNode---------------------------------------
@@ -863,39 +850,6 @@ public:
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
   virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-//------------------------------StorePConditionalNode---------------------------
-// Conditionally store pointer to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StorePConditionalNode : public LoadStoreConditionalNode {
-public:
-  StorePConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
-};
-
-//------------------------------StoreIConditionalNode---------------------------
-// Conditionally store int to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StoreIConditionalNode : public LoadStoreConditionalNode {
-public:
-  StoreIConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ii ) : LoadStoreConditionalNode(c, mem, adr, val, ii) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
-};
-
-//------------------------------StoreLConditionalNode---------------------------
-// Conditionally store long to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StoreLConditionalNode : public LoadStoreConditionalNode {
-public:
-  StoreLConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
 };
 
 class CompareAndSwapNode : public LoadStoreConditionalNode {
