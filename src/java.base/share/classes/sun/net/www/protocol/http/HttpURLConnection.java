@@ -1932,9 +1932,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     continue;
                 }
 
-                try {
-                    cl = Long.parseLong(responses.findValue("content-length"));
-                } catch (Exception exc) { };
+                final String contentLengthVal = responses.findValue("content-length");
+                if (contentLengthVal != null) {
+                    try {
+                        cl = Long.parseLong(contentLengthVal);
+                    } catch (NumberFormatException nfe) {
+                        // ignore
+                    }
+                }
 
                 if (method.equals("HEAD") || cl == 0 ||
                     respCode == HTTP_NOT_MODIFIED ||
