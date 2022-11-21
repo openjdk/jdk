@@ -52,8 +52,6 @@ class ServiceThread : public JavaThread {
 
   // Add event to the service thread event queue.
   static void enqueue_deferred_event(JvmtiDeferredEvent* event);
-  // Add jt's OopHandles to the service thread OopHandle queue to be released.
-  static void add_oop_handle_release_for(JavaThread* jt);
 
   // GC support
   void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
