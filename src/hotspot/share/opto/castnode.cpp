@@ -403,83 +403,23 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   const Type *inn = phase->type(in(1));
   if( inn == Type::TOP ) return Type::TOP;  // No information yet
 
-  const TypePtr *in_type   = inn->isa_ptr();
-  const TypePtr *my_type   = _type->isa_ptr();
+  if (inn->isa_oopptr() && _type->isa_oopptr()) {
+    return ConstraintCastNode::Value(phase);
+  }
+
+  const TypePtr *in_type = inn->isa_ptr();
+  const TypePtr *my_type = _type->isa_ptr();
   const Type *result = _type;
-  if( in_type != NULL && my_type != NULL ) {
-    TypePtr::PTR   in_ptr    = in_type->ptr();
+  if (in_type != NULL && my_type != NULL) {
+    TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
       result = in_type;
-    } else if (in_ptr == TypePtr::Constant) {
-      if (my_type->isa_rawptr()) {
-        result = my_type;
-      } else {
-        const TypeOopPtr *jptr = my_type->isa_oopptr();
-        assert(jptr, "");
-        result = !in_type->higher_equal(_type)
-          ? my_type->cast_to_ptr_type(TypePtr::NotNull)
-          : in_type;
-      }
     } else {
-      result =  my_type->cast_to_ptr_type( my_type->join_ptr(in_ptr) );
+      result =  my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
     }
   }
 
-  // This is the code from TypePtr::xmeet() that prevents us from
-  // having 2 ways to represent the same type. We have to replicate it
-  // here because we don't go through meet/join.
-  if (result->remove_speculative() == result->speculative()) {
-    result = result->remove_speculative();
-  }
-
-  // Same as above: because we don't go through meet/join, remove the
-  // speculative type if we know we won't use it.
-  return result->cleanup_speculative();
-
-  // JOIN NOT DONE HERE BECAUSE OF INTERFACE ISSUES.
-  // FIX THIS (DO THE JOIN) WHEN UNION TYPES APPEAR!
-
-  //
-  // Remove this code after overnight run indicates no performance
-  // loss from not performing JOIN at CheckCastPPNode
-  //
-  // const TypeInstPtr *in_oop = in->isa_instptr();
-  // const TypeInstPtr *my_oop = _type->isa_instptr();
-  // // If either input is an 'interface', return destination type
-  // assert (in_oop == NULL || in_oop->klass() != NULL, "");
-  // assert (my_oop == NULL || my_oop->klass() != NULL, "");
-  // if( (in_oop && in_oop->klass()->is_interface())
-  //   ||(my_oop && my_oop->klass()->is_interface()) ) {
-  //   TypePtr::PTR  in_ptr = in->isa_ptr() ? in->is_ptr()->_ptr : TypePtr::BotPTR;
-  //   // Preserve cast away nullness for interfaces
-  //   if( in_ptr == TypePtr::NotNull && my_oop && my_oop->_ptr == TypePtr::BotPTR ) {
-  //     return my_oop->cast_to_ptr_type(TypePtr::NotNull);
-  //   }
-  //   return _type;
-  // }
-  //
-  // // Neither the input nor the destination type is an interface,
-  //
-  // // history: JOIN used to cause weird corner case bugs
-  // //          return (in == TypeOopPtr::NULL_PTR) ? in : _type;
-  // // JOIN picks up NotNull in common instance-of/check-cast idioms, both oops.
-  // // JOIN does not preserve NotNull in other cases, e.g. RawPtr vs InstPtr
-  // const Type *join = in->join(_type);
-  // // Check if join preserved NotNull'ness for pointers
-  // if( join->isa_ptr() && _type->isa_ptr() ) {
-  //   TypePtr::PTR join_ptr = join->is_ptr()->_ptr;
-  //   TypePtr::PTR type_ptr = _type->is_ptr()->_ptr;
-  //   // If there isn't any NotNull'ness to preserve
-  //   // OR if join preserved NotNull'ness then return it
-  //   if( type_ptr == TypePtr::BotPTR  || type_ptr == TypePtr::Null ||
-  //       join_ptr == TypePtr::NotNull || join_ptr == TypePtr::Constant ) {
-  //     return join;
-  //   }
-  //   // ELSE return same old type as before
-  //   return _type;
-  // }
-  // // Not joining two pointers
-  // return join;
+  return result;
 }
 
 //=============================================================================
