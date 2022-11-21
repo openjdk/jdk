@@ -24,7 +24,7 @@ America/Boise MST MDT
 America/Cambridge_Bay MST MDT
 America/Cancun EST
 America/Chicago CST CDT
-America/Chihuahua MST MDT
+America/Chihuahua CST
 America/Costa_Rica CST CDT
 America/Danmarkshavn GMT
 America/Dawson MST
@@ -67,18 +67,16 @@ America/Mexico_City CST CDT
 America/Moncton AST ADT
 America/Monterrey CST CDT
 America/New_York EST EDT
-America/Nipigon EST EDT
 America/Nome AKST AKDT
 America/North_Dakota/Beulah CST CDT
 America/North_Dakota/Center CST CDT
 America/North_Dakota/New_Salem CST CDT
-America/Ojinaga MST MDT
+America/Ojinaga CST
 America/Panama EST
 America/Pangnirtung EST EDT
 America/Phoenix MST
 America/Port-au-Prince EST EDT
 America/Puerto_Rico AST
-America/Rainy_River CST CDT
 America/Rankin_Inlet CST CDT
 America/Regina CST
 America/Resolute CST CDT
@@ -88,7 +86,6 @@ America/St_Johns NST NDT
 America/Swift_Current CST
 America/Tegucigalpa CST CDT
 America/Thule AST ADT
-America/Thunder_Bay EST EDT
 America/Tijuana PST PDT
 America/Toronto EST EDT
 America/Vancouver PST PDT

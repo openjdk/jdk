@@ -23,6 +23,9 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.TestFramework;
+
 import java.io.BufferedReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,6 +34,7 @@ import java.util.regex.Pattern;
  * Class representing a normal line read from the hotspot_pid* file.
  */
 class Line extends AbstractLine {
+    private static final Pattern IDEAL_COMPILE_PHASE_PATTERN = Pattern.compile("<ideal.*compile_phase='(.*)'>");
     public Line(BufferedReader reader, Pattern compileIdPatternForTestClass) {
         super(reader, compileIdPatternForTestClass);
     }
@@ -57,5 +61,11 @@ class Line extends AbstractLine {
         // Ignore OSR compilations which have compile_kind set.
         return line.startsWith("<opto_assembly") && notOSRCompilation();
     }
-}
+
+    public CompilePhase getCompilePhase() {
+        Matcher m = IDEAL_COMPILE_PHASE_PATTERN.matcher(line);
+        TestFramework.check(m.find(), "must always find \"compile_phase\" in ideal entry in " + line);
+        return CompilePhase.forName(m.group(1));
+    }
+ }
 

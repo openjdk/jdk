@@ -182,7 +182,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         }
         caption.add(classLink);
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);

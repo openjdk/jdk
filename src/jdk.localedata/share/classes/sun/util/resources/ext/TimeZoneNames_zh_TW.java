@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,7 +427,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                               "\u6cd5\u5c6c\u572d\u4e9e\u90a3\u590f\u4ee4\u6642\u9593", "GFST",
                                               "\u6CD5\u5C6C\u572D\u4E9E\u90A3\u6642\u9593", "GFT"}},
             {"America/Cayman", EST},
-            {"America/Chihuahua", MST},
+            {"America/Chihuahua", CST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},
@@ -516,7 +516,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"America/North_Dakota/Center", CST},
             {"America/North_Dakota/New_Salem", CST},
             {"America/Nuuk", WGT},
-            {"America/Ojinaga", MST},
+            {"America/Ojinaga", CST},
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"\u8607\u5229\u5357\u6642\u9593", "SRT",

@@ -108,24 +108,23 @@ public class NodeQuickSearch implements SearchProvider {
             }
 
             if (matches != null) {
-                final Set<InputNode> set = new HashSet<>(matches);
+                final Set<InputNode> nodeSet = new HashSet<>(matches);
                 final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
                 // Show "All N matching nodes" entry only if 1) there are
                 // multiple matches and 2) the query does not only contain
                 // digits (it is rare to select all nodes whose id contains a
                 // certain subsequence of digits).
                 if (matches.size() > 1 && !rawValue.matches("\\d+")) {
-                    if (!response.addResult(new Runnable() {
-                        @Override
-                        public void run() {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            if (comp != null) {
-                                if (theGraph != null) {
-                                    comp.getModel().selectGraph(theGraph);
-                                }
-                                comp.setSelectedNodes(set);
-                                comp.requestActive();
+                    if (!response.addResult(() -> {
+                        final EditorTopComponent editor = EditorTopComponent.getActive();
+                        if (editor != null) {
+                            if (theGraph != null) {
+                                editor.getModel().selectGraph(theGraph);
                             }
+                            editor.clearSelectedNodes();
+                            editor.addSelectedNodes(nodeSet, true);
+                            editor.centerSelectedNodes();
+                            editor.requestActive();
                         }
                     },
                             "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
@@ -145,15 +144,17 @@ public class NodeQuickSearch implements SearchProvider {
                     if (!response.addResult(new Runnable() {
                         @Override
                         public void run() {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            if (comp != null) {
+                            final EditorTopComponent editor = EditorTopComponent.getActive();
+                            if (editor != null) {
                                 final Set<InputNode> tmpSet = new HashSet<>();
                                 tmpSet.add(n);
                                 if (theGraph != null) {
-                                    comp.getModel().selectGraph(theGraph);
+                                    editor.getModel().selectGraph(theGraph);
                                 }
-                                comp.setSelectedNodes(tmpSet);
-                                comp.requestActive();
+                                editor.clearSelectedNodes();
+                                editor.addSelectedNodes(tmpSet, true);
+                                editor.centerSelectedNodes();
+                                editor.requestActive();
                             }
                         }
                     },
