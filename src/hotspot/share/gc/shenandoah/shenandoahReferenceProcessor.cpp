@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -495,6 +495,8 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 
   Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
 
+  double start_time = os::elapsedTime();
+
   // Process discovered lists
   ShenandoahReferenceProcessorTask task(phase, concurrent, this);
   workers->run_task(&task);
@@ -504,6 +506,8 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 
   // Collect, log and trace statistics
   collect_statistics();
+
+  _total_processing_time_ms = (os::elapsedTime() - start_time) * 1000;
 
   enqueue_references(concurrent);
 }

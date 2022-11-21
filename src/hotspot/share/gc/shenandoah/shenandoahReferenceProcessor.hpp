@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,6 +137,7 @@ private:
   volatile uint _iterate_discovered_list_id;
 
   ReferenceProcessorStats _stats;
+  double _total_processing_time_ms;
 
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
@@ -182,6 +183,8 @@ public:
   void process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
   const ReferenceProcessorStats& reference_process_stats() { return _stats; }
+
+  double total_processing_time() const { return _total_processing_time_ms; }
 
   void work();
 

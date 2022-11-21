@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,6 +423,8 @@ public:
 void ZReferenceProcessor::process_references() {
   ZStatTimer timer(ZSubPhaseConcurrentReferencesProcess);
 
+  double start_time = os::elapsedTime();
+
   // Process discovered lists
   ZReferenceProcessorTask task(this);
   _workers->run(&task);
@@ -432,6 +434,8 @@ void ZReferenceProcessor::process_references() {
 
   // Collect, log and trace statistics
   collect_statistics();
+
+  ZTracer::tracer()->report_gc_reference_process_time((os::elapsedTime() - start_time) * 1000);
 }
 
 void ZReferenceProcessor::enqueue_references() {

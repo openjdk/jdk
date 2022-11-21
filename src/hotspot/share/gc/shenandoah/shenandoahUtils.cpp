@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -68,6 +69,7 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
   _tracer->report_gc_reference_stats(_heap->ref_processor()->reference_process_stats());
+  _tracer->report_gc_reference_process_time(_heap->ref_processor()->total_processing_time());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
   _heap->set_gc_cause(GCCause::_no_gc);
