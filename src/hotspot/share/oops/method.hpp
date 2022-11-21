@@ -82,8 +82,6 @@ class Method : public Metadata {
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
-  int               _max_monitors;
-
   // Flags
   enum Flags {
     _caller_sensitive       = 1 << 0,
@@ -629,9 +627,6 @@ public:
   // has not been computed yet.
   bool guaranteed_monitor_matching() const       { return access_flags().is_monitor_matching(); }
   void set_guaranteed_monitor_matching()         { _access_flags.set_monitor_matching(); }
-
-  int max_monitors() const                       { return _max_monitors; }
-  void set_max_monitors(int max_monitors)        { _max_monitors = max_monitors; }
 
   // returns true if the method is an accessor function (setter/getter).
   bool is_accessor() const;

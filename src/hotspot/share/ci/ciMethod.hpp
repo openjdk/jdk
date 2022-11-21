@@ -87,7 +87,6 @@ class ciMethod : public ciMetadata {
 
   bool _uses_monitors;
   bool _balanced_monitors;
-  int  _max_monitors_depth;
   bool _is_c1_compilable;
   bool _is_c2_compilable;
   bool _can_be_parsed;
@@ -236,7 +235,6 @@ class ciMethod : public ciMetadata {
   // Usage note: liveness_at_bci and init_vars should be wrapped in ResourceMarks.
   bool          has_monitor_bytecodes() const    { return _uses_monitors; }
   bool          has_balanced_monitors();
-  int           max_monitors_depth();
 
   // Returns a bitmap indicating which locals are required to be
   // maintained as live for deopt.  raw_liveness_at_bci is always the
