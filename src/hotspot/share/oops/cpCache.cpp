@@ -875,7 +875,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
-void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
+oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   ResourceMark rm;
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
 
@@ -940,7 +940,6 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
 
-  // MOVE THIS SOMEWHERE ELSE
   if (UseNewCode && resolved_invokedynamic_info_array()) {
     assert(resolved_invokedynamic_info_array() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
     resolved_invokedynamic_info_element(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
@@ -954,6 +953,7 @@ void ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   if (log_stream != NULL) {
     resolved_invokedynamic_info_element(index)->print_on(log_stream);
   }
+  return appendix();
 }
 
 // Printing

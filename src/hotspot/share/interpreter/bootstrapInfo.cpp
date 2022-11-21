@@ -71,7 +71,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
     // Check if method is not null
     if ( _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method() != nullptr) {
       methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method());
-      Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->cpool_index()));
+      Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->resolved_references_index()));
       result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
       Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
       return true;
