@@ -1036,19 +1036,6 @@ bool G1YoungCollector::evacuation_failed() const {
   return _evac_failure_regions.evacuation_failed();
 }
 
-class G1PreservedMarksSet : public PreservedMarksSet {
-public:
-
-  G1PreservedMarksSet(uint num_workers) : PreservedMarksSet(true /* in_c_heap */) {
-    init(num_workers);
-  }
-
-  virtual ~G1PreservedMarksSet() {
-    assert_empty();
-    reclaim();
-  }
-};
-
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
