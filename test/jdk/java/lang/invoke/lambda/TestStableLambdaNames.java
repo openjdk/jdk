@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Test if the names of the lambda classes are stable when {@code -Djdk.internal.lambda.stableLambdaName}
+ * @summary Test if the names of the lambda classes are stable when {@code -Djdk.internal.lambda.generateStableLambdaNames}
  *          flag is set to true. This test directly calls java.lang.invoke.LambdaMetafactory#altMetafactory
  *          method to create multilple lambda instances and then checks their names stability. We created a
  *          multidimensional space of possible values for each parameter that
@@ -32,7 +32,7 @@
  *          Alternative methods of the specific method must have the same signature with difference in parameter types
  *          as long as the parameter of the alternative method is the superclass type of the type of corresponding parameter in
  *          original method
- * @run main/othervm -Djdk.internal.lambda.generateStableLambdaNames=true TestStableLambdaName
+ * @run main/othervm -Djdk.internal.lambda.generateStableLambdaNames=true TestStableLambdaNames
  */
 
 import java.lang.invoke.LambdaMetafactory;
@@ -48,12 +48,13 @@ import java.util.function.Predicate;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-public class TestStableLambdaName {
+public class TestStableLambdaNames {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-    /* Different types of lambda classes based on value of flags parameter in the
-     * java.lang.invoke.LambdaMetafactory#altMetafactory.
-     * java.lang.invoke.LambdaMetafactory#altMetafactory uses bitwise and with this
+    /**
+     * Different types of lambda classes based on value of flags parameter in the
+     * {@link java.lang.invoke.LambdaMetafactory#altMetafactory}.
+     * {@link java.lang.invoke.LambdaMetafactory#altMetafactory} uses bitwise and with this
      * parameter and predefined values to determine if lambda is serializable, has
      * altMethods and altInterfaces etc.
      */
@@ -73,15 +74,15 @@ public class TestStableLambdaName {
         }
     }
 
-    private static final String[] interfaceMethods = new String[]{"accept", "consume", "apply", "supply", "get", "test", "getAsBoolean"};
-    private static final Class<?>[] interfaces = new Class<?>[]{Consumer.class, Function.class, Predicate.class, Supplier.class, BooleanSupplier.class};
-    // List of method types for defined methods
-    private static final MethodType[] methodTypes = new MethodType[]{MethodType.methodType(String.class, Integer.class), MethodType.methodType(Throwable.class, AssertionError.class)};
-    private static final Class<?>[] altInterfaces = new Class<?>[]{Cloneable.class, Remote.class};
-    // Alternative methods that corresponds to method1
-    private static final MethodType[] altMethodsMethod1 = new MethodType[]{MethodType.methodType(String.class, Number.class)};
-    // Alternative methods that corresponds to method2
-    private static final MethodType[] altMethodsMethod2 = new MethodType[]{MethodType.methodType(Throwable.class, Error.class), MethodType.methodType(Throwable.class, Throwable.class)};
+    private static final String[] interfaceMethods = {"accept", "consume", "apply", "supply", "get", "test", "getAsBoolean"};
+    private static final Class<?>[] interfaces = {Consumer.class, Function.class, Predicate.class, Supplier.class, BooleanSupplier.class};
+    /** List of method types for defined methods */
+    private static final MethodType[] methodTypes = {MethodType.methodType(String.class, Integer.class), MethodType.methodType(Throwable.class, AssertionError.class)};
+    private static final Class<?>[] altInterfaces = {Cloneable.class, Remote.class};
+    /** Alternative methods that corresponds to method1 */
+    private static final MethodType[] altMethodsMethod1 = {MethodType.methodType(String.class, Number.class)};
+    /** Alternative methods that corresponds to method2 */
+    private static final MethodType[] altMethodsMethod2 = {MethodType.methodType(Throwable.class, Error.class), MethodType.methodType(Throwable.class, Throwable.class)};
 
     private static String method1(Number number) {
         return String.valueOf(number);
@@ -102,7 +103,7 @@ public class TestStableLambdaName {
     }
 
     private static String removeHashFromLambdaName(String name) {
-        return name.substring(0, name.indexOf("/0x"));
+        return name.substring(0, name.indexOf("/0x0"));
     }
 
     private static void createPlainLambdas(Set<String> lambdaNames, int flags, MethodHandle[] methodHandles) throws Throwable {
@@ -246,15 +247,6 @@ public class TestStableLambdaName {
         }
     }
 
-    private static void createMethodReferencesLambdas(Set<String> lambdaNames) {
-        Runnable lambda = TestStableLambdaName::foo;
-        lambdaNames.add(removeHashFromLambdaName(lambda.getClass().getName()));
-    }
-
-    private static void foo() {
-        System.out.println("Hello world!");
-    }
-
     private static void createLambdasWithDifferentParameters(Set<String> lambdaNames, MethodHandle[] methodHandles) throws Throwable {
         // All lambdas with flags 0
         createPlainLambdas(lambdaNames, lambdaType.NOT_SERIALIZABLE_NO_ALT_METHODS_NO_ALT_INTERFACES.index, methodHandles);
@@ -279,19 +271,17 @@ public class TestStableLambdaName {
 
         // All lambdas with flags 7
         createLambdasWithAltInterfacesAndAltMethods(lambdaNames, lambdaType.SERIALIZABLE_HAS_ALT_METHODS_HAS_ALT_INTERFACES.index, methodHandles);
-
-        // Method reference lambdas
-        createMethodReferencesLambdas(lambdaNames);
     }
 
     public static void main(String[] args) throws Throwable {
         MethodType methodTypeForMethod1 = methodTypes[0];
         MethodType methodTypeForMethod2 = methodTypes[1];
-        MethodHandle[] methodHandles = new MethodHandle[]{lookup.findStatic(TestStableLambdaName.class, "method1", methodTypeForMethod1),
-                lookup.findStatic(TestStableLambdaName.class, "method2", methodTypeForMethod2)};
+        MethodHandle[] methodHandles = {lookup.findStatic(TestStableLambdaNames.class, "method1", methodTypeForMethod1),
+                lookup.findStatic(TestStableLambdaNames.class, "method2", methodTypeForMethod2)};
 
         Set<String> lambdaClassStableNames = new HashSet<>();
         createLambdasWithDifferentParameters(lambdaClassStableNames, methodHandles);
+        System.err.println(lambdaClassStableNames.size());
 
         Set<String> lambdaClassStableNamesTest = new HashSet<>();
         createLambdasWithDifferentParameters(lambdaClassStableNamesTest, methodHandles);
