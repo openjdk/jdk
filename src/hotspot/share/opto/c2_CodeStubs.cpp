@@ -33,7 +33,6 @@
 volatile int C2SafepointPollStub::_stub_size = 0;
 volatile int C2EntryBarrierStub::_stub_size = 0;
 volatile int C2CheckLockStackStub::_stub_size = 0;
-volatile int C2FastLockEnterStub::_stub_size = 0;
 
 int C2CodeStub::measure_stub_size(C2CodeStub& stub) {
   Compile* const C = Compile::current();

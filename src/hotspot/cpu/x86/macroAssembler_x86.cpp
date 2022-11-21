@@ -9608,31 +9608,21 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   assert_different_registers(obj, hdr, thread, tmp);
 
   // First we need to check if the lock-stack has room for pushing the object reference.
-  movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
   if (rt_check_stack) {
+    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
     cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
     jcc(Assembler::greaterEqual, slow);
   }
 #ifdef ASSERT
   else {
     Label ok;
+    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
     cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
     jcc(Assembler::less, ok);
     stop("Not enough room in lock stack; should have been checked in the method prologue");
     bind(ok);
   }
 #endif
-
-  if (!rt_check_stack) {
-    // Optimistically push object to lock-stack. If locking fails,
-    // the slow-path will have to un-push it before retrying in runtime.
-    // The reason for doing it this way instead of pushing on the success
-    // path is that it streamlines the common/success path and avoids
-    // branches.
-    movptr(Address(tmp, 0), obj);
-    increment(tmp, oopSize);
-    movptr(Address(thread, Thread::lock_stack_current_offset()), tmp);
-  }
 
   // Now we attempt to take the fast-lock.
   // Clear lowest two header bits (locked state).
@@ -9644,17 +9634,11 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::notEqual, slow);
 
-  if (rt_check_stack) {
-    // If we are checking the lock-stack at runtime, we can not do the optimistic
-    // push above, because that check also branches into the slow-path, and that slow-path
-    // cannot know whether or not it has to un-push the object.
-    // Therefore we have to do push the object here, after the CAS on the success path.
-    // Fortunately, this is only the case for interpreter and native wrapper.
-    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
-    movptr(Address(tmp, 0), obj);
-    increment(tmp, oopSize);
-    movptr(Address(thread, Thread::lock_stack_current_offset()), tmp);
-  }
+  // If successful, push object to lock-stack.
+  movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
+  movptr(Address(tmp, 0), obj);
+  increment(tmp, oopSize);
+  movptr(Address(thread, Thread::lock_stack_current_offset()), tmp);
 }
 
 void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {

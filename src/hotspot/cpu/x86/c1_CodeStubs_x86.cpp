@@ -268,11 +268,6 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
 
-  if (UseFastLocking) {
-    // Un-push object from lock-stack before diving into runtime.
-    __ subptr(Address(r15_thread, Thread::lock_stack_current_offset()), oopSize);
-  }
-
   ce->store_parameter(_obj_reg->as_register(),  1);
   ce->store_parameter(_lock_reg->as_register(), 0);
   Runtime1::StubID enter_id;
@@ -290,11 +285,6 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-
-  if (UseFastLocking) {
-    // Un-pop object from lock-stack before diving into runtime.
-    __ addptr(Address(r15_thread, Thread::lock_stack_current_offset()), oopSize);
-  }
 
   if (_compute_lock) {
     // lock_reg was destroyed by fast unlocking attempt => recompute it

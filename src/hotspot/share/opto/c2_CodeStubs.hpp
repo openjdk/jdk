@@ -109,14 +109,4 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
-class C2FastLockEnterStub : public C2CodeStub {
-private:
-  static volatile int _stub_size;
-public:
-  C2FastLockEnterStub() : C2CodeStub() {}
-
-  int size() { return stub_size(&_stub_size); }
-  void emit(C2_MacroAssembler& masm);
-};
-
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP
