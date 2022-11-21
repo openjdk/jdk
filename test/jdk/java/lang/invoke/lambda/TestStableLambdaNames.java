@@ -103,7 +103,7 @@ public class TestStableLambdaNames {
     }
 
     private static String removeHashFromLambdaName(String name) {
-        return name.substring(0, name.indexOf("/0x0"));
+        return name.substring(0, name.indexOf("/0x"));
     }
 
     private static void createPlainLambdas(Set<String> lambdaNames, int flags, MethodHandle[] methodHandles) throws Throwable {
