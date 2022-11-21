@@ -25,8 +25,9 @@ import java.awt.Button;
 import java.awt.Choice;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Window;
 import java.awt.event.FocusAdapter;
@@ -96,7 +97,7 @@ public class AccessibleChoiceTest {
             throw new RuntimeException("Can't create robot");
         }
         robot.waitForIdle();
-        robot.delay(2000);
+        robot.delay(1000);
         robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
 
@@ -146,9 +147,10 @@ public class AccessibleChoiceTest {
             System.err.println("Failed on os: " + osName);
 
             // Save image to better debug the status of test when failing
-            Rectangle screenRect = new Rectangle(100, 200,
-                    win.getWidth(), win.getHeight() + 20);
-            BufferedImage failImage = robot.createScreenCapture(screenRect);
+            GraphicsConfiguration ge = GraphicsEnvironment
+                    .getLocalGraphicsEnvironment().getDefaultScreenDevice()
+                    .getDefaultConfiguration();
+            BufferedImage failImage = robot.createScreenCapture(ge.getBounds());
             ImageIO.write(failImage, "png", new File("failImage.png"));
 
             throw new RuntimeException("Choice can't be controlled by keyboard");
