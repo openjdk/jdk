@@ -45,7 +45,6 @@ import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import static sun.security.pkcs11.TemplateManager.*;
-import static sun.security.pkcs11.P11Cipher.*;
 
 /**
  * P11 KeyWrap Cipher implementation class for native impl which only support
@@ -561,8 +560,8 @@ final class P11KeyWrapCipher extends CipherSpi {
 
         boolean doCancel = true;
         int k = 0;
-        try (var inGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
-             var outGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
+        try (var inGuard = NIO_ACCESS.acquireSession(inBuffer);
+             var outGuard = NIO_ACCESS.acquireSession(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;

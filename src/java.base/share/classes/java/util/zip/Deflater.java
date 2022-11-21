@@ -341,7 +341,7 @@ public class Deflater {
             ensureOpen();
             if (dictionary.isDirect()) {
                 long address = ((DirectBuffer) dictionary).address();
-                try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(dictionary)) {
+                try (var guard = NIO_ACCESS.acquireSession(dictionary)) {
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     Reference.reachabilityFence(dictionary);
@@ -591,7 +591,7 @@ public class Deflater {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(input)) {
+                    try (var guard = NIO_ACCESS.acquireSession(input)) {
                         long inputAddress = ((DirectBuffer) input).address();
                         result = deflateBufferBytes(zsRef.address(),
                             inputAddress + inputPos, inputRem,
@@ -715,7 +715,7 @@ public class Deflater {
                 inputPos = this.inputPos;
                 if (output.isDirect()) {
                     long outputAddress = ((DirectBuffer) output).address();
-                    try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
+                    try (var guard = NIO_ACCESS.acquireSession(output)) {
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
                             outputAddress + outputPos, outputRem,
@@ -736,10 +736,10 @@ public class Deflater {
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
                     long inputAddress = ((DirectBuffer) input).address();
-                    try (var inGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
+                    try (var inGuard = NIO_ACCESS.acquireSession(output)) {
                         if (output.isDirect()) {
                             long outputAddress = outputPos + ((DirectBuffer) output).address();
-                            try (var outGuard = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
+                            try (var outGuard = NIO_ACCESS.acquireSession(output)) {
                                 result = deflateBufferBuffer(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     outputAddress, outputRem,
@@ -763,7 +763,7 @@ public class Deflater {
                     int inputOffset = ZipUtils.getBufferOffset(input);
                     if (output.isDirect()) {
                         long outputAddress = ((DirectBuffer) output).address();
-                        try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
+                        try (var guard = NIO_ACCESS.acquireSession(output)) {
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
                                 outputAddress + outputPos, outputRem,

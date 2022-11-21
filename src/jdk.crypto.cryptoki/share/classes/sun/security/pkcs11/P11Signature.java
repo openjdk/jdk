@@ -38,7 +38,6 @@ import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
 
 import sun.security.rsa.RSAUtil;
 import sun.security.rsa.RSAPadding;
@@ -594,7 +593,7 @@ final class P11Signature extends SignatureSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireSession(byteBuffer)) {
                 if (mode == M_SIGN) {
                     token.p11.C_SignUpdate
                         (session.id(), addr + ofs, null, 0, len);

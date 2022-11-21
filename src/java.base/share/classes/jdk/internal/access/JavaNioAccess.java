@@ -100,9 +100,9 @@ public interface JavaNioAccess {
      *     }
      * }
      *}
-     * @see #acquireSessionAsAutoCloseable(Buffer)
+     * @see #acquireSession(Buffer)
      */
-    Runnable acquireSession(Buffer buffer, boolean async);
+    Runnable acquireSessionOrNull(Buffer buffer, boolean async);
 
     /**
      * Used by operations to make a buffer's session non-closeable
@@ -110,14 +110,14 @@ public interface JavaNioAccess {
      * A valid close handler is always returned (if the buffer has no scope, or acquiring is not
      * required to guarantee safety, a noop close handler is returned).
      * {@snippet lang = java:
-     * try (var guard = acquireSessionAsAutoCloseable(buffer)) {
+     * try (var guard = acquireSession(buffer)) {
      *     performOperation(buffer);
      * }
      *}
      *
-     * @see #acquireSession(Buffer, boolean)
+     * @see #acquireSessionOrNull(Buffer, boolean)
      */
-    SessionAcquisition acquireSessionAsAutoCloseable(Buffer buffer);
+    SessionAcquisition acquireSession(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.

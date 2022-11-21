@@ -785,7 +785,7 @@ class DatagramChannelImpl
                                         boolean connected)
         throws IOException
     {
-        try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+        try (var guard = NIO_ACCESS.acquireSession(bb)) {
             int n = receive0(fd,
                     ((DirectBuffer) bb).address() + pos, rem,
                     sourceSockAddr.address(),
@@ -938,7 +938,7 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
-        try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+        try (var guard = NIO_ACCESS.acquireSession(bb)) {
             int addressLen = targetSocketAddress(target);
             written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
                             targetSockAddr.address(), addressLen);

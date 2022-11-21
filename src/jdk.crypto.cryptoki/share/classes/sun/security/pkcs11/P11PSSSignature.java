@@ -25,8 +25,6 @@
 
 package sun.security.pkcs11;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import jdk.internal.access.JavaNioAccess;
@@ -34,7 +32,6 @@ import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import java.util.Hashtable;
-import java.util.Arrays;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
@@ -629,7 +626,7 @@ final class P11PSSSignature extends SignatureSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireSession(byteBuffer)) {
                 if (mode == M_SIGN) {
                     if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate

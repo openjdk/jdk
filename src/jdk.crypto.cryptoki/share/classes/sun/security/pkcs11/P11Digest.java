@@ -25,7 +25,6 @@
 
 package sun.security.pkcs11;
 
-import java.util.*;
 import java.nio.ByteBuffer;
 
 import java.security.*;
@@ -311,7 +310,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
                 token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
                 bufOfs = 0;
             }
-            try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireSession(byteBuffer)) {
                 token.p11.C_DigestUpdate(session.id(), addr + ofs, null, 0, len);
             }
             byteBuffer.position(ofs + len);
