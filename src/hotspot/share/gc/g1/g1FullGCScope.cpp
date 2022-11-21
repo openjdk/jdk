@@ -50,7 +50,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _active(),
     _tracer_mark(&_timer, _tracer),
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
-    _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
+    _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
     _region_compaction_threshold(do_maximal_compaction ?
                                  HeapRegion::GrainWords :
