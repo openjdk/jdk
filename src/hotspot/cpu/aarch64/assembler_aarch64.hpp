@@ -2422,48 +2422,54 @@ public:
 #undef INSN3
 #undef INSN4
 
+// Handle common single-structure ld/st parameter sanity checks
+// for all variations (1 to 4) of SIMD reigster inputs.  This
+// method will call the routine that generates the opcode.
+template<typename R, typename... Rx>
+  void ldst_sstr(SIMD_RegVariant T, int index, const Address &a,
+            int op1, int op2, R firstReg, Rx... otherRegs) {
+    const FloatRegister vtSet[] = { firstReg, otherRegs... };
+    const int regCount = sizeof...(otherRegs) + 1;
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||
+              (T == H && index <= 7) || (T == S && index <= 3) ||
+              (T == D && index <= 1)), "invalid index");
+    assert(regCount >= 1 && regCount <= 4, "illegal register count");
+
+    // Check to make sure when multiple SIMD registers are used
+    // that they are in successive order.
+    for (int i = 0; i < regCount - 1; i++) {
+      assert(vtSet[i]->successor() == vtSet[i + 1],
+             "Registers must be ordered");
+    }
+
+    ld_st(firstReg, T, index, a, op1, op2, regCount);
+  }
+
 // Define a set of INSN1/2/3/4 macros to handle single-structure
 // load/store instructions.
 #define INSN1(NAME, op1, op2)                                           \
   void NAME(FloatRegister Vt, SIMD_RegVariant T, int index,             \
             const Address &a) {                                         \
-    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
-                (T == H && index <= 7) || (T == S && index <= 3) ||     \
-                (T == D && index <= 1)), "invalid index");              \
-    ld_st(Vt, T, index, a, op1, op2, 1);                                \
+    ldst_sstr(T, index, a, op1, op2, Vt);                               \
  }
 
 #define INSN2(NAME, op1, op2)                                           \
   void NAME(FloatRegister Vt, FloatRegister Vt2, SIMD_RegVariant T,     \
             int index, const Address &a) {                              \
-    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
-                (T == H && index <= 7) || (T == S && index <= 3) ||     \
-                (T == D && index <= 1)), "invalid index");              \
-    assert(Vt->successor() == Vt2, "Registers must be ordered");        \
-    ld_st(Vt, T, index, a, op1, op2, 2);                                \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2);                          \
   }
 
 #define INSN3(NAME, op1, op2)                                           \
   void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
             SIMD_RegVariant T, int index, const Address &a) {           \
-    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
-                (T == H && index <= 7) || (T == S && index <= 3) ||     \
-                (T == D && index <= 1)), "invalid index");              \
-    assert(Vt->successor() == Vt2 && Vt2->successor() == Vt3,           \
-           "Registers must be ordered");                                \
-    ld_st(Vt, T, index, a, op1, op2, 3);                                \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3);                     \
   }
 
 #define INSN4(NAME, op1, op2)                                           \
   void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
             FloatRegister Vt4, SIMD_RegVariant T, int index,            \
             const Address &a) {                                         \
-    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
-                (T == H && index <= 7) || (T == S && index <= 3) ||     \
-                (T == D && index <= 1)), "invalid index");              \
-    assert(Vt->successor() == Vt2 && Vt2->successor() == Vt3 &&         \
-           Vt3->successor() == Vt4, "Registers must be ordered");       \
-    ld_st(Vt, T, index, a, op1, op2, 4);                                \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3, Vt4);                \
   }
 
   INSN1(st1, 0b001101000, 0b0000);
