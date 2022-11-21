@@ -2564,9 +2564,11 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
   size_t eden_capacity_bytes =
     (policy()->young_list_target_length() * HeapRegion::GrainBytes) - survivor_used_bytes;
 
+  size_t old_used_bytes = _monitoring_support->old_gen_used();
+
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
   return G1HeapSummary(heap_summary, heap_used, eden_used_bytes,
-                       eden_capacity_bytes, survivor_used_bytes, num_regions());
+                       eden_capacity_bytes, survivor_used_bytes, old_used_bytes, num_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
