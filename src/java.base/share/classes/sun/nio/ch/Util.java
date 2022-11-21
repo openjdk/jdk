@@ -216,8 +216,6 @@ public class Util {
 
     /**
      * Returns a temporary buffer of at least the given size
-     * <p>
-     * The returned ByteBuffer is guaranteed not to be asynchronously closeable.
      */
     public static ByteBuffer getTemporaryDirectBuffer(int size) {
         // If a buffer of this size is too large for the cache, there
