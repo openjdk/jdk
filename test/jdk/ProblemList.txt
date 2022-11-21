@@ -375,7 +375,6 @@ java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8023562 macosx-all
 java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407 macosx-all
@@ -556,6 +555,8 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc6
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 
+java/nio/channels/FileChannel/FileExtensionAndMap.java          8297292 generic-all
+
 ############################################################################
 
 # jdk_rmi
@@ -632,7 +633,6 @@ javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
-javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
 javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 
 ############################################################################
@@ -673,6 +673,8 @@ java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
+java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8297296 macosx-all
+
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
@@ -699,8 +701,6 @@ tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
 # jdk_jdi
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
-
-com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
