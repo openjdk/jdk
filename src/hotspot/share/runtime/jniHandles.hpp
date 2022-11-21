@@ -147,8 +147,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   JNIHandleBlock* _pop_frame_link;              // Block to restore on PopLocalFrame call
   uintptr_t*      _free_list;                   // Handle free list
 
-  // Check JNI, "planned capacity" for current frame (or push/ensure)
-  size_t          _planned_capacity;
   static int      _blocks_allocated;            // For debugging/printing
 
   // Fill block with bad_handle values
@@ -178,11 +176,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Garbage collection support
   // Traversal of handles
   void oops_do(OopClosure* f);
-
-  // Checked JNI support
-  void set_planned_capacity(size_t planned_capacity) { _planned_capacity = planned_capacity; }
-  const size_t get_planned_capacity() { return _planned_capacity; }
-  const size_t get_number_of_live_handles();
 
   // Debugging
   bool chain_contains(jobject handle) const;    // Does this block or following blocks contain handle
