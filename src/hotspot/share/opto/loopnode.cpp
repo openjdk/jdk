@@ -3672,7 +3672,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 
     PhiNode* phi2 = out->as_Phi();
-    Node *incr2 = phi2->in( LoopNode::LoopBackControl );
+    Node* incr2 = phi2->in(LoopNode::LoopBackControl);
     // Look for induction variables of the form:  X += constant
     if (phi2->region() != loop->_head ||
         incr2->req() != 3 ||
@@ -3683,7 +3683,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       continue;
     }
 
-    if (incr2->in(1)->is_ConstraintCast() && 
+    if (incr2->in(1)->is_ConstraintCast() &&
         !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
       // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
       continue;
@@ -3693,7 +3693,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // count-up array indices are common. We only RCE references off
     // the trip-counter, so we need to convert all these to trip-counter
     // expressions.
-    Node *init2 = phi2->in( LoopNode::EntryControl );
+    Node* init2 = phi2->in(LoopNode::EntryControl);
     int stride_con2 = incr2->in(2)->get_int();
 
     // The ratio of the two strides cannot be represented as an int
