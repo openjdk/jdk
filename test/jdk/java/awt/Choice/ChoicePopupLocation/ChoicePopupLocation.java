@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+import javax.imageio.ImageIO;
 
 /**
  * @test
@@ -120,6 +124,11 @@ public final class ChoicePopupLocation {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         if (choice.getSelectedIndex() == 0) {
+            GraphicsConfiguration ge = GraphicsEnvironment
+                    .getLocalGraphicsEnvironment().getDefaultScreenDevice()
+                    .getDefaultConfiguration();
+            BufferedImage failImage = robot.createScreenCapture(ge.getBounds());
+            ImageIO.write(failImage, "png", new File("failImage.png"));
             throw new RuntimeException();
         }
     }
