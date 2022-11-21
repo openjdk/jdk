@@ -49,7 +49,7 @@ public final class SystemProps {
      *
      * @return a boolean value
      */
-    public static boolean checkIoTmpdir() {
+    public static boolean isBadIoTmpdir() {
         return customTmpdir != null && !(new File(customTmpdir).isDirectory());
     }
 

@@ -27,7 +27,6 @@
  * @summary Produce warning when user specified java.io.tmpdir directory doesn't exist
  */
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -45,9 +44,8 @@ public class TempDirDoesNotExist {
         String userDir = System.getProperty("user.home");
         String timeStamp = java.time.Instant.now().toString();
         String tempDir = Path.of(userDir,"non-existing-", timeStamp).toString();
-        System.out.println("args length:"+args.length);
+
         for (String arg : args) {
-            System.out.println("args value:" + arg);
             if (arg.equals("io")) {
                 try {
                     File.createTempFile("prefix", ".suffix");
@@ -112,6 +110,6 @@ public class TempDirDoesNotExist {
                 -> line.equalsIgnoreCase(ioWarningMsg)).collect(Collectors.toList());
         if (list.size() != 1 || originalOutput.getExitValue() != exitValue)
             throw new Exception("counter of messages is not one, but " + list.size()
-                    + "\n" + originalOutput.asLines().toString());
+                    + "\n" + originalOutput.asLines().toString() + "\n");
     }
 }
