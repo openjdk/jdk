@@ -544,6 +544,7 @@
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
+     static_field(StubRoutines,                _poly1305_processBlocks,                       address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
