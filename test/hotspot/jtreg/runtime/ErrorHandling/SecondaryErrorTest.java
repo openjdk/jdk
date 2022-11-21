@@ -127,8 +127,6 @@ public class SecondaryErrorTest {
       patternlist.add(Pattern.compile("\\[siginfo: si_signo: 11 \\(SIGSEGV\\).*\\]"));
       patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
       patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
-      patternlist.add(Pattern.compile(".*VMError::report\\(.*"));
-      patternlist.add(Pattern.compile(".*VMError::report_and_die\\(.*"));
     }
     // and again, to see that repeated error reporting steps work
     patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
@@ -137,8 +135,6 @@ public class SecondaryErrorTest {
       patternlist.add(Pattern.compile("\\[siginfo: si_signo: 11 \\(SIGSEGV\\).*\\]"));
       patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
       patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
-      patternlist.add(Pattern.compile(".*VMError::report\\(.*"));
-      patternlist.add(Pattern.compile(".*VMError::report_and_die\\(.*"));
     }
     Pattern[] pattern = patternlist.toArray(new Pattern[] {});
     int currentPattern = 0;
