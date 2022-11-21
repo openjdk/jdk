@@ -190,8 +190,6 @@ abstract class UnixUserDefinedFileAttributeView
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
-                // 'nb' is guaranteed not to be associated with a closeable session.
-                // Hence, there is no need of acquiring any session.
                 long address = nb.address();
                 int n = read(name, address, rem);
 
@@ -254,8 +252,6 @@ abstract class UnixUserDefinedFileAttributeView
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
-                // 'nb' is guaranteed not to be associated with a closeable session.
-                // Hence, there is no need of acquiring any session.
                 long address = nb.address();
 
                 if (src.hasArray()) {

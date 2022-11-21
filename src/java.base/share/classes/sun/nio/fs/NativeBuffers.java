@@ -88,6 +88,8 @@ class NativeBuffers {
      * Returns a native buffer, of at least the given size. The native buffer
      * is taken from the thread local cache if possible; otherwise it is
      * allocated from the heap.
+     * <p>
+     * The returned NativeBuffer is guaranteed not to be asynchronously closeable.
      */
     static NativeBuffer getNativeBuffer(int size) {
         NativeBuffer buffer = getNativeBufferFromCache(size);
