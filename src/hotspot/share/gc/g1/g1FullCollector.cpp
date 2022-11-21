@@ -290,6 +290,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     G1FullGCRefProcProxyTask task(*this, reference_processor()->max_num_queues());
     const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, pt);
     scope()->tracer()->report_gc_reference_stats(stats);
+    scope()->tracer()->report_gc_reference_process_time(pt.total_time_ms());
     pt.print_all_references();
     assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
 

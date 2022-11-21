@@ -72,8 +72,10 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
   send_reference_stats_event(REF_WEAK, rps.weak_count());
   send_reference_stats_event(REF_FINAL, rps.final_count());
   send_reference_stats_event(REF_PHANTOM, rps.phantom_count());
+}
 
-  send_reference_processing_time_event(rps.total_process_time());
+void GCTracer::report_gc_reference_process_time(const double total_time_ms) const {
+  send_reference_processing_time_event(total_time_ms);
 }
 
 #if INCLUDE_SERVICES
