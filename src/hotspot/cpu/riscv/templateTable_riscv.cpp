@@ -285,11 +285,11 @@ void TemplateTable::sipush() {
   __ sraiw(x10, x10, 16);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Label call_ldc, notFloat, notClass, notInt, Done;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
    __ get_unsigned_2_byte_index_at_bcp(x11, 1);
   } else {
    __ load_unsigned_byte(x11, at_bcp(1));
@@ -320,7 +320,7 @@ void TemplateTable::ldc(bool wide) {
   __ bne(x13, t1, notClass);
 
   __ bind(call_ldc);
-  __ mv(c_rarg1, wide);
+  __ mv(c_rarg1, is_ldc_wide(type) ? 1 : 0);
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), c_rarg1);
   __ push_ptr(x10);
   __ verify_oop(x10);
@@ -354,14 +354,14 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
   const Register result = x10;
   const Register tmp = x11;
   const Register rarg = x12;
 
-  const int index_size = wide ? sizeof(u2) : sizeof(u1);
+  const int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
 
