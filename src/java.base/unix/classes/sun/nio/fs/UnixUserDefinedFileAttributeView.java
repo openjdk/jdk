@@ -30,6 +30,9 @@ import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.*;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.UnixConstants.*;
@@ -42,6 +45,8 @@ abstract class UnixUserDefinedFileAttributeView
     extends AbstractUserDefinedFileAttributeView
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // namespace for extended user attributes
     private static final String USER_NAMESPACE = "user.";
@@ -161,7 +166,7 @@ abstract class UnixUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "try"})
     @Override
     public int read(String name, ByteBuffer dst) throws IOException {
         if (System.getSecurityManager() != null)
@@ -175,7 +180,7 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (dst instanceof sun.nio.ch.DirectBuffer buf) {
-            try {
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
                 long address = buf.address() + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
@@ -185,6 +190,8 @@ abstract class UnixUserDefinedFileAttributeView
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
+                // 'nb' is guaranteed not to be associated with a closeable session.
+                // Hence, there is no need of acquiring any session.
                 long address = nb.address();
                 int n = read(name, address, rem);
 
@@ -225,7 +232,7 @@ abstract class UnixUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "try"})
     @Override
     public int write(String name, ByteBuffer src) throws IOException {
         if (System.getSecurityManager() != null)
@@ -237,7 +244,7 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof sun.nio.ch.DirectBuffer buf) {
-            try {
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(src)) {
                 long address = buf.address() + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
@@ -247,6 +254,8 @@ abstract class UnixUserDefinedFileAttributeView
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
+                // 'nb' is guaranteed not to be associated with a closeable session.
+                // Hence, there is no need of acquiring any session.
                 long address = nb.address();
 
                 if (src.hasArray()) {

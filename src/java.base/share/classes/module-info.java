@@ -166,7 +166,9 @@ module java.base {
         jdk.jartool,
         jdk.jlink,
         jdk.jfr,
-        jdk.net;
+        jdk.net,
+        jdk.sctp,
+        jdk.crypto.cryptoki;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to

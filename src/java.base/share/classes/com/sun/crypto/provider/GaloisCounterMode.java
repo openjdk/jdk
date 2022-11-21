@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
@@ -91,6 +93,8 @@ abstract class GaloisCounterMode extends CipherSpi {
     private static final int SPLIT_LEN = 1048576;  // 1MB
 
     static final byte[] EMPTY_BUF = new byte[0];
+
+    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private boolean initialized = false;
 
@@ -907,44 +911,49 @@ abstract class GaloisCounterMode extends CipherSpi {
          * and if dst will overwrite src data before src can be processed.
          * If so, make a copy to put the dst data in.
          */
+        @SuppressWarnings("try")
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
-                // Get the current memory address for the given ByteBuffers
-                long srcaddr = dsrc.address();
-                long dstaddr = ddst.address();
+                try (var srcAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(src);
+                     var dstAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
 
-                // Find the lowest attachment that is the base memory address
-                // of the shared memory for the src object
-                while (dsrc.attachment() != null) {
-                    srcaddr = ((DirectBuffer) dsrc.attachment()).address();
-                    dsrc = (DirectBuffer) dsrc.attachment();
-                }
+                    // Get the current memory address for the given ByteBuffers
+                    long srcaddr = dsrc.address();
+                    long dstaddr = ddst.address();
 
-                // Find the lowest attachment that is the base memory address
-                // of the shared memory for the dst object
-                while (ddst.attachment() != null) {
-                    dstaddr = ((DirectBuffer) ddst.attachment()).address();
-                    ddst = (DirectBuffer) ddst.attachment();
-                }
+                    // Find the lowest attachment that is the base memory address
+                    // of the shared memory for the src object
+                    while (dsrc.attachment() != null) {
+                        srcaddr = ((DirectBuffer) dsrc.attachment()).address();
+                        dsrc = (DirectBuffer) dsrc.attachment();
+                    }
 
-                // If the base addresses are not the same, there is no overlap
-                if (srcaddr != dstaddr) {
-                    return dst;
-                }
-                // At this point we know these objects share the same memory.
-                // This checks the starting position of the src and dst address
-                // for overlap.
-                // It uses the base address minus the passed object's address to
-                // get the offset from the base address, then add the position()
-                // from the passed object.  That gives up the true offset from
-                // the base address.  As long as the src side is >= the dst
-                // side, we are not in overlap.
-                if (((DirectBuffer) src).address() - srcaddr + src.position() >=
-                    ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
-                    return dst;
+                    // Find the lowest attachment that is the base memory address
+                    // of the shared memory for the dst object
+                    while (ddst.attachment() != null) {
+                        dstaddr = ((DirectBuffer) ddst.attachment()).address();
+                        ddst = (DirectBuffer) ddst.attachment();
+                    }
+
+                    // If the base addresses are not the same, there is no overlap
+                    if (srcaddr != dstaddr) {
+                        return dst;
+                    }
+                    // At this point we know these objects share the same memory.
+                    // This checks the starting position of the src and dst address
+                    // for overlap.
+                    // It uses the base address minus the passed object's address to
+                    // get the offset from the base address, then add the position()
+                    // from the passed object.  That gives up the true offset from
+                    // the base address.  As long as the src side is >= the dst
+                    // side, we are not in overlap.
+                    if (((DirectBuffer) src).address() - srcaddr + src.position() >=
+                            ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                        return dst;
+                    }
                 }
 
             } else if (!src.isDirect() && !dst.isDirect()) {
@@ -1510,6 +1519,7 @@ abstract class GaloisCounterMode extends CipherSpi {
          * data.  If the verification fails, the 'dst' left to it's original
          * values if crypto was in-place; otherwise 'dst' is zeroed
          */
+        @SuppressWarnings("try")
         @Override
         public int doFinal(ByteBuffer src, ByteBuffer dst)
             throws IllegalBlockSizeException, AEADBadTagException,
@@ -1585,8 +1595,10 @@ abstract class GaloisCounterMode extends CipherSpi {
                     int ofs = dst.arrayOffset() + dst.position();
                     Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
                 } else {
-                    Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
-                        len + dst.position(), (byte)0);
+                    try (var acquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dst)) {
+                        Unsafe.getUnsafe().setMemory(((DirectBuffer) dst).address(),
+                                len + dst.position(), (byte) 0);
+                    }
                 }
                 throw new AEADBadTagException("Tag mismatch");
             }

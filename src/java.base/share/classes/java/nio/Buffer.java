@@ -778,6 +778,13 @@ public abstract sealed class Buffer
         // setup access to this package in SharedSecrets
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
+
+                // We are not using a lambda here because this would create a circular dependency with lambda factories.
+                static final JavaNioAccess.SessionAcquisition NO_OP_CLOSE = new JavaNioAccess.SessionAcquisition() {
+                    @Override
+                    public void close() throws RuntimeException {}
+                };
+
                 @Override
                 public BufferPool getDirectBufferPool() {
                     return Bits.BUFFER_POOL;
@@ -830,6 +837,16 @@ public abstract sealed class Buffer
                     }
                     if (async && session.ownerThread() != null) {
                         throw new IllegalStateException("Confined session not supported");
+                    }
+                    session.acquire0();
+                    return session::release0;
+                }
+
+                @Override
+                public SessionAcquisition acquireSessionAsAutoCloseable(Buffer buffer) {
+                    var session = buffer.session();
+                    if (session == null) {
+                        return NO_OP_CLOSE;
                     }
                     session.acquire0();
                     return session::release0;

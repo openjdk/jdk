@@ -34,6 +34,8 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
@@ -55,6 +57,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   1.5
  */
 final class P11Cipher extends CipherSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // mode constant for ECB mode
     private static final int MODE_ECB = 3;
@@ -675,6 +679,7 @@ final class P11Cipher extends CipherSpi {
         }
     }
 
+    @SuppressWarnings("try")
     private int implUpdate(ByteBuffer inBuffer, ByteBuffer outBuffer)
             throws ShortBufferException {
         int inLen = inBuffer.remaining();
@@ -687,7 +692,8 @@ final class P11Cipher extends CipherSpi {
             throw new ShortBufferException();
         }
         int origPos = inBuffer.position();
-        try {
+        try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
+             var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;
@@ -876,6 +882,7 @@ final class P11Cipher extends CipherSpi {
         }
     }
 
+    @SuppressWarnings("try")
     private int implDoFinal(ByteBuffer outBuffer)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
@@ -886,7 +893,7 @@ final class P11Cipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        try {
+        try (var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long outAddr = 0;

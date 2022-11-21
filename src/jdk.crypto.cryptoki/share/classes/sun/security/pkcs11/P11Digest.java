@@ -32,6 +32,8 @@ import java.security.*;
 
 import javax.crypto.SecretKey;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.MessageDigestSpi2;
@@ -54,6 +56,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11Digest extends MessageDigestSpi implements Cloneable,
     MessageDigestSpi2 {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     /* fields initialized, no session acquired */
     private static final int S_BLANK    = 1;
@@ -283,6 +287,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
     }
 
     // see JCA spec
+    @SuppressWarnings("try")
     protected void engineUpdate(ByteBuffer byteBuffer) {
         int len = byteBuffer.remaining();
         if (len <= 0) {
@@ -306,7 +311,9 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
                 token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
                 bufOfs = 0;
             }
-            token.p11.C_DigestUpdate(session.id(), addr + ofs, null, 0, len);
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+                token.p11.C_DigestUpdate(session.id(), addr + ofs, null, 0, len);
+            }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {
             engineReset();

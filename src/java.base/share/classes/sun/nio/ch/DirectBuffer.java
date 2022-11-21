@@ -30,6 +30,12 @@ import jdk.internal.ref.Cleaner;
 
 public interface DirectBuffer {
 
+    // Note: Use of the returned address must be guarded if this DirectBuffer is backed by a memory session that is
+    // explicitly closeable or else the result is undefined including silent memory mutation and JVM crashes.
+    // An example of a guarded use of a memory address is shown here:
+    // try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+    //     performOperation(bb.address());
+    // }
     public long address();
 
     public Object attachment();

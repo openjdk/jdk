@@ -35,6 +35,8 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
@@ -54,6 +56,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   13
  */
 final class P11AEADCipher extends CipherSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // supported AEAD algorithms/transformations
     private enum Transformation {
@@ -722,6 +726,7 @@ final class P11AEADCipher extends CipherSpi {
         }
     }
 
+    @SuppressWarnings("try")
     private int implDoFinal(ByteBuffer inBuffer, ByteBuffer outBuffer)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
@@ -734,7 +739,8 @@ final class P11AEADCipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        try {
+        try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
+             var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;

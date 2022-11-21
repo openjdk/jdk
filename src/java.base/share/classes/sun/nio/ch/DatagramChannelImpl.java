@@ -71,6 +71,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
@@ -86,6 +88,8 @@ class DatagramChannelImpl
 {
     // Used to make native read and write calls
     private static final NativeDispatcher nd = new DatagramDispatcher();
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // true if interruptible (can be false to emulate legacy DatagramSocket)
     private final boolean interruptible;
@@ -776,17 +780,20 @@ class DatagramChannelImpl
         }
     }
 
+    @SuppressWarnings("try")
     private int receiveIntoNativeBuffer(ByteBuffer bb, int rem, int pos,
                                         boolean connected)
         throws IOException
     {
-        int n = receive0(fd,
-                         ((DirectBuffer)bb).address() + pos, rem,
-                         sourceSockAddr.address(),
-                         connected);
-        if (n > 0)
-            bb.position(pos + n);
-        return n;
+        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+            int n = receive0(fd,
+                    ((DirectBuffer) bb).address() + pos, rem,
+                    sourceSockAddr.address(),
+                    connected);
+            if (n > 0)
+                bb.position(pos + n);
+            return n;
+        }
     }
 
     /**
@@ -920,6 +927,7 @@ class DatagramChannelImpl
         }
     }
 
+    @SuppressWarnings("try")
     private int sendFromNativeBuffer(FileDescriptor fd, ByteBuffer bb,
                                      InetSocketAddress target)
         throws IOException
@@ -930,7 +938,7 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
-        try {
+        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
             int addressLen = targetSocketAddress(target);
             written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
                             targetSockAddr.address(), addressLen);

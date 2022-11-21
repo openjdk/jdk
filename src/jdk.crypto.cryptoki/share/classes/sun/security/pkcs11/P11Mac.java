@@ -32,6 +32,8 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.MacSpi;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.pkcs11.wrapper.*;
@@ -54,6 +56,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   1.5
  */
 final class P11Mac extends MacSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // token instance
     private final Token token;
@@ -258,6 +262,7 @@ final class P11Mac extends MacSpi {
     }
 
     // see JCE spec
+    @SuppressWarnings("try")
     protected void engineUpdate(ByteBuffer byteBuffer) {
         try {
             ensureInitialized();
@@ -271,7 +276,9 @@ final class P11Mac extends MacSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            token.p11.C_SignUpdate(session.id(), addr + ofs, null, 0, len);
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
+                token.p11.C_SignUpdate(session.id(), addr + ofs, null, 0, len);
+            }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {
             throw new ProviderException("update() failed", e);

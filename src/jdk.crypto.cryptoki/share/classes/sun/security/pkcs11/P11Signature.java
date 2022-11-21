@@ -32,6 +32,9 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.*;
@@ -97,6 +100,8 @@ import sun.security.util.KeyUtil;
  * @since   1.5
  */
 final class P11Signature extends SignatureSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // token instance
     private final Token token;
@@ -571,6 +576,7 @@ final class P11Signature extends SignatureSpi {
     }
 
     // see JCA spec
+    @SuppressWarnings("try")
     @Override
     protected void engineUpdate(ByteBuffer byteBuffer) {
 
@@ -588,7 +594,7 @@ final class P11Signature extends SignatureSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try {
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
                 if (mode == M_SIGN) {
                     token.p11.C_SignUpdate
                         (session.id(), addr + ofs, null, 0, len);

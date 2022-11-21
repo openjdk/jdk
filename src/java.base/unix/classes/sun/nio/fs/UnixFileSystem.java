@@ -701,6 +701,8 @@ abstract class UnixFileSystem
                     try {
                         long comp = Blocker.begin();
                         try {
+                            // 'buf' is guaranteed not to be associated with a closeable session.
+                            // Hence, there is no need of acquiring any session.
                             bufferedCopy(fo, fi, ((DirectBuffer)buf).address(),
                                           bufferSize, addressToPollForCancel);
                         } catch (UnixException x) {

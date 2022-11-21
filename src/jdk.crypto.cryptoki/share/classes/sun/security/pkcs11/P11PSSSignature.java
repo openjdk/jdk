@@ -28,6 +28,9 @@ package sun.security.pkcs11;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import java.util.Hashtable;
@@ -67,6 +70,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   13
  */
 final class P11PSSSignature extends SignatureSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private static final boolean DEBUG = false;
 
@@ -602,6 +607,7 @@ final class P11PSSSignature extends SignatureSpi {
     }
 
     // see JCA spec
+    @SuppressWarnings("try")
     @Override
     protected void engineUpdate(ByteBuffer byteBuffer) {
         try {
@@ -623,7 +629,7 @@ final class P11PSSSignature extends SignatureSpi {
             }
             long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try {
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(byteBuffer)) {
                 if (mode == M_SIGN) {
                     if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate

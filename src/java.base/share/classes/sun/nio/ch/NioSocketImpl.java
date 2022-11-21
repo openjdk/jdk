@@ -248,6 +248,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         ByteBuffer dst = Util.getTemporaryDirectBuffer(len);
         assert dst.position() == 0;
         try {
+            // 'dst' is guaranteed not to be associated with a closeable session.
+            // Hence, there is no need for acquiring any session.
             int n = nd.read(fd, ((DirectBuffer)dst).address(), len);
             if (n > 0) {
                 dst.get(b, off, n);
@@ -385,6 +387,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         assert src.position() == 0;
         try {
             src.put(b, off, len);
+            // 'src' is guaranteed not to be associated with a closeable session.
+            // Hence, there is no need for acquiring any session.
             return nd.write(fd, ((DirectBuffer)src).address(), len);
         } finally {
             Util.offerFirstTemporaryDirectBuffer(src);

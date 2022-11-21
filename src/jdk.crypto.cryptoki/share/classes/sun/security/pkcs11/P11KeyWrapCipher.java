@@ -37,6 +37,8 @@ import javax.crypto.spec.*;
 
 import java.util.HexFormat;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
@@ -57,6 +59,8 @@ import static sun.security.pkcs11.P11Cipher.*;
  * @since 18
  */
 final class P11KeyWrapCipher extends CipherSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private static final int BLK_SIZE = 8;
 
@@ -543,6 +547,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         return k;
     }
 
+    @SuppressWarnings("try")
     private int implDoFinal(ByteBuffer inBuffer, ByteBuffer outBuffer)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
@@ -556,7 +561,8 @@ final class P11KeyWrapCipher extends CipherSpi {
 
         boolean doCancel = true;
         int k = 0;
-        try {
+        try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(inBuffer);
+             var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;

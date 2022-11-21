@@ -35,6 +35,8 @@ import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
 import sun.nio.ch.DirectBuffer;
 
+import static java.util.zip.ZipUtils.NIO_ACCESS;
+
 /**
  * This class provides support for general purpose decompression using the
  * popular ZLIB compression library. The ZLIB compression library was
@@ -253,6 +255,7 @@ public class Inflater {
      * @see Inflater#getAdler
      * @since 11
      */
+    @SuppressWarnings("try")
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
             int position = dictionary.position();
@@ -260,7 +263,7 @@ public class Inflater {
             ensureOpen();
             if (dictionary.isDirect()) {
                 long address = ((DirectBuffer) dictionary).address();
-                try {
+                try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dictionary)) {
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     Reference.reachabilityFence(dictionary);
@@ -358,6 +361,7 @@ public class Inflater {
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      */
+    @SuppressWarnings("try")
     public int inflate(byte[] output, int off, int len)
         throws DataFormatException
     {
@@ -383,7 +387,7 @@ public class Inflater {
                     try {
                         int inputRem = Math.max(input.limit() - inputPos, 0);
                         if (input.isDirect()) {
-                            try {
+                            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(input)) {
                                 long inputAddress = ((DirectBuffer) input).address();
                                 result = inflateBufferBytes(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
@@ -501,6 +505,7 @@ public class Inflater {
      * @see Inflater#needsDictionary
      * @since 11
      */
+    @SuppressWarnings("try")
     public int inflate(ByteBuffer output) throws DataFormatException {
         if (output.isReadOnly()) {
             throw new ReadOnlyBufferException();
@@ -518,7 +523,7 @@ public class Inflater {
                     try {
                         if (output.isDirect()) {
                             long outputAddress = ((DirectBuffer) output).address();
-                            try {
+                            try (var outputAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                                 result = inflateBytesBuffer(zsRef.address(),
                                     inputArray, inputPos, inputLim - inputPos,
                                     outputAddress + outputPos, outputRem);
@@ -542,10 +547,10 @@ public class Inflater {
                     try {
                         if (input.isDirect()) {
                             long inputAddress = ((DirectBuffer) input).address();
-                            try {
+                            try (var inputAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(input)) {
                                 if (output.isDirect()) {
                                     long outputAddress = ((DirectBuffer) output).address();
-                                    try {
+                                    try (var outputAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                                         result = inflateBufferBuffer(zsRef.address(),
                                             inputAddress + inputPos, inputRem,
                                             outputAddress + outputPos, outputRem);
@@ -567,7 +572,7 @@ public class Inflater {
                             int inputOffset = ZipUtils.getBufferOffset(input);
                             if (output.isDirect()) {
                                 long outputAddress = ((DirectBuffer) output).address();
-                                try {
+                                try (var outputAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                                     result = inflateBytesBuffer(zsRef.address(),
                                         inputArray, inputOffset + inputPos, inputRem,
                                         outputAddress + outputPos, outputRem);

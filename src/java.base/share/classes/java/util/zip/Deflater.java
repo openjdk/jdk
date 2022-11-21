@@ -35,6 +35,8 @@ import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
 import sun.nio.ch.DirectBuffer;
 
+import static java.util.zip.ZipUtils.NIO_ACCESS;
+
 /**
  * This class provides support for general purpose compression using the
  * popular ZLIB compression library. The ZLIB compression library was
@@ -331,6 +333,7 @@ public class Deflater {
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      */
+    @SuppressWarnings("try")
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
             int position = dictionary.position();
@@ -338,7 +341,7 @@ public class Deflater {
             ensureOpen();
             if (dictionary.isDirect()) {
                 long address = ((DirectBuffer) dictionary).address();
-                try {
+                try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(dictionary)) {
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     Reference.reachabilityFence(dictionary);
@@ -553,6 +556,7 @@ public class Deflater {
      * @throws IllegalArgumentException if the flush mode is invalid
      * @since 1.7
      */
+    @SuppressWarnings("try")
     public int deflate(byte[] output, int off, int len, int flush) {
         Preconditions.checkFromIndexSize(len, off, output.length, Preconditions.AIOOBE_FORMATTER);
         if (flush != NO_FLUSH && flush != SYNC_FLUSH && flush != FULL_FLUSH) {
@@ -587,7 +591,7 @@ public class Deflater {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    try {
+                    try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(input)) {
                         long inputAddress = ((DirectBuffer) input).address();
                         result = deflateBufferBytes(zsRef.address(),
                             inputAddress + inputPos, inputRem,
@@ -678,6 +682,7 @@ public class Deflater {
      * @throws ReadOnlyBufferException if the given output buffer is read-only
      * @since 11
      */
+    @SuppressWarnings("try")
     public int deflate(ByteBuffer output, int flush) {
         if (output.isReadOnly()) {
             throw new ReadOnlyBufferException();
@@ -710,7 +715,7 @@ public class Deflater {
                 inputPos = this.inputPos;
                 if (output.isDirect()) {
                     long outputAddress = ((DirectBuffer) output).address();
-                    try {
+                    try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
                             outputAddress + outputPos, outputRem,
@@ -731,10 +736,10 @@ public class Deflater {
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
                     long inputAddress = ((DirectBuffer) input).address();
-                    try {
+                    try (var inAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                         if (output.isDirect()) {
                             long outputAddress = outputPos + ((DirectBuffer) output).address();
-                            try {
+                            try (var outAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                                 result = deflateBufferBuffer(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     outputAddress, outputRem,
@@ -758,7 +763,7 @@ public class Deflater {
                     int inputOffset = ZipUtils.getBufferOffset(input);
                     if (output.isDirect()) {
                         long outputAddress = ((DirectBuffer) output).address();
-                        try {
+                        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(output)) {
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
                                 outputAddress + outputPos, outputRem,

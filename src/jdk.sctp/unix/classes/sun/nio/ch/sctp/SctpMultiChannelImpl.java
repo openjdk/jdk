@@ -53,6 +53,8 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpMultiChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.net.util.IPAddressUtil;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.NativeThread;
@@ -71,6 +73,8 @@ import static sun.nio.ch.sctp.ResultContainer.*;
 public class SctpMultiChannelImpl extends SctpMultiChannel
     implements SelChImpl
 {
+    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     private final FileDescriptor fd;
 
     private final int fdVal;
@@ -577,16 +581,19 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         }
     }
 
+    @SuppressWarnings("try")
     private int receiveIntoNativeBuffer(int fd,
                                         ResultContainer resultContainer,
                                         ByteBuffer bb,
                                         int rem,
                                         int pos)
             throws IOException {
-        int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem);
-        if (n > 0)
-            bb.position(pos + n);
-        return n;
+        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+            int n = receive0(fd, resultContainer, ((DirectBuffer) bb).address() + pos, rem);
+            if (n > 0)
+                bb.position(pos + n);
+            return n;
+        }
     }
 
     private InternalNotificationHandler internalNotificationHandler =
@@ -885,6 +892,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         }
     }
 
+    @SuppressWarnings("try")
     private int sendFromNativeBuffer(int fd,
                                      ByteBuffer bb,
                                      SocketAddress target,
@@ -908,11 +916,13 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
-                            port, assocId, streamNumber, unordered, ppid);
-        if (written > 0)
-            bb.position(pos + written);
-        return written;
+        try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+            int written = send0(fd, ((DirectBuffer) bb).address() + pos, rem, addr,
+                    port, assocId, streamNumber, unordered, ppid);
+            if (written > 0)
+                bb.position(pos + written);
+            return written;
+        }
     }
 
     @Override

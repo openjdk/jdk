@@ -33,6 +33,8 @@ import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
 
+import static java.util.zip.ZipUtils.NIO_ACCESS;
+
 /**
  * A class that can be used to compute the CRC-32C of a data stream.
  *
@@ -160,6 +162,7 @@ public final class CRC32C implements Checksum {
      * at the buffer's position. Upon return, the buffer's position will be
      * updated to its limit; its limit will not have been changed.
      */
+    @SuppressWarnings("try")
     @Override
     public void update(ByteBuffer buffer) {
         int pos = buffer.position();
@@ -171,7 +174,7 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
-            try {
+            try (var sessionAcquisition = NIO_ACCESS.acquireSessionAsAutoCloseable(buffer)) {
                 crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
                         pos, limit);
             } finally {
