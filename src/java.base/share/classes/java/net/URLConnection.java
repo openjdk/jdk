@@ -623,8 +623,7 @@ public abstract class URLConnection {
         if (value != null) {
             try {
                 return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-            }
+            } catch (NumberFormatException e) { }
         }
         return Default;
     }
@@ -649,8 +648,7 @@ public abstract class URLConnection {
         if (value != null) {
             try {
                 return Long.parseLong(value);
-            } catch (NumberFormatException e) {
-            }
+            } catch (NumberFormatException e) { }
         }
         return Default;
     }
@@ -677,7 +675,7 @@ public abstract class URLConnection {
         if (value != null) {
             try {
                 return Date.parse(value);
-            } catch (NumberFormatException e) { }
+            } catch (Exception e) { }
         }
         return Default;
     }

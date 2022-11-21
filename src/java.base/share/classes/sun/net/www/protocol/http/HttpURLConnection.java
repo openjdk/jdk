@@ -1936,9 +1936,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 if (contentLengthVal != null) {
                     try {
                         cl = Long.parseLong(contentLengthVal);
-                    } catch (NumberFormatException nfe) {
-                        // ignore
-                    }
+                    } catch (NumberFormatException nfe) { }
                 }
 
                 if (method.equals("HEAD") || cl == 0 ||
