@@ -26,15 +26,14 @@
  * @test id=all-policies-no-system-gc
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
@@ -47,16 +46,15 @@
  * @test id=policy-1-gc-after-yield
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -68,16 +66,15 @@
  * @test id=policy-2-gc-after-yield
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -89,16 +86,15 @@
  * @test id=policy-3-gc-after-yield
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -110,16 +106,15 @@
  * @test id=policy-4-gc-after-yield
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -131,16 +126,15 @@
  * @test id=policy-5-gc-after-yield
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
