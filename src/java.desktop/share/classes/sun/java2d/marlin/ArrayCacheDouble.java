@@ -45,10 +45,9 @@ import sun.java2d.marlin.ArrayCacheConst.BucketStats;
 import sun.java2d.marlin.ArrayCacheConst.CacheStats;
 
 /*
- * Note that the ArrayCache[BYTE/INT/FLOAT/DOUBLE] files are nearly identical except
- * for a few type and name differences. Typically, the [BYTE]ArrayCache.java file
- * is edited manually and then [INT/FLOAT/DOUBLE]ArrayCache.java
- * files are generated with the following command lines:
+ * Note that the ArrayCache[Byte/Double/Int] files are nearly identical except
+ * for their array type [byte/double/int] and class name differences.
+ * ArrayCache[Byte/Double/Int] class deals with dirty arrays.
  */
 
 final class ArrayCacheDouble {
@@ -166,7 +165,7 @@ final class ArrayCacheDouble {
             if (array.length <= MAX_ARRAY_SIZE) {
                 if (DO_CLEAN_DIRTY && (toIndex != 0)) {
                     // clean-up array of dirty part[fromIndex; toIndex[
-                    fill(array, fromIndex, toIndex, 0.0d);
+                    fill(array, fromIndex, toIndex, /*(double)*/ 0.0);
                 }
                 // ensure to never store initial arrays in cache:
                 if (array != initial) {
