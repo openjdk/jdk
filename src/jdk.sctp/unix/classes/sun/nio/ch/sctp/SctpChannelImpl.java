@@ -77,7 +77,7 @@ public class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {
 
-    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private final FileDescriptor fd;
 

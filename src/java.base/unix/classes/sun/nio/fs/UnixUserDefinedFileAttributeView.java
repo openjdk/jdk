@@ -46,7 +46,7 @@ abstract class UnixUserDefinedFileAttributeView
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // namespace for extended user attributes
     private static final String USER_NAMESPACE = "user.";
