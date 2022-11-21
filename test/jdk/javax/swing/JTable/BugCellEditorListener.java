@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 6788481
- * @key headful
+ *  @key headful
  * @summary  Verifies if CellEditorListener.editingCanceled is called
  * @run main BugCellEditorListener
  */
@@ -38,6 +38,8 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 
@@ -48,7 +50,26 @@ public class BugCellEditorListener {
     static volatile Point pt;
     static volatile boolean cancelled;
 
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported L&F: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String [] args) throws Exception {
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing l&f : " + laf.getClassName());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            test();
+	}
+    }
+
+    private static void test() throws Exception {
         try {
             robot = new Robot();
             robot.setAutoDelay(100);
