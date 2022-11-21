@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8294916
+ * @bug 8294916 8297075 8297149
  * @summary Tests that closing a streaming handler (ofInputStream()/ofLines())
  *      without reading all the bytes unregisters the underlying subscriber.
  * @library /test/lib http2/server

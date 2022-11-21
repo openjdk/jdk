@@ -45,11 +45,9 @@ import sun.security.util.*;
  * </pre>
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
  * @see Extension
  */
-public class BasicConstraintsExtension extends Extension
-        implements CertAttrSet {
+public class BasicConstraintsExtension extends Extension {
 
     public static final String NAME = "BasicConstraints";
 

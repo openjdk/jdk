@@ -29,6 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class LogDecorations;
 class LogMessageBuffer;
@@ -43,16 +44,13 @@ class LogOutput : public CHeapObj<mtLogging> {
   friend class LogConfiguration;
 
  private:
-  static const size_t InitialConfigBufferSize = 256;
-
   // Track if the output has been reconfigured dynamically during runtime.
   // The status is set each time the configuration of the output is modified,
   // and is reset once after logging initialization is complete.
   // This is only used during logging of the configuration.
   bool _reconfigured;
 
-  char* _config_string;
-  size_t _config_string_buffer_size;
+  stringStream _config_string;
 
   // Adds the log selection to the config description (e.g. "tag1+tag2*=level").
   void add_to_config_string(const LogSelection& selection);
@@ -60,7 +58,7 @@ class LogOutput : public CHeapObj<mtLogging> {
  protected:
   LogDecorators _decorators;
 
-  // Replaces the current config description with the given string.
+  // Replaces the current config description with a copy of the given string.
   void set_config_string(const char* string);
 
   // Update the config string for this output to reflect its current configuration
@@ -80,13 +78,13 @@ class LogOutput : public CHeapObj<mtLogging> {
   }
 
   const char* config_string() const {
-    return _config_string;
+    return _config_string.base();
   }
 
-  LogOutput() : _reconfigured(false), _config_string(NULL), _config_string_buffer_size(0) {
+  LogOutput() : _reconfigured(false), _config_string(){
   }
 
-  virtual ~LogOutput();
+  virtual ~LogOutput() {};
 
   // If the output can be rotated, trigger a forced rotation, otherwise do nothing.
   // Log outputs with rotation capabilities should override this.

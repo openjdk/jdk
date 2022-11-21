@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,4 +29,22 @@ public abstract class Abstract {
      */
     abstract void method() throws NullPointerException;
 
+    // NOTE: Not sure why this test suggests that IndexOutOfBoundsException
+    // should not appear due to compatibility with some buggy behavior.
+    //
+    // Here's the expected behavior: documentation for an exception X is never
+    // inherited by an overrider unless it "pulls" it by either (or both)
+    // of these:
+    //
+    //   * tag:
+    //       @throws X {@inheritDoc}
+    //   * clause:
+    //       throws ..., X,...
+    //
+    // Neither of those are applicable here. Even taking into account
+    // mechanisms such as the one introduced in 4947455, neither of
+    // NullPointerException and IndexOutOfBoundsException is a subclass
+    // of the other.
+    //
+    // So, IndexOutOfBoundsException should not appear in Extender.
 }

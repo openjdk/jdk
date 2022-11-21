@@ -522,7 +522,6 @@ static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data,
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass cls, jlong ID, jint width, jint height, jint srcOffset,
    jint srcNextRowOffset, jint dstOffset, jint dstNextRowOffset,
-   jboolean srcAtOnce, jboolean dstAtOnce,
    jobject srcData, jobject dstData, jint srcDType, jint dstDType)
 {
     cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
@@ -548,18 +547,11 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
         return;
     }
 
-    char *inputRow = (char *) inputBuffer + srcOffset;
-    char *outputRow = (char *) outputBuffer + dstOffset;
+    char *input = (char *) inputBuffer + srcOffset;
+    char *output = (char *) outputBuffer + dstOffset;
 
-    if (srcAtOnce && dstAtOnce) {
-        cmsDoTransform(sTrans, inputRow, outputRow, width * height);
-    } else {
-        for (int i = 0; i < height; i++) {
-            cmsDoTransform(sTrans, inputRow, outputRow, width);
-            inputRow += srcNextRowOffset;
-            outputRow += dstNextRowOffset;
-        }
-    }
+    cmsDoTransformLineStride(sTrans, input, output, width, height,
+                             srcNextRowOffset, dstNextRowOffset, 0, 0);
 
     releaseILData(env, inputBuffer, srcDType, srcData, JNI_ABORT);
     releaseILData(env, outputBuffer, dstDType, dstData, 0);

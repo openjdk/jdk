@@ -403,15 +403,6 @@ Please consult the AIX section of the [Supported Build Platforms](
 https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
 
-### Support for checking standards conforming code
-
-The make system has a strict mode that enforces conforming code based on the
-standard that is used by the build, which can be useful to ensure that native code
-behaves strictly according to said standard. This option can by enabled by passing
-`--enable-conforming-compilation` during configure, but is off by default.
-If you just want to compile a working JDK it is not recommended that you set this
-flag, as it is mainly meant to aid developers that are working with native code.
-
 
 ## Boot JDK Requirements
 
@@ -1342,12 +1333,12 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using sjavac
+### Using the javac server
 
-To speed up compilation of Java code, especially during incremental compilations,
-the sjavac server is automatically enabled in the configuration step by default.
-To explicitly enable or disable sjavac, use either `--enable-javac-server`
-or `--disable-javac-server`.
+To speed up compilation of Java code, especially during incremental
+compilations, the javac server is automatically enabled in the configuration
+step by default. To explicitly enable or disable the javac server, use either
+`--enable-javac-server` or `--disable-javac-server`.
 
 ### Building the Right Target
 

@@ -163,7 +163,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == NULL) {
       // Lazily create a module's reads list
-      _reads = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -383,7 +383,7 @@ typedef ResourceHashtable<
   const ModuleEntry*,
   ModuleEntry*,
   557, // prime number
-  ResourceObj::C_HEAP> ArchivedModuleEntries;
+  AnyObj::C_HEAP> ArchivedModuleEntries;
 static ArchivedModuleEntries* _archive_modules_entries = NULL;
 
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
@@ -392,7 +392,7 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
   if (_archive_modules_entries == NULL) {
-    _archive_modules_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedModuleEntries();
+    _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
   }
   assert(_archive_modules_entries->get(this) == NULL, "Each ModuleEntry must not be shared across ModuleEntryTables");
   _archive_modules_entries->put(this, archived_entry);
@@ -428,7 +428,7 @@ GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEnt
   GrowableArray<ModuleEntry*>* array = NULL;
   int length = (archived_array == NULL) ? 0 : archived_array->length();
   if (length > 0) {
-    array = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(length, mtModule);
+    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = archived_array->at(i);
       array->append(archived_entry);
