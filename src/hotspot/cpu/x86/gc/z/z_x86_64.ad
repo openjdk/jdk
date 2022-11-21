@@ -35,7 +35,7 @@ source %{
 
 static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
   if (barrier_data == ZLoadBarrierElided) {
-    return;			// Elided.
+    return;
   }
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref, tmp, barrier_data);
   {
@@ -60,6 +60,32 @@ static void z_load_barrier_cmpxchg(MacroAssembler& _masm, const MachNode* node, 
   __ bind(*stub->continuation());
 }
 
+static void z_cmpxchg_common(MacroAssembler& _masm, const MachNode* node, Address mem, Register newval, Register tmp1, Register tmp2) {
+  // Compare value (oldval) is in rax
+
+  if (node->barrier_data() != ZLoadBarrierElided) {
+    if (mem.base() == rax || mem.index() == rax) {
+      __ movptr(tmp2, rax);
+      mem = Address(mem.base() == rax ? tmp2 : mem.base(),
+                    mem.index() == rax ? tmp2 : mem.index(),
+                    mem.scale(), mem.disp());
+    }
+    __ movptr(tmp1, rax);
+  }
+
+  __ lock();
+  __ cmpxchgptr(newval, mem);
+
+  if (node->barrier_data() != ZLoadBarrierElided) {
+    Label good;
+    z_load_barrier_cmpxchg(_masm, node, mem, rax, tmp1, good);
+    __ movptr(rax, tmp1);
+    __ lock();
+    __ cmpxchgptr(newval, mem);
+    __ bind(good);
+  }
+}
+
 %}
 
 // Load Pointer
@@ -81,39 +107,27 @@ instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct zCompareAndExchangeP(memory mem, rax_RegP oldval, rRegP newval, rRegP tmp, rFlagsReg cr) %{
+instruct zCompareAndExchangeP(memory mem, rax_RegP oldval, rRegP newval, rRegP tmp1, rRegP tmp2, rFlagsReg cr) %{
   match(Set oldval (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong);
-  effect(KILL cr, TEMP tmp);
+  effect(KILL cr, TEMP tmp1, TEMP tmp2);
 
   format %{ "lock\n\t"
             "cmpxchgq $newval, $mem" %}
 
   ins_encode %{
-    if (barrier_data() != ZLoadBarrierElided) { // barrier could be elided by ZBarrierSetC2::analyze_dominating_barriers()
-      __ movptr($tmp$$Register, $oldval$$Register);
-    }
-    __ lock();
-    __ cmpxchgptr($newval$$Register, $mem$$Address);
-
-    if (barrier_data() != ZLoadBarrierElided) {
-      Label good;
-      z_load_barrier_cmpxchg(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register, good);
-      __ movptr($oldval$$Register, $tmp$$Register);
-      __ lock();
-      __ cmpxchgptr($newval$$Register, $mem$$Address);
-      __ bind(good);
-    }
+    precond($oldval$$Register == rax);
+    z_cmpxchg_common(_masm, this, $mem$$Address, $newval$$Register, $tmp1$$Register, $tmp2$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rFlagsReg cr, rax_RegP oldval) %{
+instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp1, rRegP tmp2, rFlagsReg cr, rax_RegP oldval) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong);
-  effect(KILL cr, KILL oldval, TEMP tmp);
+  effect(KILL cr, KILL oldval, TEMP tmp1, TEMP tmp2);
 
   format %{ "lock\n\t"
             "cmpxchgq $newval, $mem\n\t"
@@ -121,20 +135,10 @@ instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rFlags
             "movzbl   $res, $res" %}
 
   ins_encode %{
-    if (barrier_data() != ZLoadBarrierElided) { // barrier could be elided by ZBarrierSetC2::analyze_dominating_barriers()
-      __ movptr($tmp$$Register, $oldval$$Register);
-    }
-    __ lock();
-    __ cmpxchgptr($newval$$Register, $mem$$Address);
-
+    precond($oldval$$Register == rax);
+    z_cmpxchg_common(_masm, this, $mem$$Address, $newval$$Register, $tmp1$$Register, $tmp2$$Register);
     if (barrier_data() != ZLoadBarrierElided) {
-      Label good;
-      z_load_barrier_cmpxchg(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register, good);
-      __ movptr($oldval$$Register, $tmp$$Register);
-      __ lock();
-      __ cmpxchgptr($newval$$Register, $mem$$Address);
-      __ bind(good);
-      __ cmpptr($tmp$$Register, $oldval$$Register);
+      __ cmpptr($tmp1$$Register, rax);
     }
     __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
