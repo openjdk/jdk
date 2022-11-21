@@ -38,7 +38,7 @@ public interface DirectBuffer {
     //
     // An example of a guarded use of a memory address is shown here:
     //
-    // try (var guard = NIO_ACCESS.acquireSessionAsAutoCloseable(bb)) {
+    // try (var guard = NIO_ACCESS.acquireSession(bb)) {
     //     performOperation(bb.address());
     // }
     public long address();
