@@ -589,7 +589,6 @@ abstract class GaloisCounterMode extends CipherSpi {
                                     GCTR gctr, GHASH ghash) {
 
         int len = 0;
-        // Loop if input length is greater than the SPLIT_LEN
         if (inLen > SPLIT_LEN && ct != null) {
             int partlen;
             while (inLen >= SPLIT_LEN) {
@@ -600,7 +599,6 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
         }
 
-        // Finish any remaining data
         if (inLen > 0) {
             if (ct == null) {
                 ghash.update(in, inOfs + len, inLen);
@@ -1641,7 +1639,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (mismatch != 0) {
                 // Clear output data
                 dst.reset();
-                // If this is an in-place array, don't zero the src
+                // If this is no an in-place array, zero the dst buffer
                 if (!inPlaceArray) {
                     if (dst.hasArray()) {
                         int ofs = dst.arrayOffset() + dst.position();
