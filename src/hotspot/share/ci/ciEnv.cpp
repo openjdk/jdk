@@ -872,21 +872,30 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   assert(cpool.not_null(), "need constant pool");
   assert(accessor != NULL, "need origin of access");
   if (bc == Bytecodes::_invokedynamic) {
-    ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
-    bool is_resolved = !cpce->is_f1_null();
-    // FIXME: code generation could allow for null (unlinked) call site
-    // The call site could be made patchable as follows:
-    // Load the appendix argument from the constant pool.
-    // Test the appendix argument and jump to a known deopt routine if it is null.
-    // Jump through a patchable call site, which is initially a deopt routine.
-    // Patch the call site to the nmethod entry point of the static compiled lambda form.
-    // As with other two-component call sites, both values must be independently verified.
-
-    if (is_resolved) {
-      // Get the invoker Method* from the constant pool.
-      // (The appendix argument, if any, will be noted in the method's signature.)
-      Method* adapter = cpce->f1_as_method();
-      return get_method(adapter);
+    if (UseNewCode) {
+      //int indy_index = (index && 0xffff0000) >> 16;
+      tty->print_cr("get_method_by_index: %d", index);
+      Method* adapter = cpool->cache()->resolved_invokedynamic_info_element(cpool->decode_invokedynamic_index(index))->method();
+      if (adapter != nullptr) {
+        return get_method(adapter);
+      }
+    } else {
+      if (UseNewCode) {tty->print_cr("get_method_by_index: %d", index);}
+      ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
+      bool is_resolved = !cpce->is_f1_null();
+      // FIXME: code generation could allow for null (unlinked) call site
+      // The call site could be made patchable as follows:
+      // Load the appendix argument from the constant pool.
+      // Test the appendix argument and jump to a known deopt routine if it is null.
+      // Jump through a patchable call site, which is initially a deopt routine.
+      // Patch the call site to the nmethod entry point of the static compiled lambda form.
+      // As with other two-component call sites, both values must be independently verified.
+      if (is_resolved) {
+        // Get the invoker Method* from the constant pool.
+        // (The appendix argument, if any, will be noted in the method's signature.)
+        Method* adapter = cpce->f1_as_method();
+        return get_method(adapter);
+      }
     }
 
     // Fake a method that is equivalent to a declared method.
@@ -1522,24 +1531,51 @@ void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
 
 // Process an invokedynamic call site and record any dynamic locations.
 void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
-  ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(indy_index);
-  if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
-    // process the adapter
-    Method* adapter = cp_cache_entry->f1_as_method();
-    record_call_site_method(thread, adapter);
-    // process the appendix
-    oop appendix = cp_cache_entry->appendix_if_resolved(cp);
-    {
-      RecordLocation fp(this, "<appendix>");
-      record_call_site_obj(thread, appendix);
+  tty->print_cr("Indy index is %d", indy_index);
+  if (UseNewCode) {
+    int index = cp->decode_invokedynamic_index(indy_index);
+    tty->print_cr("Index is %d", index);
+    // do stuff
+    ResolvedInvokeDynamicInfo* indy_info = cp->cache()->resolved_invokedynamic_info_element(index);
+    if (indy_info->method() != nullptr) {
+      // process the adapter
+      Method* adapter = indy_info->method();
+      record_call_site_method(thread, adapter);
+      // process the appendix
+      oop appendix = cp->resolved_references()->obj_at(indy_info->resolved_references_index());
+      {
+        RecordLocation fp(this, "<appendix>");
+        record_call_site_obj(thread, appendix);
+      }
+      // process the BSM
+      int pool_index = indy_info->cpool_index();
+      BootstrapInfo bootstrap_specifier(cp, pool_index, index);
+      oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+      {
+        RecordLocation fp(this, "<bsm>");
+        record_call_site_obj(thread, bsm);
+      }
     }
-    // process the BSM
-    int pool_index = cp_cache_entry->constant_pool_index();
-    BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
-    oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
-    {
-      RecordLocation fp(this, "<bsm>");
-      record_call_site_obj(thread, bsm);
+  } else {
+    ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(indy_index);
+    if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
+      // process the adapter
+      Method* adapter = cp_cache_entry->f1_as_method();
+      record_call_site_method(thread, adapter);
+      // process the appendix
+      oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+      {
+        RecordLocation fp(this, "<appendix>");
+        record_call_site_obj(thread, appendix);
+      }
+      // process the BSM
+      int pool_index = cp_cache_entry->constant_pool_index();
+      BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
+      oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+      {
+        RecordLocation fp(this, "<bsm>");
+        record_call_site_obj(thread, bsm);
+      }
     }
   }
 }
