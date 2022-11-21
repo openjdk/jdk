@@ -2130,6 +2130,8 @@ public final class System {
         return properties;
     }
 
+    private static BufferedInputStream initIn = null;
+
     /**
      * Initialize the system class.  Called after thread initialization.
      */
@@ -2173,7 +2175,8 @@ public final class System {
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
-        setIn0(new BufferedInputStream(fdIn));
+        initIn = new BufferedInputStream(fdIn);
+        setIn0(initIn);
         // stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding

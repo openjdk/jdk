@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
@@ -54,14 +55,24 @@ public class Password {
             // Use the new java.io.Console class
             Console con;
             if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
-                consoleEntered = con.readPassword();
-                // readPassword returns "" if you just print ENTER,
-                // to be compatible with old Password class, change to null
-                if (consoleEntered != null && consoleEntered.length == 0) {
-                    return null;
+                // check if `System.in` is overridden or not
+                BufferedInputStream initIn = null;
+                try {
+                    initIn = (BufferedInputStream) MethodHandles.privateLookupIn(System.class, MethodHandles.lookup())
+                            .findStaticGetter(System.class, "initIn", BufferedInputStream.class)
+                            .invoke();
+                } catch (Throwable ignore) {}
+
+                if (System.in == initIn) {
+                    consoleEntered = con.readPassword();
+                    // readPassword returns "" if you just press ENTER with the built-in Console,
+                    // to be compatible with old Password class, change to null
+                    if (consoleEntered == null || consoleEntered.length == 0) {
+                        return null;
+                    }
+                    consoleBytes = convertToBytes(consoleEntered);
+                    in = new ByteArrayInputStream(consoleBytes);
                 }
-                consoleBytes = convertToBytes(consoleEntered);
-                in = new ByteArrayInputStream(consoleBytes);
             }
 
             // Rest of the lines still necessary for KeyStoreLoginModule
