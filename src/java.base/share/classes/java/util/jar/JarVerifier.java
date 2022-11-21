@@ -26,10 +26,8 @@
 package java.util.jar;
 
 import java.io.*;
-import java.net.URL;
 import java.util.*;
 import java.security.CodeSigner;
-import java.security.CodeSource;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
@@ -89,9 +87,6 @@ class JarVerifier {
 
     /** the manifest name this JarVerifier is created upon */
     final String manifestName;
-
-    /** makes code source singleton instances unique to us */
-    private Object csdomain = new Object();
 
     /** collect -DIGEST-MANIFEST values for deny list */
     private List<Object> manifestDigests;
@@ -480,91 +475,6 @@ class JarVerifier {
                 throw new IOException("stream closed");
             }
         }
-    }
-
-    // Extended JavaUtilJarAccess CodeSource API Support
-    /*
-     * Instances of this class hold uncopied references to internal
-     * signing data that can be compared by object reference identity.
-     */
-    private static class VerifierCodeSource extends CodeSource {
-        @java.io.Serial
-        private static final long serialVersionUID = -9047366145967768825L;
-
-        URL vlocation;
-        CodeSigner[] vsigners;
-        Certificate[] vcerts;
-        @SuppressWarnings("serial") // Not statically typed as Serializable
-        Object csdomain;
-
-        VerifierCodeSource(Object csdomain, URL location, CodeSigner[] signers) {
-            super(location, signers);
-            this.csdomain = csdomain;
-            vlocation = location;
-            vsigners = signers; // from signerCache
-        }
-
-        VerifierCodeSource(Object csdomain, URL location, Certificate[] certs) {
-            super(location, certs);
-            this.csdomain = csdomain;
-            vlocation = location;
-            vcerts = certs; // from signerCache
-        }
-
-        /*
-         * All VerifierCodeSource instances are constructed based on
-         * singleton signerCache or signerCacheCert entries for each unique signer.
-         * No CodeSigner<->Certificate[] conversion is required.
-         * We use these assumptions to optimize equality comparisons.
-         */
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (obj instanceof VerifierCodeSource that) {
-
-                /*
-                 * Only compare against other per-signer singletons constructed
-                 * on behalf of the same JarFile instance. Otherwise, compare
-                 * things the slower way.
-                 */
-                if (isSameDomain(that.csdomain)) {
-                    if (that.vsigners != this.vsigners
-                            || that.vcerts != this.vcerts) {
-                        return false;
-                    }
-                    if (that.vlocation != null) {
-                        return that.vlocation.equals(this.vlocation);
-                    } else if (this.vlocation != null) {
-                        return this.vlocation.equals(that.vlocation);
-                    } else { // both null
-                        return true;
-                    }
-                }
-            }
-            return super.equals(obj);
-        }
-
-        boolean isSameDomain(Object csdomain) {
-            return this.csdomain == csdomain;
-        }
-
-        private CodeSigner[] getPrivateSigners() {
-            return vsigners;
-        }
-
-        private Certificate[] getPrivateCertificates() {
-            return vcerts;
-        }
-    }
-
-    // true if file is part of the signature mechanism itself
-    static boolean isSigningRelated(String name) {
-        return SignatureFileVerifier.isSigningRelated(name);
-    }
-
-    static CodeSource getUnsignedCS(URL url) {
-        return new VerifierCodeSource(null, url, (Certificate[]) null);
     }
 
     /**
