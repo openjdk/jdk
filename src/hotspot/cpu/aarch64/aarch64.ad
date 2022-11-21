@@ -14577,6 +14577,32 @@ instruct convF2L_reg_reg(iRegLNoSp dst, vRegF src) %{
   ins_pipe(fp_f2l);
 %}
 
+instruct convF2HF_reg_reg(iRegINoSp dst, vRegF src, vRegF tmp) %{
+  match(Set dst (ConvF2HF src));
+  format %{ "fcvt $tmp, $src\t# convert single to half precision\n\t"
+            "smov $dst, $tmp\t# move result from $tmp to $dst"
+  %}
+  effect(TEMP tmp);
+  ins_encode %{
+      __ fcvtsh($tmp$$FloatRegister, $src$$FloatRegister);
+      __ smov($dst$$Register, $tmp$$FloatRegister, __ H, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convHF2F_reg_reg(vRegF dst, iRegINoSp src, vRegF tmp) %{
+  match(Set dst (ConvHF2F src));
+  format %{ "mov $tmp, $src\t# move source from $src to $tmp\n\t"
+            "fcvt $dst, $tmp\t# convert half to single precision"
+  %}
+  effect(TEMP tmp);
+  ins_encode %{
+      __ mov($tmp$$FloatRegister, __ H, 0, $src$$Register);
+      __ fcvths($dst$$FloatRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convI2F_reg_reg(vRegF dst, iRegIorL2I src) %{
   match(Set dst (ConvI2F src));
 
