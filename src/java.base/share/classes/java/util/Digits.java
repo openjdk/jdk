@@ -36,7 +36,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-interface Digits {
+sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.OctalDigits {
     /**
      * Insert digits for long value in buffer from high index to low index.
      *
