@@ -501,13 +501,22 @@ void G1YoungCollector::verify_empty_dirty_card_logs() const {
 }
 #endif // ASSERT
 
-void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
+  // Flush early, so later phases don't need to account for per-thread stuff.
+  // Flushes deferred card marks, so must precede concatenting logs.
+  retire_tlabs();
+
+  // Flush early, so later phases don't need to account for per-thread stuff.
+  concatenate_dirty_card_logs_and_stats();
+
+  calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
+
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-   _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
+  _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
 
   _g1h->gc_prologue(false);
 
@@ -533,7 +542,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
   }
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
-  per_thread_states->preserved_marks_set()->assert_empty();
   verify_empty_dirty_card_logs();
 
 #if COMPILER2_OR_JVMCI
@@ -1088,26 +1096,13 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    // Flush early, so later phases don't need to account for per-thread stuff.
-    // Flushes deferred card marks, so must precede concatenting logs.
-    retire_tlabs();
+    pre_evacuate_collection_set(jtm.evacuation_info());
 
-    // Flush early, so later phases don't need to account for per-thread stuff.
-    concatenate_dirty_card_logs_and_stats();
-
-    calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
-
-    G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
-    G1PreservedMarksSet preserved_marks_set(workers()->active_workers());
     G1ParScanThreadStateSet per_thread_states(_g1h,
-                                              &rdcqs,
-                                              &preserved_marks_set,
                                               workers()->active_workers(),
                                               collection_set()->young_region_length(),
                                               collection_set()->optional_region_length(),
                                               &_evac_failure_regions);
-
-    pre_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
     bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;
     // Actually do the work...
