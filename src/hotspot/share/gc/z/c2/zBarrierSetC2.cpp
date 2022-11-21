@@ -584,16 +584,75 @@ static const Node* look_through_node(const Node* node) {
   return node;
 }
 
+// Whether the given offset is undefined.
+static bool is_undefined(intptr_t offset) {
+  return offset == Type::OffsetTop;
+}
+
+// Whether the given offset is unknown.
+static bool is_unknown(intptr_t offset) {
+  return offset == Type::OffsetBot;
+}
+
+// Whether the given offset is concrete (defined and compile-time known).
+static bool is_concrete(intptr_t offset) {
+  return !is_undefined(offset) && !is_unknown(offset);
+}
+
+// Compute base + offset components of the memory address accessed by mach.
+// Return a node representing the base address, or NULL if the base cannot be
+// found or the offset is undefined or a concrete negative value. If a non-NULL
+// base is returned, the offset is a concrete, nonnegative value or unknown.
 static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
   const TypePtr* adr_type = NULL;
   offset = 0;
   const Node* const base = mach->get_base_and_disp(offset, adr_type);
 
-  if (base == NULL || base == NodeSentinel || offset < 0) {
+  if (base == NULL || base == NodeSentinel ||
+      is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
     return NULL;
   }
 
   return look_through_node(base);
+}
+
+// Whether a phi node corresponds to an array allocation.
+// This test is incomplete: in some edge cases, it might return false even
+// though the node does correspond to an array allocation.
+static bool is_array_allocation(const Node* phi) {
+  precond(phi->is_Phi());
+  // Check whether phi has a successor cast (CheckCastPP) to Java array pointer,
+  // possibly below spill copies and other cast nodes. Limit the exploration to
+  // a single path from the phi node consisting of these node types.
+  const Node* current = phi;
+  while (true) {
+    const Node* next = nullptr;
+    for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
+      if (!current->fast_out(i)->isa_Mach()) {
+        continue;
+      }
+      const MachNode* succ = current->fast_out(i)->as_Mach();
+      if (succ->ideal_Opcode() == Op_CheckCastPP) {
+        if (succ->get_ptr_type()->isa_aryptr()) {
+          // Cast to Java array pointer: phi corresponds to an array allocation.
+          return true;
+        }
+        // Other cast: record as candidate for further exploration.
+        next = succ;
+      } else if (succ->is_SpillCopy() && next == nullptr) {
+        // Spill copy, and no better candidate found: record as candidate.
+        next = succ;
+      }
+    }
+    if (next == nullptr) {
+      // No evidence found that phi corresponds to an array allocation, and no
+      // candidates available to continue exploring.
+      return false;
+    }
+    // Continue exploring from the best candidate found.
+    current = next;
+  }
+  ShouldNotReachHere();
 }
 
 // Match the phi node that connects a TLAB allocation fast path with its slowpath
@@ -612,7 +671,7 @@ static bool is_allocation(const Node* node) {
   const TypePtr* const adr_type = NULL;
   intptr_t offset;
   const Node* const base = get_base_and_offset(fast_mach, offset);
-  if (base == NULL || !base->is_Mach()) {
+  if (base == NULL || !base->is_Mach() || !is_concrete(offset)) {
     return false;
   }
   const MachNode* const base_mach = base->as_Mach();
@@ -649,13 +708,23 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
         if (mem != access_obj) {
           continue;
         }
+        if (is_unknown(access_offset) && !is_array_allocation(mem)) {
+          // The accessed address has an unknown offset, but the allocated
+          // object cannot be determined to be an array. Avoid eliding in this
+          // case, to be on the safe side.
+          continue;
+        }
+        assert((is_concrete(access_offset) && access_offset >= 0) || (is_unknown(access_offset) && is_array_allocation(mem)),
+               "candidate allocation-dominated access offsets must be either concrete and nonnegative, or unknown (for array allocations only)");
       } else {
         // Access node
         const MachNode* const mem_mach = mem->as_Mach();
         intptr_t mem_offset;
         const Node* const mem_obj = get_base_and_offset(mem_mach, mem_offset);
 
-        if (mem_obj == NULL) {
+        if (mem_obj == NULL ||
+            !is_concrete(access_offset) ||
+            !is_concrete(mem_offset)) {
           // No information available
           continue;
         }
@@ -664,6 +733,8 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
           // Not the same addresses, not a candidate
           continue;
         }
+        assert(is_concrete(access_offset) && access_offset >= 0,
+               "candidate non-allocation-dominated access offsets must be concrete and nonnegative");
       }
 
       Block* mem_block = cfg->get_block_for_node(mem);
