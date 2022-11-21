@@ -44,8 +44,8 @@ import java.util.Objects;
  * @since   1.0
  */
 public class SequenceInputStream extends InputStream {
-    Enumeration<? extends InputStream> e;
-    InputStream in;
+    private final Enumeration<? extends InputStream> e;
+    private InputStream in;
 
     /**
      * Initializes a newly created {@code SequenceInputStream}
