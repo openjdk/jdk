@@ -50,7 +50,7 @@ class ResolutionErrorKey {
   }
 
   static bool equals(const ResolutionErrorKey& l, const ResolutionErrorKey& r) {
-    return l._cpool == r._cpool && l._index == r._index;
+    return (l._cpool == r._cpool) && (l._index == r._index);
   }
 };
 
