@@ -343,14 +343,12 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
   if (UseFastLocking && max_monitors > 0) {
     Label ok;
-    push(c_rarg0);
-    movptr(c_rarg0, Address(r15_thread, Thread::lock_stack_current_offset()));
-    addptr(c_rarg0, max_monitors * wordSize);
-    cmpptr(c_rarg0, Address(r15_thread, Thread::lock_stack_limit_offset()));
+    movptr(rax, Address(r15_thread, Thread::lock_stack_current_offset()));
+    addptr(rax, max_monitors * wordSize);
+    cmpptr(rax, Address(r15_thread, Thread::lock_stack_limit_offset()));
     jcc(Assembler::less, ok);
     call(RuntimeAddress(StubRoutines::x86::check_lock_stack()));
     bind(ok);
-    pop(c_rarg0);
   }
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();

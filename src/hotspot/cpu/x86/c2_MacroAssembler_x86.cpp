@@ -131,13 +131,11 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     C2CheckLockStackStub* stub = new (Compile::current()->comp_arena()) C2CheckLockStackStub();
     Compile::current()->output()->add_stub(stub);
     assert(!is_stub, "only methods have monitors");
-    push(c_rarg0);
-    movptr(c_rarg0, Address(r15_thread, Thread::lock_stack_current_offset()));
-    addptr(c_rarg0, max_monitors * wordSize);
-    cmpptr(c_rarg0, Address(r15_thread, Thread::lock_stack_limit_offset()));
+    movptr(rax, Address(r15_thread, Thread::lock_stack_current_offset()));
+    addptr(rax, max_monitors * wordSize);
+    cmpptr(rax, Address(r15_thread, Thread::lock_stack_limit_offset()));
     jcc(Assembler::greaterEqual, stub->entry());
     bind(stub->continuation());
-    pop(c_rarg0);
   }
 
   if (!is_stub) {

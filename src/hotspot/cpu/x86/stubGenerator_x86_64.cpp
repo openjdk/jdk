@@ -3054,7 +3054,7 @@ address StubGenerator::generate_check_lock_stack() {
   __ movdqu(Address(rsp, xmm_size * 1), xmm1);
   __ movdqu(Address(rsp, xmm_size * 0), xmm0);
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<void (*)(oop*)>(LockStack::ensure_lock_stack_size)), 1);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<void (*)(oop*)>(LockStack::ensure_lock_stack_size)), rax);
 
   __ movdqu(xmm0, Address(rsp, xmm_size * 0));
   __ movdqu(xmm1, Address(rsp, xmm_size * 1));
