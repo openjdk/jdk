@@ -226,6 +226,7 @@ package-deb-dbg-amd64:
     - build-linux-amd64
     - build-linux-riscv64
   variables:
+    PKG_NAME: "${PROJECT_NAME}-dbg"
     PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
     PKG_ARCH: "amd64"
     PKG_DBG: "true"
@@ -239,6 +240,7 @@ package-deb-dbg-riscv64:
     - prepare-version
     - build-linux-riscv64
   variables:
+    PKG_NAME: "${PROJECT_NAME}-dbg"
     PKG_DIRECTORIES: "/rivos/jdk"
     PKG_ARCH: "riscv64"
     PKG_DBG: "true"
