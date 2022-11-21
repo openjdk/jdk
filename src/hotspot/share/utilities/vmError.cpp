@@ -347,14 +347,14 @@ static frame next_frame(frame fr, Thread* t) {
   }
 }
 
-void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info, char* buf, int buf_size) {
+void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info, int max_frames, char* buf, int buf_size) {
 
   // see if it's a valid frame
   if (fr.pc()) {
     st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-
+    const int limit = max_frames == -1 ? StackPrintLimit : max_frames;
     int count = 0;
-    while (count++ < StackPrintLimit) {
+    while (count++ < limit) {
       fr.print_on_error(st, buf, buf_size);
       if (fr.pc()) { // print source file and line, if available
         char filename[128];
@@ -374,7 +374,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
       }
     }
 
-    if (count > StackPrintLimit) {
+    if (count > limit) {
       st->print_cr("...<more frames>...");
     }
 
@@ -844,7 +844,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
-       print_native_stack(st, fr, _thread, true, buf, sizeof(buf));
+       print_native_stack(st, fr, _thread, true, -1, buf, sizeof(buf));
        _print_native_stack_used = true;
      }
      print_native_stack_succeeded = true;
@@ -856,7 +856,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      st->cr();
      st->print_cr("Retrying call stack printing without source information...");
      frame fr = _context ? os::fetch_frame_from_context(_context) : os::current_frame();
-     print_native_stack(st, fr, _thread, false, buf, sizeof(buf));
+     print_native_stack(st, fr, _thread, false, -1, buf, sizeof(buf));
      _print_native_stack_used = true;
    }
 
@@ -1651,21 +1651,27 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         st->print_cr("]");
 #ifdef ASSERT
         {
-          static bool recursed = false;
-          if (ErrorLogSecondaryErrorDetails && !recursed) {
-            recursed = true;
-            // Print even more information for secondary errors. This may generate a lot of output
-            // and possibly disturb error reporting, therefore its optional and only available in debug builds.
-            if (siginfo != nullptr) {
-              st->print("[");
-              os::print_siginfo(st, siginfo);
+          if (ErrorLogSecondaryErrorDetails) {
+            static bool recursed = false;
+            if (!recursed) {
+              recursed = true;
+              // Print even more information for secondary errors. This may generate a lot of output
+              // and possibly disturb error reporting, therefore its optional and only available in debug builds.
+              if (siginfo != nullptr) {
+                st->print("[");
+                os::print_siginfo(st, siginfo);
+                st->print_cr("]");
+              }
+              st->print("[stack: ");
+              frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
+              // Subsequent secondary errors build up stack; to avoid flooding the hs-err file with irrelevant
+              // call stacks, limit the stack we print here (we are only interested in what happened before the
+              // last assert/fault).
+              const int max_stack_size = 15;
+              print_native_stack(st, fr, _thread, true, max_stack_size, tmp, sizeof(tmp));
               st->print_cr("]");
-            }
-            st->print("[stack: ");
-            frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
-            print_native_stack(st, fr, _thread, false /* source info */, tmp, sizeof(tmp));
-            st->print_cr("]");
-            recursed = false;
+            } // !recursed
+            recursed = false; // Note: reset outside !recursed
           }
         }
 #endif // ASSERT

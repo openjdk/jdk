@@ -745,7 +745,7 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
   Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
+  VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
 }
 
 //
@@ -765,7 +765,7 @@ extern "C" JNIEXPORT void pns2() { // print native stack
   } else {
     Thread* t = Thread::current_or_null();
     frame fr = os::current_frame();
-    VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
+    VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
   }
 }
 #endif
