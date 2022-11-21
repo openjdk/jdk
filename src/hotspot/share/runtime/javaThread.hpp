@@ -86,6 +86,10 @@ class JavaThread: public Thread {
   bool           _in_asgct;                      // Is set when this JavaThread is handling ASGCT call
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
 
+  // All references to Java objects managed via OopHandles. These
+  // have to be released by the ServiceThread after the JavaThread has
+  // terminated. If you add/remove an OopHandle be sure to update the
+  // ServiceThread code to match.
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
