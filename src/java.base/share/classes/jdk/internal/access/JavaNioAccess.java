@@ -91,7 +91,7 @@ public interface JavaNioAccess {
      * Null is returned if the buffer has no scope, or acquiring is not
      * required to guarantee safety.
      * {@snippet lang = java:
-     * var handler = acquireSessionOrNoOp(buffer);
+     * var handler = acquireSessionOrNull(buffer, async);
      * try {
      *     performOperation(buffer);
      * } finally {
