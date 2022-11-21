@@ -28,9 +28,14 @@
  * <p>
  * <b id="httpclientprops">System properties used by the java.net.http API</b>
  * <p>
- * The following is a list of system properties used by the java.net.http
+ * The following is a list of system networking properties used by the java.net.http
  * client implementation in the JDK. Any properties below that take a numeric value
  * assume the default value if given a string that does not parse as a number.
+ * Unless otherwise specified below, all values can be set in the {@code conf/net.properties}
+ * file. In all cases, values can be specified as system properties on the command line,
+ * in which case, any value in {@code conf/net.properties} is overridden. No guarantee is
+ * provided that property values can be set programatically with {@code System.setProperty()}.
+ * Other implementations of this API may choose not to support these properties.
  * <ul>
  * <li><p><b>{@systemProperty jdk.httpclient.allowRestrictedHeaders}</b> (default: see below)<br>
  * A comma-separated list of normally restricted HTTP header names that users may set in HTTP requests
@@ -92,7 +97,13 @@
  * "jdk.httpclient.HttpClient", and all logging is at level INFO.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 1200)<br>
- * The number of seconds to keep idle HTTP/1.1 connections alive in the keep alive cache.
+ * The number of seconds to keep idle HTTP connections alive in the keep alive cache. This property
+ * applies to both HTTP/1.1 and HTTP/2. The value for HTTP/2 can be overridden with the
+ * jdk.httpclient.keepalive.timeout.h2 property.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h2}</b> (default: see below)<br>
+ * The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
+ * jdk.httpclient.keepalive.timeout setting is used.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxframesize}</b> (default: 16384 or 16kB)<br>
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame larger than this.
@@ -123,17 +134,8 @@
  * <li><p><b>{@systemProperty jdk.httpclient.sendBufferSize}</b> (default: operating system default)<br>
  * The HTTP client socket send buffer size. Values less than or equal to zero are ignored.
  * </li>
- * <li><p><b>{@systemProperty jdk.internal.httpclient.debug}</b> (default: false)<br>
- * Enables general debug tracing.
- * </li>
- * <li><p><b>{@systemProperty jdk.internal.httpclient.websocket.debug}</b> (default: false)<br>
- * Enables general websocket debug tracing.
- * </li>
- * <li><p><b>{@systemProperty jdk.internal.httpclient.hpack.debug}</b> (default: false)<br>
- * Enables general HTTP/2 HPACK debug tracing.
- * </li>
  * <li><p><b>{@systemProperty jdk.internal.httpclient.disableHostnameVerification}</b> (default: false)<br>
- * If true, hostname verification in SSL certificates is disabled.
+ * If true, hostname verification in SSL certificates is disabled. This is a system property only.
  * </li>
  * <li><p><b>{@systemProperty jdk.http.auth.proxying.disabledSchemes}</b> (default: see conf/net.properties)<br>
  * A comma separated list of HTTP authentication scheme names, that are disallowed for use by
