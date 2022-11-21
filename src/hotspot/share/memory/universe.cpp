@@ -245,7 +245,7 @@ void Universe::update_archived_mirrors() {
       int index = _archived_mirror_indices[i];
       if (index >= 0) {
         oop mirror_oop = HeapShared::get_root(index);
-        assert(mirror_oop != NULL, "must be");          
+        assert(mirror_oop != NULL, "must be");
         _mirrors[i] = OopHandle(vm_global(), mirror_oop);
       }
     }
