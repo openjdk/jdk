@@ -39,28 +39,33 @@
 #include "utilities/macros.hpp"
 #include "gc/shared/oopStorage.hpp"
 
-JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj) : _wh(JvmtiExport::weak_tag_storage(), obj), _released(false) {
+JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj) : _obj(obj) { }
+
+JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& src) {
+  // move object into WeakHandle when copying into the table
+  assert(src._obj != nullptr, "must be set");
+  _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
+  _obj = nullptr;
 }
 
 JvmtiTagMapEntry::~JvmtiTagMapEntry(){
-  release();
-}
-
-void JvmtiTagMapEntry::release() {
-  if (_released) {
-    return;
+  // If obj is set null it out, this is called for stack object on lookup,
+  // and it should not have a WeakHandle created for it yet.
+  if (_obj != nullptr) {
+    _obj = nullptr;
+    assert(_wh.is_null(), "WeakHandle should be null");
+  } else {
+    _wh.release(JvmtiExport::weak_tag_storage());
   }
-  _wh.release(JvmtiExport::weak_tag_storage());
-  _released = true;
 }
 
 oop JvmtiTagMapEntry::object() const {
-  assert(!_released, "Must not be released");
+  assert(_obj == nullptr, "Must have a handle and not object");
   return _wh.resolve();
 }
 
 oop JvmtiTagMapEntry::object_no_keepalive() const {
-  assert(!_released, "Must not be released");
+  assert(_obj == nullptr, "Must have a handle and not object");
   return _wh.peek();
 }
 
@@ -83,18 +88,19 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
 }
 
 jlong JvmtiTagMapTable::find(oop obj) {
-  JvmtiTagMapEntry jtme(obj);
-  jlong* found = _rrht_table.get(jtme);
-  return found == NULL ? 0 : *found;
+  //if (obj->fast_no_hash_check()) {
+  //  return 0;
+  //} else {
+    JvmtiTagMapEntry jtme(obj);
+    jlong* found = _rrht_table.get(jtme);
+    return found == NULL ? 0 : *found;
+  //}
 }
 
 bool JvmtiTagMapTable::add(oop obj, jlong tag) {
   JvmtiTagMapEntry new_entry(obj);
   bool is_added = _rrht_table.put(new_entry, tag);
-  if (is_added) {
-    new_entry.set_released(true);// do not release on dtor, since there is acopied entry inside the table
-  }
-
+  assert(is_added, "should be added");
   return is_added;
 }
 

@@ -36,30 +36,27 @@ class JvmtiTagMapEntryClosure;
 
 class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
   WeakHandle _wh;
-  bool _released;
+  oop        _obj;  // temporarily hold obj while searching
 
  public:
   JvmtiTagMapEntry(oop obj);
-  ~JvmtiTagMapEntry();
-  void set_released(bool flag) {_released = flag;}
+  JvmtiTagMapEntry(const JvmtiTagMapEntry& src);
+  JvmtiTagMapEntry& operator=(JvmtiTagMapEntry const&) = delete;
 
-  void release();
+  ~JvmtiTagMapEntry();
+
   void resolve();
   oop object() const;
   oop object_no_keepalive() const;
-};
 
-class JvmtiTagMapTableBase {
- public:
   static unsigned get_hash(JvmtiTagMapEntry const &entry)  {
-    oop obj = entry.object_no_keepalive();
-    assert(obj != NULL, "must be alive");
-    return obj->identity_hash();
+    assert(entry._obj != NULL, "must lookup obj to hash");
+    return entry._obj->identity_hash();
   }
 
   static bool equals(JvmtiTagMapEntry const & lhs, JvmtiTagMapEntry const & rhs) {
-    oop lhs_obj = lhs.object_no_keepalive();
-    oop rhs_obj = rhs.object_no_keepalive();
+    oop lhs_obj = lhs._obj != nullptr ? lhs._obj : lhs.object_no_keepalive();
+    oop rhs_obj = rhs._obj != nullptr ? rhs._obj : rhs.object_no_keepalive();
     return lhs_obj == rhs_obj;
   }
 };
@@ -67,8 +64,8 @@ class JvmtiTagMapTableBase {
 typedef
 ResizeableResourceHashtable <JvmtiTagMapEntry, jlong,
                              AnyObj::C_HEAP, mtInternal,
-                             JvmtiTagMapTableBase::get_hash,
-                             JvmtiTagMapTableBase::equals
+                             JvmtiTagMapEntry::get_hash,
+                             JvmtiTagMapEntry::equals
                              > ResizableResourceHT ;
 
 class JvmtiTagMapTable : public CHeapObj<mtInternal> {
