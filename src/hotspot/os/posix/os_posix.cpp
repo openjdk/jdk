@@ -720,13 +720,13 @@ void os::dll_unload(void *lib) {
   // calling dlclose the dynamic loader may free the memory containing the string, thus we need to
   // copy the string to be able to reference it after dlclose.
   const char* l_path = NULL;
+#ifdef LINUX
   char* l_pathdup = NULL;
-  LINUX_ONLY(
-    l_path = os::Linux::dll_path(lib);
-    if (l_path != NULL) {
-      l_path = l_pathdup = os::strdup(l_path);
-    }
-  );
+  l_path = os::Linux::dll_path(lib);
+  if (l_path != NULL) {
+    l_path = l_pathdup = os::strdup(l_path);
+  }
+#endif  // LINUX
   if (l_path == NULL) {
     l_path = "<not available>";
   }
