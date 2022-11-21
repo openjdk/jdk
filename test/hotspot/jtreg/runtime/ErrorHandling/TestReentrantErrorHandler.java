@@ -168,7 +168,7 @@ public class TestReentrantErrorHandler {
                 System.err.print(saved_hs_err);
                 System.err.println("<end hs_err contents>");
             }
-            throw new RuntimeException("hs-err file incomplete (first missing pattern: \"" +  pattern[currentPattern].pattern() + "\")");
+            throw new RuntimeException("hs-err file incomplete (first missing pattern: \"" + pattern[currentPattern].pattern() + "\")");
         }
 
         if (!lastLine.equals("END.")) {
