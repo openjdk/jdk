@@ -1010,7 +1010,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   if (native_call) {
     __ li(R14_bcp, 0); // Must initialize.
   } else {
-    __ add(R14_bcp, in_bytes(ConstMethod::codes_offset()), Rconst_method);
+    __ addi(R14_bcp, Rconst_method, in_bytes(ConstMethod::codes_offset()));
   }
 
   // Resize parent frame.

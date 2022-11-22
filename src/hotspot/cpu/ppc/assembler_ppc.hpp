@@ -1932,7 +1932,7 @@ class Assembler : public AbstractAssembler {
 
   // More convenient version.
   int condition_register_bit(ConditionRegister cr, Condition c) {
-    return 4 * (int)(intptr_t)cr + c;
+    return 4 * cr.encoding() + c;
   }
   void crand( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
   void crnand(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);

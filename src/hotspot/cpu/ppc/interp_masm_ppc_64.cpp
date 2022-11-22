@@ -1769,7 +1769,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee,
     if (MethodData::profile_arguments()) {
       Label done;
       int off_to_args = in_bytes(TypeEntriesAtCall::args_data_offset());
-      add(R28_mdx, off_to_args, R28_mdx);
+      addi(R28_mdx, R28_mdx, off_to_args);
 
       for (int i = 0; i < TypeProfileArgsLimit; i++) {
         if (i > 0 || MethodData::profile_return()) {
