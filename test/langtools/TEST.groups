@@ -63,10 +63,6 @@ langtools_jdeps = \
     tools/all \
     tools/jdeps
 
-langtools_sjavac = \
-    tools/all \
-    tools/sjavac
-
 langtools_all = \
     jdk \
     lib \
