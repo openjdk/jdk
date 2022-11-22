@@ -541,7 +541,7 @@ public class MultiThreadTest extends Thread {
                 try {
                     s.close();
                 } catch (Exception e) { }
-                MultiThreadTest.debug("worker: " + id  + " end at " +
+                MultiThreadTest.debug("worker: " + id + " end at " +
                             MultiThreadTest.at() + "ms,  elapsed since worker start: " +
                             Duration.ofNanos(end - start).toMillis() + "ms, elapsed since accept: " +
                             Duration.ofNanos(end - acceptTime).toMillis() +
