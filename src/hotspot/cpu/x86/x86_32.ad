@@ -614,7 +614,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
+  int max_monitors = C->method() != NULL ? C->max_monitors() : 0;
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL, max_monitors);
 
   C->output()->set_frame_complete(cbuf.insts_size());
 
@@ -13809,6 +13810,7 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
   ins_encode %{
+    __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
                  $scr$$Register, $cx1$$Register, $cx2$$Register, $thread$$Register,
                  _rtm_counters, _stack_rtm_counters,
@@ -13825,6 +13827,7 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
+    __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
                  $scr$$Register, noreg, noreg, $thread$$Register, NULL, NULL, NULL, false, false);
   %}

@@ -9650,7 +9650,7 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
   orptr(tmp, markWord::unlocked_value);
   lock();
   cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
-  jcc(Assembler::notZero, slow);
+  jcc(Assembler::notEqual, slow);
   // Pop the lock object from the lock-stack.
 #ifdef _LP64
   const Register thread = r15_thread;

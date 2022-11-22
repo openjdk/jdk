@@ -396,7 +396,9 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     // stack-locking in the object's header, the second check is for
     // recursive stack-locking in the displaced header in the BasicLock,
     // and last are the inflated Java Monitor (ObjectMonitor) checks.
-    lock->set_displaced_header(markWord::unused_mark());
+    if (!UseFastLocking) {
+      lock->set_displaced_header(markWord::unused_mark());
+    }
 
     if (owner == NULL && m->try_set_owner_from(NULL, current) == NULL) {
       assert(m->_recursions == 0, "invariant");

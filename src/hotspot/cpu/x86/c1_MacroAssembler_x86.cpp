@@ -69,7 +69,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     const Register thread = disp_hdr;
     get_thread(thread);
 #endif
-    fast_lock_impl(obj, hdr, thread, tmp, slow_case, false);
+    fast_lock_impl(obj, hdr, thread, tmp, slow_case, LP64_ONLY(false) NOT_LP64(true));
   } else {
     Label done;
     // mark header as unlocked
@@ -341,15 +341,18 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 #endif // !_LP64 && COMPILER2
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
+#ifdef _LP64
   if (UseFastLocking && max_monitors > 0) {
     Label ok;
     movptr(rax, Address(r15_thread, Thread::lock_stack_current_offset()));
     addptr(rax, max_monitors * wordSize);
     cmpptr(rax, Address(r15_thread, Thread::lock_stack_limit_offset()));
     jcc(Assembler::less, ok);
+    assert(StubRoutines::x86::check_lock_stack() != NULL, "need runtime call stub");
     call(RuntimeAddress(StubRoutines::x86::check_lock_stack()));
     bind(ok);
   }
+#endif
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
