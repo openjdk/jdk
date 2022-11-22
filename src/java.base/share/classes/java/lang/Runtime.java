@@ -94,6 +94,7 @@ import jdk.internal.reflect.Reflection;
  * {@linkplain Thread.UncaughtExceptionHandler Uncaught exception handlers} are not run,
  * no {@code finally} clause of any method is executed, and try-with-resources
  * blocks do not {@linkplain AutoCloseable close} their resources.
+ * Other unexpected behaviors may also result.
  *
  * @implNote
  * Native code typically uses the
