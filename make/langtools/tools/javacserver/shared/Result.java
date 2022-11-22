@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
  * questions.
  */
 
-package javacserver.client;
+package javacserver.shared;
 
-import java.io.IOException;
+/**
+ * Result codes.
+ */
+public enum Result {
+    OK(0),        // Compilation completed with no errors.
+    ERROR(1),     // Completed but reported errors.
+    CMDERR(2);    // Bad command-line arguments
 
-public class PortFileInaccessibleException extends IOException {
+    public final int exitCode;
 
-    private static final long serialVersionUID = -4755261881545398973L;
-
-    public PortFileInaccessibleException(Throwable cause) {
-        super(cause);
+    Result(int exitCode) {
+        this.exitCode = exitCode;
     }
 }

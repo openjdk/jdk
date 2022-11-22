@@ -23,17 +23,14 @@
  * questions.
  */
 
-package javacserver.server.log;
+package javacserver.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import javacserver.Log;
-
 public class LoggingOutputStream extends FilterOutputStream {
-
     private static final byte[] LINE_SEP = System.lineSeparator().getBytes();
 
     private final Log.Level level;

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package javacserver.server;
+package javacserver.shared;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,23 +34,15 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
 import java.util.concurrent.Semaphore;
-
-import javacserver.Log;
-import javacserver.client.PortFileInaccessibleException;
+import javacserver.util.Log;
 
 /**
  * The PortFile class mediates access to a short binary file containing the tcp/ip port (for the localhost)
  * and a cookie necessary for the server answering on that port. The file can be locked using file system
  * primitives to avoid race conditions when several javac clients are started at the same. Note that file
- * system locking is not always supported on a all operating systems and/or file systems.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * system locking is not always supported on all operating systems and/or file systems.
  */
 public class PortFile {
-
     // Port file format:
     // byte ordering: high byte first = big endian
     // Magic nr, 4 byte int, first in file.
@@ -225,6 +217,19 @@ public class PortFile {
         lockSem.release();
     }
 
+    public boolean hasValidValues() throws IOException, InterruptedException {
+        if (exists()) {
+            lock();
+            getValues();
+            unlock();
+
+            if (containsPortInfo()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Wait for the port file to contain values that look valid.
      */
@@ -277,7 +282,7 @@ public class PortFile {
                 continue;
             }
             catch (ClosedChannelException e) {
-                // The channel has been closed since sjavac is exiting.
+                // The channel has been closed since the server is exiting.
                 return false;
             }
         }

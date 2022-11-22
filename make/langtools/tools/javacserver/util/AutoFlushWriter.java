@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,39 @@
  * questions.
  */
 
-package javacserver;
+package javacserver.util;
 
-/** Result codes.
- */
-public enum Result {
-    OK(0),        // Compilation completed with no errors.
-    ERROR(1),     // Completed but reported errors.
-    CMDERR(2),    // Bad command-line arguments
-    SYSERR(3),    // System error or resource exhaustion.
-    ABNORMAL(4);  // Compiler terminated abnormally
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.Writer;
 
-    Result(int exitCode) {
-        this.exitCode = exitCode;
+public class AutoFlushWriter extends FilterWriter {
+    public AutoFlushWriter(Writer out) {
+        super(out);
     }
 
-    public static Result of(int exitcode) {
-        for (Result result : values()) {
-            if (result.exitCode == exitcode) {
-                return result;
+    @Override
+    public void write(int c) throws IOException {
+        super.write(c);
+        if (c == '\n' || c == '\r')
+            flush();
+    }
+
+    @Override
+    public void write(String str, int off, int len) throws IOException {
+        super.write(str, off, len);
+        if (str.contains("\n") || str.contains("\r"))
+            flush();
+    }
+
+    @Override
+    public void write(char[] cbuf, int off, int len) throws IOException {
+        super.write(cbuf, off, len);
+        for (char c : cbuf) {
+            if (c == '\n' || c == '\r') {
+                flush();
+                break;
             }
         }
-
-        return ABNORMAL;
     }
-
-    public boolean isOK() {
-        return (exitCode == 0);
-    }
-
-    public final int exitCode;
 }

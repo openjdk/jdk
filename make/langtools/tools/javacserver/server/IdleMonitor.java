@@ -27,53 +27,30 @@ package javacserver.server;
 
 import java.util.Timer;
 import java.util.TimerTask;
-
-import javacserver.Log;
-import javacserver.Result;
+import java.util.function.Consumer;
+import javacserver.util.RunnableTimerTask;
 
 /**
- * An sjavac implementation that keeps track of idleness and shuts down the
- * given Terminable upon idleness timeout.
- *
- * An idleness timeout kicks in {@code idleTimeout} milliseconds after the last
- * request is completed.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Monitors the javacserver daemon, shutting it down if it recieves no new requests
+ * after a certain amount of time.
  */
-public class IdleResetSjavac implements Sjavac {
+public class IdleMonitor {
+    // Accept 120 seconds of inactivity before quitting.
+    private static final int KEEPALIVE = 120;
 
-    private final Sjavac delegate;
-    private final Terminable toShutdown;
+    private final Consumer<String> onShutdown;
     private final Timer idlenessTimer = new Timer();
-    private final long idleTimeout;
     private int outstandingCalls = 0;
 
     // Class invariant: idlenessTimerTask != null <-> idlenessTimerTask is scheduled
     private TimerTask idlenessTimerTask;
 
-    public IdleResetSjavac(Sjavac delegate,
-                           Terminable toShutdown,
-                           long idleTimeout) {
-        this.delegate = delegate;
-        this.toShutdown = toShutdown;
-        this.idleTimeout = idleTimeout;
+    public IdleMonitor(Consumer<String> onShutdown) {
+        this.onShutdown = onShutdown;
         scheduleTimeout();
     }
 
-    @Override
-    public Result compile(String[] args) {
-        startCall();
-        try {
-            return delegate.compile(args);
-        } finally {
-            endCall();
-        }
-    }
-
-    private synchronized void startCall() {
+    public synchronized void startCall() {
         // Was there no outstanding calls before this call?
         if (++outstandingCalls == 1) {
             // Then the timer task must have been scheduled
@@ -85,7 +62,7 @@ public class IdleResetSjavac implements Sjavac {
         }
     }
 
-    private synchronized void endCall() {
+    public synchronized void endCall() {
         if (--outstandingCalls == 0) {
             // No more outstanding calls. Schedule timeout.
             scheduleTimeout();
@@ -95,19 +72,14 @@ public class IdleResetSjavac implements Sjavac {
     private void scheduleTimeout() {
         if (idlenessTimerTask != null)
             throw new IllegalStateException("Idle timeout already scheduled");
-        idlenessTimerTask = new TimerTask() {
-            public void run() {
-                Log.setLogForCurrentThread(ServerMain.getErrorLog());
-                toShutdown.shutdown("Server has been idle for " + (idleTimeout / 1000) + " seconds.");
-            }
-        };
-        idlenessTimer.schedule(idlenessTimerTask, idleTimeout);
+        idlenessTimerTask = new RunnableTimerTask(() -> {
+            Server.restoreServerErrorLog();
+            onShutdown.accept("Server has been idle for " + KEEPALIVE + " seconds.");
+        });
+        idlenessTimer.schedule(idlenessTimerTask, KEEPALIVE * 1000);
     }
 
-    @Override
     public void shutdown() {
         idlenessTimer.cancel();
-        delegate.shutdown();
     }
-
 }
