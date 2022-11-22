@@ -46,9 +46,7 @@ import java.util.List;
  * Various utility methods for processing Java tool command line arguments.
  *
  *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ *  If you write code that depends on this, you do so at your own risk.</b>
  */
 public final class CommandLine {
     /**
