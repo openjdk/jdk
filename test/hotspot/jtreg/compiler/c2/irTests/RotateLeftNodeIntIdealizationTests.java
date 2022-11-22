@@ -27,6 +27,8 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
+ * @bug 8297384
+ * @summary Test that Ideal transformations of RotateLeftNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.RotateLeftNodeIntIdealizationTests
  */
