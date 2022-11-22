@@ -406,6 +406,26 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         return ret + (((long) (b8 & 0XFF)) << 56);
     }
 
+    public int readPaddedInt() throws IOException {
+        return (int) readPadded(4);
+    }
+
+    private long readPadded(int size) throws IOException {
+        long ret = 0L;
+        int shift = 0;
+        for (int i = 0; i < size; i++) {
+            long b = readByte();
+            boolean isLastByte = (i == size - 1);
+            long mask = isLastByte ? 0XFFL : 0x7FL;
+            ret += ((b & mask) << shift);
+            if (b >= 0) {
+                return ret;
+            }
+            shift += 7;
+        }
+        return ret;
+    }
+
     public void setValidSize(long size) {
         if (size > this.size) {
             this.size = size;

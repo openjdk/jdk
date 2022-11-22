@@ -223,7 +223,7 @@ public final class ChunkHeader {
 
     public MetadataDescriptor readMetadata(MetadataDescriptor previous) throws IOException {
         input.position(absoluteChunkStart + metadataPosition);
-        input.readInt(); // size
+        input.readPaddedInt(); // size
         long id = input.readLong(); // event type id
         if (id != METADATA_TYPE_ID) {
             throw new IOException("Expected metadata event. Type id=" + id + ", should have been " + METADATA_TYPE_ID);

@@ -183,7 +183,7 @@ public final class ChunkWriter implements Closeable {
     private void writeMetadataEvent(ChunkHeader header) throws IOException {
         long metadataposition = header.getMetadataPosition() + header.getAbsoluteChunkStart();
         input.position(metadataposition);
-        long size = input.readLong();
+        long size = input.readPaddedInt();
         input.position(metadataposition);
         for (int i = 0; i < size; i++) {
             output.writeByte(input.readByte());
@@ -194,7 +194,7 @@ public final class ChunkWriter implements Closeable {
         input.position(event.getStartPosition());
         long startPosition = output.position();
 
-        input.readLong(); // Read size
+        input.readPaddedInt(); // Read size
         output.writePaddedUnsignedInt(0); // Size, 4 bytes reserved
         output.writeLong(input.readLong()); // Constant pool id
         output.writeLong(input.readLong()); // Start time

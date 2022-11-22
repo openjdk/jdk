@@ -116,7 +116,7 @@ final class Summary extends Command {
                 input.position(ch.getEventStart());
                 while (input.position() < chunkEnd) {
                     long pos = input.position();
-                    int size = input.readInt();
+                    int size = input.readPaddedInt();
                     long eventTypeId = input.readLong();
                     Statistics s = stats.get(eventTypeId);
                     if (s == null) {
