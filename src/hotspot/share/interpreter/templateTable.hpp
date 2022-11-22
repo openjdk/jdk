@@ -83,6 +83,7 @@ class TemplateTable: AllStatic {
   enum Operation { add, sub, mul, div, rem, _and, _or, _xor, shl, shr, ushr };
   enum Condition { equal, not_equal, less, less_equal, greater, greater_equal };
   enum CacheByte { f1_byte = 1, f2_byte = 2 };  // byte_no codes
+  enum LdcType   { ldc_normal = 0, ldc_wide = 1 }; // LDC type
   enum RewriteControl { may_rewrite, may_not_rewrite };  // control for fast code under CDS
 
  private:
@@ -104,6 +105,11 @@ class TemplateTable: AllStatic {
   static void unimplemented_bc();
   static void patch_bytecode(Bytecodes::Code bc, Register bc_reg,
                              Register temp_reg, bool load_bc_into_bc_reg = true, int byte_no = -1);
+
+  static bool is_ldc_wide(LdcType type) {
+    assert(type == ldc_wide || type == ldc_normal, "sanity");
+    return (type == ldc_wide);
+  }
 
   // C calls
   static void call_VM(Register oop_result, address entry_point);
@@ -128,9 +134,9 @@ class TemplateTable: AllStatic {
 
   static void bipush();
   static void sipush();
-  static void ldc(bool wide);
+  static void ldc(LdcType type);
   static void ldc2_w();
-  static void fast_aldc(bool wide);
+  static void fast_aldc(LdcType type);
 
   static void locals_index(Register reg, int offset = 1);
   static void iload();
@@ -327,7 +333,7 @@ class TemplateTable: AllStatic {
   // initialization helpers
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(            ), char filler );
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(int arg     ), int arg     );
-  static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(bool arg    ), bool arg    );
+  static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(LdcType ldct), LdcType ldct);
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(TosState tos), TosState tos);
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(Operation op), Operation op);
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(Condition cc), Condition cc);
