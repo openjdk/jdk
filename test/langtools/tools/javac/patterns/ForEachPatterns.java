@@ -12,20 +12,20 @@ import java.util.function.Function;
 public class ForEachPatterns {
     public static void main(String[] args) {
 
-        List<Point>   in                  = List.of(new Point(1, 2), new Point(2, 3));
-        List<IPoint>  in_iface            = List.of(new Point(1, 2), new Point(2, 3));
-        List          inRaw               = List.of(new Point(1, 2), new Point(2, 3), new Frog(3, 4));
-        List<PointEx> inWithPointEx       = List.of(new PointEx(1, 2));
-        byte[]        inBytes             = { (byte) 127, (byte) 127 };
-        List<Point>   inWithNullComponent = List.of(new Point(1, null), new Point(2, 3));
-        List<Point>   inWithNull          = new ArrayList<>();
-        Point[]       inArray             = in.toArray(Point[]::new);
-        List<WithPrimitives>   inWithPrimitives
-                                          = List.of(new WithPrimitives(1, 2),
-                                                    new WithPrimitives(2, 3));
-
-        inWithNull.add(new Point(2, 3));
-        inWithNull.add(null);
+        List<Point>             in                   = List.of(new Point(1, 2), new Point(2, 3));
+        List<IPoint>            in_iface             = List.of(new Point(1, 2), new Point(2, 3));
+        List                    inRaw                = List.of(new Point(1, 2), new Point(2, 3), new Frog(3, 4));
+        List<PointEx>           inWithPointEx        = List.of(new PointEx(1, 2));
+        byte[]                  inBytes              = { (byte) 127, (byte) 127 };
+        List<Point>             inWithNullComponent  = List.of(new Point(1, null), new Point(2, 3));
+        Point[]                 inArray              = in.toArray(Point[]::new);
+        List<WithPrimitives>    inWithPrimitives     = List.of(new WithPrimitives(1, 2), new WithPrimitives(2, 3));
+        IParent                 recs []              = { new Rec(1) };
+        List<Point>             inWithNull           = new ArrayList<>();
+        {
+            inWithNull.add(new Point(2, 3));
+            inWithNull.add(null);
+        }
 
         assertEquals(8, iteratorEnhancedFor(in));
         assertEquals(8, arrayEnhancedFor(inArray));
@@ -44,7 +44,8 @@ public class ForEachPatterns {
         assertEquals(254, primitiveWidening(inBytes));
         assertEquals(8, sealedRecordPassBaseType(in_iface));
         assertEquals(8, withPrimitives(inWithPrimitives));
-        assertEquals(List.of(Color.RED), test_jep_example());
+        assertEquals(List.of(Color.RED), JEPExample());
+        assertEquals(1, arrayWithSealed(recs));
     }
 
     static int iteratorEnhancedFor(List<Point> points) {
@@ -155,17 +156,13 @@ public class ForEachPatterns {
         return -1;
     }
 
-    static <T> void method() {}
-    static <T> void method2(Function<Integer, Integer> f) {}
-
-    static void for_parsing(int i) {
+    static void forParsing(int i) {
         List<Point>                 points = null;
         List<GPoint<Integer>>       generic_points = null;
         List<GPoint<Point>>         generic_points_nested = null;
         List<GPoint<VoidPoint>>     generic_vpoints_nested = null;
         List<RecordOfLists>         list_of_records = null;
         List<RecordOfLists2>        list_of_records2 = null;
-
 
         for (Point(Integer a, Integer b) : points) { }
         for (ForEachPatterns.Point(Integer a, Integer b) : points) { }
@@ -181,8 +178,11 @@ public class ForEachPatterns {
         for (RecordOfLists(List<Integer> lr) : list_of_records) {}
         for (RecordOfLists2(List<List<Integer>> lr) : list_of_records2) {}
     }
+    //where
+    static <T> void method() {}
+    static <T> void method2(Function<Integer, Integer> f) {}
 
-    static List<Color> test_jep_example() {
+    static List<Color> JEPExample() {
         Rectangle rect = new Rectangle(
                 new ColoredPoint(new Point(1,2), Color.RED),
                 new ColoredPoint(new Point(3,4), Color.GREEN)
@@ -190,11 +190,7 @@ public class ForEachPatterns {
         Rectangle[] rArr = {rect};
         return printUpperLeftColors(rArr);
     }
-
-    enum Color { RED, GREEN, BLUE }
-    record ColoredPoint(Point p, Color c) {}
-    record Rectangle(ColoredPoint upperLeft, ColoredPoint lowerRight) {}
-
+    //where
     static List<Color> printUpperLeftColors(Rectangle[] r) {
         List<Color> ret = new ArrayList<>();
         for (Rectangle(ColoredPoint(Point p, Color c), ColoredPoint lr): r) {
@@ -203,6 +199,47 @@ public class ForEachPatterns {
         return ret;
     }
 
+    static int arrayWithSealed(IParent[] recs){
+        for (Rec(int a) : recs) {
+            return a;
+        }
+        return -1;
+    }
+
+    enum Color { RED, GREEN, BLUE }
+    record ColoredPoint(Point p, Color c) {}
+    record Rectangle(ColoredPoint upperLeft, ColoredPoint lowerRight) {}
+
+    sealed interface IParent permits Rec {}
+    record Rec(int a) implements IParent {}
+
+    sealed interface IPoint permits Point {}
+    record Point(Integer x, Integer y) implements IPoint { }
+
+    record GPoint<T>(T x, T y) { }
+    record VoidPoint() { }
+    record RecordOfLists(List<Integer> o) {}
+    record RecordOfLists2(List<List<Integer>> o) {}
+
+    @interface Annot {
+        String field();
+    }
+    record Frog(Integer x, Integer y) { }
+    record PointEx(Integer x, Integer y) {
+        @Override
+        public Integer x() {
+            throw new TestPatternFailed(EXCEPTION_MESSAGE);
+        }
+    }
+    record WithPrimitives(int x, double y) { }
+    static final String EXCEPTION_MESSAGE = "exception-message";
+    public static class TestPatternFailed extends AssertionError {
+        public TestPatternFailed(String message) {
+            super(message);
+        }
+    }
+
+    // error handling
     static void fail(String message) {
         throw new AssertionError(message);
     }
@@ -235,31 +272,6 @@ public class ForEachPatterns {
         }
         catch(Exception ex) {
             assertEquals(exceptionClass, ex.getClass());
-        }
-    }
-
-    sealed interface IPoint permits Point {}
-    record Point(Integer x, Integer y) implements IPoint { }
-    record GPoint<T>(T x, T y) { }
-    record VoidPoint() { }
-    record RecordOfLists(List<Integer> o) {}
-    record RecordOfLists2(List<List<Integer>> o) {}
-
-    @interface Annot {
-        String field();
-    }
-    record Frog(Integer x, Integer y) { }
-    record PointEx(Integer x, Integer y) {
-        @Override
-        public Integer x() {
-            throw new TestPatternFailed(EXCEPTION_MESSAGE);
-        }
-    }
-    record WithPrimitives(int x, double y) { }
-    static final String EXCEPTION_MESSAGE = "exception-message";
-    public static class TestPatternFailed extends AssertionError {
-        public TestPatternFailed(String message) {
-            super(message);
         }
     }
 }

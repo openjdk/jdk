@@ -715,7 +715,7 @@ public class TransPatterns extends TreeTranslator {
                  * }</pre>
                  *
                  */
-                Type selectorType = tree.varOrRecordPattern.type;
+                Type selectorType = types.classBound(tree.elementType);
 
                 currentValue = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
                         names.fromString("patt" + tree.pos + target.syntheticNameChar() + "temp"),
