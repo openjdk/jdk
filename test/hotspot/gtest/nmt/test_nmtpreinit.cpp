@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "services/nmtPreInit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -74,7 +75,7 @@ public:
   }
   void test_pre() {
     // Note that this part will run every time a gtestlauncher execs (so, for every TEST_OTHER_VM).
-    assert(NMTPreInit::in_preinit_phase(),
+    assert(!MemTracker::is_initialized(),
            "This should be run in pre-init phase (as part of C++ dyn. initialization)");
     LOG("corner cases, pre-init (%d)", os::current_process_id());
     log_state();
@@ -112,7 +113,7 @@ public:
     log_state();
   }
   void test_post() {
-    assert(NMTPreInit::in_preinit_phase() == false,
+    assert(MemTracker::is_initialized(),
            "This should be run in post-init phase (from inside a TEST_VM test)");
     LOG("corner cases, post-init (%d)", os::current_process_id());
     log_state();
@@ -126,7 +127,7 @@ public:
     log_state();
   }
   void free_all() {
-    assert(NMTPreInit::in_preinit_phase() == false,
+    assert(MemTracker::is_initialized(),
            "This should be run in post-init phase (from inside a TEST_VM test)");
     LOG("corner cases, free-all (%d)", os::current_process_id());
     log_state();

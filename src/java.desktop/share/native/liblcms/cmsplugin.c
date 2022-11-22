@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -197,17 +197,20 @@ cmsBool CMSEXPORT  _cmsReadUInt32Number(cmsIOHANDLER* io, cmsUInt32Number* n)
 
 cmsBool CMSEXPORT  _cmsReadFloat32Number(cmsIOHANDLER* io, cmsFloat32Number* n)
 {
-    cmsUInt32Number tmp;
+    union typeConverter {
+        cmsUInt32Number integer;
+        cmsFloat32Number floating_point;
+    } tmp;
 
     _cmsAssert(io != NULL);
 
-    if (io->Read(io, &tmp, sizeof(cmsUInt32Number), 1) != 1)
+    if (io->Read(io, &tmp.integer, sizeof(cmsUInt32Number), 1) != 1)
         return FALSE;
 
     if (n != NULL) {
 
-        tmp = _cmsAdjustEndianess32(tmp);
-        *n = *(cmsFloat32Number*)(void*)&tmp;
+        tmp.integer = _cmsAdjustEndianess32(tmp.integer);
+        *n = tmp.floating_point;
 
         // Safeguard which covers against absurd values
         if (*n > 1E+20 || *n < -1E+20) return FALSE;
@@ -334,13 +337,14 @@ cmsBool CMSEXPORT  _cmsWriteUInt32Number(cmsIOHANDLER* io, cmsUInt32Number n)
 
 cmsBool CMSEXPORT  _cmsWriteFloat32Number(cmsIOHANDLER* io, cmsFloat32Number n)
 {
-    cmsUInt32Number tmp;
+    union typeConverter {
+        cmsUInt32Number integer;
+        cmsFloat32Number floating_point;
+    } tmp;
 
-    _cmsAssert(io != NULL);
-
-    tmp = *(cmsUInt32Number*) (void*) &n;
-    tmp = _cmsAdjustEndianess32(tmp);
-    if (io -> Write(io, sizeof(cmsUInt32Number), &tmp) != 1)
+    tmp.floating_point = n;
+    tmp.integer = _cmsAdjustEndianess32(tmp.integer);
+    if (io -> Write(io, sizeof(cmsUInt32Number), &tmp.integer) != 1)
             return FALSE;
 
     return TRUE;
@@ -650,6 +654,10 @@ cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
                     if (!_cmsRegisterMutexPlugin(id, Plugin)) return FALSE;
                     break;
 
+                case cmsPluginParalellizationSig:
+                    if (!_cmsRegisterParallelizationPlugin(id, Plugin)) return FALSE;
+                    break;
+
                 default:
                     cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized plugin type '%X'", Plugin -> Type);
                     return FALSE;
@@ -672,24 +680,25 @@ void CMSEXPORT cmsUnregisterPlugins(void)
 // pointers structure. All global vars are referenced here.
 static struct _cmsContext_struct globalContext = {
 
-    NULL,                              // Not in the linked list
-    NULL,                              // No suballocator
+    NULL,                                // Not in the linked list
+    NULL,                                // No suballocator
     {
-        NULL,                          //  UserPtr,
-        &_cmsLogErrorChunk,            //  Logger,
-        &_cmsAlarmCodesChunk,          //  AlarmCodes,
-        &_cmsAdaptationStateChunk,     //  AdaptationState,
-        &_cmsMemPluginChunk,           //  MemPlugin,
-        &_cmsInterpPluginChunk,        //  InterpPlugin,
-        &_cmsCurvesPluginChunk,        //  CurvesPlugin,
-        &_cmsFormattersPluginChunk,    //  FormattersPlugin,
-        &_cmsTagTypePluginChunk,       //  TagTypePlugin,
-        &_cmsTagPluginChunk,           //  TagPlugin,
-        &_cmsIntentsPluginChunk,       //  IntentPlugin,
-        &_cmsMPETypePluginChunk,       //  MPEPlugin,
-        &_cmsOptimizationPluginChunk,  //  OptimizationPlugin,
-        &_cmsTransformPluginChunk,     //  TransformPlugin,
-        &_cmsMutexPluginChunk          //  MutexPlugin
+        NULL,                            //  UserPtr,
+        &_cmsLogErrorChunk,              //  Logger,
+        &_cmsAlarmCodesChunk,            //  AlarmCodes,
+        &_cmsAdaptationStateChunk,       //  AdaptationState,
+        &_cmsMemPluginChunk,             //  MemPlugin,
+        &_cmsInterpPluginChunk,          //  InterpPlugin,
+        &_cmsCurvesPluginChunk,          //  CurvesPlugin,
+        &_cmsFormattersPluginChunk,      //  FormattersPlugin,
+        &_cmsTagTypePluginChunk,         //  TagTypePlugin,
+        &_cmsTagPluginChunk,             //  TagPlugin,
+        &_cmsIntentsPluginChunk,         //  IntentPlugin,
+        &_cmsMPETypePluginChunk,         //  MPEPlugin,
+        &_cmsOptimizationPluginChunk,    //  OptimizationPlugin,
+        &_cmsTransformPluginChunk,       //  TransformPlugin,
+        &_cmsMutexPluginChunk,           //  MutexPlugin,
+        &_cmsParallelizationPluginChunk  //  ParallelizationPlugin
     },
 
     { NULL, NULL, NULL, NULL, NULL, NULL } // The default memory allocator is not used for context 0
@@ -700,16 +709,64 @@ static struct _cmsContext_struct globalContext = {
 static _cmsMutex _cmsContextPoolHeadMutex = CMS_MUTEX_INITIALIZER;
 static struct _cmsContext_struct* _cmsContextPoolHead = NULL;
 
+
+// Make sure context is initialized (needed on windows)
+static
+cmsBool InitContextMutex(void)
+{
+    // See the comments regarding locking in lcms2_internal.h
+    // for an explanation of why we need the following code.
+#ifndef CMS_NO_PTHREADS
+#ifdef CMS_IS_WINDOWS_
+#ifndef CMS_RELY_ON_WINDOWS_STATIC_MUTEX_INIT
+
+    static cmsBool already_initialized = FALSE;
+
+    if (!already_initialized)
+    {
+        static HANDLE _cmsWindowsInitMutex = NULL;
+        static volatile HANDLE* mutex = &_cmsWindowsInitMutex;
+
+        if (*mutex == NULL)
+        {
+            HANDLE p = CreateMutex(NULL, FALSE, NULL);
+            if (p && InterlockedCompareExchangePointer((void**)mutex, (void*)p, NULL) != NULL)
+                CloseHandle(p);
+        }
+        if (*mutex == NULL || WaitForSingleObject(*mutex, INFINITE) == WAIT_FAILED)
+        {
+            cmsSignalError(0, cmsERROR_INTERNAL, "Mutex lock failed");
+            return FALSE;
+        }
+        if (((void**)&_cmsContextPoolHeadMutex)[0] == NULL)
+            InitializeCriticalSection(&_cmsContextPoolHeadMutex);
+        if (*mutex == NULL || !ReleaseMutex(*mutex))
+        {
+            cmsSignalError(0, cmsERROR_INTERNAL, "Mutex unlock failed");
+            return FALSE;
+        }
+        already_initialized = TRUE;
+    }
+#endif
+#endif
+#endif
+
+    return TRUE;
+}
+
+
+
 // Internal, get associated pointer, with guessing. Never returns NULL.
 struct _cmsContext_struct* _cmsGetContext(cmsContext ContextID)
 {
     struct _cmsContext_struct* id = (struct _cmsContext_struct*) ContextID;
     struct _cmsContext_struct* ctx;
 
-
     // On 0, use global settings
     if (id == NULL)
         return &globalContext;
+
+    InitContextMutex();
 
     // Search
     _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
@@ -768,6 +825,8 @@ void* _cmsContextGetClientChunk(cmsContext ContextID, _cmsMemoryClient mc)
 // identify which plug-in to unregister.
 void CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID)
 {
+    struct _cmsContext_struct* ctx = _cmsGetContext(ContextID);
+
     _cmsRegisterMemHandlerPlugin(ContextID, NULL);
     _cmsRegisterInterpPlugin(ContextID, NULL);
     _cmsRegisterTagTypePlugin(ContextID, NULL);
@@ -779,6 +838,11 @@ void CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID)
     _cmsRegisterOptimizationPlugin(ContextID, NULL);
     _cmsRegisterTransformPlugin(ContextID, NULL);
     _cmsRegisterMutexPlugin(ContextID, NULL);
+    _cmsRegisterParallelizationPlugin(ContextID, NULL);
+
+   if (ctx->MemPool != NULL)
+       _cmsSubAllocDestroy(ctx->MemPool);
+   ctx->MemPool = NULL;
 }
 
 
@@ -813,31 +877,7 @@ cmsContext CMSEXPORT cmsCreateContext(void* Plugin, void* UserData)
     struct _cmsContext_struct* ctx;
     struct _cmsContext_struct  fakeContext;
 
-    // See the comments regarding locking in lcms2_internal.h
-    // for an explanation of why we need the following code.
-#ifndef CMS_NO_PTHREADS
-#ifdef CMS_IS_WINDOWS_
-#ifndef CMS_RELY_ON_WINDOWS_STATIC_MUTEX_INIT
-    {
-        static HANDLE _cmsWindowsInitMutex = NULL;
-        static volatile HANDLE* mutex = &_cmsWindowsInitMutex;
-
-        if (*mutex == NULL)
-        {
-            HANDLE p = CreateMutex(NULL, FALSE, NULL);
-            if (p && InterlockedCompareExchangePointer((void **)mutex, (void*)p, NULL) != NULL)
-                CloseHandle(p);
-        }
-        if (*mutex == NULL || WaitForSingleObject(*mutex, INFINITE) == WAIT_FAILED)
-            return NULL;
-        if (((void **)&_cmsContextPoolHeadMutex)[0] == NULL)
-            InitializeCriticalSection(&_cmsContextPoolHeadMutex);
-        if (*mutex == NULL || !ReleaseMutex(*mutex))
-            return NULL;
-    }
-#endif
-#endif
-#endif
+    if (!InitContextMutex()) return NULL;
 
     _cmsInstallAllocFunctions(_cmsFindMemoryPlugin(Plugin), &fakeContext.DefaultMemoryManager);
 
@@ -886,6 +926,7 @@ cmsContext CMSEXPORT cmsCreateContext(void* Plugin, void* UserData)
     _cmsAllocOptimizationPluginChunk(ctx, NULL);
     _cmsAllocTransformPluginChunk(ctx, NULL);
     _cmsAllocMutexPluginChunk(ctx, NULL);
+    _cmsAllocParallelizationPluginChunk(ctx, NULL);
 
     // Setup the plug-ins
     if (!cmsPluginTHR(ctx, Plugin)) {
@@ -912,6 +953,8 @@ cmsContext CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData)
     ctx = (struct _cmsContext_struct*) _cmsMalloc(ContextID, sizeof(struct _cmsContext_struct));
     if (ctx == NULL)
         return NULL;     // Something very wrong happened
+
+    if (!InitContextMutex()) return NULL;
 
     // Setup default memory allocators
     memcpy(&ctx->DefaultMemoryManager, &src->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
@@ -947,6 +990,7 @@ cmsContext CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData)
     _cmsAllocOptimizationPluginChunk(ctx, src);
     _cmsAllocTransformPluginChunk(ctx, src);
     _cmsAllocMutexPluginChunk(ctx, src);
+    _cmsAllocParallelizationPluginChunk(ctx, src);
 
     // Make sure no one failed
     for (i=Logger; i < MemoryClientMax; i++) {
@@ -971,6 +1015,9 @@ void CMSEXPORT cmsDeleteContext(cmsContext ContextID)
         struct _cmsContext_struct* ctx = (struct _cmsContext_struct*) ContextID;
         struct _cmsContext_struct  fakeContext;
         struct _cmsContext_struct* prev;
+
+
+        InitContextMutex();
 
         memcpy(&fakeContext.DefaultMemoryManager, &ctx->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
 
@@ -1018,3 +1065,32 @@ void* CMSEXPORT cmsGetContextUserData(cmsContext ContextID)
 }
 
 
+// Use context mutex to provide thread-safe time
+cmsBool _cmsGetTime(struct tm* ptr_time)
+{
+    struct tm* t;
+#if defined(HAVE_GMTIME_R) || defined(HAVE_GMTIME_S)
+    struct tm tm;
+#endif
+
+    time_t now = time(NULL);
+
+#ifdef HAVE_GMTIME_R
+    t = gmtime_r(&now, &tm);
+#elif defined(HAVE_GMTIME_S)
+    t = gmtime_s(&tm, &now) == 0 ? &tm : NULL;
+#else
+    if (!InitContextMutex()) return FALSE;
+
+    _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+    t = gmtime(&now);
+    _cmsLeaveCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+#endif
+
+    if (t == NULL)
+        return FALSE;
+    else {
+        *ptr_time = *t;
+        return TRUE;
+    }
+}

@@ -204,6 +204,15 @@ ifeq ($(HAS_SPEC),)
           # Otherwise select those that contain the given CONF string
           matching_confs := $$(strip $$(foreach var, $$(all_confs), \
               $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+          ifneq ($$(filter $$(CONF), $$(matching_confs)), )
+            # If we found an exact match, use that
+            matching_confs := $$(CONF)
+            # Don't repeat this output on make restarts caused by including
+            # generated files.
+            ifeq ($$(MAKE_RESTARTS),)
+              $$(info Using exact match for CONF=$$(CONF) (other matches are possible))
+            endif
+          endif
         endif
         ifeq ($$(matching_confs),)
           $$(info Error: No configurations found matching CONF=$$(CONF).)
