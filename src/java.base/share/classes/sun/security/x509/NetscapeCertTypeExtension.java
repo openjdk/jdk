@@ -103,7 +103,7 @@ public class NetscapeCertTypeExtension extends Extension {
     }
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream os = new DerOutputStream();
         os.putTruncatedUnalignedBitString(new BitArray(this.bitString));
         this.extensionValue = os.toByteArray();
@@ -138,7 +138,7 @@ public class NetscapeCertTypeExtension extends Extension {
      *
      * @param bitString the bits to be set for the extension.
      */
-    public NetscapeCertTypeExtension(byte[] bitString) throws IOException {
+    public NetscapeCertTypeExtension(byte[] bitString) {
         this.bitString =
             new BitArray(bitString.length*8, bitString).toBooleanArray();
         this.extensionId = NetscapeCertType_Id;
@@ -152,7 +152,7 @@ public class NetscapeCertTypeExtension extends Extension {
      *
      * @param bitString the bits to be set for the extension.
      */
-    public NetscapeCertTypeExtension(boolean[] bitString) throws IOException {
+    public NetscapeCertTypeExtension(boolean[] bitString) {
         this.bitString = bitString;
         this.extensionId = NetscapeCertType_Id;
         this.critical = true;
@@ -238,10 +238,9 @@ public class NetscapeCertTypeExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = NetscapeCertType_Id;
             this.critical = true;

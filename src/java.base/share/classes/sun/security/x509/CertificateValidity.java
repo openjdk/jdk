@@ -123,10 +123,9 @@ public class CertificateValidity implements DerEncoder {
      * Encode the CertificateValidity period in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
 
         DerOutputStream pair = new DerOutputStream();
 

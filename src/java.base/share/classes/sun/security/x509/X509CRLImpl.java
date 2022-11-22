@@ -298,48 +298,43 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
          * @exception CRLException on encoding errors.
          */
         public byte[] encodeInfo() throws CRLException {
-            try {
-                DerOutputStream tmp = new DerOutputStream();
-                DerOutputStream rCerts = new DerOutputStream();
-                DerOutputStream seq = new DerOutputStream();
+            DerOutputStream tmp = new DerOutputStream();
+            DerOutputStream rCerts = new DerOutputStream();
+            DerOutputStream seq = new DerOutputStream();
 
-                if (version != 0) // v2 crl encode version
-                    tmp.putInteger(version);
-                infoSigAlgId.encode(tmp);
-                if ((version == 0) && (issuer.toString() == null))
-                    throw new CRLException("Null Issuer DN not allowed in v1 CRL");
-                issuer.encode(tmp);
+            if (version != 0) // v2 crl encode version
+                tmp.putInteger(version);
+            infoSigAlgId.encode(tmp);
+            if ((version == 0) && (issuer.toString() == null))
+                throw new CRLException("Null Issuer DN not allowed in v1 CRL");
+            issuer.encode(tmp);
 
-                if (thisUpdate.getTime() < CertificateValidity.YR_2050)
-                    tmp.putUTCTime(thisUpdate);
+            if (thisUpdate.getTime() < CertificateValidity.YR_2050)
+                tmp.putUTCTime(thisUpdate);
+            else
+                tmp.putGeneralizedTime(thisUpdate);
+
+            if (nextUpdate != null) {
+                if (nextUpdate.getTime() < CertificateValidity.YR_2050)
+                    tmp.putUTCTime(nextUpdate);
                 else
-                    tmp.putGeneralizedTime(thisUpdate);
-
-                if (nextUpdate != null) {
-                    if (nextUpdate.getTime() < CertificateValidity.YR_2050)
-                        tmp.putUTCTime(nextUpdate);
-                    else
-                        tmp.putGeneralizedTime(nextUpdate);
-                }
-
-                if (!revokedList.isEmpty()) {
-                    for (X509CRLEntry entry : revokedList) {
-                        ((X509CRLEntryImpl)entry).encode(rCerts);
-                    }
-                    tmp.write(DerValue.tag_Sequence, rCerts);
-                }
-
-                if (extensions != null)
-                    extensions.encode(tmp, isExplicit);
-
-                seq.write(DerValue.tag_Sequence, tmp);
-
-                return seq.toByteArray();
-            } catch (IOException e) {
-                throw new CRLException("Encoding error: " + e.getMessage());
+                    tmp.putGeneralizedTime(nextUpdate);
             }
-        }
 
+            if (!revokedList.isEmpty()) {
+                for (X509CRLEntry entry : revokedList) {
+                    ((X509CRLEntryImpl) entry).encode(rCerts);
+                }
+                tmp.write(DerValue.tag_Sequence, rCerts);
+            }
+
+            if (extensions != null)
+                extensions.encode(tmp, isExplicit);
+
+            seq.write(DerValue.tag_Sequence, tmp);
+
+            return seq.toByteArray();
+        }
     }
 
     private static final boolean isExplicit = true;
@@ -605,36 +600,31 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public static X509CRLImpl newSigned(TBSCertList info, PrivateKey key, String algorithm, String provider)
             throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
                    NoSuchProviderException, SignatureException {
-        try {
-            Signature sigEngine = SignatureUtil.fromKey(algorithm, key, provider);
-            AlgorithmId sigAlgId = SignatureUtil.fromSignature(sigEngine, key);
-            info.infoSigAlgId = sigAlgId;
+        Signature sigEngine = SignatureUtil.fromKey(algorithm, key, provider);
+        AlgorithmId sigAlgId = SignatureUtil.fromSignature(sigEngine, key);
+        info.infoSigAlgId = sigAlgId;
 
-            DerOutputStream out = new DerOutputStream();
-            DerOutputStream tmp = new DerOutputStream();
+        DerOutputStream out = new DerOutputStream();
+        DerOutputStream tmp = new DerOutputStream();
 
-            // encode crl info
-            byte[] tbsCertList = info.encodeInfo();
-            tmp.writeBytes(tbsCertList);
+        // encode crl info
+        byte[] tbsCertList = info.encodeInfo();
+        tmp.writeBytes(tbsCertList);
 
-            // encode algorithm identifier
-            sigAlgId.encode(tmp);
+        // encode algorithm identifier
+        sigAlgId.encode(tmp);
 
-            // Create and encode the signature itself.
-            sigEngine.update(tbsCertList, 0, tbsCertList.length);
-            byte[] signature = sigEngine.sign();
-            tmp.putBitString(signature);
+        // Create and encode the signature itself.
+        sigEngine.update(tbsCertList, 0, tbsCertList.length);
+        byte[] signature = sigEngine.sign();
+        tmp.putBitString(signature);
 
-            // Wrap the signed data in a SEQUENCE { data, algorithm, sig }
-            out.write(DerValue.tag_Sequence, tmp);
-            byte[] signedCRL = out.toByteArray();
+        // Wrap the signed data in a SEQUENCE { data, algorithm, sig }
+        out.write(DerValue.tag_Sequence, tmp);
+        byte[] signedCRL = out.toByteArray();
 
-            return new X509CRLImpl(info, sigAlgId, signature,
-                    tbsCertList, signedCRL);
-        } catch (IOException e) {
-            throw new CRLException("Error while encoding data: " +
-                                   e.getMessage());
-        }
+        return new X509CRLImpl(info, sigAlgId, signature,
+                tbsCertList, signedCRL);
     }
 
     /**
@@ -1251,8 +1241,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     }
 
     @Override
-    public void encode(DerOutputStream out) throws IOException {
-        out.write(signedCRL.clone());
+    public void encode(DerOutputStream out) {
+        out.writeBytes(signedCRL);
     }
 
     /**

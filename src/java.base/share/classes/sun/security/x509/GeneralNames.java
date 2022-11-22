@@ -111,7 +111,7 @@ public class GeneralNames {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on error.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (isEmpty()) {
             return;
         }

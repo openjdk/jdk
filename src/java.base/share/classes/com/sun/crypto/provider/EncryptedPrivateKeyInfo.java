@@ -107,9 +107,7 @@ final class EncryptedPrivateKeyInfo {
     /**
      * Returns the ASN.1 encoding of this class.
      */
-    byte[] getEncoded()
-        throws IOException
-    {
+    byte[] getEncoded() {
         if (this.encoded != null) return this.encoded.clone();
 
         DerOutputStream out = new DerOutputStream();

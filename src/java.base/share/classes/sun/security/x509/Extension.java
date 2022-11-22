@@ -169,10 +169,9 @@ public class Extension implements java.security.cert.Extension, DerEncoder {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
 
         Objects.requireNonNull(extensionId,
                 "No OID to encode for the extension");

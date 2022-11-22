@@ -69,7 +69,7 @@ public class InhibitAnyPolicyExtension extends Extension {
     private int skipCerts = Integer.MAX_VALUE;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream out = new DerOutputStream();
         out.putInteger(skipCerts);
         this.extensionValue = out.toByteArray();
@@ -81,7 +81,7 @@ public class InhibitAnyPolicyExtension extends Extension {
      * @param skipCerts specifies the depth of the certification path.
      *                  Use value of -1 to request unlimited depth.
      */
-    public InhibitAnyPolicyExtension(int skipCerts) throws IOException {
+    public InhibitAnyPolicyExtension(int skipCerts) {
         if (skipCerts < -1)
             throw new IllegalArgumentException("Invalid value for skipCerts");
         if (skipCerts == -1)
@@ -144,7 +144,7 @@ public class InhibitAnyPolicyExtension extends Extension {
      * @param out the DerOutputStream to encode the extension to.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             this.extensionId = PKIXExtensions.InhibitAnyPolicy_Id;
             critical = true;

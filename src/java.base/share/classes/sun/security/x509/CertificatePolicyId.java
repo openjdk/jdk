@@ -37,7 +37,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificatePolicyId {
+public class CertificatePolicyId implements DerEncoder {
     private final ObjectIdentifier id;
 
     /**
@@ -79,9 +79,9 @@ public class CertificatePolicyId {
      * Write the CertificatePolicyId to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the object to.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putOID(id);
     }
 

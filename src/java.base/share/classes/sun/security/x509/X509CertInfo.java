@@ -148,12 +148,12 @@ public class X509CertInfo {
      * @exception IOException on other errors.
      */
     public void encode(DerOutputStream out)
-            throws CertificateException, IOException {
+            throws CertificateException {
         if (rawCertInfo == null) {
             emit(out);
             rawCertInfo = out.toByteArray();
         } else {
-            out.write(rawCertInfo.clone());
+            out.writeBytes(rawCertInfo.clone());
         }
     }
 
@@ -170,7 +170,7 @@ public class X509CertInfo {
                 rawCertInfo = tmp.toByteArray();
             }
             return rawCertInfo.clone();
-        } catch (IOException | CertificateException e) {
+        } catch (CertificateException e) {
             throw new CertificateEncodingException(e.toString());
         }
     }
@@ -464,8 +464,7 @@ public class X509CertInfo {
     /*
      * Marshal the contents of a "raw" certificate into a DER sequence.
      */
-    private void emit(DerOutputStream out)
-    throws CertificateException, IOException {
+    private void emit(DerOutputStream out) throws CertificateException {
         DerOutputStream tmp = new DerOutputStream();
 
         // version number, iff not V1

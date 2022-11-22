@@ -43,7 +43,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class GeneralSubtree {
+public class GeneralSubtree implements DerEncoder {
     private static final byte TAG_MIN = 0;
     private static final byte TAG_MAX = 1;
     private static final int  MIN_DEFAULT = 0;
@@ -194,7 +194,8 @@ public class GeneralSubtree {
      *
      * @param out the DerOutputStream to encode this object to.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
 
         name.encode(seq);

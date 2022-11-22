@@ -765,11 +765,7 @@ final class P11Signature extends SignatureSpi {
     }
 
     private byte[] encodeSignature(byte[] digest) throws SignatureException {
-        try {
-            return RSAUtil.encodeSignature(digestOID, digest);
-        } catch (IOException e) {
-            throw new SignatureException("Invalid encoding", e);
-        }
+        return RSAUtil.encodeSignature(digestOID, digest);
     }
 
     private static KnownOIDs getDigestEnum(String algorithm)
@@ -802,16 +798,12 @@ final class P11Signature extends SignatureSpi {
         int n = signature.length >> 1;
         BigInteger r = new BigInteger(1, P11Util.subarray(signature, 0, n));
         BigInteger s = new BigInteger(1, P11Util.subarray(signature, n, n));
-        try {
-            DerOutputStream outseq = new DerOutputStream(100);
-            outseq.putInteger(r);
-            outseq.putInteger(s);
-            DerValue result = new DerValue(DerValue.tag_Sequence,
-                                           outseq.toByteArray());
-            return result.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException("Internal error", e);
-        }
+        DerOutputStream outseq = new DerOutputStream(100);
+        outseq.putInteger(r);
+        outseq.putInteger(s);
+        DerValue result = new DerValue(DerValue.tag_Sequence,
+                outseq.toByteArray());
+        return result.toByteArray();
     }
 
     private static byte[] asn1ToDSA(byte[] sig, int sigLen)

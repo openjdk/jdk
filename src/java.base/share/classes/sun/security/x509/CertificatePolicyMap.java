@@ -36,7 +36,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificatePolicyMap {
+public class CertificatePolicyMap implements DerEncoder {
     private final CertificatePolicyId issuerDomain;
     private final CertificatePolicyId subjectDomain;
 
@@ -94,9 +94,9 @@ public class CertificatePolicyMap {
      * Write the CertificatePolicyMap to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the object to.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
 
         issuerDomain.encode(tmp);

@@ -45,7 +45,7 @@ public class CRLReasonCodeExtension extends Extension {
 
     private int reasonCode;
 
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (reasonCode == 0) {
             this.extensionValue = null;
             return;
@@ -71,8 +71,7 @@ public class CRLReasonCodeExtension extends Extension {
      * @param critical true if the extension is to be treated as critical.
      * @param reason the enumerated value for the reason code, must be positive.
      */
-    public CRLReasonCodeExtension(boolean critical, int reason)
-            throws IOException {
+    public CRLReasonCodeExtension(boolean critical, int reason) {
         if (reason <= 0) {
             throw new IllegalArgumentException("reason code must be positive");
         }
@@ -110,10 +109,9 @@ public class CRLReasonCodeExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.ReasonCode_Id;
             this.critical = false;

@@ -82,20 +82,14 @@ implements java.security.interfaces.DSAPublicKey, Serializable {
      * @param g DSA parameter g, may be null if all of p, q, and g are null.
      */
     public DSAPublicKey(BigInteger y, BigInteger p, BigInteger q,
-                        BigInteger g)
-    throws InvalidKeyException {
+                        BigInteger g) {
         this.y = y;
         algid = new AlgIdDSA(p, q, g);
 
-        try {
-            byte[] keyArray = new DerValue(DerValue.tag_Integer,
-                               y.toByteArray()).toByteArray();
-            setKey(new BitArray(keyArray.length*8, keyArray));
-            encode();
-        } catch (IOException e) {
-            throw new InvalidKeyException("could not DER encode y: " +
-                                          e.getMessage());
-        }
+        byte[] keyArray = new DerValue(DerValue.tag_Integer,
+                           y.toByteArray()).toByteArray();
+        setKey(new BitArray(keyArray.length*8, keyArray));
+        encode();
     }
 
     /**

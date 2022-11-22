@@ -801,13 +801,9 @@ abstract class P11Key implements Key, Length {
             token.ensureValid();
             if (encoded == null) {
                 fetchValues();
-                try {
-                    Key key = new sun.security.provider.DSAPublicKey
-                            (y, params.getP(), params.getQ(), params.getG());
-                    encoded = key.getEncoded();
-                } catch (InvalidKeyException e) {
-                    throw new ProviderException(e);
-                }
+                Key key = new sun.security.provider.DSAPublicKey
+                        (y, params.getP(), params.getQ(), params.getG());
+                encoded = key.getEncoded();
             }
             return encoded;
         }

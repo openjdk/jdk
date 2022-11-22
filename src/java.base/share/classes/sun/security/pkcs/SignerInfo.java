@@ -212,13 +212,10 @@ public class SignerInfo implements DerEncoder {
      * DER encode this object onto an output stream.
      * Implements the {@code DerEncoder} interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
         seq.putInteger(version);
         DerOutputStream issuerAndSerialNumber = new DerOutputStream();
@@ -432,16 +429,11 @@ public class SignerInfo implements DerEncoder {
             boolean[] keyUsageBits = cert.getKeyUsage();
             if (keyUsageBits != null) {
                 KeyUsageExtension keyUsage;
-                try {
-                    // We don't care whether this extension was marked
-                    // critical in the certificate.
-                    // We're interested only in its value (i.e., the bits set)
-                    // and treat the extension as critical.
-                    keyUsage = new KeyUsageExtension(keyUsageBits);
-                } catch (IOException ioe) {
-                    throw new SignatureException("Failed to parse keyUsage "
-                                                 + "extension");
-                }
+                // We don't care whether this extension was marked
+                // critical in the certificate.
+                // We're interested only in its value (i.e., the bits set)
+                // and treat the extension as critical.
+                keyUsage = new KeyUsageExtension(keyUsageBits);
 
                 boolean digSigAllowed
                         = keyUsage.get(KeyUsageExtension.DIGITAL_SIGNATURE);

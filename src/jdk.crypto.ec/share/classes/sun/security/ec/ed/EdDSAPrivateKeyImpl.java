@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.ec.ed;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
-import java.security.ProviderException;
 import java.security.interfaces.EdECPrivateKey;
 import java.util.Optional;
 import java.security.spec.NamedParameterSpec;
@@ -55,8 +54,6 @@ public final class EdDSAPrivateKeyImpl
         DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
             this.key = val.toByteArray();
-        } catch (IOException ex) {
-            throw new AssertionError("Should not happen", ex);
         } finally {
             val.clear();
         }

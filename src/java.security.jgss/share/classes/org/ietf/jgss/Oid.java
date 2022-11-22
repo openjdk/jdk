@@ -174,13 +174,12 @@ public class Oid {
      */
     public byte[] getDER() throws GSSException {
 
+        // Since JDK-8297065, this method no longer throws a GSSException.
+        // The throws clause in the method definition might be removed in
+        // a future Java GSS-API update.
         if (derEncoding == null) {
             DerOutputStream dout = new DerOutputStream();
-            try {
-                dout.putOID(oid);
-            } catch (IOException e) {
-                throw new GSSException(GSSException.FAILURE, e.getMessage());
-            }
+            dout.putOID(oid);
             derEncoding = dout.toByteArray();
         }
 
