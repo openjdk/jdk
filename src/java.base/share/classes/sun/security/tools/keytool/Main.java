@@ -1582,7 +1582,11 @@ public final class Main {
             int d = id.indexOf(':');
             if (d >= 0) {
                 CRLExtensions ext = new CRLExtensions();
-                ext.setExtension("Reason", new CRLReasonCodeExtension(Integer.parseInt(id.substring(d+1))));
+                int code = Integer.parseInt(id.substring(d+1));
+                if (code <= 0) {
+                    throw new Exception("Reason code must be positive");
+                }
+                ext.setExtension("Reason", new CRLReasonCodeExtension(code));
                 badCerts[i] = new X509CRLEntryImpl(new BigInteger(id.substring(0, d)),
                         firstDate, ext);
             } else {
@@ -4632,6 +4636,9 @@ public final class Main {
                     continue;
                 }
                 int exttype = oneOf(name, extSupported);
+                if (exttype != -1 && value != null && value.isEmpty()) {
+                    throw new Exception(rb.getString("Illegal.value.") + extstr);
+                }
                 switch (exttype) {
                     case 0:     // BC
                         int pathLen = -1;

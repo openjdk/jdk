@@ -914,3 +914,13 @@ TEST_VM(os, trim_native_heap) {
   EXPECT_FALSE(os::can_trim_native_heap());
 }
 #endif // __GLIBC__
+
+TEST_VM(os, open_O_CLOEXEC) {
+#if !defined(_WIN32)
+  int fd = os::open("test_file.txt", O_RDWR | O_CREAT | O_TRUNC, 0666); // open will use O_CLOEXEC
+  EXPECT_TRUE(fd > 0);
+  int flags = ::fcntl(fd, F_GETFD);
+  EXPECT_TRUE((flags & FD_CLOEXEC) != 0); // if O_CLOEXEC worked, then FD_CLOEXEC should be ON
+  ::close(fd);
+#endif
+}
