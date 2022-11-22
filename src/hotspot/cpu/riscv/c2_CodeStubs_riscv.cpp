@@ -47,7 +47,7 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
 }
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
-  IncompressibleRegion ir(&masm); // Fixed length
+  Assembler::IncompressibleRegion ir(&masm); // Fixed length
 
   // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
   int alignment_bytes = __ align(4);
@@ -61,7 +61,7 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
 
   __ bind(guard());
   __ relocate(entry_guard_Relocation::spec());
-  __ assert_alignment(pc());
+  __ assert_alignment(__ pc());
   __ emit_int32(0);  // nmethod guard value
   // make sure the stub with a fixed code size
   if (alignment_bytes == 2) {
