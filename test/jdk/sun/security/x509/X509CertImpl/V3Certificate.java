@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049237 8242151 8296742
+ * @bug 8049237 8242151
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  *          jdk.crypto.ec
