@@ -127,7 +127,7 @@
  * later time. {@code IllegalArgumentException} and {@code NullPointerException}
  * are examples of typical and acceptable run time exceptions for such cases.
  *
- * @spec https://www.ietf.org/rfc/rfc2911.html Internet Printing Protocol/1.1: Model and Semantics
+ * @spec https://www.ietf.org/rfc/rfc2911.html RFC 2911: Internet Printing Protocol/1.1: Model and Semantics
  * @since 1.4
  */
 package javax.print;

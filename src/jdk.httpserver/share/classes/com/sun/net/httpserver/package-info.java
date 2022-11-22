@@ -138,8 +138,8 @@
         }
     });
    </pre></blockquote>
-    @spec https://www.ietf.org/rfc/rfc2818.html HTTP Over TLS
-    @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
+    @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
+    @spec https://www.ietf.org/rfc/rfc2818.html RFC 2818: HTTP Over TLS
    @since 1.6
  */
 package com.sun.net.httpserver;

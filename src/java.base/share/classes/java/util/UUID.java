@@ -68,7 +68,7 @@ import jdk.internal.access.SharedSecrets;
  * Universally Unique IDentifier (UUID) URN Namespace</i></a>, section 4.2
  * &quot;Algorithms for Creating a Time-Based UUID&quot;.
  *
- * @spec https://www.ietf.org/rfc/rfc4122.html A Universally Unique IDentifier (UUID) URN Namespace
+ * @spec https://www.ietf.org/rfc/rfc4122.html RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
@@ -346,7 +346,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * </ul>
      *
      * @return  The variant number of this {@code UUID}
-     * @spec https://www.ietf.org/rfc/rfc4122.html A Universally Unique IDentifier (UUID) URN Namespace
+     * @spec https://www.ietf.org/rfc/rfc4122.html RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
      */
     public int variant() {
         // This field is composed of a varying number of bits.

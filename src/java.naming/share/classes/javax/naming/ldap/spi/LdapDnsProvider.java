@@ -103,7 +103,7 @@ public abstract class LdapDnsProvider {
      *                              occurred while performing the lookup.
      * @throws NullPointerException if either {@code url} or {@code env} are
      *                              {@code null}.
-     * @spec https://www.ietf.org/rfc/rfc2255.html The LDAP URL Format
+     * @spec https://www.ietf.org/rfc/rfc2255.html RFC 2255: The LDAP URL Format
      */
     public abstract Optional<LdapDnsProviderResult> lookupEndpoints(
             String url, Map<?,?> env) throws NamingException;

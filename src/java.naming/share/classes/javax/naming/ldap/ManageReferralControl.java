@@ -36,7 +36,7 @@ package javax.naming.ldap;
  *
  * The control has no control value.
  *
- * @spec https://www.ietf.org/rfc/rfc3296.html Named Subordinate References in Lightweight Directory Access Protocol (LDAP) Directories
+ * @spec https://www.ietf.org/rfc/rfc3296.html RFC 3296: Named Subordinate References in Lightweight Directory Access Protocol (LDAP) Directories
  * @since 1.5
  * @author Vincent Ryan
  */

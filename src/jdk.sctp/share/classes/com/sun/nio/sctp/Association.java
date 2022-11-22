@@ -49,7 +49,7 @@ package com.sun.nio.sctp;
  * as being given as a parameter to {@link NotificationHandler
  * NotificationHandler} methods.
  *
- * @spec https://www.ietf.org/rfc/rfc5061.html Stream Control Transmission Protocol (SCTP) Dynamic Address Reconfiguration
+ * @spec https://www.ietf.org/rfc/rfc5061.html RFC 5061: Stream Control Transmission Protocol (SCTP) Dynamic Address Reconfiguration
  * @since 1.7
  */
 public class Association {

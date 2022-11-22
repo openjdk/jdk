@@ -198,7 +198,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      *         does not implement the operation
      * @throws NullPointerException if {@code s} is {@code null}
      *
-     * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+     * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      * @since 1.8
      */
     public Socket createSocket(Socket s, InputStream consumed,

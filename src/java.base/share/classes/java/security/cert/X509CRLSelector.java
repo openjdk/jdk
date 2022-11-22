@@ -65,7 +65,7 @@ import sun.security.x509.X500Name;
  * provide the necessary locking. Multiple threads each manipulating
  * separate objects need not synchronize.
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @see CRLSelector
  * @see X509CRL
  *
@@ -194,7 +194,7 @@ public class X509CRLSelector implements CRLSelector {
      *
      * @param names a {@code Collection} of names (or {@code null})
      * @throws IOException if a parsing error occurs
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @see #getIssuerNames
      */
     public void setIssuerNames(Collection<?> names) throws IOException {
@@ -240,7 +240,7 @@ public class X509CRLSelector implements CRLSelector {
      *     <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a> form
      * @throws IOException if a parsing error occurs
      *
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #addIssuer(X500Principal)} or
      * {@link #addIssuerName(byte[])} instead. This method should not be
      * relied on as it can fail to match some CRLs because of a loss of
@@ -496,7 +496,7 @@ public class X509CRLSelector implements CRLSelector {
      * protect against subsequent modifications.
      *
      * @return a {@code Collection} of names (or {@code null})
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @see #setIssuerNames
      */
     public Collection<Object> getIssuerNames() {

@@ -58,9 +58,9 @@ import sun.security.util.*;
  * {@code X509Certificate} return X500Principals representing the
  * issuer and subject fields of the certificate.
  *
- * @spec https://www.ietf.org/rfc/rfc1779.html A String Representation of Distinguished Names
- * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
- * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc1779.html RFC 1779: A String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @see java.security.cert.X509Certificate
  * @since 1.4
  */
@@ -127,7 +127,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *                  is {@code null}
      * @exception IllegalArgumentException if the {@code name}
      *                  is improperly specified
-     * @spec https://www.ietf.org/rfc/rfc4512.html Lightweight Directory Access Protocol (LDAP): Directory Information Models
+     * @spec https://www.ietf.org/rfc/rfc4512.html RFC 4512: Lightweight Directory Access Protocol (LDAP): Directory Information Models
      */
     public X500Principal(String name) {
         this(name, Collections.emptyMap());
@@ -168,7 +168,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * @exception IllegalArgumentException if the {@code name} is
      *   improperly specified or a keyword in the {@code name} maps to an
      *   OID that is not in the correct form
-     * @spec https://www.ietf.org/rfc/rfc4512.html Lightweight Directory Access Protocol (LDAP): Directory Information Models
+     * @spec https://www.ietf.org/rfc/rfc4512.html RFC 4512: Lightweight Directory Access Protocol (LDAP): Directory Information Models
      * @since 1.6
      */
     public X500Principal(String name, Map<String, String> keywordMap) {

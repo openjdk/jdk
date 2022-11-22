@@ -43,7 +43,7 @@ import javax.naming.ldap.LdapName;
  * <p>
  * This class is immutable.
  *
- * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
  * @since 1.6
  */
 public final class LdapPrincipal implements Principal, java.io.Serializable {
@@ -127,7 +127,7 @@ public final class LdapPrincipal implements Principal, java.io.Serializable {
      * If the name has zero components an empty string is returned.
      *
      * @return The principal's string name.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public String toString() {
         return name.toString();

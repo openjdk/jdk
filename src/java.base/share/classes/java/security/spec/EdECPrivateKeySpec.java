@@ -34,7 +34,7 @@ import java.util.Objects;
  * a byte array. This class only supports bit string lengths that are a
  * multiple of 8.
  *
- * @spec https://www.ietf.org/rfc/rfc8032.html Edwards-Curve Digital Signature Algorithm (EdDSA)
+ * @spec https://www.ietf.org/rfc/rfc8032.html RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public final class EdECPrivateKeySpec implements KeySpec {

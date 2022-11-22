@@ -857,7 +857,7 @@ public abstract class Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws IllegalArgumentException if key contains
      *         the null control character, code point U+0000.
-     * @spec https://www.ietf.org/rfc/rfc2045.html Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+     * @spec https://www.ietf.org/rfc/rfc2045.html RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
      * @see #getByteArray(String,byte[])
      * @see #get(String,String)
      */
@@ -899,7 +899,7 @@ public abstract class Preferences {
      *         {@code null} value for {@code def} <i>is</i> permitted.)
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
-     * @spec https://www.ietf.org/rfc/rfc2045.html Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+     * @spec https://www.ietf.org/rfc/rfc2045.html RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
      * @see #get(String,String)
      * @see #putByteArray(String,byte[])
      */

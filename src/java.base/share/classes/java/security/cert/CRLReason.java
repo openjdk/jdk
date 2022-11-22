@@ -31,7 +31,7 @@ package java.security.cert;
  * RFC 5280: Internet X.509 Public Key Infrastructure Certificate and CRL
  * Profile</a>.
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @author Sean Mullan
  * @since 1.7
  * @see X509CRLEntry#getRevocationReason

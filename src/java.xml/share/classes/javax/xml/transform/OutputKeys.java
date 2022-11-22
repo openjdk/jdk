@@ -93,7 +93,7 @@ public class OutputKeys {
      * Assigned Numbers Authority <a href="http://www.iana.org/">[IANA]</a>,
      * <a href="http://www.ietf.org/rfc/rfc2278.txt">[RFC2278]</a>
      * or start with <code>X-</code>.</p>
-     * @spec https://www.ietf.org/rfc/rfc2278.html IANA Charset Registration Procedures
+     * @spec https://www.ietf.org/rfc/rfc2278.html RFC 2278: IANA Charset Registration Procedures
      * @spec https://www.w3.org/TR/xslt xslt cover page - W3C
      * @see <a href="http://www.w3.org/TR/xslt#output">
      * section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>

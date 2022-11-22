@@ -402,7 +402,7 @@ public abstract class KeyInfoFactory {
      * @throws NullPointerException if <code>keyId</code> is <code>null</code>
      * @throws IllegalArgumentException if the key id is not in the correct
      *    format
-     * @spec https://www.ietf.org/rfc/rfc2440.html OpenPGP Message Format
+     * @spec https://www.ietf.org/rfc/rfc2440.html RFC 2440: OpenPGP Message Format
      */
     public abstract PGPData newPGPData(byte[] keyId);
 
@@ -430,7 +430,7 @@ public abstract class KeyInfoFactory {
      *    contents and format of the packet body are not checked.
      * @throws ClassCastException if <code>other</code> contains any
      *    entries that are not of type {@link XMLStructure}
-     * @spec https://www.ietf.org/rfc/rfc2440.html OpenPGP Message Format
+     * @spec https://www.ietf.org/rfc/rfc2440.html RFC 2440: OpenPGP Message Format
      */
     public abstract PGPData newPGPData(byte[] keyId, byte[] keyPacket,
         List<? extends XMLStructure> other);
@@ -454,7 +454,7 @@ public abstract class KeyInfoFactory {
      *    material. The contents and format of the packet body are not checked.
      * @throws ClassCastException if <code>other</code> contains any
      *    entries that are not of type {@link XMLStructure}
-     * @spec https://www.ietf.org/rfc/rfc2440.html OpenPGP Message Format
+     * @spec https://www.ietf.org/rfc/rfc2440.html RFC 2440: OpenPGP Message Format
      */
     public abstract PGPData newPGPData(byte[] keyPacket,
         List<? extends XMLStructure> other);

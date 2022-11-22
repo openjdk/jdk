@@ -33,7 +33,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * <a href="http://www.ietf.org/rfc/rfc2898.txt">PKCS #5</a>
  * standard.
  *
- * @spec https://www.ietf.org/rfc/rfc2898.html PKCS #5: Password-Based Cryptography Specification Version 2.0
+ * @spec https://www.ietf.org/rfc/rfc2898.html RFC 2898: PKCS #5: Password-Based Cryptography Specification Version 2.0
  * @author Jan Luehe
  *
  * @since 1.4

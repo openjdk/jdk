@@ -67,7 +67,7 @@ import sun.security.util.HexDumpEncoder;
  * other regular service tickets. A ticket granting ticket is just a
  * special case of a more generalized service ticket.
  *
- * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
+ * @spec https://www.ietf.org/rfc/rfc4120.html RFC 4120: The Kerberos Network Authentication Service (V5)
  * @implNote The JAAS login module in the JDK reference implementation destroys
  * all tickets after logout.
  *

@@ -302,7 +302,7 @@ public abstract class HttpClient {
          * will use HTTP/2. If the upgrade fails, then the response will be
          * handled using HTTP/1.1
          *
-         * @spec https://www.ietf.org/rfc/rfc6454.html The Web Origin Concept
+         * @spec https://www.ietf.org/rfc/rfc6454.html RFC 6454: The Web Origin Concept
          * @implNote Constraints may also affect the selection of protocol version.
          * For example, if HTTP/2 is requested through a proxy, and if the implementation
          * does not support this mode, then HTTP/1.1 may be used
@@ -544,7 +544,7 @@ public abstract class HttpClient {
      * HttpClient.Builder#followRedirects(Redirect) Builder.followRedirects}
      * method.
      *
-     * @spec https://www.ietf.org/rfc/rfc7231.html Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content
+     * @spec https://www.ietf.org/rfc/rfc7231.html RFC 7231: Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content
      * @implNote When automatic redirection occurs, the request method of the
      * redirected request may be modified depending on the specific {@code 30X}
      * status code, as specified in <a href="https://tools.ietf.org/html/rfc7231">

@@ -2005,7 +2005,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * NullPointerException} to be thrown.
  *
  * @spec https://www.w3.org/TR/NOTE-datetime Date and Time Formats
- * @spec https://www.ietf.org/rfc/rfc0822.html STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
+ * @spec https://www.ietf.org/rfc/rfc0822.html RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
  * @author  Iris Clark
  * @since 1.5
  */

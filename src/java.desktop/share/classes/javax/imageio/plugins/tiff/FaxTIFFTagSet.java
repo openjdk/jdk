@@ -31,7 +31,7 @@ import java.util.List;
  * A class representing the extra tags found in a
  * <a href="https://tools.ietf.org/html/rfc2306.html">TIFF-F</a> (RFC 2036) file.
  *
- * @spec https://www.ietf.org/rfc/rfc2306.html Tag Image File Format (TIFF) - F Profile for Facsimile
+ * @spec https://www.ietf.org/rfc/rfc2306.html RFC 2306: Tag Image File Format (TIFF) - F Profile for Facsimile
  * @since 9
  */
 public final class FaxTIFFTagSet extends TIFFTagSet {

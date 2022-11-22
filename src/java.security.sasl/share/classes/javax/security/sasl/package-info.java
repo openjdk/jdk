@@ -98,10 +98,10 @@
  * {@extLink security_guide_sasl Java SASL Programming Guide}
  * for information on how to use this API.
  *
- * @spec https://www.ietf.org/rfc/rfc2245.html Anonymous SASL Mechanism
- * @spec https://www.ietf.org/rfc/rfc2078.html Generic Security Service Application Program Interface, Version 2
- * @spec https://www.ietf.org/rfc/rfc2222.html Simple Authentication and Security Layer (SASL)
- * @spec https://www.ietf.org/rfc/rfc2831.html Using Digest Authentication as a SASL Mechanism
+ * @spec https://www.ietf.org/rfc/rfc2078.html RFC 2078: Generic Security Service Application Program Interface, Version 2
+ * @spec https://www.ietf.org/rfc/rfc2222.html RFC 2222: Simple Authentication and Security Layer (SASL)
+ * @spec https://www.ietf.org/rfc/rfc2245.html RFC 2245: Anonymous SASL Mechanism
+ * @spec https://www.ietf.org/rfc/rfc2831.html RFC 2831: Using Digest Authentication as a SASL Mechanism
  * @since 1.5
  */
 package javax.security.sasl;

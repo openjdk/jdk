@@ -65,7 +65,7 @@ import java.util.Objects;
  *    &lt;/xs:complexType&gt;
  * </code></pre>
  *
- * @spec https://www.ietf.org/rfc/rfc6931.html Additional XML Security Uniform Resource Identifiers (URIs)
+ * @spec https://www.ietf.org/rfc/rfc6931.html RFC 6931: Additional XML Security Uniform Resource Identifiers (URIs)
  * @since 17
  * @see SignatureMethod#RSA_PSS
  * @see <a href="https://www.ietf.org/rfc/rfc6931.txt">RFC 6931</a>

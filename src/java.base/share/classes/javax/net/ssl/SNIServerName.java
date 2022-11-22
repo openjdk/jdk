@@ -41,7 +41,7 @@ import java.util.List;
  * {@code SNIServerName} objects are immutable.  Subclasses should not provide
  * methods that can change the state of an instance once it has been created.
  *
- * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+ * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
  * @see SSLParameters#getServerNames()
  * @see SSLParameters#setServerNames(List)
  *

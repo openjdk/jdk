@@ -69,8 +69,8 @@
  * extension for <I>Dynamic Address Reconfiguration</I> is defined by
  * <A HREF="https://tools.ietf.org/html/rfc5061">RFC5061</A>.
  *
- * @spec https://www.ietf.org/rfc/rfc4960.html Stream Control Transmission Protocol
- * @spec https://www.ietf.org/rfc/rfc5061.html Stream Control Transmission Protocol (SCTP) Dynamic Address Reconfiguration
+ * @spec https://www.ietf.org/rfc/rfc4960.html RFC 4960: Stream Control Transmission Protocol
+ * @spec https://www.ietf.org/rfc/rfc5061.html RFC 5061: Stream Control Transmission Protocol (SCTP) Dynamic Address Reconfiguration
  * @since 1.7
  */
 

@@ -64,9 +64,9 @@
  * <p> Unless otherwise stated, {@code null} parameter values will cause methods
  * of all classes in this package to throw {@code NullPointerException}.
  *
- * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
- * @spec https://www.ietf.org/rfc/rfc7540.html Hypertext Transfer Protocol Version 2 (HTTP/2)
- * @spec https://www.ietf.org/rfc/rfc6455.html The WebSocket Protocol
+ * @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
+ * @spec https://www.ietf.org/rfc/rfc6455.html RFC 6455: The WebSocket Protocol
+ * @spec https://www.ietf.org/rfc/rfc7540.html RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
  * @since 11
  */
 package java.net.http;

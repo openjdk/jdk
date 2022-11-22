@@ -42,7 +42,7 @@ import java.math.BigInteger;
  *
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc8017.html PKCS #1: RSA Cryptography Specifications Version 2.2
+ * @spec https://www.ietf.org/rfc/rfc8017.html RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Valerie Peng
  *
  *

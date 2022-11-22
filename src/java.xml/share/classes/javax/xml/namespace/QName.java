@@ -124,7 +124,7 @@ public class QName implements Serializable {
      *   <code>null</code>
      *
      * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      * @see #QName(String namespaceURI, String localPart, String
      * prefix) QName(String namespaceURI, String localPart, String
      * prefix)
@@ -173,7 +173,7 @@ public class QName implements Serializable {
      * @throws IllegalArgumentException When <code>localPart</code>
      *   or <code>prefix</code> is <code>null</code>
      * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public QName(String namespaceURI, String localPart, String prefix) {
 
@@ -411,7 +411,7 @@ public class QName implements Serializable {
      *
      * @return <code>QName</code> corresponding to the given <code>String</code>
      * @spec https://www.w3.org/TR/REC-xml-names Namespaces in XML 1.0 (Third Edition)
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      * @see #toString() QName.toString()
      */
     public static QName valueOf(String qNameAsString) {

@@ -106,7 +106,7 @@ public interface LSOutput {
      * output destination.
      * <br> If the system ID is a relative URI reference (see section 5 in [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]), the
      * behavior is implementation dependent.
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public String getSystemId();
     /**
@@ -114,7 +114,7 @@ public interface LSOutput {
      * output destination.
      * <br> If the system ID is a relative URI reference (see section 5 in [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]), the
      * behavior is implementation dependent.
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public void setSystemId(String systemId);
 

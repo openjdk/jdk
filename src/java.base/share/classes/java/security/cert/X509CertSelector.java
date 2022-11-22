@@ -74,7 +74,7 @@ import sun.security.x509.*;
  * provide the necessary locking. Multiple threads each manipulating
  * separate objects need not synchronize.
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @see CertSelector
  * @see X509Certificate
  *
@@ -199,7 +199,7 @@ public class X509CertSelector implements CertSelector {
      *                 (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      *
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #setIssuer(X500Principal)} or
      * {@link #setIssuer(byte[])} instead. This method should not be relied on
      * as it can fail to match some certificates because of a loss of encoding
@@ -292,7 +292,7 @@ public class X509CertSelector implements CertSelector {
      *                  (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      *
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #setSubject(X500Principal)} or
      * {@link #setSubject(byte[])} instead. This method should not be relied
      * on as it can fail to match some certificates because of a loss of
@@ -735,8 +735,8 @@ public class X509CertSelector implements CertSelector {
      *             RFC 5280, section 4.2.1.6)
      * @param name the name in string form (not {@code null})
      * @throws IOException if a parsing error occurs
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
-     * @spec https://www.ietf.org/rfc/rfc0822.html STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc0822.html RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      */
     public void addSubjectAlternativeName(int type, String name)
             throws IOException {
@@ -1286,7 +1286,7 @@ public class X509CertSelector implements CertSelector {
      * @return the required issuer distinguished name in RFC 2253 format
      *         (or {@code null})
      *
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #getIssuer()} or {@link #getIssuerAsBytes()}
      * instead. This method should not be relied on as it can fail to match
      * some certificates because of a loss of encoding information in the
@@ -1346,7 +1346,7 @@ public class X509CertSelector implements CertSelector {
      * @return the required subject distinguished name in RFC 2253 format
      *         (or {@code null})
      *
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #getSubject()} or {@link #getSubjectAsBytes()}
      * instead. This method should not be relied on as it can fail to match
      * some certificates because of a loss of encoding information in the

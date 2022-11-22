@@ -98,7 +98,7 @@ import java.io.IOException;
  * to a constructor or method in this class will cause a
  * NullPointerException to be thrown.
  *
- * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
  * @author Scott Seligman
  * @since 1.5
  */
@@ -119,7 +119,7 @@ public class LdapName implements Name {
      * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>.
      *
      * @throws InvalidNameException if a syntax violation is detected.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @see Rdn#escapeValue(Object value)
      */
     public LdapName(String name) throws InvalidNameException {
@@ -619,7 +619,7 @@ public class LdapName implements Name {
      * components an empty string is returned.
      *
      * @return The string representation of the LdapName.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public String toString() {
         if (unparsed != null) {

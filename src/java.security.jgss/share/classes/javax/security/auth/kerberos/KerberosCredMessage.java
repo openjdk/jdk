@@ -45,7 +45,7 @@ import java.util.Objects;
  *    }
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
+ * @spec https://www.ietf.org/rfc/rfc4120.html RFC 4120: The Kerberos Network Authentication Service (V5)
  * @since 9
  */
 public final class KerberosCredMessage implements Destroyable {

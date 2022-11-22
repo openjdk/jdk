@@ -57,7 +57,7 @@ public final class StandardSocketOptions {
      * require that the Java virtual machine be started with implementation
      * specific privileges to enable this option or send broadcast datagrams.
      *
-     * @spec https://www.ietf.org/rfc/rfc0919.html Broadcasting Internet Datagrams
+     * @spec https://www.ietf.org/rfc/rfc0919.html RFC 919: Broadcasting Internet Datagrams
      * @see <a href="http://www.ietf.org/rfc/rfc919.txt">RFC&nbsp;929:
      * Broadcasting Internet Datagrams</a>
      * @see DatagramSocket#setBroadcast
@@ -78,7 +78,7 @@ public final class StandardSocketOptions {
      * <p> The initial value of this socket option is {@code FALSE}. The socket
      * option may be enabled or disabled at any time.
      *
-     * @spec https://www.ietf.org/rfc/rfc1122.html Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.ietf.org/rfc/rfc1122.html RFC 1122: Requirements for Internet Hosts - Communication Layers
      * @see <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC&nbsp;1122
      * Requirements for Internet Hosts -- Communication Layers</a>
      * @see Socket#setKeepAlive
@@ -149,7 +149,7 @@ public final class StandardSocketOptions {
      * socket receive buffer to be changed after the socket is bound is system
      * dependent.
      *
-     * @spec https://www.ietf.org/rfc/rfc1323.html TCP Extensions for High Performance
+     * @spec https://www.ietf.org/rfc/rfc1323.html RFC 1323: TCP Extensions for High Performance
      * @see <a href="http://www.ietf.org/rfc/rfc1323.txt">RFC&nbsp;1323: TCP
      * Extensions for High Performance</a>
      * @see Socket#setReceiveBufferSize
@@ -182,7 +182,7 @@ public final class StandardSocketOptions {
      * after the socket is bound has no effect. The default value of this
      * socket option is system dependent.
      *
-     * @spec https://www.ietf.org/rfc/rfc0793.html Transmission Control Protocol
+     * @spec https://www.ietf.org/rfc/rfc0793.html RFC 793: Transmission Control Protocol
      * @see <a href="http://www.ietf.org/rfc/rfc793.txt">RFC&nbsp;793: Transmission
      * Control Protocol</a>
      * @see ServerSocket#setReuseAddress
@@ -272,8 +272,8 @@ public final class StandardSocketOptions {
      * {@link StandardProtocolFamily#INET6 IPv6} socket, is not defined in this
      * release.
      *
-     * @spec https://www.ietf.org/rfc/rfc2474.html Definition of the Differentiated Services Field (DS Field) in the IPv4 and IPv6 Headers
-     * @spec https://www.ietf.org/rfc/rfc1349.html Type of Service in the Internet Protocol Suite
+     * @spec https://www.ietf.org/rfc/rfc1349.html RFC 1349: Type of Service in the Internet Protocol Suite
+     * @spec https://www.ietf.org/rfc/rfc2474.html RFC 2474: Definition of the Differentiated Services Field (DS Field) in the IPv4 and IPv6 Headers
      * @see DatagramSocket#setTrafficClass
      */
     public static final SocketOption<Integer> IP_TOS =
@@ -372,7 +372,7 @@ public final class StandardSocketOptions {
      * disabled. If it cannot, then invoking the {@code setOption} method to
      * disable the option has no effect.
      *
-     * @spec https://www.ietf.org/rfc/rfc1122.html Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.ietf.org/rfc/rfc1122.html RFC 1122: Requirements for Internet Hosts - Communication Layers
      * @see <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC&nbsp;1122:
      * Requirements for Internet Hosts -- Communication Layers</a>
      * @see Socket#setTcpNoDelay

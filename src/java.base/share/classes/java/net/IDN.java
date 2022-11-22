@@ -68,12 +68,12 @@ import jdk.internal.icu.text.UCharacterIterator;
  * Applications are responsible for taking adequate security measures when using
  * international domain names.
  *
- * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
- * @spec https://www.ietf.org/rfc/rfc3491.html Nameprep: A Stringprep Profile for Internationalized Domain Names (IDN)
- * @spec https://www.ietf.org/rfc/rfc3454.html Preparation of Internationalized Strings ("stringprep")
- * @spec https://www.ietf.org/rfc/rfc3492.html Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)
- * @spec https://www.ietf.org/rfc/rfc1123.html Requirements for Internet Hosts - Application and Support
- * @spec https://www.ietf.org/rfc/rfc1122.html Requirements for Internet Hosts - Communication Layers
+ * @spec https://www.ietf.org/rfc/rfc1122.html RFC 1122: Requirements for Internet Hosts - Communication Layers
+ * @spec https://www.ietf.org/rfc/rfc1123.html RFC 1123: Requirements for Internet Hosts - Application and Support
+ * @spec https://www.ietf.org/rfc/rfc3454.html RFC 3454: Preparation of Internationalized Strings ("stringprep")
+ * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+ * @spec https://www.ietf.org/rfc/rfc3491.html RFC 3491: Nameprep: A Stringprep Profile for Internationalized Domain Names (IDN)
+ * @spec https://www.ietf.org/rfc/rfc3492.html RFC 3492: Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)
  * @spec https://www.unicode.org/reports/tr36 Unicode Security Considerations
  * @author Edward Wang
  * @since 1.6
@@ -114,7 +114,7 @@ public final class IDN {
      * @return          the translated {@code String}
      *
      * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
-     * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toASCII(String input, int flag)
     {
@@ -154,7 +154,7 @@ public final class IDN {
      * @return          the translated {@code String}
      *
      * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
-     * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toASCII(String input) {
         return toASCII(input, 0);
@@ -178,7 +178,7 @@ public final class IDN {
      * @param flag      process flag; can be 0 or any logical OR of possible flags
      *
      * @return          the translated {@code String}
-     * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toUnicode(String input, int flag) {
         int p = 0, q = 0;
@@ -215,7 +215,7 @@ public final class IDN {
      * @param input     the string to be processed
      *
      * @return          the translated {@code String}
-     * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toUnicode(String input) {
         return toUnicode(input, 0);

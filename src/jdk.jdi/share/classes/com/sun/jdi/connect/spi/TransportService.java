@@ -77,7 +77,7 @@ import com.sun.jdi.connect.TransportTimeoutException;
  * target VM.
  *
  * @spec jdwp/jdwp-spec.html Java Debug Wire Protocol
- * @spec https://www.ietf.org/rfc/rfc0793.html Transmission Control Protocol
+ * @spec https://www.ietf.org/rfc/rfc0793.html RFC 793: Transmission Control Protocol
  * @since 1.5
  */
 public abstract class TransportService {

@@ -56,7 +56,7 @@ import javax.naming.directory.SearchControls;
  * passed as a parameter to any method is owned by the caller.
  * The service provider will not modify the object or keep a reference to it.
  *
- * @spec https://www.ietf.org/rfc/rfc2254.html The String Representation of LDAP Search Filters
+ * @spec https://www.ietf.org/rfc/rfc2254.html RFC 2254: The String Representation of LDAP Search Filters
  * @author Rosanna Lee
  * @author Scott Seligman
  * @since 1.3

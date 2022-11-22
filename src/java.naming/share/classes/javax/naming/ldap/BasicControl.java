@@ -30,7 +30,7 @@ package javax.naming.ldap;
  * interface. It represents an LDAPv3 Control as defined in
  * <a href="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</a>.
  *
- * @spec https://www.ietf.org/rfc/rfc2251.html Lightweight Directory Access Protocol (v3)
+ * @spec https://www.ietf.org/rfc/rfc2251.html RFC 2251: Lightweight Directory Access Protocol (v3)
  * @since 1.5
  * @author Vincent Ryan
  */

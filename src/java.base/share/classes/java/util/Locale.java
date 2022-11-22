@@ -469,8 +469,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * compatibility, the implementation still does not impose a length
  * constraint.
  *
- * @spec https://www.ietf.org/rfc/rfc4647.html Matching of Language Tags
- * @spec https://www.ietf.org/rfc/rfc5646.html Tags for Identifying Languages
+ * @spec https://www.ietf.org/rfc/rfc4647.html RFC 4647: Matching of Language Tags
+ * @spec https://www.ietf.org/rfc/rfc5646.html RFC 5646: Tags for Identifying Languages
  * @see Builder
  * @see ResourceBundle
  * @see java.text.Format
@@ -3022,7 +3022,7 @@ public final class Locale implements Cloneable, Serializable {
      * </tbody>
      * </table>
      *
-     * @spec https://www.ietf.org/rfc/rfc4647.html Matching of Language Tags
+     * @spec https://www.ietf.org/rfc/rfc4647.html RFC 4647: Matching of Language Tags
      * @see #filter(List, Collection, FilteringMode)
      * @see #filterTags(List, Collection, FilteringMode)
      *
@@ -3094,8 +3094,8 @@ public final class Locale implements Cloneable, Serializable {
      * {@code "zh-Hant-*"} (Traditional Chinese, any regions) are extended
      * language ranges.
      *
-     * @spec https://www.ietf.org/rfc/rfc4234.html Augmented BNF for Syntax Specifications: ABNF
-     * @spec https://www.ietf.org/rfc/rfc4647.html Matching of Language Tags
+     * @spec https://www.ietf.org/rfc/rfc4234.html RFC 4234: Augmented BNF for Syntax Specifications: ABNF
+     * @spec https://www.ietf.org/rfc/rfc4647.html RFC 4647: Matching of Language Tags
      * @see #filter
      * @see #filterTags
      * @see #lookup
@@ -3292,7 +3292,7 @@ public final class Locale implements Cloneable, Serializable {
          * @throws NullPointerException if {@code ranges} is null
          * @throws IllegalArgumentException if a language range or a weight
          *     found in the given {@code ranges} is ill-formed
-         * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
+         * @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
          */
         public static List<LanguageRange> parse(String ranges) {
             return LocaleMatcher.parse(ranges);
@@ -3314,7 +3314,7 @@ public final class Locale implements Cloneable, Serializable {
          * @throws NullPointerException if {@code ranges} is null
          * @throws IllegalArgumentException if a language range or a weight
          *     found in the given {@code ranges} is ill-formed
-         * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
+         * @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
          * @see #parse(String)
          * @see #mapEquivalents
          */

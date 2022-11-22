@@ -49,7 +49,7 @@ public final class StandardConstants {
      * <P>
      * The value of this constant is {@value}.
      *
-     * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+     * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      * @see SNIServerName
      * @see SNIHostName
      */

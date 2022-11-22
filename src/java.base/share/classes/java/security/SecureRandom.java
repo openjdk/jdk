@@ -126,7 +126,7 @@ import java.util.regex.Pattern;
  * <h2> Thread safety </h2>
  * {@code SecureRandom} objects are safe for use by multiple concurrent threads.
  *
- * @spec https://www.ietf.org/rfc/rfc4086.html Randomness Requirements for Security
+ * @spec https://www.ietf.org/rfc/rfc4086.html RFC 4086: Randomness Requirements for Security
  * @implSpec
  * A {@code SecureRandom} service provider can advertise that it is thread-safe
  * by setting the <a href=

@@ -102,7 +102,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * to a constructor or method in this class will cause NullPointerException
  * to be thrown.
  *
- * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
  * @since 1.5
  */
 
@@ -129,7 +129,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * type/value mappings.
      * @throws InvalidNameException If contents of {@code attrSet} cannot
      *          be used to construct a valid RDN.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public Rdn(Attributes attrSet) throws InvalidNameException {
         if (attrSet.size() == 0) {
@@ -164,7 +164,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @param rdnString The non-null and non-empty RFC2253 formatted string.
      * @throws InvalidNameException If a syntax error occurs during
      *                  parsing of the rdnString.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public Rdn(String rdnString) throws InvalidNameException {
         entries = new ArrayList<>(DEFAULT_SIZE);
@@ -194,7 +194,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @param value The non-null and non-empty attribute value.
      * @throws InvalidNameException If type/value cannot be used to
      *                  construct a valid RDN.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      * @see #toString()
      */
     public Rdn(String type, Object value) throws InvalidNameException {
@@ -291,7 +291,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * in the class description for {@link javax.naming.ldap.LdapName LdapName}.
      *
      * @return The string representation of the Rdn.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -514,7 +514,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @param val The non-null object to be escaped.
      * @return Escaped string value.
      * @throws ClassCastException if val is not a String or byte array.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public static String escapeValue(Object val) {
         return (val instanceof byte[])
@@ -598,7 +598,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @return          Unescaped value.
      * @throws          IllegalArgumentException When an Illegal value
      *                  is provided.
-     * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
      */
     public static Object unescapeValue(String val) {
 

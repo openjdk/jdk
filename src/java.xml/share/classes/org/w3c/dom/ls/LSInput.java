@@ -157,7 +157,7 @@ public interface LSInput {
      * implementation will attempt to resolve the relative URI with the
      * <code>baseURI</code> as the base, if that fails, the behavior is
      * implementation dependent.
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public String getSystemId();
     /**
@@ -177,7 +177,7 @@ public interface LSInput {
      * implementation will attempt to resolve the relative URI with the
      * <code>baseURI</code> as the base, if that fails, the behavior is
      * implementation dependent.
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public void setSystemId(String systemId);
 
@@ -203,7 +203,7 @@ public interface LSInput {
      * resolving a relative <code>systemId</code> to an absolute URI.
      * <br> If, when used, the base URI is itself a relative URI, an empty
      * string, or null, the behavior is implementation dependent.
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public String getBaseURI();
     /**
@@ -211,7 +211,7 @@ public interface LSInput {
      * resolving a relative <code>systemId</code> to an absolute URI.
      * <br> If, when used, the base URI is itself a relative URI, an empty
      * string, or null, the behavior is implementation dependent.
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public void setBaseURI(String baseURI);
 
@@ -225,7 +225,7 @@ public interface LSInput {
      * encoding specified in the XML declaration or the Text declaration, or
      * an encoding obtained from a higher level protocol, such as HTTP [<a href='http://www.ietf.org/rfc/rfc2616.txt'>IETF RFC 2616</a>].
      * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
-     * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
+     * @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
      */
     public String getEncoding();
     /**
@@ -238,7 +238,7 @@ public interface LSInput {
      * encoding specified in the XML declaration or the Text declaration, or
      * an encoding obtained from a higher level protocol, such as HTTP [<a href='http://www.ietf.org/rfc/rfc2616.txt'>IETF RFC 2616</a>].
      * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
-     * @spec https://www.ietf.org/rfc/rfc2616.html Hypertext Transfer Protocol -- HTTP/1.1
+     * @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
      */
     public void setEncoding(String encoding);
 

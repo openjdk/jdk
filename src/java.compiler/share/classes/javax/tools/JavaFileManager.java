@@ -103,7 +103,7 @@ import static javax.tools.JavaFileObject.Kind;
  * <p>Unless explicitly allowed, all methods in this interface might
  * throw a NullPointerException if given a {@code null} argument.
  *
- * @spec https://www.ietf.org/rfc/rfc3986.html Uniform Resource Identifier (URI): Generic Syntax
+ * @spec https://www.ietf.org/rfc/rfc3986.html RFC 3986: Uniform Resource Identifier (URI): Generic Syntax
  * @see JavaFileObject
  * @see FileObject
  * @since 1.6

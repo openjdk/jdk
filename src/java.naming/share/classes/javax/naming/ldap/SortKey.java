@@ -31,7 +31,7 @@ package javax.naming.ldap;
  * Control for server-side sorting of search results as defined in
  * <a href="http://www.ietf.org/rfc/rfc2891.txt">RFC 2891</a>.
  *
- * @spec https://www.ietf.org/rfc/rfc2891.html LDAP Control Extension for Server Side Sorting of Search Results
+ * @spec https://www.ietf.org/rfc/rfc2891.html RFC 2891: LDAP Control Extension for Server Side Sorting of Search Results
  * @since 1.5
  * @see SortControl
  * @author Vincent Ryan

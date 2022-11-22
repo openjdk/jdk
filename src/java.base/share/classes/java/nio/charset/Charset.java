@@ -264,9 +264,9 @@ import java.util.jar.JarFile;
  *
  *
  * @spec http://www.iana.org/assignments/character-sets Character Sets
- * @spec https://www.ietf.org/rfc/rfc2278.html IANA Charset Registration Procedures
- * @spec https://www.ietf.org/rfc/rfc2781.html UTF-16, an encoding of ISO 10646
- * @spec https://www.ietf.org/rfc/rfc2279.html UTF-8, a transformation format of ISO 10646
+ * @spec https://www.ietf.org/rfc/rfc2278.html RFC 2278: IANA Charset Registration Procedures
+ * @spec https://www.ietf.org/rfc/rfc2279.html RFC 2279: UTF-8, a transformation format of ISO 10646
+ * @spec https://www.ietf.org/rfc/rfc2781.html RFC 2781: UTF-16, an encoding of ISO 10646
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4

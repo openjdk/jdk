@@ -283,7 +283,7 @@ public class EncryptedData implements Cloneable {
      * ASN1 encoded data.
      * @exception IOException if an I/O error occurs while reading
      * encoded data.
-     * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
+     * @spec https://www.ietf.org/rfc/rfc4120.html RFC 4120: The Kerberos Network Authentication Service (V5)
      *
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {

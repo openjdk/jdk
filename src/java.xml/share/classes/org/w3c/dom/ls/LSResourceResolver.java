@@ -104,7 +104,7 @@ public interface LSResourceResolver {
      *   source, or <code>null</code> to request that the parser open a
      *   regular URI connection to the resource.
      * @spec https://www.w3.org/TR/2004/REC-xml-20040204 Extensible Markup Language (XML) 1.0 (Third Edition)
-     * @spec https://www.ietf.org/rfc/rfc2396.html Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      * @spec https://www.w3.org/TR/2001/REC-xmlschema-1-20010502 XML Schema Part 1: Structures
      */
     public LSInput resolveResource(String type,

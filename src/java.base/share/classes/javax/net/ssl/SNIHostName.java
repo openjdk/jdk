@@ -53,8 +53,8 @@ import java.util.regex.PatternSyntaxException;
  * <P>
  * Note that {@code SNIHostName} objects are immutable.
  *
- * @spec https://www.ietf.org/rfc/rfc5890.html Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework
- * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+ * @spec https://www.ietf.org/rfc/rfc5890.html RFC 5890: Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework
+ * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
  * @see SNIServerName
  * @see StandardConstants#SNI_HOST_NAME
  *
@@ -94,10 +94,10 @@ public final class SNIHostName extends SNIServerName {
      *
      * @throws NullPointerException if {@code hostname} is {@code null}
      * @throws IllegalArgumentException if {@code hostname} is illegal
-     * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
-     * @spec https://www.ietf.org/rfc/rfc1123.html Requirements for Internet Hosts - Application and Support
-     * @spec https://www.ietf.org/rfc/rfc1122.html Requirements for Internet Hosts - Communication Layers
-     * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+     * @spec https://www.ietf.org/rfc/rfc1122.html RFC 1122: Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.ietf.org/rfc/rfc1123.html RFC 1123: Requirements for Internet Hosts - Application and Support
+     * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public SNIHostName(String hostname) {
         // IllegalArgumentException will be thrown if {@code hostname} is
@@ -165,11 +165,11 @@ public final class SNIHostName extends SNIServerName {
      *
      * @throws NullPointerException if {@code encoded} is {@code null}
      * @throws IllegalArgumentException if {@code encoded} is illegal
-     * @spec https://www.ietf.org/rfc/rfc3490.html Internationalizing Domain Names in Applications (IDNA)
-     * @spec https://www.ietf.org/rfc/rfc1123.html Requirements for Internet Hosts - Application and Support
-     * @spec https://www.ietf.org/rfc/rfc1122.html Requirements for Internet Hosts - Communication Layers
-     * @spec https://www.ietf.org/rfc/rfc4366.html Transport Layer Security (TLS) Extensions
-     * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+     * @spec https://www.ietf.org/rfc/rfc1122.html RFC 1122: Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.ietf.org/rfc/rfc1123.html RFC 1123: Requirements for Internet Hosts - Application and Support
+     * @spec https://www.ietf.org/rfc/rfc3490.html RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.ietf.org/rfc/rfc4366.html RFC 4366: Transport Layer Security (TLS) Extensions
+     * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public SNIHostName(byte[] encoded) {
         // NullPointerException will be thrown if {@code encoded} is null
@@ -209,8 +209,8 @@ public final class SNIHostName extends SNIServerName {
      *
      * @return the {@link StandardCharsets#US_ASCII}-compliant hostname
      *         of this {@code SNIHostName} object
-     * @spec https://www.ietf.org/rfc/rfc5890.html Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework
-     * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+     * @spec https://www.ietf.org/rfc/rfc5890.html RFC 5890: Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework
+     * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public String getAsciiName() {
         return hostname;
@@ -228,7 +228,7 @@ public final class SNIHostName extends SNIServerName {
      *         the other server name object to compare with.
      * @return true if, and only if, the {@code other} is considered
      *         equal to this instance
-     * @spec https://www.ietf.org/rfc/rfc6066.html Transport Layer Security (TLS) Extensions: Extension Definitions
+     * @spec https://www.ietf.org/rfc/rfc6066.html RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     @Override
     public boolean equals(Object other) {

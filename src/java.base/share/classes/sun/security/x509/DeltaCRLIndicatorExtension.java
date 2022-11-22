@@ -55,7 +55,7 @@ import java.math.BigInteger;
  *     CRLNumber ::= INTEGER (0..MAX)
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @since 1.6
  */
 public class DeltaCRLIndicatorExtension extends CRLNumberExtension {

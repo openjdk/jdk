@@ -153,7 +153,7 @@ public abstract class HttpRequest {
          * Adds the given name value pair to the set of headers for this request.
          * The given value is added to the list of values for that name.
          *
-         * @spec https://www.ietf.org/rfc/rfc7230.html Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
+         * @spec https://www.ietf.org/rfc/rfc7230.html RFC 7230: Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
          * @implNote An implementation may choose to restrict some header names
          *           or values, as the HTTP Client may determine their value itself.
          *           For example, "Content-Length", which will be determined by
@@ -187,7 +187,7 @@ public abstract class HttpRequest {
          *         RFC 7230 section-3.2</a>, or a header name or value is
          *         {@linkplain #header(String, String) restricted} by the
          *         implementation.
-         * @spec https://www.ietf.org/rfc/rfc7230.html Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
+         * @spec https://www.ietf.org/rfc/rfc7230.html RFC 7230: Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
          */
         public Builder headers(String... headers);
 
@@ -220,7 +220,7 @@ public abstract class HttpRequest {
          *         RFC 7230 section-3.2</a>, or the header name or value is
          *         {@linkplain #header(String, String) restricted} by the
          *         implementation.
-         * @spec https://www.ietf.org/rfc/rfc7230.html Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
+         * @spec https://www.ietf.org/rfc/rfc7230.html RFC 7230: Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
          */
         public Builder setHeader(String name, String value);
 
@@ -276,7 +276,7 @@ public abstract class HttpRequest {
          * Sets the request method and request body of this builder to the
          * given values.
          *
-         * @spec https://www.ietf.org/rfc/rfc7230.html Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
+         * @spec https://www.ietf.org/rfc/rfc7230.html RFC 7230: Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
          * @apiNote The {@link BodyPublishers#noBody() noBody} request
          * body publisher can be used where no request body is required or
          * appropriate. Whether a method is restricted, or not, is

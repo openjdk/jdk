@@ -44,10 +44,10 @@
  *     Directory Information Models</a></li>
  * </ul>
  *
- * @spec https://www.ietf.org/rfc/rfc1779.html A String Representation of Distinguished Names
- * @spec https://www.ietf.org/rfc/rfc5280.html Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
- * @spec https://www.ietf.org/rfc/rfc4512.html Lightweight Directory Access Protocol (LDAP): Directory Information Models
- * @spec https://www.ietf.org/rfc/rfc2253.html Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc1779.html RFC 1779: A String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.ietf.org/rfc/rfc4512.html RFC 4512: Lightweight Directory Access Protocol (LDAP): Directory Information Models
+ * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @since 1.4
  */
 package javax.security.auth.x500;

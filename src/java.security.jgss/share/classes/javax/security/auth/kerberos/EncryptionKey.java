@@ -45,7 +45,7 @@ import javax.security.auth.DestroyFailedException;
  * The key material of an {@code EncryptionKey} is defined as the value
  * of the {@code keyValue} above.
  *
- * @spec https://www.ietf.org/rfc/rfc4120.html The Kerberos Network Authentication Service (V5)
+ * @spec https://www.ietf.org/rfc/rfc4120.html RFC 4120: The Kerberos Network Authentication Service (V5)
  * @since 9
  */
 public final class EncryptionKey implements SecretKey {
