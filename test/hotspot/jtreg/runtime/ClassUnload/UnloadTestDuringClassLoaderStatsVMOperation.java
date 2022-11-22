@@ -24,10 +24,11 @@
 /*
  * @test Class unloading test while triggering execution of ClassLoaderStats VM operations
  * @summary Make sure class unloading occur even if ClassLoaderStats VM operations are executed
+ * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library classes
- * @build jdk.test.whitebox.WhiteBox test.Empty
+ * @build jdk.test.whitebox.WhiteBox test.Empty test.LoadInParent test.LoadInChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc*,class+unload=debug UnloadTestDuringClassLoaderStatsVMOperation
  */
@@ -38,10 +39,10 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     private static String className = "test.Empty";
+    private static String parentClassName = "test.LoadInParent";
+    private static String childClassName = "test.LoadInChild";
 
     public static void main(String args[]) throws Exception {
-        ClassUnloadCommon.failIf(wb.isClassAlive(className), "is not expected to be alive yet");
-
         // Create a thread forcing ClassLoaderStats VM operations.
         Runnable task = () -> {
             while (true) {
@@ -52,13 +53,22 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
         clsThread.setDaemon(true);
         clsThread.start();
 
+        // Make sure classes can be unloaded even though the class loader
+        // stats VM operation is running.
+        testClassIsUnloaded();
+        testClassLoadedInParentIsUnloaded();
+    }
+
+    public static void testClassIsUnloaded() throws Exception {
+        ClassUnloadCommon.failIf(wb.isClassAlive(className), className + " is not expected to be alive yet");
+
         // Load a test class and verify that it gets unloaded once we do a major collection.
         var classLoader = ClassUnloadCommon.newClassLoader();
         var loaded = classLoader.loadClass(className);
         var object = loaded.getDeclaredConstructor().newInstance();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), className + " should be loaded and live");
-        System.out.println("Loaded klass: " + className);
+        System.out.println("testClassIsUnloaded loaded klass: " + className);
 
         // Make class unloadable.
         classLoader = null;
@@ -68,5 +78,43 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
         // Full/Major collection should always unload classes.
         wb.fullGC();
         ClassUnloadCommon.failIf(wb.isClassAlive(className), className + " should have been unloaded");
-   }
+    }
+
+    public static void testClassLoadedInParentIsUnloaded() throws Exception {
+        ClassUnloadCommon.failIf(wb.isClassAlive(parentClassName), parentClassName + " is not expected to be alive yet");
+        ClassUnloadCommon.failIf(wb.isClassAlive(childClassName), childClassName + " is not expected to be alive yet");
+
+        // Create two class loaders and load a test class in the parent and
+        // verify that it gets unloaded once we do a major collection.
+        var parentClassLoader = ClassUnloadCommon.newClassLoader();
+        var childClassLoader =  ClassUnloadCommon.newClassLoaderWithParent(parentClassLoader);
+        var loadedParent = parentClassLoader.loadClass(parentClassName);
+        var loadedChild = childClassLoader.loadClass(childClassName);
+        var parent = loadedParent.getDeclaredConstructor().newInstance();
+        var child = loadedChild.getDeclaredConstructor().newInstance();
+
+        ClassUnloadCommon.failIf(!wb.isClassAlive(parentClassName), parentClassName + " should be loaded and live");
+        ClassUnloadCommon.failIf(!wb.isClassAlive(childClassName), childClassName + " should be loaded and live");
+        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedParent);
+        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedChild);
+
+        // Clear to allow unloading.
+        parentClassLoader = null;
+        childClassLoader = null;
+        loadedParent = null;
+        loadedChild = null;
+        parent = null;
+        child = null;
+
+        // Full/Major collection should always unload classes.
+        wb.fullGC();
+        ClassUnloadCommon.failIf(wb.isClassAlive(parentClassName), parentClassName + " should have been unloaded");
+        ClassUnloadCommon.failIf(wb.isClassAlive(childClassName), childClassName + " should have been unloaded");
+    }
+
+    static class DummyClassLoader extends ClassLoader {
+        public DummyClassLoader(ClassLoader parent) {
+            super("Dummy", parent);
+        }
+    }
 }
