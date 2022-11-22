@@ -313,6 +313,7 @@ final class VirtualThread extends BaseVirtualThread {
             }
         }
     }
+
     @Hidden
     @ForceInline
     private void runWith(Object bindings, Runnable op) {
