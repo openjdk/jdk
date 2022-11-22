@@ -101,37 +101,58 @@ public class TestSpliterator {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeTooBig() {
-        MemorySegment.ofArray(new byte[2]).spliterator(ValueLayout.JAVA_INT);
+        MemorySegment.allocateNative(2, SegmentScope.auto())
+                .spliterator(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeTooBig() {
-        MemorySegment.ofArray(new byte[2]).elements(ValueLayout.JAVA_INT);
+        MemorySegment.allocateNative(2, SegmentScope.auto())
+                .elements(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeNotMultiple() {
-        MemorySegment.ofArray(new byte[7]).spliterator(ValueLayout.JAVA_INT);
+        MemorySegment.allocateNative(7, SegmentScope.auto())
+                .spliterator(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeNotMultiple() {
-        MemorySegment.ofArray(new byte[7]).elements(ValueLayout.JAVA_INT);
+        MemorySegment.allocateNative(7, SegmentScope.auto())
+                .elements(ValueLayout.JAVA_INT);
+    }
+
+    @Test
+    public void testSpliteratorElementSizeMultipleButNotPowerOfTwo() {
+        MemorySegment.allocateNative(12, SegmentScope.auto())
+                .spliterator(ValueLayout.JAVA_INT);
+    }
+
+    @Test
+    public void testStreamElementSizeMultipleButNotPowerOfTwo() {
+        MemorySegment.allocateNative(12, SegmentScope.auto())
+                .elements(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeZero() {
-        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+        MemorySegment.allocateNative(7, SegmentScope.auto())
+                .spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeZero() {
-        MemorySegment.ofArray(new byte[7]).elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+        MemorySegment.allocateNative(7, SegmentScope.auto())
+                .elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAligned() {
-        MemorySegment.ofArray(new byte[8]).elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withBitAlignment(64)));
+        MemorySegment segment = MemorySegment.allocateNative(8, SegmentScope.auto());
+        // compute an alignment constraint (in bytes) which exceed that of the native segment
+        long bigAlign = Long.lowestOneBit(segment.address()) << 1;
+        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withBitAlignment(bigAlign)));
     }
 
     static long sumSingle(long acc, MemorySegment segment) {

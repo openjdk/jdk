@@ -126,7 +126,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (!isAlignedForElement(0, elementLayout)) {
             throw new IllegalArgumentException("Incompatible alignment constraints");
         }
-        if (!Utils.isAligned(byteSize(), elementLayout.byteSize())) {
+        if ((byteSize() % elementLayout.byteSize()) != 0) {
             throw new IllegalArgumentException("Segment size is not a multiple of layout size");
         }
         return new SegmentSplitter(elementLayout.byteSize(), byteSize() / elementLayout.byteSize(),
