@@ -175,9 +175,9 @@ public class Extension implements java.security.cert.Extension, DerEncoder {
     public void encode(DerOutputStream out) throws IOException {
 
         Objects.requireNonNull(extensionId,
-                "Null OID to encode for the extension!");
+                "No OID to encode for the extension");
         Objects.requireNonNull(extensionValue,
-                "No value to encode for the extension!");
+                "No value to encode for the extension");
 
         DerOutputStream dos = new DerOutputStream();
 

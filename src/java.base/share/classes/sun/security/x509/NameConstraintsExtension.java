@@ -139,7 +139,7 @@ public class NameConstraintsExtension extends Extension
             throws IOException {
         if (permitted == null && excluded == null) {
             throw new IllegalArgumentException(
-                    "permitted and exclude cannot both be null");
+                    "permitted and excluded cannot both be null");
         }
         this.permitted = permitted;
         this.excluded = excluded;
