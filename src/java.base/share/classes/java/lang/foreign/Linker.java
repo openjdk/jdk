@@ -339,8 +339,8 @@ public sealed interface Linker permits AbstractLinker {
          * MethodHandle handle = Linker.nativeLinker().downcallHandle(targetAddress, FunctionDescriptor.ofVoid(), ccs);
          *
          * VarHandle errnoHandle = ccs.layout().varHandle(PathElement.groupElement("errno"));
-         * try (MemorySession session = MemorySession.openConfined()) {
-         *     MemorySegment capturedState = session.allocate(ccs.layout());
+         * try (Arena arena = Arena.openConfined()) {
+         *     MemorySegment capturedState = arena.allocate(ccs.layout());
          *     handle.invoke(capturedState);
          *     int errno = errnoHandle.get(capturedState);
          *     // use errno
