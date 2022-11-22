@@ -599,11 +599,8 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread
 
 JavaThread::~JavaThread() {
 
-  // Ask ServiceThread to release the OopHandles
-  ServiceThread::add_oop_handle_release(_threadObj);
-  ServiceThread::add_oop_handle_release(_vthread);
-  ServiceThread::add_oop_handle_release(_jvmti_vthread);
-  ServiceThread::add_oop_handle_release(_extentLocalCache);
+  // Enqueue OopHandles for release by the service thread.
+  add_oop_handles_for_release();
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
@@ -2072,4 +2069,58 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
   }
+}
+
+// Deferred OopHandle release support.
+
+class OopHandleList : public CHeapObj<mtInternal> {
+  static const int _count = 4;
+  OopHandle _handles[_count];
+  OopHandleList* _next;
+  int _index;
+ public:
+  OopHandleList(OopHandleList* next) : _next(next), _index(0) {}
+  void add(OopHandle h) {
+    assert(_index < _count, "too many additions");
+    _handles[_index++] = h;
+  }
+  ~OopHandleList() {
+    assert(_index == _count, "usage error");
+    for (int i = 0; i < _index; i++) {
+      _handles[i].release(JavaThread::thread_oop_storage());
+    }
+  }
+  OopHandleList* next() const { return _next; }
+};
+
+OopHandleList* JavaThread::_oop_handle_list = nullptr;
+
+// Called by the ServiceThread to do the work of releasing
+// the OopHandles.
+void JavaThread::release_oop_handles() {
+  OopHandleList* list;
+  {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    list = _oop_handle_list;
+    _oop_handle_list = nullptr;
+  }
+  assert(!SafepointSynchronize::is_at_safepoint(), "cannot be called at a safepoint");
+
+  while (list != nullptr) {
+    OopHandleList* l = list;
+    list = l->next();
+    delete l;
+  }
+}
+
+// Add our OopHandles for later release.
+void JavaThread::add_oop_handles_for_release() {
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  OopHandleList* new_head = new OopHandleList(_oop_handle_list);
+  new_head->add(_threadObj);
+  new_head->add(_vthread);
+  new_head->add(_jvmti_vthread);
+  new_head->add(_extentLocalCache);
+  _oop_handle_list = new_head;
+  Service_lock->notify_all();
 }
