@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3158,6 +3158,11 @@ public:
   INSN(fcvtas, 0, 0b00, 0b01, 0b11100);
   INSN(fcvtzs, 0, 0b10, 0b01, 0b11011);
   INSN(fcvtms, 0, 0b00, 0b01, 0b11011);
+  INSN(fcmgt,  0, 0b10, 0b01, 0b01100); // Floating-point compare greater than zero (vector)
+  INSN(fcmeq,  0, 0b10, 0b01, 0b01101); // Floating-point compare equal to zero (vector)
+  INSN(fcmlt,  0, 0b10, 0b01, 0b01110); // Floating-point compare less than zero (vector)
+  INSN(fcmge,  1, 0b10, 0b01, 0b01100); // Floating-point compare greater than or equal to zero (vector)
+  INSN(fcmle,  1, 0b10, 0b01, 0b01101); // Floating-point compare less than or equal to zero (vector)
 #undef ASSERTION
 
 #define ASSERTION (T == T8B || T == T16B || T == T4H || T == T8H || T == T2S || T == T4S)

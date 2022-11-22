@@ -1183,6 +1183,22 @@ class CommonNEONInstruction(Instruction):
     def aname(self):
         return self._name
 
+class NEONCompareWithZero(CommonNEONInstruction):
+    numRegs = 2
+
+    def __init__(self, args):
+        self._name, self.arrangement = args
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self._name, self._firstSIMDreg, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.arrangement)
+            current = current.nextReg()
+
+        buf += ', #0'
+        return buf
+
 class SHA512SIMDOp(Instruction):
 
     def generate(self):
@@ -1528,6 +1544,19 @@ generate(NEONReduceInstruction,
           ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
           ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
+
+NEONCompareWithZeroInstructions = ['cmgt', 'cmge', 'cmeq', 'cmlt', 'cmle',
+                                   'fcmgt', 'fcmge', 'fcmeq', 'fcmlt', 'fcmle']
+NEONNonFloatArrangement = ['8B', '16B', '4H', '8H', '2S', '4S', '2D']
+NEONFloatArrangement = ['2S', '4S', '2D']
+NEONCompareWithZeroArgs = []
+for ins in NEONCompareWithZeroInstructions:
+    arrangements = NEONFloatArrangement if ins[0] == 'f' else NEONNonFloatArrangement
+    for currentArrangement in arrangements:
+        currentArgs = [ins, currentArrangement]
+        NEONCompareWithZeroArgs.append(currentArgs)
+
+generate(NEONCompareWithZero, NEONCompareWithZeroArgs)
 
 generate(TwoRegNEONOp,
          [["absr", "abs", "8B"], ["absr", "abs", "16B"],
