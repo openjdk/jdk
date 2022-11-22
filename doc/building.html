@@ -564,14 +564,31 @@ be accepted by <code>configure</code>.</p>
 <code>--with-toolchain-type=clang</code>.</p>
 <h3 id="apple-xcode">Apple Xcode</h3>
 <p>The oldest supported version of Xcode is 8.</p>
-<p>You will need the Xcode command line developer tools to be able to build the JDK. (Actually, <em>only</em> the command line tools are needed, not the IDE.) The simplest way to install these is to run:</p>
+<p>You will need the Xcode command line developer tools to be able to
+build the JDK. (Actually, <em>only</em> the command line tools are
+needed, not the IDE.) The simplest way to install these is to run:</p>
 <pre><code>xcode-select --install</code></pre>
-<p>When updating Xcode, it is advisable to keep an older version for building the JDK. To use a specific version of Xcode you have multiple options:</p>
+<p>When updating Xcode, it is advisable to keep an older version for
+building the JDK. To use a specific version of Xcode you have multiple
+options:</p>
 <ul>
-<li>Use <code>xcode-select -s</code> before running <code>configure</code>, e.g. <code>xcode-select -s /Applications/Xcode13.1.app</code>. The drawback is that the setting is system wide and you may have to revert it after an OpenJDK build.</li>
-<li>Use configure option <code>--with-xcode-path</code>, e.g. <code>configure --with-xcode-path=/Applications/Xcode13.1.app</code> This allows using a specific Xcode version for an OpenJDK build, independently of the active Xcode version by <code>xcode-select</code>.</li>
+<li>Use <code>xcode-select -s</code> before running
+<code>configure</code>, e.g.
+<code>xcode-select -s /Applications/Xcode13.1.app</code>. The drawback
+is that the setting is system wide and you may have to revert it after
+an OpenJDK build.</li>
+<li>Use configure option <code>--with-xcode-path</code>, e.g.
+<code>configure --with-xcode-path=/Applications/Xcode13.1.app</code>
+This allows using a specific Xcode version for an OpenJDK build,
+independently of the active Xcode version by
+<code>xcode-select</code>.</li>
 </ul>
-<p>If you have recently (inadvertently) updated your OS and/or Xcode version, and the JDK can no longer be built, please see the section on <a href="#problems-with-the-build-environment">Problems with the Build Environment</a>, and <a href="#getting-help">Getting Help</a> to find out if there are any recent, non-merged patches available for this update.</p>
+<p>If you have recently (inadvertently) updated your OS and/or Xcode
+version, and the JDK can no longer be built, please see the section on
+<a href="#problems-with-the-build-environment">Problems with the Build
+Environment</a>, and <a href="#getting-help">Getting Help</a> to find
+out if there are any recent, non-merged patches available for this
+update.</p>
 <h3 id="microsoft-visual-studio">Microsoft Visual Studio</h3>
 <p>The minimum accepted version is Visual Studio 2019 version 16.8.
 (Note that this version is often presented as "MSVC 14.28", and reported
