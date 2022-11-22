@@ -780,14 +780,13 @@ class DatagramChannelImpl
         }
     }
 
-    @SuppressWarnings("try")
     private int receiveIntoNativeBuffer(ByteBuffer bb, int rem, int pos,
                                         boolean connected)
         throws IOException
     {
-        try (var guard = NIO_ACCESS.acquireSession(bb)) {
+        try (var guard = NIO_ACCESS.acquireScope(bb)) {
             int n = receive0(fd,
-                    ((DirectBuffer) bb).address() + pos, rem,
+                    guard.address() + pos, rem,
                     sourceSockAddr.address(),
                     connected);
             if (n > 0)
@@ -927,7 +926,6 @@ class DatagramChannelImpl
         }
     }
 
-    @SuppressWarnings("try")
     private int sendFromNativeBuffer(FileDescriptor fd, ByteBuffer bb,
                                      InetSocketAddress target)
         throws IOException
@@ -938,9 +936,9 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
-        try (var guard = NIO_ACCESS.acquireSession(bb)) {
+        try (var guard = NIO_ACCESS.acquireScope(bb)) {
             int addressLen = targetSocketAddress(target);
-            written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
+            written = send0(fd, guard.address() + pos, rem,
                             targetSockAddr.address(), addressLen);
         } catch (PortUnreachableException pue) {
             if (isConnected())

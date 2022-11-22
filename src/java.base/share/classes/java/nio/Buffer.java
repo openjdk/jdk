@@ -779,13 +779,6 @@ public abstract sealed class Buffer
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
 
-                // We are not using a lambda here because this would create
-                // a circular dependency with lambda factories.
-                static final JavaNioAccess.SessionAcquisition NO_OP_CLOSE = new JavaNioAccess.SessionAcquisition() {
-                    @Override
-                    public void close() {}
-                };
-
                 @Override
                 public BufferPool getDirectBufferPool() {
                     return Bits.BUFFER_POOL;
@@ -844,13 +837,13 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public SessionAcquisition acquireSession(Buffer buffer) {
-                    var session = buffer.session();
-                    if (session == null) {
-                        return NO_OP_CLOSE;
+                public ScopeAcquisition acquireScope(Buffer buffer) {
+                    var scope = buffer.session();
+                    if (scope == null) {
+                        return ScopeAcquisition.create(buffer);
                     }
-                    session.acquire0();
-                    return session::release0;
+                    scope.acquire0();
+                    return ScopeAcquisition.create(buffer, scope);
                 }
 
                 @Override

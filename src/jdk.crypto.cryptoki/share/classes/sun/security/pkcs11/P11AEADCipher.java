@@ -726,7 +726,6 @@ final class P11AEADCipher extends CipherSpi {
         }
     }
 
-    @SuppressWarnings("try")
     private int implDoFinal(ByteBuffer inBuffer, ByteBuffer outBuffer)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
@@ -739,8 +738,8 @@ final class P11AEADCipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        try (var inGuard = NIO_ACCESS.acquireSession(inBuffer);
-             var outGuard = NIO_ACCESS.acquireSession(outBuffer)) {
+        try (var inGuard = NIO_ACCESS.acquireScope(inBuffer);
+             var outGuard = NIO_ACCESS.acquireScope(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;
@@ -757,7 +756,7 @@ final class P11AEADCipher extends CipherSpi {
                 inLen = in.length;
             } else {
                 if (inBuffer instanceof DirectBuffer) {
-                    inAddr = ((DirectBuffer) inBuffer).address();
+                    inAddr = inGuard.address();
                     inOfs = inBuffer.position();
                 } else {
                     if (inBuffer.hasArray()) {
@@ -773,7 +772,7 @@ final class P11AEADCipher extends CipherSpi {
             byte[] outArray = null;
             int outOfs = 0;
             if (outBuffer instanceof DirectBuffer) {
-                outAddr = ((DirectBuffer) outBuffer).address();
+                outAddr = outGuard.address();
                 outOfs = outBuffer.position();
             } else {
                 if (outBuffer.hasArray()) {

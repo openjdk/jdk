@@ -262,7 +262,6 @@ final class P11Mac extends MacSpi {
     }
 
     // see JCE spec
-    @SuppressWarnings("try")
     protected void engineUpdate(ByteBuffer byteBuffer) {
         try {
             ensureInitialized();
@@ -274,10 +273,9 @@ final class P11Mac extends MacSpi {
                 super.engineUpdate(byteBuffer);
                 return;
             }
-            long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var guard = NIO_ACCESS.acquireSession(byteBuffer)) {
-                token.p11.C_SignUpdate(session.id(), addr + ofs, null, 0, len);
+            try (var guard = NIO_ACCESS.acquireScope(byteBuffer)) {
+                token.p11.C_SignUpdate(session.id(), guard.address() + ofs, null, 0, len);
             }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {

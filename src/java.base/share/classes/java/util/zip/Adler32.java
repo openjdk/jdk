@@ -25,9 +25,8 @@
 
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
-import sun.nio.ch.DirectBuffer;
+
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -89,7 +88,6 @@ public class Adler32 implements Checksum {
      *
      * @since 1.8
      */
-    @SuppressWarnings("try")
     @Override
     public void update(ByteBuffer buffer) {
         int pos = buffer.position();
@@ -99,10 +97,8 @@ public class Adler32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
-            try (var guard = NIO_ACCESS.acquireSession(buffer)) {
-                adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
-            } finally {
-                Reference.reachabilityFence(buffer);
+            try (var guard = NIO_ACCESS.acquireScope(buffer)) {
+                adler = updateByteBuffer(adler, guard.address(), pos, rem);
             }
         } else if (buffer.hasArray()) {
             adler = updateBytes(adler, buffer.array(), pos + buffer.arrayOffset(), rem);

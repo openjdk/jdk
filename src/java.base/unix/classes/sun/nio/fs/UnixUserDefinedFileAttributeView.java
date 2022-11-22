@@ -25,7 +25,6 @@
 
 package sun.nio.fs;
 
-import java.lang.ref.Reference;
 import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
@@ -166,7 +165,7 @@ abstract class UnixUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings({"removal", "try"})
+    @SuppressWarnings("removal")
     @Override
     public int read(String name, ByteBuffer dst) throws IOException {
         if (System.getSecurityManager() != null)
@@ -179,14 +178,12 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (dst instanceof sun.nio.ch.DirectBuffer buf) {
-            try (var guard = NIO_ACCESS.acquireSession(dst)) {
-                long address = buf.address() + pos;
+        if (dst instanceof sun.nio.ch.DirectBuffer) {
+            try (var guard = NIO_ACCESS.acquireScope(dst)) {
+                long address = guard.address() + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
                 return n;
-            } finally {
-                Reference.reachabilityFence(buf);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
@@ -230,7 +227,7 @@ abstract class UnixUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings({"removal", "try"})
+    @SuppressWarnings("removal")
     @Override
     public int write(String name, ByteBuffer src) throws IOException {
         if (System.getSecurityManager() != null)
@@ -241,14 +238,12 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (src instanceof sun.nio.ch.DirectBuffer buf) {
-            try (var guard = NIO_ACCESS.acquireSession(src)) {
-                long address = buf.address() + pos;
+        if (src instanceof sun.nio.ch.DirectBuffer) {
+            try (var guard = NIO_ACCESS.acquireScope(src)) {
+                long address = guard.address() + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
                 return rem;
-            } finally {
-                Reference.reachabilityFence(buf);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {

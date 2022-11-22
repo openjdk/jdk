@@ -581,15 +581,14 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         }
     }
 
-    @SuppressWarnings("try")
     private int receiveIntoNativeBuffer(int fd,
                                         ResultContainer resultContainer,
                                         ByteBuffer bb,
                                         int rem,
                                         int pos)
             throws IOException {
-        try (var guard = NIO_ACCESS.acquireSession(bb)) {
-            int n = receive0(fd, resultContainer, ((DirectBuffer) bb).address() + pos, rem);
+        try (var guard = NIO_ACCESS.acquireScope(bb)) {
+            int n = receive0(fd, resultContainer, guard.address() + pos, rem);
             if (n > 0)
                 bb.position(pos + n);
             return n;
@@ -892,7 +891,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         }
     }
 
-    @SuppressWarnings("try")
     private int sendFromNativeBuffer(int fd,
                                      ByteBuffer bb,
                                      SocketAddress target,
@@ -916,8 +914,8 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        try (var guard = NIO_ACCESS.acquireSession(bb)) {
-            int written = send0(fd, ((DirectBuffer) bb).address() + pos, rem, addr,
+        try (var guard = NIO_ACCESS.acquireScope(bb)) {
+            int written = send0(fd, guard.address() + pos, rem, addr,
                     port, assocId, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);

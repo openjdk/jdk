@@ -26,14 +26,12 @@
 package java.util.zip;
 
 import java.lang.ref.Cleaner.Cleanable;
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
 
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -333,18 +331,14 @@ public class Deflater {
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      */
-    @SuppressWarnings("try")
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
             int position = dictionary.position();
             int remaining = Math.max(dictionary.limit() - position, 0);
             ensureOpen();
             if (dictionary.isDirect()) {
-                long address = ((DirectBuffer) dictionary).address();
-                try (var guard = NIO_ACCESS.acquireSession(dictionary)) {
-                    setDictionaryBuffer(zsRef.address(), address + position, remaining);
-                } finally {
-                    Reference.reachabilityFence(dictionary);
+                try (var guard = NIO_ACCESS.acquireScope(dictionary)) {
+                    setDictionaryBuffer(zsRef.address(), guard.address() + position, remaining);
                 }
             } else {
                 byte[] array = ZipUtils.getBufferArray(dictionary);
@@ -556,7 +550,6 @@ public class Deflater {
      * @throws IllegalArgumentException if the flush mode is invalid
      * @since 1.7
      */
-    @SuppressWarnings("try")
     public int deflate(byte[] output, int off, int len, int flush) {
         Preconditions.checkFromIndexSize(len, off, output.length, Preconditions.AIOOBE_FORMATTER);
         if (flush != NO_FLUSH && flush != SYNC_FLUSH && flush != FULL_FLUSH) {
@@ -591,14 +584,11 @@ public class Deflater {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    try (var guard = NIO_ACCESS.acquireSession(input)) {
-                        long inputAddress = ((DirectBuffer) input).address();
+                    try (var guard = NIO_ACCESS.acquireScope(input)) {
                         result = deflateBufferBytes(zsRef.address(),
-                            inputAddress + inputPos, inputRem,
+                            guard.address() + inputPos, inputRem,
                             output, off, len,
                             flush, params);
-                    } finally {
-                        Reference.reachabilityFence(input);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
@@ -682,7 +672,6 @@ public class Deflater {
      * @throws ReadOnlyBufferException if the given output buffer is read-only
      * @since 11
      */
-    @SuppressWarnings("try")
     public int deflate(ByteBuffer output, int flush) {
         if (output.isReadOnly()) {
             throw new ReadOnlyBufferException();
@@ -714,14 +703,11 @@ public class Deflater {
             if (input == null) {
                 inputPos = this.inputPos;
                 if (output.isDirect()) {
-                    long outputAddress = ((DirectBuffer) output).address();
-                    try (var guard = NIO_ACCESS.acquireSession(output)) {
+                    try (var guard = NIO_ACCESS.acquireScope(output)) {
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
-                            outputAddress + outputPos, outputRem,
+                                guard.address() + outputPos, outputRem,
                             flush, params);
-                    } finally {
-                        Reference.reachabilityFence(output);
                     }
                 } else {
                     byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -735,41 +721,32 @@ public class Deflater {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    long inputAddress = ((DirectBuffer) input).address();
-                    try (var inGuard = NIO_ACCESS.acquireSession(output)) {
+                    try (var inGuard = NIO_ACCESS.acquireScope(input)) {
                         if (output.isDirect()) {
-                            long outputAddress = outputPos + ((DirectBuffer) output).address();
-                            try (var outGuard = NIO_ACCESS.acquireSession(output)) {
+                            try (var outGuard = NIO_ACCESS.acquireScope(output)) {
                                 result = deflateBufferBuffer(zsRef.address(),
-                                    inputAddress + inputPos, inputRem,
-                                    outputAddress, outputRem,
+                                    inGuard.address() + inputPos, inputRem,
+                                    outGuard.address(), outputRem,
                                     flush, params);
-                            } finally {
-                                Reference.reachabilityFence(output);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
                             int outputOffset = ZipUtils.getBufferOffset(output);
                             result = deflateBufferBytes(zsRef.address(),
-                                inputAddress + inputPos, inputRem,
+                                inGuard.address() + inputPos, inputRem,
                                 outputArray, outputOffset + outputPos, outputRem,
                                 flush, params);
                         }
-                    } finally {
-                        Reference.reachabilityFence(input);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
                     int inputOffset = ZipUtils.getBufferOffset(input);
                     if (output.isDirect()) {
-                        long outputAddress = ((DirectBuffer) output).address();
-                        try (var guard = NIO_ACCESS.acquireSession(output)) {
+                        try (var guard = NIO_ACCESS.acquireScope(output)) {
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
-                                outputAddress + outputPos, outputRem,
+                                guard.address()+ outputPos, outputRem,
                                 flush, params);
-                        } finally {
-                            Reference.reachabilityFence(output);
                         }
                     } else {
                         byte[] outputArray = ZipUtils.getBufferArray(output);

@@ -27,9 +27,12 @@ package jdk.internal.access;
 
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.VM.BufferPool;
+import sun.nio.ch.DirectBuffer;
 
 import java.lang.foreign.MemorySegment;
 import java.io.FileDescriptor;
+import java.lang.foreign.MemorySession;
+import java.lang.ref.Reference;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
@@ -100,7 +103,8 @@ public interface JavaNioAccess {
      *     }
      * }
      *}
-     * @see #acquireSession(Buffer)
+     *
+     * @see #acquireScope(Buffer)
      */
     Runnable acquireSessionOrNull(Buffer buffer, boolean async);
 
@@ -110,14 +114,14 @@ public interface JavaNioAccess {
      * A valid close handler is always returned (if the buffer has no scope, or acquiring is not
      * required to guarantee safety, a noop close handler is returned).
      * {@snippet lang = java:
-     * try (var guard = acquireSession(buffer)) {
+     * try (var guard = acquireScope(buffer)) {
      *     performOperation(buffer);
      * }
      *}
      *
      * @see #acquireSessionOrNull(Buffer, boolean)
      */
-    SessionAcquisition acquireSession(Buffer buffer);
+    ScopeAcquisition acquireScope(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
@@ -154,10 +158,72 @@ public interface JavaNioAccess {
      */
     int pageSize();
 
-    @FunctionalInterface
-    interface SessionAcquisition extends AutoCloseable {
+    sealed interface ScopeAcquisition extends AutoCloseable {
+
+        /**
+         * {@return the address of the underlying Buffer}.
+         * @throws ClassCastException if the underlying Buffer is not a DirectBuffer
+         */
+        long address();
 
         @Override
         void close();
+
+        static ScopeAcquisition create(Buffer buffer, MemorySession session) {
+            return new ClosingScopeAcquisition(buffer, session);
+        }
+
+        static ScopeAcquisition create(Buffer buffer) {
+            return new NoOpScopeAcquisition(buffer);
+        }
+
+        final class NoOpScopeAcquisition extends AbstractScopeAcquisition implements ScopeAcquisition {
+
+            NoOpScopeAcquisition(Buffer buffer) {
+                super(buffer);
+            }
+
+            @Override
+            public void close() {
+                Reference.reachabilityFence(buffer);
+            }
+        }
+
+        final class ClosingScopeAcquisition extends AbstractScopeAcquisition implements ScopeAcquisition {
+
+            private final MemorySession scope;
+
+            ClosingScopeAcquisition(Buffer buffer,
+                                    MemorySession scope) {
+                super(buffer);
+                this.scope = scope;
+            }
+
+            @Override
+            public void close() {
+                try {
+                    scope.close();
+                } finally {
+                    Reference.reachabilityFence(buffer);
+                }
+            }
+        }
+
+        abstract sealed class AbstractScopeAcquisition implements ScopeAcquisition {
+
+            final Buffer buffer;
+
+            AbstractScopeAcquisition(Buffer buffer) {
+                this.buffer = buffer;
+            }
+
+            @Override
+            public final long address() {
+                return ((DirectBuffer) buffer).address();
+            }
+
+        }
+
     }
+
 }

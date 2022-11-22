@@ -286,7 +286,6 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
     }
 
     // see JCA spec
-    @SuppressWarnings("try")
     protected void engineUpdate(ByteBuffer byteBuffer) {
         int len = byteBuffer.remaining();
         if (len <= 0) {
@@ -299,7 +298,6 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
         }
 
         fetchSession();
-        long addr = ((DirectBuffer)byteBuffer).address();
         int ofs = byteBuffer.position();
         try {
             if (state == S_BUFFERED) {
@@ -310,8 +308,8 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
                 token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
                 bufOfs = 0;
             }
-            try (var guard = NIO_ACCESS.acquireSession(byteBuffer)) {
-                token.p11.C_DigestUpdate(session.id(), addr + ofs, null, 0, len);
+            try (var guard = NIO_ACCESS.acquireScope(byteBuffer)) {
+                token.p11.C_DigestUpdate(session.id(), guard.address() + ofs, null, 0, len);
             }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {

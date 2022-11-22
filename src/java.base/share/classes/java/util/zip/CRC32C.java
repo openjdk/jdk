@@ -24,14 +24,12 @@
  */
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -162,7 +160,6 @@ public final class CRC32C implements Checksum {
      * at the buffer's position. Upon return, the buffer's position will be
      * updated to its limit; its limit will not have been changed.
      */
-    @SuppressWarnings("try")
     @Override
     public void update(ByteBuffer buffer) {
         int pos = buffer.position();
@@ -174,11 +171,9 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
-            try (var guard = NIO_ACCESS.acquireSession(buffer)) {
-                crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
+            try (var guard = NIO_ACCESS.acquireScope(buffer)) {
+                crc = updateDirectByteBuffer(crc, guard.address(),
                         pos, limit);
-            } finally {
-                Reference.reachabilityFence(buffer);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),

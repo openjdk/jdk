@@ -679,7 +679,6 @@ final class P11Cipher extends CipherSpi {
         }
     }
 
-    @SuppressWarnings("try")
     private int implUpdate(ByteBuffer inBuffer, ByteBuffer outBuffer)
             throws ShortBufferException {
         int inLen = inBuffer.remaining();
@@ -692,8 +691,8 @@ final class P11Cipher extends CipherSpi {
             throw new ShortBufferException();
         }
         int origPos = inBuffer.position();
-        try (var inGuard = NIO_ACCESS.acquireSession(inBuffer);
-             var outGuard = NIO_ACCESS.acquireSession(outBuffer)) {
+        try (var inGuard = NIO_ACCESS.acquireScope(inBuffer);
+             var outGuard = NIO_ACCESS.acquireScope(outBuffer)) {
             ensureInitialized();
 
             long inAddr = 0;
@@ -701,7 +700,7 @@ final class P11Cipher extends CipherSpi {
             byte[] inArray = null;
 
             if (inBuffer instanceof DirectBuffer) {
-                inAddr = ((DirectBuffer) inBuffer).address();
+                inAddr = inGuard.address();
                 inOfs = origPos;
             } else if (inBuffer.hasArray()) {
                 inArray = inBuffer.array();
@@ -712,7 +711,7 @@ final class P11Cipher extends CipherSpi {
             int outOfs = 0;
             byte[] outArray = null;
             if (outBuffer instanceof DirectBuffer) {
-                outAddr = ((DirectBuffer) outBuffer).address();
+                outAddr = outGuard.address();
                 outOfs = outBuffer.position();
             } else {
                 if (outBuffer.hasArray()) {
@@ -882,7 +881,6 @@ final class P11Cipher extends CipherSpi {
         }
     }
 
-    @SuppressWarnings("try")
     private int implDoFinal(ByteBuffer outBuffer)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
@@ -893,14 +891,14 @@ final class P11Cipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        try (var outGuard = NIO_ACCESS.acquireSession(outBuffer)) {
+        try (var outGuard = NIO_ACCESS.acquireScope(outBuffer)) {
             ensureInitialized();
 
             long outAddr = 0;
             byte[] outArray = null;
             int outOfs = 0;
             if (outBuffer instanceof DirectBuffer) {
-                outAddr = ((DirectBuffer) outBuffer).address();
+                outAddr = outGuard.address();
                 outOfs = outBuffer.position();
             } else {
                 if (outBuffer.hasArray()) {

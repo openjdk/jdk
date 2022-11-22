@@ -917,8 +917,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
-                try (var srcGuard = NIO_ACCESS.acquireSession(src);
-                     var dstGuard = NIO_ACCESS.acquireSession(dst)) {
+                try (var srcGuard = NIO_ACCESS.acquireScope(src);
+                     var dstGuard = NIO_ACCESS.acquireScope(dst)) {
 
                     // Get the current memory address for the given ByteBuffers
                     long srcaddr = dsrc.address();
@@ -1519,7 +1519,6 @@ abstract class GaloisCounterMode extends CipherSpi {
          * data.  If the verification fails, the 'dst' left to it's original
          * values if crypto was in-place; otherwise 'dst' is zeroed
          */
-        @SuppressWarnings("try")
         @Override
         public int doFinal(ByteBuffer src, ByteBuffer dst)
             throws IllegalBlockSizeException, AEADBadTagException,
@@ -1595,8 +1594,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                     int ofs = dst.arrayOffset() + dst.position();
                     Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
                 } else {
-                    try (var guard = NIO_ACCESS.acquireSession(dst)) {
-                        Unsafe.getUnsafe().setMemory(((DirectBuffer) dst).address(),
+                    try (var guard = NIO_ACCESS.acquireScope(dst)) {
+                        Unsafe.getUnsafe().setMemory(guard.address(),
                                 len + dst.position(), (byte) 0);
                     }
                 }

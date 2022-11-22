@@ -836,7 +836,6 @@ public class SctpChannelImpl extends SctpChannel
         }
     }
 
-    @SuppressWarnings("try")
     private int receiveIntoNativeBuffer(int fd,
                                         ResultContainer resultContainer,
                                         ByteBuffer bb,
@@ -845,8 +844,8 @@ public class SctpChannelImpl extends SctpChannel
                                         boolean peek)
         throws IOException
     {
-        try (var guard = NIO_ACCESS.acquireSession(bb)) {
-            int n = receive0(fd, resultContainer, ((DirectBuffer) bb).address() + pos, rem, peek);
+        try (var guard = NIO_ACCESS.acquireScope(bb)) {
+            int n = receive0(fd, resultContainer, guard.address() + pos, rem, peek);
 
             if (n > 0)
                 bb.position(pos + n);
@@ -1013,7 +1012,6 @@ public class SctpChannelImpl extends SctpChannel
         }
     }
 
-    @SuppressWarnings("try")
     private int sendFromNativeBuffer(int fd,
                                      ByteBuffer bb,
                                      SocketAddress target,
@@ -1037,8 +1035,8 @@ public class SctpChannelImpl extends SctpChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        try (var guard = NIO_ACCESS.acquireSession(bb)) {
-            int written = send0(fd, ((DirectBuffer) bb).address() + pos, rem, addr,
+        try (var guard = NIO_ACCESS.acquireScope(bb)) {
+            int written = send0(fd, guard.address() + pos, rem, addr,
                     port, -1 /*121*/, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);

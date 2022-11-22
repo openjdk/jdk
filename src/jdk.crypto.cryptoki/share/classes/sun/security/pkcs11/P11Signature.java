@@ -575,7 +575,6 @@ final class P11Signature extends SignatureSpi {
     }
 
     // see JCA spec
-    @SuppressWarnings("try")
     @Override
     protected void engineUpdate(ByteBuffer byteBuffer) {
 
@@ -591,15 +590,14 @@ final class P11Signature extends SignatureSpi {
                 super.engineUpdate(byteBuffer);
                 return;
             }
-            long addr = ((DirectBuffer)byteBuffer).address();
             int ofs = byteBuffer.position();
-            try (var guard = NIO_ACCESS.acquireSession(byteBuffer)) {
+            try (var guard = NIO_ACCESS.acquireScope(byteBuffer)) {
                 if (mode == M_SIGN) {
                     token.p11.C_SignUpdate
-                        (session.id(), addr + ofs, null, 0, len);
+                        (session.id(), guard.address() + ofs, null, 0, len);
                 } else {
                     token.p11.C_VerifyUpdate
-                        (session.id(), addr + ofs, null, 0, len);
+                        (session.id(), guard.address() + ofs, null, 0, len);
                 }
                 bytesProcessed += len;
                 byteBuffer.position(ofs + len);
