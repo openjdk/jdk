@@ -60,18 +60,6 @@ public class HsErrFileUtils {
         return f;
     }
 
-    public static void printHsErrFileContent(File f)  throws IOException {
-        try (
-            FileInputStream fis = new FileInputStream(f);
-            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-        ) {
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                System.out.println(line);
-            }
-        }
-    }
-
     /**
      * Given an open hs-err file, read it line by line and check for existence of a pattern. Will fail
      * if pattern are missing, or if the END marker is missing.
