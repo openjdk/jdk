@@ -105,6 +105,7 @@ void StubGenerator::generate_chacha_stubs() {
     if (VM_Version::supports_evex()) {
       StubRoutines::_chacha20Block = generate_chacha20Block_avx512();
     } else {    // Either AVX or AVX2 is supported
+      assert(VM_Version::supports_avx() == true, "Must at least support AVX instructions");
       StubRoutines::_chacha20Block = generate_chacha20Block_avx();
     }
   }
