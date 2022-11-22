@@ -145,10 +145,6 @@ public class DrawImageBilinear extends Canvas {
     public static void main(String[] args) throws Exception {
         try {
             EventQueue.invokeAndWait(() -> createAndShowGUI());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        try {
             GraphicsConfiguration gc = frame.getGraphicsConfiguration();
             if (gc.getColorModel() instanceof IndexColorModel) {
                 System.out.println("IndexColorModel detected: " +
@@ -181,7 +177,9 @@ public class DrawImageBilinear extends Canvas {
             testRegion(capture, new Rectangle(80, 10, 40, 40));
             testRegion(capture, new Rectangle(150, 10, 40, 40));
         } finally {
-            frame.dispose();
+            if (frame != null) {
+                frame.dispose();
+            }
         }
     }
 }
