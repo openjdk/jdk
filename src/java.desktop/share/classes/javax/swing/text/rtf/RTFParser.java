@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,10 +191,8 @@ abstract class RTFParser extends AbstractFilter
           break;
         }
         if (!Character.isLetter(ch)) {
-          char[] newstring = new char[1];
-          newstring[0] = ch;
-          if (!handleKeyword(new String(newstring))) {
-            warning("Unknown keyword: " + newstring + " (" + (byte)ch + ")");
+          if (!handleKeyword(String.valueOf(ch))) {
+            warning("Unknown keyword: " + ch + " (" + (byte)ch + ")");
           }
           state = S_text;
           pendingKeyword = null;

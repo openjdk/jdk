@@ -29,11 +29,7 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.HTML;
 import javax.swing.text.ChangedCharSetException;
 import java.io.*;
-import java.util.Hashtable;
-import java.util.Properties;
 import java.util.Vector;
-import java.util.Enumeration;
-import java.net.URL;
 
 /**
  * A simple DTD-driven HTML parser. The parser reads an
@@ -1514,8 +1510,7 @@ class Parser implements DTDConstants {
                         }
                     }
                 } else {
-                    char[] str = {(char)ch};
-                    error("invalid.tagchar", new String(str), elem.getName());
+                    error("invalid.tagchar", String.valueOf((char)ch), elem.getName());
                     ch = readCh();
                     continue;
                 }
@@ -1534,8 +1529,7 @@ class Parser implements DTDConstants {
                 error("attvalerr");
                 return;
             } else {
-                char[] str = {(char)ch};
-                error("invalid.tagchar", new String(str), elem.getName());
+                error("invalid.tagchar", String.valueOf((char)ch), elem.getName());
                 if (!strict) {
                     ch = readCh();
                     continue;
