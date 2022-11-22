@@ -49,8 +49,8 @@ public class TestBackSpaceAction {
     static final String instructions
             = """
             Default look and feel set to Metal.
-            
-            
+
+
             INSTRUCTIONS:
                1. Double click on 'subDir' to move into 'subDir' folder.
                2. Press BACKSPACE key.
