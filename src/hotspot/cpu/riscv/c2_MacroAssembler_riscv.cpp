@@ -1690,26 +1690,35 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::reduce_operation(Register dst, VectorRegister tmp,
-                                         Register src1, VectorRegister src2,
-                                         BasicType bt, REDUCTION_OP op) {
+void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
+                                            Register src1, VectorRegister src2,
+                                            BasicType bt, int opc) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   vsetvli(t0, x0, sew);
 
   vmv_s_x(tmp, src1);
 
-  switch (op) {
-    case REDUCTION_OP::ADD:
+  switch (opc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
       vredsum_vs(tmp, src2, tmp);
       break;
-    case REDUCTION_OP::AND:
+    case Op_AndReductionV:
       vredand_vs(tmp, src2, tmp);
       break;
-    case REDUCTION_OP::OR:
+    case Op_OrReductionV:
       vredor_vs(tmp, src2, tmp);
       break;
-    case REDUCTION_OP::XOR:
+    case Op_XorReductionV:
       vredxor_vs(tmp, src2, tmp);
+      break;
+    case Op_MaxReductionV:
+      vredmax_vs(tmp, src2, tmp);
+      break;
+    case Op_MinReductionV:
+      vredmin_vs(tmp, src2, tmp);
       break;
     default:
       ShouldNotReachHere();

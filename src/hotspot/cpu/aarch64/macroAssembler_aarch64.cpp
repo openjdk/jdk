@@ -26,7 +26,6 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
@@ -39,6 +38,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
@@ -3976,7 +3976,11 @@ SkipIfEqual::SkipIfEqual(
   uint64_t offset;
   _masm->adrp(rscratch1, ExternalAddress((address)flag_addr), offset);
   _masm->ldrb(rscratch1, Address(rscratch1, offset));
-  _masm->cbzw(rscratch1, _label);
+  if (value) {
+    _masm->cbnzw(rscratch1, _label);
+  } else {
+    _masm->cbzw(rscratch1, _label);
+  }
 }
 
 SkipIfEqual::~SkipIfEqual() {

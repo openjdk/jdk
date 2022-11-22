@@ -125,7 +125,7 @@ class BytecodeCPEntry {
 class BytecodeConstantPool : ResourceObj {
  private:
   typedef ResourceHashtable<BytecodeCPEntry, u2,
-      256, ResourceObj::RESOURCE_AREA, mtInternal,
+      256, AnyObj::RESOURCE_AREA, mtInternal,
       &BytecodeCPEntry::hash, &BytecodeCPEntry::equals> IndexHash;
 
   ConstantPool* _orig;
