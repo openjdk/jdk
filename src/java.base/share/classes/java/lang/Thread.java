@@ -745,6 +745,7 @@ public class Thread implements Runnable {
         }
 
         // special value to indicate this is a newly-created Thread
+        // Note that his must match the declaration in ScopedValue.
         this.scopedValueBindings = NEW_THREAD_BINDINGS;
     }
 
