@@ -4130,16 +4130,20 @@ void MacroAssembler::pop_set(RegSet set, int offset) {
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
 void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp) {
-  assert(address != length_in_bytes && address != temp && temp != length_in_bytes, "registers must be different");
+  assert_different_registers(address, length_in_bytes, temp);
   assert((offset_in_bytes & (BytesPerWord - 1)) == 0, "offset must be a multiple of BytesPerWord");
   Label done;
-
-  testptr(length_in_bytes, length_in_bytes);
-  jcc(Assembler::zero, done);
 
   // initialize topmost word, divide index by 2, check if odd and test if zero
   // note: for the remaining code to work, index must be a multiple of BytesPerWord
 #ifdef ASSERT
+  {
+    Label L;
+    testptr(length_in_bytes, length_in_bytes);
+    jcc(Assembler::notZero, L);
+    stop("length must be non-zero");
+    bind(L);
+  }
   {
     Label L;
     testptr(length_in_bytes, BytesPerWord - 1);
