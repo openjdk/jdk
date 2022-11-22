@@ -78,9 +78,6 @@ public class MultiThreadTest extends Thread {
 
     static final AtomicInteger reqnum = new AtomicInteger();
 
-    // The number of time an idle timeout was detected by any worker
-    // on the server side.
-    static final AtomicInteger IDLE_TIME_EXCEEDED = new AtomicInteger();
     // Set to true after all requests have been sent
     static final AtomicBoolean DONE = new AtomicBoolean();
     // The time at which the clients have received the last
@@ -493,7 +490,6 @@ public class MultiThreadTest extends Thread {
                         if (!MultiThreadTest.DONE.get()) {
                             // avoid increasing timeoutExceeded after the test is no
                             // longer sending requests.
-                            MultiThreadTest.IDLE_TIME_EXCEEDED.incrementAndGet();
                             timeoutExceeded++;
                         }
                     }
