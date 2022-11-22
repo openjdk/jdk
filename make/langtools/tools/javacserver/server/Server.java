@@ -25,7 +25,6 @@
 
 package javacserver.server;
 
-import com.sun.tools.javac.Main;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,8 +38,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.spi.ToolProvider;
 import javacserver.shared.PortFile;
 import javacserver.shared.Protocol;
 import javacserver.shared.Result;
@@ -225,7 +226,6 @@ public class Server {
         }
     }
 
-    @SuppressWarnings("deprecated")
     public static int runCompiler(Log log, String[] args) {
         Log.setLogForCurrentThread(log);
 
@@ -234,7 +234,12 @@ public class Server {
         PrintWriter printWriter = new PrintWriter(strWriter);
 
         // Compile
-        int exitcode = Main.compile(args, printWriter);
+        Optional<ToolProvider> tool = ToolProvider.findFirst("javac");
+        if (tool.isEmpty()) {
+            Log.error("Can't find tool javac");
+            return Result.ERROR.exitCode;
+        }
+        int exitcode = tool.get().run(printWriter, printWriter, args);
 
         // Process compiler output (which is always errors)
         printWriter.flush();
