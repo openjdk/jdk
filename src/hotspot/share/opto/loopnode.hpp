@@ -350,7 +350,7 @@ public:
     return T_INT;
   }
 
-  Node* is_canonical_loop_entry();
+  Node* is_canonical_loop_entry(bool cross_check = true);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

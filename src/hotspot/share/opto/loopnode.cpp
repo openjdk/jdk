@@ -5444,7 +5444,7 @@ Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
 // loop unswitching, and IGVN, or a combination of them) can freely change
 // the graph's shape. As a result, the graph shape outlined below cannot
 // be guaranteed anymore.
-Node* CountedLoopNode::is_canonical_loop_entry() {
+Node* CountedLoopNode::is_canonical_loop_entry(bool cross_check) {
   if (!is_main_loop() && !is_post_loop()) {
     return NULL;
   }
@@ -5482,6 +5482,9 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   }
   assert(found_opaque == res, "wrong pattern");
 #endif
+  if (cross_check && res) {
+    assert(cmpzm->in(input)->as_Opaque1()->guarded_counted_loop() == this, "");
+  }
   return res ? cmpzm->in(input) : NULL;
 }
 

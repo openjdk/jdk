@@ -27,6 +27,7 @@
 #include "opto/callnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/opaquenode.hpp"
 
 
 //------------------------------split_thru_region------------------------------
@@ -217,6 +218,22 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
           wq.push(u);
         }
       }
+    }
+  }
+
+  if (n->Opcode() == Op_Opaque1) {
+    CountedLoopNode* cl = n->as_Opaque1()->guarded_counted_loop();
+    if (cl != NULL) {
+      Node* ctrl = cl->skip_predicates();
+      assert(ctrl->in(0)->is_If(), "");
+      Node* bol = ctrl->in(0)->in(1);
+      assert(bol->is_Bool(), "");
+      Node* cmp = bol->in(1);
+      assert(cmp->Opcode() == Op_CmpI, "");
+      set_ctrl(n, ctrl->in(0)->in(0));
+      set_ctrl(cmp, ctrl->in(0)->in(0));
+      set_ctrl(bol, ctrl->in(0)->in(0));
+      return true;
     }
   }
 

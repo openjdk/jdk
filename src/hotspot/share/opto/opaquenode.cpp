@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 
@@ -43,6 +45,79 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+CountedLoopNode* Opaque1Node::guarded_counted_loop() const {
+  if (Opcode() != Op_Opaque1) {
+    return NULL;
+  }
+
+  CountedLoopNode* loop = NULL;
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* u1 = fast_out(i);
+    if (u1->Opcode() == Op_CmpI) {
+      Node* cmp = u1;
+      for (DUIterator_Fast jmax, j = cmp->fast_outs(jmax); j < jmax; j++) {
+        Node* u2 = cmp->fast_out(j);
+        if (u2->is_Bool()) {
+          Node* bol = u2;
+          for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+            Node* u3 = bol->fast_out(k);
+            if (u3->is_If()) {
+              IfNode* iff = u3->as_If();
+              Node* ctrl_true = try_find_loop(iff, 1);
+              Node* ctrl_false = try_find_loop(iff, 0);
+              if (ctrl_true != NULL && ctrl_true->is_CountedLoop()) {
+                CountedLoopNode* cl = ctrl_true->as_CountedLoop();
+                if (cl->is_canonical_loop_entry(false) == this) {
+                  assert(loop == NULL, "");
+                  loop = cl;
+                }
+              }
+              if (ctrl_false != NULL && ctrl_false->is_CountedLoop()) {
+                CountedLoopNode* cl = ctrl_false->as_CountedLoop();
+                if (cl->is_canonical_loop_entry(false) == this) {
+                  assert(loop == NULL, "");
+                  loop = cl;
+                }
+                assert(loop == NULL || (outcnt() == 1 && cmp->outcnt() == 1 && bol->outcnt() == 1), "opaq can't be shared");
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return loop;
+}
+
+Node* Opaque1Node::try_find_loop(const IfNode* iff, uint proj) const {
+  Node* ctrl = iff->proj_out_or_null(proj);
+  if (ctrl != NULL) {
+    ctrl = ctrl->unique_ctrl_out_or_null();
+  }
+  while (ctrl != NULL && ctrl->is_If()) {
+    Node* ctrl_true = ctrl->as_If()->proj_out_or_null(0);
+    if (ctrl_true != NULL) {
+      ctrl_true = ctrl_true->unique_ctrl_out();
+    }
+    Node* ctrl_false = ctrl->as_If()->proj_out_or_null(1);
+    if (ctrl_false != NULL) {
+      ctrl_false = ctrl_false->unique_ctrl_out();
+    }
+    if (ctrl_true == NULL || ctrl_true->Opcode() == Op_Halt) {
+      ctrl = ctrl_false;
+    } else if (ctrl_false == NULL || ctrl_false->Opcode() == Op_Halt) {
+      ctrl = ctrl_true;
+    } else {
+      ctrl = NULL;
+    }
+  }
+  if (ctrl != NULL && ctrl->is_OuterStripMinedLoop()) {
+    ctrl = ctrl->unique_ctrl_out();
+  }
+  return ctrl;
+}
+
 
 //=============================================================================
 // A node to prevent unwanted optimizations.  Allows constant folding.  Stops

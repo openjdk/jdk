@@ -53,6 +53,10 @@ class Opaque1Node : public Node {
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
+
+  CountedLoopNode* guarded_counted_loop() const;
+private:
+  Node* try_find_loop(const IfNode* iff, uint proj) const;
 };
 
 // Opaque nodes specific to range check elimination handling
