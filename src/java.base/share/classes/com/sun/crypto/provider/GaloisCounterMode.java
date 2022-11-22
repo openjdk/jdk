@@ -914,48 +914,45 @@ abstract class GaloisCounterMode extends CipherSpi {
         @SuppressWarnings("try")
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
+                // The use of DirectBuffer::address below need not be guarded as
+                // no access is made to actual memory.
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
-                try (var srcGuard = NIO_ACCESS.acquireScope(src);
-                     var dstGuard = NIO_ACCESS.acquireScope(dst)) {
+                // Get the current memory address for the given ByteBuffers
+                long srcaddr = dsrc.address();
+                long dstaddr = ddst.address();
 
-                    // Get the current memory address for the given ByteBuffers
-                    long srcaddr = dsrc.address();
-                    long dstaddr = ddst.address();
-
-                    // Find the lowest attachment that is the base memory address
-                    // of the shared memory for the src object
-                    while (dsrc.attachment() != null) {
-                        srcaddr = ((DirectBuffer) dsrc.attachment()).address();
-                        dsrc = (DirectBuffer) dsrc.attachment();
-                    }
-
-                    // Find the lowest attachment that is the base memory address
-                    // of the shared memory for the dst object
-                    while (ddst.attachment() != null) {
-                        dstaddr = ((DirectBuffer) ddst.attachment()).address();
-                        ddst = (DirectBuffer) ddst.attachment();
-                    }
-
-                    // If the base addresses are not the same, there is no overlap
-                    if (srcaddr != dstaddr) {
-                        return dst;
-                    }
-                    // At this point we know these objects share the same memory.
-                    // This checks the starting position of the src and dst address
-                    // for overlap.
-                    // It uses the base address minus the passed object's address to
-                    // get the offset from the base address, then add the position()
-                    // from the passed object.  That gives up the true offset from
-                    // the base address.  As long as the src side is >= the dst
-                    // side, we are not in overlap.
-                    if (((DirectBuffer) src).address() - srcaddr + src.position() >=
-                            ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
-                        return dst;
-                    }
+                // Find the lowest attachment that is the base memory address
+                // of the shared memory for the src object
+                while (dsrc.attachment() != null) {
+                    srcaddr = ((DirectBuffer) dsrc.attachment()).address();
+                    dsrc = (DirectBuffer) dsrc.attachment();
                 }
 
+                // Find the lowest attachment that is the base memory address
+                // of the shared memory for the dst object
+                while (ddst.attachment() != null) {
+                    dstaddr = ((DirectBuffer) ddst.attachment()).address();
+                    ddst = (DirectBuffer) ddst.attachment();
+                }
+
+                // If the base addresses are not the same, there is no overlap
+                if (srcaddr != dstaddr) {
+                    return dst;
+                }
+                // At this point we know these objects share the same memory.
+                // This checks the starting position of the src and dst address
+                // for overlap.
+                // It uses the base address minus the passed object's address to
+                // get the offset from the base address, then add the position()
+                // from the passed object.  That gives up the true offset from
+                // the base address.  As long as the src side is >= the dst
+                // side, we are not in overlap.
+                if (((DirectBuffer) src).address() - srcaddr + src.position() >=
+                        ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                    return dst;
+                }
             } else if (!src.isDirect() && !dst.isDirect()) {
                 // if src is read only, then we need a copy
                 if (!src.isReadOnly()) {

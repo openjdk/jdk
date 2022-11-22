@@ -36,11 +36,7 @@ public interface DirectBuffer {
     // Failure to do this means the outcome is undefined including
     // silent unrelated memory mutation and JVM crashes.
     //
-    // An example of a guarded use of a memory address is shown here:
-    //
-    // try (var guard = NIO_ACCESS.acquireSession(bb)) {
-    //     performOperation(bb.address());
-    // }
+    // Guards are available in the JavaNioAccess class.
     public long address();
 
     public Object attachment();
