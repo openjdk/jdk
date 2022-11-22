@@ -521,7 +521,8 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
     return (sign * (pow(2,-24)) * hf_significand_bits);
   }else if (hf_exp == 16) {
    if (hf_significand_bits == 0) {
-     return sign * (1.0f/0.0f);
+     bits.i = 0x7f800000;
+     return sign * bits.f;
    } else {
      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
               (hf_significand_bits << significand_shift);
