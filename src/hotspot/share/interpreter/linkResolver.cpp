@@ -1767,7 +1767,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   int pool_index;
   if (UseNewCode) {
     indy_index = pool->decode_invokedynamic_index(indy_index);
-    pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
+    //pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
+    pool_index = pool->resolved_indy_info(indy_index)->cpool_index();
   } else {
     ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
     pool_index = cpce->constant_pool_index();

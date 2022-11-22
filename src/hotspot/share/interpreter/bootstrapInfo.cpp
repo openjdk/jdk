@@ -56,7 +56,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
   if (UseNewCode) {
-    assert(indy_index == -1 || pool->cache()->resolved_invokedynamic_info_element(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
+    assert(indy_index == -1 || pool->resolved_indy_info(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
   } else {
     assert(indy_index == -1 || pool->invokedynamic_bootstrap_ref_index_at(indy_index) == bss_index, "invalid bootstrap specifier index");
   }
@@ -69,14 +69,15 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
   assert(_indy_index != -1, "");
   if (UseNewCode) {
     // Check if method is not null
-    if ( _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method() != nullptr) {
-      methodHandle method(THREAD, _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->method());
-      Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->resolved_references_index()));
+    if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
+      methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());
+      //Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->resolved_references_index()));
+      Handle appendix ( THREAD,  _pool->resolved_reference_from_indy(_indy_index));
       result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
       Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
       return true;
     } else {
-      int encoded_index = _pool->cache()->resolved_invokedynamic_info_element(_indy_index)->cpool_index();
+      int encoded_index = _pool->resolved_indy_info(_indy_index)->cpool_index();
       //ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
       return false;
     }

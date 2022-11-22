@@ -687,11 +687,11 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   int size = ConstantPoolCache::size(length);
 
   // Initialize resolvedinvokedynamicinfo array with available data
-  Array<ResolvedInvokeDynamicInfo>* array;
+  Array<ResolvedIndyInfo>* array;
   if (invokedynamic_info.length()) {
-    array = MetadataFactory::new_array<ResolvedInvokeDynamicInfo>(loader_data, invokedynamic_info.length(), CHECK_NULL);
+    array = MetadataFactory::new_array<ResolvedIndyInfo>(loader_data, invokedynamic_info.length(), CHECK_NULL);
     for (int i = 0; i < invokedynamic_info.length(); i++) {
-        array->at_put(i, ResolvedInvokeDynamicInfo(invokedynamic_info.at(i)._resolved_info_index,
+        array->at_put(i, ResolvedIndyInfo(invokedynamic_info.at(i)._resolved_info_index,
                       invokedynamic_info.at(i)._cp_index));
     }
   } else {
@@ -869,8 +869,8 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_reference_map);
   if (_resolved_invokedynamic_info_array) {
     it->push(&_resolved_invokedynamic_info_array);
-    for (int i = 0; i < resolved_invokedynamicinfo_length(); i++) {
-      resolved_invokedynamic_info_element(i)->metaspace_pointers_do(it); // Maybe we need this?
+    for (int i = 0; i < resolved_indy_info_length(); i++) {
+      resolved_indy_info(i)->metaspace_pointers_do(it); // Maybe we need this?
     }
   }
 }
@@ -927,8 +927,8 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   }
 
   if (has_appendix) {
-    //const int appendix_index = f2_as_index();
-    const int appendix_index = resolved_invokedynamic_info_array()->at(index).resolved_references_index();
+    //const int appendix_index = resolved_invokedynamic_info_array()->at(index).resolved_references_index();
+    const int appendix_index = resolved_indy_info(index)->resolved_references_index();
     objArrayOop resolved_references = constant_pool()->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
@@ -940,9 +940,9 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
 
-  if (UseNewCode && resolved_invokedynamic_info_array()) {
-    assert(resolved_invokedynamic_info_array() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
-    resolved_invokedynamic_info_element(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+  if (UseNewCode && resolved_indy_info()) {
+    assert(resolved_indy_info() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
+    resolved_indy_info(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
   }
 
   // The interpreter assembly code does not check byte_2,
@@ -951,7 +951,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   //NOT_PRODUCT(verify(tty));
 
   if (log_stream != NULL) {
-    resolved_invokedynamic_info_element(index)->print_on(log_stream);
+    resolved_indy_info(index)->print_on(log_stream);
   }
   return appendix();
 }

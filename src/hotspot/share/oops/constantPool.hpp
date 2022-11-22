@@ -272,7 +272,7 @@ class ConstantPool : public Metadata {
   // From there, uncached_name/signature_ref_at will get the name/type.
   int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
     if (UseNewCode) {
-      return cache()->resolved_invokedynamic_info_element(decode_invokedynamic_index(indy_index))->cpool_index();
+      return cache()->resolved_indy_info(decode_invokedynamic_index(indy_index))->cpool_index();
     } else {
       return invokedynamic_cp_cache_entry_at(indy_index)->constant_pool_index();
     }
@@ -928,6 +928,14 @@ class ConstantPool : public Metadata {
   void print_entry_on(int index, outputStream* st);
 
   const char* internal_name() const { return "{constant pool}"; }
+
+    // ResolvedIndyInfo getters
+  ResolvedIndyInfo* resolved_indy_info(int index) {
+    return cache()->resolved_indy_info(index);
+  }
+  oop resolved_reference_from_indy(int index) {
+    return resolved_references()->obj_at(cache()->resolved_indy_info(index)->resolved_references_index());
+  }
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

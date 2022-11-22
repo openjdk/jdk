@@ -2735,8 +2735,8 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
-  __ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
+  __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
+  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
   // Compare the method to zero
   __ testptr(method, method);
@@ -2757,8 +2757,8 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedInvokeDynamicInfo>::base_offset_in_bytes()));
-  __ movptr(method, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::method_offset())));
+  __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
+  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfi::method_offset())));
 
 #ifdef ASSERT
   __ testptr(method, method);
@@ -2769,12 +2769,12 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   Label L_no_push;
   // Check if there is an appendix
-  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::has_appendix_offset())));
+  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::has_appendix_offset())));
   __ testl(index, index);
   __ jcc(Assembler::zero, L_no_push);
 
   // Get appendix
-  __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::resolved_references_index_offset())));
+  __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyInfo::resolved_references_index_offset())));
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
@@ -2787,7 +2787,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ bind(L_no_push);
 
   // compute return type
-  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedInvokeDynamicInfo::result_type_offset())));
+  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::result_type_offset())));
   // load return address
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(bytecode());
