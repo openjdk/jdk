@@ -46,6 +46,9 @@ public:
 };
 
 void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
+  // Class loaders are not kept alive so this closure must only be
+  // used during a safepoint.
+  assert_at_safepoint();
   oop cl = cld->class_loader_no_keepalive();
 
   // The hashtable key is the ClassLoader oop since we want to account
@@ -63,7 +66,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   }
 
   if (cl != NULL) {
-    cls->_parent = java_lang_ClassLoader::parent(cl);
+    cls->_parent = java_lang_ClassLoader::parent_no_keepalive(cl);
     addEmptyParents(cls->_parent);
   }
 
@@ -149,12 +152,12 @@ void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
     ClassLoaderStats* cls = _stats->put_if_absent(cl, &added);
     if (added) {
       cls->_class_loader = cl;
-      cls->_parent = java_lang_ClassLoader::parent(cl);
+      cls->_parent = java_lang_ClassLoader::parent_no_keepalive(cl);
       _total_loaders++;
     }
     assert(cls->_class_loader == cl, "Sanity");
 
-    cl = java_lang_ClassLoader::parent(cl);
+    cl = java_lang_ClassLoader::parent_no_keepalive(cl);
   }
 }
 
