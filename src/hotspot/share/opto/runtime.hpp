@@ -280,6 +280,7 @@ private:
   static const TypeFunc* ghash_processBlocks_Type();
   static const TypeFunc* base64_encodeBlock_Type();
   static const TypeFunc* base64_decodeBlock_Type();
+  static const TypeFunc* poly1305_processBlocks_Type();
 
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();

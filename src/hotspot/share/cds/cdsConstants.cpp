@@ -23,11 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
-#include "cds.h"
 #include "cds/cdsConstants.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
+#include "include/cds.h"
 #include "utilities/globalDefinitions.hpp"
 
 CDSConst CDSConstants::offsets[] = {

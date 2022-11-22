@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.inline.hpp"
@@ -42,6 +41,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
@@ -111,6 +111,18 @@ void FileMapInfo::fail_stop(const char *msg, ...) {
 void FileMapInfo::fail_continue(const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
+  fail_continue_impl(LogLevel::Info, msg, ap);
+  va_end(ap);
+}
+
+void FileMapInfo::fail_continue(LogLevelType level, const char *msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  fail_continue_impl(level, msg, ap);
+  va_end(ap);
+}
+
+void FileMapInfo::fail_continue_impl(LogLevelType level, const char *msg, va_list ap) {
   if (PrintSharedArchiveAndExit && _validating_shared_path_table) {
     // If we are doing PrintSharedArchiveAndExit and some of the classpath entries
     // do not validate, we can still continue "limping" to validate the remaining
@@ -122,14 +134,10 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
     if (RequireSharedSpaces) {
       fail_exit(msg, ap);
     } else {
-      if (log_is_enabled(Info, cds)) {
-        LogStream ls(Log(cds)::info());
-        ls.print("UseSharedSpaces: ");
-        ls.vprint_cr(msg, ap);
-      }
+      LogMessage(cds) lm;
+      lm.vwrite(level, msg, ap);
     }
   }
-  va_end(ap);
 }
 
 // Fill in the fileMapInfo structure with data about this VM instance.
@@ -1117,11 +1125,10 @@ bool FileMapInfo::validate_shared_path_table() {
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   } else {
     if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len)) {
-      const char* mismatch_msg = "shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)";
-      fail_continue("%s", mismatch_msg);
-      if (!log_is_enabled(Info, cds) && !log_is_enabled(Info, class, path)) {
-        log_warning(cds)("%s", mismatch_msg);
-      }
+      const char* mismatch_msg = "shared class paths mismatch";
+      const char* hint_msg = log_is_enabled(Info, class, path) ?
+          "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
+      fail_continue(LogLevel::Warning, "%s%s", mismatch_msg, hint_msg);
       return false;
     }
   }

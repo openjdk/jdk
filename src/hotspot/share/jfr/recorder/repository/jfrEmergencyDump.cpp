@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -31,6 +30,7 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
