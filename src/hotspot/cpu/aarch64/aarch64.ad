@@ -3634,7 +3634,7 @@ encode %{
     } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
       __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
-     } else {
+    } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
