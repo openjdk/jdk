@@ -140,7 +140,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
+ *                     -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -161,7 +161,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
+ *                     -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -182,7 +182,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
+ *                     -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -203,7 +203,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
+ *                     -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
@@ -224,7 +224,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
+ *                     -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
