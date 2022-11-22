@@ -25,7 +25,7 @@
  * @test
  * @summary  Verify that some special headers - such as User-Agent
  *           can be specified by the caller.
- * @bug 8203771 8218546
+ * @bug 8203771 8218546 8297200
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -308,7 +308,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
               boolean sameClient)
         throws Exception
     {
-        out.println("\n--- Starting ");
+        out.println("\n--- Starting test " + now());
 
         int index = headerNameAndValue.indexOf(":");
         String name = headerNameAndValue.substring(0, index);
@@ -321,6 +321,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
 
         HttpClient client = null;
         Tracker tracker = null;
+        Throwable thrown = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             try {
                 if (!sameClient || client == null) {
@@ -366,12 +367,17 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                         assertEquals(resp.headers().allValues("X-" + key).size(), 0);
                     }
                 }
+            } catch (Throwable x) {
+                thrown = x;
             } finally {
                 if (!sameClient) {
                     client = null;
                     System.gc();
                     var error = TRACKER.check(tracker, 500);
-                    if (error != null) throw error;
+                    if (error != null) {
+                        if (thrown != null) error.addSuppressed(thrown);
+                        throw error;
+                    }
                 }
             }
         }
@@ -383,11 +389,12 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                                    boolean sameClient)
         throws Exception
     {
-        out.println("\n--- Starting ");
+        out.println("\n--- Starting testHomeMadeIllegalHeader " + now());
         final URI uri = URI.create(uriString);
 
         HttpClient client = newHttpClient("testHomeMadeIllegalHeader", sameClient);
         Tracker tracker = TRACKER.getTracker(client);
+        Throwable thrown = null;
         try {
             // Test a request which contains an illegal header created
             HttpRequest req = new HttpRequest() {
@@ -434,19 +441,24 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             } catch (IllegalArgumentException ee) {
                 out.println("Got IAE as expected");
             }
+        } catch (Throwable x) {
+            thrown = x;
         } finally {
             if (!sameClient) {
                 client = null;
                 System.gc();
                 var error = TRACKER.check(tracker, 500);
-                if (error != null) throw error;
+                if (error != null) {
+                    if (thrown != null) error.addSuppressed(thrown);
+                    throw error;
+                }
             }
         }
     }
 
     @Test(dataProvider = "variants")
     void testAsync(String uriString, String headerNameAndValue, boolean sameClient) {
-        out.println("\n--- Starting ");
+        out.println("\n--- Starting testAsync " + now());
         int index = headerNameAndValue.indexOf(":");
         String name = headerNameAndValue.substring(0, index);
         String v = headerNameAndValue.substring(index+1).trim();
@@ -458,6 +470,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
 
         HttpClient client = null;
         Tracker tracker = null;
+        Throwable thrown = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             try {
                 if (!sameClient || client == null) {
@@ -506,12 +519,17 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                             }
                         })
                         .join();
+            } catch (Throwable x) {
+                thrown = x;
             } finally {
                 if (!sameClient) {
                     client = null;
                     System.gc();
                     var error = TRACKER.check(tracker, 500);
-                    if (error != null) throw error;
+                    if (error != null) {
+                        if (thrown != null) error.addSuppressed(thrown);
+                        throw error;
+                    }
                 }
             }
         }
@@ -524,6 +542,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
+        out.println("--- Starting setup " + now());
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -556,6 +575,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
 
     @AfterTest
     public void teardown() throws Exception {
+        out.println("\n--- Teardown " + now());
         HttpClient shared = sharedClient;
         String sharedClientName =
                 shared == null ? null : shared.toString();
@@ -563,6 +583,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         shared = sharedClient = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(2500);
+        out.println("--- Stopping servers " + now());
         try {
             httpTestServer.stop();
             httpsTestServer.stop();
