@@ -1583,8 +1583,8 @@ public final class Main {
             if (d >= 0) {
                 CRLExtensions ext = new CRLExtensions();
                 int code = Integer.parseInt(id.substring(d+1));
-                if (code == 0) {
-                    throw new Exception("Reason code cannot be 0");
+                if (code <= 0) {
+                    throw new Exception("Reason code must be positive");
                 }
                 ext.setExtension("Reason", new CRLReasonCodeExtension(code));
                 badCerts[i] = new X509CRLEntryImpl(new BigInteger(id.substring(0, d)),

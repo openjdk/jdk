@@ -82,6 +82,7 @@ public class IllegalExtensions {
 
         new CRLReasonCodeExtension(1);
         Utils.runAndCheckException(() -> new CRLReasonCodeExtension(0), IllegalArgumentException.class);
+        Utils.runAndCheckException(() -> new CRLReasonCodeExtension(-1), IllegalArgumentException.class);
 
         new ExtendedKeyUsageExtension(new Vector<>(List.of(oid)));
         Utils.runAndCheckException(() -> new ExtendedKeyUsageExtension(null), IllegalArgumentException.class);
