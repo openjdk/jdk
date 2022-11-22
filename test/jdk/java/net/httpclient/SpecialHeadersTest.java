@@ -562,7 +562,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         if (shared != null) TRACKER.track(shared);
         shared = sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(2500);
         try {
             httpTestServer.stop();
             httpsTestServer.stop();
