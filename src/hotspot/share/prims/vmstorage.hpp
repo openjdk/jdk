@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_PRIMS_VMSTORAGE_INLINE_HPP
-#define SHARE_PRIMS_VMSTORAGE_INLINE_HPP
+#ifndef SHARE_PRIMS_VMSTORAGE_HPP
+#define SHARE_PRIMS_VMSTORAGE_HPP
 
 #include <cstdint>
 
@@ -95,6 +95,6 @@ inline bool operator==(const VMStorage& a, const VMStorage& b) {
     && a._segment_mask_or_size == b._segment_mask_or_size;
 }
 
-#include CPU_HEADER_INLINE(vmstorage)
+#include CPU_HEADER(vmstorage)
 
-#endif // SHARE_PRIMS_VMSTORAGE_INLINE_HPP
+#endif // SHARE_PRIMS_VMSTORAGE_HPP

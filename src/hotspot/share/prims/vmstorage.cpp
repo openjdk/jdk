@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "prims/vmstorage.inline.hpp"
+#include "prims/vmstorage.hpp"
 
 void VMStorage::print_on(outputStream* os) const {
   os->print("{type=%d, index=%d, %s=%d}", static_cast<int8_t>(_type), _index_or_offset,

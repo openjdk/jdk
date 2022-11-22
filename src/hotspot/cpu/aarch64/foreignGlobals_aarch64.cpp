@@ -30,7 +30,7 @@
 #include "oops/oopCast.inline.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "prims/foreignGlobals.inline.hpp"
-#include "prims/vmstorage.inline.hpp"
+#include "prims/vmstorage.hpp"
 #include "utilities/formatBuffer.hpp"
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {

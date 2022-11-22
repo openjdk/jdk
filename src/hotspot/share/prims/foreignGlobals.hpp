@@ -26,7 +26,7 @@
 
 #include "code/vmreg.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "prims/vmstorage.inline.hpp"
+#include "prims/vmstorage.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
