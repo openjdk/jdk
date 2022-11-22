@@ -45,6 +45,12 @@ inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_mark
   set_footer(_footer_canary_life_mark); // set after initializing _size
 }
 
+inline void MallocHeader::mark_block_as_alive() {
+  _canary = _header_canary_life_mark;
+  NOT_LP64(_alt_canary = _header_alt_canary_life_mark);
+  set_footer(_footer_canary_life_mark);
+}
+
 inline void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);

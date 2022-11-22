@@ -62,6 +62,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
+#include "services/mallocHeader.inline.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtPreInit.hpp"
 #include "services/nmtCommon.hpp"
@@ -714,30 +715,29 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return NULL;
     }
 
-    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
-
-    // De-account the old block from NMT *before* calling the real realloc(3) since it
-    // may invalidate old block including its header. This will also perform integrity checks
-    // on the old block (e.g. overwriters) and mark the old header as dead.
-    void* const old_outer_ptr = MemTracker::record_free(memblock);
+    MallocHeader* header = MallocTracker::malloc_header(memblock);
+    header->assert_block_integrity(); // Assert block hasn't been tampered with.
+    const FreePackage free_package = header->free_recording_data();
+    header->mark_block_as_dead();
 
     // the real realloc
-    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
+    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc((void*)header, new_outer_size);)
 
     if (new_outer_ptr == NULL) {
-      // If realloc(3) failed, the old block still exists. We must re-instantiate the old
-      // NMT header then, since we marked it dead already. Otherwise subsequent os::realloc()
-      // or os::free() calls would trigger block integrity asserts.
-      void* p = MemTracker::record_malloc(old_outer_ptr, old_size, memflags, stack);
-      assert(p == memblock, "sanity");
-      return NULL;
+      // realloc(3) failed and the block still exists.
+      // We have however marked it as dead, revert this change.
+      header->mark_block_as_alive();
+      return nullptr;
     }
+    // realloc(3) succeeded, variable header now points to invalid memory and we need to record the free:ing
+    MallocTracker::record_free_header(free_package);
 
     // After a successful realloc(3), we re-account the resized block with its new size
     // to NMT. This re-instantiates the NMT header.
     void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
 #ifdef ASSERT
+    size_t old_size = free_package.size;
     if (old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);

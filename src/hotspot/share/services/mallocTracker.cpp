@@ -199,14 +199,18 @@ void* MallocTracker::record_free(void* memblock) {
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();
 
-  MallocMemorySummary::record_free(header->size(), header->flags());
-  if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-  }
+  record_free_header(header->free_recording_data());
 
   header->mark_block_as_dead();
 
   return (void*)header;
+}
+
+void MallocTracker::record_free_header(FreePackage pkg) {
+  MallocMemorySummary::record_free(pkg.size, pkg.flags);
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(pkg.size, pkg.mst_marker);
+  }
 }
 
 // Given a pointer, if it seems to point to the start of a valid malloced block,
