@@ -200,9 +200,7 @@ void JavaThread::set_scopedValueCache(oop p) {
 
 void JavaThread::clear_scopedValueBindings() {
   set_scopedValueCache(NULL);
-  oop threadObj = vthread();
-  assert(threadObj != NULL, "must be");
-  java_lang_Thread::clear_scopedValueBindings(threadObj);
+  java_lang_Thread::clear_scopedValueBindings(vthread());
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
