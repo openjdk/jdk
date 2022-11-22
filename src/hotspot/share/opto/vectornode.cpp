@@ -335,17 +335,6 @@ bool VectorNode::is_muladds2i(Node* n) {
   return false;
 }
 
-bool VectorNode::is_type_transition_long_to_int(Node* n) {
-  switch(n->Opcode()) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-       return true;
-    default:
-       return false;
-  }
-}
-
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
     return true;
