@@ -236,6 +236,7 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void Universe::set_archived_mirror_index(BasicType t, int index) {
+  assert(DumpSharedSpaces, "dump-time only");
   _archived_mirror_indices[t] = index;
 }
 
