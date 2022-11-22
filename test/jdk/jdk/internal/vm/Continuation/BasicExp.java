@@ -23,37 +23,123 @@
  */
 
 /**
- * @test id=all-policies-no-system-gc
+ * @test id=policy-1-without-gc-with-verification
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 0 0
+ *                     BasicExp 1 0
  */
 
 /**
- * @test id=policy-1-gc-after-yield
+ * @test id=policy-2-without-gc-with-verification
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ *                     -XX:CompileCommand=dontinline,*::*dontinline*
+ *                     -XX:CompileCommand=dontinline,*::*dontjit*
+ *                     -XX:CompileCommand=exclude,*::*dontjit*
+ *                     -XX:CompileCommand=dontinline,java/lang/String*.*
+ *                     BasicExp 2 0
+ */
+
+/**
+ * @test id=policy-3-without-gc-with-verification
+ * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
+ * @requires vm.continuations
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm
+ * @library /test/lib /test/hotspot/jtreg
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ *                     -XX:CompileCommand=dontinline,*::*dontinline*
+ *                     -XX:CompileCommand=dontinline,*::*dontjit*
+ *                     -XX:CompileCommand=exclude,*::*dontjit*
+ *                     -XX:CompileCommand=dontinline,java/lang/String*.*
+ *                     BasicExp 3 0
+ */
+
+/**
+ * @test id=policy-4-without-gc-with-verification
+ * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
+ * @requires vm.continuations
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm
+ * @library /test/lib /test/hotspot/jtreg
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ *                     -XX:CompileCommand=dontinline,*::*dontinline*
+ *                     -XX:CompileCommand=dontinline,*::*dontjit*
+ *                     -XX:CompileCommand=exclude,*::*dontjit*
+ *                     -XX:CompileCommand=dontinline,java/lang/String*.*
+ *                     BasicExp 4 0
+ */
+
+/**
+ * @test id=policy-5-without-gc-with-verification
+ * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
+ * @requires vm.continuations
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm
+ * @library /test/lib /test/hotspot/jtreg
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                     -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyContinuations -Xbatch -XX:-TieredCompilation
+ *                     -XX:CompileCommand=dontinline,*::*dontinline*
+ *                     -XX:CompileCommand=dontinline,*::*dontjit*
+ *                     -XX:CompileCommand=exclude,*::*dontjit*
+ *                     -XX:CompileCommand=dontinline,java/lang/String*.*
+ *                     BasicExp 5 0
+ */
+
+/**
+ * @test id=policy-1-with-gc-without-verification
+ * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
+ * @requires vm.continuations
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm
+ * @library /test/lib /test/hotspot/jtreg
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
@@ -63,17 +149,18 @@
  */
 
 /**
- * @test id=policy-2-gc-after-yield
+ * @test id=policy-2-with-gc-without-verification
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
@@ -83,17 +170,18 @@
  */
 
 /**
- * @test id=policy-3-gc-after-yield
+ * @test id=policy-3-with-gc-without-verification
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
@@ -103,17 +191,18 @@
  */
 
 /**
- * @test id=policy-4-gc-after-yield
+ * @test id=policy-4-with-gc-without-verification
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
@@ -123,17 +212,18 @@
  */
 
 /**
- * @test id=policy-5-gc-after-yield
+ * @test id=policy-5-with-gc-without-verification
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
- * @requires vm.flavor == "server" & (vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == false)
+ * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
+ * @enablePreview
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300   --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                     -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
  *                     -XX:CompileCommand=dontinline,*::*dontinline*
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
@@ -166,7 +256,7 @@ public class BasicExp {
     public static final Pattern CONT_METHS = Pattern.compile("^(enter|enter0|yield|yield0)$");
 
     public static int compPolicySelection;
-    public static boolean callSystemGC;
+    public static boolean triggerGCAfterYield;
     public static int compLevel;
 
     public static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -193,7 +283,7 @@ public class BasicExp {
             // compLevel = CompilerWhiteBoxTest.COMP_LEVEL_FULL_PROFILE;
 
             compPolicySelection = Integer.parseInt(args[0]);
-            callSystemGC = Integer.parseInt(args[1]) == 1;
+            triggerGCAfterYield = Integer.parseInt(args[1]) == 1;
             runTests();
         } catch (Throwable t) {
             t.printStackTrace();
@@ -203,18 +293,24 @@ public class BasicExp {
     public static void runTests() {
         System.out.println("$$$0 Running test cases with the following settings:");
         System.out.println("compLevel=" + compLevel);
-        System.out.println("callSystemGC=" + callSystemGC);
+        System.out.println("callSystemGC=" + triggerGCAfterYield);
         System.out.println();
 
         WB.deoptimizeAll();
 
         boolean all = compPolicySelection == 0;
-        if (compPolicySelection == 1 || all) runTests(new CompilationPolicy(7 /*warmup*/, COMP_NONE, COMP_NONE /*Cont. pattern*/));
-        if (compPolicySelection == 2 || all) runTests(new CompilationPolicy(7 /*warmup*/, 1 /* length comp. window */));
-        if (compPolicySelection == 3 || all) runTests(new CompilationPolicy(7 /*warmup*/, 2 /* length comp. window */));
-        if (compPolicySelection == 4 || all) runTests(new CompilationPolicy(7 /*warmup*/, 3 /* length comp. window */));
-        if (compPolicySelection == 5 || all) runTests(new CompilationPolicy(7 /*warmup*/, COMP_ALL, CONT_METHS /*Cont. pattern*/));
-        if (compPolicySelection >= 6) throw new Error("CompilationPolicy with number " + compPolicySelection + " does not exist");
+        if (compPolicySelection == 1 || all)
+            runTests(new CompilationPolicy(7 /*warmup*/, COMP_NONE, COMP_NONE /*Cont. pattern*/));
+        if (compPolicySelection == 2 || all)
+            runTests(new CompilationPolicy(7 /*warmup*/, 1 /* length comp. window */));
+        if (compPolicySelection == 3 || all)
+            runTests(new CompilationPolicy(7 /*warmup*/, 2 /* length comp. window */));
+        if (compPolicySelection == 4 || all)
+            runTests(new CompilationPolicy(7 /*warmup*/, 3 /* length comp. window */));
+        if (compPolicySelection == 5 || all)
+            runTests(new CompilationPolicy(7 /*warmup*/, COMP_ALL, CONT_METHS /*Cont. pattern*/));
+        if (compPolicySelection >= 6)
+            throw new Error("CompilationPolicy with number " + compPolicySelection + " does not exist");
     }
 
     public static void runTests(CompilationPolicy compPolicy) {
@@ -257,15 +353,20 @@ public class BasicExp {
             NO_COMP_WINDOW, COMP_WINDOW, DEOPT_WINDOW
         }
 
-        public CompilationPolicy(int warmupIterations, Pattern methodPattern, Pattern contMethPattern) {
-            this(warmupIterations, 0, methodPattern, contMethPattern, CompWindowMode.NO_COMP_WINDOW);
+        public CompilationPolicy(int warmupIterations, Pattern methodPattern,
+                                 Pattern contMethPattern) {
+            this(warmupIterations, 0, methodPattern, contMethPattern,
+                 CompWindowMode.NO_COMP_WINDOW);
         }
 
-        public CompilationPolicy(int warmupIterations, int windowLength, Pattern methodPattern, Pattern contMethPattern) {
-            this(warmupIterations, windowLength, methodPattern, contMethPattern, CompWindowMode.COMP_WINDOW);
+        public CompilationPolicy(int warmupIterations, int windowLength,
+                                 Pattern methodPattern, Pattern contMethPattern) {
+            this(warmupIterations, windowLength, methodPattern, contMethPattern,
+                 CompWindowMode.COMP_WINDOW);
         }
 
-        public CompilationPolicy(int warmupIterations, int windowLength, Pattern methodPattern, Pattern contMethPattern,
+        public CompilationPolicy(int warmupIterations, int windowLength,
+                                 Pattern methodPattern, Pattern contMethPattern,
                                  CompWindowMode startMode) {
             this.warmupIterations = warmupIterations;
             this.methodPattern = methodPattern;
@@ -289,21 +390,22 @@ public class BasicExp {
             print();
             for (int i = 0; i < methods.length; i++) {
                 Method meth = methods[i];
-                boolean inWindow = i >= winPos && i < (winPos+winLen);
+                boolean inWindow = i >= winPos && i < (winPos + winLen);
                 boolean shouldBeCompiled = compWindowMode == CompWindowMode.NO_COMP_WINDOW
                     || (inWindow && compWindowMode == CompWindowMode.COMP_WINDOW)
                     || (!inWindow && compWindowMode == CompWindowMode.DEOPT_WINDOW);
                 boolean isCompiled = WB.isMethodCompiled(meth);
-                log("methods["+i+"] inWindow="+inWindow + " isCompiled="+isCompiled+" shouldBeCompiled="+shouldBeCompiled+" method=`"+meth+"`");
+                log("methods[" + i + "] inWindow=" + inWindow + " isCompiled=" + isCompiled +
+                    " shouldBeCompiled=" + shouldBeCompiled + " method=`" + meth + "`");
                 if (isCompiled != shouldBeCompiled) {
                     if (shouldBeCompiled) {
-                        log("           Compiling methods["+i+"]");
+                        log("           Compiling methods[" + i + "]");
                         enqForCompilation(meth);
                         newCompilation = true;
                         assertTrue(WB.isMethodCompiled(meth), "Run with -Xbatch");
                     } else {
                         assertFalse(WB.isMethodQueuedForCompilation(meth), "Run with -Xbatch");
-                        log("           Deoptimizing methods["+i+"]");
+                        log("           Deoptimizing methods[" + i + "]");
                         WB.deoptimizeMethod(meth);
                     }
                 }
@@ -379,7 +481,8 @@ public class BasicExp {
 
         public void runTestCase(int yieldCalls, CompilationPolicy compPolicy) {
             this.yieldCalls = yieldCalls;
-            log_dontjit(">>>> Executing test case " + getClass().getName() + " (yieldCalls=" + yieldCalls + ", " + "testVariant=" + testVariant + ")");
+            log_dontjit(">>>> Executing test case " + getClass().getName() +
+                        " (yieldCalls=" + yieldCalls + ", " + "testVariant=" + testVariant + ")");
             init(compPolicy);
             try {
                 log_dontjit("Warm-up test case");
@@ -448,11 +551,11 @@ public class BasicExp {
                         int p2 = -1;
                         int i = n1.indexOf("ord");
                         if (i >= 0) {
-                            p1 = Integer.parseInt(n1.substring(i+3, i+6));
+                            p1 = Integer.parseInt(n1.substring(i + 3, i + 6));
                         }
                         i = n2.indexOf("ord");
                         if (i >= 0) {
-                            p2 = Integer.parseInt(n2.substring(i+3, i+6));
+                            p2 = Integer.parseInt(n2.substring(i + 3, i + 6));
                         }
                         if (p1 < 0) p1 = getScoreKnownMethods(n1);
                         if (p2 < 0) p2 = getScoreKnownMethods(n2);
@@ -481,7 +584,7 @@ public class BasicExp {
                 } catch (UnhandledException e) {
                     log_dontjit("Exc: " + e);
                 }
-                if (callSystemGC) System.gc();
+                if (triggerGCAfterYield) WB.youngGC();
                 checkFrames_dontjit(cont);
             } while (!cont.isDone());
         }
@@ -502,9 +605,11 @@ public class BasicExp {
         }
 
         static final long i1=1; static final long i2=2; static final long i3=3;
-        static final long i4=4; static final long i5=5; static final long i6=6; static final long i7=7;
-        static final long i8=8; static final long i9=9; static final long i10=10; static final long i11=11; static final long i12=12;
-        static final long i13=13; static final long i14=14; static final long i15=15; static final long i16=16;
+        static final long i4=4; static final long i5=5; static final long i6=6;
+        static final long i7=7; static final long i8=8; static final long i9=9;
+        static final long i10=10; static final long i11=11; static final long
+        i12=12; static final long i13=13; static final long i14=14; static final
+        long i15=15; static final long i16=16;
     }
 
     /**
@@ -520,7 +625,7 @@ public class BasicExp {
                 log_dontjit("Yield #" + i);
                 String s1 = "str1";
                 Continuation.yield(THE_SCOPE);
-                String s2 = s1+"str2";
+                String s2 = s1 + "str2";
                 sField = s2;
             }
         }
@@ -587,21 +692,25 @@ public class BasicExp {
                     String s1 = "str1";
                     String result = ord101_testMethod_dontinline(i1, i2, i3, s1);
                     assertEQ(resLong, testVariant == TestCaseVariants.ALLOC_MONITOR ? 7L : 6L);
-                    assertEQ(result, testVariant == TestCaseVariants.EXPR_STACK_NOT_EMPTY ? "exprStckVal str1str2str3" : "str1str2str3");
+                    assertEQ(result, testVariant == TestCaseVariants.EXPR_STACK_NOT_EMPTY ?
+                             "exprStckVal str1str2str3" : "str1str2str3");
                 } catch (HandledException e) {
                     caughtException = e;
                 }
-                assertTrue(testVariant != TestCaseVariants.THROW_HANDLED_EXCEPTION || (caughtException instanceof HandledException),
+                assertTrue(testVariant != TestCaseVariants.THROW_HANDLED_EXCEPTION
+                           || (caughtException instanceof HandledException),
                            "Exception handling error");
             }
         }
 
-        public String ord101_testMethod_dontinline(long a1, long a2, long a3, String s1) throws HandledException {
-            String s2 = s1+"str2";
+        public String ord101_testMethod_dontinline(long a1, long a2, long a3, String s1)
+            throws HandledException {
+            String s2 = s1 + "str2";
             return ord102_testMethod_dontinline(a1, a2, a3, s2);
         }
 
-        public String ord102_testMethod_dontinline(long a1, long a2, long a3, String s2) throws HandledException {
+        public String ord102_testMethod_dontinline(long a1, long a2, long a3, String s2)
+            throws HandledException {
             if (testVariant == TestCaseVariants.ALLOC_MONITOR) {
                 synchronized (this) {
                     resLong++;
@@ -615,14 +724,18 @@ public class BasicExp {
             }
         }
 
-        public String ord103_testMethod_dontinline(long a1, long a2, long a3, String s2) throws HandledException {
+        public String ord103_testMethod_dontinline(long a1, long a2, long a3, String s2)
+            throws HandledException {
             return ord104_testMethod_dontinline(a1, a2, a3, s2);
         }
 
-        public String ord104_testMethod_dontinline(long a1, long a2, long a3, String s2) throws HandledException {
+        public String ord104_testMethod_dontinline(long a1, long a2, long a3, String s2)
+            throws HandledException {
             long res = a2;
-            String s3 = s2+"str3";
-            log_dontjit("Yield #" + yieldCount++); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount);
+            String s3 = s2 + "str3";
+            log_dontjit("Yield #" + yieldCount++);
+            Continuation.yield(THE_SCOPE);
+            log_dontjit("/Yield #" + yieldCount);
             if (testVariant == TestCaseVariants.THROW_HANDLED_EXCEPTION) {
                 log_dontjit("Exc: throw handled");
                 throw new HandledException();
@@ -631,7 +744,7 @@ public class BasicExp {
                 log_dontjit("Exc: throw unhandled");
                 throw new UnhandledException();
             }
-            resLong += res+a1+a3;
+            resLong += res + a1 + a3;
             return s3;
         }
 
@@ -641,10 +754,15 @@ public class BasicExp {
 
         @Override
         public void checkFrames_dontjit(Continuation cont) {
-            List<String> frames = cont.stackWalker().walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
+            List<String> frames =
+                cont.stackWalker()
+                .walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
             assertEquals(frames, cont.isDone() ? List.of()
-                         : Arrays.asList("yield", "ord104_testMethod_dontinline", "ord103_testMethod_dontinline",
-                                         "ord102_testMethod_dontinline", "ord101_testMethod_dontinline", "run", "enter0", "enter"));
+                         : Arrays.asList("yield", "ord104_testMethod_dontinline",
+                                         "ord103_testMethod_dontinline",
+                                         "ord102_testMethod_dontinline",
+                                         "ord101_testMethod_dontinline",
+                                         "run", "enter0", "enter"));
         }
     }
 
@@ -726,26 +844,30 @@ public class BasicExp {
         public void run() {
             log_dontjit("Continuation running on thread " + Thread.currentThread());
             long res = ord101_recurse_dontinline(0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11);
-            if (res != i1+i2+i3+i4+i5+i6+i7+i8+i9+i10+i11) {
+            if (res != i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) {
                 throw new Error();
             }
         }
 
-        public long ord101_recurse_dontinline(int depth, long l1, long l2, long l3, long l4, long l5, long l6, long l7, long l8, long l9, long l10, long l11) {
+        public long ord101_recurse_dontinline(int depth, long l1, long l2, long
+                                              l3, long l4, long l5, long l6,
+                                              long l7, long l8, long l9, long
+                                              l10, long l11) {
             if (depth >= limit) {
                 log_dontjit("yield at depth " + depth);
                 ord102_yield_dontinline(0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11);
                 log_dontjit("After yield at depth " + depth);
-                return l1+l2+l3+l4+l5+l6+l7+l8+l9+l10+l11;
+                return l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8 + l9 + l10 + l11;
             }
-            long res = ord101_recurse_dontinline(depth + 1, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11);
-            if (res != l1+l2+l3+l4+l5+l6+l7+l8+l9+l10+l11) {
+            long res = ord101_recurse_dontinline(depth + 1, l1, l2, l3, l4, l5,
+                                                 l6, l7, l8, l9, l10, l11);
+            if (res != l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8 + l9 + l10 + l11) {
                 throw new Error();
             }
             if (depth == yield1_depth || depth == yield2_depth) {
                 log_dontjit("yield at depth " + depth);
                 long res1 = ord102_yield_dontinline(0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11);
-                if (res1 != l1+l2+l3+l4+l5+l6+l7+l8+l9+l10+l11) {
+                if (res1 != l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8 + l9 + l10 + l11) {
                     throw new Error();
                 }
                 log_dontjit("After yield at depth " + depth);
@@ -754,13 +876,14 @@ public class BasicExp {
         }
 
         // Add a few frames before yield
-        public long ord102_yield_dontinline(int depth, long l1, long l2, long l3, long l4, long l5, long l6, long l7, long l8, long l9, long l10, long l11) {
+        public long ord102_yield_dontinline(int depth, long l1, long l2, long l3, long l4, long l5,
+                                            long l6, long l7, long l8, long l9, long l10, long l11) {
             if (depth >= 2) {
                 Continuation.yield(THE_SCOPE);
-                return l1+l2+l3+l4+l5+l6+l7+l8+l9+l10+l11;
+                return l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8 + l9 + l10 + l11;
             }
             long res = ord102_yield_dontinline(depth + 1, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11);
-            if (res != l1+l2+l3+l4+l5+l6+l7+l8+l9+l10+l11) {
+            if (res != l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8 + l9 + l10 + l11) {
                 throw new Error();
             }
             return res;
@@ -792,9 +915,12 @@ public class BasicExp {
             return res;
         }
 
-        public long ord102_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8,
-                                                 long a9, long a10, long a11) {
-            long res = a1+a2+a3+a4+a5+a6+a7+a8+a9+a10+a11+i12+i13+i14+i15+i16;
+        public long ord102_testMethod_dontinline(long a1, long a2, long a3, long
+                                                 a4, long a5, long a6, long a7,
+                                                 long a8, long a9, long a10,
+                                                 long a11) {
+            long res = a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11
+                       + i12 + i13 + i14 + i15 + i16;
             log_dontjit("Yield #" + yieldCount);
             log_dontjit("ord109_testMethod_dontinline res=" + res);
             Continuation.yield(THE_SCOPE);
@@ -829,9 +955,13 @@ public class BasicExp {
             return res;
         }
 
-        public long ord102_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8,
-                                                 long a9, long a10, long a11, long a12, long a13, long a14) {
-            long res = ord103_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, i15);
+        public long ord102_testMethod_dontinline(long a1, long a2, long a3, long
+                                                 a4, long a5, long a6, long a7,
+                                                 long a8, long a9, long a10,
+                                                 long a11, long a12, long a13,
+                                                 long a14) {
+            long res = ord103_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8,
+                                                    a9, a10, a11, a12, a13, a14, i15);
             log_dontjit("Yield #" + yieldCount);
             log_dontjit("ord109_testMethod_dontinline res=" + res);
             Continuation.yield(THE_SCOPE);
@@ -840,9 +970,13 @@ public class BasicExp {
             return res;
         }
 
-        public long ord103_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7,
-                                                 long a8, long a9, long a10, long a11, long a12, long a13, long a14, long a15) {
-            long res = a1+a2+a3+a4+a5+a6+a7+a8+a9+a10+a11+a12+a13+a14+a15+i16;
+        public long ord103_testMethod_dontinline(long a1, long a2, long a3, long
+                                                 a4, long a5, long a6, long a7,
+                                                 long a8, long a9, long a10,
+                                                 long a11, long a12, long a13,
+                                                 long a14, long a15) {
+            long res = a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11
+                       + a12 + a13 + a14 + a15 + i16;
             log_dontjit("Yield #" + yieldCount);
             log_dontjit("ord109_testMethod_dontinline res=" + res);
             Continuation.yield(THE_SCOPE);
@@ -868,41 +1002,54 @@ public class BasicExp {
 
        public long ord101_testMethod_dontinline(long a1) {
            long res = ord102_testMethod_dontinline(a1, i2);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
        public long ord102_testMethod_dontinline(long a1, long a2) {
            long res = ord103_testMethod_dontinline(a1, a2, i3);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
        public long ord103_testMethod_dontinline(long a1, long a2, long a3) {
            long res = ord104_testMethod_dontinline(a1, a2, a3, i4);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
        public long ord104_testMethod_dontinline(long a1, long a2, long a3, long a4) {
            long res = ord105_testMethod_dontinline(a1, a2, a3, a4, i5);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
        public long ord105_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5) {
            long res = ord106_testMethod_dontinline(a1, a2, a3, a4, a5, i6);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
        public long ord106_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6) {
            long res = ord107_testMethod_dontinline(a1, a2, a3, a4, a5, a6, i7);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-        public long ord107_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7) {
+        public long ord107_testMethod_dontinline(long a1, long a2, long a3, long
+                                                 a4, long a5, long a6, long a7) {
             long res = ord108_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, i8);
             log_dontjit("Yield #" + yieldCount);
             log_dontjit("ord108_testMethod_dontinline res=" + res);
@@ -912,7 +1059,8 @@ public class BasicExp {
             return res;
         }
 
-        public long ord108_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8) {
+        public long ord108_testMethod_dontinline(long a1, long a2, long a3, long
+                                                 a4, long a5, long a6, long a7, long a8) {
             long res = ord109_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, i9);
             log_dontjit("Yield #" + yieldCount);
             log_dontjit("ord109_testMethod_dontinline res=" + res);
@@ -922,52 +1070,76 @@ public class BasicExp {
             return res;
         }
 
-        public long ord109_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9) {
+        public long ord109_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                 long a7, long a8, long a9) {
             long res = ord110_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, i10);
             Continuation.yield(THE_SCOPE);
             return res;
         }
 
-       public long ord110_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10) {
+       public long ord110_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                long a7, long a8, long a9, long a10) {
            long res = ord111_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, i11);
            log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-       public long ord111_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10, long a11) {
+       public long ord111_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                long a7, long a8, long a9, long a10, long a11) {
            long res = ord112_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, i12);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-       public long ord112_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10, long a11, long a12) {
+       public long ord112_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                long a7, long a8, long a9, long a10, long a11, long a12) {
            long res = ord113_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, i13);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-       public long ord113_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10, long a11, long a12, long a13) {
+       public long ord113_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                long a7, long a8, long a9, long a10, long a11, long a12,
+                                                long a13) {
            long res = ord114_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, i14);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-       public long ord114_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10, long a11, long a12, long a13, long a14) {
+       public long ord114_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                long a7, long a8, long a9, long a10, long a11, long a12,
+                                                long a13, long a14) {
            long res = ord115_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, i15);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-       public long ord115_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10, long a11, long a12, long a13, long a14, long a15) {
+       public long ord115_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                long a7, long a8, long a9, long a10, long a11, long a12,
+                                                long a13, long a14, long a15) {
            long res = ord116_testMethod_dontinline(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, i16);
-           log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
+           log_dontjit("Yield #" + yieldCount);
+           Continuation.yield(THE_SCOPE);
+           log_dontjit("/Yield #" + yieldCount++);
            return res;
        }
 
-        public long ord116_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8, long a9, long a10, long a11, long a12, long a13, long a14, long a15, long a16) {
-            long res = a2+a4+a6+a8+a10+a12+a14+a16;
-            log_dontjit("Yield #" + yieldCount); Continuation.yield(THE_SCOPE); log_dontjit("/Yield #" + yieldCount++);
-            res += a1+a3+a5+a7+a9+a11+a13+a15;
+        public long ord116_testMethod_dontinline(long a1, long a2, long a3, long a4, long a5, long a6,
+                                                 long a7, long a8, long a9, long a10, long a11, long a12,
+                                                 long a13, long a14, long a15, long a16) {
+            long res = a2 + a4 + a6 + a8 + a10 + a12 + a14 + a16;
+            log_dontjit("Yield #" + yieldCount);
+            Continuation.yield(THE_SCOPE);
+            log_dontjit("/Yield #" + yieldCount++);
+            res += a1 + a3 + a5 + a7 + a9 + a11 + a13 + a15;
             return res;
         }
     }
