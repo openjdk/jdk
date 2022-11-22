@@ -293,6 +293,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_ghash_processBlocks();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
+  bool inline_poly1305_processBlocks();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
