@@ -2734,7 +2734,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // Get address of invokedynamic array
   __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  __ imull(index, index, sizeof(ResolvedIndyInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
   __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
   __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
@@ -2756,9 +2756,9 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ get_cache_index_at_bcp(index, 1, sizeof(u4));
   __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  __ imull(index, index, sizeof(ResolvedInvokeDynamicInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  __ imull(index, index, sizeof(ResolvedIndyInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
   __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
-  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfi::method_offset())));
+  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
 #ifdef ASSERT
   __ testptr(method, method);

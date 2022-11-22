@@ -707,11 +707,11 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& inverse_index_map,
                                             const intStack& invokedynamic_inverse_index_map,
                                             const intStack& invokedynamic_references_map,
-                                            Array<ResolvedInvokeDynamicInfo>* invokedynamic_info) :
+                                            Array<ResolvedIndyInfo>* invokedynamic_info) :
                                                   _length(length),
                                                   _constant_pool(NULL),
                                                   _gc_epoch(0),
-                                                  _resolved_invokedynamic_info_array(invokedynamic_info) {
+                                                  _resolved_indy_info(invokedynamic_info) {
 
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
   initialize(inverse_index_map, invokedynamic_inverse_index_map,
@@ -790,8 +790,8 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   if (_initial_entries != NULL) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    if (_resolved_invokedynamic_info_array)
-      MetadataFactory::free_array<ResolvedInvokeDynamicInfo>(data, _resolved_invokedynamic_info_array);
+    if (_resolved_indy_info)
+      MetadataFactory::free_array<ResolvedIndyInfo>(data, _resolved_indy_info);
     _initial_entries = NULL;
   }
 #endif
@@ -867,8 +867,8 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
-  if (_resolved_invokedynamic_info_array) {
-    it->push(&_resolved_invokedynamic_info_array);
+  if (_resolved_indy_info) {
+    it->push(&_resolved_indy_info);
     for (int i = 0; i < resolved_indy_info_length(); i++) {
       resolved_indy_info(i)->metaspace_pointers_do(it); // Maybe we need this?
     }

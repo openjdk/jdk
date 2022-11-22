@@ -946,7 +946,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
 
   if (UseNewCode) {
     // Call my own set_dynamic_call from CpCache
-    pool->cache()->set_dynamic_call(info, index);
+    pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
   } else {
     ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
     cp_cache_entry->set_dynamic_call(pool, info);

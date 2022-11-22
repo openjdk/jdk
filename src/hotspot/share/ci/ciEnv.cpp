@@ -873,10 +873,11 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   assert(accessor != NULL, "need origin of access");
   if (bc == Bytecodes::_invokedynamic) {
     if (UseNewCode) {
-      tty->print_cr("Indy array len %d", cpool->cache()->resolved_invokedynamicinfo_length());
-      if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_invokedynamicinfo_length()) {
+      tty->print_cr("Indy array len %d", cpool->cache()->resolved_indy_info_length());
+      if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_indy_info_length()) {
         tty->print_cr("get_method_by_index: %d", index);
-        Method* adapter = cpool->cache()->resolved_invokedynamic_info_element(cpool->decode_invokedynamic_index(index))->method();
+        //Method* adapter = cpool->cache()->resolved_invokedynamic_info_element(cpool->decode_invokedynamic_index(index))->method();
+        Method* adapter = cpool->resolved_indy_info(cpool->decode_invokedynamic_index(index))->method();
         if (adapter != nullptr) {
           return get_method(adapter);
         }
@@ -1537,13 +1538,13 @@ void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, 
     int index = cp->decode_invokedynamic_index(indy_index);
     tty->print_cr("Index is %d", index);
     // do stuff
-    ResolvedInvokeDynamicInfo* indy_info = cp->cache()->resolved_invokedynamic_info_element(index);
+    ResolvedIndyInfo* indy_info = cp->resolved_indy_info(index);
     if (indy_info->method() != nullptr) {
       // process the adapter
       Method* adapter = indy_info->method();
       record_call_site_method(thread, adapter);
       // process the appendix
-      oop appendix = cp->resolved_references()->obj_at(indy_info->resolved_references_index());
+      oop appendix = cp->resolved_reference_from_indy(index);
       {
         RecordLocation fp(this, "<appendix>");
         record_call_site_obj(thread, appendix);
