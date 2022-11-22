@@ -33,7 +33,7 @@ import jdk.internal.foreign.layout.AbstractLayout;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
@@ -66,7 +66,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options);
 
     @Override
-    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession scope) {
+    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, SegmentScope scope) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
@@ -81,7 +81,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     protected abstract MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType,
-                                                   FunctionDescriptor function, MemorySession scope);
+                                                   FunctionDescriptor function, SegmentScope scope);
 
     @Override
     public SystemLookup defaultLookup() {

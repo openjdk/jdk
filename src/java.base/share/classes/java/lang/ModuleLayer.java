@@ -310,6 +310,8 @@ public final class ModuleLayer {
          * from depending on restricted methods, and use safe and supported functionalities,
          * where possible.
          *
+         * @since 20
+         *
          * @param  target
          *         The module to update
          *

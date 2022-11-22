@@ -25,10 +25,10 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Array;
 import java.nio.Buffer;
@@ -77,16 +77,16 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     final long length;
     final boolean readOnly;
-    final MemorySession session;
+    final SegmentScope session;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, boolean readOnly, MemorySession session) {
+    AbstractMemorySegmentImpl(long length, boolean readOnly, SegmentScope session) {
         this.length = length;
         this.readOnly = readOnly;
         this.session = session;
     }
 
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope session);
 
     abstract ByteBuffer makeByteBuffer();
 
@@ -149,12 +149,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     public MemorySegment allocate(long byteSize, long byteAlignment) {
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         return asSlice(0, byteSize);
-    }
-
-    @Override
-    public long mismatch(MemorySegment other) {
-        Objects.requireNonNull(other);
-        return MemorySegment.mismatch(this, 0, byteSize(), other, 0, other.byteSize());
     }
 
     /**
@@ -363,7 +357,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public MemorySession session() {
+    public SegmentScope scope() {
         return session;
     }
 
@@ -481,7 +475,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         int size = limit - pos;
 
         AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(bb);
-        final MemorySession bufferSession;
+        final SegmentScope bufferSession;
         if (bufferSegment != null) {
             bufferSession = bufferSegment.session;
         } else {

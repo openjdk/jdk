@@ -43,12 +43,12 @@ class G1GCPhaseTimes;
 class G1HotCardCache;
 class G1HRPrinter;
 class G1MonitoringSupport;
+class G1MonotonicArenaMemoryStats;
 class G1NewTracer;
 class G1ParScanThreadStateSet;
 class G1Policy;
 class G1RedirtyCardsQueueSet;
 class G1RemSet;
-class G1SegmentedArrayMemoryStats;
 class G1SurvivorRegions;
 class G1YoungGCEvacFailureInjector;
 class STWGCTimer;
@@ -98,7 +98,7 @@ class G1YoungCollector {
 
   void set_young_collection_default_active_worker_threads();
 
-  void concatenate_dirty_card_logs_and_stats();
+  void flush_dirty_card_queues();
 
   void pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* pss);
   // Actually do the work of evacuating the parts of the collection set.

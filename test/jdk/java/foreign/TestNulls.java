@@ -39,6 +39,7 @@ import org.testng.annotations.NoInjection;
 import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -101,14 +102,14 @@ public class TestNulls {
             VaList.Builder.class,
             FunctionDescriptor.class,
             SegmentAllocator.class,
-            MemorySession.class,
+            SegmentScope.class,
             SymbolLookup.class
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
-            "java.lang.foreign.MemorySegment/ofAddress(long,long,java.lang.foreign.MemorySession,java.lang.Runnable)/3/0",
-            "java.lang.foreign.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
+            "java.lang.foreign.MemorySegment/ofAddress(long,long,java.lang.foreign.SegmentScope,java.lang.Runnable)/3/0",
+            "java.lang.foreign.MemorySegment.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
+            "java.lang.foreign.MemorySegment.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
             "java.lang.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.SequenceLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.ValueLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
@@ -183,7 +184,7 @@ public class TestNulls {
         addDefaultMapping(VaList.class, VaListHelper.vaList);
         addDefaultMapping(VaList.Builder.class, VaListHelper.vaListBuilder);
         addDefaultMapping(Arena.class, Arena.openConfined());
-        addDefaultMapping(MemorySession.class, MemorySession.implicit());
+        addDefaultMapping(SegmentScope.class, SegmentScope.auto());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
@@ -198,7 +199,7 @@ public class TestNulls {
             vaList = VaList.make(b -> {
                 builderRef.set(b);
                 b.addVarg(JAVA_LONG, 42L);
-            }, MemorySession.implicit());
+            }, SegmentScope.auto());
             vaListBuilder = builderRef.get();
         }
     }

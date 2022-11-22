@@ -42,7 +42,7 @@
  * and fill it with values ranging from {@code 0} to {@code 9}, we can use the following code:
  *
  * {@snippet lang = java:
- * MemorySegment segment = MemorySegment.allocateNative(10 * 4, MemorySession.implicit());
+ * MemorySegment segment = MemorySegment.allocateNative(10 * 4, SegmentScope.auto());
  * for (int i = 0 ; i < 10 ; i++) {
  *     segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
  * }
@@ -50,8 +50,9 @@
  *
  * This code creates a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
- * The segment is associated with a memory session that is {@linkplain java.lang.foreign.MemorySession#implicit() implicitly} closed,
- * by the garbage collector. As such, the off-heap memory backing the native segment will be released at some unspecified
+ * The segment is associated with an {@linkplain java.lang.foreign.SegmentScope#auto() automatic scope}. This
+ * means that the off-heap region of memory backing the segment is managed, automatically, by the garbage collector.
+ * As such, the off-heap memory backing the native segment will be released at some unspecified
  * point <em>after</em> the segment becomes <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
  * This is similar to what happens with direct buffers created via {@link java.nio.ByteBuffer#allocateDirect(int)}.
  * It is also possible to manage the lifecycle of allocated native segments more directly, as shown in a later section.
@@ -84,7 +85,7 @@
  *
  * This example is almost identical to the prior one; this time we first create an arena
  * which is used to allocate multiple native segments which share the same life-cycle. That is, all the segments
- * allocated by the arena will be associated with the same {@linkplain java.lang.foreign.MemorySession memory session}.
+ * allocated by the arena will be associated with the same {@linkplain java.lang.foreign.SegmentScope scope}.
  * Note the use of the <em>try-with-resources</em> construct: this idiom ensures that the off-heap region of memory backing the
  * native segment will be released at the end of the block, according to the semantics described in Section {@jls 14.20.3}
  * of <cite>The Java Language Specification</cite>.
@@ -97,8 +98,8 @@
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
  * <p>
- * Since memory segments can be closed (see above), segments are also validated (upon access) to make sure that
- * the memory session associated with the segment being accessed has not been closed prematurely.
+ * Since memory segments created with an arena can become invalid (see above), segments are also validated (upon access) to make sure that
+ * the scope associated with the segment being accessed is still alive.
  * We call this guarantee <em>temporal safety</em>. Together, spatial and temporal safety ensure that each memory access
  * operation either succeeds - and accesses a valid location within the region of memory backing the memory segment - or fails.
  *
@@ -178,30 +179,30 @@
  * using the {@link java.lang.foreign.Linker} interface, as follows:
  *
  * {@snippet lang = java:
- * MemorySession session = ...
+ * SegmentScope scope = ...
  * MemorySegment comparFunc = Linker.nativeLinker().upcallStub(
- *     intCompareHandle, intCompareDescriptor, session);
+ *     intCompareHandle, intCompareDescriptor, scope);
  * );
  *}
  *
  * The {@link java.lang.foreign.FunctionDescriptor} instance created in the previous step is then used to
- * {@linkplain java.lang.foreign.Linker#upcallStub(java.lang.invoke.MethodHandle, FunctionDescriptor, MemorySession) create}
+ * {@linkplain java.lang.foreign.Linker#upcallStub(java.lang.invoke.MethodHandle, FunctionDescriptor, SegmentScope) create}
  * a new upcall stub; the layouts in the function descriptors allow the linker to determine the sequence of steps which
  * allow foreign code to call the stub for {@code intCompareHandle} according to the rules specified by the ABI of the
  * underlying platform.
- * The lifecycle of the upcall stub is tied to the {@linkplain java.lang.foreign.MemorySession memory session}
- * provided when the upcall stub is created. This same session is made available by the {@link java.lang.foreign.MemorySegment}
+ * The lifecycle of the upcall stub is tied to the {@linkplain java.lang.foreign.SegmentScope scope}
+ * provided when the upcall stub is created. This same scope is made available by the {@link java.lang.foreign.MemorySegment}
  * instance returned by that method.
  *
  * <h2 id="restricted">Restricted methods</h2>
  * Some methods in this package are considered <em>restricted</em>. Restricted methods are typically used to bind native
  * foreign data and/or functions to first-class Java API elements which can then be used directly by clients. For instance
- * the restricted method {@link java.lang.foreign.MemorySegment#ofAddress(long, long, MemorySession)}
+ * the restricted method {@link java.lang.foreign.MemorySegment#ofAddress(long, long, SegmentScope)}
  * can be used to create a fresh segment with the given spatial bounds out of a native address.
  * <p>
  * Binding foreign data and/or functions is generally unsafe and, if done incorrectly, can result in VM crashes,
  * or memory corruption when the bound Java API element is accessed. For instance, in the case of
- * {@link java.lang.foreign.MemorySegment#ofAddress(long, long, MemorySession)}, if the provided spatial bounds are
+ * {@link java.lang.foreign.MemorySegment#ofAddress(long, long, SegmentScope)}, if the provided spatial bounds are
  * incorrect, a client of the segment returned by that method might crash the VM, or corrupt
  * memory when attempting to access said segment. For these reasons, it is crucial for code that calls a restricted method
  * to never pass arguments that might cause incorrect binding of foreign data and/or functions to a Java API.
@@ -215,6 +216,9 @@
  * type must not be null, and any null argument will elicit a {@code NullPointerException}.  This fact is not individually
  * documented for methods of this API.
  *
+ * @apiNote Usual memory model guarantees, for example stated in {@jls 6.6} and {@jls 10.4}, do not apply
+ * when accessing native memory segments as these segments are backed by off-heap regions of memory.
+ *
  * @implNote
  * In the reference implementation, access to restricted methods can be granted to specific modules using the command line option
  * {@code --enable-native-access=M1,M2, ... Mn}, where {@code M1}, {@code M2}, {@code ... Mn} are module names
@@ -224,3 +228,4 @@
  *
  */
 package java.lang.foreign;
+

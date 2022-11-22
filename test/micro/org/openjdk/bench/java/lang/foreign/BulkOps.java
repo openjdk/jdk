@@ -63,7 +63,7 @@ public class BulkOps {
     final Arena arena = Arena.openConfined();
 
     final long unsafe_addr = unsafe.allocateMemory(ALLOC_SIZE);
-    final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, arena.session());
+    final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, arena.scope());
     final IntBuffer buffer = IntBuffer.allocate(ELEM_SIZE);
 
     final int[] ints = new int[ELEM_SIZE];
@@ -72,14 +72,14 @@ public class BulkOps {
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
-    final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, arena.session());
-    final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, arena.session());;
+    final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, arena.scope());
+    final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, arena.scope());;
     final ByteBuffer mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
     final ByteBuffer mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
 
     // mismatch at first byte
-    final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7, arena.session());;
-    final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7, arena.session());;
+    final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7, arena.scope());;
+    final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7, arena.scope());;
     final ByteBuffer mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
     final ByteBuffer mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
 

@@ -47,20 +47,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class PolicyMappingsExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.PolicyMappings";
-    /**
-     * Attribute names.
-     */
+public class PolicyMappingsExtension extends Extension {
+
     public static final String NAME = "PolicyMappings";
-    public static final String MAP = "map";
 
     // Private data members
     private List<CertificatePolicyMap> maps;
@@ -157,41 +147,15 @@ implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(MAP)) {
-            if (!(obj instanceof List)) {
-              throw new IOException("Attribute value should be of" +
-                                    " type List.");
-            }
-            maps = (List<CertificatePolicyMap>)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:PolicyMappingsExtension.");
-        }
-        encodeThis();
+    public List<CertificatePolicyMap> getMaps() {
+        return maps;
     }
 
     /**
-     * Get the attribute value.
-     */
-    public List<CertificatePolicyMap> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(MAP)) {
-            return (maps);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:PolicyMappingsExtension.");
-        }
-    }
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName () {
-        return (NAME);
+        return NAME;
     }
 }

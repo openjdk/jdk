@@ -267,6 +267,8 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module can access
      * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
      *
+     * @since 20
+     *
      * @return {@code true} if this module can access <em>restricted</em> methods.
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)

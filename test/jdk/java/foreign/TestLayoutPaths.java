@@ -434,7 +434,7 @@ public class TestLayoutPaths {
         sliceHandle = sliceHandle.asSpreader(long[].class, indexes.length);
 
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, arena.session());
+            MemorySegment segment = MemorySegment.allocateNative(layout, arena.scope());
             MemorySegment slice = (MemorySegment) sliceHandle.invokeExact(segment, indexes);
             assertEquals(slice.address() - segment.address(), expectedBitOffset / 8);
             assertEquals(slice.byteSize(), selected.byteSize());
@@ -469,7 +469,7 @@ public class TestLayoutPaths {
         }
 
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, arena.session());
+            MemorySegment segment = MemorySegment.allocateNative(layout, arena.scope());
 
             try {
                 sliceHandle.invokeExact(segment, 1); // should work

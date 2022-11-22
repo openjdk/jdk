@@ -80,7 +80,7 @@ public class TestMemoryAccessInstance {
 
         void test() {
             try (Arena arena = Arena.openConfined()) {
-                MemorySegment segment = MemorySegment.allocateNative(128, arena.session());;
+                MemorySegment segment = MemorySegment.allocateNative(128, arena.scope());;
                 ByteBuffer buffer = segment.asByteBuffer();
                 T t = transform.apply(segment);
                 segmentSetter.set(t, layout, 8, value);
@@ -93,7 +93,7 @@ public class TestMemoryAccessInstance {
         @SuppressWarnings("unchecked")
         void testHyperAligned() {
             try (Arena arena = Arena.openConfined()) {
-                MemorySegment segment = MemorySegment.allocateNative(64, arena.session());;
+                MemorySegment segment = MemorySegment.allocateNative(64, arena.scope());;
                 T t = transform.apply(segment);
                 L alignedLayout = (L)layout.withBitAlignment(layout.byteSize() * 8 * 2);
                 try {

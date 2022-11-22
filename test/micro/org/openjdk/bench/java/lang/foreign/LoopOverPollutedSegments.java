@@ -70,8 +70,8 @@ public class LoopOverPollutedSegments extends JavaLayouts {
         arr = new byte[ALLOC_SIZE];
         confinedArena = Arena.openConfined();
         sharedArena = Arena.openShared();
-        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, confinedArena.session());
-        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, sharedArena.session());
+        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, confinedArena.scope());
+        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, sharedArena.scope());
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 

@@ -142,14 +142,27 @@ public:
   double predict_base_time_ms(size_t pending_cards) const;
 
 private:
+  // Base time contains handling remembered sets and constant other time of the
+  // whole young gen, refinement buffers, and copying survivors.
+  // Basically everything but copying eden regions.
   double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
+  // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(HeapRegion* hr) const;
+  // Merge-scan time for a region is handling remembered sets of that region (as a single unit).
+  double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  // Non-copy time for a region is handling remembered sets and other time.
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
 public:
 
-  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  // Predict other time for count young regions.
+  double predict_young_region_other_time_ms(uint count) const;
+  // Predict copying live data time for count eden regions. Return the predict bytes if
+  // bytes_to_copy is non-nullptr.
+  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
+  // Total time for a region is handling remembered sets (as a single unit), copying its live data
+  // and other time.
   double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
@@ -278,6 +291,9 @@ private:
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
 
+  // Record and log stats before not-full collection.
+  void record_concurrent_refinement_stats();
+
 public:
 
   G1Policy(STWGCTimer* gc_timer);
@@ -295,6 +311,8 @@ public:
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
+
+  void record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
@@ -392,12 +410,6 @@ public:
   size_t estimate_used_young_bytes_locked() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
-
-  // Record and log stats and pending cards before not-full collection.
-  // thread_buffer_cards is the number of cards that were in per-thread
-  // buffers.  pending_cards includes thread_buffer_cards.
-  void record_concurrent_refinement_stats(size_t pending_cards,
-                                          size_t thread_buffer_cards);
 
 private:
   //

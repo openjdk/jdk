@@ -26,7 +26,7 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -36,6 +36,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -64,7 +65,7 @@ public class QSort extends CLayouts {
     static MemorySegment qsort_addr = abi.defaultLookup().find("qsort").get();
 
     static {
-        INPUT_SEGMENT = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT), MemorySession.global());
+        INPUT_SEGMENT = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT), SegmentScope.global());
         INPUT_SEGMENT.copyFrom(MemorySegment.ofArray(INPUT));
 
         System.loadLibrary("QSortJNI");
@@ -82,7 +83,7 @@ public class QSort extends CLayouts {
                             "panama_upcall_compar",
                             MethodType.methodType(int.class, MemorySegment.class, MemorySegment.class)),
                     FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER),
-                    MemorySession.global()
+                    SegmentScope.global()
             );
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);

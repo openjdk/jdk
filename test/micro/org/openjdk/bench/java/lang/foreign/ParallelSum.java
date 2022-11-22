@@ -80,7 +80,7 @@ public class ParallelSum extends JavaLayouts {
             unsafe.putInt(address + (i * CARRIER_SIZE), i);
         }
         arena = Arena.openShared();
-        segment = MemorySegment.allocateNative(ALLOC_SIZE, CARRIER_SIZE, arena.session());
+        segment = MemorySegment.allocateNative(ALLOC_SIZE, CARRIER_SIZE, arena.scope());
         for (int i = 0; i < ELEM_SIZE; i++) {
             VH_INT.set(segment, (long) i, i);
         }

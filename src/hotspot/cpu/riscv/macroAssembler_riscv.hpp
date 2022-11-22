@@ -44,8 +44,6 @@ class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  virtual ~MacroAssembler() {}
-
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Alignment
@@ -54,6 +52,9 @@ class MacroAssembler: public Assembler {
   static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
     assert(is_aligned(pc, alignment), "bad alignment");
   }
+
+  // nop
+  void post_call_nop();
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -192,14 +193,14 @@ class MacroAssembler: public Assembler {
                       Address src, Register tmp1, Register tmp2);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
-  void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
-  void cmp_klass(Register oop, Register trial_klass, Register tmp, Label &L);
+  void load_klass(Register dst, Register src, Register tmp = t0);
+  void store_klass(Register dst, Register src, Register tmp = t0);
+  void cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L);
 
-  void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src, Register tmp = xheapbase);
-  void decode_klass_not_null(Register dst, Register src, Register tmp = xheapbase);
+  void encode_klass_not_null(Register r, Register tmp = t0);
+  void decode_klass_not_null(Register r, Register tmp = t0);
+  void encode_klass_not_null(Register dst, Register src, Register tmp);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
   void decode_heap_oop_not_null(Register r);
   void decode_heap_oop_not_null(Register dst, Register src);
   void decode_heap_oop(Register d, Register s);
@@ -384,6 +385,12 @@ class MacroAssembler: public Assembler {
   }
 
   static int patch_oop(address insn_addr, address o);
+
+  // Return whether code is emitted to a scratch blob.
+  virtual bool in_scratch_emit_size() {
+    return false;
+  }
+
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
   void emit_static_call_stub();
 
@@ -571,6 +578,9 @@ public:
 
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
+
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
@@ -1042,11 +1052,11 @@ public:
   // to use a 2nd scratch register to hold the constant. so, an address
   // increment/decrement may trash both t0 and t1.
 
-  void increment(const Address dst, int64_t value = 1);
-  void incrementw(const Address dst, int32_t value = 1);
+  void increment(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
+  void incrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void decrement(const Address dst, int64_t value = 1);
-  void decrementw(const Address dst, int32_t value = 1);
+  void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
+  void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
   void cmpptr(Register src1, Address src2, Label& equal);
 
@@ -1260,7 +1270,7 @@ private:
   }
 
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
-  Address add_memory_helper(const Address dst);
+  Address add_memory_helper(const Address dst, Register tmp);
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);

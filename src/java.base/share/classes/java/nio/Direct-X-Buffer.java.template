@@ -29,7 +29,6 @@ package java.nio;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.ref.Reference;
 import java.util.Objects;
 import jdk.internal.foreign.MemorySessionImpl;

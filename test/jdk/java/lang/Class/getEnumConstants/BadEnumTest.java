@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,27 @@
  * questions.
  */
 
-package sun.security.x509;
-
-import java.util.Vector;
-
 /**
- * <p>This class provides the Enumeration implementation used
- * by all the X509 certificate attributes to return the attribute
- * names contained within them.
- *
- * @author Amit Kapoor
- * @author Hemma Prafullchandra
+ * @test
+ * @bug 8296196
+ * @summary Test getEnumConstants on bad Enums
+ * @build BadEnum1 BadEnum2
+ * @run junit BadEnumTest
  */
-public class AttributeNameEnumeration extends Vector<String> {
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-    @java.io.Serial
-    private static final long serialVersionUID = -6067440240757099134L;
+public class BadEnumTest {
 
-    /**
-     * The default constructor for this class.
-     */
-    public AttributeNameEnumeration() {
-        super(4,2);
+    @Test
+    void testBadEnum1() {
+        assertNull(BadEnum1.class.getEnumConstants(), "Expected BadEnum1.class.getEnumConstants() to return null");
+    }
+
+    @Test
+    void testBadEnum2() {
+        assertNull(BadEnum2.class.getEnumConstants(), "Expected BadEnum2.class.getEnumConstants() to return null");
     }
 }

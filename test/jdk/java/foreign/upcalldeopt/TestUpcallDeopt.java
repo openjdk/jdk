@@ -80,7 +80,7 @@ public class TestUpcallDeopt extends NativeTestHelper {
     // that is created when calling upcallStub below
     public static void main(String[] args) throws Throwable {
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), arena.session());
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), arena.scope());
             armed = false;
             for (int i = 0; i < 20_000; i++) {
                 payload(stub); // warmup

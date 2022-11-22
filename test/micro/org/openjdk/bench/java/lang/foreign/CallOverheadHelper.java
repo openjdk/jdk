@@ -23,11 +23,11 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
 
 import java.lang.foreign.SymbolLookup;
@@ -81,12 +81,12 @@ public class CallOverheadHelper extends CLayouts {
             C_INT, C_INT
     );
 
-    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openShared().session());
-    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openConfined().session());
+    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openShared().scope());
+    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openConfined().scope());
 
-    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.implicit());
+    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, SegmentScope.auto());
 
-    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.implicit()));
+    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, SegmentScope.auto()));
 
     static {
         System.loadLibrary("CallOverheadJNI");

@@ -33,7 +33,7 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
@@ -94,7 +94,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testFilterValue() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle = layout.varHandle();
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, S2I, I2S);
         i2SHandle.set(segment, "1");
@@ -113,7 +113,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testFilterValueComposite() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle = layout.varHandle();
         MethodHandle CTX_S2I = MethodHandles.dropArguments(S2I, 0, String.class, String.class);
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, CTX_S2I, CTX_I2S);
@@ -134,7 +134,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testFilterValueLoose() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle = layout.varHandle();
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, O2I, I2O);
         i2SHandle.set(segment, "1");
@@ -192,7 +192,7 @@ public class TestAdaptVarHandles {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         VarHandle vh = MethodHandles.filterValue(intHandle, S2I, I2S_EX);
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment seg = MemorySegment.allocateNative(ValueLayout.JAVA_INT, arena.session());
+            MemorySegment seg = MemorySegment.allocateNative(ValueLayout.JAVA_INT, arena.scope());
             vh.set(seg, "42");
             String x = (String) vh.get(seg); // should throw
         }
@@ -203,7 +203,7 @@ public class TestAdaptVarHandles {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         VarHandle vh = MethodHandles.filterValue(intHandle, S2I_EX, I2S);
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment seg = MemorySegment.allocateNative(ValueLayout.JAVA_INT, arena.session());
+            MemorySegment seg = MemorySegment.allocateNative(ValueLayout.JAVA_INT, arena.scope());
             vh.set(seg, "42"); // should throw
         }
     }
@@ -211,7 +211,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testFilterCoordinates() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle_longIndex = MethodHandles.filterCoordinates(intHandleIndexed, 0, BASE_ADDR, S2L);
         intHandle_longIndex.set(segment, "0", 1);
         int oldValue = (int)intHandle_longIndex.getAndAdd(segment, "0", 42);
@@ -254,7 +254,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testInsertCoordinates() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle_longIndex = MethodHandles.insertCoordinates(intHandleIndexed, 0, segment, 0L);
         intHandle_longIndex.set(1);
         int oldValue = (int)intHandle_longIndex.getAndAdd(42);
@@ -292,7 +292,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testPermuteCoordinates() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle_swap = MethodHandles.permuteCoordinates(intHandleIndexed,
                 List.of(long.class, MemorySegment.class), 1, 0);
         intHandle_swap.set(0L, segment, 1);
@@ -331,7 +331,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testCollectCoordinates() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle_sum = MethodHandles.collectCoordinates(intHandleIndexed, 1, SUM_OFFSETS);
         intHandle_sum.set(segment, -2L, 2L, 1);
         int oldValue = (int)intHandle_sum.getAndAdd(segment, -2L, 2L, 42);
@@ -374,7 +374,7 @@ public class TestAdaptVarHandles {
     @Test
     public void testDropCoordinates() throws Throwable {
         ValueLayout layout = ValueLayout.JAVA_INT;
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.implicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         VarHandle intHandle_dummy = MethodHandles.dropCoordinates(intHandleIndexed, 1, float.class, String.class);
         intHandle_dummy.set(segment, 1f, "hello", 0L, 1);
         int oldValue = (int)intHandle_dummy.getAndAdd(segment, 1f, "hello", 0L, 42);

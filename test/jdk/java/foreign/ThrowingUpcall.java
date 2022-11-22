@@ -73,7 +73,7 @@ public class ThrowingUpcall extends NativeTestHelper {
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), arena.session());
+            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), arena.scope());
 
             downcallVoid.invoke(stub); // should call Shutdown.exit(1);
         }
@@ -86,7 +86,7 @@ public class ThrowingUpcall extends NativeTestHelper {
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), arena.session());
+            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), arena.scope());
 
             downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
         }

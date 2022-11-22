@@ -26,7 +26,7 @@
 package jdk.internal.foreign;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
@@ -43,7 +43,7 @@ public sealed class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, MemorySession session) {
+    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, SegmentScope session) {
         super(min, length, readOnly, session);
         this.unmapper = unmapper;
     }
@@ -55,7 +55,7 @@ public sealed class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     }
 
     @Override
-    MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session) {
+    MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope session) {
         return new MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, session);
     }
 

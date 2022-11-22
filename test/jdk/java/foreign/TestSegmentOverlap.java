@@ -29,6 +29,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.foreign.SegmentScope;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,7 +37,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.function.Supplier;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 import static java.lang.System.out;
@@ -61,10 +62,10 @@ public class TestSegmentOverlap {
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
-                () -> MemorySegment.allocateNative(16, MemorySession.implicit()),
+                () -> MemorySegment.allocateNative(16, SegmentScope.auto()),
                 () -> {
                     try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                        return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 16L, MemorySession.implicit());
+                        return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 16L, SegmentScope.auto());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -98,10 +99,10 @@ public class TestSegmentOverlap {
         var s2 = s1.asReadOnly();
         out.format("testIdentical s1:%s, s2:%s\n", s1, s2);
         assertEquals(s1.asOverlappingSlice(s2).get().byteSize(), s1.byteSize());
-        assertEquals(s1.asOverlappingSlice(s2).get().session(), s1.session());
+        assertEquals(s1.asOverlappingSlice(s2).get().scope(), s1.scope());
 
         assertEquals(s2.asOverlappingSlice(s1).get().byteSize(), s2.byteSize());
-        assertEquals(s2.asOverlappingSlice(s1).get().session(), s2.session());
+        assertEquals(s2.asOverlappingSlice(s1).get().scope(), s2.scope());
 
         if (s1.isNative()) {
             assertEquals(s1.asOverlappingSlice(s2).get().address(), s1.address());
@@ -117,10 +118,10 @@ public class TestSegmentOverlap {
             MemorySegment slice = s1.asSlice(offset);
             out.format("testSlices s1:%s, s2:%s, slice:%s, offset:%d\n", s1, s2, slice, offset);
             assertEquals(s1.asOverlappingSlice(slice).get().byteSize(), s1.byteSize() - offset);
-            assertEquals(s1.asOverlappingSlice(slice).get().session(), s1.session());
+            assertEquals(s1.asOverlappingSlice(slice).get().scope(), s1.scope());
 
             assertEquals(slice.asOverlappingSlice(s1).get().byteSize(), slice.byteSize());
-            assertEquals(slice.asOverlappingSlice(s1).get().session(), slice.session());
+            assertEquals(slice.asOverlappingSlice(s1).get().scope(), slice.scope());
 
             if (s1.isNative()) {
                 assertEquals(s1.asOverlappingSlice(slice).get().address(), s1.address() + offset);
@@ -131,7 +132,7 @@ public class TestSegmentOverlap {
     }
 
     enum OtherSegmentFactory {
-        NATIVE(() -> MemorySegment.allocateNative(16, MemorySession.implicit())),
+        NATIVE(() -> MemorySegment.allocateNative(16, SegmentScope.auto())),
         HEAP(() -> MemorySegment.ofArray(new byte[]{16}));
 
         final Supplier<MemorySegment> factory;
