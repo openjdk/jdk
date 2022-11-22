@@ -207,13 +207,20 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Decodes the exception encoded in {@code buffer} and throws it.
+     * Decodes the exception encoded in {@code buffer} and throws it. If {@code buffer == 0} then
+     * something went wrong (e.g. OutOfMemoryError) while encoding the exception. In this case, an
+     * {@link InternalError} is thrown.
      *
      * @param buffer a native byte buffer containing an exception encoded by
      *            {@link #encodeThrowable}
      */
     @VMEntryPoint
     static void decodeAndThrowThrowable(long buffer) throws Throwable {
+        if (buffer == 0L) {
+            throw new InternalError(String.format("unexpected problem occurred while encoding an exception to translate it from %s to %s",
+                            IS_IN_NATIVE_IMAGE ? "HotSpot" : "libjvmci",
+                            IS_IN_NATIVE_IMAGE ? "libjvmci" : "HotSpot"));
+        }
         Unsafe unsafe = UnsafeAccess.UNSAFE;
         int encodingLength = unsafe.getInt(buffer);
         byte[] encoding = new byte[encodingLength];
