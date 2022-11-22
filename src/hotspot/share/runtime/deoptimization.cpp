@@ -456,6 +456,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (realloc_failures) {
     // This destroys all ScopedValue bindings.
     current->clear_scopedValueBindings();
+    pop_frames_failed_reallocs(current, array);
   }
 #endif
 
