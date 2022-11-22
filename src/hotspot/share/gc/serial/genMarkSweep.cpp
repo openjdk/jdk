@@ -203,7 +203,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
-    gc_tracer()->report_gc_reference_process_time(pt.total_time_ms());
+    gc_tracer()->report_gc_reference_processing_time(pt.total_time_ms());
   }
 
   // This is the point where the entire marking should have completed.

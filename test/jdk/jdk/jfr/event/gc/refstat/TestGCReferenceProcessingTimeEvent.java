@@ -53,10 +53,9 @@ import jdk.test.lib.jfr.GCHelper;
  */
 
 /**
- * @test id=G1
  * @key jfr
  * @requires vm.hasJFR
- * @requires vm.gc.G1
+ * @requires vm.gc != "Epsilon"
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

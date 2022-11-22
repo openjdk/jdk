@@ -435,7 +435,7 @@ void ZReferenceProcessor::process_references() {
   // Collect, log and trace statistics
   collect_statistics();
 
-  ZTracer::tracer()->report_gc_reference_process_time((os::elapsedTime() - start_time) * 1000);
+  ZTracer::tracer()->report_gc_reference_processing_time((os::elapsedTime() - start_time) * 1000);
 }
 
 void ZReferenceProcessor::enqueue_references() {
