@@ -445,7 +445,7 @@ public class MultiThreadTest extends Thread {
             long last;
             while (!done) {
                 int c = in.read();
-                last =  System.nanoTime();
+                last = System.nanoTime();
                 if (count == 0) {
                     // time at which the first byte of the request (or EOF) was received
                     startReading = last;
