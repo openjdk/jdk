@@ -198,8 +198,8 @@ private:
 public:
   JvmtiVirtualThreadEventMark(JavaThread *thread) :
     JvmtiEventMark(thread) {
-    _jthread = to_jobject(thread->vthread());
     assert(thread->vthread() != NULL || thread->threadObj() == NULL, "sanity check");
+    _jthread = to_jobject(thread->vthread());
   };
   jthread jni_thread() { return (jthread)_jthread; }
 };
