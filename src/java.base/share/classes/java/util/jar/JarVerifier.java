@@ -327,6 +327,10 @@ class JarVerifier {
         }
     }
 
+    /**
+     * Return an array of Certificate objects for
+     * the given file in the jar.
+     */
     public Certificate[] getCerts(JarEntry entry)
     {
         return mapSignersToCertArray(getCodeSigners(entry));
@@ -337,14 +341,9 @@ class JarVerifier {
      * the given file in the jar. this array is not cloned.
      *
      */
-    public CodeSigner[] getCodeSigners(String name)
-    {
-        return verifiedSigners.get(name);
-    }
-
     public CodeSigner[] getCodeSigners(JarEntry entry)
     {
-        return getCodeSigners(entry.getName());
+        return verifiedSigners.get(entry.getName());
     }
 
     /*
