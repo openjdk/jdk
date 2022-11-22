@@ -423,7 +423,7 @@ extern char* resource_allocate_bytes(Thread* thread, size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-extern void resource_free_bytes( char *old, size_t size );
+extern void resource_free_bytes( Thread* thread, char *old, size_t size );
 
 //----------------------------------------------------------------------
 // Base class for objects allocated in the resource area.
@@ -548,7 +548,10 @@ protected:
                                     (new_size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
 #define FREE_RESOURCE_ARRAY(type, old, size)\
-  resource_free_bytes((char*)(old), (size) * sizeof(type))
+  resource_free_bytes(Thread::current(), (char*)(old), (size) * sizeof(type))
+
+#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, type, old, size)\
+  resource_free_bytes(thread, (char*)(old), (size) * sizeof(type))
 
 #define FREE_FAST(old)\
     /* nop */
@@ -624,6 +627,8 @@ class ArrayAllocator : public AllStatic {
   static E* allocate_malloc(size_t length, MEMFLAGS flags);
   static E* allocate_mmap(size_t length, MEMFLAGS flags);
 
+  static E* reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags);
+
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
@@ -653,6 +658,7 @@ class MallocArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
   static E* allocate(size_t length, MEMFLAGS flags);
+  static E* reallocate(E* addr, size_t new_length, MEMFLAGS flags);
   static void free(E* addr);
 };
 

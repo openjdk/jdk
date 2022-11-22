@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
@@ -37,6 +36,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"

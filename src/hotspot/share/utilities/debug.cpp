@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classPrinter.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -35,6 +34,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

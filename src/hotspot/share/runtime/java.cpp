@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -39,6 +38,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
+#include "jvm.h"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif

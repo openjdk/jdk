@@ -2182,7 +2182,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
 
   // Should the klass from the profile be recorded in the speculative type?
   if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
-    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
+    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls, Type::trust_interfaces);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
@@ -2636,7 +2636,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   case T_ADDRESS: cmp = new CmpPNode(in1, in2); break;
   default: fatal("unexpected comparison type %s", type2name(bt));
   }
-  gvn.transform(cmp);
+  cmp = gvn.transform(cmp);
   Node* bol = gvn.transform(new BoolNode(cmp, test));
   IfNode* iff = new IfNode(ctrl, bol, p, COUNT_UNKNOWN);
   gvn.transform(iff);
@@ -2844,7 +2844,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
                                     Node* *casted_receiver) {
   assert(!klass->is_interface(), "no exact type check on interfaces");
 
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
   Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
@@ -2873,7 +2873,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 //------------------------------subtype_check_receiver-------------------------
 Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
                                        Node** casted_receiver) {
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces)->try_improve();
   Node* want_klass = makecon(tklass);
 
   Node* slow_ctl = gen_subtype_check(receiver, want_klass);
@@ -2996,7 +2996,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
   if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
-        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls)) == Compile::SSC_always_true) {
+        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls, Type::trust_interfaces)) == Compile::SSC_always_true) {
       // If we narrow the type to match what the type profile sees or
       // the speculative type, we can then remove the rest of the
       // cast.
@@ -3182,8 +3182,8 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
                               Node* *failure_control) {
   kill_dead_locals();           // Benefit all the uncommon traps
-  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr();
-  const Type *toop = tk->cast_to_exactness(false)->as_instance_type();
+  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr()->try_improve();
+  const TypeOopPtr *toop = tk->cast_to_exactness(false)->as_instance_type();
 
   // Fast cutout:  Check the case that the cast is vacuously true.
   // This detects the common cases where the test will short-circuit

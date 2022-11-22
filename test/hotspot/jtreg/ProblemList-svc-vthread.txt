@@ -32,11 +32,6 @@ serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java          826
 vmTestbase/nsk/jvmti/CompiledMethodUnload/compmethunload001/TestDescription.java
 
 ####
-## NSK JVMTI tests failing with wrapper
-
-vmTestbase/nsk/jvmti/GetAllThreads/allthr001/TestDescription.java 8284027 generic-all
-
-####
 ## Tests for functionality which currently is not supported for virtual threads
 
 vmTestbase/nsk/jvmti/GetCurrentThreadCpuTime/curthrcputime001/TestDescription.java
