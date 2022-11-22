@@ -84,7 +84,7 @@ public class IssuerAlternativeNameExtension extends Extension {
     public IssuerAlternativeNameExtension(Boolean critical, GeneralNames names)
             throws IOException {
         if (names == null || names.isEmpty()) {
-            throw new IllegalArgumentException("names should not be empty");
+            throw new IllegalArgumentException("names cannot be null or empty");
         }
         this.names = names;
         this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
