@@ -137,7 +137,7 @@ public class Client {
     }
 
     /*
-     * Fork a server process process and wait for server to come around
+     * Fork a server process and wait for server to come around
      */
     private void startNewServer() throws IOException, InterruptedException {
         List<String> cmd = new ArrayList<>();
