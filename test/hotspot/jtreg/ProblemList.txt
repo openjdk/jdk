@@ -68,6 +68,9 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
+compiler/debug/TestStressCM.java 8297343 generic-all
+compiler/debug/TestStressIGVNAndCCP.java 8297343 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -97,6 +100,8 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
+runtime/vthread/RedefineClass.java 8297286 generic-all
+runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
