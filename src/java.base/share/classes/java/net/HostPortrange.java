@@ -149,6 +149,9 @@ class HostPortrange {
                         // regular domain name
                         hoststr = toLowerCase(hoststr);
                     }
+                } else {
+                    // regular domain name
+                    hoststr = toLowerCase(hoststr);
                 }
             }
             hostname = hoststr;

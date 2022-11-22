@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ public class NoStringToLower {
                 "com.sun.tools.javah",
                 "com.sun.tools.javap",
                 "com.sun.tools.jdeps",
-                "com.sun.tools.sjavac",
                 "jdk.javadoc"
             };
             for (String pkg: pkgs) {

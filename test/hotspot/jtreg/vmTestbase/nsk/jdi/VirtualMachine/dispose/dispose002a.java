@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,9 @@ public class dispose002a {
                                  }
                                  break;
                              } else if (instruction.equals("check_alive")) {
-                                 log1("checking on: thread2.isAlive");
-                                 if (test_thread.isAlive()) {
+                                 log1("checking if thread2 completed");
+                                 if (!JDIUtils.waitForCompletion(test_thread)) {
+                                     log1("thread2 is alive after vm.dispose().");
                                      pipe.println("alive");
                                      test_thread.interrupt();
                                  } else {

@@ -545,6 +545,7 @@
      static_field(StubRoutines,                _chacha20Block,                                address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
+     static_field(StubRoutines,                _poly1305_processBlocks,                       address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
@@ -1047,7 +1048,7 @@
                                                                                                                                      \
   CDS_ONLY(nonstatic_field(FileMapInfo,        _header,                   FileMapHeader*))                                           \
   CDS_ONLY(   static_field(FileMapInfo,        _current_info,             FileMapInfo*))                                             \
-  CDS_ONLY(nonstatic_field(FileMapHeader,      _space[0],                 CDSFileMapRegion))                                         \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _regions[0],               CDSFileMapRegion))                                         \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _cloned_vtables_offset,    size_t))                                                   \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _mapped_base_address,      char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _mapped_base,              char*))                                                    \

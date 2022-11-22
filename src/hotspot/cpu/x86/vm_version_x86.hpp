@@ -223,7 +223,9 @@ class VM_Version : public Abstract_VM_Version {
                avx512dq : 1,
                         : 1,
                     adx : 1,
-                        : 3,
+                        : 1,
+             avx512ifma : 1,
+                        : 1,
              clflushopt : 1,
                    clwb : 1,
                         : 1,
@@ -387,7 +389,8 @@ protected:
     decl(PKU,               "pku",               54) /* Protection keys for user-mode pages */ \
     decl(OSPKE,             "ospke",             55) /* OS enables protection keys */ \
     decl(CET_IBT,           "cet_ibt",           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
-    decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */
+    decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
+    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -667,6 +670,7 @@ public:
   static bool supports_adx()          { return (_features & CPU_ADX) != 0; }
   static bool supports_evex()         { return (_features & CPU_AVX512F) != 0; }
   static bool supports_avx512dq()     { return (_features & CPU_AVX512DQ) != 0; }
+  static bool supports_avx512ifma()   { return (_features & CPU_AVX512_IFMA) != 0; }
   static bool supports_avx512pf()     { return (_features & CPU_AVX512PF) != 0; }
   static bool supports_avx512er()     { return (_features & CPU_AVX512ER) != 0; }
   static bool supports_avx512cd()     { return (_features & CPU_AVX512CD) != 0; }

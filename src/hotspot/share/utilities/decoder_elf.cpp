@@ -55,7 +55,12 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call) {
-  assert(filename != nullptr && filename_len > 0 && line != nullptr, "Argument error");
+#if defined(__clang_major__) && (__clang_major__ < 5)
+  DWARF_LOG_ERROR("The DWARF parser only supports Clang 5.0+.");
+  return false;
+#else
+  assert(filename != nullptr && line != nullptr, "arguments should not be null");
+  assert(filename_len > 1, "buffer must be able to at least hold 1 character with a null terminator");
   filename[0] = '\0';
   *line = -1;
 
@@ -83,6 +88,9 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
                  unsigned_offset_in_library, filepath);
 
   if (!file->get_source_info(unsigned_offset_in_library, filename, filename_len, line, is_pc_after_call)) {
+    // Return sane values.
+    filename[0] = '\0';
+    *line = -1;
     return false;
   }
 
@@ -90,6 +98,7 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
                        p2i(pc), offset_in_library, filename, *line);
   DWARF_LOG_INFO("") // To structure the debug output better.
   return true;
+#endif // clang
 }
 
 
