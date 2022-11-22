@@ -21,14 +21,15 @@
  * questions.
  */
 
+import java.awt.EventQueue;
+import java.util.Arrays;
+
 import javax.swing.JPasswordField;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.PlainDocument;
-import java.awt.EventQueue;
-import java.util.Arrays;
 
 /**
  * @test
