@@ -103,7 +103,7 @@ public class ReferenceTracker {
                 hasOperations.or(hasSubscribers)
                         .or(Tracker::isFacadeReferenced)
                         .or(Tracker::isSelectorAlive),
-                "outstanding operations or unreleased resources", false);
+                "outstanding operations or unreleased resources", true);
     }
 
     public AssertionError check(long graceDelayMs) {
@@ -233,8 +233,9 @@ public class ReferenceTracker {
         }
         if (fail != null) {
             if (printThreads && tracker.isSelectorAlive()) {
-                printThreads("Some selector manager threads are still alive: ", System.out);
-                printThreads("Some selector manager threads are still alive: ", System.err);
+                var msg = "Selector manager threads are still alive for "  + tracker.getName() + ": ";
+                printThreads(msg, System.out);
+                printThreads(msg, System.err);
             }
         }
         return fail;

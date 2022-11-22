@@ -46,6 +46,7 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -319,10 +320,13 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         String value =  useDefault ? DEFAULTS.get(key).apply(uri) : v;
 
         HttpClient client = null;
+        Tracker tracker = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             try {
-                if (!sameClient || client == null)
+                if (!sameClient || client == null) {
                     client = newHttpClient("test", sameClient);
+                    tracker = TRACKER.getTracker(client);
+                }
 
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri);
                 if (!useDefault) {
@@ -366,7 +370,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                 if (!sameClient) {
                     client = null;
                     System.gc();
-                    var error = TRACKER.check(500);
+                    var error = TRACKER.check(tracker, 500);
                     if (error != null) throw error;
                 }
             }
@@ -383,7 +387,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         final URI uri = URI.create(uriString);
 
         HttpClient client = newHttpClient("testHomeMadeIllegalHeader", sameClient);
-
+        Tracker tracker = TRACKER.getTracker(client);
         try {
             // Test a request which contains an illegal header created
             HttpRequest req = new HttpRequest() {
@@ -434,7 +438,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             if (!sameClient) {
                 client = null;
                 System.gc();
-                var error = TRACKER.check(500);
+                var error = TRACKER.check(tracker, 500);
                 if (error != null) throw error;
             }
         }
@@ -453,10 +457,13 @@ public class SpecialHeadersTest implements HttpServerAdapters {
         String value =  useDefault ? DEFAULTS.get(key).apply(uri) : v;
 
         HttpClient client = null;
+        Tracker tracker = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             try {
-                if (!sameClient || client == null)
+                if (!sameClient || client == null) {
                     client = newHttpClient("testAsync", sameClient);
+                    tracker = TRACKER.getTracker(client);
+                }
 
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri);
                 if (!useDefault) {
@@ -503,7 +510,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                 if (!sameClient) {
                     client = null;
                     System.gc();
-                    var error = TRACKER.check(500);
+                    var error = TRACKER.check(tracker, 500);
                     if (error != null) throw error;
                 }
             }
