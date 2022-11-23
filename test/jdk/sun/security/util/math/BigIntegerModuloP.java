@@ -155,6 +155,11 @@ public class BigIntegerModuloP implements IntegerFieldModuloP {
         public void asByteArray(byte[] result) {
             bigIntAsByteArray(v, result);
         }
+
+        @Override
+        public long[] getLimbs() {
+            return null;
+        }
     }
 
     private class ImmutableElement extends Element

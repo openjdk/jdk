@@ -53,7 +53,7 @@ public final class ParkLoops {
     static class Parker implements Runnable {
         static {
             // Reduce the risk of rare disastrous classloading in first call to
-            // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+            // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
             Class<?> ensureLoaded = LockSupport.class;
         }
 
@@ -84,7 +84,7 @@ public final class ParkLoops {
     static class Unparker implements Runnable {
         static {
             // Reduce the risk of rare disastrous classloading in first call to
-            // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+            // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
             Class<?> ensureLoaded = LockSupport.class;
         }
 

@@ -535,7 +535,7 @@ public interface Document {
      * &nbsp; text.setPartialReturn(true);
      * &nbsp; while (nleft &gt; 0) {
      * &nbsp;     doc.getText(offs, nleft, text);
-     * &nbsp;     // do someting with text
+     * &nbsp;     // do something with text
      * &nbsp;     nleft -= text.count;
      * &nbsp;     offs += text.count;
      * &nbsp; }

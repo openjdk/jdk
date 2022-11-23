@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -404,8 +404,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // Generate SEGV here (reference through NULL)
     // and check upper YMM/ZMM bits after it.
     //
-    intx saved_useavx = UseAVX;
-    intx saved_usesse = UseSSE;
+    int saved_useavx = UseAVX;
+    int saved_usesse = UseSSE;
 
     // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
@@ -854,9 +854,6 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 #endif
-  // If the OS doesn't support SSE, we can't use this feature even if the HW does
-  if (!os::supports_sse())
-    _features &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
 
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
@@ -880,10 +877,37 @@ void VM_Version::get_processor_features() {
     UseAVX = 0;
   }
 
+  // UseSSE is set to the smaller of what hardware supports and what
+  // the command line requires.  I.e., you cannot set UseSSE to 2 on
+  // older Pentiums which do not support it.
+  int use_sse_limit = 0;
+  if (UseSSE > 0) {
+    if (UseSSE > 3 && supports_sse4_1()) {
+      use_sse_limit = 4;
+    } else if (UseSSE > 2 && supports_sse3()) {
+      use_sse_limit = 3;
+    } else if (UseSSE > 1 && supports_sse2()) {
+      use_sse_limit = 2;
+    } else if (UseSSE > 0 && supports_sse()) {
+      use_sse_limit = 1;
+    } else {
+      use_sse_limit = 0;
+    }
+  }
+  if (FLAG_IS_DEFAULT(UseSSE)) {
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  } else if (UseSSE > use_sse_limit) {
+    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", UseSSE, use_sse_limit);
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  }
+
   // first try initial setting and detect what we can support
   int use_avx_limit = 0;
   if (UseAVX > 0) {
-    if (UseAVX > 2 && supports_evex()) {
+    if (UseSSE < 4) {
+      // Don't use AVX if SSE is unavailable or has been disabled.
+      use_avx_limit = 0;
+    } else if (UseAVX > 2 && supports_evex()) {
       use_avx_limit = 3;
     } else if (UseAVX > 1 && supports_avx2()) {
       use_avx_limit = 2;
@@ -902,11 +926,12 @@ void VM_Version::get_processor_features() {
     }
   }
   if (UseAVX > use_avx_limit) {
-    warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
+    if (UseSSE < 4) {
+      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
+    } else {
+      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", UseAVX, use_avx_limit);
+    }
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
-  } else if (UseAVX < 0) {
-    warning("UseAVX=%d is not valid, setting it to UseAVX=0", (int) UseAVX);
-    FLAG_SET_DEFAULT(UseAVX, 0);
   }
 
   if (UseAVX < 3) {
@@ -922,6 +947,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VBMI;
     _features &= ~CPU_AVX512_VBMI2;
     _features &= ~CPU_AVX512_BITALG;
+    _features &= ~CPU_AVX512_IFMA;
   }
 
   if (UseAVX < 2)
@@ -953,6 +979,7 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_FLUSHOPT;
       _features &= ~CPU_GFNI;
       _features &= ~CPU_AVX512_BITALG;
+      _features &= ~CPU_AVX512_IFMA;
     }
   }
 
@@ -972,33 +999,6 @@ void VM_Version::get_processor_features() {
   insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
-
-  // UseSSE is set to the smaller of what hardware supports and what
-  // the command line requires.  I.e., you cannot set UseSSE to 2 on
-  // older Pentiums which do not support it.
-  int use_sse_limit = 0;
-  if (UseSSE > 0) {
-    if (UseSSE > 3 && supports_sse4_1()) {
-      use_sse_limit = 4;
-    } else if (UseSSE > 2 && supports_sse3()) {
-      use_sse_limit = 3;
-    } else if (UseSSE > 1 && supports_sse2()) {
-      use_sse_limit = 2;
-    } else if (UseSSE > 0 && supports_sse()) {
-      use_sse_limit = 1;
-    } else {
-      use_sse_limit = 0;
-    }
-  }
-  if (FLAG_IS_DEFAULT(UseSSE)) {
-    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  } else if (UseSSE > use_sse_limit) {
-    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", (int) UseSSE, use_sse_limit);
-    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  } else if (UseSSE < 0) {
-    warning("UseSSE=%d is not valid, setting it to UseSSE=0", (int) UseSSE);
-    FLAG_SET_DEFAULT(UseSSE, 0);
-  }
 
   // Use AES instructions if available.
   if (supports_aes()) {
@@ -1331,6 +1331,18 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // COMPILER2 && ASSERT
+
+#ifdef _LP64
+  if (supports_avx512ifma() && supports_avx512vlbw() && MaxVectorSize >= 64) {
+    if (FLAG_IS_DEFAULT(UsePolyIntrinsics)) {
+      FLAG_SET_DEFAULT(UsePolyIntrinsics, true);
+    }
+  } else
+#endif
+  if (UsePolyIntrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UsePolyIntrinsics, false);
+  }
 
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
@@ -1859,9 +1871,9 @@ void VM_Version::get_processor_features() {
     log->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
     log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    log->print("UseSSE=%d", (int) UseSSE);
+    log->print("UseSSE=%d", UseSSE);
     if (UseAVX > 0) {
-      log->print("  UseAVX=%d", (int) UseAVX);
+      log->print("  UseAVX=%d", UseAVX);
     }
     if (UseAES) {
       log->print("  UseAES=1");
@@ -2896,6 +2908,8 @@ uint64_t VM_Version::feature_flags() {
         result |= CPU_AVX512CD;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512dq != 0)
         result |= CPU_AVX512DQ;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512ifma != 0)
+        result |= CPU_AVX512_IFMA;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512pf != 0)
         result |= CPU_AVX512PF;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512er != 0)
@@ -2989,6 +3003,22 @@ uint64_t VM_Version::feature_flags() {
     if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
       result |= CPU_3DNOW_PREFETCH;
     }
+  }
+
+  // Protection key features.
+  if (_cpuid_info.sef_cpuid7_ecx.bits.pku != 0) {
+    result |= CPU_PKU;
+  }
+  if (_cpuid_info.sef_cpuid7_ecx.bits.ospke != 0) {
+    result |= CPU_OSPKE;
+  }
+
+  // Control flow enforcement (CET) features.
+  if (_cpuid_info.sef_cpuid7_ecx.bits.cet_ss != 0) {
+    result |= CPU_CET_SS;
+  }
+  if (_cpuid_info.sef_cpuid7_edx.bits.cet_ibt != 0) {
+    result |= CPU_CET_IBT;
   }
 
   // Composite features.

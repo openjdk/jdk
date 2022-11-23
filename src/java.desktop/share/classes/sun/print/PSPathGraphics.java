@@ -450,7 +450,7 @@ class PSPathGraphics extends PathGraphics {
                     bgcolor = null;
                 }
                 // if src region extends beyond the image, the "opaque" path
-                // may blit b/g colour (including white) where it shoudn't.
+                // may blit b/g colour (including white) where it shouldn't.
                 if ((srcX+srcWidth > img.getWidth(null) ||
                      srcY+srcHeight > img.getHeight(null))
                     && canDoRedraws()) {

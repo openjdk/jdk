@@ -739,6 +739,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
+  case vmIntrinsics::_poly1305_processBlocks:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -776,6 +777,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorInsert:
   case vmIntrinsics::_VectorExtract:
   case vmIntrinsics::_VectorMaskOp:
+  case vmIntrinsics::_IndexVector:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
     break;

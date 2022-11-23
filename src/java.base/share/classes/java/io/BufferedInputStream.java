@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.misc.InternalLock;
@@ -355,6 +356,7 @@ public class BufferedInputStream extends FilterInputStream {
      * @throws     IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(byte[] b, int off, int len) throws IOException {
         if (lock != null) {
@@ -604,9 +606,15 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private long implTransferTo(OutputStream out) throws IOException {
-        if (getClass() == BufferedInputStream.class
-                && ((count - pos) <= 0) && (markpos == -1)) {
-            return getInIfOpen().transferTo(out);
+        if (getClass() == BufferedInputStream.class && markpos == -1) {
+            int avail = count - pos;
+            if (avail > 0) {
+                // Prevent poisoning and leaking of buf
+                byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
+                out.write(buffer);
+                pos = count;
+            }
+            return avail + getInIfOpen().transferTo(out);
         } else {
             return super.transferTo(out);
         }

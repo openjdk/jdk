@@ -45,7 +45,7 @@ final class XCheckboxMenuItemPeer extends XMenuItemPeer
 
     /************************************************
      *
-     * Implementaion of interface methods
+     * Implementation of interface methods
      *
      ************************************************/
 

@@ -933,7 +933,7 @@ static void ProcessQuad(ProcessHandler* hnd, jfloat* coords, jint* pixelInfo) {
  * Note, b coefficient calculating in the DrawCubic is actually twice the b
  * coefficient seen above.  It's been done for the better accuracy.
  *
- * In our case, initialy K is chosen as 1/(2^DF_CUB_STEPS) this value is taken
+ * In our case, initially K is chosen as 1/(2^DF_CUB_STEPS) this value is taken
  * with FWD_PREC bits precision. This means that we should do 2^DF_CUB_STEPS
  * steps to pass through all the curve.
  *

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/compiler_globals.hpp"
@@ -34,6 +33,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
@@ -1216,6 +1216,19 @@ void MacroAssembler::andps(XMMRegister dst, AddressLiteral src, Register rscratc
 void MacroAssembler::andptr(Register dst, int32_t imm32) {
   LP64_ONLY(andq(dst, imm32)) NOT_LP64(andl(dst, imm32));
 }
+
+#ifdef _LP64
+void MacroAssembler::andq(Register dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    andq(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    andq(dst, Address(rscratch, 0));
+  }
+}
+#endif
 
 void MacroAssembler::atomic_incl(Address counter_addr) {
   lock();
@@ -5104,15 +5117,15 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Reg
   }
 }
 
-void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
@@ -5127,9 +5140,9 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
   access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.
@@ -9105,6 +9118,40 @@ void MacroAssembler::evrord(BasicType type, XMMRegister dst, KRegister mask, XMM
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
 }
+
+void MacroAssembler::evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    evpandq(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    evpandq(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    evporq(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    evporq(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src3), "missing");
+
+  if (reachable(src3)) {
+    vpternlogq(dst, imm8, src2, as_Address(src3), vector_len);
+  } else {
+    lea(rscratch, src3);
+    vpternlogq(dst, imm8, src2, Address(rscratch, 0), vector_len);
+  }
+}
+
 #if COMPILER2_OR_JVMCI
 
 void MacroAssembler::fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,

@@ -67,6 +67,7 @@
  * input.build_osenv
  * input.build_osenv_cpu
  * input.build_osenv_platform
+ * input.build_osenv_version
  *
  * For more complex nested attributes, there is a method "get":
  *
@@ -1077,20 +1078,23 @@ var getJibProfilesDependencies = function (input, common) {
         environment_path: common.boot_jdk_home + "/bin"
     }
 
-    var pandoc_version;
-    if (input.build_cpu == "aarch64") {
-        if (input.build_os == "macosx") {
-            pandoc_version = "2.14.0.2+1.0";
-        } else {
-            pandoc_version = "2.5+1.0";
+    var makeRevision = "4.0+1.0";
+    var makeBinSubDir = "/bin";
+    var makeModule = "gnumake-" + input.build_platform;
+    if (input.build_os == "windows") {
+        makeModule = "gnumake-" + input.build_osenv_platform;
+        if (input.build_osenv == "cygwin") {
+            var versionArray = input.build_osenv_version.split(/\./);
+            var majorVer = parseInt(versionArray[0]);
+            var minorVer = parseInt(versionArray[1]);
+            if (majorVer > 3 || (majorVer == 3 && minorVer >= 3)) {
+                makeRevision = "4.3+1.0";
+            } else {
+                makeBinSubDir = "/cygwin/bin";
+            }
         }
-    } else {
-        pandoc_version = "2.3.1+1.0";
     }
-
-    var makeBinDir = (input.build_os == "windows"
-        ? input.get("gnumake", "install_path") + "/cygwin/bin"
-        : input.get("gnumake", "install_path") + "/bin");
+    var makeBinDir = input.get("gnumake", "install_path") + makeBinSubDir;
 
     var dependencies = {
         boot_jdk: boot_jdk,
@@ -1155,18 +1159,12 @@ var getJibProfilesDependencies = function (input, common) {
         gnumake: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "4.0+1.0",
-
-            module: (input.build_os == "windows"
-                ? "gnumake-" + input.build_osenv_platform
-                : "gnumake-" + input.build_platform),
-
+            revision: makeRevision,
+            module: makeModule,
             configure_args: "MAKE=" + makeBinDir + "/make",
-
             environment: {
                 "MAKE": makeBinDir + "/make"
             },
-
             environment_path: makeBinDir
         },
 
@@ -1193,7 +1191,7 @@ var getJibProfilesDependencies = function (input, common) {
         pandoc: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: pandoc_version,
+            revision: "2.19.2+1.0",
             module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"

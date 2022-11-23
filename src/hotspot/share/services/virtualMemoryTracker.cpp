@@ -323,7 +323,7 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == NULL, "only call once");
   if (level >= NMT_summary) {
     VirtualMemorySummary::initialize();
-    _reserved_regions = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
+    _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
     return (_reserved_regions != NULL);
   }

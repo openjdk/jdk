@@ -110,9 +110,11 @@ class oopDesc;
 
 // Format 32-bit quantities.
 #define INT32_FORMAT             "%"          PRId32
+#define INT32_FORMAT_X           "0x%"        PRIx32
 #define INT32_FORMAT_X_0         "0x%08"      PRIx32
 #define INT32_FORMAT_W(width)    "%"   #width PRId32
 #define UINT32_FORMAT            "%"          PRIu32
+#define UINT32_FORMAT_X          "0x%"        PRIx32
 #define UINT32_FORMAT_X_0        "0x%08"      PRIx32
 #define UINT32_FORMAT_W(width)   "%"   #width PRIu32
 
@@ -369,6 +371,9 @@ inline T byte_size_in_proper_unit(T s) {
     return s;
   }
 }
+
+#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64

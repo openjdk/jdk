@@ -1,4 +1,4 @@
-File-Date: 2022-03-02
+File-Date: 2022-08-08
 %%
 Type: language
 Subtag: aa
@@ -46970,6 +46970,7 @@ Preferred-Value: TL
 %%
 Type: region
 Subtag: TR
+Description: Türkiye
 Description: Turkey
 Added: 2005-10-16
 %%
@@ -47764,6 +47765,19 @@ Added: 2007-08-11
 Prefix: sl-rozaj
 Comments: The dialect of Lipovaz/Lipovec is one of the minor local
   dialects of Resian
+%%
+Type: variant
+Subtag: ltg1929
+Description: The Latgalian language orthography codified in 1929
+Added: 2022-08-05
+Prefix: ltg
+%%
+Type: variant
+Subtag: ltg2007
+Description: The Latgalian language orthography codified in the language
+  law in 2007
+Added: 2022-06-23
+Prefix: ltg
 %%
 Type: variant
 Subtag: luna1918

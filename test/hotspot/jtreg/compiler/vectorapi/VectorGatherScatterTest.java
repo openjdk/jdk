@@ -85,7 +85,7 @@ public class VectorGatherScatterTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "LoadVectorGather", ">= 1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER, ">= 1" })
     public static void testLoadGather() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0, ia, 0);
         av.intoArray(lr, 0);
@@ -99,7 +99,7 @@ public class VectorGatherScatterTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "LoadVectorGatherMasked", ">= 1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" })
     public static void testLoadGatherMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0, ia, 0, mask);
@@ -114,7 +114,7 @@ public class VectorGatherScatterTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "StoreVectorScatter", ">= 1" })
+    @IR(counts = { IRNode.STORE_VECTOR_SCATTER, ">= 1" })
     public static void testStoreScatter() {
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, 0);
         av.intoArray(dr, 0, ia, 0);
@@ -128,7 +128,7 @@ public class VectorGatherScatterTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "StoreVectorScatterMasked", ">= 1" })
+    @IR(counts = { IRNode.STORE_VECTOR_SCATTER_MASKED, ">= 1" })
     public static void testStoreScatterMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, 0);

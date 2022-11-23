@@ -171,6 +171,21 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // Otherwise return JNIHandles::resolve_external_guard(thread).
   static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
+  // Return true if the thread identified with a pair <jt,thr_obj> is current.
+  // A passive carrier thread is not treated as current.
+  static bool is_JavaThread_current(JavaThread* jt, oop thr_obj) {
+    JavaThread* current = JavaThread::current();
+    // jt can be NULL in case of a virtual thread
+    if (jt == NULL || jt != current) {
+      return false;
+    }
+    oop cur_obj = current->jvmti_vthread();
+
+    // cur_obj == NULL is true for normal platform threads only
+    // otherwise it can be virtual or carrier thread.
+    return cur_obj == NULL || cur_obj == thr_obj;
+  }
+
   static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
     jvmtiError err = JVMTI_ERROR_NONE;
     if (thread == NULL) {
@@ -317,9 +332,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
  protected:
   // helper methods for creating arrays of global JNI Handles from local Handles
   // allocated into environment specific storage
-  jobject * new_jobjectArray(int length, Handle *handles);
   jthread * new_jthreadArray(int length, Handle *handles);
-  jthreadGroup * new_jthreadGroupArray(int length, Handle *handles);
+  jthreadGroup * new_jthreadGroupArray(int length, objArrayHandle groups);
 
   // convert to a jni jclass from a non-null Klass*
   jclass get_jni_class_non_null(Klass* k);
@@ -363,7 +377,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jvmtiError get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p);
 
   // enumerates the subgroups in the given thread group
-  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **group_objs_p);
+  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p);
 
   // JVMTI API helper functions which are called when target thread is suspended
   // or at safepoint / thread local handshake.

@@ -598,10 +598,21 @@ public class HtmlDocletWriter {
     /**
      * {@return the link to the given package}
      *
-     * @param packageElement the package to link to.
-     * @param label the label for the link.
+     * @param packageElement the package to link to
+     * @param label the label for the link
      */
     public Content getPackageLink(PackageElement packageElement, Content label) {
+        return getPackageLink(packageElement, label, null);
+    }
+
+    /**
+     * {@return the link to the given package}
+     *
+     * @param packageElement the package to link to
+     * @param label the label for the link
+     * @param fragment the link fragment
+     */
+    public Content getPackageLink(PackageElement packageElement, Content label, String fragment) {
         boolean included = packageElement != null && utils.isIncluded(packageElement);
         if (!included) {
             for (PackageElement p : configuration.packages) {
@@ -619,7 +630,7 @@ public class HtmlDocletWriter {
         }
         DocLink targetLink;
         if (included || packageElement == null) {
-            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY));
+            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY), fragment);
         } else {
             targetLink = getCrossPackageLink(packageElement);
         }
@@ -650,11 +661,23 @@ public class HtmlDocletWriter {
      * @param label tag for the link
      */
     public Content getModuleLink(ModuleElement mdle, Content label) {
+        return getModuleLink(mdle, label, null);
+    }
+
+    /**
+     * {@return a link to module}
+     *
+     * @param mdle the module being documented
+     * @param label tag for the link
+     * @param fragment the link fragment
+     */
+    public Content getModuleLink(ModuleElement mdle, Content label, String fragment) {
         Set<ElementFlag> flags = mdle != null ? utils.elementFlags(mdle)
                                               : EnumSet.noneOf(ElementFlag.class);
         boolean included = utils.isIncluded(mdle);
         if (included) {
-            DocLink targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)));
+            DocLink targetLink;
+            targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
