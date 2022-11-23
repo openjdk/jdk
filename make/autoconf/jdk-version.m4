@@ -105,18 +105,21 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(JDK_RC_NAME)
 
   # The vendor name, if any
-  AC_ARG_WITH(vendor-name, [AS_HELP_STRING([--with-vendor-name],
-      [Set vendor name. Among others, used to set the 'java.vendor'
-       and 'java.vm.vendor' system properties. @<:@not specified@:>@])])
-  if test "x$with_vendor_name" = xyes || test "x$with_vendor_name" = xno; then
-    AC_MSG_ERROR([--with-vendor-name must have a value])
-  elif [ ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-vendor-name contains non-printing characters: $with_vendor_name])
-  elif test "x$with_vendor_name" != x; then
-    # Only set COMPANY_NAME if '--with-vendor-name' was used and is not empty.
-    # Otherwise we will use the value from "branding.conf" included above.
-    COMPANY_NAME="$with_vendor_name"
-  fi
+  # Only set COMPANY_NAME if '--with-vendor-name' was used and is not empty.
+  # Otherwise we will use the value from "branding.conf" included above.
+  UTIL_ARG_WITH(NAME: vendor-name, TYPE: string,
+    RESULT: COMPANY_NAME,
+    DEFAULT: $DEFAULT_COMPANY_NAME,
+    DESC: [Set vendor name. Among othersCOMMA used to set the 'java.vendor'
+       and 'java.vm.vendor' system properties.],
+    DEFAULT_DESC: [not specified],
+    IF_GIVEN: [
+      if test "x$COMPANY_NAME" = x; then
+        AC_MSG_ERROR([--with-vendor-name must have a value])
+      elif [ ! [[ $COMPANY_NAME =~ ^[[:print:]]*$ ]] ]; then
+        AC_MSG_ERROR([--with-vendor-name contains non-printing characters: $COMPANY_NAME])
+      fi
+    ])
   AC_SUBST(COMPANY_NAME)
 
   # The vendor URL, if any
