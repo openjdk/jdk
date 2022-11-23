@@ -322,13 +322,20 @@ class ExceptionTranslation: public StackObj {
         return;
       }
       int res = encode(THREAD, runtimeKlass, buffer, buffer_size);
-      if (_from_env != nullptr && _from_env->has_pending_exception()) {
+      if (_from_env != nullptr && !_from_env->is_hotspot() && _from_env->has_pending_exception()) {
+        // Cannot get name of exception thrown by `encode` as that involves
+        // calling into libjvmci which in turn can raise another exception.
         _from_env->clear_pending_exception();
-        decode(THREAD, runtimeKlass, 0L);
+        decode(THREAD, runtimeKlass, -2L);
         return;
       } else if (HAS_PENDING_EXCEPTION) {
+        Symbol *ex_name = PENDING_EXCEPTION->klass()->name();
         CLEAR_PENDING_EXCEPTION;
-        decode(THREAD, runtimeKlass, 0L);
+        if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+          decode(THREAD, runtimeKlass, -1L);
+        } else {
+          decode(THREAD, runtimeKlass, -2L);
+        }
         return;
       } else if (res < 0) {
         int required_buffer_size = -res;
