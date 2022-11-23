@@ -26,10 +26,6 @@
  * @bug 4636628
  * @summary HttpURLConnection duplicates HTTP GET requests when used with multiple threads
  * @run main MultiThreadTest
- * @run main/othervm MultiThreadTest
- * @run main/othervm MultiThreadTest
- * @run main/othervm MultiThreadTest
- * @run main/othervm MultiThreadTest
 */
 
 /*
@@ -52,7 +48,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.LongStream;
 
 public class MultiThreadTest extends Thread {
 
@@ -250,7 +245,6 @@ public class MultiThreadTest extends Thread {
             }
 
             if (validConnections != cnt) {
-                // these connections are not necessarily unexpected if SLEEP exceeds keep-alive.
                 debug("INFO: got " + (cnt - validConnections) + " unexpected connections");
             }
             if (reqs != threads * requests) {
@@ -260,10 +254,11 @@ public class MultiThreadTest extends Thread {
         } finally {
             debug("waiting for worker to shutdown at " + at() +"ms");
             for (Worker worker : svr.workers()) {
-                // we could call worker.done(); to force the worker
-                // to terminate at this point, but we want to verify
-                // that the client will eventually close the idle
-                // connection. So just join the worker and wait...
+                // We want to verify that the client will eventually
+                // close the idle connections. So just join the worker
+                // and wait... This shouldn't take more than the granularity
+                // of the keep-alive cache timer - so we're not actually
+                // going to have to wait for one full minute here.
                 worker.join(60_000);
             }
         }
@@ -417,12 +412,13 @@ public class MultiThreadTest extends Thread {
         }
 
         /**
-         * Tries to figure out whether this worker might have been idle for more
-         * than the KEEP_ALIVE timeout. This will be true if the worker detected
-         * that the idle timeout was exceeded between two consecutive request, or
-         * if the time between the last reply
-         * @param nanosNow
-         * @return
+         * {@return Whether this worker might have been idle for more
+         * than the KEEP_ALIVE timeout}
+         * This will be true if the worker detected that the idle timeout
+         * was exceeded between two consecutive request, or
+         * if the time between the last reply and `nanosNow` exceeds
+         * the keep-alive time.
+         * @param nanosNow a timestamp in nano seconds
          */
         public boolean mayHaveTimedOut(long nanosNow) {
             // the minimum time elapsed between nanosNow and:
@@ -440,7 +436,7 @@ public class MultiThreadTest extends Thread {
         int readUntil(InputStream in, StringBuilder headers, char[] seq) throws IOException {
             int i=0, count=0;
             long last;
-            while (!done) {
+            while (true) {
                 int c = in.read();
                 last = System.nanoTime();
                 if (count == 0) {
@@ -462,7 +458,6 @@ public class MultiThreadTest extends Thread {
                     i = 0;
                 }
             }
-            return count;
         }
 
         public void run() {
@@ -480,7 +475,7 @@ public class MultiThreadTest extends Thread {
                                     new BufferedOutputStream(
                                                 s.getOutputStream() ));
 
-                for (;!done;) {
+                for (;;) {
                     // read entire request from client
                     int n;
                     StringBuilder headers = new StringBuilder();
@@ -531,7 +526,7 @@ public class MultiThreadTest extends Thread {
                 }
 
             } catch (Exception e) {
-                if (!done) e.printStackTrace();
+                e.printStackTrace();
             } finally {
                 long end = stopTime = System.nanoTime();
                 try {
@@ -542,17 +537,10 @@ public class MultiThreadTest extends Thread {
                             Duration.ofNanos(end - start).toMillis() + "ms, elapsed since accept: " +
                             Duration.ofNanos(end - acceptTime).toMillis() +
                             "ms, timeout exceeded: " + timeoutExceeded +
-                            ", received " + expectedReqs + " genuine requests, " +
+                            ", successfuly handled " + requestHandled + "/" +
+                             expectedReqs + " genuine requests, " +
                             ", mayHaveTimedOut: " + mayHaveTimedOut(end));
             }
         }
 
-        public void done() {
-            done = true;
-            try {
-                s.close();
-            } catch (IOException x) {
-                // ignore
-            }
-        }
     }
