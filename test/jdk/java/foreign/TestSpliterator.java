@@ -151,8 +151,8 @@ public class TestSpliterator {
     public void testHyperAligned() {
         MemorySegment segment = MemorySegment.allocateNative(8, SegmentScope.auto());
         // compute an alignment constraint (in bytes) which exceed that of the native segment
-        long bigAlign = Long.lowestOneBit(segment.address()) << 1;
-        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withBitAlignment(bigAlign)));
+        long bigByteAlign = Long.lowestOneBit(segment.address()) << 1;
+        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withBitAlignment(bigByteAlign * 8)));
     }
 
     static long sumSingle(long acc, MemorySegment segment) {
