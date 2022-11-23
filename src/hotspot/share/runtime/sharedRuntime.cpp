@@ -450,7 +450,7 @@ JRT_END
 
 // Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
 JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  union {jfloat f; juint i;} bits;
+  union {jfloat f; jint i;} bits;
   bits.f = x;
   jint doppel = bits.i;
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
@@ -503,7 +503,7 @@ JRT_END
 JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   // Halffloat format has 1 signbit, 5 exponent bits and
   // 10 significand bits
-  union {jfloat f; juint i;} bits;
+  union {jfloat f; jint i;} bits;
   jint hf_arg = (jint)x;
   jint hf_sign_bit = 0x8000 & hf_arg;
   jint hf_exp_bits = 0x7c00 & hf_arg;
@@ -519,15 +519,15 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   if (hf_exp == -15) {
     // For subnormal values, return 2^-24 * significand bits
     return (sign * (pow(2,-24)) * hf_significand_bits);
-  }else if (hf_exp == 16) {
-   if (hf_significand_bits == 0) {
-     bits.i = 0x7f800000;
-     return sign * bits.f;
-   } else {
-     bits.i = (hf_sign_bit << 16) | 0x7f800000 |
-              (hf_significand_bits << significand_shift);
-     return bits.f;
-   }
+  } else if (hf_exp == 16) {
+    if (hf_significand_bits == 0) {
+      bits.i = 0x7f800000;
+      return sign * bits.f;
+    } else {
+      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
+               (hf_significand_bits << significand_shift);
+      return bits.f;
+    }
   }
 
   // Add the bias of float exponent and shift
