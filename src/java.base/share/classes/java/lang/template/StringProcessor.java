@@ -55,7 +55,7 @@ import jdk.internal.javac.PreviewFeature;
 public interface StringProcessor extends TemplateProcessor<String> {
     /**
      * Constructs a {@link String} based on the template fragments and values in the
-     * supplied {@link StringTemplate stringTemplate} object.
+     * supplied {@link StringTemplate} object.
      *
      * @param stringTemplate  a {@link StringTemplate} instance
      *

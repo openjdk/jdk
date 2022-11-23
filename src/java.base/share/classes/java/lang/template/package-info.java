@@ -49,17 +49,17 @@
  * The expression {@code STR."The result of adding \{x} and \{y} is \{x + y}."}
  * above is an example of a <em>process template expression</em>. A process template
  * expression consists of a <em>processor expression</em> and a <em>processor
- * argument</em> separated by a dot (period). A proper processor expression evaluates
- * to an instance of type {@link java.lang.template.ValidatingProcessor}. A proper
+ * argument</em> separated by a dot (period). A processor expression evaluates
+ * to an instance of type {@link java.lang.template.ValidatingProcessor}. A
  * processor argument is a string template that is represented by an instance of
- *{@link java.lang.template.StringTemplate}. The end result of the process template
+ * {@link java.lang.template.StringTemplate}. The end result of the process template
  * expression is the value that is produced by invoking the processor's
- *{@link java.lang.template.ValidatingProcessor#process(StringTemplate)}
+ * {@link java.lang.template.ValidatingProcessor#process(StringTemplate)}
  * method of with the processor argument. Improper processor expressions or
  * improper processor arguments result in compilation errors.
  * <p>
- * In the example, {@code STR."The result of adding \{x} and \{y} is \{x + y}."},
- * {@code STR} is the processor that implements string interpolation with its
+ * In the example above, {@code STR} is the processor that implements string
+ * interpolation with it
  * {@link java.lang.template.ValidatingProcessor#process(StringTemplate)} method.
  * <p>
  * The string template in the example, represented by a
@@ -72,19 +72,21 @@
  * See {@link java.lang.template.StringTemplate} for examples and details.
  * <p>
  * String literals and text blocks can be used as proper processor arguments as
- * well. This is automatically facilitated by the Java compiler converted the
+ * well. This is automatically facilitated by the Java compiler converting the
  * strings to {@link java.lang.template.StringTemplate StringTemplate} using the
  * {@link java.lang.template.StringTemplate#of(String)} method.
  * <p>
- * Users can create their own template processors by implementing either
+ * Users can create their own template processors by implementing one of
  * {@link java.lang.template.ValidatingProcessor},
  * {@link java.lang.template.TemplateProcessor} or
  * {@link java.lang.template.StringProcessor} interfaces.
- * See {@link java.lang.template.ValidatingProcessor} for examples and details.
+ * For more examples and details see {@link java.lang.template.StringTemplate} and
+ * {@link java.lang.template.ValidatingProcessor}.
  *
  * @see java.lang.template.StringTemplate
  * @see java.lang.template.ValidatingProcessor
  * @see java.lang.template.TemplateProcessor
+ *
  * @see java.lang.template.StringTemplate
  *
  * @since 20

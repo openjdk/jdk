@@ -25,6 +25,7 @@
 
 package java.lang.template;
 
+import java.lang.Object;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,12 +59,12 @@ import jdk.internal.javac.PreviewFeature;
  * List<String> fragments = st.fragments();
  * List<Object> values = st.values();
  * }
- * {@code fragments} will be equivalent to {@code List.of("", " + ", " = ", "")},
- * which includes the empty first and last fragments. {@code values} will be the
+ * The value of {@code fragments} will be equivalent to {@code List.of("", " + ", " = ", "")},
+ * which includes the empty first and last fragments. The {@code values} will be the
  * equivalent of {@code List.of(10, 20, 30)}.
  * <p>
- * The following code contains a template expression with the same template but a
- * different template processor:
+ * The following code contains a template expression with the same template but with a
+ * different template processor, {@code STR}:
  * {@snippet :
  * int x = 10;
  * int y = 20;
@@ -72,8 +73,8 @@ import jdk.internal.javac.PreviewFeature;
  * When the template expression is evaluated, an instance of {@link StringTemplate} is
  * produced that returns the same lists from {@link StringTemplate#fragments()} and
  * {@link StringTemplate#values()} as shown above. The {@link StringTemplate#STR} template
- * processor uses these lists to yield an interpolated string. {@code s} will be equivalent to
- * {@code "10 + 20 = 30"}.
+ * processor uses these lists to yield an interpolated string. the value of {@code s} will
+ * be equivalent to {@code "10 + 20 = 30"}.
  * <p>
  * The {@code interpolate()} method provides a direct way to perform string interpolation
  * of a {@link StringTemplate}. Template processors can use the following code pattern:
@@ -160,7 +161,11 @@ public interface StringTemplate {
      * StringTemplate st = RAW."The student \{student} is in \{teacher}'s classroom.";
      * String result = st.interpolate(); // @highlight substring="interpolate()"
      * }
-     * {@code result} will be equivalent to {@code "The student Mary is in Johnson's classroom."}
+     * In the above example, the value of  {@code result} will be
+     * {@code "The student Mary is in Johnson's classroom."}. This is
+     * produced by the interleaving concatenation of fragments and values from the supplied
+     * {@link StringTemplate}. To accommodate concatenation, values are converted to strings
+     * as if invoking {@link String#valueOf(Object)}.
      *
      * @return interpolation of this {@link StringTemplate}
      */
@@ -262,7 +267,8 @@ public interface StringTemplate {
 
     /**
      * Creates a string that interleaves the elements of values between the
-     * elements of fragments.
+     * elements of fragments. To accommodate interpolation, values are converted to strings
+     * as if invoking {@link String#valueOf(Object)}.
      *
      * @param fragments  list of String fragments
      * @param values     list of expression values
@@ -325,6 +331,10 @@ public interface StringTemplate {
      * int y = 20;
      * String result = STR."\{x} + \{y} = \{x + y}"; // @highlight substring="STR"
      * }
+     * In the above example, the value of {@code result} will be {@code "10 + 20 = 30"}. This is
+     * produced by the interleaving concatenation of fragments and values from the supplied
+     * {@link StringTemplate}. To accommodate concatenation, values are converted to strings
+     * as if invoking {@link String#valueOf(Object)}.
      * @implNote {@link StringTemplate#STR} is statically imported implicitly into every
      * Java compilation unit.<p>The result of interpolation is not interned.
      */

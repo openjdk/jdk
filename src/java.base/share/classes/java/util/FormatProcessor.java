@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@linkplain ValidatingProcessor template processor} constructs a {@link String}
+ * This {@linkplain StringProcessor template processor} constructs a {@link String}
  * result using {@link Formatter}. Unlike {@link Formatter}, {@link FormatProcessor} uses
  * the value from the embedded expression that follows immediately after the
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
@@ -193,7 +193,6 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * the embedded expression that follows immediately after the
      * <a href="../../util/Formatter.html#syntax">format specifier</a>.
      * StringTemplate expressions without a preceeding specifier, use "%s" by
-
      * Example: {@snippet :
      * int x = 123;
      * int y = 987;
