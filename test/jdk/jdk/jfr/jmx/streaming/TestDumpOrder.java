@@ -43,7 +43,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
  * @key jfr
- * @summary Tests that evenst arrive in the same order they were comitted
+ * @summary Tests that chunks arrive in the same order they were committed
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.streaming.TestDumpOrder
@@ -78,7 +78,6 @@ public class TestDumpOrder {
                     ie.printStackTrace();
                 }
             });
-            rs.setOrdered(true);
             rs.startAsync();
             long counter = 0;
             for (int i = 0; i < 10; i++) {
@@ -97,32 +96,31 @@ public class TestDumpOrder {
             }
             Path file = Path.of("events.jfr");
             // Wait for most (but not all) chunk files to be downloaded
-            // before dumping
+            // before invoking dump()
             awaitChunkFiles(directory);
-            rs.dump(file);
-            // release consumer thread
+            // To stress the implementation, release consumer thread
+            // during the dump
             dumpLatch.countDown();
-            // Print event order for debugging purposes
+            rs.dump(file);
             List<RecordedEvent> events = RecordingFile.readAllEvents(file);
-            for (var event : events) {
-                System.out.println(event);
+            if (events.isEmpty()) {
+                throw new AssertionError("No events found");
             }
+            // Print events for debugging purposes
+            events.forEach(System.out::println);
             long expected = 0;
-            for (var event : RecordingFile.readAllEvents(file)) {
+            for (var event : events) {
                 long value = event.getLong("id");
                 if (value != expected) {
                     throw new Exception("Expected " + expected + ", got " + value);
                 }
-                expected = value + 1;
+                expected++;
             }
         }
     }
 
     private static void awaitChunkFiles(Path directory) throws Exception {
-        while (true) {
-            if (Files.list(directory).count() > 6) {
-                return;
-            }
+        while (Files.list(directory).count() < 7) {
             Thread.sleep(10);
         }
     }
