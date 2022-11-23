@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -75,9 +76,6 @@ public class MultiThreadTest extends Thread {
 
     // Set to true after all requests have been sent
     static final AtomicBoolean DONE = new AtomicBoolean();
-    // The time at which the clients have received the last
-    // response (last response byte has been read).
-    static final AtomicLong END = new AtomicLong();
 
     void doRequest(String uri) throws Exception {
         URL url = new URL(uri + "?foo="+reqnum.getAndIncrement());
@@ -95,19 +93,16 @@ public class MultiThreadTest extends Thread {
         http.disconnect();
     }
 
-    String uri;
-    byte[] b;
-    int requests;
+    final String uri;
+    final byte[] b;
+    final int requests;
+    final CountDownLatch countDown;
 
-    MultiThreadTest(String authority, int requests) throws Exception {
+    MultiThreadTest(String authority, int requests, CountDownLatch latch) throws Exception {
+        countDown = latch;
         uri = "http://" + authority + "/foo.html";
-
         b = new byte [256];
         this.requests = requests;
-
-        synchronized (threadlock) {
-            threadCounter ++;
-        }
     }
 
     public void run() {
@@ -123,13 +118,7 @@ public class MultiThreadTest extends Thread {
         } catch (Exception e) {
             throw new RuntimeException (e.getMessage());
         } finally {
-            synchronized (threadlock) {
-                threadCounter --;
-                if (threadCounter == 0) {
-                    END.set(System.nanoTime());
-                    threadlock.notifyAll();
-                }
-            }
+            countDown.countDown();
         }
         debug("client: end at " + at() + "ms, thread duration "
                 + Duration.ofNanos(System.nanoTime() - start).toMillis() + "ms");
@@ -150,7 +139,6 @@ public class MultiThreadTest extends Thread {
 
     public static void main(String args[]) throws Exception {
         long start = System.nanoTime();
-        END.set(start);
 
         int x = 0, arg_len = args.length;
         int requests = 20;
@@ -171,26 +159,23 @@ public class MultiThreadTest extends Thread {
         ss.bind(new InetSocketAddress(loopback, 0));
         Server svr = new Server(ss);
         svr.start();
+        var latch = new CountDownLatch(threads);
 
         MAIN_START = System.nanoTime();
         try {
             Object lock = MultiThreadTest.getLock();
             List<MultiThreadTest> tests = new ArrayList<>();
-            synchronized (lock) {
-                for (int i = 0; i < threads; i++) {
-                    MultiThreadTest t = new MultiThreadTest(svr.getAuthority(), requests);
-                    tests.add(t);
-                    t.start();
-                }
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                }
+            for (int i = 0; i < threads; i++) {
+                MultiThreadTest t = new MultiThreadTest(svr.getAuthority(), requests, latch);
+                tests.add(t);
+                t.start();
             }
 
+            latch.await();
+            long end = System.nanoTime();
             DONE.compareAndSet(false, true);
-            END.compareAndSet(start, System.nanoTime()); // sets END if not set.
-            long end = END.get();
+            for (var test : tests) test.join();
+
             MultiThreadTest.debug("DONE at " + at(end) + "ms");
 
             // shutdown server - we're done.
