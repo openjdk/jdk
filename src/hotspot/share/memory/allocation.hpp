@@ -138,7 +138,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 /*
  * Memory types
  */
-enum class MEMFLAGS {
+enum class MEMFLAGS : uint8_t  {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
