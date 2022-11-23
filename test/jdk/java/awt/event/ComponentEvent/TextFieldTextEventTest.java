@@ -33,6 +33,7 @@ import java.awt.event.KeyEvent;
 /*
  * @test
  * @key headful
+ * @bug 8297489
  * @summary Verify the content changes of a TextField via TextListener.
  * @run main TextFieldTextEventTest
  */
