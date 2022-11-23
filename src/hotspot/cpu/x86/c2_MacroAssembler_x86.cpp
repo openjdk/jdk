@@ -947,8 +947,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     bind  (Stacked);
     if (UseFastLocking) {
       mov(boxReg, tmpReg);
-      fast_unlock_impl(objReg, boxReg, tmpReg, DONE_LABEL);
-      xorptr(rax, rax); // Set ZF = 1 (success)
+      fast_unlock_impl(objReg, boxReg, tmpReg, NO_COUNT);
+      jmp(COUNT);
     } else {
       movptr(tmpReg, Address (boxReg, 0));      // re-fetch
       lock();
