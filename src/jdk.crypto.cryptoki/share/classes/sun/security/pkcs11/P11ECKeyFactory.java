@@ -91,8 +91,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
 
     // Used by ECDH KeyAgreement
     static byte[] getEncodedPublicValue(PublicKey key) throws InvalidKeyException {
-        if (key instanceof ECPublicKey) {
-            ECPublicKey ecKey = (ECPublicKey)key;
+        if (key instanceof ECPublicKey ecKey) {
             ECPoint w = ecKey.getW();
             ECParameterSpec params = ecKey.getParams();
             return ECUtil.encodePoint(w, params.getCurve());
@@ -105,8 +104,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
 
     PublicKey implTranslatePublicKey(PublicKey key) throws InvalidKeyException {
         try {
-            if (key instanceof ECPublicKey) {
-                ECPublicKey ecKey = (ECPublicKey)key;
+            if (key instanceof ECPublicKey ecKey) {
                 return generatePublic(
                     ecKey.getW(),
                     ecKey.getParams()
@@ -134,8 +132,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
     PrivateKey implTranslatePrivateKey(PrivateKey key)
             throws InvalidKeyException {
         try {
-            if (key instanceof ECPrivateKey) {
-                ECPrivateKey ecKey = (ECPrivateKey)key;
+            if (key instanceof ECPrivateKey ecKey) {
                 return generatePrivate(
                     ecKey.getS(),
                     ecKey.getParams()
@@ -174,7 +171,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
                         ("Could not create EC public key", e);
             }
         }
-        if (keySpec instanceof ECPublicKeySpec == false) {
+        if (!(keySpec instanceof ECPublicKeySpec)) {
             throw new InvalidKeySpecException("Only ECPublicKeySpec and "
                 + "X509EncodedKeySpec supported for EC public keys");
         }
@@ -204,7 +201,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
                         ("Could not create EC private key", e);
             }
         }
-        if (keySpec instanceof ECPrivateKeySpec == false) {
+        if (!(keySpec instanceof ECPrivateKeySpec)) {
             throw new InvalidKeySpecException("Only ECPrivateKeySpec and "
                 + "PKCS8EncodedKeySpec supported for EC private keys");
         }

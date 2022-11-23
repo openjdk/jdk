@@ -134,12 +134,11 @@ abstract class P11KeyFactory extends KeyFactorySpi {
         if (key == null) {
             throw new InvalidKeyException("Key must not be null");
         }
-        if (key.getAlgorithm().equals(this.algorithm) == false) {
+        if (!key.getAlgorithm().equals(this.algorithm)) {
             throw new InvalidKeyException
                 ("Key algorithm must be " + algorithm);
         }
-        if (key instanceof P11Key) {
-            P11Key p11Key = (P11Key)key;
+        if (key instanceof P11Key p11Key) {
             if (p11Key.token == token) {
                 // already a key of this token, no need to translate
                 return key;

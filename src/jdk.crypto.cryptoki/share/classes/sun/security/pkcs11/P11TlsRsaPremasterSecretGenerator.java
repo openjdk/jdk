@@ -83,12 +83,10 @@ final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
+        if (!(params instanceof TlsRsaPremasterSecretParameterSpec spec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
 
-        TlsRsaPremasterSecretParameterSpec spec =
-            (TlsRsaPremasterSecretParameterSpec) params;
         int tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
 
         if ((tlsVersion == 0x0300 && !supportSSLv3) ||

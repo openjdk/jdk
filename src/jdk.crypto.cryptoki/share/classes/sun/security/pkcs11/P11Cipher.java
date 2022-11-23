@@ -226,18 +226,17 @@ final class P11Cipher extends CipherSpi {
     private int parseMode(String mode) throws NoSuchAlgorithmException {
         mode = mode.toUpperCase(Locale.ENGLISH);
         int result;
-        if (mode.equals("ECB")) {
-            result = MODE_ECB;
-        } else if (mode.equals("CBC")) {
-            if (blockSize == 0) {
-                throw new NoSuchAlgorithmException
-                        ("CBC mode not supported with stream ciphers");
+        switch (mode) {
+            case "ECB" -> result = MODE_ECB;
+            case "CBC" -> {
+                if (blockSize == 0) {
+                    throw new NoSuchAlgorithmException
+                            ("CBC mode not supported with stream ciphers");
+                }
+                result = MODE_CBC;
             }
-            result = MODE_CBC;
-        } else if (mode.equals("CTR")) {
-            result = MODE_CTR;
-        } else {
-            throw new NoSuchAlgorithmException("Unsupported mode " + mode);
+            case "CTR" -> result = MODE_CTR;
+            default -> throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
         return result;
     }
@@ -321,7 +320,7 @@ final class P11Cipher extends CipherSpi {
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         byte[] ivValue;
         if (params != null) {
-            if (params instanceof IvParameterSpec == false) {
+            if (!(params instanceof IvParameterSpec)) {
                 throw new InvalidAlgorithmParameterException
                         ("Only IvParameterSpec supported");
             }
@@ -364,19 +363,13 @@ final class P11Cipher extends CipherSpi {
             throw new InvalidKeyException("Key size is invalid");
         }
         switch (opmode) {
-            case Cipher.ENCRYPT_MODE:
-                encrypt = true;
-                break;
-            case Cipher.DECRYPT_MODE:
-                encrypt = false;
-                break;
-            case Cipher.WRAP_MODE:
-            case Cipher.UNWRAP_MODE:
-                throw new UnsupportedOperationException
-                        ("Unsupported mode: " + opmode);
-            default:
+            case Cipher.ENCRYPT_MODE -> encrypt = true;
+            case Cipher.DECRYPT_MODE -> encrypt = false;
+            case Cipher.WRAP_MODE, Cipher.UNWRAP_MODE -> throw new UnsupportedOperationException
+                    ("Unsupported mode: " + opmode);
+            default ->
                 // should never happen; checked by Cipher.init()
-                throw new AssertionError("Unknown mode: " + opmode);
+                    throw new AssertionError("Unknown mode: " + opmode);
         }
         if (blockMode == MODE_ECB) { // ECB or stream cipher
             if (iv != null) {
@@ -390,7 +383,7 @@ final class P11Cipher extends CipherSpi {
             }
         } else { // MODE_CBC or MODE_CTR
             if (iv == null) {
-                if (encrypt == false) {
+                if (!encrypt) {
                     String exMsg =
                         (blockMode == MODE_CBC ?
                          "IV must be specified for decryption in CBC mode" :

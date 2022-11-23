@@ -53,7 +53,7 @@ class Token implements Serializable {
 
     // how often to check if the token is still present (in ms)
     // this is different from checking if a token has been inserted,
-    // that is done in SunPKCS11. Currently 50 ms.
+    // that is done in SunPKCS11. Currently, 50 ms.
     private static final long CHECK_INTERVAL = 50;
 
     final SunPKCS11 provider;
@@ -167,8 +167,7 @@ class Token implements Serializable {
         privateCache = new KeyCache();
         templateManager = config.getTemplateManager();
         explicitCancel = config.getExplicitCancel();
-        mechInfoMap =
-            new ConcurrentHashMap<Long, CK_MECHANISM_INFO>(10);
+        mechInfoMap = new ConcurrentHashMap<>(10);
     }
 
     boolean isWriteProtected() {
@@ -241,7 +240,7 @@ class Token implements Serializable {
     // ensure that we are logged in
     // call provider.login() if not
     void ensureLoggedIn(Session session) throws PKCS11Exception, LoginException {
-        if (isLoggedIn(session) == false) {
+        if (!isLoggedIn(session)) {
             provider.login(null, null);
         }
     }
@@ -249,14 +248,14 @@ class Token implements Serializable {
     // return whether this token object is valid (i.e. token not removed)
     // returns value from last check, does not perform new check
     boolean isValid() {
-        if (removable == false) {
+        if (!removable) {
             return true;
         }
         return valid;
     }
 
     void ensureValid() {
-        if (isValid() == false) {
+        if (!isValid()) {
             throw new ProviderException("Token has been removed");
         }
     }
@@ -264,10 +263,10 @@ class Token implements Serializable {
     // return whether a token is present (i.e. token not removed)
     // returns cached value if current, otherwise performs new check
     boolean isPresent(long sessionID) {
-        if (removable == false) {
+        if (!removable) {
             return true;
         }
-        if (valid == false) {
+        if (!valid) {
             return false;
         }
         long time = System.currentTimeMillis();
@@ -292,7 +291,7 @@ class Token implements Serializable {
                     }
                     valid = ok;
                     lastPresentCheck = System.currentTimeMillis();
-                    if (ok == false) {
+                    if (!ok) {
                         destroy();
                     }
                 }
@@ -417,7 +416,7 @@ class Token implements Serializable {
             SecureRandom random = JCAUtil.getSecureRandom();
             tokenId = new byte[20];
             random.nextBytes(tokenId);
-            serializedTokens.add(new WeakReference<Token>(this));
+            serializedTokens.add(new WeakReference<>(this));
         }
         return tokenId;
     }
@@ -426,11 +425,10 @@ class Token implements Serializable {
     // NOTE that elements are never removed from this list
     // the assumption is that the number of tokens that are serialized
     // is relatively small
-    private static final List<Reference<Token>> serializedTokens =
-        new ArrayList<Reference<Token>>();
+    private static final List<Reference<Token>> serializedTokens = new ArrayList<>();
 
     private Object writeReplace() throws ObjectStreamException {
-        if (isValid() == false) {
+        if (!isValid()) {
             throw new NotSerializableException("Token has been removed");
         }
         return new TokenRep(this);

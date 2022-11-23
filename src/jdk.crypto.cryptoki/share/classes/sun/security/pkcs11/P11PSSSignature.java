@@ -71,8 +71,7 @@ final class P11PSSSignature extends SignatureSpi {
     private static final boolean DEBUG = false;
 
     // mappings of digest algorithms and their output length in bytes
-    private static final Hashtable<String, Integer> DIGEST_LENGTHS =
-        new Hashtable<String, Integer>();
+    private static final Hashtable<String, Integer> DIGEST_LENGTHS = new Hashtable<>();
 
     static {
         DIGEST_LENGTHS.put("SHA-1", 20);
@@ -173,32 +172,31 @@ final class P11PSSSignature extends SignatureSpi {
         this.mdAlg = (idx == -1 ?
                 null : toStdName(algorithm.substring(0, idx)));
 
-        switch ((int)mechId) {
-        case (int)CKM_SHA1_RSA_PKCS_PSS:
-        case (int)CKM_SHA224_RSA_PKCS_PSS:
-        case (int)CKM_SHA256_RSA_PKCS_PSS:
-        case (int)CKM_SHA384_RSA_PKCS_PSS:
-        case (int)CKM_SHA512_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_224_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_256_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_384_RSA_PKCS_PSS:
-        case (int)CKM_SHA3_512_RSA_PKCS_PSS:
-            type = T_UPDATE;
-            this.md = null;
-            break;
-        case (int)CKM_RSA_PKCS_PSS:
-            // check if the digest algo is supported by underlying PKCS11 lib
-            if (this.mdAlg != null && token.getMechanismInfo
-                    (Functions.getHashMechId(this.mdAlg)) == null) {
-                throw new NoSuchAlgorithmException("Unsupported algorithm: " +
-                        algorithm);
+        switch ((int) mechId) {
+            case (int) CKM_SHA1_RSA_PKCS_PSS,
+                 (int) CKM_SHA224_RSA_PKCS_PSS,
+                 (int) CKM_SHA256_RSA_PKCS_PSS,
+                 (int) CKM_SHA384_RSA_PKCS_PSS,
+                 (int) CKM_SHA512_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_224_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_256_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_384_RSA_PKCS_PSS,
+                 (int) CKM_SHA3_512_RSA_PKCS_PSS -> {
+                type = T_UPDATE;
+                this.md = null;
             }
-            this.md = (this.mdAlg == null ? null :
-                    MessageDigest.getInstance(this.mdAlg));
-            type = T_DIGEST;
-            break;
-        default:
-            throw new ProviderException("Unsupported mechanism: " + mechId);
+            case (int) CKM_RSA_PKCS_PSS -> {
+                // check if the digest algo is supported by underlying PKCS11 lib
+                if (this.mdAlg != null && token.getMechanismInfo
+                        (Functions.getHashMechId(this.mdAlg)) == null) {
+                    throw new NoSuchAlgorithmException("Unsupported algorithm: " +
+                            algorithm);
+                }
+                this.md = (this.mdAlg == null ? null :
+                        MessageDigest.getInstance(this.mdAlg));
+                type = T_DIGEST;
+            }
+            default -> throw new ProviderException("Unsupported mechanism: " + mechId);
         }
     }
 
@@ -235,7 +233,7 @@ final class P11PSSSignature extends SignatureSpi {
                     this.mdAlg, "MGF1", this.mdAlg, sigParams.getSaltLength()));
         }
 
-        if (initialized == false) {
+        if (!initialized) {
             try {
                 initialize();
             } catch (ProviderException pe) {
@@ -413,12 +411,11 @@ final class P11PSSSignature extends SignatureSpi {
         if (p == null) {
             throw new InvalidAlgorithmParameterException("PSS Parameter required");
         }
-        if (!(p instanceof PSSParameterSpec)) {
+        if (!(p instanceof PSSParameterSpec params)) {
             throw new InvalidAlgorithmParameterException
                 ("Only PSSParameterSpec is supported");
         }
         // no need to validate again if same as current signature parameters
-        PSSParameterSpec params = (PSSParameterSpec) p;
         if (params == this.sigParams) return;
 
         String digestAlgorithm = params.getDigestAlgorithm();
@@ -615,42 +612,43 @@ final class P11PSSSignature extends SignatureSpi {
         }
         isActive = true;
         switch (type) {
-        case T_UPDATE:
-            if (byteBuffer instanceof DirectBuffer == false) {
-                // cannot do better than default impl
-                super.engineUpdate(byteBuffer);
-                return;
-            }
-            long addr = ((DirectBuffer)byteBuffer).address();
-            int ofs = byteBuffer.position();
-            try {
-                if (mode == M_SIGN) {
-                    if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
-                    token.p11.C_SignUpdate
-                        (session.id(), addr + ofs, null, 0, len);
-                } else {
-                    if (DEBUG) System.out.println(this + ": Calling C_VerifyUpdate");
-                    token.p11.C_VerifyUpdate
-                        (session.id(), addr + ofs, null, 0, len);
+            case T_UPDATE -> {
+                if (byteBuffer instanceof DirectBuffer == false) {
+                    // cannot do better than default impl
+                    super.engineUpdate(byteBuffer);
+                    return;
                 }
+                long addr = ((DirectBuffer) byteBuffer).address();
+                int ofs = byteBuffer.position();
+                try {
+                    if (mode == M_SIGN) {
+                        if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
+                        token.p11.C_SignUpdate
+                                (session.id(), addr + ofs, null, 0, len);
+                    } else {
+                        if (DEBUG) System.out.println(this + ": Calling C_VerifyUpdate");
+                        token.p11.C_VerifyUpdate
+                                (session.id(), addr + ofs, null, 0, len);
+                    }
+                    bytesProcessed += len;
+                    byteBuffer.position(ofs + len);
+                } catch (PKCS11Exception e) {
+                    reset(false);
+                    throw new ProviderException("Update failed", e);
+                }
+            }
+            case T_DIGEST -> {
+                // should not happen as this should be covered by earlier checks
+                if (md == null) {
+                    throw new ProviderException("PSS Parameters required");
+                }
+                md.update(byteBuffer);
                 bytesProcessed += len;
-                byteBuffer.position(ofs + len);
-            } catch (PKCS11Exception e) {
+            }
+            default -> {
                 reset(false);
-                throw new ProviderException("Update failed", e);
+                throw new ProviderException("Internal error");
             }
-            break;
-        case T_DIGEST:
-            // should not happen as this should be covered by earlier checks
-            if (md == null) {
-                throw new ProviderException("PSS Parameters required");
-            }
-            md.update(byteBuffer);
-            bytesProcessed += len;
-            break;
-        default:
-            reset(false);
-            throw new ProviderException("Internal error");
         }
     }
 

@@ -83,7 +83,7 @@ final class Session implements Comparable<Session> {
     }
 
     long id() {
-        if (token.isPresent(this.id) == false) {
+        if (!token.isPresent(this.id)) {
             throw new ProviderException("Token has been removed");
         }
         lastAccess = System.currentTimeMillis();

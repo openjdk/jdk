@@ -85,42 +85,23 @@ final class P11Mac extends MacSpi {
         this.token = token;
         this.algorithm = algorithm;
         Long params = null;
-        switch ((int)mechanism) {
-        case (int)CKM_MD5_HMAC:
-            macLength = 16;
-            break;
-        case (int)CKM_SHA_1_HMAC:
-            macLength = 20;
-            break;
-        case (int)CKM_SHA224_HMAC:
-        case (int)CKM_SHA512_224_HMAC:
-        case (int)CKM_SHA3_224_HMAC:
-            macLength = 28;
-            break;
-        case (int)CKM_SHA256_HMAC:
-        case (int)CKM_SHA512_256_HMAC:
-        case (int)CKM_SHA3_256_HMAC:
-            macLength = 32;
-            break;
-        case (int)CKM_SHA384_HMAC:
-        case (int)CKM_SHA3_384_HMAC:
-            macLength = 48;
-            break;
-        case (int)CKM_SHA512_HMAC:
-        case (int)CKM_SHA3_512_HMAC:
-            macLength = 64;
-            break;
-        case (int)CKM_SSL3_MD5_MAC:
-            macLength = 16;
-            params = Long.valueOf(16);
-            break;
-        case (int)CKM_SSL3_SHA1_MAC:
-            macLength = 20;
-            params = Long.valueOf(20);
-            break;
-        default:
-            throw new ProviderException("Unknown mechanism: " + mechanism);
-        }
+        macLength = switch ((int) mechanism) {
+            case (int) CKM_MD5_HMAC -> 16;
+            case (int) CKM_SHA_1_HMAC -> 20;
+            case (int) CKM_SHA224_HMAC, (int) CKM_SHA512_224_HMAC, (int) CKM_SHA3_224_HMAC -> 28;
+            case (int) CKM_SHA256_HMAC, (int) CKM_SHA512_256_HMAC, (int) CKM_SHA3_256_HMAC -> 32;
+            case (int) CKM_SHA384_HMAC, (int) CKM_SHA3_384_HMAC -> 48;
+            case (int) CKM_SHA512_HMAC, (int) CKM_SHA3_512_HMAC -> 64;
+            case (int) CKM_SSL3_MD5_MAC -> {
+                params = Long.valueOf(16);
+                yield 16;
+            }
+            case (int) CKM_SSL3_SHA1_MAC -> {
+                params = Long.valueOf(20);
+                yield 20;
+            }
+            default -> throw new ProviderException("Unknown mechanism: " + mechanism);
+        };
         ckMechanism = new CK_MECHANISM(mechanism, params);
     }
 
@@ -265,11 +246,11 @@ final class P11Mac extends MacSpi {
             if (len <= 0) {
                 return;
             }
-            if (byteBuffer instanceof DirectBuffer == false) {
+            if (!(byteBuffer instanceof DirectBuffer directBuffer)) {
                 super.engineUpdate(byteBuffer);
                 return;
             }
-            long addr = ((DirectBuffer)byteBuffer).address();
+            long addr = directBuffer.address();
             int ofs = byteBuffer.position();
             token.p11.C_SignUpdate(session.id(), addr + ofs, null, 0, len);
             byteBuffer.position(ofs + len);
