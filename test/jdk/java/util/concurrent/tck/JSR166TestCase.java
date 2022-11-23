@@ -513,7 +513,8 @@ public class JSR166TestCase extends TestCase {
     public static boolean atLeastJava14() { return JAVA_CLASS_VERSION >= 58.0; }
     public static boolean atLeastJava15() { return JAVA_CLASS_VERSION >= 59.0; }
     public static boolean atLeastJava16() { return JAVA_CLASS_VERSION >= 60.0; }
-    public static boolean atLeastJava17() { return JAVA_CLASS_VERSION >= 61.0; }
+    public static boolean atLeastJava19() { return JAVA_CLASS_VERSION >= 63.0; }
+    public static boolean atLeastJava20() { return JAVA_CLASS_VERSION >= 64.0; }
 
     /**
      * Collects all JSR166 unit tests as one suite.
@@ -633,12 +634,20 @@ public class JSR166TestCase extends TestCase {
             addNamedTestClasses(suite, java9TestClassNames);
         }
 
-        if (atLeastJava17()) {
-            String[] java17TestClassNames = {
+        if (atLeastJava19()) {
+            String[] java19TestClassNames = {
                 "ForkJoinPool19Test",
             };
-            addNamedTestClasses(suite, java17TestClassNames);
+            addNamedTestClasses(suite, java19TestClassNames);
         }
+
+        if (atLeastJava20()) {
+            String[] java20TestClassNames = {
+                "ForkJoinPool20Test",
+            };
+            addNamedTestClasses(suite, java20TestClassNames);
+        }
+
         return suite;
     }
 
