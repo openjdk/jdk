@@ -33,7 +33,7 @@ import jdk.internal.javac.PreviewFeature;
  * Digits provides a fast methodology for converting integers and longs to
  * ASCII strings.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.OctalDigits {

@@ -42,7 +42,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @implNote This interface is sealed to only allow standard processors.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public sealed interface ProcessorLinkage permits FormatProcessor {

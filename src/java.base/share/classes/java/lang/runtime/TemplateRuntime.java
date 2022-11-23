@@ -58,7 +58,7 @@ import jdk.internal.javac.PreviewFeature;
  * The {@link TemplateRuntime#newLargeStringTemplate} bootstrap method is used
  * to bind to specialized processors that implement {@link ProcessorLinkage}.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class TemplateRuntime {

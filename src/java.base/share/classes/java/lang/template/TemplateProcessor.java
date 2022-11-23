@@ -47,7 +47,7 @@ import jdk.internal.javac.PreviewFeature;
  * @see java.lang.template.StringProcessor
  * @see java.lang.template.StringTemplate
  *
- * @since 20
+ * @since 21
  *
  * @implNote It is recommended that {@link StringProcessor} be used instead of
  * {@code TemplateProcessor<String>} when the result type is {@link String}.

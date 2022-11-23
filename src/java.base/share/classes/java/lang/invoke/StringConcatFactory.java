@@ -117,7 +117,7 @@ public final class StringConcatFactory {
      * we do not use all those slots, to let the strategies with MethodHandle
      * combinators to use some arguments.
      *
-     * @since 20
+     * @since 21
      */
     public static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
 
@@ -1053,7 +1053,7 @@ public final class StringConcatFactory {
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
      *
-     * @since 20
+     * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplate(
@@ -1183,7 +1183,7 @@ public final class StringConcatFactory {
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
      *
-     * @since 20
+     * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static List<MethodHandle> makeConcatWithTemplateCluster(
@@ -1259,7 +1259,7 @@ public final class StringConcatFactory {
      * @throws StringConcatException If any of the linkage invariants are violated
      * @throws NullPointerException If any of the incoming arguments is null
      *
-     * @since 20
+     * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplateGetters(

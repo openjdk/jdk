@@ -32,7 +32,7 @@ import jdk.internal.javac.PreviewFeature;
  * assist {@link java.lang.invoke.StringConcatFactory} perform optimal
  * insertion.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public interface FormatConcatItem {

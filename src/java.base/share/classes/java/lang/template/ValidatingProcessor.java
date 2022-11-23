@@ -138,7 +138,7 @@ import jdk.internal.javac.PreviewFeature;
  * @see java.lang.template.StringTemplate
  * @see java.util.FormatProcessor
  *
- * @since 20
+ * @since 21
  *
  * @jls 15.8.6 Process Template Expressions
  */

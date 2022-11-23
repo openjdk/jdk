@@ -47,7 +47,7 @@ import jdk.internal.javac.PreviewFeature;
  * These {@link MethodHandle MethodHandles} are  also shared by binding to the
  * {@link java.lang.invoke.CallSite CallSite}.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class StringTemplateImpl extends Carriers.CarrierObject implements StringTemplate {

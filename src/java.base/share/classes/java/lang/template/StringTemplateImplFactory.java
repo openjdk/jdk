@@ -42,7 +42,7 @@ import jdk.internal.javac.PreviewFeature;
  * fragments and bootstrap method type. Usage is primarily from
  * {@link java.lang.runtime.TemplateRuntime} via {@code SharedSecrets.getJavaTemplateAccess()}.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class StringTemplateImplFactory implements JavaTemplateAccess {

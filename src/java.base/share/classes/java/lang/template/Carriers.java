@@ -80,7 +80,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @implNote The strategy for storing components is deliberately left unspecified
  * so that future improvements will not be hampered by issues of backward compatibility.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class Carriers {

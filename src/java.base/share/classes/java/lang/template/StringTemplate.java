@@ -107,7 +107,7 @@ import jdk.internal.javac.PreviewFeature;
  * {@link StringTemplate#fragments()} must be one element larger than the list returned
  * by {@link StringTemplate#values()}.
  *
- * @since 20
+ * @since 21
  *
  * @jls 15.8.6 Process Template Expressions
  */

@@ -51,7 +51,7 @@ import static java.lang.invoke.MethodType.*;
  * This package private class supports the construction of the {@link MethodHandle}
  * used by {@link FormatProcessor}.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class FormatterBuilder {

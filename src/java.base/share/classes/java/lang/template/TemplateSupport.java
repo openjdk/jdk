@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * This class provides runtime support for string templates. The methods within
  * are intended for internal use only.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class TemplateSupport {

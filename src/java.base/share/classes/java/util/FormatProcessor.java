@@ -63,7 +63,7 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec Since, values are found within the string template, argument indexing
  * specifiers are unsupported.
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class FormatProcessor implements StringProcessor, ProcessorLinkage {

@@ -41,7 +41,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @param <T> key type
  *
- * @since 20
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 interface ReferenceKey<T> {
@@ -60,7 +60,7 @@ interface ReferenceKey<T> {
      *
      * @param <T> key type
      *
-     * @since 20
+     * @since 21
      */
     class WeakKey<T> extends WeakReference<T> implements ReferenceKey<T> {
         /**
@@ -119,7 +119,7 @@ interface ReferenceKey<T> {
      *
      * @param <T> key type
      *
-     * @since 20
+     * @since 21
      */
     class SoftKey<T> extends SoftReference<T> implements ReferenceKey<T> {
         /**
@@ -179,7 +179,7 @@ interface ReferenceKey<T> {
      *
      * @param <T> key type
      *
-     * @since 20
+     * @since 21
      */
     class StrongKey<T> implements ReferenceKey<T> {
         T key;

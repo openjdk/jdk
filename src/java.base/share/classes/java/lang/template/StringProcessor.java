@@ -42,7 +42,7 @@ import jdk.internal.javac.PreviewFeature;
  * @see java.lang.template.TemplateProcessor
  * @see java.lang.template.StringTemplate
  *
- * @since 20
+ * @since 21
  *
  * @implNote Implementations using {@link StringProcessor} are equivalent to implementations using
  * {@code TemplateProcessor<String>} or {@code ValidatingProcessor<String, RuntimeException>},
