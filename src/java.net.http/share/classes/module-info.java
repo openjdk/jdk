@@ -109,10 +109,11 @@
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame larger than this.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxstreams}</b> (default: 100)<br>
- * The maximum number of HTTP/2 streams per connection.
+ * The maximum number of HTTP/2 push streams that the client will permit servers to open simultaneously.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system default)<br>
- * The HTTP client socket receive buffer size in bytes.
+ * The HTTP client <a href="../java.base/java/net/StandardSocketOptions.html#SO_RCVBUF">socket receive 
+ * buffer size</a> in bytes.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.redirects.retrylimit}</b> (default: 5)<br>
  * The maximum number of attempts to send a HTTP request when redirected or any failure occurs for any reason.
@@ -126,13 +127,9 @@
  * <li><p><b>{@systemProperty jdk.httpclient.auth.retrylimit}</b> (default: 3)<br>
  * The number of attempts the Basic authentication filter will attempt to retry a failed authentication.
  * </li>
- * <li><p><b>{@systemProperty jdk.internal.httpclient.selectorTimeout}</b> (default: 3000)<br>
- * The selector thread wakes up repeatedly after this number of milliseconds when there is no activity.
- * This allows the thread to terminate when no longer needed. The value provided is limited
- * to the range from 1 to 1200(???) seconds.
- * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.sendBufferSize}</b> (default: operating system default)<br>
- * The HTTP client socket send buffer size. Values less than or equal to zero are ignored.
+ * The HTTP client socket <a href="../java.base/java/net/StandardSocketOptions.html#SO_SNDBUF">send 
+ * buffer size</a>. Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.internal.httpclient.disableHostnameVerification}</b> (default: false)<br>
  * If true, hostname verification in SSL certificates is disabled. This is a system property only.
