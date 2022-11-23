@@ -1621,6 +1621,15 @@ eventHandler_onConnect() {
     debugMonitorExit(handlerLock);
 }
 
+static jvmtiError
+adjust_jvmti_error(jvmtiError error) {
+    // Allow WRONG_PHASE if vm is exiting.
+    if (error == JVMTI_ERROR_WRONG_PHASE && gdata->vmDead) {
+        error = JVMTI_ERROR_NONE;
+    }
+    return error;
+}
+
 void
 eventHandler_reset(jbyte sessionID)
 {
@@ -1637,18 +1646,20 @@ eventHandler_reset(jbyte sessionID)
 
     /* Disable vthread START and END events unless we are remembering vthreads
      * when no debugger is connected. We do this because these events can
-     * be very noisy and hurt performance a lot.
+     * be very noisy and hurt performance a lot. Note the VM might be exiting,
+     * and we might get the VM_DEATH event while executing here, so don't
+     * complain about JVMTI_ERROR_WRONG_PHASE if we've already seen VM_DEATH event.
      */
     if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
         jvmtiError error;
         error = threadControl_setEventMode(JVMTI_DISABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
-        if (error != JVMTI_ERROR_NONE) {
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error,"Can't disable vthread start events");
         }
         error = threadControl_setEventMode(JVMTI_DISABLE,
                                            EI_VIRTUAL_THREAD_END, NULL);
-        if (error != JVMTI_ERROR_NONE) {
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error,"Can't disable vthread end events");
         }
     }
