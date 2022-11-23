@@ -49,6 +49,7 @@ import java.util.Queue;
 
 import jdk.jfr.internal.management.ChunkFilename;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.StreamBarrier;
 
 final class DiskRepository implements Closeable {
 
@@ -126,6 +127,7 @@ final class DiskRepository implements Closeable {
     private final ByteBuffer buffer = ByteBuffer.allocate(256);
     private final Path directory;
     private final ChunkFilename chunkFilename;
+    private final StreamBarrier barrier = new StreamBarrier();
 
     private RandomAccessFile raf;
     private RandomAccessFile previousRAF;
@@ -153,6 +155,7 @@ final class DiskRepository implements Closeable {
     }
 
     public synchronized void write(byte[] bytes) throws IOException {
+        barrier.check();
         index = 0;
         lastFlush = 0;
         currentByteArray = bytes;
@@ -345,6 +348,10 @@ final class DiskRepository implements Closeable {
             long endTimeNanos = currentChunk.startTimeNanos + durationNanos;
             currentChunk.endTimeNanos = endTimeNanos;
             currentChunk.endTime = ManagementSupport.epochNanosToInstant(endTimeNanos);
+            if (currentChunk.endTime.toEpochMilli() == barrier.getStreamEnd()) {
+                // Recording has been stopped, need to complete last chunk
+                completePrevious(currentChunk);
+            }
         }
         raf.seek(position);
     }
@@ -511,5 +518,10 @@ final class DiskRepository implements Closeable {
             fileDumps.add(fd);
         }
         return fd;
+    }
+
+    public StreamBarrier activateStreamBarrier() {
+        barrier.activate();
+        return barrier;
     }
 }

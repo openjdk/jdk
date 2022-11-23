@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordingFile;
@@ -165,5 +166,27 @@ public class Snippets {
             Thread.sleep(10_000);
         }
         // @end
+    }
+
+    void RecordingStreamStop() throws Exception {
+        // @start region="RecordingStreamStop"
+        AtomicBoolean socketUse = new AtomicBoolean();
+        try (var r = new RecordingStream()) {
+            r.setMaxSize(Long.MAX_VALUE);
+            r.enable("jdk.SocketWrite").withoutThreshold();
+            r.enable("jdk.SocketRead").withoutThreshold();
+            r.onEvent(event -> socketUse.set(true));
+            r.startAsync();
+            testFoo();
+            r.stop();
+            if (socketUse.get()) {
+                r.dump(Path.of("socket-events.jfr"));
+                throw new AssertionError("testFoo() should not use network");
+            }
+        }
+        // @end
+    }
+
+    void testFoo() {
     }
 }
