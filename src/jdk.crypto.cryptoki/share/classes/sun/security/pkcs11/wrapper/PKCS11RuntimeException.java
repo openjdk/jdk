@@ -48,6 +48,8 @@
 package sun.security.pkcs11.wrapper;
 
 
+import java.io.Serial;
+
 /**
  * This is the superclass of all runtime exception used by this library.
  * For instance, Runtime exceptions occur, if an internal error in the native
@@ -57,6 +59,7 @@ package sun.security.pkcs11.wrapper;
  * @invariants
  */
 public class PKCS11RuntimeException extends RuntimeException {
+    @Serial
     private static final long serialVersionUID = 7889842162743590564L;
 
     /**
