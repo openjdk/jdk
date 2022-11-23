@@ -393,17 +393,15 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @ChangesCurrentThread
     private boolean yieldContinuation() {
-        boolean notifyJvmti = notifyJvmtiEvents;
-
         // unmount
-        if (notifyJvmti) notifyJvmtiUnmountBegin(false);
+        if (notifyJvmtiEvents) notifyJvmtiUnmountBegin(false);
         unmount();
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
             // re-mount
             mount();
-            if (notifyJvmti) notifyJvmtiMountEnd(false);
+            if (notifyJvmtiEvents) notifyJvmtiMountEnd(false);
         }
     }
 
