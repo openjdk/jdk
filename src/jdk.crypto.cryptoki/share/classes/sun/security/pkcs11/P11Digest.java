@@ -292,7 +292,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
             return;
         }
 
-        if (byteBuffer instanceof DirectBuffer == false) {
+        if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
             super.engineUpdate(byteBuffer);
             return;
         }
@@ -310,7 +310,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
             }
             var scope = NIO_ACCESS.acquireScopeOrNull(byteBuffer);
             try {
-                token.p11.C_DigestUpdate(session.id(), ((DirectBuffer)byteBuffer).address() + ofs, null, 0, len);
+                token.p11.C_DigestUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
             } finally {
                 NIO_ACCESS.releaseScope(byteBuffer, scope);
             }

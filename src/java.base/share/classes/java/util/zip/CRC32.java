@@ -28,9 +28,9 @@ package java.util.zip;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+import sun.nio.ch.DirectBuffer;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 

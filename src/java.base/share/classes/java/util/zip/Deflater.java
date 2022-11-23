@@ -340,7 +340,7 @@ public class Deflater {
             if (dictionary.isDirect()) {
                 var scope = NIO_ACCESS.acquireScopeOrNull(dictionary);
                 try {
-                    setDictionaryBuffer(zsRef.address(), ((DirectBuffer)dictionary).address() + position, remaining);
+                    setDictionaryBuffer(zsRef.address(), ((DirectBuffer) dictionary).address() + position, remaining);
                 } finally {
                     NIO_ACCESS.releaseScope(dictionary, scope);
                 }
@@ -591,7 +591,7 @@ public class Deflater {
                     var scope = NIO_ACCESS.acquireScopeOrNull(input);
                     try {
                         result = deflateBufferBytes(zsRef.address(),
-                                ((DirectBuffer)input).address() + inputPos, inputRem,
+                                ((DirectBuffer) input).address() + inputPos, inputRem,
                             output, off, len,
                             flush, params);
                     } finally {
@@ -714,7 +714,7 @@ public class Deflater {
                     try {
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
-                                ((DirectBuffer)output).address() + outputPos, outputRem,
+                                ((DirectBuffer) output).address() + outputPos, outputRem,
                             flush, params);
                     } finally {
                         NIO_ACCESS.releaseScope(output, outScope);
@@ -737,8 +737,8 @@ public class Deflater {
                             var outScope = NIO_ACCESS.acquireScopeOrNull(output);
                             try {
                                 result = deflateBufferBuffer(zsRef.address(),
-                                    ((DirectBuffer)input).address() + inputPos, inputRem,
-                                    ((DirectBuffer)output).address(), outputRem,
+                                    ((DirectBuffer) input).address() + inputPos, inputRem,
+                                    ((DirectBuffer) output).address(), outputRem,
                                     flush, params);
                             } finally {
                                 NIO_ACCESS.releaseScope(output, outScope);
@@ -747,7 +747,7 @@ public class Deflater {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
                             int outputOffset = ZipUtils.getBufferOffset(output);
                             result = deflateBufferBytes(zsRef.address(),
-                                    ((DirectBuffer)input).address() + inputPos, inputRem,
+                                    ((DirectBuffer) input).address() + inputPos, inputRem,
                                 outputArray, outputOffset + outputPos, outputRem,
                                 flush, params);
                         }
@@ -762,7 +762,7 @@ public class Deflater {
                         try {
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
-                                ((DirectBuffer)output).address()+ outputPos, outputRem,
+                                ((DirectBuffer) output).address()+ outputPos, outputRem,
                                 flush, params);
                         } finally {
                             NIO_ACCESS.releaseScope(output, outScope);

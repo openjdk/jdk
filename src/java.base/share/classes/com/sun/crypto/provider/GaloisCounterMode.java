@@ -949,7 +949,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // the base address.  As long as the src side is >= the dst
                 // side, we are not in overlap.
                 if (((DirectBuffer) src).address() - srcaddr + src.position() >=
-                        ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                    ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
                     return dst;
                 }
             } else if (!src.isDirect() && !dst.isDirect()) {

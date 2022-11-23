@@ -241,10 +241,10 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (src instanceof sun.nio.ch.DirectBuffer dsrc) {
+        if (src instanceof sun.nio.ch.DirectBuffer buf) {
             var scope = NIO_ACCESS.acquireScopeOrNull(src);
             try {
-                long address = dsrc.address() + pos;
+                long address = buf.address() + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
                 return rem;

@@ -825,7 +825,7 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Runnable acquireScopeOrNull(Buffer buffer, boolean async) {
+                public Runnable acquireSession(Buffer buffer, boolean async) {
                     var session = buffer.session();
                     if (session == null) {
                         return null;
