@@ -780,6 +780,9 @@ public class JavacParser implements Parser {
             JCPattern p = parsePattern(token.pos, null, null, true, false);
             accept(RPAREN);
             pattern = toP(F.at(startPos).ParenthesizedPattern(p));
+        } else if (token.kind == UNDERSCORE) {
+            nextToken();
+            pattern = toP(F.at(token.pos).AnyPattern());
         } else {
             mods = mods != null ? mods : optFinal(0);
             JCExpression e;

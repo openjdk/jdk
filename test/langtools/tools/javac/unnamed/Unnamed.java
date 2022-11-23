@@ -1,6 +1,6 @@
 /**
  * @test
- * @compile -doe Unnamed.java
+ * @compile --enable-preview -source ${jdk.version} Unnamed.java
  */
 public class Unnamed {
     private void unnamedTest() {
@@ -20,6 +20,8 @@ public class Unnamed {
         }
         TwoParams p1 = (_, _) -> {};
         TwoParams p2 = (var _, var _) -> {};
+        R r = new R(null);
+        if (r instanceof R(_)) {}
         for (int _ = 0, _ = 1; ;) {}
     }
     class Lock implements AutoCloseable {
@@ -29,4 +31,5 @@ public class Unnamed {
     interface TwoParams {
         public void run(Object o1, Object o2);
     }
+    record R(Object o) {}
 }

@@ -237,6 +237,11 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
+    public void visitAnyPattern(JCTree.JCAnyPattern that) {
+        result = make.Literal(true);
+    }
+
+    @Override
     public void visitBindingPattern(JCBindingPattern tree) {
         //it is assumed the primary type has already been checked:
         BindingSymbol binding = (BindingSymbol) tree.var.sym;

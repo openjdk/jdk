@@ -4139,6 +4139,11 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    @Override
+    public void visitAnyPattern(JCAnyPattern tree) {
+        result = tree.type = resultInfo.pt;
+    }
+
     public void visitBindingPattern(JCBindingPattern tree) {
         Type type;
         if (tree.var.vartype != null) {
@@ -4191,8 +4196,9 @@ public class Attr extends JCTree.Visitor {
         try {
             while (recordTypes.nonEmpty() && nestedPatterns.nonEmpty()) {
                 boolean nestedIsVarPattern = false;
-                nestedIsVarPattern |= nestedPatterns.head.hasTag(BINDINGPATTERN) &&
-                                      ((JCBindingPattern) nestedPatterns.head).var.vartype == null;
+                nestedIsVarPattern |= (nestedPatterns.head.hasTag(BINDINGPATTERN) &&
+                                      ((JCBindingPattern) nestedPatterns.head).var.vartype == null) ||
+                                      nestedPatterns.head.hasTag(ANYPATTERN);
                 attribExpr(nestedPatterns.head, localEnv, nestedIsVarPattern ? recordTypes.head : Type.noType);
                 checkCastablePattern(nestedPatterns.head.pos(), recordTypes.head, nestedPatterns.head.type);
                 outBindings.addAll(matchBindings.bindingsWhenTrue);

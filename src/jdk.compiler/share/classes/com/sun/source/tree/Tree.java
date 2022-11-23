@@ -224,6 +224,13 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
+         * @since 21
+         */
+        ANY_PATTERN(AnyPatternTree.class),
+
+        /**
+         * Used for instances of {@link BindingPatternTree}.
+         *
          * @since 16
          */
         BINDING_PATTERN(BindingPatternTree.class),

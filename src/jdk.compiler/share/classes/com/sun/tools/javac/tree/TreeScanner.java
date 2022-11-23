@@ -328,6 +328,10 @@ public class TreeScanner extends Visitor {
     }
 
     @Override
+    public void visitAnyPattern(JCAnyPattern that) {
+    }
+
+    @Override
     public void visitRecordPattern(JCRecordPattern that) {
         scan(that.deconstructor);
         scan(that.nested);

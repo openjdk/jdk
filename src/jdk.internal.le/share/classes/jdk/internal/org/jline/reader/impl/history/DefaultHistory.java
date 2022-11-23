@@ -428,6 +428,7 @@ public class DefaultHistory implements History {
     }
 
     private void maybeResize() {
+        System.err.println("size: " + getInt(reader, LineReader.HISTORY_SIZE, DEFAULT_HISTORY_SIZE));
         while (size() > getInt(reader, LineReader.HISTORY_SIZE, DEFAULT_HISTORY_SIZE)) {
             items.removeFirst();
             for (HistoryFileData hfd: historyFiles.values()) {
