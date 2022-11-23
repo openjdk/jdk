@@ -130,6 +130,7 @@ address StubRoutines::_galoisCounterMode_AESCrypt          = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
 address StubRoutines::_base64_decodeBlock                  = NULL;
+address StubRoutines::_poly1305_processBlocks              = NULL;
 
 address StubRoutines::_md5_implCompress      = NULL;
 address StubRoutines::_md5_implCompressMB    = NULL;

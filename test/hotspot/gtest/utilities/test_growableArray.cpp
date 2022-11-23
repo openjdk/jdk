@@ -50,8 +50,8 @@ protected:
     return array->on_C_heap();
   }
   template <typename E>
-  static bool elements_on_stack(const GrowableArray<E>* array) {
-    return array->on_stack();
+  static bool elements_on_resource_area(const GrowableArray<E>* array) {
+    return array->on_resource_area();
   }
   template <typename E>
   static bool elements_on_arena(const GrowableArray<E>* array) {
@@ -471,7 +471,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     GrowableArray<int>* a = new GrowableArray<int>();
     ASSERT_TRUE(a->allocated_on_res_area());
-    ASSERT_TRUE(elements_on_stack(a));
+    ASSERT_TRUE(elements_on_resource_area(a));
   }
 
   // Resource/CHeap allocated
@@ -499,7 +499,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     GrowableArray<int> a(0);
     ASSERT_TRUE(a.allocated_on_stack_or_embedded());
-    ASSERT_TRUE(elements_on_stack(&a));
+    ASSERT_TRUE(elements_on_resource_area(&a));
   }
 
   // Stack/CHeap allocated
@@ -522,7 +522,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     WithEmbeddedArray w(0);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
-    ASSERT_TRUE(elements_on_stack(&w._a));
+    ASSERT_TRUE(elements_on_resource_area(&w._a));
   }
 
   // Embedded/CHeap allocated

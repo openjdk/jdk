@@ -187,36 +187,40 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         @Override
         public void filteredChanged(SelectionCoordinator coordinator) {
-            Set<Integer> ids = coordinator.getHighlightedObjects();
-            Set<Object> result = new HashSet<>();
-            for (Figure figure : getModel().getDiagram().getFigures()) {
-                if (ids.contains(figure.getInputNode().getId())) {
-                    result.add(figure);
-                }
-                for (Slot slot : figure.getSlots()) {
-                    if (!Collections.disjoint(slot.getSource().getSourceNodesAsSet(), ids)) {
-                        result.add(slot);
+            if (model.getGlobalSelection()) {
+                Set<Integer> ids = coordinator.getHighlightedObjects();
+                Set<Object> highlightedObjects = new HashSet<>();
+                for (Figure figure : getModel().getDiagram().getFigures()) {
+                    if (ids.contains(figure.getInputNode().getId())) {
+                        highlightedObjects.add(figure);
+                    }
+                    for (Slot slot : figure.getSlots()) {
+                        if (!Collections.disjoint(slot.getSource().getSourceNodesAsSet(), ids)) {
+                            highlightedObjects.add(slot);
+                        }
                     }
                 }
+                setHighlightedObjects(highlightedObjects);
+                validateAll();
             }
-            setHighlightedObjects(result);
-            validateAll();
         }
     };
     private final ControllableChangedListener<SelectionCoordinator> selectedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
 
         @Override
         public void filteredChanged(SelectionCoordinator coordinator) {
-            Set<Integer> ids = coordinator.getSelectedObjects();
-            Set<Figure> figures = new HashSet<>();
-            for (Figure figure : getModel().getDiagram().getFigures()) {
-                if (ids.contains(figure.getInputNode().getId())) {
-                    figures.add(figure);
+            if (model.getGlobalSelection()) {
+                Set<Integer> ids = coordinator.getSelectedObjects();
+                Set<Figure> selectedFigures = new HashSet<>();
+                for (Figure figure : getModel().getDiagram().getFigures()) {
+                    if (ids.contains(figure.getInputNode().getId())) {
+                        selectedFigures.add(figure);
+                    }
                 }
+                setFigureSelection(selectedFigures);
+                centerSelectedFigures();
+                validateAll();
             }
-            setFigureSelection(figures);
-            centerSelectedFigures();
-            validateAll();
         }
     };
 

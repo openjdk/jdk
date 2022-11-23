@@ -62,7 +62,7 @@ class fieldDescriptor {
 
   AccessFlags access_flags()      const    { return _access_flags; }
   oop loader()                    const;
-  // Offset (in words) of field from start of instanceOop / Klass*
+  // Offset (in bytes) of field from start of instanceOop / Klass*
   inline int offset()             const;
   Symbol* generic_signature()     const;
   int index()                     const    { return _index; }
