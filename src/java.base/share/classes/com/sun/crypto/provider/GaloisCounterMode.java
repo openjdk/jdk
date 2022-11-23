@@ -911,7 +911,6 @@ abstract class GaloisCounterMode extends CipherSpi {
          * and if dst will overwrite src data before src can be processed.
          * If so, make a copy to put the dst data in.
          */
-        @SuppressWarnings("try")
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
                 // The use of DirectBuffer::address below need not be guarded as
@@ -1591,9 +1590,12 @@ abstract class GaloisCounterMode extends CipherSpi {
                     int ofs = dst.arrayOffset() + dst.position();
                     Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
                 } else {
-                    try (var guard = NIO_ACCESS.acquireScope(dst)) {
-                        Unsafe.getUnsafe().setMemory(guard.address(),
+                    var scope = NIO_ACCESS.acquireScopeOrNull(dst);
+                    try {
+                        Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
                                 len + dst.position(), (byte) 0);
+                    } finally {
+                        NIO_ACCESS.releaseScope(dst, scope);
                     }
                 }
                 throw new AEADBadTagException("Tag mismatch");

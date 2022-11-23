@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -97,8 +98,11 @@ public class Adler32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
-            try (var guard = NIO_ACCESS.acquireScope(buffer)) {
-                adler = updateByteBuffer(adler, guard.address(), pos, rem);
+            var scope = NIO_ACCESS.acquireScopeOrNull(buffer);
+            try {
+                adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
+            } finally {
+                NIO_ACCESS.releaseScope(buffer, scope);
             }
         } else if (buffer.hasArray()) {
             adler = updateBytes(adler, buffer.array(), pos + buffer.arrayOffset(), rem);

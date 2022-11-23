@@ -784,14 +784,17 @@ class DatagramChannelImpl
                                         boolean connected)
         throws IOException
     {
-        try (var guard = NIO_ACCESS.acquireScope(bb)) {
+        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        try {
             int n = receive0(fd,
-                    guard.address() + pos, rem,
+                    ((DirectBuffer)bb).address() + pos, rem,
                     sourceSockAddr.address(),
                     connected);
             if (n > 0)
                 bb.position(pos + n);
             return n;
+        } finally {
+            NIO_ACCESS.releaseScope(bb, scope);
         }
     }
 
@@ -936,14 +939,17 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
-        try (var guard = NIO_ACCESS.acquireScope(bb)) {
+        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        try {
             int addressLen = targetSocketAddress(target);
-            written = send0(fd, guard.address() + pos, rem,
+            written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
                             targetSockAddr.address(), addressLen);
         } catch (PortUnreachableException pue) {
             if (isConnected())
                 throw pue;
             written = rem;
+        } finally {
+            NIO_ACCESS.releaseScope(bb, scope);
         }
         if (written > 0)
             bb.position(pos + written);

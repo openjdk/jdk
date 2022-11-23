@@ -32,6 +32,7 @@ import java.util.Objects;
 
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
+import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -259,8 +260,11 @@ public class Inflater {
             int remaining = Math.max(dictionary.limit() - position, 0);
             ensureOpen();
             if (dictionary.isDirect()) {
-                try (var guard = NIO_ACCESS.acquireScope(dictionary)) {
-                    setDictionaryBuffer(zsRef.address(), guard.address() + position, remaining);
+                var scope = NIO_ACCESS.acquireScopeOrNull(dictionary);
+                try {
+                    setDictionaryBuffer(zsRef.address(), ((DirectBuffer)dictionary).address() + position, remaining);
+                } finally {
+                    NIO_ACCESS.releaseScope(dictionary, scope);
                 }
             } else {
                 byte[] array = ZipUtils.getBufferArray(dictionary);
@@ -380,10 +384,13 @@ public class Inflater {
                     try {
                         int inputRem = Math.max(input.limit() - inputPos, 0);
                         if (input.isDirect()) {
-                            try (var guard = NIO_ACCESS.acquireScope(input)) {
+                            var inScope = NIO_ACCESS.acquireScopeOrNull(input);
+                            try {
                                 result = inflateBufferBytes(zsRef.address(),
-                                    guard.address() + inputPos, inputRem,
+                                    ((DirectBuffer)input).address() + inputPos, inputRem,
                                     output, off, len);
+                            } finally {
+                                NIO_ACCESS.releaseScope(input, inScope);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
@@ -511,10 +518,13 @@ public class Inflater {
                     inputPos = this.inputPos;
                     try {
                         if (output.isDirect()) {
-                            try (var guard = NIO_ACCESS.acquireScope(output)) {
+                            var outScope = NIO_ACCESS.acquireScopeOrNull(output);
+                            try {
                                 result = inflateBytesBuffer(zsRef.address(),
                                     inputArray, inputPos, inputLim - inputPos,
-                                    guard.address() + outputPos, outputRem);
+                                    ((DirectBuffer)output).address() + outputPos, outputRem);
+                            } finally {
+                                NIO_ACCESS.releaseScope(output, outScope);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -532,29 +542,38 @@ public class Inflater {
                     int inputRem = Math.max(input.limit() - inputPos, 0);
                     try {
                         if (input.isDirect()) {
-                            try (var inGuard = NIO_ACCESS.acquireScope(input)) {
+                            var inScope = NIO_ACCESS.acquireScopeOrNull(input);
+                            try {
                                 if (output.isDirect()) {
-                                    try (var outGuard = NIO_ACCESS.acquireScope(output)) {
+                                    var outScope = NIO_ACCESS.acquireScopeOrNull(output);
+                                    try {
                                         result = inflateBufferBuffer(zsRef.address(),
-                                            inGuard.address() + inputPos, inputRem,
-                                            outGuard.address() + outputPos, outputRem);
+                                            ((DirectBuffer)input).address() + inputPos, inputRem,
+                                            ((DirectBuffer)output).address() + outputPos, outputRem);
+                                    } finally {
+                                        NIO_ACCESS.releaseScope(output, outScope);
                                     }
                                 } else {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
                                     int outputOffset = ZipUtils.getBufferOffset(output);
                                     result = inflateBufferBytes(zsRef.address(),
-                                        inGuard.address() + inputPos, inputRem,
+                                        ((DirectBuffer)input).address() + inputPos, inputRem,
                                         outputArray, outputOffset + outputPos, outputRem);
                                 }
+                            } finally {
+                                NIO_ACCESS.releaseScope(input, inScope);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
                             int inputOffset = ZipUtils.getBufferOffset(input);
                             if (output.isDirect()) {
-                                try (var guard = NIO_ACCESS.acquireScope(output)) {
+                                var outScope = NIO_ACCESS.acquireScopeOrNull(output);
+                                try {
                                     result = inflateBytesBuffer(zsRef.address(),
                                         inputArray, inputOffset + inputPos, inputRem,
-                                        guard.address() + outputPos, outputRem);
+                                        ((DirectBuffer)output).address() + outputPos, outputRem);
+                                } finally {
+                                    NIO_ACCESS.releaseScope(output, outScope);
                                 }
                             } else {
                                 byte[] outputArray = ZipUtils.getBufferArray(output);

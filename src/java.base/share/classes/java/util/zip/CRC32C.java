@@ -30,6 +30,7 @@ import java.nio.ByteOrder;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -171,9 +172,12 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
-            try (var guard = NIO_ACCESS.acquireScope(buffer)) {
-                crc = updateDirectByteBuffer(crc, guard.address(),
+            var scope = NIO_ACCESS.acquireScopeOrNull(buffer);
+            try {
+                crc = updateDirectByteBuffer(crc, ((DirectBuffer)buffer).address(),
                         pos, limit);
+            } finally {
+                NIO_ACCESS.releaseScope(buffer, scope);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),

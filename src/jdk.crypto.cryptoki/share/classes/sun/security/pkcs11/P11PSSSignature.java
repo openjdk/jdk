@@ -618,27 +618,30 @@ final class P11PSSSignature extends SignatureSpi {
         isActive = true;
         switch (type) {
         case T_UPDATE:
-            if (byteBuffer instanceof DirectBuffer == false) {
+            if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
                 // cannot do better than default impl
                 super.engineUpdate(byteBuffer);
                 return;
             }
             int ofs = byteBuffer.position();
-            try (var guard = NIO_ACCESS.acquireScope(byteBuffer)) {
+            var scope = NIO_ACCESS.acquireScopeOrNull(byteBuffer);
+            try {
                 if (mode == M_SIGN) {
                     if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate
-                        (session.id(), guard.address() + ofs, null, 0, len);
+                        (session.id(), dByteBuffer.address() + ofs, null, 0, len);
                 } else {
                     if (DEBUG) System.out.println(this + ": Calling C_VerifyUpdate");
                     token.p11.C_VerifyUpdate
-                        (session.id(), guard.address() + ofs, null, 0, len);
+                        (session.id(), dByteBuffer.address() + ofs, null, 0, len);
                 }
                 bytesProcessed += len;
                 byteBuffer.position(ofs + len);
             } catch (PKCS11Exception e) {
                 reset(false);
                 throw new ProviderException("Update failed", e);
+            } finally {
+                NIO_ACCESS.releaseScope(byteBuffer, scope);
             }
             break;
         case T_DIGEST:

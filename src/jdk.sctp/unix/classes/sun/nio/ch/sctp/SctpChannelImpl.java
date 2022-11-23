@@ -844,12 +844,15 @@ public class SctpChannelImpl extends SctpChannel
                                         boolean peek)
         throws IOException
     {
-        try (var guard = NIO_ACCESS.acquireScope(bb)) {
-            int n = receive0(fd, resultContainer, guard.address() + pos, rem, peek);
+        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        try {
+            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
 
             if (n > 0)
                 bb.position(pos + n);
             return n;
+        } finally {
+            NIO_ACCESS.releaseScope(bb, scope);
         }
     }
 
@@ -1035,12 +1038,15 @@ public class SctpChannelImpl extends SctpChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        try (var guard = NIO_ACCESS.acquireScope(bb)) {
-            int written = send0(fd, guard.address() + pos, rem, addr,
+        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        try {
+            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
                     port, -1 /*121*/, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);
             return written;
+        } finally {
+            NIO_ACCESS.releaseScope(bb, scope);
         }
     }
 

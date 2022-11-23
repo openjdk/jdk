@@ -37,6 +37,7 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
+import java.lang.ref.Reference;
 import java.util.Objects;
 import java.util.Spliterator;
 
@@ -824,7 +825,7 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Runnable acquireSessionOrNull(Buffer buffer, boolean async) {
+                public Runnable acquireScopeOrNull(Buffer buffer, boolean async) {
                     var session = buffer.session();
                     if (session == null) {
                         return null;
@@ -837,13 +838,25 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public ScopeAcquisition acquireScope(Buffer buffer) {
+                public MemorySessionImpl acquireScopeOrNull(Buffer buffer) {
                     var scope = buffer.session();
                     if (scope == null) {
-                        return ScopeAcquisition.create(buffer);
+                        return null;
                     }
                     scope.acquire0();
-                    return ScopeAcquisition.create(buffer, scope);
+                    return scope;
+                }
+
+                @Override
+                public void releaseScope(Buffer buffer, MemorySessionImpl scope) {
+                    assert buffer.session() == scope;
+                    try {
+                        if (scope != null) {
+                            scope.release0();
+                        }
+                    } finally {
+                        Reference.reachabilityFence(buffer);
+                    }
                 }
 
                 @Override

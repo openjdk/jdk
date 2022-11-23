@@ -269,13 +269,16 @@ final class P11Mac extends MacSpi {
             if (len <= 0) {
                 return;
             }
-            if (byteBuffer instanceof DirectBuffer == false) {
+            if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
                 super.engineUpdate(byteBuffer);
                 return;
             }
             int ofs = byteBuffer.position();
-            try (var guard = NIO_ACCESS.acquireScope(byteBuffer)) {
-                token.p11.C_SignUpdate(session.id(), guard.address() + ofs, null, 0, len);
+            var scope = NIO_ACCESS.acquireScopeOrNull(byteBuffer);
+            try  {
+                token.p11.C_SignUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
+            } finally {
+                NIO_ACCESS.releaseScope(byteBuffer, scope);
             }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {

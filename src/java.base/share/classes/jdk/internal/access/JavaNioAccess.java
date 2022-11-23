@@ -26,6 +26,7 @@
 package jdk.internal.access;
 
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.VM.BufferPool;
 import sun.nio.ch.DirectBuffer;
 
@@ -94,7 +95,7 @@ public interface JavaNioAccess {
      * Null is returned if the buffer has no scope, or acquiring is not
      * required to guarantee safety.
      * {@snippet lang = java:
-     * var handler = acquireSessionOrNull(buffer, async);
+     * var handler = acquireScopeOrNull(buffer, async);
      * try {
      *     performOperation(buffer);
      * } finally {
@@ -103,25 +104,27 @@ public interface JavaNioAccess {
      *     }
      * }
      *}
-     *
-     * @see #acquireScope(Buffer)
      */
-    Runnable acquireSessionOrNull(Buffer buffer, boolean async);
+    Runnable acquireScopeOrNull(Buffer buffer, boolean async);
 
     /**
      * Used by operations to make a buffer's session non-closeable
      * (for the duration of the operation) by acquiring the session.
-     * A valid close handler is always returned (if the buffer has no scope, or acquiring is not
-     * required to guarantee safety, a noop close handler is returned).
+     * The buffers scope is returned if it has one, otherwise {@code null} is returned.
      * {@snippet lang = java:
-     * try (var guard = acquireScope(buffer)) {
+     * var guard = acquireScopeOrNull(buffer);
+     * try {
      *     performOperation(buffer);
+     * } finally {
+     *     releaseScope(buffer, guard);
      * }
      *}
      *
-     * @see #acquireSessionOrNull(Buffer, boolean)
+     * @see #releaseScope(Buffer, MemorySessionImpl)
      */
-    ScopeAcquisition acquireScope(Buffer buffer);
+    MemorySessionImpl acquireScopeOrNull(Buffer buffer);
+
+    void releaseScope(Buffer buffer, MemorySessionImpl scope);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
