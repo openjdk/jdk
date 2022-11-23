@@ -33,6 +33,9 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc*,class+unload=debug UnloadTestDuringClassLoaderStatsVMOperation
  */
 import jdk.test.whitebox.WhiteBox;
+
+import java.net.URLClassLoader;
+
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class UnloadTestDuringClassLoaderStatsVMOperation {
@@ -87,7 +90,7 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
         // Create two class loaders and load a test class in the parent and
         // verify that it gets unloaded once we do a major collection.
         var parentClassLoader = ClassUnloadCommon.newClassLoader();
-        var childClassLoader =  ClassUnloadCommon.newClassLoaderWithParent(parentClassLoader);
+        var childClassLoader =  new ChildURLClassLoader((URLClassLoader) parentClassLoader);
         var loadedParent = parentClassLoader.loadClass(parentClassName);
         var loadedChild = childClassLoader.loadClass(childClassName);
         var parent = loadedParent.getDeclaredConstructor().newInstance();
@@ -112,9 +115,27 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
         ClassUnloadCommon.failIf(wb.isClassAlive(childClassName), childClassName + " should have been unloaded");
     }
 
-    static class DummyClassLoader extends ClassLoader {
-        public DummyClassLoader(ClassLoader parent) {
-            super("Dummy", parent);
+    static class ChildURLClassLoader extends URLClassLoader {
+        public ChildURLClassLoader(URLClassLoader parent) {
+            super("ChildURLClassLoader", parent.getURLs(), parent);
+        }
+
+        @Override
+        public Class<?> loadClass(String cn, boolean resolve) throws ClassNotFoundException {
+            synchronized (getClassLoadingLock(cn)) {
+                Class<?> c = findLoadedClass(cn);
+                if (c == null) {
+                    try {
+                        c = findClass(cn);
+                    } catch (ClassNotFoundException e) {
+                        c = getParent().loadClass(cn);
+                    }
+                }
+                if (resolve) {
+                    resolveClass(c);
+                }
+                return c;
+            }
         }
     }
 }

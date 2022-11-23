@@ -101,36 +101,6 @@ public class ClassUnloadCommon {
         };
     }
 
-    public static ClassLoader newClassLoaderWithParent(ClassLoader parent) {
-        String cp = System.getProperty("test.class.path", ".");
-        URL[] urls = Stream.of(cp.split(File.pathSeparator))
-                .map(Paths::get)
-                .map(ClassUnloadCommon::toURL)
-                .toArray(URL[]::new);
-        return new URLClassLoader("ClassUnloadCommonClassLoaderWithParent", urls, parent) {
-            @Override
-            public Class<?> loadClass(String cn, boolean resolve)
-                throws ClassNotFoundException
-            {
-                synchronized (getClassLoadingLock(cn)) {
-                    Class<?> c = findLoadedClass(cn);
-                    if (c == null) {
-                        try {
-                            c = findClass(cn);
-                        } catch (ClassNotFoundException e) {
-                            c = getParent().loadClass(cn);
-                        }
-
-                    }
-                    if (resolve) {
-                        resolveClass(c);
-                    }
-                    return c;
-                }
-            }
-        };
-    }
-
     static URL toURL(Path path) {
         try {
             return path.toUri().toURL();
