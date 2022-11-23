@@ -404,6 +404,12 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         boolean identifiable = false;
         String peerHost = session.getPeerHost();
+        // Is it a Fully-Qualified Domain Names (FQDN) ending with a dot?
+        if (peerHost != null && peerHost.endsWith(".")) {
+            // Remove the ending dot, which is not allowed in SNIHostName.
+            peerHost = peerHost.substring(0, peerHost.length() - 1);
+        }
+
         if (!checkClientTrusted) {
             List<SNIServerName> sniNames = getRequestedServerNames(session);
             String sniHostName = getHostNameInSNI(sniNames);

@@ -101,14 +101,19 @@ final class Utilities {
      *         not look like a FQDN
      */
     private static SNIHostName rawToSNIHostName(String hostname) {
-        SNIHostName sniHostName = null;
+        // Is it a Fully-Qualified Domain Names (FQDN) ending with a dot?
+        if (hostname != null && hostname.endsWith(".")) {
+            // Remove the ending dot, which is not allowed in SNIHostName.
+            hostname = hostname.substring(0, hostname.length() - 1);
+        }
+
         if (hostname != null && hostname.indexOf('.') > 0 &&
                 !hostname.endsWith(".") &&
                 !IPAddressUtil.isIPv4LiteralAddress(hostname) &&
                 !IPAddressUtil.isIPv6LiteralAddress(hostname)) {
 
             try {
-                sniHostName = new SNIHostName(hostname);
+                return new SNIHostName(hostname);
             } catch (IllegalArgumentException iae) {
                 // don't bother to handle illegal host_name
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
@@ -118,7 +123,7 @@ final class Utilities {
             }
         }
 
-        return sniHostName;
+        return null;
     }
 
     /**
