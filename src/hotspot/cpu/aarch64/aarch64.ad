@@ -1784,6 +1784,18 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
+  int max_monitors = C->method() != NULL ? C->max_monitors() : 0;
+  if (UseFastLocking && max_monitors > 0) {
+    C2CheckLockStackStub* stub = new (C->comp_arena()) C2CheckLockStackStub();
+    C->output()->add_stub(stub);
+    __ ldr(r9, Address(rthread, Thread::lock_stack_current_offset()));
+    __ add(r9, r9, max_monitors * oopSize);
+    __ ldr(r10, Address(rthread, Thread::lock_stack_limit_offset()));
+    __ cmp(r9, r10);
+    __ br(Assembler::GE, stub->entry());
+    __ bind(stub->continuation());
+  }
+
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
@@ -3779,7 +3791,7 @@ encode %{
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
         Label slow;
-        __ fast_lock(oop, disp_hdr, tmp, rscratch1, slow);
+        __ fast_lock(oop, disp_hdr, tmp, rscratch1, slow, false);
 
         // Indicate success at cont.
         __ cmp(oop, oop);

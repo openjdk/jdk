@@ -55,4 +55,12 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ emit_int32(0);   // nmethod guard value
 }
 
+void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");
+  __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::check_lock_stack());
+  __ blr(rscratch1);
+  __ b(continuation());
+}
+
 #undef __

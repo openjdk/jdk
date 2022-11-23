@@ -5926,15 +5926,17 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1, t2, t3: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow, bool rt_check_stack) {
   assert(UseFastLocking, "only used with fast-locking");
   assert_different_registers(obj, hdr, t1, t2);
 
-  // Check if we would have space on lock-stack for the object.
-  ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
-  ldr(t2, Address(rthread, Thread::lock_stack_limit_offset()));
-  cmp(t1, t2);
-  br(Assembler::GE, slow);
+  if (rt_check_stack) {
+    // Check if we would have space on lock-stack for the object.
+    ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
+    ldr(t2, Address(rthread, Thread::lock_stack_limit_offset()));
+    cmp(t1, t2);
+    br(Assembler::GE, slow);
+  }
 
   // Load (object->mark() | 1) into hdr
   orr(hdr, hdr, markWord::unlocked_value);
@@ -5946,8 +5948,6 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   br(Assembler::NE, slow);
 
   // After successful lock, push object on lock-stack
-  // TODO: Can we avoid re-loading the current offset? The CAS above clobbers it.
-  // Maybe we could ensure that we have enough space on the lock stack more cleverly.
   ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
   str(obj, Address(t1, 0));
   add(t1, t1, oopSize);

@@ -84,7 +84,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // Load object header
   ldr(hdr, Address(obj, hdr_offset));
   if (UseFastLocking) {
-    fast_lock(obj, hdr, rscratch1, rscratch2, slow_case);
+    fast_lock(obj, hdr, rscratch1, rscratch2, slow_case, false);
   } else {
     // and mark it as unlocked
     orr(hdr, hdr, markWord::unlocked_value);
@@ -307,6 +307,19 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes, int m
   // Note that we do this before creating a frame.
   generate_stack_overflow_check(bang_size_in_bytes);
   MacroAssembler::build_frame(framesize);
+
+  if (UseFastLocking && max_monitors > 0) {
+    Label ok;
+    ldr(r9, Address(rthread, Thread::lock_stack_current_offset()));
+    add(r9, r9, max_monitors * oopSize);
+    ldr(r10, Address(rthread, Thread::lock_stack_limit_offset()));
+    cmp(r9, r10);
+    br(Assembler::LT, ok);
+    assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");
+    movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::check_lock_stack());
+    blr(rscratch1);
+    bind(ok);
+  }
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
