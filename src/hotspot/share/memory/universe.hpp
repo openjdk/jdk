@@ -196,8 +196,14 @@ class Universe: AllStatic {
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
 
+  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
+  // but including T_VOID, hence the index including T_VOID
+  static OopHandle _basic_type_mirrors[T_VOID+1];
+
 #if INCLUDE_CDS_JAVA_HEAP
-  static int _archived_mirror_indices[T_VOID+1];
+  // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
+  // from the archive heap using HeapShared::get_root(int)
+  static int _archived_basic_type_mirror_indices[T_VOID+1];
 #endif
 
  public:
@@ -235,15 +241,11 @@ class Universe: AllStatic {
   static oop short_mirror();
   static oop void_mirror();
 
-  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
-  // but including T_VOID, hence the index including T_VOID
-  static OopHandle _mirrors[T_VOID+1];
-
   static oop java_mirror(BasicType t);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void set_archived_mirror_index(BasicType t, int index);
-  static void update_archived_mirrors();
+  static void set_archived_basic_type_mirror_index(BasicType t, int index);
+  static void update_archived_basic_type_mirrors();
 #endif
 
   static oop      main_thread_group();
