@@ -412,6 +412,12 @@ void CompilerConfig::set_compilation_policy_flags() {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
 #endif
+
+#if defined RISCV64
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, 2000);
+    }
+#endif
 #endif // COMPILER2
   }
 
