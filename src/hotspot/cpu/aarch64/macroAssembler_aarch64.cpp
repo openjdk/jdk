@@ -26,7 +26,6 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
@@ -39,6 +38,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"

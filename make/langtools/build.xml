@@ -238,7 +238,6 @@
         <build-tool name="javadoc"/>
         <build-tool name="javap"/>
         <build-tool name="jdeps"/>
-        <build-tool name="sjavac"/>
         <build-tool name="jshell"/>
     </target>
 

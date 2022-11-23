@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -53,7 +53,7 @@
 //---------------------------------------------------------------------------------
 //
 // This is the plug-in header file. Normal LittleCMS clients should not use it.
-// It is provided for plug-in writters that may want to access the support
+// It is provided for plug-in writers that may want to access the support
 // functions to do low level operations. All plug-in related structures
 // are defined here. Including this file forces to include the standard API too.
 
@@ -238,6 +238,7 @@ typedef void*    (* _cmsDupUserDataFn)(cmsContext ContextID, const void* Data);
 #define cmsPluginOptimizationSig             0x6F707448     // 'optH'
 #define cmsPluginTransformSig                0x7A666D48     // 'xfmH'
 #define cmsPluginMutexSig                    0x6D747A48     // 'mtxH'
+#define cmsPluginParalellizationSig          0x70726C48     // 'prlH
 
 typedef struct _cmsPluginBaseStruct {
 
@@ -625,7 +626,7 @@ typedef void     (* _cmsTransformFn)(struct _cmstransform_struct *CMMcargo,   //
                                      const void* InputBuffer,
                                      void* OutputBuffer,
                                      cmsUInt32Number Size,
-                                     cmsUInt32Number Stride);                 // Stride in bytes to the next plana in planar formats
+                                     cmsUInt32Number Stride);                 // Stride in bytes to the next plane in planar formats
 
 
 typedef void     (*_cmsTransform2Fn)(struct _cmstransform_struct *CMMcargo,
@@ -697,6 +698,25 @@ CMSAPI void*   CMSEXPORT _cmsCreateMutex(cmsContext ContextID);
 CMSAPI void    CMSEXPORT _cmsDestroyMutex(cmsContext ContextID, void* mtx);
 CMSAPI cmsBool CMSEXPORT _cmsLockMutex(cmsContext ContextID, void* mtx);
 CMSAPI void    CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx);
+
+//----------------------------------------------------------------------------------------------------------
+// Parallelization
+
+CMSAPI _cmsTransform2Fn CMSEXPORT _cmsGetTransformWorker(struct _cmstransform_struct* CMMcargo);
+CMSAPI cmsInt32Number   CMSEXPORT _cmsGetTransformMaxWorkers(struct _cmstransform_struct* CMMcargo);
+CMSAPI cmsUInt32Number  CMSEXPORT _cmsGetTransformWorkerFlags(struct _cmstransform_struct* CMMcargo);
+
+// Let's plug-in to guess the best number of workers
+#define CMS_GUESS_MAX_WORKERS -1
+
+typedef struct {
+    cmsPluginBase       base;
+
+    cmsInt32Number      MaxWorkers;       // Number of starts to do as maximum
+    cmsUInt32Number     WorkerFlags;      // Reserved
+    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions
+
+}  cmsPluginParalellization;
 
 
 #ifndef CMS_USE_CPP_API

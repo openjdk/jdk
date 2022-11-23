@@ -35,9 +35,9 @@
 #include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
-                    NativeCallStack(0) : NativeCallStack::empty_stack())
+                    NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
-                    NativeCallStack(1) : NativeCallStack::empty_stack())
+                    NativeCallStack(1) : FAKE_CALLSTACK)
 
 class MemBaseline;
 
@@ -231,10 +231,7 @@ class MemTracker : AllStatic {
 
  private:
   // Tracking level
-  static volatile NMT_TrackingLevel   _tracking_level;
-  // If NMT option value passed by launcher through environment
-  // variable is valid
-  static bool                         _is_nmt_env_valid;
+  static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
   static MemBaseline      _baseline;
   // Query lock

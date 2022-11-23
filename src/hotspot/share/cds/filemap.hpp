@@ -27,6 +27,7 @@
 
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
+#include "logging/logLevel.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
@@ -481,6 +482,8 @@ public:
   // Errors.
   static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
   static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void fail_continue(LogLevelType level, const char *msg, ...) ATTRIBUTE_PRINTF(2, 3);
+  static void fail_continue_impl(LogLevelType level, const char *msg, va_list ap) ATTRIBUTE_PRINTF(2, 0);
   static bool memory_mapping_failed() {
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
