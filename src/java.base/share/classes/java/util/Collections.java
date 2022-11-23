@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1714,6 +1714,7 @@ public class Collections {
                         throw new UnsupportedOperationException();
                     }
                     public void forEachRemaining(Consumer<? super Map.Entry<K, V>> action) {
+                        Objects.requireNonNull(action);
                         i.forEachRemaining(entryConsumer(action));
                     }
                 };
@@ -3878,6 +3879,7 @@ public class Collections {
                     }
 
                     public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+                        Objects.requireNonNull(action);
                         i.forEachRemaining(
                             e -> action.accept(checkedEntry(e, valueType)));
                     }

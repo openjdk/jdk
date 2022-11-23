@@ -32,10 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
-LogOutput::~LogOutput() {
-  os::free(_config_string);
-}
-
 void LogOutput::describe(outputStream *out) {
   out->print("%s ", name());
   out->print_raw(config_string()); // raw printed because length might exceed O_BUFLEN
@@ -56,34 +52,16 @@ void LogOutput::describe(outputStream *out) {
 }
 
 void LogOutput::set_config_string(const char* string) {
-  os::free(_config_string);
-  _config_string = os::strdup(string, mtLogging);
-  _config_string_buffer_size = strlen(_config_string) + 1;
+  _config_string.reset();
+  _config_string.print_raw(string);
 }
 
 void LogOutput::add_to_config_string(const LogSelection& selection) {
-  if (_config_string_buffer_size < InitialConfigBufferSize) {
-    _config_string_buffer_size = InitialConfigBufferSize;
-    _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
-  }
-
-  size_t offset = strlen(_config_string);
-  if (offset > 0) {
+  if (_config_string.size() > 0) {
     // Add commas in-between tag and level combinations in the config string
-    _config_string[offset++] = ',';
+    _config_string.print_raw(",");
   }
-
-  for (;;) {
-    int ret = selection.describe(_config_string + offset,
-                                 _config_string_buffer_size - offset);
-    if (ret == -1) {
-      // Double the buffer size and retry
-      _config_string_buffer_size *= 2;
-      _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
-      continue;
-    }
-    break;
-  };
+  selection.describe_on(&_config_string);
 }
 
 
