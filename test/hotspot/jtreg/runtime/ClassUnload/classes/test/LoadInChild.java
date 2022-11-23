@@ -25,5 +25,5 @@
 package test;
 
 public class LoadInChild {
-public String toString() { return "Load In Child"; }
+    public String toString() { return "Load In Child"; }
 }
