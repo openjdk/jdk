@@ -78,7 +78,7 @@ public class CRLNumberExtension extends Extension {
      * Create a CRLNumberExtension with the BigInteger value .
      * The criticality is set to false.
      *
-     * @param crlNum the value to be set for the extension.
+     * @param crlNum the value to be set for the extension, cannot be null
      */
     public CRLNumberExtension(BigInteger crlNum) throws IOException {
         this(PKIXExtensions.CRLNumber_Id, false, crlNum, NAME, LABEL);
@@ -91,6 +91,9 @@ public class CRLNumberExtension extends Extension {
         boolean isCritical, BigInteger crlNum, String extensionName,
         String extensionLabel) throws IOException {
 
+        if (crlNum == null) {
+            throw new IllegalArgumentException("CRL number cannot be null");
+        }
         this.extensionId = extensionId;
         this.critical = isCritical;
         this.crlNumber = crlNum;

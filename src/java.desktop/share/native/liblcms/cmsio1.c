@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -289,7 +289,7 @@ Error:
 
 
 
-// Read the DToAX tag, adjusting the encoding of Lab or XYZ if neded
+// Read the DToAX tag, adjusting the encoding of Lab or XYZ if needed
 static
 cmsPipeline* _cmsReadFloatInputTag(cmsHPROFILE hProfile, cmsTagSignature tagFloat)
 {
@@ -351,10 +351,8 @@ cmsPipeline* CMSEXPORT _cmsReadInputLUT(cmsHPROFILE hProfile, cmsUInt32Number In
         if (nc == NULL) return NULL;
 
         Lut = cmsPipelineAlloc(ContextID, 0, 0);
-        if (Lut == NULL) {
-            cmsFreeNamedColorList(nc);
+        if (Lut == NULL)
             return NULL;
-        }
 
         if (!cmsPipelineInsertStage(Lut, cmsAT_BEGIN, _cmsStageAllocNamedColor(nc, TRUE)) ||
             !cmsPipelineInsertStage(Lut, cmsAT_END, _cmsStageAllocLabV2ToV4(ContextID))) {
@@ -565,7 +563,7 @@ void ChangeInterpolationToTrilinear(cmsPipeline* Lut)
 }
 
 
-// Read the DToAX tag, adjusting the encoding of Lab or XYZ if neded
+// Read the DToAX tag, adjusting the encoding of Lab or XYZ if needed
 static
 cmsPipeline* _cmsReadFloatOutputTag(cmsHPROFILE hProfile, cmsTagSignature tagFloat)
 {
@@ -690,7 +688,7 @@ Error:
 
 // ---------------------------------------------------------------------------------------------------------------
 
-// Read the AToD0 tag, adjusting the encoding of Lab or XYZ if neded
+// Read the AToD0 tag, adjusting the encoding of Lab or XYZ if needed
 static
 cmsPipeline* _cmsReadFloatDevicelinkTag(cmsHPROFILE hProfile, cmsTagSignature tagFloat)
 {
@@ -769,7 +767,6 @@ cmsPipeline* CMSEXPORT _cmsReadDevicelinkLUT(cmsHPROFILE hProfile, cmsUInt32Numb
         return Lut;
     Error:
         cmsPipelineFree(Lut);
-        cmsFreeNamedColorList(nc);
         return NULL;
     }
 

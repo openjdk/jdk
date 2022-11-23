@@ -223,6 +223,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * @see     java.net.InetAddress#getByName(java.lang.String)
  * @see     java.net.InetAddress#getLocalHost()
  * @since 1.0
+ * @sealedGraph
  */
 public sealed class InetAddress implements Serializable permits Inet4Address, Inet6Address {
 
