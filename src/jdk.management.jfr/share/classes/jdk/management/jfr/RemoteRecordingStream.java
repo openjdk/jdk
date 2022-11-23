@@ -611,6 +611,7 @@ public final class RemoteRecordingStream implements EventStream {
                         stopped = mbean.stopRecording(recordingId);
                         ManagementSupport.setCloseOnComplete(stream, false);
                         long stopTime = getRecordingInfo(mbean.getRecordings(), recordingId).getStopTime();                       pb.setStreamEnd(stopTime);
+                        pb.setStreamEnd(stopTime);
                         rb.setStreamEnd(stopTime);
                     }
                 }
