@@ -68,7 +68,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * {@link MappedMemorySegmentImpl}.
  */
 public abstract sealed class AbstractMemorySegmentImpl
-        implements MemorySegment, SegmentAllocator, Scoped, BiFunction<String, List<Number>, RuntimeException>
+        implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
         permits HeapMemorySegmentImpl, NativeMemorySegmentImpl {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
@@ -329,6 +329,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private int checkArraySize(String typeName, int elemSize) {
+        // elemSize is guaranteed to be a power of two, so we can use an alignment check
         if (!Utils.isAligned(length, elemSize)) {
             throw new IllegalStateException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
@@ -359,6 +360,11 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public SegmentScope scope() {
         return session;
+    }
+
+    @ForceInline
+    public final MemorySessionImpl sessionImpl() {
+        return (MemorySessionImpl)session;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {

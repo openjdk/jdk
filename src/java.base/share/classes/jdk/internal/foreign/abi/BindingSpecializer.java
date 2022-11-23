@@ -24,9 +24,9 @@
  */
 package jdk.internal.foreign.abi;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
-import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -498,8 +498,8 @@ public class BindingSpecializer {
     }
 
     private void emitAcquireScope() {
-        emitCheckCast(Scoped.class);
-        emitInvokeInterface(Scoped.class, "sessionImpl", SESSION_IMPL_DESC);
+        emitCheckCast(AbstractMemorySegmentImpl.class);
+        emitInvokeVirtual(AbstractMemorySegmentImpl.class, "sessionImpl", SESSION_IMPL_DESC);
         Label skipAcquire = new Label();
         Label end = new Label();
 
