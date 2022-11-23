@@ -559,7 +559,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   const Register t0 = r13;
   const Register t1 = r14;
   const Register t2 = r15;
-  const Register rscratch = r13;
+  const Register rscratch = r14;
   const Register mulql = rax;
   const Register mulqh = rdx;
 
