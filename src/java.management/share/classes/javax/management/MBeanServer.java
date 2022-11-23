@@ -393,14 +393,12 @@ public interface MBeanServer extends MBeanServerConnection {
 
     /**
      * {@inheritDoc}
-      * @throws RuntimeOperationsException {@inheritDoc}
      */
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query);
 
     /**
      * {@inheritDoc}
-      * @throws RuntimeOperationsException {@inheritDoc}
-    */
+     */
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query);
 
     // doc comment inherited from MBeanServerConnection
