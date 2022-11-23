@@ -62,7 +62,6 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
-import sun.java2d.pipe.Region;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
 
