@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
@@ -73,8 +74,9 @@ class ClassLoaderDataGraph : public AllStatic {
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void always_strong_cld_do(CLDClosure* cl);
   // Iteration through CLDG not by GC.
+  template <bool keep_alive = true>
   static void loaded_cld_do(CLDClosure* cl);
-  static void loaded_cld_do_no_keepalive(CLDClosure* cl);
+
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
   // classes that are allocated but not loaded, classes that have errors, and scratch classes
@@ -142,6 +144,21 @@ public:
   void do_klass(Klass* k) {
     (*_function)(k);
   }
+};
+
+// Iterating over the CLDG needs to be locked because
+// unloading can remove entries concurrently soon.
+template <bool keep_alive = true>
+class ClassLoaderDataGraphIteratorBase : public StackObj {
+  ClassLoaderData*    _next;
+  Thread*             _thread;
+  HandleMark          _hm;  // clean up handles when this is done.
+  NoSafepointVerifier _nsv; // No safepoints allowed in this scope
+                            // unless verifying at a safepoint.
+
+public:
+  ClassLoaderDataGraphIteratorBase();
+  ClassLoaderData* get_next();
 };
 
 // An iterator that distributes Klasses to parallel worker threads.

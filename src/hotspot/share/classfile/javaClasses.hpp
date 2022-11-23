@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
 #include "classfile/vmClasses.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
@@ -1475,8 +1476,8 @@ class java_lang_ClassLoader : AllStatic {
   static ClassLoaderData* loader_data(oop loader);
   static void release_set_loader_data(oop loader, ClassLoaderData* new_data);
 
+  template <DecoratorSet decorators = DECORATORS_NONE>
   static oop parent(oop loader);
-  static oop parent_no_keepalive(oop loader);
   static oop name(oop loader);
   static oop nameAndId(oop loader);
   static bool isAncestor(oop loader, oop cl);

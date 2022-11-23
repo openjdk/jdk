@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -66,7 +67,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   }
 
   if (cl != NULL) {
-    cls->_parent = java_lang_ClassLoader::parent_no_keepalive(cl);
+    cls->_parent = java_lang_ClassLoader::parent<AS_NO_KEEPALIVE>(cl);
     addEmptyParents(cls->_parent);
   }
 
@@ -152,19 +153,19 @@ void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
     ClassLoaderStats* cls = _stats->put_if_absent(cl, &added);
     if (added) {
       cls->_class_loader = cl;
-      cls->_parent = java_lang_ClassLoader::parent_no_keepalive(cl);
+      cls->_parent = java_lang_ClassLoader::parent<AS_NO_KEEPALIVE>(cl);
       _total_loaders++;
     }
     assert(cls->_class_loader == cl, "Sanity");
 
-    cl = java_lang_ClassLoader::parent_no_keepalive(cl);
+    cl = java_lang_ClassLoader::parent<AS_NO_KEEPALIVE>(cl);
   }
 }
 
 
 void ClassLoaderStatsVMOperation::doit() {
   ClassLoaderStatsClosure clsc (_out);
-  ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&clsc);
+  ClassLoaderDataGraph::loaded_cld_do<false>(&clsc);
   clsc.print();
 }
 

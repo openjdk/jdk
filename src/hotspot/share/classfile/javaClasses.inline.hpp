@@ -310,6 +310,12 @@ inline size_t java_lang_Class::oop_size(oop java_class) {
   return size;
 }
 
+template <DecoratorSet decorators>
+inline oop java_lang_ClassLoader::parent(oop loader) {
+  assert(is_instance(loader), "loader must be oop");
+  return loader->obj_field_access<decorators>(_parent_offset);
+}
+
 inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }

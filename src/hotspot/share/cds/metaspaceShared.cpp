@@ -36,7 +36,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"

@@ -26,8 +26,9 @@
 #include "precompiled.hpp"
 
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"

@@ -30,7 +30,48 @@
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
+
+template<bool keep_alive>
+inline ClassLoaderDataGraphIteratorBase<keep_alive>::ClassLoaderDataGraphIteratorBase() :
+    _next(ClassLoaderDataGraph::_head),
+    _thread(Thread::current()),
+    _hm(_thread) {
+  if (keep_alive) {
+    assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  } else {
+    assert_at_safepoint();
+  }
+}
+
+template<bool keep_alive>
+inline ClassLoaderData* ClassLoaderDataGraphIteratorBase<keep_alive>::get_next() {
+  ClassLoaderData* cld = _next;
+  // Skip already unloaded CLD for concurrent unloading.
+  while (cld != NULL && !cld->is_alive()) {
+    cld = cld->next();
+  }
+  if (cld != NULL) {
+    if (keep_alive) {
+      // Keep cld that is being returned alive.
+      Handle(_thread, cld->holder());
+    }
+    _next = cld->next();
+  } else {
+    _next = NULL;
+  }
+  return cld;
+}
+
+template<bool keep_alive>
+inline void ClassLoaderDataGraph::loaded_cld_do(CLDClosure* cl) {
+  ClassLoaderDataGraphIteratorBase<keep_alive> iter;
+  while (ClassLoaderData* cld = iter.get_next()) {
+    cl->do_cld(cld);
+  }
+}
 
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
