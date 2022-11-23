@@ -39,7 +39,6 @@ import javax.crypto.spec.*;
  * Note: only <code>CBC</code> mode and <code>NoPadding</code> padding
  * scheme can be used for this algorithm.
  *
- * @spec https://www.w3.org/TR/xmlenc-core XML Encryption Syntax and Processing Version 1.1
  * @author Valerie Peng
  *
  *

@@ -57,7 +57,6 @@ import com.sun.jndi.ldap.Connection;
  * a TLS connection over the existing LDAP connection associated with
  * the JNDI context on which {@code extendedOperation()} is invoked.
  *
- * @spec https://www.ietf.org/rfc/rfc2830.html RFC 2830: Lightweight Directory Access Protocol (v3): Extension for Transport Layer Security
  * @see StartTlsRequest
  * @author Vincent Ryan
  */

@@ -94,7 +94,6 @@ import sun.security.util.DerValue;
  *
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc3161.html RFC 3161: Internet X.509 Public Key Infrastructure Time-Stamp Protocol (TSP)
  * @since 1.5
  * @author Vincent Ryan
  * @see Timestamper

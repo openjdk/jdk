@@ -60,7 +60,6 @@ import sun.security.util.DerValue;
  *          onlyContainsAttributeCerts [5] BOOLEAN DEFAULT FALSE }
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @see DistributionPoint
  * @since 1.6
  */

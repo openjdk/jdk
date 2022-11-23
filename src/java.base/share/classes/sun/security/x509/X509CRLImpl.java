@@ -77,7 +77,6 @@ import sun.security.util.*;
  *     }
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @see X509CRL
  */
@@ -804,7 +803,6 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * and CRL Profile</a>.
      *
      * @return the signature algorithm oid string.
-     * @spec https://www.ietf.org/rfc/rfc3279.html RFC 3279: Algorithms and Identifiers for the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
      */
     public String getSigAlgOID() {
         if (sigAlgId == null)

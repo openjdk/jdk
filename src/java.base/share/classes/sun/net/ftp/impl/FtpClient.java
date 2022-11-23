@@ -2092,7 +2092,6 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      *
      * @return <code>true</code> if the operation was successful.
      * @throws IOException if an error occurred during the transmission.
-     * @spec https://www.ietf.org/rfc/rfc4217.html RFC 4217: Securing FTP with TLS
      * @see #endSecureSession()
      */
     public sun.net.ftp.FtpClient startSecureSession() throws sun.net.ftp.FtpProtocolException, IOException {

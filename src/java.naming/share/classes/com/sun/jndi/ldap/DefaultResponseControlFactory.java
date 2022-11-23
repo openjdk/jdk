@@ -45,8 +45,6 @@ import javax.naming.ldap.*;
  * <a href="http://www.ietf.org/internet-drafts/draft-ietf-ldapext-psearch-02.txt">draft-ietf-ldapext-psearch-02.txt</a>.
  * </ul>
  *
- * @spec https://www.ietf.org/rfc/rfc2696.html RFC 2696: LDAP Control Extension for Simple Paged Results Manipulation
- * @spec https://www.ietf.org/rfc/rfc2891.html RFC 2891: LDAP Control Extension for Server Side Sorting of Search Results
  * @see javax.naming.ldap.SortResponseControl
  * @see javax.naming.ldap.PagedResultsResponseControl
  * @see PersistentSearchControl
