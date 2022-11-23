@@ -301,7 +301,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
 }
 
 
-void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
+void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes, int max_monitors) {
   assert(bang_size_in_bytes >= framesize, "stack bang size incorrect");
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before creating a frame.
