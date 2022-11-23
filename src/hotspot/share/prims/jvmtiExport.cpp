@@ -381,6 +381,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     java_lang_VirtualThread::set_notify_jvmti_events(true);
     if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
       ThreadInVMfromNative __tiv(JavaThread::current());
+      JvmtiVTMSTransitionDisabler disabler;
       java_lang_VirtualThread::init_static_notify_jvmti_events();
     }
   }
