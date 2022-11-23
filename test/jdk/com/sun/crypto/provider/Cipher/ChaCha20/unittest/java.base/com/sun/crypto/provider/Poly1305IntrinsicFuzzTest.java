@@ -26,6 +26,7 @@ package com.sun.crypto.provider;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 
 import javax.crypto.spec.SecretKeySpec;
 
@@ -36,7 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class Poly1305IntrinsicFuzzTest {
         public static void main(String[] args) throws Exception {
                 //Note: it might be useful to increase this number during development of new Poly1305 intrinsics
-                final int repeat = 100;
+                final int repeat = 1000;
                 for (int i = 0; i < repeat; i++) {
                         run();
                 }
@@ -44,7 +45,7 @@ public class Poly1305IntrinsicFuzzTest {
         }
 
         public static void run() throws Exception {
-                java.util.Random rnd = new java.util.Random();
+                Random rnd = new Random();
                 long seed = rnd.nextLong();
                 rnd.setSeed(seed);
 
@@ -65,17 +66,17 @@ public class Poly1305IntrinsicFuzzTest {
                 if (rnd.nextBoolean()) {
                         // Prime just the buffer and/or accumulator (buffer can keep at most 16 bytes from previous engineUpdate)
                         int initDataLen = rnd.nextInt(8, 24);
-                        authenticator.engineUpdate(message, 0, initDataLen);
+                        fastUpdate(authenticator, rnd, message, 0, initDataLen);
                         slowUpdate(authenticatorSlow, message, 0, initDataLen);
                 }
 
                 if (rnd.nextBoolean()) {
                         // Multiple calls to engineUpdate
-                        authenticator.engineUpdate(message, 0, message.length);
+                        fastUpdate(authenticator, rnd, message, 0, message.length);
                         slowUpdate(authenticatorSlow, message, 0, message.length);
                 }
 
-                authenticator.engineUpdate(message, 0, message.length);
+                fastUpdate(authenticator, rnd, message, 0, message.length);
                 slowUpdate(authenticatorSlow, message, 0, message.length);
 
                 byte[] tag = authenticator.engineDoFinal();
@@ -90,6 +91,20 @@ public class Poly1305IntrinsicFuzzTest {
                 len = Math.min(message.length, offset + len);
                 for (int i = offset; i < len; i++) {
                         authenticator.engineUpdate(message[i]);
+                }
+        }
+
+        static void fastUpdate(Poly1305 authenticator, Random rnd, byte[] message, int offset, int len) {
+                switch(rnd.nextInt(3)) {
+                        case 0: // byte[]
+                                authenticator.engineUpdate(message, offset, len);
+                                break;
+                        case 1: // ByteArray with backing array
+                                authenticator.engineUpdate(ByteBuffer.wrap(message, offset, len));
+                                break;
+                        case 2: // ByteArray without backing array (wont be sent to intrinsic)
+                                authenticator.engineUpdate(ByteBuffer.wrap(message, offset, len).asReadOnlyBuffer());
+                                break;
                 }
         }
 }
