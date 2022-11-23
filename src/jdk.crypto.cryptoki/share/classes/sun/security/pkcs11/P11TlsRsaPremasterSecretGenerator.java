@@ -55,7 +55,7 @@ final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     private final String algorithm;
 
     // mechanism id
-    private long mechanism;
+    private final long mechanism;
 
     @SuppressWarnings("deprecation")
     private TlsRsaPremasterSecretParameterSpec spec;
