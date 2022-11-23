@@ -48,6 +48,7 @@ public class LotsOfClasses {
         opts.addSuffix("ALL-SYSTEM");
         opts.addSuffix("-Xlog:hashtables");
         opts.addSuffix("-Xmx500m");
+        opts.addSuffix("-XX:MetaspaceSize=500M"); // avoid heap fragmentation by avoiding metaspace-limit induced GCs
         opts.addSuffix("-Xlog:gc+region+cds");
         opts.addSuffix("-Xlog:cds=debug");  // test detailed metadata info printing
 
