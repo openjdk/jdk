@@ -987,7 +987,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     String loc = http.getHeaderField("Location");
                     URL target = null;
                     if (loc != null) {
-                        target = new URL(base, loc);
+                        target = newURL(base, loc);
                     }
                     http.disconnect();
                     if (target == null
@@ -1885,7 +1885,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             String path = tok.nextToken();
                             try {
                                 /* path could be an abs_path or a complete URI */
-                                URL u = new URL (url, path);
+                                URL u = newURL (url, path);
                                 DigestAuthentication d = new DigestAuthentication (
                                                    false, u, realm, "Digest", pw,
                                                    digestparams, srv.authenticatorKey);
@@ -1932,9 +1932,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     continue;
                 }
 
-                try {
-                    cl = Long.parseLong(responses.findValue("content-length"));
-                } catch (Exception exc) { };
+                final String contentLengthVal = responses.findValue("content-length");
+                if (contentLengthVal != null) {
+                    try {
+                        cl = Long.parseLong(contentLengthVal);
+                    } catch (NumberFormatException nfe) { }
+                }
 
                 if (method.equals("HEAD") || cl == 0 ||
                     respCode == HTTP_NOT_MODIFIED ||
@@ -2502,6 +2505,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (ret == null && defaultAuth != null
                 && defaultAuth.schemeSupported(scheme)) {
                 try {
+                    @SuppressWarnings("deprecation")
                     URL u = new URL("http", host, port, "/");
                     String a = defaultAuth.authString(u, scheme, realm);
                     if (a != null) {
@@ -2616,7 +2620,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (NTLMAuthenticationProxy.supported) {
                         URL url1;
                         try {
-                            url1 = new URL (url, "/"); /* truncate the path */
+                            url1 = newURL (url, "/"); /* truncate the path */
                         } catch (Exception e) {
                             url1 = url;
                         }
@@ -2774,14 +2778,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         URL locUrl;
         try {
-            locUrl = new URL(loc);
+            locUrl = newURL(loc);
             if (!url.getProtocol().equalsIgnoreCase(locUrl.getProtocol())) {
                 return false;
             }
 
         } catch (MalformedURLException mue) {
-          // treat loc as a relative URI to conform to popular browsers
-          locUrl = new URL(url, loc);
+            // treat loc as a relative URI to conform to popular browsers
+           locUrl = newURL(url, loc);
         }
 
         final URL locUrl0 = locUrl;
@@ -3993,6 +3997,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 is.close();
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(URL context, String spec) throws MalformedURLException {
+        return new URL(context, spec);
     }
 }
 

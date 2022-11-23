@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public abstract class ReentrantContextProviderCLQ<K extends ReentrantContext>
 {
     // ReentrantContext queue to store all contexts
     private final ConcurrentLinkedQueue<Reference<K>> ctxQueue
-        = new ConcurrentLinkedQueue<Reference<K>>();
+        = new ConcurrentLinkedQueue<>();
 
     /**
      * Create a new ReentrantContext provider using the given reference type
@@ -63,7 +63,7 @@ public abstract class ReentrantContextProviderCLQ<K extends ReentrantContext>
     public final K acquire() {
         K ctx = null;
         // Drain queue if all referent are null:
-        Reference<K> ref = null;
+        Reference<K> ref;
         while ((ctx == null) && ((ref = ctxQueue.poll()) != null)) {
             ctx = ref.get();
         }

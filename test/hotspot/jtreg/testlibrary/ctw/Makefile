@@ -47,7 +47,7 @@ LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
     $(TESTLIBRARY_DIR)/jtreg \
     -maxdepth 1 -name '*.java')
-WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot $(TESTLIBRARY_DIR)/jdk/test/whitebox -name '*.java')
+WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/compiler $(TESTLIBRARY_DIR)/jdk/test/whitebox -name '*.java')
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \

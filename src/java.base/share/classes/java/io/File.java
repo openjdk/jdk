@@ -694,7 +694,9 @@ public class File
         if (isInvalid()) {
             throw new MalformedURLException("Invalid file path");
         }
-        return new URL("file", "", slashify(getAbsolutePath(), isDirectory()));
+        @SuppressWarnings("deprecation")
+        var result = new URL("file", "", slashify(getAbsolutePath(), isDirectory()));
+        return result;
     }
 
     /**

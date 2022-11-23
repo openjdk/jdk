@@ -704,11 +704,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 #if INCLUDE_RTM_OPT
   } // use_rtm()
 #endif
-  // DONE_LABEL is a hot target - we'd really like to place it at the
-  // start of cache line by padding with NOPs.
-  // See the AMD and Intel software optimization manuals for the
-  // most efficient "long" NOP encodings.
-  // Unfortunately none of our alignment mechanisms suffice.
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -770,7 +765,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
-  Label DONE_LABEL, Stacked, CheckSucc, COUNT, NO_COUNT;
+  Label DONE_LABEL, Stacked, COUNT, NO_COUNT;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -829,8 +824,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // each other and there's no need for an explicit barrier (fence).
   // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
 #ifndef _LP64
-  get_thread (boxReg);
-
   // Note that we could employ various encoding schemes to reduce
   // the number of loads below (currently 4) to just 2 or 3.
   // Refer to the comments in synchronizer.cpp.
@@ -840,30 +833,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jccb  (Assembler::notZero, DONE_LABEL);
   movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  jccb  (Assembler::notZero, CheckSucc);
+  jccb  (Assembler::notZero, DONE_LABEL);
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
   jmpb  (DONE_LABEL);
-
-  bind (Stacked);
-  // It's not inflated and it's not recursively stack-locked.
-  // It must be stack-locked.
-  // Try to reset the header to displaced header.
-  // The "box" value on the stack is stable, so we can reload
-  // and be assured we observe the same value as above.
-  movptr(tmpReg, Address(boxReg, 0));
-  lock();
-  cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-  // Intention fall-thru into DONE_LABEL
-
-  // DONE_LABEL is a hot target - we'd really like to place it at the
-  // start of cache line by padding with NOPs.
-  // See the AMD and Intel software optimization manuals for the
-  // most efficient "long" NOP encodings.
-  // Unfortunately none of our alignment mechanisms suffice.
-  bind (CheckSucc);
 #else // _LP64
   // It's inflated
-  Label LNotRecursive, LSuccess, LGoSlowPath;
+  Label CheckSucc, LNotRecursive, LSuccess, LGoSlowPath;
 
   cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
   jccb(Assembler::equal, LNotRecursive);
@@ -936,13 +911,14 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   testl (boxReg, 0);                      // set ICC.ZF=1 to indicate success
   jmpb  (DONE_LABEL);
 
+#endif
   if (!UseHeavyMonitors) {
     bind  (Stacked);
     movptr(tmpReg, Address (boxReg, 0));      // re-fetch
     lock();
     cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    // Intentional fall-thru into DONE_LABEL
   }
-#endif
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -5279,7 +5255,7 @@ void C2_MacroAssembler::vector_reverse_bit(BasicType bt, XMMRegister dst, XMMReg
     // Get the reverse bit sequence of lower nibble of each byte.
     vmovdqu(xtmp1, ExternalAddress(StubRoutines::x86::vector_reverse_bit_lut()), vec_enc, noreg);
     vbroadcast(T_INT, xtmp2, 0x0F0F0F0F, rtmp, vec_enc);
-    vpandq(dst, xtmp2, src, vec_enc);
+    evpandq(dst, xtmp2, src, vec_enc);
     vpshufb(dst, xtmp1, dst, vec_enc);
     vpsllq(dst, dst, 4, vec_enc);
 
@@ -5290,7 +5266,7 @@ void C2_MacroAssembler::vector_reverse_bit(BasicType bt, XMMRegister dst, XMMReg
 
     // Perform logical OR operation b/w left shifted reverse bit sequence of lower nibble and
     // right shifted reverse bit sequence of upper nibble to obtain the reverse bit sequence of each byte.
-    vporq(xtmp2, dst, xtmp2, vec_enc);
+    evporq(xtmp2, dst, xtmp2, vec_enc);
     vector_reverse_byte(bt, dst, xtmp2, vec_enc);
 
   } else if(vec_enc == Assembler::AVX_512bit) {
@@ -5345,11 +5321,11 @@ void C2_MacroAssembler::vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, X
 void C2_MacroAssembler::vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
                                           XMMRegister xtmp1, Register rtmp, int vec_enc) {
   vbroadcast(T_INT, xtmp1, bitmask, rtmp, vec_enc);
-  vpandq(dst, xtmp1, src, vec_enc);
+  evpandq(dst, xtmp1, src, vec_enc);
   vpsllq(dst, dst, nbits, vec_enc);
   vpandn(xtmp1, xtmp1, src, vec_enc);
   vpsrlq(xtmp1, xtmp1, nbits, vec_enc);
-  vporq(dst, dst, xtmp1, vec_enc);
+  evporq(dst, dst, xtmp1, vec_enc);
 }
 
 void C2_MacroAssembler::vector_reverse_byte64(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
