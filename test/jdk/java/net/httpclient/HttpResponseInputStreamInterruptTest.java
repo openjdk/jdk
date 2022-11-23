@@ -28,17 +28,14 @@
  * @run junit HttpResponseInputStreamInterruptTest
  */
 
-import com.sun.net.httpserver;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +48,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpResponseInputStreamInterruptTest {
 
@@ -60,7 +60,6 @@ public class HttpResponseInputStreamInterruptTest {
     private CountDownLatch interruptLatch = new CountDownLatch(1);
     static final String FIRST_MESSAGE = "Should be received";
     static final String SECOND_MESSAGE = "Shouldn't be received";
-
 
     @BeforeAll
     void before() throws Exception {
@@ -155,7 +154,7 @@ public class HttpResponseInputStreamInterruptTest {
                         .GET()
                         .build();
 
-                // Send httpRequest and assert the first expected response is received
+                // Send a httpRequest and assert the first response is received as expected
                 HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
                 String firstOutput = new String(response.body().readNBytes(FIRST_MESSAGE.getBytes().length));
                 assertEquals(firstOutput, FIRST_MESSAGE);
