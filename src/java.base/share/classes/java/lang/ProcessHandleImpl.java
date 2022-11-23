@@ -99,8 +99,7 @@ final class ProcessHandleImpl implements ProcessHandle {
 
                 ThreadFactory threadFactory = grimReaper -> {
                     Thread t = InnocuousThread.newSystemThread("process reaper", grimReaper,
-                            stackSize, Thread.MAX_PRIORITY);
-                    t.setDaemon(true);
+                            stackSize, Thread.MAX_PRIORITY, true);
                     return t;
                 };
 
@@ -140,8 +139,12 @@ final class ProcessHandleImpl implements ProcessHandle {
                 processReaperExecutor.execute(new Runnable() {
                     // Use inner class to avoid lambda stack overhead
                     public void run() {
-                        String threadName = Thread.currentThread().getName();
-                        Thread.currentThread().setName("process reaper (pid " + pid + ")");
+                        Thread t = Thread.currentThread();
+                        String threadName = t.getName();
+                        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                            t.setName("process reaper (pid " + pid + ")");
+                            return null;
+                        });
                         try {
                             int exitValue = waitForProcessExit0(pid, shouldReap);
                             if (exitValue == NOT_A_CHILD) {
@@ -172,7 +175,10 @@ final class ProcessHandleImpl implements ProcessHandle {
                             completions.remove(pid, newCompletion);
                         } finally {
                             // Restore thread name
-                            Thread.currentThread().setName(threadName);
+                            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                                t.setName(threadName);
+                                return null;
+                            });
                         }
                     }
                 });

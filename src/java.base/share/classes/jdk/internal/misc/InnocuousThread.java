@@ -73,14 +73,14 @@ public final class InnocuousThread extends Thread {
     public static Thread newThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
             return createThread(name, target, 0L,
-                    ClassLoader.getSystemClassLoader(), priority);
+                    ClassLoader.getSystemClassLoader(), priority, false);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
                         return createThread(name, target, 0L,
-                                ClassLoader.getSystemClassLoader(), priority);
+                                ClassLoader.getSystemClassLoader(), priority, false);
                     }
                 });
     }
@@ -106,14 +106,14 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newSystemThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
-            return createThread(name, target, 0L, null, priority);
+            return createThread(name, target, 0L, null, priority, false);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
                         return createThread(name, target, 0L,
-                                null, priority);
+                                null, priority, false);
                     }
                 });
     }
@@ -124,26 +124,38 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newSystemThread(String name, Runnable target,
                                          long stackSize, int priority) {
+        return newSystemThread(name, target, stackSize, priority, false);
+    }
+
+    /**
+     * Returns a new InnocuousThread with null context class loader.
+     * Thread priority is set to the given priority.
+     * If {@code daemon} is {@code true}, the thread is set as a daemon thread.
+     */
+    public static Thread newSystemThread(String name, Runnable target,
+                                         long stackSize, int priority,
+                                         boolean daemon) {
         if (System.getSecurityManager() == null) {
-            return createThread(name, target, stackSize, null, priority);
+            return createThread(name, target, stackSize, null, priority, daemon);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
                         return createThread(name, target, 0L,
-                                null, priority);
+                                null, priority, daemon);
                     }
                 });
     }
 
     private static Thread createThread(String name, Runnable target, long stackSize,
-                                       ClassLoader loader, int priority) {
+                                       ClassLoader loader, int priority, boolean daemon) {
         Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
                 target, name, stackSize, loader);
         if (priority >= 0) {
             t.setPriority(priority);
         }
+        t.setDaemon(daemon);
         return t;
     }
 
