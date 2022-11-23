@@ -291,13 +291,13 @@ public final class ScopedValue<T> {
          * Returns a new {@code Carrier} with the mappings from this carrier plus a
          * new mapping from {@code key} to {@code value}. If this carrier already has a
          * mapping for the scoped value {@code key} then it will map to the new
-         * {@code value}. The current carrier is immutable, it is not changed by this
+         * {@code value}. The current carrier is immutable, so it is not changed by this
          * method.
          *
          * @param key the {@code ScopedValue} key
          * @param value the value, can be {@code null}
          * @param <T> the type of the value
-         * @return a new {@Code Carrier} with the mappings from this carrier plus the new mapping
+         * @return a new {@code Carrier} with the mappings from this carrier plus the new mapping
          */
         public <T> Carrier where(ScopedValue<T> key, T value) {
             return where(key, value, this);
@@ -452,7 +452,7 @@ public final class ScopedValue<T> {
      * @param key the {@code ScopedValue} key
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
-     * @return a new {@Code Carrier} with a single mapping
+     * @return a new {@code Carrier} with a single mapping
      */
     public static <T> Carrier where(ScopedValue<T> key, T value) {
         return Carrier.of(key, value);
