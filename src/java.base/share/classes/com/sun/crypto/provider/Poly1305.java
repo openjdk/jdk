@@ -260,7 +260,7 @@ final class Poly1305 {
             int offset = buf.arrayOffset();
             long[] aLimbs = a.getLimbs();
             long[] rLimbs = r.getLimbs();
-            
+
             processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
             processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
         } else {
