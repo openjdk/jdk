@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,14 +416,14 @@ bool Arena::contains( const void *ptr ) const {
 }
 
 
-#ifdef ASSERT
+
 void* Arena::malloc(size_t size) {
   assert(UseMallocOnly, "shouldn't call");
   // use malloc, but save pointer in res. area for later freeing
   char** save = (char**)internal_amalloc(sizeof(char*));
   return (*save = (char*)os::malloc(size, mtChunk));
 }
-#endif
+
 
 
 //--------------------------------------------------------------------------------------
