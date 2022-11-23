@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.crypto.spec.PBEKeySpec;
 
 /**
  * @test
- * @bug 8041787
+ * @bug 8041787 8288050
  * @summary verify that Mac.update works with different size ByteBuffer
  * @author Alexander Fomin
  * @run main PBMacBuffer
@@ -50,7 +50,9 @@ public class PBMacBuffer {
             "PBEWithHmacSHA224",
             "PBEWithHmacSHA256",
             "PBEWithHmacSHA384",
-            "PBEWithHmacSHA512"
+            "PBEWithHmacSHA512",
+            "PBEWithHmacSHA512/224",
+            "PBEWithHmacSHA512/256",
         };
 
         String[] PBKDF2Algorithms = {
@@ -58,7 +60,9 @@ public class PBMacBuffer {
             "PBKDF2WithHmacSHA224",
             "PBKDF2WithHmacSHA256",
             "PBKDF2WithHmacSHA384",
-            "PBKDF2WithHmacSHA512"
+            "PBKDF2WithHmacSHA512",
+            "PBKDF2WithHmacSHA512/224",
+            "PBKDF2WithHmacSHA512/256",
         };
 
         PBMacBuffer testRunner = new PBMacBuffer();

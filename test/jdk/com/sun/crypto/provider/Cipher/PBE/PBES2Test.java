@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6383200
+ * @bug 6383200 8288050
  * @summary PBE: need new algorithm support in password based encryption
  */
 import java.security.*;
@@ -38,7 +38,9 @@ public class PBES2Test {
         "PBEWithHmacSHA224AndAES_128",
         "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128",
-        "PBEWithHmacSHA512AndAES_128"
+        "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128",
+        "PBEWithHmacSHA512/256AndAES_128",
     };
     private static final byte[] ivBytes = {
         0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,

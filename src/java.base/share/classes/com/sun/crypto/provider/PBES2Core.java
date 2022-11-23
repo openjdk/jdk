@@ -89,6 +89,12 @@ abstract class PBES2Core extends CipherSpi {
             case "HmacSHA512":
                 kdf = new PBKDF2Core.HmacSHA512();
                 break;
+            case "HmacSHA512/224":
+                kdf = new PBKDF2Core.HmacSHA512_224();
+                break;
+            case "HmacSHA512/256":
+                kdf = new PBKDF2Core.HmacSHA512_256();
+                break;
             default:
                 throw new NoSuchAlgorithmException(
                     "No Cipher implementation for " + kdfAlgo);
@@ -370,6 +376,20 @@ abstract class PBES2Core extends CipherSpi {
         }
     }
 
+    public static final class HmacSHA512_224AndAES_128 extends PBES2Core {
+        public HmacSHA512_224AndAES_128()
+            throws NoSuchAlgorithmException, NoSuchPaddingException {
+            super("HmacSHA512/224", "AES", 16);
+        }
+    }
+
+    public static final class HmacSHA512_256AndAES_128 extends PBES2Core {
+        public HmacSHA512_256AndAES_128()
+            throws NoSuchAlgorithmException, NoSuchPaddingException {
+            super("HmacSHA512/256", "AES", 16);
+        }
+    }
+
     public static final class HmacSHA1AndAES_256 extends PBES2Core {
         public HmacSHA1AndAES_256()
             throws NoSuchAlgorithmException, NoSuchPaddingException {
@@ -402,6 +422,19 @@ abstract class PBES2Core extends CipherSpi {
         public HmacSHA512AndAES_256()
             throws NoSuchAlgorithmException, NoSuchPaddingException {
             super("HmacSHA512", "AES", 32);
+        }
+    }
+
+    public static final class HmacSHA512_224AndAES_256 extends PBES2Core {
+        public HmacSHA512_224AndAES_256()
+            throws NoSuchAlgorithmException, NoSuchPaddingException {
+            super("HmacSHA512/224", "AES", 32);
+        }
+    }
+    public static final class HmacSHA512_256AndAES_256 extends PBES2Core {
+        public HmacSHA512_256AndAES_256()
+            throws NoSuchAlgorithmException, NoSuchPaddingException {
+            super("HmacSHA512/256", "AES", 32);
         }
     }
 }

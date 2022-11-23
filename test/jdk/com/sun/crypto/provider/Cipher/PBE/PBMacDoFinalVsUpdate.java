@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.crypto.spec.PBEKeySpec;
 
 /**
  * @test
- * @bug 8041787
+ * @bug 8041787 8288050
  * @summary Check if doFinal and update operation result in same PBMac
  * @author Alexander Fomin
  * @run main PBMacDoFinalVsUpdate
@@ -46,7 +46,9 @@ public class PBMacDoFinalVsUpdate {
             "PBEWithHmacSHA224",
             "PBEWithHmacSHA256",
             "PBEWithHmacSHA384",
-            "PBEWithHmacSHA512"
+            "PBEWithHmacSHA512",
+            "PBEWithHmacSHA512/224",
+            "PBEWithHmacSHA512/256",
         };
 
         String[] PBKDF2Algorithms = {
@@ -54,7 +56,9 @@ public class PBMacDoFinalVsUpdate {
             "PBKDF2WithHmacSHA224",
             "PBKDF2WithHmacSHA256",
             "PBKDF2WithHmacSHA384",
-            "PBKDF2WithHmacSHA512"
+            "PBKDF2WithHmacSHA512",
+            "PBKDF2WithHmacSHA512/224",
+            "PBKDF2WithHmacSHA512/256",
         };
 
         PBMacDoFinalVsUpdate testRunner = new PBMacDoFinalVsUpdate();
@@ -176,12 +180,13 @@ public class PBMacDoFinalVsUpdate {
      * otherwise.
      */
     protected boolean isMacLengthExpected(String MACAlgo, int lengthToCheck) {
+
         java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)",
                 java.util.regex.Pattern.CASE_INSENSITIVE);
         java.util.regex.Matcher m = p.matcher(MACAlgo);
         int val = 0;
 
-        if (m.find()) {
+        while (m.find()) { // use the lastly found number
             val = Integer.parseInt(m.group(1));
         }
 

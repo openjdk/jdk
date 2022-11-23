@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,15 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
         validTypes.add("PBEWithHmacSHA256AndAES_128".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA384AndAES_128".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA512AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA512/224AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA512/256AndAES_128".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA1AndAES_256".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA224AndAES_256".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA256AndAES_256".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA384AndAES_256".toUpperCase(Locale.ENGLISH));
         validTypes.add("PBEWithHmacSHA512AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA512/224AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH));
     }
 
     public static final class PBEWithMD5AndDES
@@ -164,6 +168,20 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
+    public static final class PBEWithHmacSHA512_224AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA512_224AndAES_128()  {
+            super("PBEWithHmacSHA512/224AndAES_128");
+        }
+    }
+
+    public static final class PBEWithHmacSHA512_256AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA512_256AndAES_128()  {
+            super("PBEWithHmacSHA512/256AndAES_128");
+        }
+    }
+
     public static final class PBEWithHmacSHA1AndAES_256
             extends PBEKeyFactory {
         public PBEWithHmacSHA1AndAES_256()  {
@@ -196,6 +214,20 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
             extends PBEKeyFactory {
         public PBEWithHmacSHA512AndAES_256()  {
             super("PBEWithHmacSHA512AndAES_256");
+        }
+    }
+
+    public static final class PBEWithHmacSHA512_224AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA512_224AndAES_256()  {
+            super("PBEWithHmacSHA512/224AndAES_256");
+        }
+    }
+
+    public static final class PBEWithHmacSHA512_256AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA512_256AndAES_256()  {
+            super("PBEWithHmacSHA512/256AndAES_256");
         }
     }
 
