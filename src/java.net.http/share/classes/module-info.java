@@ -132,7 +132,8 @@
  * buffer size</a>. Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.internal.httpclient.disableHostnameVerification}</b> (default: false)<br>
- * If true, hostname verification in SSL certificates is disabled. This is a system property only.
+ * If true, hostname verification in SSL certificates is disabled. This is a system property only and not
+ * available in {@code conf/net.properties}. It is provided for testing purposes only.
  * </li>
  * <li><p><b>{@systemProperty jdk.http.auth.proxying.disabledSchemes}</b> (default: see conf/net.properties)<br>
  * A comma separated list of HTTP authentication scheme names, that are disallowed for use by
