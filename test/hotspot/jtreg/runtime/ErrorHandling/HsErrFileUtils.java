@@ -48,8 +48,6 @@ public class HsErrFileUtils {
     /**
      * Given the output of a java VM that crashed, extract the name of the hs-err file from the output,
      * open that file and return its File.
-     * @param output
-     * @return
      */
     public static File openHsErrFileFromOutput(OutputAnalyzer output) {
         String name = extractHsErrFileNameFromOutput(output);
@@ -61,11 +59,11 @@ public class HsErrFileUtils {
     }
 
     /**
-     * Given an open hs-err file, read it line by line and check for existence of a pattern. Will fail
-     * if pattern are missing, or if the END marker is missing.
-     * @param f input file
-     * @param patterns an array of patterns that need to match, in that order
-     * @param verbose if true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     * Given an open hs-err file, read it line by line and check for existence of a set of pattern. Will fail
+     * if patterns are missing, or if the END marker is missing.
+     * @param f Input file
+     * @param patterns An array of patterns that need to match, in that order
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
      *                are printed.
      * @throws RuntimeException, {@link IOException}
      */
@@ -77,11 +75,11 @@ public class HsErrFileUtils {
      * Given an open hs-err file, read it line by line and check for various conditions.
      * @param f input file
      * @param positivePatterns Optional array of patterns that need to appear, in given order, in the file. Missing
-     *                        pattern cause the test to fail.
+     *                        patterns cause the test to fail.
      * @param negativePatterns Optional array of patterns that must not appear in the file; test fails if they do.
      *                        Order is irrelevant.
-     * @param checkEndMarker If true, we check for the final "END" in an hs-err file; it missing indicates hs-err file
-     *                       printing did not complete successfully.
+     * @param checkEndMarker If true, we check for the final "END" in an hs-err file; if it is missing it indicates
+     *                        that hs-err file printing did not complete successfully.
      * @param verbose If true, the content of the hs-err file is printed while matching. If false, only important
      *               information are printed.
      * @throws RuntimeException, {@link IOException}
@@ -130,7 +128,7 @@ public class HsErrFileUtils {
                     }
                 }
                 lastLine = line;
-                lineNo ++;
+                lineNo++;
             }
             // Found all positive pattern?
             if (!positivePatternStack.isEmpty()) {

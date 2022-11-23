@@ -66,7 +66,7 @@ public class BadNativeStackInErrorHandlingTest {
         Pattern.compile("\\[error occurred during error reporting \\(printing native stack\\), id .*\\]")
     };
 
-    HsErrFileUtils.checkHsErrFileContent(hs_err_file, null, negativePatterns, true, false);
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, null, negativePatterns, true /* check end marker */, false /* verbose */);
 
     System.out.println("OK.");
   }

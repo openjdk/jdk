@@ -126,7 +126,8 @@ public class TestDwarf {
         System.out.println(crashOutputString);
 
         File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(crashOut);
-        try (BufferedReader reader = new BufferedReader(new FileReader(hs_err_file))) {
+        try (FileReader fr = new FileReader(hs_err_file);
+             BufferedReader reader = new BufferedReader(fr)) {
             String line;
             boolean foundNativeFrames = false;
             int matches = 0;

@@ -74,7 +74,7 @@ public class ResourceMarkTest {
         Pattern.compile("\\[error occurred during error reporting \\(test missing ResourceMark does not crash\\), id 0xe0000000, Internal Error \\(.*resourceArea.cpp:.*\\)\\]"),
     };
 
-    HsErrFileUtils.checkHsErrFileContent(hs_err_file, null, negativePattern, true, false);
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, null, negativePattern, true /* check end marker */, false /* verbose */);
 
     System.out.println("OK.");
 

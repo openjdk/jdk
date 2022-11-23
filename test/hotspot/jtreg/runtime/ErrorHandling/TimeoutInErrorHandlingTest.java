@@ -117,7 +117,7 @@ public class TimeoutInErrorHandlingTest {
         // Note: we *dont* check for the end marker, since the hs-err file will likely not have
         // one but a global timeout marker. As explained above, we don't check for that one either
         // since it is too instable.
-        HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, null, false,true);
+        HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, null, false /* check end marker */,true /* verbose */);
 
         System.out.println("OK.");
 

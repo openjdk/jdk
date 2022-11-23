@@ -72,7 +72,7 @@ public class VeryEarlyAssertTest {
     Pattern[] pattern = new Pattern[] {
             Pattern.compile(".*HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION.*")
     };
-    HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, null, false, true);
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, null, false /* check end marker */, true /* verbose */);
 
     System.out.println("OK.");
 
