@@ -112,7 +112,7 @@
  * The maximum number of HTTP/2 push streams that the client will permit servers to open simultaneously.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system default)<br>
- * The HTTP client <a href="../java.base/java/net/StandardSocketOptions.html#SO_RCVBUF">socket receive 
+ * The HTTP client <a href="../java.base/java/net/StandardSocketOptions.html#SO_RCVBUF">socket receive
  * buffer size</a> in bytes.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.redirects.retrylimit}</b> (default: 5)<br>
@@ -128,7 +128,7 @@
  * The number of attempts the Basic authentication filter will attempt to retry a failed authentication.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.sendBufferSize}</b> (default: operating system default)<br>
- * The HTTP client socket <a href="../java.base/java/net/StandardSocketOptions.html#SO_SNDBUF">send 
+ * The HTTP client socket <a href="../java.base/java/net/StandardSocketOptions.html#SO_SNDBUF">send
  * buffer size</a>. Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.internal.httpclient.disableHostnameVerification}</b> (default: false)<br>
