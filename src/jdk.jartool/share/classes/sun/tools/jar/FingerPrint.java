@@ -105,7 +105,7 @@ final class FingerPrint {
     }
 
     public boolean isCompatibleVersion(FingerPrint that) {
-        return attrs.version >= that.attrs.version;
+        return attrs.majorVersion >= that.attrs.majorVersion;
     }
 
     public boolean isSameAPI(FingerPrint that) {
@@ -236,7 +236,7 @@ final class FingerPrint {
         private String name;
         private String outerClassName;
         private String superName;
-        private int version;
+        private int majorVersion;
         private int access;
         private boolean publicClass;
         private boolean nestedClass;
@@ -255,7 +255,7 @@ final class FingerPrint {
         @Override
         public void visit(int version, int access, String name, String signature,
                           String superName, String[] interfaces) {
-            this.version = version;
+            this.majorVersion = version & 0xFFFF; // JDK-8296329: extract major version only
             this.access = access;
             this.name = name;
             this.nestedClass = name.contains("$");
