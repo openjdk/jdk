@@ -116,6 +116,9 @@ public class TestDumpOrder {
                 }
                 expected++;
             }
+            if (expected != counter) {
+                throw new Exception("Not all events found");
+            }
         }
     }
 
