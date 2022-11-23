@@ -404,10 +404,6 @@
   template(exit_method_name,                          "exit")                                     \
   template(remove_method_name,                        "remove")                                   \
   template(parent_name,                               "parent")                                   \
-  template(ngroups_name,                              "ngroups")                                  \
-  template(groups_name,                               "groups")                                   \
-  template(nweaks_name,                               "nweaks")                                   \
-  template(weaks_name,                                "weaks")                                    \
   template(maxPriority_name,                          "maxPriority")                              \
   template(shutdown_name,                             "shutdown")                                 \
   template(finalize_method_name,                      "finalize")                                 \
@@ -612,6 +608,7 @@
   template(runnable_void_signature,                   "(Ljava/lang/Runnable;)V")                                   \
   template(threadgroup_runnable_void_signature,       "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;)V")           \
   template(threadgroup_string_void_signature,         "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V")             \
+  template(void_threadgroup_array_signature,          "()[Ljava/lang/ThreadGroup;")                               \
   template(string_class_signature,                    "(Ljava/lang/String;)Ljava/lang/Class;")                    \
   template(string_boolean_class_signature,            "(Ljava/lang/String;Z)Ljava/lang/Class;")                   \
   template(object_object_object_signature,            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \

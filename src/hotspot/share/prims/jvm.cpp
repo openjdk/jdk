@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -48,6 +47,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"

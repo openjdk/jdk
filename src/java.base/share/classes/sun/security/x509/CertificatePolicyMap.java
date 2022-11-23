@@ -26,6 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import sun.security.util.*;
 
@@ -47,8 +48,8 @@ public class CertificatePolicyMap {
      */
     public CertificatePolicyMap(CertificatePolicyId issuer,
                                 CertificatePolicyId subject) {
-        this.issuerDomain = issuer;
-        this.subjectDomain = subject;
+        this.issuerDomain = Objects.requireNonNull(issuer);
+        this.subjectDomain = Objects.requireNonNull(subject);
     }
 
     /**

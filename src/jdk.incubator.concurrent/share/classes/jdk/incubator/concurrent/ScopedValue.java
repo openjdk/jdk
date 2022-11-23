@@ -149,7 +149,7 @@ import sun.security.action.GetPropertyAction;
  * will be low and performance will be poor. This design allows
  * scoped-value inheritance by {@link StructuredTaskScope} threads to
  * be very fast: in essence, no more than copying a pointer, and
- * leaving an scoped-value binding also requires little more than
+ * leaving a scoped-value binding also requires little more than
  * updating a pointer.
  *
  * <p>Because the scoped-value per-thread cache is small, clients
@@ -714,7 +714,7 @@ public final class ScopedValue<T> {
         return (bitmask & targetBits) == targetBits;
     }
 
-    // A small fixed-size key-value cache. When an scoped value's get() method
+    // A small fixed-size key-value cache. When a scoped value's get() method
     // is invoked, we record the result of the lookup in this per-thread cache
     // for fast access in future.
     private static final class Cache {
