@@ -231,8 +231,6 @@ public class PKCS9Attributes {
      *
      * @param tag the implicit tag to use in the DER encoding.
      * @param out the output stream on which to put the DER encoding.
-     *
-     * @exception IOException  on output error.
      */
     public void encode(byte tag, DerOutputStream out) {
         out.write(tag);
