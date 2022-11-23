@@ -226,6 +226,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     if (cl != NULL) {
       Node* ctrl = cl->skip_predicates();
       assert(ctrl->in(0)->is_If(), "");
+      assert(ctrl->in(0) != blk1 && ctrl->in(0) != blk2, "");
       Node* bol = ctrl->in(0)->in(1);
       assert(bol->is_Bool(), "");
       Node* cmp = bol->in(1);
