@@ -62,8 +62,11 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
+import sun.java2d.pipe.Region;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
+
+import static sun.java2d.pipe.Region.clipRound;
 
 /**
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
@@ -246,115 +249,104 @@ public class MetalBorders {
          */
         public InternalFrameBorder() {}
 
-        /**
-         * Rounds a double to the nearest integer. It rounds 0.5 down,
-         * for example 1.5 is rounded to 1.0.
-         *
-         * @param d number to be rounded
-         * @return the rounded value
-         */
-        private static int roundHalfDown(double d) {
-            double decP = (Math.ceil(d) - d);
-            return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
-        }
-
-
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
-            Color background;
-            Color highlight;
-            Color shadow;
+            if (g instanceof Graphics2D) {
+                Graphics2D g2d = (Graphics2D) g;
+                AffineTransform at = g2d.getTransform();
+                Stroke oldStk = g2d.getStroke();
+                Color oldColor = g2d.getColor();
+                int stkWidth = 1;
 
-            if (c instanceof JInternalFrame && ((JInternalFrame)c).isSelected()) {
-                background = MetalLookAndFeel.getPrimaryControlDarkShadow();
-                highlight = MetalLookAndFeel.getPrimaryControlShadow();
-                shadow = MetalLookAndFeel.getPrimaryControlInfo();
-            } else {
-                background = MetalLookAndFeel.getControlDarkShadow();
-                highlight = MetalLookAndFeel.getControlShadow();
-                shadow = MetalLookAndFeel.getControlInfo();
-            }
+                Color background;
+                Color highlight;
+                Color shadow;
 
-            Graphics2D g2d = (Graphics2D) g;
-            AffineTransform at = g2d.getTransform();
-            Stroke oldStk = g2d.getStroke();
-            Color oldColor = g2d.getColor();
-            int stkWidth = 1;
+                if (c instanceof JInternalFrame && ((JInternalFrame)c).isSelected()) {
+                    background = MetalLookAndFeel.getPrimaryControlDarkShadow();
+                    highlight = MetalLookAndFeel.getPrimaryControlShadow();
+                    shadow = MetalLookAndFeel.getPrimaryControlInfo();
+                } else {
+                    background = MetalLookAndFeel.getControlDarkShadow();
+                    highlight = MetalLookAndFeel.getControlShadow();
+                    shadow = MetalLookAndFeel.getControlInfo();
+                }
 
-            // if m01 or m10 is non-zero, then there is a rotation or shear
-            // skip resetting the transform
-            boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
+                // if m01 or m10 is non-zero, then there is a rotation or shear
+                // skip resetting the transform
+                boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
 
-            int xtranslation;
-            int ytranslation;
-            int width;
-            int height;
+                int xtranslation;
+                int ytranslation;
+                int width;
+                int height;
 
-            if (resetTransform) {
-                g2d.setTransform(new AffineTransform());
-                stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
+                if (resetTransform) {
+                    g2d.setTransform(new AffineTransform());
+                    stkWidth = clipRound(Math.min(at.getScaleX(), at.getScaleY()));
 
-                double xx = at.getScaleX() * x + at.getTranslateX();
-                double yy = at.getScaleY() * y + at.getTranslateY();
-                xtranslation = roundHalfDown(xx);
-                ytranslation = roundHalfDown(yy);
-                width = roundHalfDown(at.getScaleX() * w + xx) - xtranslation;
-                height = roundHalfDown(at.getScaleY() * h + yy) - ytranslation;
-            } else {
-                width = w;
-                height = h;
-                xtranslation = x;
-                ytranslation = y;
-            }
-            g2d.translate(xtranslation, ytranslation);
+                    double xx = at.getScaleX() * x + at.getTranslateX();
+                    double yy = at.getScaleY() * y + at.getTranslateY();
+                    xtranslation = clipRound(xx);
+                    ytranslation = clipRound(yy);
+                    width = clipRound(at.getScaleX() * w + xx) - xtranslation;
+                    height = clipRound(at.getScaleY() * h + yy) - ytranslation;
+                } else {
+                    width = w;
+                    height = h;
+                    xtranslation = x;
+                    ytranslation = y;
+                }
+                g2d.translate(xtranslation, ytranslation);
 
-            // scaled border
-            int thickness = (int) Math.ceil(4 * at.getScaleX());
+                // scaled border
+                int thickness = (int) Math.ceil(4 * at.getScaleX());
 
-            g.setColor(background);
-            // Draw the bulk of the border
-            for (int i = 0; i <= thickness; i++) {
-                g.drawRect(i, i, width - (i * 2), height - (i * 2));
-            }
+                g2d.setColor(background);
+                // Draw the bulk of the border
+                for (int i = 0; i <= thickness; i++) {
+                    g2d.drawRect(i, i, width - (i * 2), height - (i * 2));
+                }
 
-            if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
-                // set new stroke to draw shadow and highlight lines
-                g2d.setStroke(new BasicStroke((float) stkWidth));
+                if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
+                    // set new stroke to draw shadow and highlight lines
+                    g2d.setStroke(new BasicStroke((float) stkWidth));
 
-                // midpoint at which highlight & shadow lines
-                // are positioned on the border
-                int midPoint = thickness / 2;
-                int offset = ((at.getScaleX() - stkWidth) >= 0 && stkWidth % 2 != 0) ? 1 : 0;
-                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
-                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
-                // scaled corner
-                int corner = (int) Math.round(CORNER * at.getScaleX());
+                    // midpoint at which highlight & shadow lines
+                    // are positioned on the border
+                    int midPoint = thickness / 2;
+                    int offset = ((at.getScaleX() - stkWidth) >= 0 && stkWidth % 2 != 0) ? 1 : 0;
+                    int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
+                    int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
+                    // scaled corner
+                    int corner = (int) Math.round(CORNER * at.getScaleX());
 
-                // Draw the Long highlight lines
-                g.setColor(highlight);
-                g.drawLine(corner + 1, loc2, width - corner, loc2); //top
-                g.drawLine(loc2, corner + 1, loc2, height - corner); //left
-                g.drawLine((width - offset) - loc1, corner + 1,
-                        (width - offset) - loc1, height - corner); //right
-                g.drawLine(corner + 1, (height - offset) - loc1,
-                        width - corner, (height - offset) - loc1); //bottom
+                    // Draw the Long highlight lines
+                    g2d.setColor(highlight);
+                    g2d.drawLine(corner + 1, loc2, width - corner, loc2); //top
+                    g2d.drawLine(loc2, corner + 1, loc2, height - corner); //left
+                    g2d.drawLine((width - offset) - loc1, corner + 1,
+                            (width - offset) - loc1, height - corner); //right
+                    g2d.drawLine(corner + 1, (height - offset) - loc1,
+                            width - corner, (height - offset) - loc1); //bottom
 
-                // Draw the Long shadow lines
-                g.setColor(shadow);
-                g.drawLine(corner, loc1, width - corner - 1, loc1);
-                g.drawLine(loc1, corner, loc1, height - corner - 1);
-                g.drawLine((width - offset) - loc2, corner,
-                        (width - offset) - loc2, height - corner - 1);
-                g.drawLine(corner, (height - offset) - loc2,
-                        width - corner - 1, (height - offset) - loc2);
-            }
+                    // Draw the Long shadow lines
+                    g2d.setColor(shadow);
+                    g2d.drawLine(corner, loc1, width - corner - 1, loc1);
+                    g2d.drawLine(loc1, corner, loc1, height - corner - 1);
+                    g2d.drawLine((width - offset) - loc2, corner,
+                            (width - offset) - loc2, height - corner - 1);
+                    g2d.drawLine(corner, (height - offset) - loc2,
+                            width - corner - 1, (height - offset) - loc2);
+                }
 
-            // restore previous transform
-            g2d.translate(-xtranslation, -ytranslation);
-            if (resetTransform) {
-                g2d.setColor(oldColor);
-                g2d.setTransform(at);
-                g2d.setStroke(oldStk);
+                // restore previous transform
+                g2d.translate(-xtranslation, -ytranslation);
+                if (resetTransform) {
+                    g2d.setColor(oldColor);
+                    g2d.setTransform(at);
+                    g2d.setStroke(oldStk);
+                }
             }
         }
 
