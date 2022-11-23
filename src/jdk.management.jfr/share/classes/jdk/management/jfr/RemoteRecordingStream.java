@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,10 @@ public final class RemoteRecordingStream implements EventStream {
     volatile Instant startTime;
     volatile Instant endTime;
     volatile boolean closed;
-    private boolean started; // always guarded by lock
+    // always guarded by lock
+    private boolean started;
+    private Duration maxAge;
+    private long maxSize;
 
     /**
      * Creates an event stream that operates against a {@link MBeanServerConnection}
@@ -415,7 +418,11 @@ public final class RemoteRecordingStream implements EventStream {
      */
     public void setMaxAge(Duration maxAge) {
         Objects.requireNonNull(maxAge);
-        repository.setMaxAge(maxAge);
+        synchronized (lock) {
+            repository.setMaxAge(maxAge);
+            this.maxAge = maxAge;
+            updateOnCompleteHandler();
+        }
     }
 
     /**
@@ -441,7 +448,11 @@ public final class RemoteRecordingStream implements EventStream {
         if (maxSize < 0) {
             throw new IllegalArgumentException("Max size of recording can't be negative");
         }
-        repository.setMaxSize(maxSize);
+        synchronized (lock) {
+            repository.setMaxSize(maxSize);
+            this.maxSize = maxSize;
+            updateOnCompleteHandler();
+        }
     }
 
     @Override
@@ -643,6 +654,15 @@ public final class RemoteRecordingStream implements EventStream {
 
     private static Path makeTempDirectory() throws IOException {
         return Files.createTempDirectory("jfr-streaming");
+    }
+
+    private void updateOnCompleteHandler() {
+        if (maxAge != null || maxSize != 0) {
+            // User has set a chunk removal policy
+            ManagementSupport.setOnChunkCompleteHandler(stream, null);
+        } else {
+            ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
+        }
     }
 
     private void startDownload() {
