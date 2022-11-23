@@ -114,6 +114,14 @@ final class ProcessHandleImpl implements ProcessHandle {
         }
     }
 
+    @SuppressWarnings("removal")
+    private static void privilegedThreadSetName(Thread thread, String name) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            thread.setName(name);
+            return null;
+        });
+    }
+
     /**
      * Returns a CompletableFuture that completes with process exit status when
      * the process completes.
@@ -141,10 +149,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                     public void run() {
                         Thread t = Thread.currentThread();
                         String threadName = t.getName();
-                        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                            t.setName("process reaper (pid " + pid + ")");
-                            return null;
-                        });
+                        privilegedThreadSetName(t, "process reaper (pid " + pid + ")");
                         try {
                             int exitValue = waitForProcessExit0(pid, shouldReap);
                             if (exitValue == NOT_A_CHILD) {
@@ -175,10 +180,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                             completions.remove(pid, newCompletion);
                         } finally {
                             // Restore thread name
-                            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                                t.setName(threadName);
-                                return null;
-                            });
+                            privilegedThreadSetName(t, threadName);
                         }
                     }
                 });
