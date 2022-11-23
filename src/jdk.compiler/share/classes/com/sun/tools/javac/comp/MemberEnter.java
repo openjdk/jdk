@@ -62,6 +62,7 @@ public class MemberEnter extends JCTree.Visitor {
     private final Symtab syms;
     private final Annotate annotate;
     private final Types types;
+    private final Names names;
     private final DeferredLintHandler deferredLintHandler;
 
     public static MemberEnter instance(Context context) {
@@ -80,6 +81,7 @@ public class MemberEnter extends JCTree.Visitor {
         syms = Symtab.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
+        names = Names.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
     }
 
@@ -296,7 +298,7 @@ public class MemberEnter extends JCTree.Visitor {
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
             }
         }
-        if (chk.checkUnique(tree.pos(), v, enclScope)) {
+        if (tree.name != names.underscore && chk.checkUnique(tree.pos(), v, enclScope)) {
             chk.checkTransparentVar(tree.pos(), v, enclScope);
             enclScope.enter(v);
         } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {

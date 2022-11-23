@@ -572,6 +572,14 @@ public class JavacParser implements Parser {
     }
 
     protected Name ident(boolean allowClass) {
+        return ident(allowClass, false);
+    }
+
+    public Name identOrUnderscore() {
+        return ident(false, true);
+    }
+
+    protected Name ident(boolean allowClass, boolean asVariable) {
         if (token.kind == IDENTIFIER) {
             Name name = token.name();
             nextToken();
@@ -597,6 +605,8 @@ public class JavacParser implements Parser {
         } else if (token.kind == UNDERSCORE) {
             if (Feature.UNDERSCORE_IDENTIFIER.allowedInSource(source)) {
                 log.warning(token.pos, Warnings.UnderscoreAsIdentifier);
+            } else if (asVariable) {
+                checkSourceLevel(Feature.UNNAMED_VARIABLES);
             } else {
                 log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UnderscoreAsIdentifier);
             }
@@ -2985,7 +2995,7 @@ public class JavacParser implements Parser {
         JCExpression paramType = catchTypes.size() > 1 ?
                 toP(F.at(catchTypes.head.getStartPosition()).TypeUnion(catchTypes)) :
                 catchTypes.head;
-        JCVariableDecl formal = variableDeclaratorId(mods, paramType);
+        JCVariableDecl formal = variableDeclaratorId(mods, paramType, true, false, false);
         accept(RPAREN);
         JCBlock body = block();
         return F.at(pos).Catch(formal, body);
@@ -3447,7 +3457,7 @@ public class JavacParser implements Parser {
                                                                          T vdefs,
                                                                          boolean localDecl)
     {
-        return variableDeclaratorsRest(token.pos, mods, type, ident(), false, null, vdefs, localDecl);
+        return variableDeclaratorsRest(token.pos, mods, type, identOrUnderscore(), false, null, vdefs, localDecl);
     }
 
     /** VariableDeclaratorsRest = VariableDeclaratorRest { "," VariableDeclarator }
@@ -3480,7 +3490,7 @@ public class JavacParser implements Parser {
      *  ConstantDeclarator = Ident ConstantDeclaratorRest
      */
     JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc, boolean localDecl) {
-        return variableDeclaratorRest(token.pos, mods, type, ident(), reqInit, dc, localDecl, true);
+        return variableDeclaratorRest(token.pos, mods, type, identOrUnderscore(), reqInit, dc, localDecl, true);
     }
 
     /** VariableDeclaratorRest = BracketsOpt ["=" VariableInitializer]
@@ -3581,24 +3591,21 @@ public class JavacParser implements Parser {
 
     /** VariableDeclaratorId = Ident BracketsOpt
      */
-    JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type) {
-        return variableDeclaratorId(mods, type, false, false);
-    }
-    //where
-    JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type, boolean lambdaParameter, boolean recordComponent) {
+    JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type, boolean catchParameter, boolean lambdaParameter, boolean recordComponent) {
         int pos = token.pos;
         Name name;
-        if (lambdaParameter && token.kind == UNDERSCORE) {
-            log.error(pos, Errors.UnderscoreAsIdentifierInLambda);
-            name = token.name();
-            nextToken();
-        } else {
+            //TODO: fix ident:
             if (allowThisIdent ||
                 !lambdaParameter ||
                 LAX_IDENTIFIER.test(token.kind) ||
                 mods.flags != Flags.PARAMETER ||
                 mods.annotations.nonEmpty()) {
-                JCExpression pn = qualident(false);
+                JCExpression pn;
+                if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
+                    pn = toP(F.at(token.pos).Ident(identOrUnderscore()));
+                } else {
+                    pn = qualident(false);
+                }
                 if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
                     name = ((JCIdent)pn).name;
                 } else {
@@ -3625,7 +3632,6 @@ public class JavacParser implements Parser {
                  */
                 name = names.empty;
             }
-        }
         if ((mods.flags & Flags.VARARGS) != 0 &&
                 token.kind == LBRACKET) {
             log.error(token.pos, Errors.VarargsAndOldArraySyntax);
@@ -3670,7 +3676,7 @@ public class JavacParser implements Parser {
         JCExpression t = term(EXPR | TYPE);
         if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.test(token.kind)) {
             JCModifiers mods = F.Modifiers(0);
-            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true, false);
+            return variableDeclaratorRest(token.pos, mods, t, identOrUnderscore(), true, null, true, false);
         } else {
             checkSourceLevel(Feature.EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES);
             if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
@@ -4798,12 +4804,12 @@ public class JavacParser implements Parser {
             }
             typeAnnotationsPushedBack = List.nil();
         }
-        return variableDeclaratorId(mods, type, lambdaParameter, recordComponent);
+        return variableDeclaratorId(mods, type, false, lambdaParameter, recordComponent);
     }
 
     protected JCVariableDecl implicitParameter() {
         JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
-        return variableDeclaratorId(mods, null, true, false);
+        return variableDeclaratorId(mods, null, false, true, false);
     }
 
 /* ---------- auxiliary methods -------------- */
