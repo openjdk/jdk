@@ -216,7 +216,7 @@ public final class ScopedValue<T> {
             this.bitmask = bindings.bitmask | prev.bitmask;
         }
 
-        protected Snapshot() {
+        Snapshot() {
             this.prev = null;
             this.bindings = null;
             this.bitmask = 0;
