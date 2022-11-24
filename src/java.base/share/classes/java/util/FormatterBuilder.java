@@ -447,7 +447,7 @@ final class FormatterBuilder {
                     break;
                 case -1:  // relative index
                 default:  // explicit index
-                    throw new MissingFormatArgumentException(fs.toString());
+                    throw new IllegalFormatFlagsException("Indexing not allowed: " + fs.toString());
             }
         }
 

@@ -28,42 +28,72 @@ package java.util;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.template.ProcessorLinkage;
 import java.lang.template.StringProcessor;
 import java.lang.template.StringTemplate;
-import java.lang.template.ValidatingProcessor;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@linkplain StringProcessor template processor} constructs a {@link String}
- * result using {@link Formatter}. Unlike {@link Formatter}, {@link FormatProcessor} uses
- * the value from the embedded expression that follows immediately after the
+ * This {@link StringProcessor} constructs a {@link String} result using
+ * {@link Formatter} specifications and values found in the {@link StringTemplate}.
+ * Unlike {@link Formatter}, {@link FormatProcessor} uses the value from the
+ * embedded expression that immediately follows, no whitespace, after the
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
- * StringTemplate expressions without a preceding specifier, use "%s" by
- * default. Example:
+ * For example:
  * {@snippet :
+ * FormatProcessor fmt = new FormatProcessor(Locale.ROOT);
  * int x = 10;
  * int y = 20;
- * String result = FMT."%05d\{x} + %05d\{y} = %05d\{x + y}";
+ * String result = fmt."%05d\{x} + %05d\{y} = %05d\{x + y}";
  * }
- * result is: <code>00010 + 00020 = 00030</code>
- *
- * @implNote When used in conjunction with a runtime instances of {@link
- * StringTemplate} representing string templates this {@link StringProcessor}
- * will use the format specifiers in the fragments and types of the values in
- * the value list to produce a more performant formatter.
- *
- * @implSpec Since, values are found within the string template, argument indexing
- * specifiers are unsupported.
+ * In the above example, the value of {@code result} will be {@code "00010 + 00020 = 00030"}.
+ * <p>
+ * Embedded expressions without a preceeding format specifier, use {@code %s}
+ * by default.
+ * {@snippet :
+ * FormatProcessor fmt = new FormatProcessor(Locale.ROOT);
+ * int x = 10;
+ * int y = 20;
+ * String result1 = fmt."\{x} + \{y} = \{x + y}";
+ * String result2 = fmt."%s\{x} + %s\{y} = %s\{x + y}";
+ * }
+ * In the above example, the value of {@code result1} and {@code result2} will
+ * both be {@code "10 + 20 = 30"}.
+ * <p>
+ * {@link FormatProcessor}  format specification uses and exceptions are the same as
+ * those of {@link Formatter}.
+ * <p>
+ * However, there are two significant differences related to the position of arguments.
+ * An explict {@code n$} and relative {@code <} index will cause an exception due to
+ * a missing argument list.
+ * Whitespace appearing between the specification and the embedded expression will
+ * also cause an exception.
+ * <p>
+ * {@link FormatProcessor} allows the use of different locales. For example:
+ * {@snippet :
+ * Locale locale = Locale.forLanguageTag("th-TH-u-nu-thai");
+ * FormatProcessor thaiFMT = new FormatProcessor(locale);
+ * int x = 10;
+ * int y = 20;
+ * String result = thaiFMT."%d\{x} + %d\{y} = %d\{x + y}";
+ * }
+ * In the above example, the value of {@code result} will be
+ * {@code "\u0E51\u0E50 + \u0E52\u0E50 = \u0E53\u0E50"}.
+ * <p>
+ * For day to day use, the predefined {@link FormatProcessor#FMT} {@link FormatProcessor}
+ * is available. {@link FormatProcessor#FMT} is defined using the {@link Locale#ROOT}.
+ * Example: {@snippet :
+ * int x = 10;
+ * int y = 20;
+ * String result = FMT."0x%04x\{x} + 0x%04x\{y} = 0x%04x\{x + y}"; // @highlight substring="FMT"
+ * }
+ * In the above example, the value of {@code result} will be {@code "0x000a + 0x0014 = 0x001E"}.
  *
  * @since 21
+ *
+ * @see java.lang.template.StringProcessor
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class FormatProcessor implements StringProcessor, ProcessorLinkage {
@@ -82,12 +112,29 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
     }
 
     /**
-     * {@inheritDoc}
+     * Constructs a {@link String} based on the fragments, format
+     * specifications found in the fragments and values in the
+     * supplied {@link StringTemplate} object. This method constructs a
+     * format string from the fragments, gathers up the values and
+     * evaluates the expression
+     * {@code new Formatter(locale).format(format, values).toString()}.
+     * <p>
+     * If an embedded expression is not immediately preceded by a
+     * specifier then a {@code %s} is inserted in the format.
+     *
+     * @param stringTemplate  a {@link StringTemplate} instance
+     *
+     * @return constructed {@link String}
+
      * @throws  IllegalFormatException
-     *          If a format string contains an illegal syntax, a format
+     *          If a format specifier contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
-     *          insufficient arguments given the format string, or other
-     *          illegal conditions.
+     *          a specifier not followed immediately by an embedded expression or
+     *          other illegal conditions. For specification of all possible
+     *          formatting errors, see the
+     *          <a href="../util/Formatter.html#detail">details</a>
+     *          section of the formatter class specification.
+     *
      * @see java.util.Formatter
      */
     @Override
@@ -100,12 +147,36 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
     }
 
     /**
-     * {@inheritDoc}
+     * Constructs a {@link MethodHandle} that when supplied with the values from
+     * a {@link StringTemplate} will produce a result equivalent to that provided by
+     * {@link FormatProcessor#process(StringTemplate)}. This {@link MethodHandle}
+     * is used by {@link FormatProcessor#FMT} and the ilk to perform a more
+     * specialized composition of a result. This is specialization is done by
+     * prescanning the fragments and value types of a {@link StringTemplate}.
+     * <p>
+     * Process template expressions can be specialized  when the processor is
+     * of type {@link ProcessorLinkage} and fetched from a static constant as is
+     * {@link FormatProcessor#FMT} ({@code static final FormatProcessor}).
+     * <p>
+     * Other {@link FormatProcessor} can be specialized if stored as static final.
+     * For example:
+     * {@snippet :
+     * FormatProcessor THAI_FMT = new FormatProcessor(Locale.forLanguageTag("th-TH-u-nu-thai"));
+     * }
+     * {@code THAI_FMT} will now produce specialized {@link MethodHandle MethodHandles} by way
+     * of {@link FormatProcessor#linkage(List, MethodType)}.
+     *
+     * See {@link FormatProcessor#process(StringTemplate)} for more information.
+     *
      * @throws  IllegalFormatException
-     *          If a format string contains an illegal syntax, a format
+     *          If a format specifier contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
-     *          insufficient arguments given the format string, or other
-     *          illegal conditions.
+     *          a specifier not followed immediately by an embedded expression or
+     *          other illegal conditions. For specification of all possible
+     *          formatting errors, see the
+     *          <a href="../util/Formatter.html#detail">details</a>
+     *          section of the formatter class specification.
+     *
      * @see java.util.Formatter
      */
     @Override
@@ -120,12 +191,6 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
         return mh;
     }
 
-    // %[argument_index$][flags][width][.precision][t]conversion
-    private static final String FORMAT_SPECIFIER
-            = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
-
-    private static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
-
     /**
      * Find a format specification at the end of a fragment.
      *
@@ -137,7 +202,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * @throws MissingFormatArgumentException if not at end or found and not needed
      */
     private static boolean findFormat(String fragment, boolean needed) {
-        Matcher matcher = FORMAT_SPECIFIER_PATTERN.matcher(fragment);
+        Matcher matcher = Formatter.FORMAT_SPECIFIER_PATTERN.matcher(fragment);
         String group;
 
         while (matcher.find()) {
@@ -148,7 +213,8 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
                     return true;
                 }
 
-                throw new MissingFormatArgumentException(group);
+                throw new MissingFormatArgumentException(group +
+                        " is not immediately followed by an embedded expression");
             }
         }
 
@@ -188,17 +254,16 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
     }
 
     /**
-     * This predefined FormatProcessor instance constructs a String result using {@link
-     * Formatter}. Unlike {@link Formatter}, FormatProcessor uses the value from
-     * the embedded expression that follows immediately after the
-     * <a href="../../util/Formatter.html#syntax">format specifier</a>.
-     * StringTemplate expressions without a preceeding specifier, use "%s" by
+     * This predefined {@link FormatProcessor} instance constructs a {@link String} result using
+     * the Locale.ROOT {@link Locale}. See {@link FormatProcessor} for more details.
      * Example: {@snippet :
-     * int x = 123;
-     * int y = 987;
-     * String result = FMT."%3d\{x} + %3d\{y} = %4d\{x + y}"; // @highlight substring="FMT"
+     * int x = 10;
+     * int y = 20;
+     * String result = FMT."0x%04x\{x} + 0x%04x\{y} = 0x%04x\{x + y}"; // @highlight substring="FMT"
      * }
-     * {@link FMT} uses the Locale.ROOT {@link Locale}.
+     * In the above example, the value of {@code result} will be {@code "0x000a + 0x0014 = 0x001E"}.
+     *
+     * @see java.util.FormatProcessor
      */
     public static final FormatProcessor FMT = new FormatProcessor(Locale.ROOT);
 

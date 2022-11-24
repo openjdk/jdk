@@ -2796,10 +2796,10 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     // %[argument_index$][flags][width][.precision][t]conversion
-    private static final String formatSpecifier
+    static final String FORMAT_SPECIFIER
         = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
 
-    private static final Pattern fsPattern = Pattern.compile(formatSpecifier);
+    static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
 
     /**
      * Finds format specifiers in the format string.
@@ -2832,7 +2832,7 @@ public final class Formatter implements Closeable, Flushable {
                 i++;
             } else {
                 if (m == null) {
-                    m = fsPattern.matcher(s);
+                    m = FORMAT_SPECIFIER_PATTERN.matcher(s);
                 }
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
