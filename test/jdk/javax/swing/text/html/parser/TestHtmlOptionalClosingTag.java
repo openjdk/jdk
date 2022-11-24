@@ -33,7 +33,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
-
 public class TestHtmlOptionalClosingTag {
 
     private static JFrame frame;
@@ -54,9 +53,7 @@ public class TestHtmlOptionalClosingTag {
             "<tr><th align=right>Audio:<td>Stereo - 44100 Hz - 123 kbps - AAC";
 
         JLabel label = new JLabel(html);
-
         frame.add(label);
-
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);	    
