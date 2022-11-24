@@ -2981,16 +2981,24 @@ public class JavacParser implements Parser {
 
     @SuppressWarnings("fallthrough")
     ForInitResult analyzeForInit() {
-        int depth = 0;
         boolean inType = false;
         boolean inSelectionAndParenthesis = false;
-        ForInitResult defaultResult = ForInitResult.LocalVarDecl;
+        int typeParameterPossibleStart = -1;
         outer: for (int lookahead = 0; ; lookahead++) {
             TokenKind tk = S.token(lookahead).kind;
             switch (tk) {
                 case DOT:
                     if (inType) break; // in qualified type
-                case COMMA: case EXTENDS: case SUPER:  case AMP: case QUES:
+                case COMMA:
+                    typeParameterPossibleStart = lookahead;
+                    break;
+                case QUES:
+                    // "?" only allowed in a type parameter position - otherwise it's an expression
+                    if (typeParameterPossibleStart == lookahead - 1) break;
+                    else return ForInitResult.LocalVarDecl;
+                case EXTENDS: case SUPER: case AMP:
+                case GTGTGT: case GTGT: case GT:
+                case FINAL: case ELLIPSIS:
                     break;
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR: case VOID:
@@ -3026,27 +3034,25 @@ public class JavacParser implements Parser {
                         inType = true;
                     }
                     break;
-                case FINAL:
-                case ELLIPSIS:
-                case MONKEYS_AT:
+                case MONKEYS_AT: {
+                    int prevLookahead = lookahead;
                     lookahead = skipAnnotation(lookahead);
+                    if (typeParameterPossibleStart == prevLookahead - 1) {
+                        // move possible start of type param after the anno
+                        typeParameterPossibleStart = lookahead;
+                    }
                     break;
+                }
                 case LBRACKET:
                     if (peekToken(lookahead, RBRACKET)) {
                         return ForInitResult.LocalVarDecl;
                     }
                 case LT:
-                    depth++; break;
-                case GTGTGT:
-                    depth--;
-                case GTGT:
-                    depth--;
-                case GT:
-                    depth--;
+                    typeParameterPossibleStart = lookahead;
                     break;
                 default:
                     //this includes EOF
-                    return defaultResult;
+                    return ForInitResult.LocalVarDecl;
             }
         }
     }

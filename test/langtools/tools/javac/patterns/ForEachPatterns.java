@@ -3,7 +3,10 @@
  * @summary
  * @enablePreview
  */
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -155,7 +158,11 @@ public class ForEachPatterns {
         return -1;
     }
 
-    static void forParsing(int i) {
+    static void m(int i) { }
+    static void m(GPoint<?> gpoint, int i) { }
+    static int b() { return 42; }
+
+    static void forParsing(int i, boolean cond) {
         List<Point>                 points = null;
         List<GPoint<Integer>>       generic_points = null;
         List<GPoint<Point>>         generic_points_nested = null;
@@ -176,6 +183,9 @@ public class ForEachPatterns {
         for (method2((Integer a) -> 42); i == 0;) { i++; }
         for (RecordOfLists(List<Integer> lr) : list_of_records) {}
         for (RecordOfLists2(List<List<Integer>> lr) : list_of_records2) {}
+        for (m(cond ? b() : i) ; ;) {}
+        for (m((GPoint<?>)null, cond ? b() : i) ; ;) {}
+        for (GPoint<@Annot(field = "") ? extends Point>(var x, var y) : generic_points_nested) {};
     }
     //where
     static <T> void method() {}
@@ -220,6 +230,7 @@ public class ForEachPatterns {
     record RecordOfLists(List<Integer> o) {}
     record RecordOfLists2(List<List<Integer>> o) {}
 
+    @Target({ElementType.TYPE_USE, ElementType.LOCAL_VARIABLE})
     @interface Annot {
         String field();
     }
