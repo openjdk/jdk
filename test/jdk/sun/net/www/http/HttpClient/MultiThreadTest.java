@@ -191,6 +191,8 @@ public class MultiThreadTest extends Thread {
             // our client. We should only count those workers for which
             // the expected header has been found.
             int validConnections = 0;
+            // We detect worker threads that may have timed out, so we don't include them in
+            // the count to compare with the number of connections.
             int becameIdle = 0;
             for (Worker w : svr.workers()) {
                 if (w.headerFound > 0) {
