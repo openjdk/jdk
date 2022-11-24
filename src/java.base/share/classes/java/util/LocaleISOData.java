@@ -414,7 +414,7 @@ class LocaleISOData {
         + "PY" + "PRY"  // Paraguay, Republic of
         + "QA" + "QAT"  // Qatar, State of
         + "RE" + "REU"  // Reunion
-        + "RO" + "ROU"  // Romania, Socialist Republic of
+        + "RO" + "ROU"  // Romania
         + "RS" + "SRB"  // Serbia, Republic of
         + "RU" + "RUS"  // Russian Federation
         + "RW" + "RWA"  // Rwanda, Rwandese Republic
