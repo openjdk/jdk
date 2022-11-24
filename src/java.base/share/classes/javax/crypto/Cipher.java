@@ -454,7 +454,7 @@ public class Cipher {
             // Algorithm only
             Transform tr = new Transform(alg, "", null, null);
             return Collections.singletonList(tr);
-        } else { 
+        } else {
             // Algorithm w/ at least mode or padding or both
             List<Transform> list = new ArrayList<>(4);
             list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
