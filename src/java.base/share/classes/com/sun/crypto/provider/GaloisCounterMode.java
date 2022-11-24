@@ -1590,12 +1590,12 @@ abstract class GaloisCounterMode extends CipherSpi {
                     int ofs = dst.arrayOffset() + dst.position();
                     Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
                 } else {
-                    var scope = NIO_ACCESS.acquireScopeOrNull(dst);
+                    var scope = NIO_ACCESS.acquireSession(dst);
                     try {
                         Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
                                 len + dst.position(), (byte) 0);
                     } finally {
-                        NIO_ACCESS.releaseScope(dst, scope);
+                        NIO_ACCESS.releaseSession(dst, scope);
                     }
                 }
                 throw new AEADBadTagException("Tag mismatch");

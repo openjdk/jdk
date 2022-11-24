@@ -179,14 +179,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (dst instanceof sun.nio.ch.DirectBuffer ddst) {
-            var scope = NIO_ACCESS.acquireScopeOrNull(dst);
+            var scope = NIO_ACCESS.acquireSession(dst);
             try {
                 long address = ddst.address() + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
                 return n;
             } finally {
-                NIO_ACCESS.releaseScope(dst, scope);
+                NIO_ACCESS.releaseSession(dst, scope);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
@@ -242,14 +242,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof sun.nio.ch.DirectBuffer buf) {
-            var scope = NIO_ACCESS.acquireScopeOrNull(src);
+            var scope = NIO_ACCESS.acquireSession(src);
             try {
                 long address = buf.address() + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
                 return rem;
             } finally {
-                NIO_ACCESS.releaseScope(src, scope);
+                NIO_ACCESS.releaseSession(src, scope);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {

@@ -844,7 +844,7 @@ public class SctpChannelImpl extends SctpChannel
                                         boolean peek)
         throws IOException
     {
-        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        var scope = NIO_ACCESS.acquireSession(bb);
         try {
             int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
 
@@ -852,7 +852,7 @@ public class SctpChannelImpl extends SctpChannel
                 bb.position(pos + n);
             return n;
         } finally {
-            NIO_ACCESS.releaseScope(bb, scope);
+            NIO_ACCESS.releaseSession(bb, scope);
         }
     }
 
@@ -1038,7 +1038,7 @@ public class SctpChannelImpl extends SctpChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        var scope = NIO_ACCESS.acquireSession(bb);
         try {
             int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
                     port, -1 /*121*/, streamNumber, unordered, ppid);
@@ -1046,7 +1046,7 @@ public class SctpChannelImpl extends SctpChannel
                 bb.position(pos + written);
             return written;
         } finally {
-            NIO_ACCESS.releaseScope(bb, scope);
+            NIO_ACCESS.releaseSession(bb, scope);
         }
     }
 

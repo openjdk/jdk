@@ -784,7 +784,7 @@ class DatagramChannelImpl
                                         boolean connected)
         throws IOException
     {
-        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        var scope = NIO_ACCESS.acquireSession(bb);
         try {
             int n = receive0(fd,
                     ((DirectBuffer)bb).address() + pos, rem,
@@ -794,7 +794,7 @@ class DatagramChannelImpl
                 bb.position(pos + n);
             return n;
         } finally {
-            NIO_ACCESS.releaseScope(bb, scope);
+            NIO_ACCESS.releaseSession(bb, scope);
         }
     }
 
@@ -939,7 +939,7 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
-        var scope = NIO_ACCESS.acquireScopeOrNull(bb);
+        var scope = NIO_ACCESS.acquireSession(bb);
         try {
             int addressLen = targetSocketAddress(target);
             written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
@@ -949,7 +949,7 @@ class DatagramChannelImpl
                 throw pue;
             written = rem;
         } finally {
-            NIO_ACCESS.releaseScope(bb, scope);
+            NIO_ACCESS.releaseSession(bb, scope);
         }
         if (written > 0)
             bb.position(pos + written);

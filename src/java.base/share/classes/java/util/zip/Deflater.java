@@ -338,11 +338,11 @@ public class Deflater {
             int remaining = Math.max(dictionary.limit() - position, 0);
             ensureOpen();
             if (dictionary.isDirect()) {
-                var scope = NIO_ACCESS.acquireScopeOrNull(dictionary);
+                var scope = NIO_ACCESS.acquireSession(dictionary);
                 try {
                     setDictionaryBuffer(zsRef.address(), ((DirectBuffer) dictionary).address() + position, remaining);
                 } finally {
-                    NIO_ACCESS.releaseScope(dictionary, scope);
+                    NIO_ACCESS.releaseSession(dictionary, scope);
                 }
             } else {
                 byte[] array = ZipUtils.getBufferArray(dictionary);
@@ -588,14 +588,14 @@ public class Deflater {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    var scope = NIO_ACCESS.acquireScopeOrNull(input);
+                    var scope = NIO_ACCESS.acquireSession(input);
                     try {
                         result = deflateBufferBytes(zsRef.address(),
                                 ((DirectBuffer) input).address() + inputPos, inputRem,
                             output, off, len,
                             flush, params);
                     } finally {
-                        NIO_ACCESS.releaseScope(input, scope);
+                        NIO_ACCESS.releaseSession(input, scope);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
@@ -710,14 +710,14 @@ public class Deflater {
             if (input == null) {
                 inputPos = this.inputPos;
                 if (output.isDirect()) {
-                    var outScope = NIO_ACCESS.acquireScopeOrNull(output);
+                    var outScope = NIO_ACCESS.acquireSession(output);
                     try {
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
                                 ((DirectBuffer) output).address() + outputPos, outputRem,
                             flush, params);
                     } finally {
-                        NIO_ACCESS.releaseScope(output, outScope);
+                        NIO_ACCESS.releaseSession(output, outScope);
                     }
                 } else {
                     byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -731,17 +731,17 @@ public class Deflater {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    var inScope = NIO_ACCESS.acquireScopeOrNull(input);
+                    var inScope = NIO_ACCESS.acquireSession(input);
                     try {
                         if (output.isDirect()) {
-                            var outScope = NIO_ACCESS.acquireScopeOrNull(output);
+                            var outScope = NIO_ACCESS.acquireSession(output);
                             try {
                                 result = deflateBufferBuffer(zsRef.address(),
                                     ((DirectBuffer) input).address() + inputPos, inputRem,
                                     ((DirectBuffer) output).address(), outputRem,
                                     flush, params);
                             } finally {
-                                NIO_ACCESS.releaseScope(output, outScope);
+                                NIO_ACCESS.releaseSession(output, outScope);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -752,20 +752,20 @@ public class Deflater {
                                 flush, params);
                         }
                     } finally {
-                        NIO_ACCESS.releaseScope(input, inScope);
+                        NIO_ACCESS.releaseSession(input, inScope);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
                     int inputOffset = ZipUtils.getBufferOffset(input);
                     if (output.isDirect()) {
-                        var outScope = NIO_ACCESS.acquireScopeOrNull(output);
+                        var outScope = NIO_ACCESS.acquireSession(output);
                         try {
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
                                 ((DirectBuffer) output).address()+ outputPos, outputRem,
                                 flush, params);
                         } finally {
-                            NIO_ACCESS.releaseScope(output, outScope);
+                            NIO_ACCESS.releaseSession(output, outScope);
                         }
                     } else {
                         byte[] outputArray = ZipUtils.getBufferArray(output);

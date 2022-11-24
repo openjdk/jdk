@@ -28,12 +28,9 @@ package jdk.internal.access;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.VM.BufferPool;
-import sun.nio.ch.DirectBuffer;
 
 import java.lang.foreign.MemorySegment;
 import java.io.FileDescriptor;
-import java.lang.foreign.MemorySession;
-import java.lang.ref.Reference;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
@@ -90,41 +87,25 @@ public interface JavaNioAccess {
     MemorySegment bufferSegment(Buffer buffer);
 
     /**
-     * Used by I/O operations to make a buffer's session non-closeable
-     * (for the duration of the I/O operation) by acquiring the session.
-     * Null is returned if the buffer has no scope, or acquiring is not
-     * required to guarantee safety.
-     * {@snippet lang = java:
-     * var handler = acquireSession(buffer, async);
-     * try {
-     *     performOperation(buffer);
-     * } finally {
-     *     if (handler != null) {
-     *         handler.run();
-     *     }
-     * }
-     *}
-     */
-    Runnable acquireSession(Buffer buffer, boolean async);
-
-    /**
      * Used by operations to make a buffer's session non-closeable
      * (for the duration of the operation) by acquiring the session.
      * The buffers scope is returned if it has one, otherwise {@code null} is returned.
      * {@snippet lang = java:
-     * var guard = acquireScopeOrNull(buffer);
+     * var guard = acquireSession(buffer);
      * try {
      *     performOperation(buffer);
      * } finally {
-     *     releaseScope(buffer, guard);
+     *     releaseSession(buffer, guard);
      * }
      *}
      *
-     * @see #releaseScope(Buffer, MemorySessionImpl)
+     * @see #releaseSession(Buffer, MemorySessionImpl)
      */
-    MemorySessionImpl acquireScopeOrNull(Buffer buffer);
+    MemorySessionImpl acquireSession(Buffer buffer);
 
-    void releaseScope(Buffer buffer, MemorySessionImpl scope);
+    void releaseSession(Buffer buffer, MemorySessionImpl scope);
+
+    boolean isThreadConfined(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
@@ -160,73 +141,4 @@ public interface JavaNioAccess {
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
      */
     int pageSize();
-
-    sealed interface ScopeAcquisition extends AutoCloseable {
-
-        /**
-         * {@return the address of the underlying Buffer}.
-         * @throws ClassCastException if the underlying Buffer is not a DirectBuffer
-         */
-        long address();
-
-        @Override
-        void close();
-
-        static ScopeAcquisition create(Buffer buffer, MemorySession session) {
-            return new ClosingScopeAcquisition(buffer, session);
-        }
-
-        static ScopeAcquisition create(Buffer buffer) {
-            return new NoOpScopeAcquisition(buffer);
-        }
-
-        final class NoOpScopeAcquisition extends AbstractScopeAcquisition implements ScopeAcquisition {
-
-            NoOpScopeAcquisition(Buffer buffer) {
-                super(buffer);
-            }
-
-            @Override
-            public void close() {
-                Reference.reachabilityFence(buffer);
-            }
-        }
-
-        final class ClosingScopeAcquisition extends AbstractScopeAcquisition implements ScopeAcquisition {
-
-            private final MemorySession scope;
-
-            ClosingScopeAcquisition(Buffer buffer,
-                                    MemorySession scope) {
-                super(buffer);
-                this.scope = scope;
-            }
-
-            @Override
-            public void close() {
-                try {
-                    scope.close();
-                } finally {
-                    Reference.reachabilityFence(buffer);
-                }
-            }
-        }
-
-        abstract sealed class AbstractScopeAcquisition implements ScopeAcquisition {
-
-            final Buffer buffer;
-
-            AbstractScopeAcquisition(Buffer buffer) {
-                this.buffer = buffer;
-            }
-
-            @Override
-            public final long address() {
-                return ((DirectBuffer) buffer).address();
-            }
-
-        }
-
-    }
-
 }

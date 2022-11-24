@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.MemorySessionImpl;
 
 /**
  * File-descriptor based I/O utilities that are shared by NIO classes.
@@ -136,7 +137,7 @@ public class IOUtil {
                 written = nd.write(fd, bufferAddress(bb) + pos, rem);
             }
         } finally {
-            releaseScope(handle);
+            releaseScope(bb, handle);
         }
         if (written > 0)
             bb.position(pos + written);
@@ -183,7 +184,7 @@ public class IOUtil {
                 ByteBuffer buf = bufs[i];
                 var h = acquireScope(buf, async);
                 if (h != null) {
-                    handleReleasers = LinkedRunnable.of(Releaser.of(h), handleReleasers);
+                    handleReleasers = LinkedRunnable.of(Releaser.of(buf, h), handleReleasers);
                 }
                 int pos = buf.position();
                 int lim = buf.limit();
@@ -331,7 +332,7 @@ public class IOUtil {
         if (rem == 0)
             return 0;
         int n = 0;
-        var handle = acquireScope(bb, async);
+        var scope = acquireScope(bb, async);
         try {
             if (position != -1) {
                 n = nd.pread(fd, bufferAddress(bb) + pos, rem, position);
@@ -339,7 +340,7 @@ public class IOUtil {
                 n = nd.read(fd, bufferAddress(bb) + pos, rem);
             }
         } finally {
-            releaseScope(handle);
+            releaseScope(bb, scope);
         }
         if (n > 0)
             bb.position(pos + n);
@@ -395,7 +396,7 @@ public class IOUtil {
                     throw new IllegalArgumentException("Read-only buffer");
                 var h = acquireScope(buf, async);
                 if (h != null) {
-                    handleReleasers = LinkedRunnable.of(Releaser.of(h), handleReleasers);
+                    handleReleasers = LinkedRunnable.of(Releaser.of(buf, h), handleReleasers);
                 }
                 int pos = buf.position();
                 int lim = buf.limit();
@@ -474,15 +475,16 @@ public class IOUtil {
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
-    static Runnable acquireScope(ByteBuffer bb, boolean async) {
-        return NIO_ACCESS.acquireSession(bb, async);
+    static MemorySessionImpl acquireScope(ByteBuffer bb, boolean async) {
+        if (async && NIO_ACCESS.isThreadConfined(bb)) {
+            throw new IllegalStateException("Confined session not supported");
+        }
+        return NIO_ACCESS.acquireSession(bb);
     }
 
-    private static void releaseScope(Runnable handle) {
-        if (handle == null)
-            return;
+    private static void releaseScope(ByteBuffer bb, MemorySessionImpl session) {
         try {
-            handle.run();
+            NIO_ACCESS.releaseSession(bb, session);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -495,14 +497,14 @@ public class IOUtil {
     static Runnable acquireScopes(ByteBuffer buf, ByteBuffer[] buffers) {
         if (buffers == null) {
             assert buf != null;
-            return IOUtil.Releaser.ofNullable(IOUtil.acquireScope(buf, true));
+            return IOUtil.Releaser.ofNullable(buf, IOUtil.acquireScope(buf, true));
         } else {
             assert buf == null;
             Runnable handleReleasers = null;
             for (var b : buffers) {
                 var h = IOUtil.acquireScope(b, true);
                 if (h != null) {
-                    handleReleasers = IOUtil.LinkedRunnable.of(IOUtil.Releaser.of(h), handleReleasers);
+                    handleReleasers = IOUtil.LinkedRunnable.of(IOUtil.Releaser.of(b, h), handleReleasers);
                 }
             }
             return handleReleasers;
@@ -514,7 +516,7 @@ public class IOUtil {
             releasers.run();
     }
 
-    static record LinkedRunnable(Runnable node, Runnable next)
+    record LinkedRunnable(Runnable node, Runnable next)
         implements Runnable
     {
         LinkedRunnable {
@@ -534,14 +536,14 @@ public class IOUtil {
         }
     }
 
-    static record Releaser(Runnable handle) implements Runnable {
-        Releaser { Objects.requireNonNull(handle) ; }
-        @Override public void run() { releaseScope(handle); }
-        static Runnable of(Runnable handle) { return new Releaser(handle); }
-        static Runnable ofNullable(Runnable handle) {
-            if (handle == null)
+    record Releaser(ByteBuffer bb, MemorySessionImpl session) implements Runnable {
+        Releaser { Objects.requireNonNull(bb) ; Objects.requireNonNull(session); }
+        @Override public void run() { releaseScope(bb, session); }
+        static Runnable of(ByteBuffer bb, MemorySessionImpl session) { return new Releaser(bb, session); }
+        static Runnable ofNullable(ByteBuffer bb, MemorySessionImpl session) {
+            if (session == null)
                 return () -> { };
-            return new Releaser(handle);
+            return new Releaser(bb, session);
         }
     }
 

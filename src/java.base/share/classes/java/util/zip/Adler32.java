@@ -98,11 +98,11 @@ public class Adler32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
-            var scope = NIO_ACCESS.acquireScopeOrNull(buffer);
+            var scope = NIO_ACCESS.acquireSession(buffer);
             try {
                 adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
             } finally {
-                NIO_ACCESS.releaseScope(buffer, scope);
+                NIO_ACCESS.releaseSession(buffer, scope);
             }
         } else if (buffer.hasArray()) {
             adler = updateBytes(adler, buffer.array(), pos + buffer.arrayOffset(), rem);

@@ -825,20 +825,7 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Runnable acquireSession(Buffer buffer, boolean async) {
-                    var session = buffer.session();
-                    if (session == null) {
-                        return null;
-                    }
-                    if (async && session.ownerThread() != null) {
-                        throw new IllegalStateException("Confined session not supported");
-                    }
-                    session.acquire0();
-                    return session::release0;
-                }
-
-                @Override
-                public MemorySessionImpl acquireScopeOrNull(Buffer buffer) {
+                public MemorySessionImpl acquireSession(Buffer buffer) {
                     var scope = buffer.session();
                     if (scope == null) {
                         return null;
@@ -848,7 +835,7 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public void releaseScope(Buffer buffer, MemorySessionImpl scope) {
+                public void releaseSession(Buffer buffer, MemorySessionImpl scope) {
                     assert buffer.session() == scope;
                     try {
                         if (scope != null) {
@@ -857,6 +844,12 @@ public abstract sealed class Buffer
                     } finally {
                         Reference.reachabilityFence(buffer);
                     }
+                }
+
+                @Override
+                public boolean isThreadConfined(Buffer buffer) {
+                    var scope = buffer.session();
+                    return scope != null && scope.ownerThread() != null;
                 }
 
                 @Override

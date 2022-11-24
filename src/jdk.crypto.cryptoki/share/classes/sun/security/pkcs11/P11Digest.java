@@ -308,11 +308,11 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
                 token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
                 bufOfs = 0;
             }
-            var scope = NIO_ACCESS.acquireScopeOrNull(byteBuffer);
+            var scope = NIO_ACCESS.acquireSession(byteBuffer);
             try {
                 token.p11.C_DigestUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
             } finally {
-                NIO_ACCESS.releaseScope(byteBuffer, scope);
+                NIO_ACCESS.releaseSession(byteBuffer, scope);
             }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {
