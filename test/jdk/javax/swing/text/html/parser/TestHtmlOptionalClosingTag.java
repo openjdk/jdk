@@ -38,9 +38,9 @@ public class TestHtmlOptionalClosingTag {
     private static JFrame frame;
 
     private static final String INSTRUCTIONS =
-        " A Swing JLabel with a two-column HTML table is shown\n " + 
-	" If the table is shown without any alignment issue\n " +
-	" then press Pass, otherwise test fails";
+        " A Swing JLabel with a two-column HTML table is shown\n " +
+        " If the table is shown without any alignment issue\n " +
+        " then press Pass, otherwise test fails";
 
     public static void createAndShowGUI() {
         frame = new JFrame();
@@ -56,17 +56,17 @@ public class TestHtmlOptionalClosingTag {
         frame.add(label);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);	    
+        frame.setVisible(true);
     }
 
 
     public static void main(String[] argv) throws Exception {
         PassFailJFrame passFailJFrame = new PassFailJFrame(
-                "SwingHtmlTable Test", INSTRUCTIONS, 5);	    
+                "SwingHtmlTable Test", INSTRUCTIONS, 5);
         SwingUtilities.invokeAndWait(() -> createAndShowGUI());
-	PassFailJFrame.addTestWindow(frame);
-	PassFailJFrame.positionTestWindow(
+        PassFailJFrame.addTestWindow(frame);
+        PassFailJFrame.positionTestWindow(
                 frame, PassFailJFrame.Position.HORIZONTAL);
-	passFailJFrame.awaitAndCheck();
+        passFailJFrame.awaitAndCheck();
     }
 }
