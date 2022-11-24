@@ -139,8 +139,6 @@ CodeBuffer::~CodeBuffer() {
   }
 
   NOT_PRODUCT(clear_strings());
-
-  assert(_default_oop_recorder.allocated_on_stack_or_embedded(), "should be embedded object");
 }
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
@@ -422,6 +420,21 @@ void CodeSection::expand_locs(int new_capacity) {
   }
 }
 
+int CodeSection::alignment() const {
+  if (_index == CodeBuffer::SECT_CONSTS) {
+    // CodeBuffer controls the alignment of the constants section
+    return _outer->_const_section_alignment;
+  }
+  if (_index == CodeBuffer::SECT_INSTS) {
+    return (int) CodeEntryAlignment;
+  }
+  if (_index == CodeBuffer::SECT_STUBS) {
+    // CodeBuffer installer expects sections to be HeapWordSize aligned
+    return HeapWordSize;
+  }
+  ShouldNotReachHere();
+  return 0;
+}
 
 /// Support for emitting the code to its final location.
 /// The pattern is the same for all functions.

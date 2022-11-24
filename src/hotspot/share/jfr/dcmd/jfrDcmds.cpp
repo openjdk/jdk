@@ -256,7 +256,7 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
                                                         false,
                                                         true, // a DcmdFramework "option"
                                                         false);
-  for (int i = 0; i < array->max_length(); ++i) {
+  for (int i = 0; i < array->capacity(); ++i) {
     array->append(dummy);
   }
 }

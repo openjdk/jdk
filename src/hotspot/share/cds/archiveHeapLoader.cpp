@@ -256,7 +256,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
   int num_loaded_regions = 0;
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
-    FileMapRegion* r = mapinfo->space_at(i);
+    FileMapRegion* r = mapinfo->region_at(i);
     r->assert_is_heap_region();
     if (r->used() > 0) {
       assert(is_aligned(r->used(), HeapWordSize), "must be");
@@ -309,7 +309,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
   uintptr_t load_address = buffer;
   for (int i = 0; i < num_loaded_regions; i++) {
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
-    FileMapRegion* r = mapinfo->space_at(ri->_region_index);
+    FileMapRegion* r = mapinfo->region_at(ri->_region_index);
 
     if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
       // There's no easy way to free the buffer, so we will fill it with zero later
@@ -465,7 +465,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
 
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
-    FileMapRegion* r = FileMapInfo::current_info()->space_at(i);
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(i);
     if (r->mapped_base() != NULL && r->has_ptrmap()) {
       log_info(cds, heap)("Patching native pointers in heap region %d", i);
       BitMapView bm = r->ptrmap_view();

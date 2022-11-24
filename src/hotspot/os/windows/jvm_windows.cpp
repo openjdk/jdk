@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "os_windows.hpp"
 #include "runtime/osThread.hpp"
 
 #include <signal.h>
@@ -34,7 +35,7 @@ JVM_LEAF(void*, JVM_GetThreadInterruptEvent())
 JVM_END
 
 // sun.misc.Signal ///////////////////////////////////////////////////////////
-// Signal code is mostly copied from classic vm, signals_md.c   1.4 98/08/23
+
 /*
  * This function is included primarily as a debugging aid. If Java is
  * running in a console window, then pressing <CTRL-BREAK> will cause
@@ -43,11 +44,9 @@ JVM_END
  */
 
 JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
-  // Copied from classic vm
-  // signals_md.c       1.4 98/08/23
-  void* newHandler = handler == (void *)2
-                   ? os::user_handler()
-                   : handler;
+  signal_handler_t newHandler = handler == (void *)2 ?
+                                CAST_TO_FN_PTR(signal_handler_t, os::win32::user_handler()) :
+                                CAST_TO_FN_PTR(signal_handler_t, handler);
   switch (sig) {
    case SIGFPE:
      return (void *)-1; /* already used by VM */
@@ -65,8 +64,8 @@ JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
      if (ReduceSignalUsage) return (void*)-1;
   }
 
-  void* oldHandler = os::signal(sig, newHandler);
-  if (oldHandler == os::user_handler()) {
+  void* oldHandler = os::win32::install_signal_handler(sig, newHandler);
+  if (oldHandler == os::win32::user_handler()) {
       return (void *)2;
   } else {
       return oldHandler;
@@ -84,6 +83,6 @@ JVM_ENTRY_NO_ENV(jboolean, JVM_RaiseSignal(jint sig))
       return JNI_FALSE;
     }
   }
-  os::signal_raise(sig);
+  ::raise(sig);
   return JNI_TRUE;
 JVM_END
