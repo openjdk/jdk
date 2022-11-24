@@ -119,7 +119,6 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
-java/awt/Focus/UnaccessibleChoice/AccessibleChoiceTest.java 8239801 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
@@ -186,11 +185,9 @@ java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
 java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all,macosx-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
-java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java 8252713 linux-all
 
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java 8194947 generic-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
-java/awt/Scrollbar/ScrollbarMouseWheelTest/ScrollbarMouseWheelTest.java 8196018 windows-all,linux-all
 java/awt/TrayIcon/ActionCommand/ActionCommand.java 8150540 windows-all
 java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540,8295300 windows-all,linux-all
 java/awt/TrayIcon/ActionEventTest/ActionEventTest.java 8150540,8242801 windows-all,macosx-all
@@ -226,7 +223,7 @@ sun/java2d/DirectX/MultiPaintEventTest/MultiPaintEventTest.java 8284825 windows-
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
-sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
+sun/java2d/SunGraphics2D/DrawImageBilinear.java 8297175 linux-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
@@ -375,7 +372,6 @@ java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8023562 macosx-all
 java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407 macosx-all
@@ -428,7 +424,6 @@ java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.j
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 8157147 linux-all,windows-all,macosx-all
-java/awt/Mouse/TitleBarDoubleClick/TitleBarDoubleClick.java 8148041 linux-all
 java/awt/Toolkit/DesktopProperties/rfe4758438.java 8193547 linux-all
 java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
@@ -505,6 +500,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
+java/io/File/TempDirDoesNotExist.java                           8297528 windows-all
 
 ############################################################################
 
@@ -555,6 +551,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
+
+java/nio/channels/FileChannel/FileExtensionAndMap.java          8297292 generic-all
 
 ############################################################################
 
@@ -632,7 +630,6 @@ javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
-javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
 javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 
 ############################################################################
@@ -673,6 +670,9 @@ java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
+java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8297296 macosx-all
+javax/swing/JFileChooser/8046391/bug8046391.java 8293862 windows-x64
+
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
@@ -699,8 +699,6 @@ tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
 # jdk_jdi
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
-
-com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
