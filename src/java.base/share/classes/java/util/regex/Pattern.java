@@ -484,9 +484,15 @@ import jdk.internal.util.regex.Grapheme;
  * <p> The regular expression {@code .} matches any character except a line
  * terminator unless the {@link #DOTALL} flag is specified.
  *
- * <p> By default, the regular expressions {@code ^} and {@code $} ignore
- * line terminators and only match at the beginning and the end, respectively,
- * of the entire input sequence. If {@link #MULTILINE} mode is activated then
+ * <p> If {@link #MULTILINE} mode is not activated, the regular expression
+ * {@code ^} ignores line terminators and only matches at the beginning of
+ * the entire input sequence. The regular expression {@code $} matches at the
+ * end of the entire input sequence, but also matches just before the last line
+ * terminator if this is not followed by any other input character. Other line
+ * terminators are ignored, including the last one if it is followed by other
+ * input characters.
+ *
+ * <p> If {@link #MULTILINE} mode is activated then
  * {@code ^} matches at the beginning of input and after any line terminator
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.
@@ -1843,12 +1849,24 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         topClosureNodes = null;
     }
 
-    Map<String, Integer> namedGroups() {
+    private Map<String, Integer> namedGroupsMap() {
         Map<String, Integer> groups = namedGroups;
         if (groups == null) {
             namedGroups = groups = new HashMap<>(2);
         }
         return groups;
+    }
+
+    /**
+     * Returns an unmodifiable map from capturing group names to group numbers.
+     * If there are no named groups, returns an empty map.
+     *
+     * @return an unmodifiable map from capturing group names to group numbers
+     *
+     * @since 20
+     */
+    public Map<String, Integer> namedGroups() {
+        return Map.copyOf(namedGroupsMap());
     }
 
     /**
@@ -2554,14 +2572,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (read() != '<')
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
-            if (!namedGroups().containsKey(name))
+            if (!namedGroupsMap().containsKey(name))
                 throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
-                    root = new CIBackRef(namedGroups().get(name), has(UNICODE_CASE));
+                    root = new CIBackRef(namedGroupsMap().get(name), has(UNICODE_CASE));
                 else
-                    root = new BackRef(namedGroups().get(name));
+                    root = new BackRef(namedGroupsMap().get(name));
             }
             return -1;
         case 'l':
@@ -3008,13 +3026,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (ch != '=' && ch != '!') {
                         // named captured group
                         String name = groupname(ch);
-                        if (namedGroups().containsKey(name))
+                        if (namedGroupsMap().containsKey(name))
                             throw error("Named capturing group <" + name
                                         + "> is already defined");
                         capturingGroup = true;
                         head = createGroup(false);
                         tail = root;
-                        namedGroups().put(name, capturingGroupCount - 1);
+                        namedGroupsMap().put(name, capturingGroupCount - 1);
                         head.next = expr(tail);
                         break;
                     }

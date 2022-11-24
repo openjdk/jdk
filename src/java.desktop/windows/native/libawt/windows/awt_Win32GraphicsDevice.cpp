@@ -578,7 +578,7 @@ void AwtWin32GraphicsDevice::RealizePalette(HDC hDC)
 }
 
 /**
- * Deterine which device the HWND exists on and return the
+ * Determine which device the HWND exists on and return the
  * appropriate index into the devices array.
  */
 int AwtWin32GraphicsDevice::DeviceIndexForWindow(HWND hWnd)

@@ -31,6 +31,11 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # We might have the original command line if the wrapper was called by some
+  # other script.
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_SHORT)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_FULL)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_LINE)
   # AUTOCONF might be set in the environment by the user. Preserve for "make reconfigure".
   AC_SUBST(AUTOCONF)
   # Save the path variable before it gets changed
@@ -138,6 +143,15 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
+    fi
+  elif test "x$TOOLCHAIN_PATH" != x; then
+    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
+    if test "x$XCODEBUILD" != x; then
+      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
+        XCODEBUILD=
+      fi
     fi
   else
     UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
@@ -288,6 +302,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_toolchain_path)]
   )
 
+  AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
+      [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  if test "x$with_xcode_path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],
+          $with_xcode_path/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$with_xcode_path/Contents/Developer/usr/bin)
+    else
+      AC_MSG_WARN([Option --with-xcode-path is only valid on Mac OS, ignoring.])
+    fi
+  fi
+
+  AC_MSG_CHECKING([for toolchain path])
+  AC_MSG_RESULT([$TOOLCHAIN_PATH])
+  AC_SUBST(TOOLCHAIN_PATH)
+
   AC_ARG_WITH([extra-path], [AS_HELP_STRING([--with-extra-path],
       [prepend these directories to the default path])],
       [UTIL_PREPEND_TO_PATH([EXTRA_PATH],$with_extra_path)]
@@ -305,10 +335,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
   AC_SUBST(SYSROOT)
-
-  AC_MSG_CHECKING([for toolchain path])
-  AC_MSG_RESULT([$TOOLCHAIN_PATH])
-  AC_SUBST(TOOLCHAIN_PATH)
 
   AC_MSG_CHECKING([for extra path])
   AC_MSG_RESULT([$EXTRA_PATH])
@@ -453,7 +479,7 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
     # in the source tree when configure runs
     file_to_test="$TOPDIR/Makefile"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
-      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
+      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with non cygwin tools in a directory not created in cygwin.])
     fi
   fi
 ])

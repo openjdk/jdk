@@ -33,7 +33,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/resourceHash.hpp"
 
-ResourceHashtable<uintptr_t, ResolutionErrorEntry*, 107, ResourceObj::C_HEAP, mtClass> _resolution_error_table;
+ResourceHashtable<uintptr_t, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass> _resolution_error_table;
 
 // create new error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
@@ -162,4 +162,3 @@ void ResolutionErrorTable::purge_resolution_errors() {
   ResolutionIteratePurgeErrors purgeErrorsIterator;
   _resolution_error_table.unlink(&purgeErrorsIterator);
 }
-

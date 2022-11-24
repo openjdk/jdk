@@ -25,28 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-
-import com.sun.source.doctree.AttributeTree;
-import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.AuthorTree;
 import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.CommentTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.EndElementTree;
-import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
@@ -60,7 +44,7 @@ import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SinceTree;
-import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -72,8 +56,21 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import java.util.List;
+import java.util.Optional;
+
+import static com.sun.source.doctree.DocTree.Kind.SEE;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
 
 /**
  * A utility class.
@@ -130,6 +127,7 @@ public class CommentHelper {
     }
 
     Element getElement(ReferenceTree rtree) {
+        // We need to lookup type variables and other types
         Utils utils = configuration.utils;
         // likely a synthesized tree
         if (path == null) {
@@ -213,7 +211,7 @@ public class CommentHelper {
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
 
-    public String getReferencedMemberName(String signature) {
+    public String getReferencedFragment(String signature) {
         if (signature == null) {
             return null;
         }
@@ -483,6 +481,11 @@ public class CommentHelper {
             }
 
             @Override
+            public List<? extends DocTree> visitSpec(SpecTree node, Void p) {
+                return node.getTitle();
+            }
+
+            @Override
             public List<? extends DocTree> visitThrows(ThrowsTree node, Void p) {
                 return node.getDescription();
             }
@@ -533,12 +536,15 @@ public class CommentHelper {
 
     private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
         Utils utils = configuration.utils;
-        DocFinder.Output inheritedDoc =
-                DocFinder.search(configuration,
-                        new DocFinder.Input(utils, ee));
-        return inheritedDoc.holder == ee
+        var docFinder = utils.docFinder();
+        Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
+                (m -> {
+                    Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
+                    return Result.fromOptional(optional);
+                })).toOptional();
+        return inheritedDoc.isEmpty() || inheritedDoc.get().equals(ee)
                 ? null
-                : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
+                : utils.getCommentHelper(inheritedDoc.get()).getDocTreePath(dtree);
     }
 
     /**

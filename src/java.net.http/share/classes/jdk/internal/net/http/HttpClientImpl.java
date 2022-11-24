@@ -112,6 +112,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     final Logger debugtimeout = Utils.getDebugLogger(this::dbgString, DEBUGTIMEOUT);
     static final AtomicLong CLIENT_IDS = new AtomicLong();
     private final AtomicLong CONNECTION_IDS = new AtomicLong();
+    static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 1200;
+    static final long KEEP_ALIVE_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout", DEFAULT_KEEP_ALIVE_TIMEOUT);
+    // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
+    static final long IDLE_CONNECTION_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -396,6 +400,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final AtomicLong pendingHttpRequestCount = new AtomicLong();
     private final AtomicLong pendingHttp2StreamCount = new AtomicLong();
     private final AtomicLong pendingTCPConnectionCount = new AtomicLong();
+    private final AtomicLong pendingSubscribersCount = new AtomicLong();
     private final AtomicBoolean isAlive = new AtomicBoolean();
 
     /** A Set of, deadline first, ordered timeout events. */
@@ -548,7 +553,12 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         if (!selmgr.isClosed()) {
             synchronized (selmgr) {
                 if (!selmgr.isClosed()) {
-                    subscribers.add(subscriber);
+                    if (subscribers.add(subscriber)) {
+                        long count = pendingSubscribersCount.incrementAndGet();
+                        if (debug.on()) {
+                            debug.log("body subscriber registered: " + count);
+                        }
+                    }
                     return;
                 }
             }
@@ -556,8 +566,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         subscriber.onError(selmgr.selectorClosedException());
     }
 
-    public void subscriberCompleted(HttpBodySubscriberWrapper<?> subscriber) {
-        subscribers.remove(subscriber);
+    public void unregisterSubscriber(HttpBodySubscriberWrapper<?> subscriber) {
+        if (subscribers.remove(subscriber)) {
+            long count = pendingSubscribersCount.decrementAndGet();
+            if (debug.on()) {
+                debug.log("body subscriber unregistered: " + count);
+            }
+        }
     }
 
     private void closeConnection(HttpConnection conn) {
@@ -627,7 +642,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long httpCount = pendingHttpOperationsCount.decrementAndGet();
         final long http2Count = pendingHttp2StreamCount.get();
         final long webSocketCount = pendingWebSocketCount.get();
-        if (count == 0 && facade() == null) {
+        if (count == 0 && facadeRef.refersTo(null)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -649,7 +664,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long http2Count = pendingHttp2StreamCount.decrementAndGet();
         final long httpCount = pendingHttpOperationsCount.get();
         final long webSocketCount = pendingWebSocketCount.get();
-        if (count == 0 && facade() == null) {
+        if (count == 0 && facadeRef.refersTo(null)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -671,7 +686,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long webSocketCount = pendingWebSocketCount.decrementAndGet();
         final long httpCount = pendingHttpOperationsCount.get();
         final long http2Count = pendingHttp2StreamCount.get();
-        if (count == 0 && facade() == null) {
+        if (count == 0 && facadeRef.refersTo(null)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -697,6 +712,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final AtomicLong websocketCount;
         final AtomicLong operationsCount;
         final AtomicLong connnectionsCount;
+        final AtomicLong subscribersCount;
         final Reference<?> reference;
         final AtomicBoolean isAlive;
         final String name;
@@ -706,6 +722,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                           AtomicLong ws,
                           AtomicLong ops,
                           AtomicLong conns,
+                          AtomicLong subscribers,
                           Reference<?> ref,
                           AtomicBoolean isAlive,
                           String name) {
@@ -715,9 +732,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             this.websocketCount = ws;
             this.operationsCount = ops;
             this.connnectionsCount = conns;
+            this.subscribersCount = subscribers;
             this.reference = ref;
             this.isAlive = isAlive;
             this.name = name;
+        }
+        @Override
+        public long getOutstandingSubscribers() {
+            return subscribersCount.get();
         }
         @Override
         public long getOutstandingOperations() {
@@ -759,6 +781,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 pendingWebSocketCount,
                 pendingOperationCount,
                 pendingTCPConnectionCount,
+                pendingSubscribersCount,
                 facadeRef,
                 isAlive,
                 dbgTag);
@@ -1525,6 +1548,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Optional.ofNullable(connectTimeout);
     }
 
+    Optional<Duration> idleConnectionTimeout() {
+        return Optional.ofNullable(getIdleConnectionTimeout());
+    }
+
     @Override
     public Optional<ProxySelector> proxy() {
         return Optional.ofNullable(userProxySelector);
@@ -1687,6 +1714,25 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // the SSL connections managed by this client.
     BufferSupplier getSSLBufferSupplier() {
         return sslBufferSupplier;
+    }
+
+    private Duration getIdleConnectionTimeout() {
+        if (IDLE_CONNECTION_TIMEOUT >= 0)
+            return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT);
+        return null;
+    }
+
+    private static long getTimeoutProp(String prop, long def) {
+        String s = Utils.getNetProperty(prop);
+        try {
+            if (s != null) {
+                long timeoutVal = Long.parseLong(s);
+                if (timeoutVal >= 0) return timeoutVal;
+            }
+        } catch (NumberFormatException ignored) {
+            Log.logTrace("Invalid value set for " + prop + " property: " + ignored.toString());
+        }
+        return def;
     }
 
     // An implementation of BufferSupplier that manages a pool of

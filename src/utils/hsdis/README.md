@@ -83,7 +83,7 @@ you need to augment your `PATH` variable to also point to where you installed
 LLVM (like `C:\LLVM\bin`).
 
 More information is available at the [HotSpot
-wiki](https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly).
+wiki](https://wiki.openjdk.org/display/HotSpot/PrintAssembly).
 
 ## Building with Capstone
 

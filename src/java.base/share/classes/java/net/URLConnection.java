@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,10 +619,12 @@ public abstract class URLConnection {
      *          missing or malformed.
      */
     public int getHeaderFieldInt(String name, int Default) {
-        String value = getHeaderField(name);
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) { }
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) { }
+        }
         return Default;
     }
 
@@ -642,10 +644,12 @@ public abstract class URLConnection {
      * @since 1.7
      */
     public long getHeaderFieldLong(String name, long Default) {
-        String value = getHeaderField(name);
-        try {
-            return Long.parseLong(value);
-        } catch (Exception e) { }
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) { }
+        }
         return Default;
     }
 
@@ -667,10 +671,12 @@ public abstract class URLConnection {
      */
     @SuppressWarnings("deprecation")
     public long getHeaderFieldDate(String name, long Default) {
-        String value = getHeaderField(name);
-        try {
-            return Date.parse(value);
-        } catch (Exception e) { }
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Date.parse(value);
+            } catch (Exception e) { }
+        }
         return Default;
     }
 
@@ -1092,7 +1098,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static void setDefaultUseCaches(String protocol, boolean defaultVal) {
-        protocol = protocol.toLowerCase(Locale.US);
+        protocol = URL.lowerCaseProtocol(protocol);
         defaultCaching.put(protocol, defaultVal);
     }
 
@@ -1108,7 +1114,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static boolean getDefaultUseCaches(String protocol) {
-        Boolean protoDefault = defaultCaching.get(protocol.toLowerCase(Locale.US));
+        Boolean protoDefault = defaultCaching.get(URL.lowerCaseProtocol(protocol));
         if (protoDefault != null) {
             return protoDefault.booleanValue();
         } else {

@@ -135,8 +135,8 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 }
 
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
-  HeapWord* start = (HeapWord*)start_address() + sp() - frame::sender_sp_offset;
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
+  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words;
 #else
   Unimplemented();
   HeapWord* start = NULL;
@@ -324,7 +324,7 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
-#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+#if !defined(AMD64) || !defined(AARCH64) || !defined(RISCV64) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.
@@ -343,7 +343,7 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   assert(from >= start_address(), "");
   assert(from + size <= end_address(), "");
 
-#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+#if !defined(AMD64) || !defined(AARCH64) || !defined(RISCV64) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.

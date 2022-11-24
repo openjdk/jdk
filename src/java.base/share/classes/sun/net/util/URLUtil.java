@@ -49,8 +49,14 @@ public class URLUtil {
 
         String protocol = url.getProtocol();
         if (protocol != null) {
-            /* protocol is compared case-insensitive, so convert to lowercase */
-            protocol = protocol.toLowerCase();
+            /* protocol is compared case-insensitive, so convert to lowercase
+             * if needed. URL will store from lower-cased String literals for
+             * built-in protocols, so avoid calling toLowerCase for these and
+             * use identity tests for speed
+             */
+            if (protocol != "file" && protocol != "jrt" && protocol != "jar") {
+                protocol = protocol.toLowerCase();
+            }
             strForm.append(protocol);
             strForm.append("://");
         }
@@ -58,8 +64,9 @@ public class URLUtil {
         String host = url.getHost();
         if (host != null) {
             /* host is compared case-insensitive, so convert to lowercase */
-            host = host.toLowerCase();
-            strForm.append(host);
+            if (!host.isEmpty()) {
+                strForm.append(host.toLowerCase());
+            }
 
             int port = url.getPort();
             if (port == -1) {
@@ -88,6 +95,7 @@ public class URLUtil {
             String urlString = url.toString();
             int bangPos = urlString.indexOf("!/");
             urlString = urlString.substring(4, bangPos > -1 ? bangPos : urlString.length());
+            @SuppressWarnings("deprecation")
             URL u = new URL(urlString);
             return getURLConnectPermission(u);
             // If protocol is HTTP or HTTPS than use URLPermission object

@@ -190,8 +190,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
@@ -204,8 +203,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
@@ -218,8 +216,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
@@ -232,8 +229,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
@@ -246,8 +242,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
@@ -260,8 +255,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
@@ -275,8 +269,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
-      __ mv(t0, fn);
-      __ jalr(t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -526,7 +519,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   assert_cond(runtime_entry != NULL);
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath(xthread);
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath(xthread);
   __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -1082,7 +1077,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
     address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ mv(t1, unsatisfied);
-    __ ld(t1, t1);
+    __ ld(t1, Address(t1, 0));
     __ bne(x28, t1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -1169,8 +1164,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ mv(t1, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
-    __ jalr(t1);
+    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1219,8 +1213,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
-    __ mv(t1, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
-    __ jalr(t1);
+    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
@@ -1447,6 +1440,17 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(continue_after_compile);
   }
+
+  return entry_point;
+}
+
+// Method entry for java.lang.Thread.currentThread
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+
+  __ ld(x10, Address(xthread, JavaThread::vthread_offset()));
+  __ resolve_oop_handle(x10, t0, t1);
+  __ ret();
 
   return entry_point;
 }
@@ -1733,18 +1737,35 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  __ push_reg(t0);
-  __ push_reg(x10);
-  __ mv(x10, (address) &BytecodeCounter::_counter_value);
-  __ mv(t0, 1);
-  __ amoadd_d(zr, x10, t0, Assembler::aqrl);
-  __ pop_reg(x10);
-  __ pop_reg(t0);
+  __ mv(x7, (address) &BytecodeCounter::_counter_value);
+  __ atomic_addw(noreg, 1, x7);
 }
 
-void TemplateInterpreterGenerator::histogram_bytecode(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
+  __ mv(x7, (address) &BytecodeHistogram::_counters[t->bytecode()]);
+  __ atomic_addw(noreg, 1, x7);
+}
 
-void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
+  // Calculate new index for counter:
+  //   _index = (_index >> log2_number_of_codes) |
+  //            (bytecode << log2_number_of_codes);
+  Register index_addr = t1;
+  Register index = t0;
+  __ mv(index_addr, (address) &BytecodePairHistogram::_index);
+  __ lw(index, index_addr);
+  __ mv(x7, ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
+  __ srli(index, index, BytecodePairHistogram::log2_number_of_codes);
+  __ orrw(index, x7, index);
+  __ sw(index, index_addr);
+  // Bump bucket contents:
+  //   _counters[_index] ++;
+  Register counter_addr = t1;
+  __ mv(x7, (address) &BytecodePairHistogram::_counters);
+  __ slli(index, index, LogBytesPerInt);
+  __ add(counter_addr, x7, index);
+  __ atomic_addw(noreg, 1, counter_addr);
+ }
 
 void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // Call a little run-time stub to avoid blow-up for each bytecode.

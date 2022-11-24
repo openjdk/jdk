@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
         break;
       }
       case RegisterSaver::special_reg: {
-        if (reg_num == SR_CTR_SpecialRegisterEnumValue) {
+        if (reg_num == SR_CTR.encoding()) {
           __ mfctr(R30);
           __ std(R30, offset, R1_SP);
         } else {
@@ -403,7 +403,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
         break;
       }
       case RegisterSaver::special_reg: {
-        if (reg_num == SR_CTR_SpecialRegisterEnumValue) {
+        if (reg_num == SR_CTR.encoding()) {
           if (restore_ctr) { // Nothing to do here if ctr already contains the next address.
             __ ld(R31, offset, R1_SP);
             __ mtctr(R31);
@@ -583,7 +583,7 @@ static int reg2offset(VMReg r) {
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
 // and VMRegImpl::stack0+1 refers to the memory word 4-bytes higher. Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// up to Register::number_of_registers) are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words, which are
@@ -1889,12 +1889,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //   out is the index of the outgoing C arguments
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for (int r = 0 ; r < RegisterImpl::number_of_registers ; r++) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for (int r = 0 ; r < Register::number_of_registers ; r++) {
     reg_destroyed[r] = false;
   }
-  for (int f = 0 ; f < FloatRegisterImpl::number_of_registers ; f++) {
+  for (int f = 0 ; f < FloatRegister::number_of_registers ; f++) {
     freg_destroyed[f] = false;
   }
 #endif // ASSERT

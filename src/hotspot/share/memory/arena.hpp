@@ -86,7 +86,7 @@ class Chunk: CHeapObj<mtChunk> {
 
 //------------------------------Arena------------------------------------------
 // Fast allocation of memory
-class Arena : public CHeapObj<mtNone> {
+class Arena : public CHeapObjBase {
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
@@ -120,15 +120,6 @@ protected:
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
-
-  // new operators
-  void* operator new (size_t size) throw();
-  void* operator new (size_t size, const std::nothrow_t& nothrow_constant) throw();
-
-  // dynamic memory type tagging
-  void* operator new(size_t size, MEMFLAGS flags) throw();
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
-  void  operator delete(void* p);
 
   // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.

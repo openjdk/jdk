@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -128,11 +128,42 @@ install_jib() {
             exit 1
         fi
     fi
+    # Want to check the filetype using file, to see if we got served a HTML error page.
+    # This is sensitive to the filename containing a specific string, but good enough.
+    file ${installed_jib_script}.gz | grep "gzip compressed data" > /dev/null
+    if [ $? -ne 0 ]; then 
+        echo "Warning: ${installed_jib_script}.gz is not a gzip file."
+        echo "If you are behind a proxy you may need to configure exceptions using no_proxy."
+        echo "The download URL was: ${jib_url}"
+        exit 1
+    fi
     echo "Extracting JIB bootstrap script"
     rm -f "${installed_jib_script}"
     gunzip "${installed_jib_script}.gz"
     chmod +x "${installed_jib_script}"
     echo "${data_string}" > "${install_data}"
+}
+
+# Returns a shell-escaped version of the argument given.
+shell_quote() {
+  if [[ -n "$1" ]]; then
+    # Uses only shell-safe characters?  No quoting needed.
+    # '=' is a zsh meta-character, but only in word-initial position.
+    if echo "$1" | grep '^[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\.:,%/+=_-]\{1,\}$' > /dev/null \
+        && ! echo "$1" | grep '^=' > /dev/null; then
+      quoted="$1"
+    else
+      if echo "$1" | grep "[\'!]" > /dev/null; then
+        # csh does history expansion within single quotes, but not
+        # when backslash-escaped!
+        local quoted_quote="'\\''" quoted_exclam="'\\!'"
+        word="${1//\'/${quoted_quote}}"
+        word="${1//\!/${quoted_exclam}}"
+      fi
+      quoted="'$1'"
+    fi
+    echo "$quoted"
+  fi
 }
 
 # Main body starts here
@@ -150,5 +181,17 @@ fi
 if [ -z "${JIB_SRC_DIR}" ]; then
     export JIB_SRC_DIR="${mydir}/../"
 fi
+
+
+# Save the original command line
+conf_quoted_arguments=()
+for conf_option; do
+  conf_quoted_arguments=("${conf_quoted_arguments[@]}" "$(shell_quote "$conf_option")")
+done
+export REAL_CONFIGURE_COMMAND_LINE="${conf_quoted_arguments[@]}"
+
+myfulldir="$(cd "${mydir}" > /dev/null && pwd)"
+export REAL_CONFIGURE_COMMAND_EXEC_FULL="$BASH $myfulldir/$myname"
+export REAL_CONFIGURE_COMMAND_EXEC_SHORT="$myname"
 
 ${installed_jib_script} "$@"

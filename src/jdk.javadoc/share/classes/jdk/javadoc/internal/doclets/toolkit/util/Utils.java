@@ -101,6 +101,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -137,6 +138,7 @@ public class Utils {
     public final Types typeUtils;
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
+    private final DocFinder docFinder = newDocFinder();
 
     public Utils(BaseConfiguration c) {
         configuration = c;
@@ -1265,7 +1267,7 @@ public class Utils {
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
-        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        Object forRemoval = getAnnotationElement(e, getDeprecatedType(), "forRemoval");
         return forRemoval != null && (boolean) forRemoval;
     }
 
@@ -1276,21 +1278,31 @@ public class Utils {
      * @return the Deprecated.since value for e, or null.
      */
     public String getDeprecatedSince(Element e) {
-        return (String) getDeprecatedElement(e, "since");
+        return (String) getAnnotationElement(e, getDeprecatedType(), "since");
+    }
+
+    /**
+     * Returns the value of the internal {@code PreviewFeature.feature} element.
+     *
+     * @param e the Element to check
+     * @return the PreviewFeature.feature for e, or null
+     */
+    public Object getPreviewFeature(Element e) {
+        return getAnnotationElement(e, getSymbol("jdk.internal.javac.PreviewFeature"), "feature");
     }
 
     /**
      * Returns the Deprecated annotation element value of the given element, or null.
      */
-    private Object getDeprecatedElement(Element e, String elementName) {
+    private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), getDeprecatedType())) {
+            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals(elementName)) {
+                        if (element.getSimpleName().contentEquals(annotationElementName)) {
                             return (pairs.get(element)).getValue();
                         }
                     }
@@ -1903,6 +1915,9 @@ public class Utils {
 
     private SimpleElementVisitor14<String, Void> snvisitor = null;
 
+    // If `e` is a static nested class, this method will return e's simple name
+    // preceded by `.` and an outer type; this is not how JLS defines "simple
+    // name". See "Simple Name", "Qualified Name", "Fully Qualified Name".
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor14<>() {
@@ -1916,7 +1931,7 @@ public class Utils {
                     StringBuilder sb = new StringBuilder(e.getSimpleName().toString());
                     Element enclosed = e.getEnclosingElement();
                     while (enclosed != null
-                            && (enclosed.getKind().isClass() || enclosed.getKind().isInterface())) {
+                            && (enclosed.getKind().isDeclaredType())) {
                         sb.insert(0, enclosed.getSimpleName() + ".");
                         enclosed = enclosed.getEnclosingElement();
                     }
@@ -2402,6 +2417,10 @@ public class Utils {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC, SpecTree.class);
+    }
+
     public List<ThrowsTree> getThrowsTrees(Element element) {
         return getBlockTags(element,
                 t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
@@ -2781,4 +2800,16 @@ public class Utils {
         boolean isPreview(Element el);
     }
 
+    public DocFinder docFinder() {
+        return docFinder;
+    }
+
+    private DocFinder newDocFinder() {
+        return new DocFinder(this::overriddenMethod, this::implementedMethods);
+    }
+
+    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
+        var type = configuration.utils.getEnclosingTypeElement(m);
+        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    }
 }

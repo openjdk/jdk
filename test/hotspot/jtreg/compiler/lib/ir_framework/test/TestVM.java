@@ -363,7 +363,9 @@ public class TestVM {
             TestFormat.checkNoThrow(WHITE_BOX.enqueueInitializerForCompilation(c, level.getValue()),
                                     "Failed to enqueue <clinit> of " + c + " for compilation. Did you specify "
                                     + "@ForceCompileClassInitializer without providing a static class initialization? "
-                                    + "Make sure to provide any form of static initialization or remove the annotation.");
+                                    + "Make sure to provide any form of static initialization or remove the annotation. "
+                                    + "For debugging purposes, -DIgnoreCompilerControls=true can be used to temporarly "
+                                    + "ignore @ForceCompileClassInitializer annotations.");
         }
     }
 
@@ -503,7 +505,8 @@ public class TestVM {
                 if (testAnno != null) {
                     addDeclaredTest(m);
                 } else {
-                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class), "Found @IR annotation on non-@Test method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class) && !m.isAnnotationPresent(IRs.class),
+                                            "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
                                             "Found @Warmup annotation on non-@Test or non-@Run method " + m);
                 }

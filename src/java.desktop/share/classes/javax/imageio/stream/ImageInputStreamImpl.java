@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         buf.setLength(len);
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public boolean readBoolean() throws IOException {
         int ch = this.read();
         if (ch < 0) {
@@ -208,6 +211,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         return (ch != 0);
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public byte readByte() throws IOException {
         int ch = this.read();
         if (ch < 0) {
@@ -216,6 +222,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         return (byte)ch;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public int readUnsignedByte() throws IOException {
         int ch = this.read();
         if (ch < 0) {
@@ -224,6 +233,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         return ch;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public short readShort() throws IOException {
         if (read(byteBuf, 0, 2) != 2) {
             throw new EOFException();
@@ -238,14 +250,23 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public int readUnsignedShort() throws IOException {
         return ((int)readShort()) & 0xffff;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public char readChar() throws IOException {
         return (char)readShort();
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public int readInt() throws IOException {
         if (read(byteBuf, 0, 4) !=  4) {
             throw new EOFException();
@@ -262,10 +283,16 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public long readUnsignedInt() throws IOException {
         return ((long)readInt()) & 0xffffffffL;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public long readLong() throws IOException {
         // REMIND: Once 6277756 is fixed, we should do a bulk read of all 8
         // bytes here as we do in readShort() and readInt() for even better
@@ -280,10 +307,16 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public float readFloat() throws IOException {
         return Float.intBitsToFloat(readInt());
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public double readDouble() throws IOException {
         return Double.longBitsToDouble(readLong());
     }
@@ -318,6 +351,10 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         return input.toString();
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     * @throws java.io.UTFDataFormatException {@inheritDoc}
+     */
     public String readUTF() throws IOException {
         this.bitOffset = 0;
 
@@ -340,6 +377,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         return ret;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(byte[] b, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > b.length || off + len < 0) {
@@ -357,10 +397,16 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(byte[] b) throws IOException {
         readFully(b, 0, b.length);
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(short[] s, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > s.length || off + len < 0) {
@@ -377,6 +423,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(char[] c, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > c.length || off + len < 0) {
@@ -393,6 +442,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(int[] i, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > i.length || off + len < 0) {
@@ -409,6 +461,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(long[] l, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > l.length || off + len < 0) {
@@ -425,6 +480,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(float[] f, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > f.length || off + len < 0) {
@@ -441,6 +499,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public void readFully(double[] d, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > d.length || off + len < 0) {
@@ -641,6 +702,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         this.bitOffset = bitOffset;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public int readBit() throws IOException {
         checkClosed();
 
@@ -663,6 +727,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         return val & 0x1;
     }
 
+    /**
+     * @throws EOFException {@inheritDoc}
+     */
     public long readBits(int numBits) throws IOException {
         checkClosed();
 

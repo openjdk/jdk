@@ -58,16 +58,4 @@ tools/javap/output/RepeatingTypeAnnotations.java                                
 
 ###########################################################################
 #
-# sjavac
-
-tools/sjavac/IncCompileFullyQualifiedRef.java                                   8152055    generic-all    Requires dependency code to deal with in-method dependencies.
-tools/sjavac/IncCompileWithChanges.java                                         8152055    generic-all    Requires dependency code to deal with in-method dependencies.
-
-tools/sjavac/ApiExtraction.java                                                 8158002    generic-all    Requires investigation
-tools/sjavac/IgnoreSymbolFile.java                                              8158002    generic-all    Requires investigation
-tools/sjavac/ClasspathDependencies.java                                         8158002    generic-all    Requires investigation
-
-
-###########################################################################
-#
 # jdeps

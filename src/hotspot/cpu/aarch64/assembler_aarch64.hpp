@@ -303,24 +303,29 @@ public:
 class PrePost {
   int _offset;
   Register _r;
-public:
+protected:
   PrePost(Register reg, int o) : _offset(o), _r(reg) { }
-  int offset() { return _offset; }
-  Register reg() { return _r; }
+  ~PrePost() = default;
+  PrePost(const PrePost&) = default;
+  PrePost& operator=(const PrePost&) = default;
+public:
+  int offset() const { return _offset; }
+  Register reg() const { return _r; }
 };
 
 class Pre : public PrePost {
 public:
   Pre(Register reg, int o) : PrePost(reg, o) { }
 };
+
 class Post : public PrePost {
   Register _idx;
   bool _is_postreg;
 public:
-  Post(Register reg, int o) : PrePost(reg, o) { _idx = noreg; _is_postreg = false; }
-  Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; _is_postreg = true; }
-  Register idx_reg() { return _idx; }
-  bool is_postreg() {return _is_postreg; }
+  Post(Register reg, int o) : PrePost(reg, o), _idx(noreg), _is_postreg(false) {}
+  Post(Register reg, Register idx) : PrePost(reg, 0), _idx(idx), _is_postreg(true) {}
+  Register idx_reg() const { return _idx; }
+  bool is_postreg() const { return _is_postreg; }
 };
 
 namespace ext
@@ -332,7 +337,7 @@ namespace ext
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
+  enum mode { no_mode, base_plus_offset, pre, post, post_reg,
               base_plus_offset_reg, literal };
 
   // Shift and extend for base reg + reg offset addressing
@@ -346,22 +351,11 @@ class Address {
     int shift() const { return _shift; }
     ext::operation op() const { return _op; }
   };
-  class uxtw : public extend {
-  public:
-    uxtw(int shift = -1): extend(shift, 0b010, ext::uxtw) { }
-  };
-  class lsl : public extend {
-  public:
-    lsl(int shift = -1): extend(shift, 0b011, ext::uxtx) { }
-  };
-  class sxtw : public extend {
-  public:
-    sxtw(int shift = -1): extend(shift, 0b110, ext::sxtw) { }
-  };
-  class sxtx : public extend {
-  public:
-    sxtx(int shift = -1): extend(shift, 0b111, ext::sxtx) { }
-  };
+
+  static extend uxtw(int shift = -1) { return extend(shift, 0b010, ext::uxtw); }
+  static extend lsl(int shift = -1)  { return extend(shift, 0b011, ext::uxtx); }
+  static extend sxtw(int shift = -1) { return extend(shift, 0b110, ext::sxtw); }
+  static extend sxtx(int shift = -1) { return extend(shift, 0b111, ext::sxtx); }
 
  private:
   Register _base;
@@ -371,11 +365,6 @@ class Address {
   extend _ext;
 
   RelocationHolder _rspec;
-
-  // Typically we use AddressLiterals we want to use their rval
-  // However in some situations we want the lval (effect address) of
-  // the item.  We provide a special factory for making those lvals.
-  bool _is_lval;
 
   // If the target is far we'll need to load the ea of this to a
   // register to reach it. Otherwise if near we can do PC-relative
@@ -405,7 +394,6 @@ class Address {
   Address(address target, RelocationHolder const& rspec)
     : _mode(literal),
       _rspec(rspec),
-      _is_lval(false),
       _target(target)  { }
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
   Address(Register base, RegisterOrConstant index, extend ext = lsl())
@@ -1907,31 +1895,33 @@ void mvnw(Register Rd, Register Rm,
 #undef INSN
 
   // Floating-point data-processing (1 source)
-  void data_processing(unsigned op31, unsigned type, unsigned opcode,
+  void data_processing(unsigned type, unsigned opcode,
                        FloatRegister Vd, FloatRegister Vn) {
     starti;
-    f(op31, 31, 29);
+    f(0b000, 31, 29);
     f(0b11110, 28, 24);
     f(type, 23, 22), f(1, 21), f(opcode, 20, 15), f(0b10000, 14, 10);
     rf(Vn, 5), rf(Vd, 0);
   }
 
-#define INSN(NAME, op31, type, opcode)                  \
+#define INSN(NAME, type, opcode)                        \
   void NAME(FloatRegister Vd, FloatRegister Vn) {       \
-    data_processing(op31, type, opcode, Vd, Vn);        \
+    data_processing(type, opcode, Vd, Vn);              \
   }
 
-  INSN(fmovs,  0b000, 0b00, 0b000000);
-  INSN(fabss,  0b000, 0b00, 0b000001);
-  INSN(fnegs,  0b000, 0b00, 0b000010);
-  INSN(fsqrts, 0b000, 0b00, 0b000011);
-  INSN(fcvts,  0b000, 0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fmovs,  0b00, 0b000000);
+  INSN(fabss,  0b00, 0b000001);
+  INSN(fnegs,  0b00, 0b000010);
+  INSN(fsqrts, 0b00, 0b000011);
+  INSN(fcvts,  0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fcvths, 0b11, 0b000100);   // Half-precision to single-precision
+  INSN(fcvtsh, 0b00, 0b000111);   // Single-precision to half-precision
 
-  INSN(fmovd,  0b000, 0b01, 0b000000);
-  INSN(fabsd,  0b000, 0b01, 0b000001);
-  INSN(fnegd,  0b000, 0b01, 0b000010);
-  INSN(fsqrtd, 0b000, 0b01, 0b000011);
-  INSN(fcvtd,  0b000, 0b01, 0b000100);   // Double-precision to single-precision
+  INSN(fmovd,  0b01, 0b000000);
+  INSN(fabsd,  0b01, 0b000001);
+  INSN(fnegd,  0b01, 0b000010);
+  INSN(fsqrtd, 0b01, 0b000011);
+  INSN(fcvtd,  0b01, 0b000100);   // Double-precision to single-precision
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,

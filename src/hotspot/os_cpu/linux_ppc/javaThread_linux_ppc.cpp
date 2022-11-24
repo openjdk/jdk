@@ -31,7 +31,9 @@
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
 
-  intptr_t* sp = Atomic::load_acquire(&_anchor._last_Java_sp);
+  // Only called by current thread or when the thread is suspended.
+  // No memory barrier needed, here. Only writer must write sp last (for use by profiler).
+  intptr_t* sp = last_Java_sp();
   address pc = _anchor.last_Java_pc();
 
   return frame(sp, pc);
@@ -42,7 +44,12 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
   if (has_last_Java_frame() && frame_anchor()->walkable()) {
-    *fr_addr = pd_last_frame();
+    intptr_t* sp = last_Java_sp();
+    address pc = _anchor.last_Java_pc();
+    // pc can be seen as null because not all writers use store pc + release store sp.
+    // Simply discard the sample in this very rare case.
+    if (pc == nullptr) return false;
+    *fr_addr = frame(sp, pc);
     return true;
   }
 
