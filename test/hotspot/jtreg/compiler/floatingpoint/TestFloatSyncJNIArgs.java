@@ -27,7 +27,7 @@
  * @summary Regression test for passing float args to a synchronized jni function.
  *
  *
- * @run main/othervm/native -XX:TieredStopAtLevel=1 compiler.floatingpoint.TestFloatSyncJNIArgs
+ * @run main/othervm/native compiler.floatingpoint.TestFloatSyncJNIArgs
  */
 
 package compiler.floatingpoint;
