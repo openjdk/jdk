@@ -96,7 +96,7 @@
  * Note that you can replace control:data:window with all. The name of the logger is
  * "jdk.httpclient.HttpClient", and all logging is at level INFO.
  * </li>
- * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 1200)<br>
+ * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 30)<br>
  * The number of seconds to keep idle HTTP connections alive in the keep alive cache. This property
  * applies to both HTTP/1.1 and HTTP/2. The value for HTTP/2 can be overridden with the
  * jdk.httpclient.keepalive.timeout.h2 property.
