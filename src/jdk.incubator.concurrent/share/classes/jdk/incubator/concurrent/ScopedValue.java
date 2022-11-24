@@ -1,4 +1,4 @@
-x/*
+/*
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -480,7 +480,7 @@ public final class ScopedValue<T> {
      *     ScopedValue.where(key, value).call(op);
      * }
      *
-     * @param key the {@code ScopedValue}
+     * @param key the {@code ScopedValue} key
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
      * @param <R> the result type
@@ -515,7 +515,7 @@ public final class ScopedValue<T> {
      *     ScopedValue.where(key, value).run(op);
      * }
      *
-     * @param key the {@code ScopedValue}
+     * @param key the {@code ScopedValue} key
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
      * @param op the operation to call
