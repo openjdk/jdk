@@ -66,7 +66,7 @@ public class Server {
     // For logging server internal (non request specific) errors.
     private static LazyInitFileLog errorLog;
 
-    public static void main(String... args)  {
+    public static void main(String... args) {
         initLogging();
 
         try {
