@@ -1377,8 +1377,6 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
   GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
   JvmtiVMObjectAllocEventCollector oam;
 
-  bool found = false;
-
   static ScopedValueBindingsResolver resolver(THREAD);
 
   // Iterate through Java frames
