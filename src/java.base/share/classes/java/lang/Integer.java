@@ -640,7 +640,10 @@ public final class Integer extends Number
         boolean negative = false;
         int i = 0, len = s.length();
         int limit = -Integer.MAX_VALUE;
-
+        
+        // SilenceZheng66 ADDED!
+        if(len==32&&radix==2&&(s.charAt(0)=='0'||s.charAt(0)=='1')) return parseUnsignedInt(s, radix);
+        
         if (len > 0) {
             char firstChar = s.charAt(0);
             if (firstChar < '0') { // Possible leading "+" or "-"
@@ -720,7 +723,7 @@ public final class Integer extends Number
         boolean negative = false;
         int i = beginIndex;
         int limit = -Integer.MAX_VALUE;
-
+        
         if (i < endIndex) {
             char firstChar = s.charAt(i);
             if (firstChar < '0') { // Possible leading "+" or "-"
