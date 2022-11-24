@@ -39,7 +39,7 @@ import javax.management.MBeanServerConnection;
 import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
- * @summary Tests RecordingStream::stop()
+ * @summary Tests RemoteRecordingStream::stop()
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

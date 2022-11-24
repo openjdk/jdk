@@ -188,6 +188,7 @@ public final class ManagementSupport {
         aes.setCloseOnComplete(closeOnComplete);
     }
 
+    // Internal method needed to block parser
     public static StreamBarrier activateStreamBarrier(EventStream stream) {
         EventDirectoryStream aes = (EventDirectoryStream) stream;
         return aes.activateStreamBarrier();

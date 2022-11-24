@@ -47,7 +47,6 @@ public final class StreamBarrier implements Closeable {
     public synchronized void check() {
         while (activated) {
             try {
-                System.out.println("Barrier wait: " + Thread.currentThread().getName());
                 this.wait();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
