@@ -744,6 +744,7 @@ static bool falls_through(Bytecodes::Code bc) {
 
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))
+  assert(thread == JavaThread::current(), "pre-condition");
 
   // We are already active in the special DeoptResourceMark any ResourceObj's we
   // allocate will be freed at the end of the routine.
@@ -1733,6 +1734,7 @@ void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
 // JVMTI PopFrame support
 JRT_LEAF(void, Deoptimization::popframe_preserve_args(JavaThread* thread, int bytes_to_save, void* start_address))
 {
+  assert(thread == JavaThread::current(), "pre-condition");
   thread->popframe_preserve_args(in_ByteSize(bytes_to_save), start_address);
 }
 JRT_END

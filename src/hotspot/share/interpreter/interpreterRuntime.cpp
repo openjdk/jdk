@@ -1135,6 +1135,7 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
 JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
@@ -1454,6 +1455,7 @@ JRT_END
 
 #if defined(IA32) || defined(AMD64) || defined(ARM)
 JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address))
+  assert(current == JavaThread::current(), "pre-condition");
   if (src_address == dest_address) {
     return;
   }
@@ -1507,6 +1509,7 @@ JRT_END
 // The generated code still uses call_VM because that will set up the frame pointer for
 // bcp and method.
 JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2))
+  assert(current == JavaThread::current(), "pre-condition");
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be an interpreted frame");
   methodHandle mh(current, last_frame.method());

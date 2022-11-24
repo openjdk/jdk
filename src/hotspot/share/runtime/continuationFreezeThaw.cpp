@@ -234,6 +234,7 @@ static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* sp))
 JRT_END
 
 JRT_LEAF(int, Continuation::prepare_thaw(JavaThread* thread, bool return_barrier))
+  assert(thread == JavaThread::current(), "pre-condition");
   return prepare_thaw_internal(thread, return_barrier);
 JRT_END
 

@@ -763,6 +763,7 @@ JRT_END
 
 
 JRT_LEAF(void, Runtime1::monitorexit(JavaThread* current, BasicObjectLock* lock))
+  assert(current == JavaThread::current(), "pre-condition");
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _monitorexit_slowcase_cnt++;
