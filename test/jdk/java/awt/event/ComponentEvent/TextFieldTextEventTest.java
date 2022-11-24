@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -133,9 +134,8 @@ public class TextFieldTextEventTest {
         }
     }
 
-    private static void typeKey(int key) throws Exception {
+    private static void typeKey(int key){
         robot.keyPress(key);
         robot.keyRelease(key);
     }
-
 }
