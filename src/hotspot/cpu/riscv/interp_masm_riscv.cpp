@@ -849,7 +849,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Call the runtime routine for slow case
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
+            UseFastLocking ? obj_reg : lock_reg);
 
     j(done);
 
