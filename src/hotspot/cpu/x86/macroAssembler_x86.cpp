@@ -9656,15 +9656,15 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
 
   // First we need to check if the lock-stack has room for pushing the object reference.
   if (rt_check_stack) {
-    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
-    cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
+    movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
+    cmpptr(tmp, Address(thread, JavaThread::lock_stack_limit_offset()));
     jcc(Assembler::greaterEqual, slow);
   }
 #ifdef ASSERT
   else {
     Label ok;
-    movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
-    cmpptr(tmp, Address(thread, Thread::lock_stack_limit_offset()));
+    movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
+    cmpptr(tmp, Address(thread, JavaThread::lock_stack_limit_offset()));
     jcc(Assembler::less, ok);
     stop("Not enough room in lock stack; should have been checked in the method prologue");
     bind(ok);
@@ -9682,10 +9682,10 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   jcc(Assembler::notEqual, slow);
 
   // If successful, push object to lock-stack.
-  movptr(tmp, Address(thread, Thread::lock_stack_current_offset()));
+  movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
   movptr(Address(tmp, 0), obj);
   increment(tmp, oopSize);
-  movptr(Address(thread, Thread::lock_stack_current_offset()), tmp);
+  movptr(Address(thread, JavaThread::lock_stack_current_offset()), tmp);
 }
 
 void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
@@ -9705,5 +9705,5 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
   const Register thread = rax;
   get_thread(rax);
 #endif
-  subptr(Address(thread, Thread::lock_stack_current_offset()), oopSize);
+  subptr(Address(thread, JavaThread::lock_stack_current_offset()), oopSize);
 }

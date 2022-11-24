@@ -897,7 +897,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
       // must handle it.
-      ld(header_reg, Address(xthread, Thread::lock_stack_current_offset()));
+      ld(header_reg, Address(xthread, JavaThread::lock_stack_current_offset()));
       bne(header_reg, obj_reg, slow_case);
 
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));

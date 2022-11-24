@@ -344,9 +344,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 #ifdef _LP64
   if (UseFastLocking && max_monitors > 0) {
     Label ok;
-    movptr(rax, Address(r15_thread, Thread::lock_stack_current_offset()));
+    movptr(rax, Address(r15_thread, JavaThread::lock_stack_current_offset()));
     addptr(rax, max_monitors * wordSize);
-    cmpptr(rax, Address(r15_thread, Thread::lock_stack_limit_offset()));
+    cmpptr(rax, Address(r15_thread, JavaThread::lock_stack_limit_offset()));
     jcc(Assembler::less, ok);
     assert(StubRoutines::x86::check_lock_stack() != NULL, "need runtime call stub");
     call(RuntimeAddress(StubRoutines::x86::check_lock_stack()));

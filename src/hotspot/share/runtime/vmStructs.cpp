@@ -705,7 +705,7 @@
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
-  nonstatic_field(Thread,                      _lock_stack,                                   LockStack)                             \
+  nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   nonstatic_field(LockStack,                   _current,                                      oop*)                                  \
   nonstatic_field(LockStack,                   _base,                                         oop*)                                  \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
