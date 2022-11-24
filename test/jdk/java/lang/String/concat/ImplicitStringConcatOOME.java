@@ -30,10 +30,8 @@
  *          Integer.MAX_VALUE / 2 and Integer.MAX_VALUE and the String coder
  *          is UTF16.
  *
- * @compile ImplicitStringConcatOOME.java
+ * @requires sun.arch.data.model == "64"
  * @run main/othervm -Xverify:all -Xmx4g ImplicitStringConcatOOME
- *
- * @compile ImplicitStringConcatOOME.java
  * @run main/othervm -Xverify:all -Xmx4g -XX:-CompactStrings ImplicitStringConcatOOME
  */
 
