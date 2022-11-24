@@ -461,7 +461,7 @@ public final class ScopedValue<T> {
     /**
      * Calls a value-returning operation with a {@code ScopedValue} bound to a value
      * in the current thread. When the operation completes (normally or with an
-     * exception), the {@code ScopedValue} will revert to being unbound, or rervert to
+     * exception), the {@code ScopedValue} will revert to being unbound, or revert to
      * its previous value when previously bound, in the current thread.
      *
      * <p> Scoped values are intended to be used in a <em>structured manner</em>.
