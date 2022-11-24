@@ -1,4 +1,4 @@
-/*
+x/*
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -344,7 +344,7 @@ public final class ScopedValue<T> {
          * Calls a value-returning operation with each scoped value in this mapping bound
          * to its value in the current thread.
          * When the operation completes (normally or with an exception), each scoped value
-         * in the mapping will revert to being unbound, or rervert to its previous value
+         * in the mapping will revert to being unbound, or revert to its previous value
          * when previously bound, in the current thread.
          *
          * <p> Scoped values are intended to be used in a <em>structured manner</em>.
@@ -394,7 +394,7 @@ public final class ScopedValue<T> {
          * Runs an operation with each scoped value in this mapping bound to its value
          * in the current thread.
          * When the operation completes (normally or with an exception), each scoped value
-         * in the mapping will revert to being unbound, or rervert to its previous value
+         * in the mapping will revert to being unbound, or revert to its previous value
          * when previously bound, in the current thread.
          *
          * <p> Scoped values are intended to be used in a <em>structured manner</em>.
@@ -496,7 +496,7 @@ public final class ScopedValue<T> {
     /**
      * Run an operation with a {@code ScopedValue} bound to a value in the current
      * thread. When the operation completes (normally or with an exception), the
-     * {@code ScopedValue} will revert to being unbound, or rervert to its previous value
+     * {@code ScopedValue} will revert to being unbound, or revert to its previous value
      * when previously bound, in the current thread.
      *
      * <p> Scoped values are intended to be used in a <em>structured manner</em>.
