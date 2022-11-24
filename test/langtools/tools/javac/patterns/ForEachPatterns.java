@@ -1,8 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary
- * @compile --enable-preview -source ${jdk.version} ForEachPatterns.java
- * @run main/othervm --enable-preview ForEachPatterns
+ * @enablePreview
  */
 import java.util.ArrayList;
 import java.util.List;

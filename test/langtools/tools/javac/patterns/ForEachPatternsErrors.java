@@ -1,7 +1,8 @@
 /*
  * @test /nodynamiccopyright/
  * @summary
- * @compile/fail/ref=ForEachPatternsErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW --enable-preview -source ${jdk.version} ForEachPatternsErrors.java
+ * @enablePreview
+ * @compile/fail/ref=ForEachPatternsErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW ForEachPatternsErrors.java
  */
 
 import java.util.List;
