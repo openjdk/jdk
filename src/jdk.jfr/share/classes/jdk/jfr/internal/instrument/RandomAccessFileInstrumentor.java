@@ -156,7 +156,7 @@ final class RandomAccessFileInstrumentor {
             write(b);
             bytesWritten = b.length;
         } finally {
-            long duration = EventHandler.timestamp();
+            long duration = EventHandler.timestamp() - start;
             if (handler.shouldCommit(duration)) {
                 handler.write(start, duration, path, bytesWritten);
             }
