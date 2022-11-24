@@ -36,7 +36,7 @@ public interface DirectBuffer {
     // Failure to do this means the outcome is undefined including
     // silent unrelated memory mutation and JVM crashes.
     //
-    // Guards are available in the JavaNioAccess class.
+    // See JavaNioAccess for methods to safely acquire/release resources.
     public long address();
 
     public Object attachment();

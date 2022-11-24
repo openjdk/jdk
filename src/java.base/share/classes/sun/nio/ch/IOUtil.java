@@ -516,12 +516,11 @@ public class IOUtil {
             releasers.run();
     }
 
-    record LinkedRunnable(Runnable node, Runnable next)
-        implements Runnable
-    {
+    record LinkedRunnable(Runnable node, Runnable next) implements Runnable {
         LinkedRunnable {
             Objects.requireNonNull(node);
         }
+
         @Override
         public void run() {
             try {
@@ -531,19 +530,31 @@ public class IOUtil {
                     next.run();
             }
         }
+
         static LinkedRunnable of(Runnable first, Runnable second) {
             return new LinkedRunnable(first, second);
         }
     }
 
     record Releaser(ByteBuffer bb, MemorySessionImpl session) implements Runnable {
-        Releaser { Objects.requireNonNull(bb) ; Objects.requireNonNull(session); }
-        @Override public void run() { releaseScope(bb, session); }
-        static Runnable of(ByteBuffer bb, MemorySessionImpl session) { return new Releaser(bb, session); }
-        static Runnable ofNullable(ByteBuffer bb, MemorySessionImpl session) {
-            if (session == null)
-                return () -> { };
+        Releaser {
+            Objects.requireNonNull(bb);
+            Objects.requireNonNull(session);
+        }
+
+        @Override
+        public void run() {
+            releaseScope(bb, session);
+        }
+
+        static Runnable of(ByteBuffer bb, MemorySessionImpl session) {
             return new Releaser(bb, session);
+        }
+
+        static Runnable ofNullable(ByteBuffer bb, MemorySessionImpl session) {
+            return session == null
+                    ? () -> {}
+                    : new Releaser(bb, session);
         }
     }
 
