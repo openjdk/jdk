@@ -34,6 +34,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
+
 #include <sys/stat.h>
 
 #if INCLUDE_CDS
