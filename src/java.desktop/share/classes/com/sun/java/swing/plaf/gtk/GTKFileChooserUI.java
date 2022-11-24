@@ -351,6 +351,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             }
             directoryComboBoxModel.addItem(currentDirectory);
             directoryListModel.directoryChanged();
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            getChangeToParentDirectoryAction().setEnabled(!fsv.isFileSystemRoot(currentDirectory));
         }
         super.doDirectoryChanged(e);
     }

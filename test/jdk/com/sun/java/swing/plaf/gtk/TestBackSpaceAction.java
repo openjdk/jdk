@@ -40,7 +40,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @build PassFailJFrame
  * @requires (os.family == "linux")
  * @summary Verifies if filechooser current directory changed to parent directory on
- * BACKSPACE key press from keyboard.
+ * BACKSPACE key press from keyboard if not at root directory.
  * @run main/manual TestBackSpaceAction
  */
 
@@ -53,9 +53,10 @@ public class TestBackSpaceAction {
 
             INSTRUCTIONS:
                1. Double click on 'subDir' to move into 'subDir' folder.
-               2. Press BACKSPACE key.
-               3. Verify the file chooser directory changed to 'testDir'.
-               4. Press Nimbus button to change look and feel to nimbus.
+               2. Press BACKSPACE key multiple times.
+               3. Verify the file chooser directory changed to parent directory
+                  except root level.
+               4. Press Nimbus button to change look and feel to Nimbus.
                5. Repeat Steps 1 to 3.
                6. Press GTK+ button to change look and feel to GTK.
                7. Repeat Steps 1 to 3.
@@ -84,6 +85,7 @@ public class TestBackSpaceAction {
 class TestFrame extends JFrame implements ActionListener {
     static File testDir;
     static File subDir;
+    static JFileChooser fileChooser;
 
     public TestFrame() {
         try {
@@ -108,7 +110,7 @@ class TestFrame extends JFrame implements ActionListener {
 
     public void initComponents() {
         JPanel p = new JPanel();
-        JFileChooser fileChooser = new JFileChooser(testDir);
+        fileChooser = new JFileChooser(testDir);
         fileChooser.setControlButtonsAreShown(false);
         getContentPane().add(fileChooser);
 
@@ -141,5 +143,6 @@ class TestFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         setLookAndFeel(e.getActionCommand());
         SwingUtilities.updateComponentTreeUI(this);
+        fileChooser.setCurrentDirectory(testDir);
     }
 }
