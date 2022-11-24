@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -42,6 +41,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -2685,7 +2685,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
 ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
-                  ResourceObj::C_HEAP, mtCode,
+                  AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals> _adapter_handler_table;
 

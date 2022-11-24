@@ -41,16 +41,10 @@ import sun.security.util.*;
  *
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLNumberExtension extends Extension
-implements CertAttrSet<String> {
+public class CRLNumberExtension extends Extension {
 
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "CRLNumber";
-    public static final String NUMBER = "value";
 
     private static final String LABEL = "CRL Number";
 
@@ -84,7 +78,7 @@ implements CertAttrSet<String> {
      * Create a CRLNumberExtension with the BigInteger value .
      * The criticality is set to false.
      *
-     * @param crlNum the value to be set for the extension.
+     * @param crlNum the value to be set for the extension, cannot be null
      */
     public CRLNumberExtension(BigInteger crlNum) throws IOException {
         this(PKIXExtensions.CRLNumber_Id, false, crlNum, NAME, LABEL);
@@ -97,6 +91,9 @@ implements CertAttrSet<String> {
         boolean isCritical, BigInteger crlNum, String extensionName,
         String extensionLabel) throws IOException {
 
+        if (crlNum == null) {
+            throw new IllegalArgumentException("CRL number cannot be null");
+        }
         this.extensionId = extensionId;
         this.critical = isCritical;
         this.crlNumber = crlNum;
@@ -135,31 +132,10 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Set the attribute value.
+     * Get the crlNumber value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            if (!(obj instanceof BigInteger)) {
-                throw new IOException("Attribute must be of type BigInteger.");
-            }
-            crlNumber = (BigInteger)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public BigInteger get(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            return crlNumber;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
+    public BigInteger getCrlNumber() {
+        return crlNumber;
     }
 
 
@@ -206,10 +182,10 @@ implements CertAttrSet<String> {
 
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (extensionName);
+        return extensionName;
     }
 }

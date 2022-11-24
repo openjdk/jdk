@@ -48,21 +48,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class SubjectAlternativeNameExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.SubjectAlternativeName";
-    /**
-     * Attribute names.
-     */
+public class SubjectAlternativeNameExtension extends Extension {
+
     public static final String NAME = "SubjectAlternativeName";
-    public static final String SUBJECT_NAME = "subject_name";
 
     // private data members
     GeneralNames        names;
@@ -95,25 +84,18 @@ implements CertAttrSet<String> {
      * criticality and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the subject.
+     * @param names the GeneralNames for the subject, cannot be null or empty.
      * @exception IOException on error.
      */
     public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+            throws IOException {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names cannot be null or empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.SubjectAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default SubjectAlternativeNameExtension. The extension
-     * is marked non-critical.
-     */
-    public SubjectAlternativeNameExtension() {
-        extensionId = PKIXExtensions.SubjectAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**
@@ -173,41 +155,19 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Set the attribute value.
+     * Get the GeneralNames value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(SUBJECT_NAME)) {
-            if (!(obj instanceof GeneralNames)) {
-              throw new IOException("Attribute value should be of " +
-                                    "type GeneralNames.");
-            }
-            names = (GeneralNames)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:SubjectAlternativeName.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public GeneralNames get(String name) throws IOException {
-        if (name.equalsIgnoreCase(SUBJECT_NAME)) {
-            return (names);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:SubjectAlternativeName.");
-        }
+    public GeneralNames getNames() {
+        return names;
     }
 
 
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

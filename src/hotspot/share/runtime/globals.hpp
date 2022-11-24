@@ -238,6 +238,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
+  product(bool, UsePolyIntrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for sun.security.util.math.intpoly")              \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
           "page size for the environment as the maximum)")                  \
@@ -679,6 +682,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
+                                                                            \
+  product(bool, EnableWaitForParallelLoad, false,                           \
+          "(Deprecated) Enable legacy parallel classloading logic for "     \
+          "class loaders not registered as parallel capable")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
