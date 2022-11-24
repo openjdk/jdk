@@ -665,11 +665,17 @@ public class TestCommon extends CDSTestUtils {
         Arrays.sort(sa2);
 
         int i = 0;
+        boolean found = false;
         for (String s : sa1) {
-            if (!s.equals(sa2[i])) {
-                throw new RuntimeException(s + " is different from " + sa2[i]);
+            found = false;
+            for (String s2 : sa2) {
+                if (s.equals(s2)) {
+                    found = true;
+                }
             }
-            i ++;
+            if (!found) {
+                throw new RuntimeException(s + " is not found");
+            }
         }
         return true;
     }
