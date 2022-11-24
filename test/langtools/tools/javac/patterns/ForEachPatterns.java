@@ -183,9 +183,9 @@ public class ForEachPatterns {
         for (method2((Integer a) -> 42); i == 0;) { i++; }
         for (RecordOfLists(List<Integer> lr) : list_of_records) {}
         for (RecordOfLists2(List<List<Integer>> lr) : list_of_records2) {}
-        for (m(cond ? b() : i) ; ;) {}
+        for (m(cond ? b() : i) ; i == 0;) {}
         for (m((GPoint<?>)null, cond ? b() : i) ; ;) {}
-        for (GPoint<@Annot(field = "") ? extends Point>(var x, var y) : generic_points_nested) {};
+//        for (GPoint<@Annot(field = "") ? extends Point>(var x, var y) : generic_points_nested) {}; // TODO: Enable after https://bugs.openjdk.org/browse/JDK-8297602 is fixed
     }
     //where
     static <T> void method() {}
