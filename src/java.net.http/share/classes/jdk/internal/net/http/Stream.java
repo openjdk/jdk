@@ -1543,7 +1543,7 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        public void onSubscribed() {
+        protected void onSubscribed() {
             registerResponseSubscriber(this);
         }
 

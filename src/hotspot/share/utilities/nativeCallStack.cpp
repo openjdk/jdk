@@ -77,6 +77,7 @@ void NativeCallStack::print_on(outputStream* out) const {
 
 // Decode and print this call path
 void NativeCallStack::print_on(outputStream* out, int indent) const {
+  DEBUG_ONLY(assert_not_fake();)
   address pc;
   char    buf[1024];
   int     offset;

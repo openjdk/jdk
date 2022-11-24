@@ -1306,11 +1306,10 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
   if (old_compiled_method_table != NULL) {
     length = old_compiled_method_table->length();
     for (int i = 0; i < length; i++) {
-      CompiledMethod* cm = old_compiled_method_table->at(i);
-      // Only walk !is_unloading nmethods, the other ones will get removed by the GC.
-      if (!cm->is_unloading()) {
-        old_compiled_method_table->at(i)->metadata_do(f);
-      }
+      // Walk all methods saved on the last pass.  Concurrent class unloading may
+      // also be looking at this method's metadata, so don't delete it yet if
+      // it is marked as unloaded.
+      old_compiled_method_table->at(i)->metadata_do(f);
     }
   }
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);

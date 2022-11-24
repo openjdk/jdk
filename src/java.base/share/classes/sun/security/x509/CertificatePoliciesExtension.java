@@ -106,10 +106,14 @@ public class CertificatePoliciesExtension extends Extension {
      * a List of PolicyInformation with specified criticality.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param certPolicies the List of PolicyInformation.
+     * @param certPolicies the List of PolicyInformation, cannot be null or empty.
      */
     public CertificatePoliciesExtension(Boolean critical,
             List<PolicyInformation> certPolicies) throws IOException {
+        if (certPolicies == null || certPolicies.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "certificate policies cannot be null or empty");
+        }
         this.certPolicies = certPolicies;
         this.extensionId = PKIXExtensions.CertificatePolicies_Id;
         this.critical = critical.booleanValue();

@@ -209,7 +209,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        public void onSubscribed() {
+        protected void onSubscribed() {
             exchange.registerResponseSubscriber(this);
         }
 

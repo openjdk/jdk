@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} -doe SimpleAndGuardPattern.java
- * @run main/othervm --enable-preview SimpleAndGuardPattern
+ * @enablePreview
+ * @compile -doe SimpleAndGuardPattern.java
+ * @run main SimpleAndGuardPattern
  */
 
 import java.util.Objects;
