@@ -209,6 +209,7 @@ public final class ScopedValue<T> {
         private static final Object NIL = new Object();
 
         static final Snapshot EMPTY_SNAPSHOT = new Snapshot();
+        
         Snapshot(Carrier bindings, Snapshot prev) {
             this.prev = prev;
             this.bindings = bindings;
