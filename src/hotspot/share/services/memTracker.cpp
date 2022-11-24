@@ -34,6 +34,7 @@
 #include "runtime/vmOperations.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
@@ -90,7 +91,7 @@ void MemTracker::initialize() {
     ls.print_cr("NMT initialized: %s", NMTUtil::tracking_level_to_string(_tracking_level));
     ls.print_cr("Preinit state: ");
     NMTPreInit::print_state(&ls);
-    ls.cr();
+    MallocLimitHandler::print_on(&ls);
   }
 }
 
@@ -114,7 +115,7 @@ void MemTracker::error_report(outputStream* output) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
-    MallocMemorySummary::print_limits(output);
+    MallocLimitHandler::print_on(output);
   }
 }
 
@@ -159,6 +160,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->cr();
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
-  MallocMemorySummary::print_limits(out);
+  MallocLimitHandler::print_on(out);
   out->cr();
 }

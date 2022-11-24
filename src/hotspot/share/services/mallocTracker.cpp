@@ -25,20 +25,20 @@
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "services/mallocHeader.inline.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/vmError.hpp"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
-size_t MallocMemorySummary::_limits_per_category[mt_number_of_types] = { 0 };
-size_t MallocMemorySummary::_total_limit = 0;
 
 #ifdef ASSERT
 void MemoryCounter::update_peak_count(size_t count) {
@@ -92,59 +92,37 @@ void MallocMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
   ::new ((void*)_snapshot)MallocMemorySnapshot();
-  initialize_limit_handling();
+  MallocLimitHandler::initialize(MallocLimit);
 }
 
-void MallocMemorySummary::initialize_limit_handling() {
-  // Initialize limit handling.
-  Arguments::parse_malloc_limits(&_total_limit, _limits_per_category);
+void MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit_t* limit) {
 
-  if (_total_limit > 0) {
-    log_info(nmt)("MallocLimit: total limit: " SIZE_FORMAT "%s",
-                  byte_size_in_proper_unit(_total_limit),
-                  proper_unit_for_byte_size(_total_limit));
+#define FORMATTED \
+  "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
+  PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->v)
+
+  if (limit->f == malloclimit_mode_t::trigger_fatal) {
+    fatal(FORMATTED);
   } else {
-    for (int i = 0; i < mt_number_of_types; i ++) {
-      size_t catlim = _limits_per_category[i];
-      if (catlim > 0) {
-        log_info(nmt)("MallocLimit: category \"%s\" limit: " SIZE_FORMAT "%s",
-                      NMTUtil::flag_to_name((MEMFLAGS)i),
-                      byte_size_in_proper_unit(catlim),
-                      proper_unit_for_byte_size(catlim));
-      }
-    }
+    log_warning(nmt)(FORMATTED);
   }
+
+#undef FORMATTED
 }
 
-void MallocMemorySummary::total_limit_reached(size_t size, size_t limit) {
-  // Assert in both debug and release, but allow error reporting to malloc beyond limits.
-  if (!VMError::is_error_reported()) {
-    fatal("MallocLimit: reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
-          size, limit);
-  }
-}
+void MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit_t* limit) {
 
-void MallocMemorySummary::category_limit_reached(size_t size, size_t limit, MEMFLAGS flag) {
-  // Assert in both debug and release, but allow error reporting to malloc beyond limits.
-  if (!VMError::is_error_reported()) {
-    fatal("MallocLimit: category \"%s\" reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
-          NMTUtil::flag_to_name(flag), size, limit);
-  }
-}
+#define FORMATTED \
+  "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
+  NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->v)
 
-void MallocMemorySummary::print_limits(outputStream* st) {
-  if (_total_limit != 0) {
-    st->print("MallocLimit: " SIZE_FORMAT, _total_limit);
+  if (limit->f == malloclimit_mode_t::trigger_fatal) {
+    fatal(FORMATTED);
   } else {
-    bool first = true;
-    for (int i = 0; i < mt_number_of_types; i ++) {
-      if (_limits_per_category[i] > 0) {
-        st->print("%s%s:" SIZE_FORMAT, (first ? "MallocLimit: " : ", "),
-                  NMTUtil::flag_to_name((MEMFLAGS)i), _limits_per_category[i]);
-        first = false;
-      }
-    }
+    log_warning(nmt)(FORMATTED);
   }
+
+#undef FORMATTED
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
