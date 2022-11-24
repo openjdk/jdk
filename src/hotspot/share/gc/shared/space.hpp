@@ -545,13 +545,13 @@ class ContiguousSpace: public CompactibleSpace {
 // sub-classes). It knows how to filter out objects that are outside of the
 // _boundary.
 //
+// Assumptions:
 // 1. That the actual top of any area in a memory region
 //    contained by the space is bounded by the end of the contiguous
 //    region of the space.
 // 2. That the space is really made up of objects and not just
 //    blocks.
 class ContiguousSpaceDCTOC : public DirtyCardToOopClosure {
-protected:
   // Overrides.
   void walk_mem_region(MemRegion mr,
                        HeapWord* bottom, HeapWord* top);
