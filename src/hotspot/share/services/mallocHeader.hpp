@@ -92,7 +92,7 @@ class MallocHeader {
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
-  const uint8_t _flags;
+  const MEMFLAGS _flags;
   const uint8_t _unused;
   uint16_t _canary;
 
@@ -119,7 +119,7 @@ class MallocHeader {
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
 
   inline size_t   size()  const { return _size; }
-  inline MEMFLAGS flags() const { return (MEMFLAGS)_flags; }
+  inline MEMFLAGS flags() const { return _flags; }
   inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 
