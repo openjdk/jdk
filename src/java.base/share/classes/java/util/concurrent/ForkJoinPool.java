@@ -2897,9 +2897,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     // Added mainly for possible use in Loom
 
     /**
-     * Externally submit a task to the pool. This method adds the task to a
-     * scheduling queue for submissions to the pool even when called from a
-     * thread in the pool.
+     * Submits the given task as if submitted from a non-{@code ForkJoinTask}
+     * client. The task is added to a scheduling queue for submissions to the
+     * pool even when called from a thread in the pool.
      *
      * @implSpec
      * This method is equivalent to {@link #submit(ForkJoinTask)} when called
