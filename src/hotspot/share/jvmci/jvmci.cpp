@@ -35,7 +35,7 @@
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtimes = nullptr;

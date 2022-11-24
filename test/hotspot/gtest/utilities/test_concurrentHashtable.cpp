@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
