@@ -32,6 +32,9 @@
  *
  * @compile ImplicitStringConcatOOME.java
  * @run main/othervm -Xverify:all -Xmx4g ImplicitStringConcatOOME
+ *
+ * @compile ImplicitStringConcatOOME.java
+ * @run main/othervm -Xverify:all -Xmx4g -XX:-CompactStrings ImplicitStringConcatOOME
  */
 
 import java.lang.reflect.Field;
