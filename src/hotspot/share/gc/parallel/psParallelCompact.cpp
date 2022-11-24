@@ -1033,6 +1033,9 @@ void PSParallelCompact::post_compact()
   ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   DEBUG_ONLY(MetaspaceUtils::verify();)
 
+  // Need to clear claim bits for the next mark.
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   heap->prune_scavengable_nmethods();
 
 #if COMPILER2_OR_JVMCI
@@ -1965,7 +1968,7 @@ public:
     PCMarkAndPushClosure mark_and_push_closure(cm);
 
     {
-      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
+      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
       ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
 
       // Do the real work
@@ -2016,9 +2019,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
-
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
   {
     GCTraceTime(Debug, gc, phases) tm("Par Mark", &_gc_timer);
 
@@ -2094,8 +2095,8 @@ public:
     _sub_tasks(PSAdjustSubTask_num_elements),
     _weak_proc_task(nworkers),
     _nworkers(nworkers) {
-    // Need new claim bits when tracing through and adjusting pointers.
-    ClassLoaderDataGraph::clear_claimed_marks();
+
+    ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
     if (nworkers > 1) {
       Threads::change_thread_claim_token();
     }
@@ -2114,7 +2115,7 @@ public:
     }
     _oop_storage_iter.oops_do(&adjust);
     {
-      CLDToOopClosure cld_closure(&adjust, ClassLoaderData::_claim_strong);
+      CLDToOopClosure cld_closure(&adjust, ClassLoaderData::_claim_stw_fullgc_adjust);
       ClassLoaderDataGraph::cld_do(&cld_closure);
     }
     {
