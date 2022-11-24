@@ -40,13 +40,25 @@ public class TestStackGuardPages {
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("invoke",
                                                                         "test_java_overflow");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
-        new OutputAnalyzer(pb.start())
-            .shouldHaveExitValue(0);
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createNativeTestProcessBuilder("invoke",
+                                                         "test_java_overflow_initial");
+        pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
+        output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createNativeTestProcessBuilder("invoke", "test_native_overflow");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
-        new OutputAnalyzer(pb.start())
-            .shouldHaveExitValue(0);
+        output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createNativeTestProcessBuilder("invoke", "test_native_overflow_initial");
+        pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
+        output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
+
     }
 }
 
