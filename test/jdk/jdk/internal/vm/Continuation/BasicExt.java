@@ -40,7 +40,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 1 0
+ *                     BasicExt 1 0
  */
 
 /**
@@ -61,7 +61,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 2 0
+ *                     BasicExt 2 0
  */
 
 /**
@@ -82,7 +82,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 3 0
+ *                     BasicExt 3 0
  */
 
 /**
@@ -103,7 +103,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 4 0
+ *                     BasicExt 4 0
  */
 
 /**
@@ -124,7 +124,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 5 0
+ *                     BasicExt 5 0
  */
 
 /**
@@ -145,7 +145,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 1 1
+ *                     BasicExt 1 1
  */
 
 /**
@@ -166,7 +166,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 2 1
+ *                     BasicExt 2 1
  */
 
 /**
@@ -187,7 +187,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 3 1
+ *                     BasicExt 3 1
  */
 
 /**
@@ -208,7 +208,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 4 1
+ *                     BasicExt 4 1
  */
 
 /**
@@ -229,7 +229,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExp 5 1
+ *                     BasicExt 5 1
  */
 
 import java.lang.reflect.Method;
@@ -248,7 +248,7 @@ import static jdk.test.lib.Asserts.*;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.whitebox.WhiteBox;
 
-public class BasicExp {
+public class BasicExt {
     static final ContinuationScope THE_SCOPE = new ContinuationScope() {};
 
     public static final Pattern COMP_NONE  = Pattern.compile("COMP_NONE");
