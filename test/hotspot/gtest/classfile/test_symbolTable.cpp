@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 

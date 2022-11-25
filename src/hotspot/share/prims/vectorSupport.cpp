@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
+#include "jni.h"
 #include "jvm.h"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -38,9 +38,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/stackValue.hpp"
-
 #ifdef COMPILER2
-#include "opto/matcher.hpp" // Matcher::max_vector_size(BasicType)
+#include "opto/matcher.hpp"
 #endif // COMPILER2
 
 #ifdef COMPILER2

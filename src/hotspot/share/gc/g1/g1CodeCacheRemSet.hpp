@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_G1_G1CODECACHEREMSET_HPP
 #define SHARE_GC_G1_G1CODECACHEREMSET_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 class CodeBlobClosure;
 class G1CodeRootSetTable;
 class HeapRegion;

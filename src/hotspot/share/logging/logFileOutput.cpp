@@ -30,8 +30,8 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 const char* const LogFileOutput::Prefix = "file=";
 const char* const LogFileOutput::FileOpenMode = "a";

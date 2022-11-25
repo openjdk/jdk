@@ -957,7 +957,9 @@ class LoadStorePairOp(InstructionWithModes):
 class FloatInstruction(Instruction):
 
     def aname(self):
-        if (self._name.endswith("s") | self._name.endswith("d")):
+        if (self._name in ["fcvtsh", "fcvths"]):
+            return self._name[:len(self._name)-2]
+        elif (self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -1012,6 +1014,8 @@ class SVEVectorOp(Instruction):
         elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
+        elif name == "revb":
+            self._width = RegVariant(1, 3)
         else:
             self._width = RegVariant(0, 3)
 
@@ -1458,7 +1462,7 @@ generate(FourRegFloatOp,
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
-          ["fcvts", "ds"],
+          ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
           ["fcvtd", "sd"],
           ])
