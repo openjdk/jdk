@@ -29,7 +29,7 @@ import jdk.jfr.consumer.RecordingFile;
 import java.nio.file.Path;
 
 /**
- * @test Tests that the event duration is zero of length after a chunk rotation
+ * @test Tests that the event duration is zero after a chunk rotation
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
