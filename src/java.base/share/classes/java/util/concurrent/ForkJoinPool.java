@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.Permission;
@@ -1527,6 +1528,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     private static final long RUNSTATE;
     private static final long PARALLELISM;
     private static final long THREADIDS;
+    private static final Object POOLIDS_BASE;
     private static final long POOLIDS;
 
     private boolean compareAndSetCtl(long c, long v) {
@@ -1545,7 +1547,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         return U.getAndAddLong(this, THREADIDS, 1L);
     }
     private static int getAndAddPoolIds(int x) {
-        return U.getAndAddInt(ForkJoinPool.class, POOLIDS, x);
+        return U.getAndAddInt(POOLIDS_BASE, POOLIDS, x);
     }
     private int getAndSetParallelism(int v) {
         return U.getAndSetInt(this, PARALLELISM, v);
@@ -3763,7 +3765,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         U = Unsafe.getUnsafe();
         Class<ForkJoinPool> klass = ForkJoinPool.class;
         try {
-            POOLIDS = U.staticFieldOffset(klass.getDeclaredField("poolIds"));
+            Field poolIdsField = klass.getDeclaredField("poolIds");
+            POOLIDS_BASE = U.staticFieldBase(poolIdsField);
+            POOLIDS = U.staticFieldOffset(poolIdsField);
         } catch (NoSuchFieldException e) {
             throw new ExceptionInInitializerError(e);
         }
