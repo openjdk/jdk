@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -52,6 +51,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
+#include "jni.h"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -60,9 +60,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
+#include "os_linux.hpp"
 #endif
 
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
@@ -389,5 +389,15 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jobject jvm))
   return OSContainer::is_containerized();
 #else
   return false;
+#endif
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jobject jvm))
+#ifdef LINUX
+  // We want the host memory, not the container limit.
+  // os::physical_memory() would return the container limit.
+  return os::Linux::physical_memory();
+#else
+  return os::physical_memory();
 #endif
 JVM_END

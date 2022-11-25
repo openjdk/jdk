@@ -76,12 +76,12 @@
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/c2compiler.hpp"
 #endif
 
 #ifdef DTRACE_ENABLED

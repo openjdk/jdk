@@ -52,11 +52,13 @@ public:
   virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
 };
 
-class PCIterateMarkAndPushClosure: public MetadataVisitingOopIterateClosure {
+class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 private:
   ParCompactionManager* _compaction_manager;
 public:
-  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) : MetadataVisitingOopIterateClosure(rp), _compaction_manager(cm) { }
+  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) :
+    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
+    _compaction_manager(cm) { }
 
   template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
   virtual void do_oop(oop* p)                     { do_oop_nv(p); }
