@@ -3045,8 +3045,10 @@ public class JavacParser implements Parser {
                 }
                 case LBRACKET:
                     if (peekToken(lookahead, RBRACKET)) {
-                        return ForInitResult.LocalVarDecl;
+                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
+                                                         : ForInitResult.LocalVarDecl;
                     }
+                    return ForInitResult.LocalVarDecl;
                 case LT:
                     typeParameterPossibleStart = lookahead;
                     break;

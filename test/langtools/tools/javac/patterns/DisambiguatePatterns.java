@@ -35,16 +35,30 @@ import com.sun.source.tree.CaseLabelTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ConstantCaseLabelTree;
+import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.PatternCaseLabelTree;
+import com.sun.source.tree.PatternTree;
+import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.SwitchTree;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 
 public class DisambiguatePatterns {
 
@@ -110,14 +124,27 @@ public class DisambiguatePatterns {
                                  ExpressionType.EXPRESSION);
         test.disambiguationTest("a & b",
                                  ExpressionType.EXPRESSION);
+        test.forDisambiguationTest("T[] a", ForType.ENHANCED_FOR);
+        test.forDisambiguationTest("T[].class.getName()", ForType.TRADITIONAL_FOR);
+        test.forDisambiguationTest("T[].class", ForType.TRADITIONAL_FOR, "compiler.err.not.stmt");
+        test.forDisambiguationTest("R(T[] a)", ForType.ENHANCED_FOR_WITH_PATTERNS);
     }
 
     private final ParserFactory factory;
+    private final List<String> errors = new ArrayList<>();
 
-    public DisambiguatePatterns() {
+    public DisambiguatePatterns() throws URISyntaxException {
         Context context = new Context();
+        context.put(DiagnosticListener.class, d -> {
+            if (d.getKind() == Diagnostic.Kind.ERROR) {
+                errors.add(d.getCode());
+            }
+        });
         JavacFileManager jfm = new JavacFileManager(context, true, Charset.defaultCharset());
         Options.instance(context).put(Option.PREVIEW, "");
+        SimpleJavaFileObject source =
+                new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {};
+        Log.instance(context).useSource(source);
         factory = ParserFactory.instance(context);
     }
 
@@ -148,9 +175,66 @@ public class DisambiguatePatterns {
         }
     }
 
+    void forDisambiguationTest(String snippet, ForType forType, String... expectedErrors) {
+        errors.clear();
+
+        String codeTemplate = switch (forType) {
+            case TRADITIONAL_FOR ->
+                """
+                public class Test {
+                    private void test() {
+                        for (SNIPPET; ;) {
+                        }
+                    }
+                }
+                """;
+            case ENHANCED_FOR, ENHANCED_FOR_WITH_PATTERNS ->
+                """
+                public class Test {
+                    private void test() {
+                        for (SNIPPET : collection) {
+                        }
+                    }
+                }
+                """;
+        };
+
+        String code = codeTemplate.replace("SNIPPET", snippet);
+        JavacParser parser = factory.newParser(code, false, false, false);
+        CompilationUnitTree result = parser.parseCompilationUnit();
+        if (!Arrays.asList(expectedErrors).equals(errors)) {
+            throw new AssertionError("Expected errors: " + Arrays.asList(expectedErrors) +
+                                     ", actual: " + errors +
+                                     ", for: " + code);
+        }
+        ClassTree clazz = (ClassTree) result.getTypeDecls().get(0);
+        MethodTree method = (MethodTree) clazz.getMembers().get(0);
+        StatementTree st = method.getBody().getStatements().get(0);
+        if (forType == ForType.TRADITIONAL_FOR) {
+            if (st.getKind() != Kind.FOR_LOOP) {
+                throw new AssertionError("Unpected statement: " + st);
+            }
+        } else {
+            EnhancedForLoopTree ef = (EnhancedForLoopTree) st;
+            ForType actualType = switch (ef.getVariableOrRecordPattern()) {
+                case PatternTree pattern -> ForType.ENHANCED_FOR_WITH_PATTERNS;
+                default -> ForType.ENHANCED_FOR;
+            };
+            if (forType != actualType) {
+                throw new AssertionError("Expected: " + forType + ", actual: " + actualType +
+                                          ", for: " + code + ", parsed: " + result);
+            }
+        }
+    }
+
     enum ExpressionType {
         PATTERN,
         EXPRESSION;
     }
 
+    enum ForType {
+        TRADITIONAL_FOR,
+        ENHANCED_FOR,
+        ENHANCED_FOR_WITH_PATTERNS;
+    }
 }
