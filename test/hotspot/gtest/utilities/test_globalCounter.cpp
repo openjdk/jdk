@@ -25,7 +25,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "threadHelper.inline.hpp"
-#include "utilities/globalCounter.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
 constexpr const int good_value = 1337;

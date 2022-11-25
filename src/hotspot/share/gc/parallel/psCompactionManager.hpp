@@ -182,10 +182,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Check mark and maybe push on marking stack.
   template <typename T> inline void mark_and_push(T* p);
 
-  inline void follow_klass(Klass* klass);
-
-  void follow_class_loader(ClassLoaderData* klass);
-
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(uint index);
 

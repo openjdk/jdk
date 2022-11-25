@@ -109,11 +109,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-
-#include CPU_HEADER(vmStructs)
-#include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
-
 #ifdef COMPILER2
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -141,6 +136,10 @@
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #endif // COMPILER2
+
+#include CPU_HEADER(vmStructs)
+#include OS_HEADER(vmStructs)
+#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -544,6 +543,7 @@
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
+     static_field(StubRoutines,                _poly1305_processBlocks,                       address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \

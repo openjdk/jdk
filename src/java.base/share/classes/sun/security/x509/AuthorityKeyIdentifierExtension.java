@@ -99,8 +99,8 @@ public class AuthorityKeyIdentifierExtension extends Extension {
     }
 
     /**
-     * The default constructor for this extension.  Null parameters make
-     * the element optional (not present).
+     * The default constructor for this extension. At least one parameter
+     * must be non null. Null parameters make the element optional (not present).
      *
      * @param kid the KeyIdentifier associated with this extension.
      * @param names the GeneralNames associated with this extension
@@ -110,7 +110,11 @@ public class AuthorityKeyIdentifierExtension extends Extension {
      */
     public AuthorityKeyIdentifierExtension(KeyIdentifier kid, GeneralNames names,
                                            SerialNumber sn)
-    throws IOException {
+            throws IOException {
+        if (kid == null && names == null && sn == null) {
+            throw new IllegalArgumentException(
+                    "AuthorityKeyIdentifierExtension cannot be empty");
+        }
         this.id = kid;
         this.names = names;
         this.serialNum = sn;

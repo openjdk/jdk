@@ -27,8 +27,9 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include <type_traits>
 #include "unittest.hpp"
+
+#include <type_traits>
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
