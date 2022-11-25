@@ -245,7 +245,7 @@ public class ReferenceTracker {
         }
         if (fail != null) {
             if (printThreads && tracker.isSelectorAlive()) {
-                var msg = "Selector manager threads are still alive for "  + tracker.getName() + ": ";
+                var msg = "Selector manager threads are still alive for " + tracker.getName() + ": ";
                 printThreads(msg, System.out);
                 printThreads(msg, System.err);
             }
