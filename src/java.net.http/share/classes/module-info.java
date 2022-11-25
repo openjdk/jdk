@@ -76,8 +76,8 @@
  * 16 kB)<br> The HTTP/2 client maximum HPACK header table size in bytes.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.HttpClient.log}</b> (default: none)<br>
- * Enables high-level logging of various events through the {@link java.lang.System.Logger
- * Platform Logging API}.The value contains a comma-separated list of any of the
+ * Enables high-level logging of various events through the {@linkplain java.lang.System.Logger
+ * Platform Logging API}. The value contains a comma-separated list of any of the
  * following items:
  * <ul>
  *   <li>errors</li>
