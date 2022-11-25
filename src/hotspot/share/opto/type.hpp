@@ -181,6 +181,7 @@ protected:
   const Type *hashcons();       // Hash-cons the type
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
   const Type *join_helper(const Type *t, bool include_speculative) const {
+    assert(Compile::current()->_type_verif_cache.length() == 0, "cache should have been discarded");
     return dual()->meet_helper(t->dual(), include_speculative)->dual();
   }
 

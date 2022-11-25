@@ -650,6 +650,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #ifndef PRODUCT
                   , _in_dump_cnt(0)
 #endif
+#ifdef ASSERT
+                  , _type_verif_cache(comp_arena(), 2, 0, VerifyMeetResult())
+#endif
 {
   C = this;
   CompileWrapper cw(this);
@@ -922,7 +925,11 @@ Compile::Compile( ciEnv* ci_env,
 #ifndef PRODUCT
     _in_dump_cnt(0),
 #endif
-    _allowed_reasons(0) {
+    _allowed_reasons(0)
+#ifdef ASSERT
+  , _type_verif_cache(comp_arena(), 2, 0, VerifyMeetResult())
+#endif
+    {
   C = this;
 
   TraceTime t1(NULL, &_t_totalCompilation, CITime, false);
@@ -1072,9 +1079,9 @@ void Compile::Init(bool aliasing) {
   probe_alias_cache(NULL)->_index = AliasIdxTop;
 
 #ifdef ASSERT
-  _type_verify_symmetry = true;
   _phase_optimize_finished = false;
   _exception_backedge = false;
+  _type_depth = 0;
 #endif
 }
 
