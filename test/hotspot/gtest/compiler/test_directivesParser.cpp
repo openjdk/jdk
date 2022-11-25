@@ -22,13 +22,12 @@
  */
 
 #include "precompiled.hpp"
-
-#include <locale.h>
-
 #include "compiler/directivesParser.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.hpp"
 #include "unittest.hpp"
+
+#include <locale.h>
 
 class DirectivesParserTest : public ::testing::Test{
  protected:

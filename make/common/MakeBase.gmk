@@ -219,7 +219,7 @@ define NamedParamsMacroTemplate
   $(foreach i,$(PARAM_SEQUENCE), $(if $(strip $($i)),\
     $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
   # Debug print all named parameter names and values
-  $(if $(findstring $(LOG_LEVEL),debug trace), \
+  $(if $(findstring $(LOG_LEVEL), trace), \
     $(info $0 $(strip $1) $(foreach i,$(PARAM_SEQUENCE), \
       $(if $(strip $($i)),$(NEWLINE) $(strip [$i] $(if $(filter $(LOG_LEVEL), trace), \
         $($i), $(wordlist 1, 20, $($(i))) $(if $(word 21, $($(i))), ...)))))))

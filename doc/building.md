@@ -316,12 +316,12 @@ ongoing efforts to loosen this strict coupling between compiler and operating
 system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
 will likely be a very long time before this goal can be realized.
 
- Operating system   Supported toolchain
- ------------------ -------------------------
- Linux              gcc, clang
- macOS              Apple Xcode (using clang)
- AIX                IBM XL C/C++
- Windows            Microsoft Visual Studio
+| Operating system   | Supported toolchain       |
+| ------------------ | ------------------------- |
+| Linux              | gcc, clang                |
+| macOS              | Apple Xcode (using clang) |
+| AIX                | IBM XL C/C++              |
+| Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
 recommendations. As a reference, these versions of the toolchains are used, at
@@ -330,11 +330,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
- Operating system   Toolchain version
- ------------------ -------------------------------------------------------
- Linux              gcc 11.2.0
- macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2022 update 17.1.0
+| Operating system   | Toolchain version                          |
+| ------------------ | ------------------------------------------ |
+| Linux              | gcc 11.2.0                                 |
+| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -362,20 +362,20 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 The oldest supported version of Xcode is 8.
 
-You will need the Xcode command lines developers tools to be able to build
-the JDK. (Actually, *only* the command lines tools are needed, not the IDE.)
+You will need the Xcode command line developer tools to be able to build
+the JDK. (Actually, *only* the command line tools are needed, not the IDE.)
 The simplest way to install these is to run:
 ```
 xcode-select --install
 ```
 
-It is advisable to keep an older version of Xcode for building the JDK when
-updating Xcode. This [blog page](
-http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html) has
-good suggestions on managing multiple Xcode versions. To use a specific version
-of Xcode, use `xcode-select -s` before running `configure`, or use
-`--with-toolchain-path` to point to the version of Xcode to use, e.g.
-`configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin`
+When updating Xcode, it is advisable to keep an older version for building the JDK.
+To use a specific version of Xcode you have multiple options:
+
+  * Use `xcode-select -s` before running `configure`, e.g. `xcode-select -s /Applications/Xcode13.1.app`. The drawback is that the setting
+    is system wide and you may have to revert it after an OpenJDK build.
+  * Use configure option `--with-xcode-path`, e.g. `configure --with-xcode-path=/Applications/Xcode13.1.app`
+    This allows using a specific Xcode version for an OpenJDK build, independently of the active Xcode version by `xcode-select`.
 
 If you have recently (inadvertently) updated your OS and/or Xcode version, and
 the JDK can no longer be built, please see the section on [Problems with the

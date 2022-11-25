@@ -155,21 +155,19 @@ public class V3Certificate {
                 new OIDName(ObjectIdentifier.of("1.2.3.4"));
         GeneralName oid = new GeneralName(oidInf);
 
-        SubjectAlternativeNameExtension subjectName
-                = new SubjectAlternativeNameExtension();
-        IssuerAlternativeNameExtension issuerName
-                = new IssuerAlternativeNameExtension();
 
-        GeneralNames subjectNames = subjectName.getNames();
-
-        GeneralNames issuerNames = issuerName.getNames();
-
+        GeneralNames subjectNames = new GeneralNames();
         subjectNames.add(mail);
         subjectNames.add(dns);
         subjectNames.add(uri);
+        SubjectAlternativeNameExtension subjectName
+                = new SubjectAlternativeNameExtension(subjectNames);
 
+        GeneralNames issuerNames = new GeneralNames();
         issuerNames.add(ip);
         issuerNames.add(oid);
+        IssuerAlternativeNameExtension issuerName
+                = new IssuerAlternativeNameExtension(issuerNames);
 
         cal.set(2000, 11, 15, 12, 30, 30);
         lastDate = cal.getTime();

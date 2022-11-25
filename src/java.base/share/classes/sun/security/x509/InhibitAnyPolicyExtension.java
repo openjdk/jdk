@@ -83,7 +83,7 @@ public class InhibitAnyPolicyExtension extends Extension {
      */
     public InhibitAnyPolicyExtension(int skipCerts) throws IOException {
         if (skipCerts < -1)
-            throw new IOException("Invalid value for skipCerts");
+            throw new IllegalArgumentException("Invalid value for skipCerts");
         if (skipCerts == -1)
             this.skipCerts = Integer.MAX_VALUE;
         else

@@ -25,7 +25,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
 stringStream* GCLogPrecious::_lines = NULL;
