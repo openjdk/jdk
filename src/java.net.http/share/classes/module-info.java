@@ -56,7 +56,8 @@
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.connectionWindowSize}</b> (default: 2^26)<br>
  * The HTTP/2 client connection window size in bytes. The maximum size is 2^31-1. This value cannot be
- * smaller than the stream window size.
+ * smaller than the stream window size, which can be configured through the
+ * {@code jdk.httpclient.windowsize} system property.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.disableRetryConnect}</b> (default: false)<br>
  * Whether automatic retry of connection failures is disabled. If false, then retries are attempted
@@ -72,12 +73,13 @@
  * The HTTP/2 client maximum HPACK header table size in bytes.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.HttpClient.log}</b> (default: none)<br>
- * Enables high-level logging of various events through the Java Logging API (which is contained in the
- * package java.util.logging). The value contains a comma-separated list of any of the following items:
+ * Enables high-level logging of various events through the {@link java.lang.System.Logger Platform Logging
+ * API}.The value contains a comma-separated list of any of the following items:
  * <ul>
  *   <li>errors</li>
  *   <li>requests</li>
  *   <li>headers</li>
+ *   <li>content</li>
  *   <li>frames</li>
  *   <li>ssl</li>
  *   <li>trace</li>
@@ -91,7 +93,7 @@
  *   <li>all</li>
  * </ul><br>
  * Specifying an item adds it to the HTTP client's log. For example, if you specify the following value,
- * then the Java Logging API logs all possible HTTP Client events:<br>
+ * then the Platform Logging API logs all possible HTTP Client events:<br>
  * "errors,requests,headers,frames:control:data:window,ssl,trace,channel"<br>
  * Note that you can replace control:data:window with all. The name of the logger is
  * "jdk.httpclient.HttpClient", and all logging is at level INFO.
@@ -99,11 +101,11 @@
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 30)<br>
  * The number of seconds to keep idle HTTP connections alive in the keep alive cache. This property
  * applies to both HTTP/1.1 and HTTP/2. The value for HTTP/2 can be overridden with the
- * jdk.httpclient.keepalive.timeout.h2 property.
+ * {@code jdk.httpclient.keepalive.timeout.h2 property}.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h2}</b> (default: see below)<br>
  * The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
- * jdk.httpclient.keepalive.timeout setting is used.
+ * {@code jdk.httpclient.keepalive.timeout} setting is used.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxframesize}</b> (default: 16384 or 16kB)<br>
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame larger than this.
@@ -132,8 +134,9 @@
  * buffer size</a>. Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.internal.httpclient.disableHostnameVerification}</b> (default: false)<br>
- * If true, hostname verification in SSL certificates is disabled. This is a system property only and not
- * available in {@code conf/net.properties}. It is provided for testing purposes only.
+ * If true (or set to an empty string), hostname verification in SSL certificates is disabled.
+ * This is a system property only and not available in {@code conf/net.properties}.
+ * It is provided for testing purposes only.
  * </li>
  * <li><p><b>{@systemProperty jdk.http.auth.proxying.disabledSchemes}</b> (default: see conf/net.properties)<br>
  * A comma separated list of HTTP authentication scheme names, that are disallowed for use by
