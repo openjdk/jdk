@@ -40,6 +40,10 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
     @Override
     int getModifiers();
 
+    /**
+     * Returns the offset of the field relative to the base of its storage container (e.g.,
+     * {@code instanceOop} for an instance field or {@code Klass*} for a static field on HotSpot).
+     */
     int getOffset();
 
     default boolean isFinal() {
