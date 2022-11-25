@@ -158,39 +158,6 @@ public class ForEachPatterns {
         return -1;
     }
 
-    static void m(int i) { }
-    static void m(GPoint<?> gpoint, int i) { }
-    static int b() { return 42; }
-
-    static void forParsing(int i, boolean cond) {
-        List<Point>                 points = null;
-        List<GPoint<Integer>>       generic_points = null;
-        List<GPoint<Point>>         generic_points_nested = null;
-        List<GPoint<VoidPoint>>     generic_vpoints_nested = null;
-        List<RecordOfLists>         list_of_records = null;
-        List<RecordOfLists2>        list_of_records2 = null;
-
-        for (Point(Integer a, Integer b) : points) { }
-        for (ForEachPatterns.Point(Integer a, Integer b) : points) { }
-        for (GPoint<Integer>(Integer a, Integer b) : generic_points) { }
-        for (@Annot(field = "test") Point p : points) {}
-        for (method(); i == 0;) { i++; }
-        for (method(), method(); i == 0;) { i++; }
-        for (ForEachPatterns.<Integer>method(); i == 0;) { i++; }
-        for (GPoint<Point>(Point(Integer a, Integer b), Point c) : generic_points_nested) { }
-        for (GPoint<Point>(Point(var a, Integer b), Point c) : generic_points_nested) { }
-        for (GPoint<VoidPoint>(VoidPoint(), VoidPoint()) : generic_vpoints_nested) { }
-        for (method2((Integer a) -> 42); i == 0;) { i++; }
-        for (RecordOfLists(List<Integer> lr) : list_of_records) {}
-        for (RecordOfLists2(List<List<Integer>> lr) : list_of_records2) {}
-        for (m(cond ? b() : i) ; i == 0;) {}
-        for (m((GPoint<?>)null, cond ? b() : i) ; ;) {}
-//        for (GPoint<@Annot(field = "") ? extends Point>(var x, var y) : generic_points_nested) {}; // TODO: Enable after https://bugs.openjdk.org/browse/JDK-8297602 is fixed
-    }
-    //where
-    static <T> void method() {}
-    static <T> void method2(Function<Integer, Integer> f) {}
-
     static List<Color> JEPExample() {
         Rectangle rect = new Rectangle(
                 new ColoredPoint(new Point(1,2), Color.RED),

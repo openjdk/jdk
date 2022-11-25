@@ -128,6 +128,23 @@ public class DisambiguatePatterns {
         test.forDisambiguationTest("T[].class.getName()", ForType.TRADITIONAL_FOR);
         test.forDisambiguationTest("T[].class", ForType.TRADITIONAL_FOR, "compiler.err.not.stmt");
         test.forDisambiguationTest("R(T[] a)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+
+        test.forDisambiguationTest("Point(Integer a, Integer b)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("ForEachPatterns.Point(Integer a, Integer b)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("GPoint<Integer>(Integer a, Integer b)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("@Annot(field = \"test\") Point p", ForType.ENHANCED_FOR);
+        test.forDisambiguationTest("GPoint<Point>(Point(Integer a, Integer b), Point c)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("GPoint<Point>(Point(var a, Integer b), Point c)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("GPoint<VoidPoint>(VoidPoint(), VoidPoint())", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("RecordOfLists(List<Integer> lr)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("RecordOfLists2(List<List<Integer>> lr)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+        test.forDisambiguationTest("GPoint<@Annot(field = \"\") ? extends Point>(var x, var y)", ForType.ENHANCED_FOR_WITH_PATTERNS);
+
+        test.forDisambiguationTest("method()", ForType.TRADITIONAL_FOR);
+        test.forDisambiguationTest("method(), method()", ForType.TRADITIONAL_FOR);
+        test.forDisambiguationTest("method2((Integer a) -> 42)", ForType.TRADITIONAL_FOR);
+        test.forDisambiguationTest("m(cond ? b() : i)", ForType.TRADITIONAL_FOR);
+        test.forDisambiguationTest("m((GPoint<?>)null, cond ? b() : i)", ForType.TRADITIONAL_FOR);
     }
 
     private final ParserFactory factory;
