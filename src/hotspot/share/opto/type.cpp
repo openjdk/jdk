@@ -3183,7 +3183,7 @@ void TypePtr::InterfaceSet::compute_hash() {
 }
 
 static int compare_interfaces(ciKlass** k1, ciKlass** k2) {
-return (int)((*k1)->ident() - (*k2)->ident());
+  return (int)((*k1)->ident() - (*k2)->ident());
 }
 
 void TypePtr::InterfaceSet::dump(outputStream *st) const {
