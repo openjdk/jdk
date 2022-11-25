@@ -358,7 +358,7 @@ final class Config {
         try {
             return PropertyExpander.expand(s);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -394,6 +394,10 @@ final class Config {
 
     private ConfigurationException excLine(String msg) {
         return new ConfigurationException(msg + ", line " + st.lineno());
+    }
+
+    private ConfigurationException excLine(String msg, Throwable e) {
+        return new ConfigurationException(msg + ", line " + st.lineno(), e);
     }
 
     private void parse() throws IOException {
@@ -792,7 +796,7 @@ final class Config {
             try {
                 return Functions.getMechanismId(mech);
             } catch (IllegalArgumentException e) {
-                throw excLine("Unknown mechanism: " + mech);
+                throw excLine("Unknown mechanism: " + mech, e);
             }
         }
     }
@@ -952,7 +956,7 @@ final class Config {
         try {
             return Functions.getObjectClassId(name);
         } catch (IllegalArgumentException e) {
-            throw excLine("Unknown object class " + name);
+            throw excLine("Unknown object class " + name, e);
         }
     }
 
@@ -964,7 +968,7 @@ final class Config {
             try {
                 return Functions.getKeyId(name);
             } catch (IllegalArgumentException e) {
-                throw excLine("Unknown key algorithm " + name);
+                throw excLine("Unknown key algorithm " + name, e);
             }
         }
     }
@@ -976,7 +980,7 @@ final class Config {
             try {
                 return Functions.getAttributeId(name);
             } catch (IllegalArgumentException e) {
-                throw excLine("Unknown attribute name " + name);
+                throw excLine("Unknown attribute name " + name, e);
             }
         }
     }
@@ -1031,5 +1035,9 @@ class ConfigurationException extends IOException {
     private static final long serialVersionUID = 254492758807673194L;
     ConfigurationException(String msg) {
         super(msg);
+    }
+
+    ConfigurationException(String msg, Throwable e) {
+        super(msg, e);
     }
 }
