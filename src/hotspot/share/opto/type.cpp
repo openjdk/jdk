@@ -3194,7 +3194,7 @@ void TypePtr::InterfaceSet::dump(outputStream *st) const {
   st->print(" (");
   GrowableArray<ciKlass*> interfaces;
   interfaces.appendAll(&_list);
-  // Sort the interfaces so there's listed in the same order from one run to the other of the same compilation
+  // Sort the interfaces so they are listed in the same order from one run to the other of the same compilation
   interfaces.sort(compare_interfaces);
   for (int i = 0; i < interfaces.length(); i++) {
     if (i > 0) {
