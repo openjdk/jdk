@@ -4183,6 +4183,7 @@ public class Attr extends JCTree.Visitor {
             expectedRecordTypes = Stream.generate(() -> Type.noType)
                                 .limit(tree.nested.size())
                                 .collect(List.collector());
+            tree.record = syms.errSymbol;
         }
         ListBuffer<BindingSymbol> outBindings = new ListBuffer<>();
         List<Type> recordTypes = expectedRecordTypes;
