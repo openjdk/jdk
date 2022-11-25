@@ -59,7 +59,7 @@ public class HsErrFileUtils {
     }
 
     /**
-     * Given an open hs-err file, read it line by line and check for existence of a set of pattern. Will fail
+     * Given an open hs-err file, read it line by line and check for existence of a set of patterns. Will fail
      * if patterns are missing, or if the END marker is missing.
      * @param f Input file
      * @param patterns An array of patterns that need to match, in that order

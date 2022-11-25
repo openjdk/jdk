@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,7 @@
 
 /*
  * @test
- * @bug 8065896
+ * @bug 8065895
  * @summary Synchronous signals during error reporting may terminate or hang VM process
  * @library /test/lib
  * @requires vm.debug
