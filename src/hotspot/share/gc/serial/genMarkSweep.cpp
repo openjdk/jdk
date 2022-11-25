@@ -186,10 +186,13 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   {
     StrongRootsScope srs(0);
 
-    gch->full_process_roots(false, // not the adjust phase
-                            GenCollectedHeap::SO_None,
-                            &follow_root_closure,
-                            &follow_cld_closure);
+    CLDClosure* weak_cld_closure = ClassUnloading ? NULL : &follow_cld_closure;
+    MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
+    gch->process_roots(GenCollectedHeap::SO_None,
+                       &follow_root_closure,
+                       &follow_cld_closure,
+                       weak_cld_closure,
+                       &mark_code_closure);
   }
 
   // Process reference objects found during marking
@@ -262,10 +265,12 @@ void GenMarkSweep::mark_sweep_phase3() {
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  gch->full_process_roots(true,  // this is the adjust phase
-                          GenCollectedHeap::SO_AllCodeCache,
-                          &adjust_pointer_closure,
-                          &adjust_cld_closure);
+  CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+  gch->process_roots(GenCollectedHeap::SO_AllCodeCache,
+                     &adjust_pointer_closure,
+                     &adjust_cld_closure,
+                     &adjust_cld_closure,
+                     &code_closure);
 
   gch->gen_process_weak_roots(&adjust_pointer_closure);
 

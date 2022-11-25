@@ -789,23 +789,6 @@ void GenCollectedHeap::process_roots(ScanningOption so,
   DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
-void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
-                                          ScanningOption so,
-                                          OopClosure* root_closure,
-                                          CLDClosure* cld_closure) {
-  // Called from either the marking phase or the adjust phase.
-  const bool is_marking_phase = !is_adjust_phase;
-
-  if (is_marking_phase) {
-    CLDClosure* weak_cld_closure = ClassUnloading ? NULL : cld_closure;
-    MarkingCodeBlobClosure mark_code_closure(root_closure, !CodeBlobToOopClosure::FixRelocations, true);
-    process_roots(so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
-  } else {
-    CodeBlobToOopClosure code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
-    process_roots(so, root_closure, cld_closure, cld_closure, &code_closure);
-  }
-}
-
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
   WeakProcessor::oops_do(root_closure);
 }
