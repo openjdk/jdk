@@ -123,7 +123,7 @@ final class ArgumentParser {
                     }
                 } else {
                     if (options.containsKey(key)) {
-                        if(!conflictedOptions.contains(key)) {
+                        if (!conflictedOptions.contains(key)) {
                             conflictedOptions.add(key);
                         }
                     } else {
