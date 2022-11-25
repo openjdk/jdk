@@ -68,9 +68,6 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
-compiler/debug/TestStressCM.java 8297343 generic-all
-compiler/debug/TestStressIGVNAndCCP.java 8297343 generic-all
-
 #############################################################################
 
 # :hotspot_gc
