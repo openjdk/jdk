@@ -995,11 +995,28 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaMethod[] getDeclaredConstructors() {
+        link();
+        return runtime().compilerToVm.getDeclaredConstructors(this);
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredConstructors(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
         return runtime().compilerToVm.getDeclaredConstructors(this);
     }
 
     @Override
     public ResolvedJavaMethod[] getDeclaredMethods() {
+        return getDeclaredMethods(true);
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
         return runtime().compilerToVm.getDeclaredMethods(this);
     }
 
