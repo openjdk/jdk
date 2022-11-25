@@ -120,7 +120,7 @@ public class TestJcmdOptionSpecifiedOnce {
 
         try {
             Matcher matcher = Pattern.compile(regex).matcher(output);
-            if(matcher.find()){
+            if (matcher.find()){
                 throw new RuntimeException("found in output : \"%s\"".formatted(regex));
             }
         } catch (Exception e){
