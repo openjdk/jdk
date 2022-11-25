@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -481,8 +482,11 @@ public class ResponseSubscribers {
                     if (debug.on()) debug.log("Next Buffer");
                     currentBuffer = currentListItr.next();
                 } catch (InterruptedException ex) {
-                    close();
-                    throw new IOException("interrupted", ex);
+                    try {
+                        close();
+                    } catch (IOException ignored) {
+                    }
+                    throw new InterruptedIOException();
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();

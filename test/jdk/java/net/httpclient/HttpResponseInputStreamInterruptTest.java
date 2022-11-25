@@ -39,6 +39,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -56,8 +57,8 @@ public class HttpResponseInputStreamInterruptTest {
 
     HttpServer server;
     int port;
-    private CountDownLatch countDownLatch = new CountDownLatch(2);
-    private CountDownLatch interruptLatch = new CountDownLatch(1);
+    private CountDownLatch interruptReadyLatch = new CountDownLatch(2);
+    private CountDownLatch interruptDoneLatch = new CountDownLatch(1);
     static final String FIRST_MESSAGE = "Should be received";
     static final String SECOND_MESSAGE = "Shouldn't be received";
 
@@ -67,8 +68,8 @@ public class HttpResponseInputStreamInterruptTest {
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         server = HttpServer.create(addr, 0);
         port = server.getAddress().getPort();
-        Handler handler = new Handler(countDownLatch, interruptLatch);
-        server.createContext("/", handler);
+        Handler handler = new Handler(interruptReadyLatch, interruptDoneLatch);
+        server.createContext("/HttpResponseInputStreamInterruptTest/", handler);
         server.start();
     }
 
@@ -80,13 +81,15 @@ public class HttpResponseInputStreamInterruptTest {
     @Test
     public void test() {
         try {
-            //create client and interrupter threads
-            Thread clientThread = createClientThread(countDownLatch, port);
+            // create client and interrupter threads
+            Thread clientThread = createClientThread(interruptReadyLatch, port);
             Thread interrupterThread = new Thread(() -> {
                 try {
-                    countDownLatch.await();
+                    // wait until the clientThread is just about to read the second message sent by the server
+                    // then interrupt the thread to cause an error to be thrown
+                    interruptReadyLatch.await();
                     clientThread.interrupt();
-                    interruptLatch.countDown();
+                    interruptDoneLatch.countDown();
                 } catch (InterruptedException e) {
                     System.out.println("interrupterThread failed");
                     throw new RuntimeException(e);
@@ -104,12 +107,12 @@ public class HttpResponseInputStreamInterruptTest {
 
     static class Handler implements HttpHandler {
 
-        CountDownLatch countDownLatch;
-        CountDownLatch interruptLatch;
+        CountDownLatch interruptReadyLatch;
+        CountDownLatch interruptDoneLatch;
 
-        public Handler(CountDownLatch countDownLatch, CountDownLatch interruptLatch) {
-            this.countDownLatch = countDownLatch;
-            this.interruptLatch = interruptLatch;
+        public Handler(CountDownLatch interruptReadyLatch, CountDownLatch interruptDoneLatch) {
+            this.interruptReadyLatch = interruptReadyLatch;
+            this.interruptDoneLatch = interruptDoneLatch;
         }
 
         @Override
@@ -124,17 +127,17 @@ public class HttpResponseInputStreamInterruptTest {
                 os.flush();
 
                 // await the interrupt threads completion, then write the second message
-                countDownLatch.countDown();
-                interruptLatch.await();
+                interruptReadyLatch.countDown();
+                interruptDoneLatch.await();
                 os.write(errorResponse);
             } catch (InterruptedException e) {
-                System.out.println("interruptLatch await failed");
+                System.out.println("interruptDoneLatch await failed");
                 throw new RuntimeException(e);
             }
         }
     }
 
-    static Thread createClientThread(CountDownLatch countDownLatch, int port) {
+    static Thread createClientThread(CountDownLatch interruptReadyLatch, int port) {
         return new Thread(() -> {
             try {
                 HttpClient client = HttpClient
@@ -146,7 +149,7 @@ public class HttpResponseInputStreamInterruptTest {
                         .scheme("http")
                         .loopback()
                         .port(port)
-                        .path("/")
+                        .path("/HttpResponseInputStreamInterruptTest/")
                         .build();
 
                 HttpRequest request = HttpRequest
@@ -160,12 +163,11 @@ public class HttpResponseInputStreamInterruptTest {
                 assertEquals(firstOutput, FIRST_MESSAGE);
 
                 // countdown on latch, and assert that an IOException is throw due to the interrupt
-                countDownLatch.countDown();
-                assertThrows(IOException.class, () -> response.body().readAllBytes(), "excepted IOException");
+                interruptReadyLatch.countDown();
+                assertThrows(InterruptedIOException.class, () -> response.body().readAllBytes(), "excepted IOException");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
     }
 }
-
