@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,17 @@ import sun.java2d.marlin.FloatMath;
  */
 public class CeilAndFloorTests {
 
-    public static String toHexString(float f) {
-        if (!Float.isNaN(f))
-            return Float.toHexString(f);
-        else
-            return "NaN(0x" + Integer.toHexString(Float.floatToRawIntBits(f)) + ")";
+    public static String toHexString(double f) {
+        if (!Double.isNaN(f)) {
+            return Double.toHexString(f);
+        } else {
+            return "NaN(0x" + Long.toHexString(Double.doubleToRawLongBits(f)) + ")";
+        }
     }
 
-    public static int test(String testName, float input,
-                           float result, float expected) {
-        if (Float.compare(expected, result) != 0) {
+    public static int test(String testName, double input,
+                           double result, double expected) {
+        if (Double.compare(expected, result) != 0) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
                                "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
@@ -51,12 +52,12 @@ public class CeilAndFloorTests {
             return 0;
     }
 
-    public static int test_skip_0(String testName, float input,
-                           float result, float expected)
+    public static int test_skip_0(String testName, double input,
+                           double result, double expected)
     {
         // floor_int does not distinguish +0f and -0f
         // but it is not critical for Marlin
-        if (Float.compare(expected, result) != 0 && (expected != 0f))
+        if (Double.compare(expected, result) != 0 && (expected != 0.0))
         {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
@@ -68,36 +69,30 @@ public class CeilAndFloorTests {
             return 0;
     }
 
-    private static int testCeilCase(float input, float expected) {
+    private static int testCeilCase(double input, double expected) {
         int failures = 0;
-        // float result:
-        failures += test("FloatMath.ceil_f", input, FloatMath.ceil_f(input), expected);
         // int result:
         failures += test("FloatMath.ceil_int", input, FloatMath.ceil_int(input), (int)expected);
-        failures += test("FloatMath.ceil_f (int)", input, (int)FloatMath.ceil_f(input), (int)expected);
         return failures;
     }
 
-    private static int testFloorCase(float input, float expected) {
+    private static int testFloorCase(double input, double expected) {
         int failures = 0;
-        // float result:
-        failures += test       ("FloatMath.floor_f", input, FloatMath.floor_f(input), expected);
         // ignore difference between +0f and -0f:
         failures += test_skip_0("FloatMath.floor_int", input, FloatMath.floor_int(input), (int)expected);
-        failures += test_skip_0("FloatMath.floor_f (int)", input, (int)FloatMath.floor_f(input), (int)expected);
         return failures;
     }
 
     private static int nearIntegerTests() {
         int failures = 0;
 
-        float [] fixedPoints = {
-            -0.0f,
-             0.0f,
-            -1.0f,
-             1.0f,
-            -0x1.0p52f,
-             0x1.0p52f,
+        double [] fixedPoints = {
+            -0.0,
+             0.0,
+            -1.0,
+             1.0,
+            -0x1.0p52,
+             0x1.0p52,
             -Float.MAX_VALUE,
              Float.MAX_VALUE,
              Float.NEGATIVE_INFINITY,
@@ -105,28 +100,28 @@ public class CeilAndFloorTests {
              Float.NaN,
         };
 
-        for(float fixedPoint : fixedPoints) {
+        for(double fixedPoint : fixedPoints) {
             failures += testCeilCase(fixedPoint, fixedPoint);
             failures += testFloorCase(fixedPoint, fixedPoint);
         }
 
         for(int i = Float.MIN_EXPONENT; i <= Float.MAX_EXPONENT; i++) {
-            float powerOfTwo   = Math.scalb(1.0f, i);
-            float neighborDown = Math.nextDown(powerOfTwo);
-            float neighborUp   = Math.nextUp(powerOfTwo);
+            double powerOfTwo   = Math.scalb(1.0f, i);
+            double neighborDown = Math.nextDown(powerOfTwo);
+            double neighborUp   = Math.nextUp(powerOfTwo);
 
             if (i < 0) {
-                failures += testCeilCase( powerOfTwo,  1.0f);
-                failures += testCeilCase(-powerOfTwo, -0.0f);
+                failures += testCeilCase( powerOfTwo,  1.0);
+                failures += testCeilCase(-powerOfTwo, -0.0);
 
-                failures += testFloorCase( powerOfTwo,  0.0f);
-                failures += testFloorCase(-powerOfTwo, -1.0f);
+                failures += testFloorCase( powerOfTwo,  0.0);
+                failures += testFloorCase(-powerOfTwo, -1.0);
 
-                failures += testCeilCase( neighborDown, 1.0f);
-                failures += testCeilCase(-neighborDown, -0.0f);
+                failures += testCeilCase( neighborDown, 1.0);
+                failures += testCeilCase(-neighborDown, -0.0);
 
-                failures += testFloorCase( neighborUp,  0.0f);
-                failures += testFloorCase(-neighborUp, -1.0f);
+                failures += testFloorCase( neighborUp,  0.0);
+                failures += testFloorCase(-neighborUp, -1.0);
             } else {
                 failures += testCeilCase(powerOfTwo, powerOfTwo);
                 failures += testFloorCase(powerOfTwo, powerOfTwo);
@@ -156,9 +151,9 @@ public class CeilAndFloorTests {
         }
 
         for(int i = -(0x10000); i <= 0x10000; i++) {
-            float f = (float) i;
-            float neighborDown = Math.nextDown(f);
-            float neighborUp   = Math.nextUp(f);
+            double f = (double) i;
+            double neighborDown = Math.nextDown(f);
+            double neighborUp   = Math.nextUp(f);
 
             failures += testCeilCase( f, f);
             failures += testCeilCase(-f, -f);
@@ -180,52 +175,46 @@ public class CeilAndFloorTests {
 
     public static int roundingTests() {
         int failures = 0;
-        float [][] testCases = {
-            { Float.MIN_VALUE,                           1.0f},
-            {-Float.MIN_VALUE,                          -0.0f},
-            { Math.nextDown(Float.MIN_NORMAL),           1.0f},
-            {-Math.nextDown(Float.MIN_NORMAL),          -0.0f},
-            { Float.MIN_NORMAL,                          1.0f},
-            {-Float.MIN_NORMAL,                         -0.0f},
+        double [][] testCases = {
+            { Float.MIN_VALUE,                           1.0},
+            {-Float.MIN_VALUE,                          -0.0},
+            { Math.nextDown(Float.MIN_NORMAL),           1.0},
+            {-Math.nextDown(Float.MIN_NORMAL),          -0.0},
+            { Float.MIN_NORMAL,                          1.0},
+            {-Float.MIN_NORMAL,                         -0.0},
 
-            { 0.1f,                                        1.0f},
-            {-0.1f,                                       -0.0f},
+            { 0.1,                                        1.0},
+            {-0.1,                                       -0.0},
 
-            { 0.5f,                                        1.0f},
-            {-0.5f,                                       -0.0f},
+            { 0.5,                                        1.0},
+            {-0.5,                                       -0.0},
 
-            { 1.5f,                                        2.0f},
-            {-1.5f,                                       -1.0f},
+            { 1.5,                                        2.0},
+            {-1.5,                                       -1.0},
 
-            { 2.5f,                                        3.0f},
-            {-2.5f,                                       -2.0f},
+            { 2.5,                                        3.0},
+            {-2.5,                                       -2.0},
 
-            { 12.3456789f,                                13.0f},
-            {-12.3456789f,                               -12.0f},
+            { 12.3456789,                                13.0},
+            {-12.3456789,                               -12.0},
 
-            { Math.nextDown(1.0f),                         1.0f},
-            { Math.nextDown(-1.0f),                       -1.0f},
+            { Math.nextDown(1.0),                         1.0},
+            { Math.nextDown(-1.0),                       -1.0},
 
-            { Math.nextUp(1.0f),                           2.0f},
-            { Math.nextUp(-1.0f),                         -0.0f},
+            { Math.nextUp(1.0),                           2.0},
+            { Math.nextUp(-1.0),                         -0.0},
 
-            { 0x1.0p22f,                                 0x1.0p22f},
-            {-0x1.0p22f,                                -0x1.0p22f},
+            { 0x1.0p22,                                 0x1.0p22},
+            {-0x1.0p22,                                -0x1.0p22},
 
-            { Math.nextDown(0x1.0p22f),                  0x1.0p22f},
-            {-Math.nextUp(0x1.0p22f),                   -0x1.0p22f},
+            { Math.nextDown(0x1.0p22),                  0x1.0p22},
+            {-Math.nextUp(0x1.0p22),                   -0x1.0p22},
 
-            { Math.nextUp(0x1.0p22f),                    0x1.0p22f+1f},
-            {-Math.nextDown(0x1.0p22f),                 -0x1.0p22f+1f},
-
-            { Math.nextDown(0x1.0p23f),                  0x1.0p23f},
-            {-Math.nextUp(0x1.0p23f),                   -0x1.0p23f-1f},
-
-            { Math.nextUp(0x1.0p23f),                    0x1.0p23f+1f},
-            {-Math.nextDown(0x1.0p23f),                 -0x1.0p23f+1f},
+            { Math.nextUp(0x1.0p22),                    0x1.0p22 + 1.0},
+            {-Math.nextDown(0x1.0p22),                 -0x1.0p22 + 1.0}
         };
 
-        for(float[] testCase : testCases) {
+        for(double[] testCase : testCases) {
             failures += testCeilCase(testCase[0], testCase[1]);
             failures += testFloorCase(-testCase[0], -testCase[1]);
         }

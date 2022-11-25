@@ -22,25 +22,23 @@
  *
  */
 
+#include "jni.h"
+#include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "unittest.hpp"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #ifdef __APPLE__
-#  include <dlfcn.h>
+#include <dlfcn.h>
 #endif
-
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
 #endif
-
-#include "jni.h"
-#include "unittest.hpp"
-
-#include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
 // problems when attempting to initialize the JVM on the primordial thread.

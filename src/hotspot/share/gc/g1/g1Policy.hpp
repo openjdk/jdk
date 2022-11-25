@@ -142,14 +142,27 @@ public:
   double predict_base_time_ms(size_t pending_cards) const;
 
 private:
+  // Base time contains handling remembered sets and constant other time of the
+  // whole young gen, refinement buffers, and copying survivors.
+  // Basically everything but copying eden regions.
   double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
+  // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(HeapRegion* hr) const;
+  // Merge-scan time for a region is handling remembered sets of that region (as a single unit).
+  double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  // Non-copy time for a region is handling remembered sets and other time.
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
 public:
 
-  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  // Predict other time for count young regions.
+  double predict_young_region_other_time_ms(uint count) const;
+  // Predict copying live data time for count eden regions. Return the predict bytes if
+  // bytes_to_copy is non-nullptr.
+  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
+  // Total time for a region is handling remembered sets (as a single unit), copying its live data
+  // and other time.
   double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {

@@ -380,7 +380,7 @@ oop MemAllocator::allocate() const {
 
 oop MemAllocator::try_allocate_in_existing_tlab() {
   oop obj = NULL;
-  {
+  if (UseTLAB) {
     HeapWord* mem = allocate_inside_tlab_fast();
     if (mem != NULL) {
       obj = initialize(mem);

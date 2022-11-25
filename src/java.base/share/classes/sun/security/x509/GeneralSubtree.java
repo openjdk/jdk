@@ -26,6 +26,7 @@
 package sun.security.x509;
 
 import java.io.*;
+import java.util.Objects;
 
 import sun.security.util.*;
 
@@ -61,7 +62,7 @@ public class GeneralSubtree {
      * @param max the maximum BaseDistance
      */
     public GeneralSubtree(GeneralName name, int min, int max) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name);
         this.minimum = min;
         this.maximum = max;
     }

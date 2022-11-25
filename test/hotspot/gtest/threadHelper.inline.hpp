@@ -25,12 +25,12 @@
 #define GTEST_THREADHELPER_INLINE_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "unittest.hpp"
 
 static void startTestThread(JavaThread* thread, const char* name) {

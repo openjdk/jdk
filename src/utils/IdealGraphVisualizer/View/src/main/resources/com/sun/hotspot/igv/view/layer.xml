@@ -3,7 +3,7 @@
 <filesystem>
     <folder name="Shortcuts">
         <file name="D-F.shadow">
-            <attr name="originalFile" stringvalue="Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/>
+            <attr name="originalFile" stringvalue="Actions/Search/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/>
         </file>
     </folder>
     <folder name="Actions">
