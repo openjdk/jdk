@@ -503,7 +503,7 @@ void G1YoungCollector::verify_empty_dirty_card_logs() const {
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
   // Flush early, so later phases don't need to account for per-thread stuff.
-  // Flushes deferred card marks, so must precede concatenting logs.
+  // Flushes deferred card marks, so must precede concatenating logs.
   retire_tlabs();
 
   // Flush early, so later phases don't need to account for per-thread stuff.
