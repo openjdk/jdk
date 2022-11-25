@@ -1511,7 +1511,8 @@ public final class Module implements AnnotatedElement {
      */
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
-        byte[] bytes = Classfile.parse(in.readAllBytes()).transform((clb, cle) -> {
+        byte[] bytes = Classfile.parse(in.readAllBytes(),
+                Classfile.Option.constantPoolSharing(false)).transform((clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
                         AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);
