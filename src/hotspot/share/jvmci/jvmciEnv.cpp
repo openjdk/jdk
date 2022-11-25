@@ -316,12 +316,28 @@ class ExceptionTranslation: public StackObj {
     int buffer_size = 2048;
     while (true) {
       ResourceMark rm;
-      jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, jbyte, buffer_size);
-      int res = encode(THREAD, runtimeKlass, buffer, buffer_size);
-      if ((_from_env != nullptr && _from_env->has_pending_exception()) || HAS_PENDING_EXCEPTION) {
-        JVMCIRuntime::fatal_exception(_from_env, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+      jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, buffer_size);
+      if (buffer == 0L) {
+        decode(THREAD, runtimeKlass, 0L);
+        return;
       }
-      if (res < 0) {
+      int res = encode(THREAD, runtimeKlass, buffer, buffer_size);
+      if (_from_env != nullptr && !_from_env->is_hotspot() && _from_env->has_pending_exception()) {
+        // Cannot get name of exception thrown by `encode` as that involves
+        // calling into libjvmci which in turn can raise another exception.
+        _from_env->clear_pending_exception();
+        decode(THREAD, runtimeKlass, -2L);
+        return;
+      } else if (HAS_PENDING_EXCEPTION) {
+        Symbol *ex_name = PENDING_EXCEPTION->klass()->name();
+        CLEAR_PENDING_EXCEPTION;
+        if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+          decode(THREAD, runtimeKlass, -1L);
+        } else {
+          decode(THREAD, runtimeKlass, -2L);
+        }
+        return;
+      } else if (res < 0) {
         int required_buffer_size = -res;
         if (required_buffer_size > buffer_size) {
           buffer_size = required_buffer_size;
@@ -329,7 +345,7 @@ class ExceptionTranslation: public StackObj {
       } else {
         decode(THREAD, runtimeKlass, buffer);
         if (!_to_env->has_pending_exception()) {
-          JVMCIRuntime::fatal_exception(_to_env, "HotSpotJVMCIRuntime.decodeAndThrowThrowable should throw an exception");
+          _to_env->throw_InternalError("HotSpotJVMCIRuntime.decodeAndThrowThrowable should have thrown an exception");
         }
         return;
       }
