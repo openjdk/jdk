@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_ALLOCATION_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -143,6 +144,8 @@ enum class MEMFLAGS : uint8_t  {
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };
+// Extra insurance that MEMFLAGS truly has the same size as uint8_t.
+STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
 
 #define MEMORY_TYPE_SHORTNAME(type, human_readable) \
   constexpr MEMFLAGS type = MEMFLAGS::type;
