@@ -716,6 +716,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         loadReferencedType(cpi, opcode, true /* initialize */);
     }
 
+    @Override
     @SuppressWarnings("fallthrough")
     public void loadReferencedType(int cpi, int opcode, boolean initialize) {
         int index;
