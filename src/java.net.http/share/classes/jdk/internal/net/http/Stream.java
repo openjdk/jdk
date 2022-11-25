@@ -175,8 +175,6 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (subscriber == null) {
                     // can't process anything yet
                     return;
-                } else {
-                    pendingResponseSubscriber = null;
                 }
                 if (debug.on()) debug.log("subscribing user subscriber");
                 subscriber.onSubscribe(userSubscription);
