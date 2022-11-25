@@ -647,6 +647,16 @@ C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, job
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
+C2V_VMENTRY_NULL(jobject, getUncachedStringInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
+  constantTag tag = cp->tag_at(index);
+  if (!tag.is_string()) {
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException, err_msg("Unexpected constant pool tag at index %d: %d", index, tag.value()));
+  }
+  oop obj = cp->uncached_string_at(index, CHECK_NULL);
+  return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
+C2V_END
+
 C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   return cp->name_and_type_ref_index_at(index);
@@ -2690,6 +2700,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL "IB)" HS_RESOLVED_METHOD,                                     FN_PTR(lookupMethodInPool)},
   {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL "I)I",                                                        FN_PTR(constantPoolRemapInstructionOperandFromCache)},
   {CC "resolvePossiblyCachedConstantInPool",          CC "(" HS_CONSTANT_POOL "I)" JAVACONSTANT,                                            FN_PTR(resolvePossiblyCachedConstantInPool)},
+  {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL "I)" JAVACONSTANT,                                            FN_PTR(getUncachedStringInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL "I)" HS_RESOLVED_KLASS,                                       FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "I" HS_RESOLVED_METHOD "B[I)" HS_RESOLVED_KLASS,              FN_PTR(resolveFieldInPool)},
   {CC "resolveInvokeDynamicInPool",                   CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeDynamicInPool)},

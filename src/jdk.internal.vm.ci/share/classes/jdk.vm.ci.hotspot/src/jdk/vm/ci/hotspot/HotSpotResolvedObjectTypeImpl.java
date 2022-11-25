@@ -684,6 +684,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             return readFieldSlot(config().fieldInfoSignatureIndexOffset);
         }
 
+        private int getConstantValueIndex() {
+            return readFieldSlot(config().fieldInfoConstantValueIndexOffset);
+        }
+
         public int getOffset() {
             HotSpotVMConfig config = config();
             final int lowPacked = readFieldSlot(config.fieldInfoLowPackedOffset);
@@ -717,6 +721,19 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         public String getSignature() {
             final int signatureIndex = getSignatureIndex();
             return isInternal() ? config().symbolAt(signatureIndex) : getConstantPool().lookupUtf8(signatureIndex);
+        }
+
+        /**
+         * Gets the {@link JavaConstant} for the {@code ConstantValue} attribute of this field.
+         *
+         * @return {@code null} if this field has no {@code ConstantValue} attribute
+         */
+        public JavaConstant getConstantValue() {
+            int cvIndex = getConstantValueIndex();
+            if (cvIndex == 0) {
+                return null;
+            }
+            return constantPool.getStaticFieldConstantValue(cvIndex);
         }
 
         public JavaType getType() {

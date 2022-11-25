@@ -211,6 +211,14 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
     /**
+     * Resolves the entry at index {@code cpi} in {@code constantPool} to an interned String object.
+     *
+     * The behavior of this method is undefined if {@code cpi} does not denote an
+     * {@code JVM_CONSTANT_String}.
+     */
+    native JavaConstant getUncachedStringInPool(HotSpotConstantPool constantPool, int cpi);
+
+    /**
      * Resolves the entry at index {@code cpi} in {@code constantPool} to an object, looking in the
      * constant pool cache first.
      *

@@ -535,6 +535,27 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolFlagsOffset);
     }
 
+    /**
+     * Gets the {@link JavaConstant} for the {@code ConstantValue} attribute of a field.
+     */
+    JavaConstant getStaticFieldConstantValue(int cpi) {
+        final JvmConstant tag = getTagAt(cpi);
+        switch (tag.name) {
+            case "Integer":
+                return JavaConstant.forInt(getIntAt(cpi));
+            case "Long":
+                return JavaConstant.forLong(getLongAt(cpi));
+            case "Float":
+                return JavaConstant.forFloat(getFloatAt(cpi));
+            case "Double":
+                return JavaConstant.forDouble(getDoubleAt(cpi));
+            case "String":
+                return compilerToVM().getUncachedStringInPool(this, cpi);
+            default:
+                throw new IllegalArgumentException("Illegal entry for a ConstantValue attribute:" + tag);
+        }
+    }
+
     @Override
     public Object lookupConstant(int cpi) {
         final JvmConstant tag = getTagAt(cpi);
