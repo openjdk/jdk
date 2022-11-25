@@ -175,11 +175,24 @@ public final class ModuleInfoExtender {
                 clb.with(ModuleResolutionAttribute.of(moduleResolution.value()));
             }
             if (hashes != null) {
-                clb.with(ModuleHashesAttribute.of(hashes.algorithm(), hashes.hashes().entrySet().stream().map(he -> ModuleHashInfo.of(ModuleDesc.of(he.getKey()), he.getValue())).toList()));
+                clb.with(ModuleHashesAttribute.of(
+                        hashes.algorithm(),
+                        hashes.hashes().entrySet().stream().map(he ->
+                                ModuleHashInfo.of(ModuleDesc.of(
+                                        he.getKey()),
+                                        he.getValue())).toList()));
             }
         }).andThen((clb, cle) -> {
             if (v != null && cle instanceof ModuleAttribute ma) {
-                clb.with(ModuleAttribute.of(ma.moduleName(), ma.moduleFlagsMask(), clb.constantPool().utf8Entry(v.toString()), ma.requires(), ma.exports(), ma.opens(), ma.uses(), ma.provides()));
+                clb.with(ModuleAttribute.of(
+                        ma.moduleName(),
+                        ma.moduleFlagsMask(),
+                        clb.constantPool().utf8Entry(v.toString()),
+                        ma.requires(),
+                        ma.exports(),
+                        ma.opens(),
+                        ma.uses(),
+                        ma.provides()));
             } else {
                 clb.accept(cle);
             }
