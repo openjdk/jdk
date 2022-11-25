@@ -206,12 +206,9 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         //
         // Compute nQ (using elliptic curve arithmetic), and verify that
         // nQ is the identity element.
-        ImmutableIntegerModuloP xElem = ops.getField().getElement(x);
-        ImmutableIntegerModuloP yElem = ops.getField().getElement(y);
-        AffinePoint affP = new AffinePoint(xElem, yElem);
         byte[] order = spec.getOrder().toByteArray();
         ArrayUtil.reverse(order);
-        Point product = ops.multiply(affP, order);
+        Point product = ops.multiply(key.getW(), order);
         if (!ops.isNeutral(product)) {
             throw new InvalidKeyException("Point has incorrect order");
         }
@@ -275,12 +272,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         scalar.setProduct(cofactor);
         int keySize =
             (priv.getParams().getCurve().getField().getFieldSize() + 7) / 8;
-        ImmutableIntegerModuloP x =
-            field.getElement(pubKey.getW().getAffineX());
-        ImmutableIntegerModuloP y =
-            field.getElement(pubKey.getW().getAffineY());
-        Point product = ops.multiply(new AffinePoint(x, y),
-            scalar.asByteArray(keySize));
+        Point product =
+                ops.multiply(pubKey.getW(), scalar.asByteArray(keySize));
         if (ops.isNeutral(product)) {
             throw new InvalidKeyException("Product is zero");
         }

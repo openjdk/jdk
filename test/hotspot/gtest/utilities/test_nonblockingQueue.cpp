@@ -29,6 +29,7 @@
 #include "utilities/pair.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
+
 #include <new>
 
 class NonblockingQueueTestElement {
