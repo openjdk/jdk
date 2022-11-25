@@ -595,6 +595,8 @@ public final class RemoteRecordingStream implements EventStream {
      * @return {@code true} if recording is stopped, {@code false} otherwise
      *
      * @throws IllegalStateException if the recording is not started or is already stopped
+     *
+     * @since 20
      */
     public boolean stop() {
         synchronized (lock) {

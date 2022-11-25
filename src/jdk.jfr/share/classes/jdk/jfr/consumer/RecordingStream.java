@@ -400,6 +400,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @return {@code true} if recording is stopped, {@code false} otherwise
      *
      * @throws IllegalStateException if the recording is not started or is already stopped
+     *
+     * @since 20
      */
     public boolean stop() {
         boolean stopped = false;
