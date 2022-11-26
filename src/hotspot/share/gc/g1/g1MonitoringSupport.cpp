@@ -348,8 +348,8 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
                      max_size);
 }
 
-G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support)
-: _monitoring_support(monitoring_support) { }
+G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support) :
+  _monitoring_support(monitoring_support) { }
 
 G1MonitoringScope::~G1MonitoringScope() {
   _monitoring_support->update_sizes();
@@ -357,21 +357,22 @@ G1MonitoringScope::~G1MonitoringScope() {
   MemoryService::track_memory_usage();
 }
 
-G1IncMonitoringScope::G1IncMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected) :
+G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
+                                                   bool all_memory_pools_affected) :
   G1MonitoringScope(monitoring_support),
   _tcs(monitoring_support->_incremental_collection_counters),
   _tms(&monitoring_support->_incremental_memory_manager,
        G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
 }
 
-G1FullMonitoringScope::G1FullMonitoringScope(G1MonitoringSupport* monitoring_support) :
+G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
   G1MonitoringScope(monitoring_support),
   _tcs(monitoring_support->_full_collection_counters),
   _tms(&monitoring_support->_full_gc_memory_manager,
        G1CollectedHeap::heap()->gc_cause()) {
 }
 
-G1ConcMonitoringScope::G1ConcMonitoringScope(G1MonitoringSupport* monitoring_support) :
+G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
   G1MonitoringScope(monitoring_support),
   _tcs(monitoring_support->_conc_collection_counters),
   _tms(&monitoring_support->_conc_gc_memory_manager,

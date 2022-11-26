@@ -122,9 +122,9 @@ class MemoryPool;
 class G1MonitoringSupport : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class G1MonitoringScope;
-  friend class G1IncMonitoringScope;
-  friend class G1FullMonitoringScope;
-  friend class G1ConcMonitoringScope;
+  friend class G1YoungGCMonitoringScope;
+  friend class G1FullGCMonitoringScope;
+  friend class G1ConcGCMonitoringScope;
 
   G1CollectedHeap* _g1h;
 
@@ -244,27 +244,27 @@ public:
   ~G1MonitoringScope();
 };
 
-class G1IncMonitoringScope : public G1MonitoringScope {
+class G1YoungGCMonitoringScope : public G1MonitoringScope {
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
 public:
-  G1IncMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
-  ~G1IncMonitoringScope() { }
+  G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
+  ~G1YoungGCMonitoringScope() { }
 };
 
-class G1FullMonitoringScope : public G1MonitoringScope {
+class G1FullGCMonitoringScope : public G1MonitoringScope {
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
 public:
-  G1FullMonitoringScope(G1MonitoringSupport* monitoring_support);
-  ~G1FullMonitoringScope() { }
+  G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+  ~G1FullGCMonitoringScope() { }
 };
 
-class G1ConcMonitoringScope : public G1MonitoringScope {
+class G1ConcGCMonitoringScope : public G1MonitoringScope {
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
 public:
-  G1ConcMonitoringScope(G1MonitoringSupport* monitoring_support);
-  ~G1ConcMonitoringScope() { }
+  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+  ~G1ConcGCMonitoringScope() { }
 };
 #endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP
