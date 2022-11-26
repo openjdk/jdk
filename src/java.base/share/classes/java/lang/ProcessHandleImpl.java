@@ -99,7 +99,8 @@ final class ProcessHandleImpl implements ProcessHandle {
 
                 ThreadFactory threadFactory = grimReaper -> {
                     Thread t = InnocuousThread.newSystemThread("process reaper", grimReaper,
-                            stackSize, Thread.MAX_PRIORITY, true);
+                            stackSize, Thread.MAX_PRIORITY);
+                    privilegedThreadSetDaemon(t, true);
                     return t;
                 };
 
@@ -118,6 +119,14 @@ final class ProcessHandleImpl implements ProcessHandle {
     private static void privilegedThreadSetName(Thread thread, String name) {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             thread.setName(name);
+            return null;
+        });
+    }
+
+    @SuppressWarnings("removal")
+    private static void privilegedThreadSetDaemon(Thread thread, boolean on) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            thread.setDaemon(on);
             return null;
         });
     }
