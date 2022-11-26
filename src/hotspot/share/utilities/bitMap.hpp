@@ -97,9 +97,9 @@ class BitMap {
   // Helper for get_next_{zero,one}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
-  // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
+  // - aligned_right is true if end is a priori on a bm_word_t boundary.
   template<bm_word_t flip, bool aligned_right>
-  inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
+  inline idx_t get_next_bit_impl(idx_t start, idx_t end) const;
 
   // Values for get_next_bit_impl flip parameter.
   static const bm_word_t find_ones_flip = 0;
@@ -109,7 +109,7 @@ class BitMap {
   // operation was requested. Measured in words.
   static const size_t small_range_words = 32;
 
-  static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
+  static bool is_small_range_of_words(idx_t start_full_word, idx_t end_full_word);
 
   // Return the position of bit within the word that contains it (e.g., if
   // bitmap words are 32 bits, return a number 0 <= n <= 31).
@@ -142,24 +142,24 @@ class BitMap {
 
   static inline const bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
 
-  // Utilities for ranges of bits.  Ranges are half-open [beg, end).
+  // Utilities for ranges of bits.  Ranges are half-open [start, end).
 
   // Ranges within a single word.
-  bm_word_t inverted_bit_mask_for_range(idx_t beg, idx_t end) const;
-  void  set_range_within_word      (idx_t beg, idx_t end);
-  void  clear_range_within_word    (idx_t beg, idx_t end);
-  void  par_put_range_within_word  (idx_t beg, idx_t end, bool value);
+  bm_word_t inverted_bit_mask_for_range(idx_t start, idx_t end) const;
+  void  set_range_within_word      (idx_t start, idx_t end);
+  void  clear_range_within_word    (idx_t start, idx_t end);
+  void  par_put_range_within_word  (idx_t start, idx_t end, bool value);
 
   // Ranges spanning entire words.
-  void      set_range_of_words         (idx_t beg, idx_t end);
-  void      clear_range_of_words       (idx_t beg, idx_t end);
-  void      set_large_range_of_words   (idx_t beg, idx_t end);
-  void      clear_large_range_of_words (idx_t beg, idx_t end);
+  void      set_range_of_words         (idx_t start, idx_t end);
+  void      clear_range_of_words       (idx_t start, idx_t end);
+  void      set_large_range_of_words   (idx_t start, idx_t end);
+  void      clear_large_range_of_words (idx_t start, idx_t end);
 
-  static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
+  static void clear_range_of_words(bm_word_t* map, idx_t start, idx_t end);
 
-  idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
-  idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
+  idx_t count_one_bits_within_word(idx_t start, idx_t end) const;
+  idx_t count_one_bits_in_range_of_words(idx_t start_full_word, idx_t end_full_word) const;
 
   // Set the map and size.
   void update(bm_word_t* map, idx_t size) {
@@ -215,23 +215,23 @@ class BitMap {
   void at_put(idx_t index, bool value);
   bool par_at_put(idx_t index, bool value);
 
-  // Update a range of bits.  Ranges are half-open [beg, end).
-  void set_range   (idx_t beg, idx_t end);
-  void clear_range (idx_t beg, idx_t end);
-  void set_large_range   (idx_t beg, idx_t end);
-  void clear_large_range (idx_t beg, idx_t end);
-  void at_put_range(idx_t beg, idx_t end, bool value);
-  void par_at_put_range(idx_t beg, idx_t end, bool value);
-  void at_put_large_range(idx_t beg, idx_t end, bool value);
-  void par_at_put_large_range(idx_t beg, idx_t end, bool value);
+  // Update a range of bits.  Ranges are half-open [start, end).
+  void set_range   (idx_t start, idx_t end);
+  void clear_range (idx_t start, idx_t end);
+  void set_large_range   (idx_t start, idx_t end);
+  void clear_large_range (idx_t start, idx_t end);
+  void at_put_range(idx_t start, idx_t end, bool value);
+  void par_at_put_range(idx_t start, idx_t end, bool value);
+  void at_put_large_range(idx_t start, idx_t end, bool value);
+  void par_at_put_large_range(idx_t start, idx_t end, bool value);
 
   // Update a range of bits, using a hint about the size.  Currently only
   // inlines the predominant case of a 1-bit range.  Works best when hint is a
   // compile-time constant.
-  void set_range(idx_t beg, idx_t end, RangeSizeHint hint);
-  void clear_range(idx_t beg, idx_t end, RangeSizeHint hint);
-  void par_set_range(idx_t beg, idx_t end, RangeSizeHint hint);
-  void par_clear_range  (idx_t beg, idx_t end, RangeSizeHint hint);
+  void set_range(idx_t start, idx_t end, RangeSizeHint hint);
+  void clear_range(idx_t start, idx_t end, RangeSizeHint hint);
+  void par_set_range(idx_t start, idx_t end, RangeSizeHint hint);
+  void par_clear_range  (idx_t start, idx_t end, RangeSizeHint hint);
 
   // Clearing
   void clear_large();
@@ -245,8 +245,8 @@ class BitMap {
   void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
   // Verify bit is not greater than size().
   void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
-  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
-  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
+  // Verify [start,end) is a valid range, e.g. start <= end <= size().
+  void verify_range(idx_t start, idx_t end) const NOT_DEBUG_RETURN;
 
   // Iteration support.  Applies the closure to the index for each set bit,
   // starting from the least index in the range to the greatest, in order.
@@ -255,18 +255,18 @@ class BitMap {
   // returned false.  If the closure modifies the bitmap, modifications to
   // bits at indices greater than the current index will affect which further
   // indices the closure will be applied to.
-  // precondition: beg and end form a valid range.
+  // precondition: start and end form a valid range.
   template <class BitMapClosureType>
-  bool iterate(BitMapClosureType* cl, idx_t beg, idx_t end);
+  bool iterate(BitMapClosureType* cl, idx_t start, idx_t end);
 
   template <class BitMapClosureType>
   bool iterate(BitMapClosureType* cl);
 
-  // Looking for 1's and 0's at indices equal to or greater than "l_index",
-  // stopping if none has been found before "r_index", and returning
-  // "r_index" (which must be at most "size") in that case.
-  idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
-  idx_t get_next_zero_offset(idx_t l_index, idx_t r_index) const;
+  // Looking for 1's and 0's at indices equal to or greater than "start",
+  // stopping if none has been found before "end", and returning
+  // "end" (which must be at most "size") in that case.
+  idx_t get_next_one_offset (idx_t start, idx_t end) const;
+  idx_t get_next_zero_offset(idx_t start, idx_t end) const;
 
   idx_t get_next_one_offset(idx_t offset) const {
     return get_next_one_offset(offset, size());
@@ -275,15 +275,15 @@ class BitMap {
     return get_next_zero_offset(offset, size());
   }
 
-  // Like "get_next_one_offset", except requires that "r_index" is
+  // Like "get_next_one_offset", except requires that "end" is
   // aligned to bitsizeof(bm_word_t).
-  idx_t get_next_one_offset_aligned_right(idx_t l_index, idx_t r_index) const;
+  idx_t get_next_one_offset_aligned_right(idx_t start, idx_t end) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
 
-  // Returns the number of bits set within  [beg, end).
-  idx_t count_one_bits(idx_t beg, idx_t end) const;
+  // Returns the number of bits set within  [start, end).
+  idx_t count_one_bits(idx_t start, idx_t end) const;
 
   // Set operations.
   void set_union(const BitMap& bits);

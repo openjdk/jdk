@@ -164,9 +164,9 @@ void BitMap::verify_limit(idx_t bit) const {
          bit, _size);
 }
 
-void BitMap::verify_range(idx_t beg, idx_t end) const {
-  assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+void BitMap::verify_range(idx_t start, idx_t end) const {
+  assert(start <= end,
+         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, start, end);
   verify_limit(end);
 }
 #endif // #ifdef ASSERT
@@ -175,32 +175,32 @@ void BitMap::pretouch() {
   os::pretouch_memory(word_addr(0), word_addr(size()));
 }
 
-void BitMap::set_range_within_word(idx_t beg, idx_t end) {
-  // With a valid range (beg <= end), this test ensures that end != 0, as
+void BitMap::set_range_within_word(idx_t start, idx_t end) {
+  // With a valid range (start <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
-  if (beg != end) {
-    bm_word_t mask = inverted_bit_mask_for_range(beg, end);
-    *word_addr(beg) |= ~mask;
+  if (start != end) {
+    bm_word_t mask = inverted_bit_mask_for_range(start, end);
+    *word_addr(start) |= ~mask;
   }
 }
 
-void BitMap::clear_range_within_word(idx_t beg, idx_t end) {
-  // With a valid range (beg <= end), this test ensures that end != 0, as
+void BitMap::clear_range_within_word(idx_t start, idx_t end) {
+  // With a valid range (start <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
-  if (beg != end) {
-    bm_word_t mask = inverted_bit_mask_for_range(beg, end);
-    *word_addr(beg) &= mask;
+  if (start != end) {
+    bm_word_t mask = inverted_bit_mask_for_range(start, end);
+    *word_addr(start) &= mask;
   }
 }
 
-void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
+void BitMap::par_put_range_within_word(idx_t start, idx_t end, bool value) {
   assert(value == 0 || value == 1, "0 for clear, 1 for set");
-  // With a valid range (beg <= end), this test ensures that end != 0, as
+  // With a valid range (start <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
-  if (beg != end) {
-    volatile bm_word_t* pw = word_addr(beg);
+  if (start != end) {
+    volatile bm_word_t* pw = word_addr(start);
     bm_word_t w = Atomic::load(pw);
-    bm_word_t mr = inverted_bit_mask_for_range(beg, end);
+    bm_word_t mr = inverted_bit_mask_for_range(start, end);
     bm_word_t nw = value ? (w | ~mr) : (w & mr);
     while (true) {
       bm_word_t res = Atomic::cmpxchg(pw, w, nw);
@@ -211,85 +211,85 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
   }
 }
 
-void BitMap::set_range(idx_t beg, idx_t end) {
-  verify_range(beg, end);
+void BitMap::set_range(idx_t start, idx_t end) {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
-  if (beg_full_word < end_full_word) {
+  if (start_full_word < end_full_word) {
     // The range includes at least one full word.
-    set_range_within_word(beg, bit_index(beg_full_word));
-    set_range_of_words(beg_full_word, end_full_word);
+    set_range_within_word(start, bit_index(start_full_word));
+    set_range_of_words(start_full_word, end_full_word);
     set_range_within_word(bit_index(end_full_word), end);
   } else {
     // The range spans at most 2 partial words.
-    idx_t boundary = MIN2(bit_index(beg_full_word), end);
-    set_range_within_word(beg, boundary);
+    idx_t boundary = MIN2(bit_index(start_full_word), end);
+    set_range_within_word(start, boundary);
     set_range_within_word(boundary, end);
   }
 }
 
-void BitMap::clear_range(idx_t beg, idx_t end) {
-  verify_range(beg, end);
+void BitMap::clear_range(idx_t start, idx_t end) {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
-  if (beg_full_word < end_full_word) {
+  if (start_full_word < end_full_word) {
     // The range includes at least one full word.
-    clear_range_within_word(beg, bit_index(beg_full_word));
-    clear_range_of_words(beg_full_word, end_full_word);
+    clear_range_within_word(start, bit_index(start_full_word));
+    clear_range_of_words(start_full_word, end_full_word);
     clear_range_within_word(bit_index(end_full_word), end);
   } else {
     // The range spans at most 2 partial words.
-    idx_t boundary = MIN2(bit_index(beg_full_word), end);
-    clear_range_within_word(beg, boundary);
+    idx_t boundary = MIN2(bit_index(start_full_word), end);
+    clear_range_within_word(start, boundary);
     clear_range_within_word(boundary, end);
   }
 }
 
-bool BitMap::is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word) {
+bool BitMap::is_small_range_of_words(idx_t start_full_word, idx_t end_full_word) {
   // There is little point to call large version on small ranges.
   // Need to check carefully, keeping potential idx_t over/underflow in mind,
-  // because beg_full_word > end_full_word can occur when beg and end are in
+  // because start_full_word > end_full_word can occur when start and end are in
   // the same word.
   // The threshold should be at least one word.
   STATIC_ASSERT(small_range_words >= 1);
-  return beg_full_word + small_range_words >= end_full_word;
+  return start_full_word + small_range_words >= end_full_word;
 }
 
-void BitMap::set_large_range(idx_t beg, idx_t end) {
-  verify_range(beg, end);
+void BitMap::set_large_range(idx_t start, idx_t end) {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
-  if (is_small_range_of_words(beg_full_word, end_full_word)) {
-    set_range(beg, end);
+  if (is_small_range_of_words(start_full_word, end_full_word)) {
+    set_range(start, end);
     return;
   }
 
   // The range includes at least one full word.
-  set_range_within_word(beg, bit_index(beg_full_word));
-  set_large_range_of_words(beg_full_word, end_full_word);
+  set_range_within_word(start, bit_index(start_full_word));
+  set_large_range_of_words(start_full_word, end_full_word);
   set_range_within_word(bit_index(end_full_word), end);
 }
 
-void BitMap::clear_large_range(idx_t beg, idx_t end) {
-  verify_range(beg, end);
+void BitMap::clear_large_range(idx_t start, idx_t end) {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
-  if (is_small_range_of_words(beg_full_word, end_full_word)) {
-    clear_range(beg, end);
+  if (is_small_range_of_words(start_full_word, end_full_word)) {
+    clear_range(start, end);
     return;
   }
 
   // The range includes at least one full word.
-  clear_range_within_word(beg, bit_index(beg_full_word));
-  clear_large_range_of_words(beg_full_word, end_full_word);
+  clear_range_within_word(start, bit_index(start_full_word));
+  clear_large_range_of_words(start_full_word, end_full_word);
   clear_range_within_word(bit_index(end_full_word), end);
 }
 
@@ -328,55 +328,55 @@ void BitMap::at_put_range(idx_t start_offset, idx_t end_offset, bool value) {
   }
 }
 
-void BitMap::par_at_put_range(idx_t beg, idx_t end, bool value) {
-  verify_range(beg, end);
+void BitMap::par_at_put_range(idx_t start, idx_t end, bool value) {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
-  if (beg_full_word < end_full_word) {
+  if (start_full_word < end_full_word) {
     // The range includes at least one full word.
-    par_put_range_within_word(beg, bit_index(beg_full_word), value);
+    par_put_range_within_word(start, bit_index(start_full_word), value);
     if (value) {
-      set_range_of_words(beg_full_word, end_full_word);
+      set_range_of_words(start_full_word, end_full_word);
     } else {
-      clear_range_of_words(beg_full_word, end_full_word);
+      clear_range_of_words(start_full_word, end_full_word);
     }
     par_put_range_within_word(bit_index(end_full_word), end, value);
   } else {
     // The range spans at most 2 partial words.
-    idx_t boundary = MIN2(bit_index(beg_full_word), end);
-    par_put_range_within_word(beg, boundary, value);
+    idx_t boundary = MIN2(bit_index(start_full_word), end);
+    par_put_range_within_word(start, boundary, value);
     par_put_range_within_word(boundary, end, value);
   }
 
 }
 
-void BitMap::at_put_large_range(idx_t beg, idx_t end, bool value) {
+void BitMap::at_put_large_range(idx_t start, idx_t end, bool value) {
   if (value) {
-    set_large_range(beg, end);
+    set_large_range(start, end);
   } else {
-    clear_large_range(beg, end);
+    clear_large_range(start, end);
   }
 }
 
-void BitMap::par_at_put_large_range(idx_t beg, idx_t end, bool value) {
-  verify_range(beg, end);
+void BitMap::par_at_put_large_range(idx_t start, idx_t end, bool value) {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
-  if (is_small_range_of_words(beg_full_word, end_full_word)) {
-    par_at_put_range(beg, end, value);
+  if (is_small_range_of_words(start_full_word, end_full_word)) {
+    par_at_put_range(start, end, value);
     return;
   }
 
   // The range includes at least one full word.
-  par_put_range_within_word(beg, bit_index(beg_full_word), value);
+  par_put_range_within_word(start, bit_index(start_full_word), value);
   if (value) {
-    set_large_range_of_words(beg_full_word, end_full_word);
+    set_large_range_of_words(start_full_word, end_full_word);
   } else {
-    clear_large_range_of_words(beg_full_word, end_full_word);
+    clear_large_range_of_words(start_full_word, end_full_word);
   }
   par_put_range_within_word(bit_index(end_full_word), end, value);
 }
@@ -593,20 +593,20 @@ void BitMap::clear_large() {
   clear_large_range_of_words(0, size_in_words());
 }
 
-BitMap::idx_t BitMap::count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const {
+BitMap::idx_t BitMap::count_one_bits_in_range_of_words(idx_t start_full_word, idx_t end_full_word) const {
   idx_t sum = 0;
-  for (idx_t i = beg_full_word; i < end_full_word; i++) {
+  for (idx_t i = start_full_word; i < end_full_word; i++) {
     bm_word_t w = map()[i];
     sum += population_count(w);
   }
   return sum;
 }
 
-BitMap::idx_t BitMap::count_one_bits_within_word(idx_t beg, idx_t end) const {
-  if (beg != end) {
-    assert(end > beg, "must be");
-    bm_word_t mask = ~inverted_bit_mask_for_range(beg, end);
-    bm_word_t w = *word_addr(beg);
+BitMap::idx_t BitMap::count_one_bits_within_word(idx_t start, idx_t end) const {
+  if (start != end) {
+    assert(end > start, "must be");
+    bm_word_t mask = ~inverted_bit_mask_for_range(start, end);
+    bm_word_t w = *word_addr(start);
     w &= mask;
     return population_count(w);
   }
@@ -617,28 +617,28 @@ BitMap::idx_t BitMap::count_one_bits() const {
   return count_one_bits(0, size());
 }
 
-// Returns the number of bits set within  [beg, end).
-BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
-  verify_range(beg, end);
+// Returns the number of bits set within  [start, end).
+BitMap::idx_t BitMap::count_one_bits(idx_t start, idx_t end) const {
+  verify_range(start, end);
 
-  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t start_full_word = to_words_align_up(start);
   idx_t end_full_word = to_words_align_down(end);
 
   idx_t sum = 0;
 
-  if (beg_full_word < end_full_word) {
+  if (start_full_word < end_full_word) {
     // The range includes at least one full word.
-    sum += count_one_bits_within_word(beg, bit_index(beg_full_word));
-    sum += count_one_bits_in_range_of_words(beg_full_word, end_full_word);
+    sum += count_one_bits_within_word(start, bit_index(start_full_word));
+    sum += count_one_bits_in_range_of_words(start_full_word, end_full_word);
     sum += count_one_bits_within_word(bit_index(end_full_word), end);
   } else {
     // The range spans at most 2 partial words.
-    idx_t boundary = MIN2(bit_index(beg_full_word), end);
-    sum += count_one_bits_within_word(beg, boundary);
+    idx_t boundary = MIN2(bit_index(start_full_word), end);
+    sum += count_one_bits_within_word(start, boundary);
     sum += count_one_bits_within_word(boundary, end);
   }
 
-  assert(sum <= (beg - end), "must be");
+  assert(sum <= (start - end), "must be");
 
   return sum;
 
