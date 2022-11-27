@@ -101,13 +101,6 @@ typedef unsigned int            uintptr_t;
 
 #endif // !LINUX && !_ALLBSD_SOURCE
 
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }

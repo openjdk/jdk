@@ -27,6 +27,7 @@
 
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/javaArithmetic.hpp"
 #include "utilities/macros.hpp"
 
 // Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
@@ -1176,81 +1177,6 @@ template<class T> static void swap(T& a, T& b) {
 template<typename T, size_t N> char (&array_size_impl(T (&)[N]))[N];
 
 #define ARRAY_SIZE(array) sizeof(array_size_impl(array))
-
-//----------------------------------------------------------------------------------------------------
-// Sum and product which can never overflow: they wrap, just like the
-// Java operations.  Note that we don't intend these to be used for
-// general-purpose arithmetic: their purpose is to emulate Java
-// operations.
-
-// The goal of this code to avoid undefined or implementation-defined
-// behavior.  The use of an lvalue to reference cast is explicitly
-// permitted by Lvalues and rvalues [basic.lval].  [Section 3.10 Para
-// 15 in C++03]
-#define JAVA_INTEGER_OP(OP, NAME, TYPE, UNSIGNED_TYPE)  \
-inline TYPE NAME (TYPE in1, TYPE in2) {                 \
-  UNSIGNED_TYPE ures = static_cast<UNSIGNED_TYPE>(in1); \
-  ures OP ## = static_cast<UNSIGNED_TYPE>(in2);         \
-  return reinterpret_cast<TYPE&>(ures);                 \
-}
-
-JAVA_INTEGER_OP(+, java_add, jint, juint)
-JAVA_INTEGER_OP(-, java_subtract, jint, juint)
-JAVA_INTEGER_OP(*, java_multiply, jint, juint)
-JAVA_INTEGER_OP(+, java_add, jlong, julong)
-JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
-JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
-
-#undef JAVA_INTEGER_OP
-
-// Provide integer shift operations with Java semantics.  No overflow
-// issues - left shifts simply discard shifted out bits.  No undefined
-// behavior for large or negative shift quantities; instead the actual
-// shift distance is the argument modulo the lhs value's size in bits.
-// No undefined or implementation defined behavior for shifting negative
-// values; left shift discards bits, right shift sign extends.  We use
-// the same safe conversion technique as above for java_add and friends.
-#define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)    \
-inline TYPE NAME (TYPE lhs, jint rhs) {                 \
-  const uint rhs_mask = (sizeof(TYPE) * 8) - 1;         \
-  STATIC_ASSERT(rhs_mask == 31 || rhs_mask == 63);      \
-  XTYPE xres = static_cast<XTYPE>(lhs);                 \
-  xres OP ## = (rhs & rhs_mask);                        \
-  return reinterpret_cast<TYPE&>(xres);                 \
-}
-
-JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jint, juint)
-JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jlong, julong)
-// For signed shift right, assume C++ implementation >> sign extends.
-JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jint, jint)
-JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jlong, jlong)
-// For >>> use C++ unsigned >>.
-JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jint, juint)
-JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
-
-#undef JAVA_INTEGER_SHIFT_OP
-
-//----------------------------------------------------------------------------------------------------
-// The goal of this code is to provide saturating operations for int/uint.
-// Checks overflow conditions and saturates the result to min_jint/max_jint.
-#define SATURATED_INTEGER_OP(OP, NAME, TYPE1, TYPE2) \
-inline int NAME (TYPE1 in1, TYPE2 in2) {             \
-  jlong res = static_cast<jlong>(in1);               \
-  res OP ## = static_cast<jlong>(in2);               \
-  if (res > max_jint) {                              \
-    res = max_jint;                                  \
-  } else if (res < min_jint) {                       \
-    res = min_jint;                                  \
-  }                                                  \
-  return static_cast<int>(res);                      \
-}
-
-SATURATED_INTEGER_OP(+, saturated_add, int, int)
-SATURATED_INTEGER_OP(+, saturated_add, int, uint)
-SATURATED_INTEGER_OP(+, saturated_add, uint, int)
-SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
-
-#undef SATURATED_INTEGER_OP
 
 // Dereference vptr
 // All C++ compilers that we know of have the vtbl pointer in the first
