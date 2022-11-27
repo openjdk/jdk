@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,73 +21,44 @@
  * questions.
  */
 
-import java.io.File;
-import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+/*
+ * @test
+ * @bug 8078471
+ * @key headful
+ * @requires (os.family == "linux")
+ * @summary Verifies if filechooser current directory changed to parent directory on
+ * BACKSPACE key press from keyboard except root directory.
+ * @run main TestBackSpaceAction
+ */
 
-import javax.swing.JButton;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.KeyEvent;
+import java.awt.Robot;
+import java.io.File;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-/* @test
- * @bug 8078471
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @requires (os.family == "linux")
- * @summary Verifies if filechooser current directory changed to parent directory on
- * BACKSPACE key press from keyboard if not at root directory.
- * @run main/manual TestBackSpaceAction
- */
 
 public class TestBackSpaceAction {
-    static TestFrame testObj;
-    static final String instructions
-            = """
-            Default look and feel set to Metal.
-
-
-            INSTRUCTIONS:
-               1. Double click on 'subDir' to move into 'subDir' folder.
-               2. Press BACKSPACE key multiple times.
-               3. Verify the file chooser directory changed to parent directory
-                  except root level.
-               4. Press Nimbus button to change look and feel to Nimbus.
-               5. Repeat Steps 1 to 3.
-               6. Press GTK+ button to change look and feel to GTK.
-               7. Repeat Steps 1 to 3.
-               8. Press Pass if execution is as per instructions else Press Fail.
-            """;
-    static PassFailJFrame passFailJFrame;
+    private static JFrame frame;
+    private static JFileChooser fileChooser;
+    private static Robot robot;
+    private static File testDir;
+    private static File subDir;
+    private static File prevDir;
+    private static File crntDir;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions",
-                        instructions, 5, 15, 50);
-                testObj = new TestFrame();
-                PassFailJFrame.addTestWindow(testObj);
-                PassFailJFrame.positionTestWindow(testObj,
-                        PassFailJFrame.Position.HORIZONTAL);
-                testObj.setVisible(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-        passFailJFrame.awaitAndCheck();
-    }
-}
-
-class TestFrame extends JFrame implements ActionListener {
-    static File testDir;
-    static File subDir;
-    static JFileChooser fileChooser;
-
-    public TestFrame() {
+        robot = new Robot();
+        robot.setAutoDelay(100);
         try {
             // create test directory
             String tmpDir = System.getProperty("java.io.tmpdir");
@@ -105,44 +76,104 @@ class TestFrame extends JFrame implements ActionListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        initComponents();
-    }
 
-    public void initComponents() {
-        JPanel p = new JPanel();
-        fileChooser = new JFileChooser(testDir);
-        fileChooser.setControlButtonsAreShown(false);
-        getContentPane().add(fileChooser);
-
-        UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
-        for (UIManager.LookAndFeelInfo laf : lookAndFeel) {
-            if(!laf.getClassName().contains("MotifLookAndFeel")) {
-                JButton btn = new JButton(laf.getName());
-                btn.setActionCommand(laf.getClassName());
-                btn.addActionListener(this);
-                p.add(btn);
+        for (UIManager.LookAndFeelInfo laf :
+                        UIManager.getInstalledLookAndFeels()) {
+            if (!laf.getClassName().contains("MotifLookAndFeel")) {
+                System.out.println("Testing LAF: " + laf.getClassName());
+            	SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            	doTesting(laf);
             }
         }
-
-        getContentPane().add(p,BorderLayout.SOUTH);
-        setSize(500, 500);
     }
 
-    private static void setLookAndFeel(String laf) {
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
-            UIManager.setLookAndFeel(laf);
+            UIManager.setLookAndFeel(laf.getClassName());
         } catch (UnsupportedLookAndFeelException ignored) {
-            System.out.println("Unsupported L&F: " + laf);
+            System.out.println("Unsupported LAF: " + laf.getClassName());
         } catch (ClassNotFoundException | InstantiationException
                  | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
-    //Change the Look and Feel on user selection
-    public void actionPerformed(ActionEvent e) {
-        setLookAndFeel(e.getActionCommand());
-        SwingUtilities.updateComponentTreeUI(this);
-        fileChooser.setCurrentDirectory(testDir);
+    private static void doTesting(UIManager.LookAndFeelInfo laf) throws Exception{
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                createAndShowUI();
+            });
+            boolean passed_1 = false;
+            boolean passed_2 = false;
+            robot.waitForIdle();
+            robot.delay(100);
+
+            // check backspace key at subDir level
+            clickBackSpace();
+            if (prevDir != crntDir) {
+                passed_1 = true;
+            }
+
+            // check if backspace key changes directory at root level
+            while(!fileChooser.getFileSystemView().isFileSystemRoot(prevDir)) {
+                clickBackSpace();
+                if (prevDir == crntDir) {
+                    passed_2 = true;
+                    break;
+                }
+            }
+
+            if (passed_1 && passed_2) {
+                System.out.println("Passed");
+            } else {
+                throw new RuntimeException("BackSpace keyboard button does not" +
+                        "lead to parent directory for LAF: " + laf.getClassName());
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+    }
+
+    private static void createAndShowUI() {
+        frame = new JFrame("Test File Chooser Backspace Action");
+        frame.getContentPane().setLayout(new BorderLayout());
+        fileChooser = new JFileChooser(subDir);
+        fileChooser.setControlButtonsAreShown(false);
+        fileChooser.addHierarchyListener(new HierarchyListener(){
+            public void hierarchyChanged(HierarchyEvent he)
+            {
+                grabFocusForComboBox(fileChooser.getComponents());
+            }
+        });
+        frame.getContentPane().add(fileChooser, BorderLayout.CENTER);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+    private static void grabFocusForComboBox(Component[] comp)
+    {
+        for (Component c:comp) {
+            if (c instanceof JComboBox) {
+                JComboBox cb = (JComboBox)c;
+                cb.requestFocusInWindow();
+                break;
+            } else if (c instanceof JPanel) {
+                JPanel jp = (JPanel)c;
+                grabFocusForComboBox(jp.getComponents());
+            }
+        }
+    }
+
+    private static void clickBackSpace() {
+        prevDir = fileChooser.getCurrentDirectory();
+        robot.keyPress(KeyEvent.VK_BACK_SPACE);
+        robot.keyRelease(KeyEvent.VK_BACK_SPACE);
+        crntDir = fileChooser.getCurrentDirectory();
     }
 }
