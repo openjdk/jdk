@@ -81,44 +81,38 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
         validTypes.add("PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH));
     }
 
-    public static final class PBEWithMD5AndDES
-            extends PBEKeyFactory {
-        public PBEWithMD5AndDES()  {
+    public static final class PBEWithMD5AndDES extends PBEKeyFactory {
+        public PBEWithMD5AndDES() {
             super("PBEWithMD5AndDES");
         }
     }
 
-    public static final class PBEWithSHA1AndDESede
-            extends PBEKeyFactory {
-        public PBEWithSHA1AndDESede()  {
+    public static final class PBEWithSHA1AndDESede extends PBEKeyFactory {
+        public PBEWithSHA1AndDESede() {
             super("PBEWithSHA1AndDESede");
         }
     }
 
-    public static final class PBEWithSHA1AndRC2_40
-            extends PBEKeyFactory {
-        public PBEWithSHA1AndRC2_40()  {
+    public static final class PBEWithSHA1AndRC2_40 extends PBEKeyFactory {
+        public PBEWithSHA1AndRC2_40() {
             super("PBEWithSHA1AndRC2_40");
         }
     }
 
-    public static final class PBEWithSHA1AndRC2_128
-            extends PBEKeyFactory {
-        public PBEWithSHA1AndRC2_128()  {
+    public static final class PBEWithSHA1AndRC2_128 extends PBEKeyFactory {
+        public PBEWithSHA1AndRC2_128() {
             super("PBEWithSHA1AndRC2_128");
         }
     }
 
-    public static final class PBEWithSHA1AndRC4_40
-            extends PBEKeyFactory {
-        public PBEWithSHA1AndRC4_40()  {
+    public static final class PBEWithSHA1AndRC4_40 extends PBEKeyFactory {
+        public PBEWithSHA1AndRC4_40() {
             super("PBEWithSHA1AndRC4_40");
         }
     }
 
-    public static final class PBEWithSHA1AndRC4_128
-            extends PBEKeyFactory {
-        public PBEWithSHA1AndRC4_128()  {
+    public static final class PBEWithSHA1AndRC4_128 extends PBEKeyFactory {
+        public PBEWithSHA1AndRC4_128() {
             super("PBEWithSHA1AndRC4_128");
         }
     }
@@ -126,107 +120,104 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     /*
      * Private proprietary algorithm for supporting JCEKS.
      */
-    public static final class PBEWithMD5AndTripleDES
-            extends PBEKeyFactory {
-        public PBEWithMD5AndTripleDES()  {
+    public static final class PBEWithMD5AndTripleDES extends PBEKeyFactory {
+        public PBEWithMD5AndTripleDES() {
             super("PBEWithMD5AndTripleDES");
         }
     }
 
-    public static final class PBEWithHmacSHA1AndAES_128
-            extends PBEKeyFactory {
-        public PBEWithHmacSHA1AndAES_128()  {
+    public static final class PBEWithHmacSHA1AndAES_128 extends PBEKeyFactory {
+        public PBEWithHmacSHA1AndAES_128() {
             super("PBEWithHmacSHA1AndAES_128");
         }
     }
 
     public static final class PBEWithHmacSHA224AndAES_128
             extends PBEKeyFactory {
-        public PBEWithHmacSHA224AndAES_128()  {
+        public PBEWithHmacSHA224AndAES_128() {
             super("PBEWithHmacSHA224AndAES_128");
         }
     }
 
     public static final class PBEWithHmacSHA256AndAES_128
             extends PBEKeyFactory {
-        public PBEWithHmacSHA256AndAES_128()  {
+        public PBEWithHmacSHA256AndAES_128() {
             super("PBEWithHmacSHA256AndAES_128");
         }
     }
 
     public static final class PBEWithHmacSHA384AndAES_128
             extends PBEKeyFactory {
-        public PBEWithHmacSHA384AndAES_128()  {
+        public PBEWithHmacSHA384AndAES_128() {
             super("PBEWithHmacSHA384AndAES_128");
         }
     }
 
     public static final class PBEWithHmacSHA512AndAES_128
             extends PBEKeyFactory {
-        public PBEWithHmacSHA512AndAES_128()  {
+        public PBEWithHmacSHA512AndAES_128() {
             super("PBEWithHmacSHA512AndAES_128");
         }
     }
 
     public static final class PBEWithHmacSHA512_224AndAES_128
             extends PBEKeyFactory {
-        public PBEWithHmacSHA512_224AndAES_128()  {
+        public PBEWithHmacSHA512_224AndAES_128() {
             super("PBEWithHmacSHA512/224AndAES_128");
         }
     }
 
     public static final class PBEWithHmacSHA512_256AndAES_128
             extends PBEKeyFactory {
-        public PBEWithHmacSHA512_256AndAES_128()  {
+        public PBEWithHmacSHA512_256AndAES_128() {
             super("PBEWithHmacSHA512/256AndAES_128");
         }
     }
 
-    public static final class PBEWithHmacSHA1AndAES_256
-            extends PBEKeyFactory {
-        public PBEWithHmacSHA1AndAES_256()  {
+    public static final class PBEWithHmacSHA1AndAES_256 extends PBEKeyFactory {
+        public PBEWithHmacSHA1AndAES_256() {
             super("PBEWithHmacSHA1AndAES_256");
         }
     }
 
     public static final class PBEWithHmacSHA224AndAES_256
             extends PBEKeyFactory {
-        public PBEWithHmacSHA224AndAES_256()  {
+        public PBEWithHmacSHA224AndAES_256() {
             super("PBEWithHmacSHA224AndAES_256");
         }
     }
 
     public static final class PBEWithHmacSHA256AndAES_256
             extends PBEKeyFactory {
-        public PBEWithHmacSHA256AndAES_256()  {
+        public PBEWithHmacSHA256AndAES_256() {
             super("PBEWithHmacSHA256AndAES_256");
         }
     }
 
     public static final class PBEWithHmacSHA384AndAES_256
             extends PBEKeyFactory {
-        public PBEWithHmacSHA384AndAES_256()  {
+        public PBEWithHmacSHA384AndAES_256() {
             super("PBEWithHmacSHA384AndAES_256");
         }
     }
 
     public static final class PBEWithHmacSHA512AndAES_256
             extends PBEKeyFactory {
-        public PBEWithHmacSHA512AndAES_256()  {
+        public PBEWithHmacSHA512AndAES_256() {
             super("PBEWithHmacSHA512AndAES_256");
         }
     }
 
     public static final class PBEWithHmacSHA512_224AndAES_256
             extends PBEKeyFactory {
-        public PBEWithHmacSHA512_224AndAES_256()  {
+        public PBEWithHmacSHA512_224AndAES_256() {
             super("PBEWithHmacSHA512/224AndAES_256");
         }
     }
 
     public static final class PBEWithHmacSHA512_256AndAES_256
             extends PBEKeyFactory {
-        public PBEWithHmacSHA512_256AndAES_256()  {
+        public PBEWithHmacSHA512_256AndAES_256() {
             super("PBEWithHmacSHA512/256AndAES_256");
         }
     }
