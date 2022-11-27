@@ -239,30 +239,29 @@ public:
 // Scope object for java.lang.management support.
 class G1MonitoringScope : public StackObj {
   G1MonitoringSupport* _monitoring_support;
+  TraceCollectorStats _tcs;
+  TraceMemoryManagerStats _tms;
 public:
-  G1MonitoringScope(G1MonitoringSupport* monitoring_support);
+  G1MonitoringScope(G1MonitoringSupport* monitoring_support,
+                    CollectorCounters* collection_counters,
+                    GCMemoryManager* gc_memory_manager,
+                    bool all_memory_pools_affected = true);
   ~G1MonitoringScope();
 };
 
 class G1YoungGCMonitoringScope : public G1MonitoringScope {
-  TraceCollectorStats _tcs;
-  TraceMemoryManagerStats _tms;
 public:
   G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
   ~G1YoungGCMonitoringScope() { }
 };
 
 class G1FullGCMonitoringScope : public G1MonitoringScope {
-  TraceCollectorStats _tcs;
-  TraceMemoryManagerStats _tms;
 public:
   G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support);
   ~G1FullGCMonitoringScope() { }
 };
 
 class G1ConcGCMonitoringScope : public G1MonitoringScope {
-  TraceCollectorStats _tcs;
-  TraceMemoryManagerStats _tms;
 public:
   G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
   ~G1ConcGCMonitoringScope() { }

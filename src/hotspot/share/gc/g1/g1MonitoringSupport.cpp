@@ -348,8 +348,15 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
                      max_size);
 }
 
-G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support) :
-  _monitoring_support(monitoring_support) { }
+G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support,
+                                     CollectorCounters* collection_counters,
+                                     GCMemoryManager* gc_memory_manager,
+                                     bool all_memory_pools_affected) :
+  _monitoring_support(monitoring_support),
+  _tcs(collection_counters),
+  _tms(gc_memory_manager,
+       G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
+}
 
 G1MonitoringScope::~G1MonitoringScope() {
   _monitoring_support->update_sizes();
@@ -359,22 +366,20 @@ G1MonitoringScope::~G1MonitoringScope() {
 
 G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
                                                    bool all_memory_pools_affected) :
-  G1MonitoringScope(monitoring_support),
-  _tcs(monitoring_support->_incremental_collection_counters),
-  _tms(&monitoring_support->_incremental_memory_manager,
-       G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_incremental_collection_counters,
+                    &monitoring_support->_incremental_memory_manager,
+                    all_memory_pools_affected) {
 }
 
 G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
-  G1MonitoringScope(monitoring_support),
-  _tcs(monitoring_support->_full_collection_counters),
-  _tms(&monitoring_support->_full_gc_memory_manager,
-       G1CollectedHeap::heap()->gc_cause()) {
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_full_collection_counters,
+                    &monitoring_support->_full_gc_memory_manager) {
 }
 
 G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
-  G1MonitoringScope(monitoring_support),
-  _tcs(monitoring_support->_conc_collection_counters),
-  _tms(&monitoring_support->_conc_gc_memory_manager,
-       G1CollectedHeap::heap()->gc_cause()) {
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_conc_collection_counters,
+                    &monitoring_support->_conc_gc_memory_manager) {
 }
