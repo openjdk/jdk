@@ -24,7 +24,7 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
- *      7171415 6339649 6933879 8037396 8272072
+ *      7171415 6339649 6933879 8037396 8272072 8051627
  * @author Mark Reinhold
  */
 
@@ -1617,6 +1617,7 @@ public class Test {
         b6339649();
         b6933879();
         b8037396();
+        b8051627();
         b8272072();
     }
 
@@ -1675,6 +1676,49 @@ public class Test {
         eq("/a%20b%5Bc%20d%5D", u.getRawPath());
         eq("a%20b[c%20d]", u.getRawQuery());
         eq("a%20b[c%20d]", u.getRawFragment());
+    }
+
+    // 8051627 - Invariants about java.net.URI resolve and relativize are wrong
+    private static void b8051627() {
+        try {
+            // Let u be a normalized absolute URI u which ends with "/" and
+            // v be a normalized relative URI v which does not start with "." or "/", then
+            // u.relativize(u.resolve(v)).equals(v) should be true
+            reltivizeAfterResolveTest("http://a/b/", "c/d", "c/d");
+            reltivizeAfterResolveTest("http://a/b/", "g;x?y#s", "g;x?y#s");
+
+            // when the URI condition is not met, u.relativize(u.resolve(v)).equals(v) may be false
+            // In the following examples, that should be false
+            reltivizeAfterResolveTest("http://a/b", "c/d", "http://a/c/d");
+            reltivizeAfterResolveTest("http://a/b/", "../c/d", "http://a/c/d");
+            reltivizeAfterResolveTest("http://a/b/", "/c/d", "http://a/c/d");
+            reltivizeAfterResolveTest("http://a/b/", "http://a/b/c/d", "c/d");
+
+            // Let u be a normalized absolute URI u which ends with "/" and
+            // v be a normalized absolute URI v, then
+            // u.resolve(u.relativize(v)).equals(v) should be true
+            resolveAfterRelativizeTest("http://a/b/", "http://a/b/c/d", "http://a/b/c/d");
+            resolveAfterRelativizeTest("http://a/b/", "http://a/b/c/g;x?y#s", "http://a/b/c/g;x?y#s");
+
+            // when the URI condition is not met, u.resolve(u.relativize(v)).equals(v) may be false
+            // In the following examples, that should be false
+            resolveAfterRelativizeTest("http://a/b", "http://a/b/c/d", "http://a/c/d");
+            resolveAfterRelativizeTest("http://a/b/", "c/d", "http://a/b/c/d");
+        } catch (URISyntaxException e) {
+            throw new AssertionError("shouldn't ever happen", e);
+        }
+    }
+    private static void reltivizeAfterResolveTest(String base, String target, String expected)
+        throws URISyntaxException {
+            URI baseURI = URI.create(base);
+            URI targetURI = URI.create(target);
+            eq(URI.create(expected), baseURI.relativize(baseURI.resolve(targetURI)));
+    }
+    private static void resolveAfterRelativizeTest(String base, String target, String expected)
+        throws URISyntaxException {
+            URI baseURI = URI.create(base);
+            URI targetURI = URI.create(target);
+            eq(URI.create(expected), baseURI.resolve(baseURI.relativize(targetURI)));
     }
 
     // 8272072 - Resolving URI relative path with no "/" may lead to incorrect toString

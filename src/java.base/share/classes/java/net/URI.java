@@ -219,12 +219,20 @@ import sun.nio.cs.UTF_8;
  * {@code demo/b/index.html}
  * </blockquote>
  *
- * <p> <i>Relativization</i>, finally, is the inverse of resolution: For any
- * two normalized URIs <i>u</i> and&nbsp;<i>v</i>,
+ * <p> <i>Relativization</i>, finally, can be regarded as the inverse of resolution.
+ * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
+ * and <i>v</i> be any normalized relative URI not beginning with a period character ({@code '.'})
+ * or slash character ({@code '/'}). Then, the following statement is true:
  *
  * <blockquote>
- *   <i>u</i>{@code .relativize(}<i>u</i>{@code .resolve(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}&nbsp;&nbsp;and<br>
- *   <i>u</i>{@code .resolve(}<i>u</i>{@code .relativize(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}&nbsp;&nbsp;.<br>
+ *   <i>u</i>{@code .relativize(}<i>u</i>{@code .resolve(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
+ * </blockquote>
+ *
+ * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
+ * and <i>v</i> be any normalized absolute URI. Then, the following statement is true:
+ *
+ * <blockquote>
+ *   <i>u</i>{@code .resolve(}<i>u</i>{@code .relativize(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
  * </blockquote>
  *
  * This operation is often useful when constructing a document containing URIs

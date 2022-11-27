@@ -149,7 +149,6 @@ final class TranslatedException extends Exception {
      * Encodes {@code throwable} including its stack and causes as a {@linkplain GZIPOutputStream
      * compressed} byte array that can be decoded by {@link #decodeThrowable}.
      */
-    @VMEntryPoint
     static byte[] encodeThrowable(Throwable throwable) throws Throwable {
         try {
             return encodeThrowable(throwable, true);
@@ -223,7 +222,6 @@ final class TranslatedException extends Exception {
      * @param encodedThrowable an encoded exception in the format specified by
      *            {@link #encodeThrowable}
      */
-    @VMEntryPoint
     static Throwable decodeThrowable(byte[] encodedThrowable) {
         try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(encodedThrowable)))) {
             Throwable cause = null;

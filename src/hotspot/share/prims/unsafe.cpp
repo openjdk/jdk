@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -31,6 +30,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jni.h"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

@@ -72,6 +72,7 @@
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
+
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in

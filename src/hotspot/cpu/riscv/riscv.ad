@@ -7226,9 +7226,9 @@ instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 %}
 
 // Math.max(FF)F
-instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
+instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   match(Set dst (MaxF src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "maxF $dst, $src1, $src2" %}
 
@@ -7242,9 +7242,9 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
 %}
 
 // Math.min(FF)F
-instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
+instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   match(Set dst (MinF src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "minF $dst, $src1, $src2" %}
 
@@ -7258,9 +7258,9 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
 %}
 
 // Math.max(DD)D
-instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
+instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   match(Set dst (MaxD src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "maxD $dst, $src1, $src2" %}
 
@@ -7274,9 +7274,9 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
 %}
 
 // Math.min(DD)D
-instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
+instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   match(Set dst (MinD src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "minD $dst, $src1, $src2" %}
 

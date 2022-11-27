@@ -37,7 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
