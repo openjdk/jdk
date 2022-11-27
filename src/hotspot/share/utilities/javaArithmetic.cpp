@@ -1,4 +1,5 @@
 #include "precompiled.hpp"
+#include "utilities/javaArithmetic.hpp"
 
 //----------------------magic_int_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
