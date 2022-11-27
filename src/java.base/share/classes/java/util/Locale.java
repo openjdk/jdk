@@ -3554,7 +3554,7 @@ public final class Locale implements Cloneable, Serializable {
      * @param locales {@code Locale} instances used for matching
      * @return the best matching {@code Locale} instance chosen based on
      *     priority or weight, or {@code null} if nothing matches.
-     * @throws NullPointerException if {@code priorityList} or {@code tags} is
+     * @throws NullPointerException if {@code priorityList} or {@code locales} is
      *     {@code null}
      *
      * @since 1.8
