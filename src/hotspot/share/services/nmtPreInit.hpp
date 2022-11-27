@@ -30,6 +30,7 @@
 #ifdef ASSERT
 #include "runtime/atomic.hpp"
 #endif
+#include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -217,7 +218,6 @@ public:
 class NMTPreInit : public AllStatic {
 
   static NMTPreInitAllocationTable* _table;
-  static bool _nmt_was_initialized;
 
   // Some statistics
   static unsigned _num_mallocs_pre;           // Number of pre-init mallocs
@@ -227,7 +227,7 @@ class NMTPreInit : public AllStatic {
   static void create_table();
 
   static void add_to_map(NMTPreInitAllocation* a) {
-    assert(!_nmt_was_initialized, "lookup map cannot be modified after NMT initialization");
+    assert(!MemTracker::is_initialized(), "lookup map cannot be modified after NMT initialization");
     // Only on add, we create the table on demand. Only needed on add, since everything should start
     // with a call to os::malloc().
     if (_table == NULL) {
@@ -242,7 +242,7 @@ class NMTPreInit : public AllStatic {
   }
 
   static NMTPreInitAllocation* find_and_remove_in_map(void* p) {
-    assert(!_nmt_was_initialized, "lookup map cannot be modified after NMT initialization");
+    assert(!MemTracker::is_initialized(), "lookup map cannot be modified after NMT initialization");
     assert(_table != NULL, "stray allocation?");
     return _table->find_and_remove(p);
   }
@@ -256,15 +256,12 @@ public:
   //  in post-init, no modifications to the lookup table are possible.
   static void pre_to_post();
 
-  // Returns true if we are still in pre-init phase, false if post-init
-  static bool in_preinit_phase()  { return _nmt_was_initialized == false; }
-
   // Called from os::malloc.
   // Returns true if allocation was handled here; in that case,
   // *rc contains the return address.
   static bool handle_malloc(void** rc, size_t size) {
     size = MAX2((size_t)1, size);         // malloc(0)
-    if (!_nmt_was_initialized) {
+    if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // Allocate entry and add address to lookup table
       NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(size);
@@ -284,7 +281,7 @@ public:
       return handle_malloc(rc, new_size);
     }
     new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
-    if (!_nmt_was_initialized) {
+    if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // - the address must already be in the lookup table
       // - find the old entry, remove from table, reallocate, add to table
@@ -323,7 +320,7 @@ public:
     if (p == NULL) { // free(NULL)
       return true;
     }
-    if (!_nmt_was_initialized) {
+    if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // - the allocation must be in the hash map, since all allocations went through
       //   NMTPreInit::handle_malloc()

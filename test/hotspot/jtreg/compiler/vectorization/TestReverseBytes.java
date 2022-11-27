@@ -75,7 +75,7 @@ public class TestReverseBytes {
   }
 
   @Test
-  @IR(counts = {"ReverseBytesV" , " > 0 "})
+  @IR(counts = {IRNode.REVERSE_BYTES_V, "> 0"})
   public void test_reverse_bytes_long(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverseBytes(linp[i]);
@@ -91,7 +91,7 @@ public class TestReverseBytes {
   }
 
   @Test
-  @IR(counts = {"ReverseBytesV" , " > 0 "})
+  @IR(counts = {IRNode.REVERSE_BYTES_V, "> 0"})
   public void test_reverse_bytes_int(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverseBytes(iinp[i]);
@@ -107,7 +107,7 @@ public class TestReverseBytes {
   }
 
   @Test
-  @IR(counts = {"ReverseBytesV" , " > 0 "})
+  @IR(counts = {IRNode.REVERSE_BYTES_V, "> 0"})
   public void test_reverse_bytes_short(short[] sout, short[] sinp) {
       for (int i = 0; i < sout.length; i+=1) {
           sout[i] = Short.reverseBytes(sinp[i]);
@@ -123,7 +123,7 @@ public class TestReverseBytes {
   }
 
   @Test
-  @IR(counts = {"ReverseBytesV" , " > 0 "})
+  @IR(counts = {IRNode.REVERSE_BYTES_V, "> 0"})
   public void test_reverse_bytes_char(char[] cout, char[] cinp) {
       for (int i = 0; i < cout.length; i+=1) {
           cout[i] = Character.reverseBytes(cinp[i]);

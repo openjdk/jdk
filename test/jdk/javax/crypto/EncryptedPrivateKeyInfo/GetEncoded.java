@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8261779
+ * @bug 8261779 8296442
  * @summary Check that EncryptedPrivateKeyInfo.getEncoded() calls
  *          AlgorithmParameters.getEncoded() when first called
  */
@@ -56,6 +56,14 @@ public class GetEncoded {
         AlgorithmParameters ap1 = AlgorithmParameters.getInstance("EC");
         EncryptedPrivateKeyInfo epki1 =
             new EncryptedPrivateKeyInfo(ap1, new byte[] {1, 2, 3, 4});
+
+        try {
+            epki1.getEncoded();
+            throw new Exception("Should have thrown IOException");
+        } catch (IOException ioe) {
+            // test passed, expected exception
+        }
+
         ap1.init(new ECGenParameterSpec("secp256r1"));
 
         EncryptedPrivateKeyInfo epki2 =

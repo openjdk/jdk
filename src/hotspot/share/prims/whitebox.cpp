@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include <new>
 #include "cds.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
@@ -112,7 +111,6 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"

@@ -39,7 +39,7 @@
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
-#define CURRENT_CDS_ARCHIVE_VERSION 15
+#define CURRENT_CDS_ARCHIVE_VERSION 16
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -96,7 +96,7 @@ typedef struct CDSFileMapHeaderBase {
   // We cannot inherit from GenericCDSFileMapHeader as this type may be used
   // by both C and C++ code.
   GenericCDSFileMapHeader _generic_header;
-  CDSFileMapRegion _space[NUM_CDS_REGIONS];
+  CDSFileMapRegion _regions[NUM_CDS_REGIONS];
 } CDSFileMapHeaderBase;
 
 #endif // SHARE_INCLUDE_CDS_H

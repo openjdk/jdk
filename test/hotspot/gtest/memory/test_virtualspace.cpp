@@ -23,8 +23,8 @@
 
 #include "precompiled.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/os.hpp"
 #include "oops/oop.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
