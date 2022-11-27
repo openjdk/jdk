@@ -81,8 +81,8 @@ public class TestBackSpaceAction {
                         UIManager.getInstalledLookAndFeels()) {
             if (!laf.getClassName().contains("MotifLookAndFeel")) {
                 System.out.println("Testing LAF: " + laf.getClassName());
-            	SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            	doTesting(laf);
+                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+                doTesting(laf);
             }
         }
     }
