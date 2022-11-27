@@ -354,7 +354,7 @@ define SetupEclipseWorkspaceBody
     # $$(call AppendFile,                       <entry kind="macro" name="_WINDOWS" value=""/>, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,                   </resource>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,            </provider>, $(LANGUAGE_SETTINGS))
 
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
