@@ -688,9 +688,7 @@ JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* current, int i
   const int len = 35;
   assert(len < strlen("Index %d out of bounds for length %d"), "Must allocate more space for message.");
   char message[2 * jintAsStringSize + len];
-  int printed_len = os::snprintf(message, sizeof(message), "Index %d out of bounds for length %d", index, a->length());
-  assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < sizeof(message), "message buf overflow");
+  os::snprintf(message, sizeof(message), "Index %d out of bounds for length %d", index, a->length());
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
 JRT_END
 
@@ -702,9 +700,7 @@ JRT_ENTRY(void, Runtime1::throw_index_exception(JavaThread* current, int index))
   }
 #endif
   char message[16];
-  int printed_len = os::snprintf(message, sizeof(message), "%d", index);
-  assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < sizeof(sizeof(message)), "message buf overflow");
+  os::snprintf(message, sizeof(message), "%d", index);
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IndexOutOfBoundsException(), message);
 JRT_END
 

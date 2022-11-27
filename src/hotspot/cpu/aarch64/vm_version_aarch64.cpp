@@ -222,15 +222,8 @@ void VM_Version::initialize() {
   }
 
   char buf[512];
-  int printed_len = os::snprintf(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
-  assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < sizeof(buf), "insufficient buf");
-  if (_model2) {
-    size_t remaining_size = sizeof(buf) - printed_len;
-    printed_len = os::snprintf(buf + printed_len, remaining_size, "(0x%03x)", _model2);
-    assert(printed_len > 0, "error occurs for os::snprintf");
-    assert((size_t)printed_len < remaining_size, "insufficient buf");
-  }
+  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  if (_model2) os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (VM_Version::supports_##name()) strcat(buf, ", " #name);
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED

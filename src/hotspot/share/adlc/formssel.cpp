@@ -1535,10 +1535,7 @@ Predicate *InstructForm::build_predicate() {
         s += strlen(s);
       }
       // Add predicate to working buffer
-      size_t remaining_len = remaining_buflen(buf, s);
-      int printed_len =  snprintf(s, remaining_len, "/*%s*/(",(char*)i._key);
-      assert(printed_len > 0, "error occurs at snprintf");
-      assert((size_t)printed_len < remaining_len, "insufficient buf");
+      snprintf(s, remaining_buflen(buf, s), "/*%s*/(",(char*)i._key);
       s += strlen(s);
       mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);
@@ -3477,9 +3474,7 @@ void MatchNode::build_internalop( ) {
                        _rChild->_internalop : _rChild->_opType) : "";
   len += (int)strlen(lstr) + (int)strlen(rstr);
   subtree = (char *)AdlAllocateHeap(len);
-  int printed_len = snprintf(subtree, len, "_%s_%s_%s", _opType, lstr, rstr);
-  assert(printed_len > 0, "error occurs at snprintf");
-  assert(printed_len < len, "insufficient buf");
+  snprintf(subtree, len, "_%s_%s_%s", _opType, lstr, rstr);
   // Hash the subtree string in _internalOps; if a name exists, use it
   iop = (char *)_AD._internalOps[subtree];
   // Else create a unique name, and add it to the hash table

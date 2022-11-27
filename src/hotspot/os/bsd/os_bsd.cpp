@@ -379,17 +379,13 @@ void os::init_system_properties_values() {
     const size_t ld_library_path_size = strlen(v) + 1 + sizeof(SYS_EXT_DIR) +
             sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1;
     char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
-    int printed_len = os::snprintf(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
-    assert(printed_len > 0, "error occurs at os::snprintf");
-    assert((size_t)printed_len < ld_library_path_size, "insufficient ld_library_path buf");
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
-  int printed_len = os::snprintf(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
-  assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < bufsize, "insufficient buf");
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -476,10 +472,8 @@ void os::init_system_properties_values() {
     // JAVA_LIBRARY_PATH environment variable.
     const size_t ld_library_path_size = strlen(v) + 1 + strlen(l) + 1 + system_ext_size + 3;
     char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
-    int printed_len = os::snprintf(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
-    assert(printed_len > 0, "error occurs at os::snprintf");
-    assert((size_t)printed_len < ld_library_path_size, "insufficient ld_library_path buf");
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
@@ -489,10 +483,8 @@ void os::init_system_properties_values() {
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator (so actually one byte more
   // than necessary is allocated).
-  int printed_len = os::snprintf(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
+  os::snprintf_checked(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
           user_home_dir, Arguments::get_java_home());
-  assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < bufsize, "insufficient buf");
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);

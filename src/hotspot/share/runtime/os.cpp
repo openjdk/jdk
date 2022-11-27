@@ -99,6 +99,16 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
+int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  assert(result >= 0, "os::snprintf error");
+  assert(static_cast<size_t>(result) < size, "os::snprintf truncated");
+  return result;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
 // Returns buffer, or NULL if it failed.
@@ -1273,9 +1283,7 @@ char* os::format_boot_path(const char* format_string,
 FILE* os::fopen(const char* path, const char* mode) {
   char modified_mode[20];
   assert(strlen(mode) + 1 < sizeof(modified_mode), "mode chars plus one extra must fit in buffer");
-  int printed_len = os::snprintf(modified_mode, sizeof(modified_mode), "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
-  assert(printed_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_len < sizeof(modified_mode), "modified_mode buf overflow");
+  os::snprintf_checked(modified_mode, sizeof(modified_mode), "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
   FILE* file = ::fopen(path, modified_mode);
 
 #if !(defined LINUX || defined BSD || defined _WINDOWS)

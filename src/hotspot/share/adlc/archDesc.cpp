@@ -815,9 +815,7 @@ static const char *getRegMask(const char *reg_class_name) {
     const char *mask    = "_mask";
     int         length  = (int)strlen(rc_name) + (int)strlen(mask) + 5;
     char       *regMask = new char[length];
-    int printed_len = snprintf(regMask, length, "%s%s()", rc_name, mask);
-    assert(printed_len > 0, "error occurs at snprintf");
-    assert(printed_len < length, "insufficient regMask buf");
+    snprintf(regMask, length, "%s%s()", rc_name, mask);
     delete[] rc_name;
     return regMask;
   }
@@ -910,9 +908,7 @@ char *ArchDesc::stack_or_reg_mask(OperandForm  &opForm) {
   const char *stack_or = "STACK_OR_";
   int   length         = (int)strlen(stack_or) + (int)strlen(reg_mask_name) + 1;
   char *result         = new char[length];
-  int printed_len = snprintf(result, length, "%s%s", stack_or, reg_mask_name);
-  assert(printed_len > 0, "error occurs at snprintf");
-  assert(printed_len < length, "insufficient result buf");
+  snprintf(result, length, "%s%s", stack_or, reg_mask_name);
 
   return result;
 }

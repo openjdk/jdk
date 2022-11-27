@@ -248,9 +248,7 @@ int BsdAttachListener::init() {
 //
 BsdAttachOperation* BsdAttachListener::read_request(int s) {
   char ver_str[8];
-  int printed_ver_len = os::snprintf(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
-  assert(printed_ver_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_ver_len < sizeof(ver_str), "insufficient ver_str buf");
+  size_t ver_str_len = os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
   // The request is a sequence of strings so we first figure out the
   // expected count and the maximum possible length of the request.
@@ -259,7 +257,7 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   // where <ver> is the protocol version (1), <cmd> is the command
   // name ("load", "datadump", ...), and <arg> is an argument
   int expected_str_count = 2 + AttachOperation::arg_count_max;
-  const int max_len = (printed_ver_len + 1) + (AttachOperation::name_length_max + 1) +
+  const int max_len = (ver_str_len + 1) + (AttachOperation::name_length_max + 1) +
     AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
 
   char buf[max_len];
@@ -290,13 +288,11 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
         // The first string is <ver> so check it now to
         // check for protocol mismatch
         if (str_count == 1) {
-          if ((strlen(buf) != (size_t)printed_ver_len) ||
+          if ((strlen(buf) != ver_str_len) ||
               (atoi(buf) != ATTACH_PROTOCOL_VER)) {
             char msg[32];
-            int printed_msg_len = os::snprintf(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
-            assert(printed_msg_len > 0, "error occurs at os::snprintf");
-            assert((size_t)printed_msg_len < sizeof(msg), "insufficient msg buf");
-            write_fully(s, msg, printed_msg_len);
+            int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
+            write_fully(s, msg, msg_len);
             return NULL;
           }
         }
@@ -415,10 +411,8 @@ void BsdAttachOperation::complete(jint result, bufferedStream* st) {
 
   // write operation result
   char msg[32];
-  int printed_msg_len = os::snprintf(msg, sizeof(msg), "%d\n", result);
-  assert(printed_msg_len > 0, "error occurs at os::snprintf");
-  assert((size_t)printed_msg_len < sizeof(msg), "insufficient msg buf");
-  int rc = BsdAttachListener::write_fully(this->socket(), msg, printed_msg_len);
+  int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
+  int rc = BsdAttachListener::write_fully(this->socket(), msg, msg_len);
 
   // write any result data
   if (rc == 0) {

@@ -161,9 +161,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
     strncpy(header_version, vm_version, JVM_IDENT_MAX-9);
 
     // Append the hash code as eight hex digits.
-    int printed_len = os::snprintf(&header_version[JVM_IDENT_MAX-9], 9, "%08x", hash);
-    assert(printed_len > 0, "error occurs at os::snprintf");
-    assert(printed_len < 9, "header_version buf overflow");
+    os::snprintf(&header_version[JVM_IDENT_MAX-9], 9, "%08x", hash);
     header_version[JVM_IDENT_MAX-1] = 0;  // Null terminate.
   }
 

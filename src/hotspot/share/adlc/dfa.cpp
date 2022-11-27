@@ -212,17 +212,13 @@ Expr *ArchDesc::calc_cost(FILE *fp, const char *spaces, MatchList &mList, Produc
   Expr *c = new Expr("0");
   if (mList._lchild) { // If left child, add it in
     const char* lchild_to_upper = ArchDesc::getMachOperEnum(mList._lchild);
-    int printed_len = snprintf(Expr::buffer(), STRING_BUFFER_LENGTH, "_kids[0]->_cost[%s]", lchild_to_upper);
-    assert(printed_len > 0, "error occurs at snprintf");
-    assert(printed_len < STRING_BUFFER_LENGTH, "lchild_to_upper overflow");
+    snprintf(Expr::buffer(), STRING_BUFFER_LENGTH, "_kids[0]->_cost[%s]", lchild_to_upper);
     c->add(Expr::buffer());
     delete[] lchild_to_upper;
 }
   if (mList._rchild) { // If right child, add it in
     const char* rchild_to_upper = ArchDesc::getMachOperEnum(mList._rchild);
-    int printed_len = snprintf(Expr::buffer(), STRING_BUFFER_LENGTH, "_kids[1]->_cost[%s]", rchild_to_upper);
-    assert(printed_len > 0, "error occurs at snprintf");
-    assert(printed_len < STRING_BUFFER_LENGTH, "rchild_to_upper overflow");
+    snprintf(Expr::buffer(), STRING_BUFFER_LENGTH, "_kids[1]->_cost[%s]", rchild_to_upper);
     c->add(Expr::buffer());
     delete[] rchild_to_upper;
   }
