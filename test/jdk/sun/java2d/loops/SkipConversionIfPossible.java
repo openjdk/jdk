@@ -60,24 +60,24 @@ public final class SkipConversionIfPossible {
     }
 
     private static void render(int src, int dst) {
-        BufferedImage bi = new BufferedImage(SIZE, SIZE, src);
+        BufferedImage from = new BufferedImage(SIZE, SIZE, src);
         for (int a = 0; a < SIZE; ++a) {
             for (int c = 0; c < SIZE; ++c) {
                 // The data is intentionally broken for the argb_pre format, but
                 // it should be stored as is in dst if no conversion was done.
-                bi.getRaster().setPixel(c, a, new int[]{c, c << 24, -c, a});
+                from.getRaster().setPixel(c, a, new int[]{c, c << 24, -c, a});
             }
         }
-        BufferedImage pre = new BufferedImage(SIZE, SIZE, dst);
-        Graphics2D g = pre.createGraphics();
+        BufferedImage to = new BufferedImage(SIZE, SIZE, dst);
+        Graphics2D g = to.createGraphics();
         g.setComposite(AlphaComposite.Src);
-        g.drawImage(bi, 0, 0, null);
+        g.drawImage(from, 0, 0, null);
         g.dispose();
 
         for (int a = 0; a < SIZE; ++a) {
             for (int c = 0; c < SIZE; ++c) {
-                int[] pixel1 = bi.getRaster().getPixel(c, a, (int[]) null);
-                int[] pixel2 = pre.getRaster().getPixel(c, a, (int[]) null);
+                int[] pixel1 = from.getRaster().getPixel(c, a, (int[]) null);
+                int[] pixel2 = to.getRaster().getPixel(c, a, (int[]) null);
                 if (!Arrays.equals(pixel1, pixel2)) {
                     System.err.println(Arrays.toString(pixel1));
                     System.err.println(Arrays.toString(pixel2));
