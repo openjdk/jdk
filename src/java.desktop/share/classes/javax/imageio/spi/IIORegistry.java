@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,8 @@ package javax.imageio.spi;
 
 import java.security.PrivilegedAction;
 import java.security.AccessController;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.Vector;
 import com.sun.imageio.spi.FileImageInputStreamSpi;
 import com.sun.imageio.spi.FileImageOutputStreamSpi;
 import com.sun.imageio.spi.InputStreamImageInputStreamSpi;
@@ -87,10 +83,10 @@ import java.util.ServiceConfigurationError;
 public final class IIORegistry extends ServiceRegistry {
 
     /**
-     * A {@code Vector} containing the valid IIO registry
+     * An {@code ArrayList} containing the valid IIO registry
      * categories (superinterfaces) to be used in the constructor.
      */
-    private static final Vector<Class<?>> initialCategories = new Vector<>(5);
+    private static final ArrayList<Class<?>> initialCategories = new ArrayList<>(5);
 
     static {
         initialCategories.add(ImageReaderSpi.class);
