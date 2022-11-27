@@ -651,6 +651,21 @@ constant members.  Compilers having such bugs are no longer supported.
 Except where an enum is semantically appropriate, new code should use
 integral constants.
 
+### alignas
+
+`alignas`
+([n1877](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1877.pdf))
+is permitted for the purpose of imposing alignment restrictions on types or
+objects in HotSpot code. The exception is if `alignas` specifies extended
+alignment, in other words when alignment is greater than alignof(std::max_align_t)
+([C++14 3.11/3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)),
+for which it is only permitted for variables with static
+([C++14 3.7.1](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf))
+or automatic storage duration. It is also forbidden to have over-aligned types
+within HotSpot, at least until we switch to using C++17. See the review for
+[JDK-8252584](https://github.com/openjdk/jdk/pull/11315)
+for more information.
+
 ### thread_local
 
 Avoid use of `thread_local`
@@ -1010,9 +1025,6 @@ and other supported compilers may not have anything similar.
   "p0136r1"
 
 ### Additional Permitted Features
-
-* `alignas`
-([n1877](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1877.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))

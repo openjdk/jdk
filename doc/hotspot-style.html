@@ -72,6 +72,7 @@ Deduction</a></li>
 <li><a href="#expression-sfinae" id="toc-expression-sfinae">Expression
 SFINAE</a></li>
 <li><a href="#enum" id="toc-enum">enum</a></li>
+<li><a href="#alignas" id="toc-alignas">alignas</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
@@ -670,6 +671,22 @@ of enums and avoidance of in-class initialization of static integral
 constant members. Compilers having such bugs are no longer supported.
 Except where an enum is semantically appropriate, new code should use
 integral constants.</p>
+<h3 id="alignas">alignas</h3>
+<p><code>alignas</code> (<a
+href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1877.pdf">n1877</a>)
+is permitted for the purpose of imposing alignment restrictions on types
+or objects in HotSpot code. The exception is if <code>alignas</code>
+specifies extended alignment, in other words when alignment is greater
+than alignof(std::max_align_t) (<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf">C++14
+3.11/3</a>), for which it is only permitted for variables with static
+(<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf">C++14
+3.7.1</a>) or automatic storage duration. It is also forbidden to have
+over-aligned types within HotSpot, at least until we switch to using
+C++17. See the review for <a
+href="https://github.com/openjdk/jdk/pull/11315">JDK-8252584</a> for
+more information.</p>
 <h3 id="thread_local">thread_local</h3>
 <p>Avoid use of <code>thread_local</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>);
@@ -1012,8 +1029,6 @@ other supported compilers may not have anything similar.</p>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
-<li><p><code>alignas</code> (<a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1877.pdf">n1877</a>)</p></li>
 <li><p><code>constexpr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>)
 (<a
