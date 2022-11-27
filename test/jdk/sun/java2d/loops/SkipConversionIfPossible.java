@@ -36,7 +36,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /**
  * @test
- * @bug 1234567
+ * @bug 8297681
  * @summary The blit TYPE_4BYTE_ABGR_PRE to TYPE_INT_ARGB_PRE should be "direct"
  */
 public final class SkipConversionIfPossible {
