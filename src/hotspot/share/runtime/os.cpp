@@ -730,7 +730,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
     // realloc(3) succeeded, variable header now points to invalid memory and we need to record the free:ing
-    MallocTracker::record_free_header(free_package);
+    MallocTracker::record_free(free_package);
 
     // After a successful realloc(3), we re-account the resized block with its new size
     // to NMT. This re-instantiates the NMT header.

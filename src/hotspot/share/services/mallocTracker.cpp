@@ -199,14 +199,14 @@ void* MallocTracker::record_free_block(void* memblock) {
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();
 
-  record_free_header(header->free_package());
+  record_free(header->free_package());
 
   header->mark_block_as_dead();
 
   return (void*)header;
 }
 
-void MallocTracker::record_free_header(FreePackage pkg) {
+void MallocTracker::record_free(FreePackage pkg) {
   MallocMemorySummary::record_free(pkg.size, pkg.flags);
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(pkg.size, pkg.mst_marker);

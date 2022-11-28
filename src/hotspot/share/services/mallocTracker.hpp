@@ -294,8 +294,8 @@ class MallocTracker : AllStatic {
   // Record free on specified memory block.
   // Returns the outer pointer to this block.
   static void* record_free_block(void* memblock);
-  // Record free given the relevant data.
-  static void record_free_header(FreePackage pkg);
+  // Record a free.
+  static void record_free(FreePackage pkg);
 
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);
