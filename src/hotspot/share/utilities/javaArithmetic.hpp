@@ -16,13 +16,13 @@ constexpr jlong  min_jlong  = std::numeric_limits<jlong>::min();
 constexpr jlong  max_jlong  = std::numeric_limits<jlong>::max();
 
 constexpr jfloat  min_jfloat      = std::numeric_limits<jfloat>::min();
-constexpr jint    min_jintFloat   = (jint)0x00000001;
+constexpr jint    min_jintFloat   = 0x00000001;
 constexpr jfloat  max_jfloat      = std::numeric_limits<jfloat>::max();
-constexpr jint    max_jintFloat   = (jint)0x7f7fffff;
+constexpr jint    max_jintFloat   = 0x7f7fffff;
 constexpr jdouble min_jdouble     = std::numeric_limits<jdouble>::min();
-constexpr jlong   min_jlongDouble = (jlong)0x0000000000000001;
+constexpr jlong   min_jlongDouble = 0x0000000000000001;
 constexpr jdouble max_jdouble     = std::numeric_limits<jdouble>::max();
-constexpr jlong   max_jlongDouble = (jlong)0x7fefffffffffffff;
+constexpr jlong   max_jlongDouble = 0x7fefffffffffffff;
 
 // Additional Java basic types
 using jubyte  = std::make_unsigned<jbyte> ::type;
@@ -34,6 +34,8 @@ constexpr jubyte  max_jubyte  = std::numeric_limits<jubyte>::max();
 constexpr jushort max_jushort = std::numeric_limits<jushort>::max();
 constexpr juint   max_juint   = std::numeric_limits<juint>::max();
 constexpr julong  max_julong  = std::numeric_limits<julong>::max();
+
+using uint = juint;
 
 //----------------------------------------------------------------------------------------------------
 // Sum and product which can never overflow: they wrap, just like the
@@ -101,10 +103,10 @@ inline constexpr int NAME (TYPE1 in1, TYPE2 in2) {   \
   return res;                                        \
 }
 
-SATURATED_INTEGER_OP(+, saturated_add, jint, jint)
-SATURATED_INTEGER_OP(+, saturated_add, jint, juint)
-SATURATED_INTEGER_OP(+, saturated_add, juint, jint)
-SATURATED_INTEGER_OP(+, saturated_add, juint, juint)
+SATURATED_INTEGER_OP(+, saturated_add, int, int)
+SATURATED_INTEGER_OP(+, saturated_add, int, uint)
+SATURATED_INTEGER_OP(+, saturated_add, uint, int)
+SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
 
 #undef SATURATED_INTEGER_OP
 

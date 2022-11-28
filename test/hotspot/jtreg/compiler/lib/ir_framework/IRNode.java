@@ -663,12 +663,12 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_L, "MulL");
     }
 
-    public static final String MUL_HI_L = START + "MUL_HI_L" + MID + END;
+    public static final String MUL_HI_L = PREFIX + "MUL_HI_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_HI_L, "MulHiL");
     }
 
-    public static final String UMUL_HI_L = START + "UMUL_HI_L" + MID + END;
+    public static final String UMUL_HI_L = PREFIX + "UMUL_HI_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(UMUL_HI_L, "UMulHiL");
     }

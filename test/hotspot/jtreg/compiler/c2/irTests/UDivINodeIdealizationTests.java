@@ -165,7 +165,7 @@ public class UDivINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.CMP_U, "1",
-                  IRNode.CMOVEI, "1"
+                  IRNode.CMOVE_I, "1"
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisor(int x) {
