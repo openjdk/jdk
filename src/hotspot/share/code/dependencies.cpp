@@ -778,7 +778,7 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
       }
     } else {
       char xn[12];
-      os::snprintf(xn, sizeof(xn), "x%d", j);
+      os::snprintf_checked(xn, sizeof(xn), "x%d", j);
       if (arg.is_oop()) {
         xtty->object(xn, Handle(thread, arg.oop_value()));
       } else {

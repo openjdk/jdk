@@ -2524,14 +2524,14 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  size_t buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
     if (module_version != NULL) {
-      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
     } else {
-      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
     }
   }
 
@@ -2546,17 +2546,17 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     } else {
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
       } else if (source_file_name != NULL) {
         // Just sourcename
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
       CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
-        os::snprintf(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
     }
   }
