@@ -83,6 +83,7 @@ public:
 
   bool is_subtype_of(ciKlass* klass);
   bool is_subclass_of(ciKlass* klass);
+  bool can_be_primary_super();
   juint super_depth();
   juint super_check_offset();
   ciKlass* super_of_depth(juint i);

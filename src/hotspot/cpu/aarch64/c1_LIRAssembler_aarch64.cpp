@@ -1353,33 +1353,35 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     // not a safepoint as obj null check happens earlier
     __ load_klass(klass_RInfo, obj);
     if (k->is_loaded()) {
-      // See if we get an immediate positive hit
-      __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
-      __ cmp(k_RInfo, rscratch1);
-      if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
+      if (k->can_be_primary_super()) {
+        // See if we get an immediate positive hit
+        __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
+        __ cmp(k_RInfo, rscratch1);
         __ br(Assembler::NE, *failure_target);
         // successful cast, fall through to profile or jump
       } else {
-        // See if we get an immediate positive hit
-        __ br(Assembler::EQ, *success_target);
+        if (UseSecondarySuperCache) {
+          // See if we get an immediate positive hit
+          __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
+          __ cmp(k_RInfo, rscratch1);
+          // See if we get an immediate positive hit
+          __ br(Assembler::EQ, *success_target);
+        }
         // check for self
         __ cmp(klass_RInfo, k_RInfo);
         __ br(Assembler::EQ, *success_target);
-
-        __ stp(klass_RInfo, k_RInfo, Address(__ pre(sp, -2 * wordSize)));
-        __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-        __ ldr(klass_RInfo, Address(__ post(sp, 2 * wordSize)));
-        // result is a boolean
-        __ cbzw(klass_RInfo, *failure_target);
-        // successful cast, fall through to profile or jump
       }
     } else {
       // perform the fast part of the checking logic
       __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
+    }
+
+    bool needs_slow_path = !k->is_loaded() || !k->can_be_primary_super();
+    if (needs_slow_path) {
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
       __ stp(klass_RInfo, k_RInfo, Address(__ pre(sp, -2 * wordSize)));
       __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-      __ ldp(k_RInfo, klass_RInfo, Address(__ post(sp, 2 * wordSize)));
+      __ ldr(k_RInfo, Address(__ post(sp, 2 * wordSize)));
       // result is a boolean
       __ cbz(k_RInfo, *failure_target);
       // successful cast, fall through to profile or jump

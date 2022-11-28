@@ -824,6 +824,9 @@ const int ObjectAlignmentInBytes = 8;
           "JVM aborts, producing an error log and core/mini dump, on the "  \
           "first occurrence of an out-of-memory error thrown from JVM")     \
                                                                             \
+  product_pd(bool, UseSecondarySuperCache, DIAGNOSTIC,                      \
+          "Use secondary super cache during subtype checks")                \
+                                                                            \
   /* tracing */                                                             \
                                                                             \
   develop(bool, StressRewriter, false,                                      \

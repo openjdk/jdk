@@ -2519,8 +2519,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     }
     // Successful cast, fall through to profile or jump.
   } else {
-    bool need_slow_path = !k->is_loaded() ||
-                          ((int) k->super_check_offset() == in_bytes(Klass::secondary_super_cache_offset()));
+    bool need_slow_path = !k->is_loaded() || !k->can_be_primary_super();
     intptr_t super_check_offset = k->is_loaded() ? k->super_check_offset() : -1L;
     __ load_klass(klass_RInfo, obj);
     // Perform the fast part of the checking logic.

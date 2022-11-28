@@ -360,8 +360,10 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   b(not_subtype);
 
   bind(update_cache);
-  // Must be equal but missed in cache.  Update cache.
-  str(Rsuper_klass, Address(Rsub_klass, Klass::secondary_super_cache_offset()));
+  if (UseSecondarySuperCache) {
+    // Must be equal but missed in cache.  Update cache.
+    str(Rsuper_klass, Address(Rsub_klass, Klass::secondary_super_cache_offset()));
+  }
 
   bind(ok_is_subtype);
 }

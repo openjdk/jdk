@@ -2949,49 +2949,54 @@ void MacroAssembler::check_klass_subtype_fast_path(Register   sub_klass,
     z_llgf(Rsuper_check_offset, sco_offset, super_klass);
     super_check_offset = RegisterOrConstant(Rsuper_check_offset);
   }
-  Address super_check_addr(sub_klass, super_check_offset, 0);
-  z_cg(super_klass, super_check_addr); // compare w/ displayed supertype
-
-  // This check has worked decisively for primary supers.
-  // Secondary supers are sought in the super_cache ('super_cache_addr').
-  // (Secondary supers are interfaces and very deeply nested subtypes.)
-  // This works in the same check above because of a tricky aliasing
-  // between the super_cache and the primary super display elements.
-  // (The 'super_check_addr' can address either, as the case requires.)
-  // Note that the cache is updated below if it does not help us find
-  // what we need immediately.
-  // So if it was a primary super, we can just fail immediately.
-  // Otherwise, it's the slow path for us (no success at this point).
 
   // Hacked jmp, which may only be used just before L_fallthrough.
 #define final_jmp(label)                                                \
   if (&(label) == &L_fallthrough) { /*do nothing*/ }                    \
   else                            { branch_optimized(Assembler::bcondAlways, label); } /*omit semicolon*/
 
-  if (super_check_offset.is_register()) {
-    branch_optimized(Assembler::bcondEqual, *L_success);
-    z_cfi(super_check_offset.as_register(), sc_offset);
-    if (L_failure == &L_fallthrough) {
-      branch_optimized(Assembler::bcondEqual, *L_slow_path);
-    } else {
-      branch_optimized(Assembler::bcondNotEqual, *L_failure);
-      final_jmp(*L_slow_path);
-    }
-  } else if (super_check_offset.as_constant() == sc_offset) {
-    // Need a slow path; fast failure is impossible.
-    if (L_slow_path == &L_fallthrough) {
-      branch_optimized(Assembler::bcondEqual, *L_success);
-    } else {
-      branch_optimized(Assembler::bcondNotEqual, *L_slow_path);
-      final_jmp(*L_success);
-    }
+  if (!UseSecondarySuperCache && super_check_offset.is_constant() && super_check_offset.as_constant() == sc_offset) {
+    final_jmp(*L_slow_path);
   } else {
-    // No slow path; it's a fast decision.
-    if (L_failure == &L_fallthrough) {
+    Address super_check_addr(sub_klass, super_check_offset, 0);
+    z_cg(super_klass, super_check_addr); // compare w/ displayed supertype
+
+    // This check has worked decisively for primary supers.
+    // Secondary supers are sought in the super_cache ('super_cache_addr').
+    // (Secondary supers are interfaces and very deeply nested subtypes.)
+    // This works in the same check above because of a tricky aliasing
+    // between the super_cache and the primary super display elements.
+    // (The 'super_check_addr' can address either, as the case requires.)
+    // Note that the cache is updated below if it does not help us find
+    // what we need immediately.
+    // So if it was a primary super, we can just fail immediately.
+    // Otherwise, it's the slow path for us (no success at this point).
+
+    if (super_check_offset.is_register()) {
       branch_optimized(Assembler::bcondEqual, *L_success);
+      z_cfi(super_check_offset.as_register(), sc_offset);
+      if (L_failure == &L_fallthrough) {
+        branch_optimized(Assembler::bcondEqual, *L_slow_path);
+      } else {
+        branch_optimized(Assembler::bcondNotEqual, *L_failure);
+        final_jmp(*L_slow_path);
+      }
+    } else if (super_check_offset.as_constant() == sc_offset) {
+      // Need a slow path; fast failure is impossible.
+      if (L_slow_path == &L_fallthrough) {
+        branch_optimized(Assembler::bcondEqual, *L_success);
+      } else {
+        branch_optimized(Assembler::bcondNotEqual, *L_slow_path);
+        final_jmp(*L_success);
+      }
     } else {
-      branch_optimized(Assembler::bcondNotEqual, *L_failure);
-      final_jmp(*L_success);
+      // No slow path; it's a fast decision.
+      if (L_failure == &L_fallthrough) {
+        branch_optimized(Assembler::bcondEqual, *L_success);
+      } else {
+        branch_optimized(Assembler::bcondNotEqual, *L_failure);
+        final_jmp(*L_success);
+      }
     }
   }
 
@@ -3062,7 +3067,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
 
   BIND(match);
 
-  z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  if (UseSecondarySuperCache) {
+    z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  }
 
   final_jmp(*L_success);
 

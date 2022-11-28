@@ -262,9 +262,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Note: temp_reg/cmp_temp is already 0 and flag Z is set
 
-  // Success.  Cache the super we found and proceed in triumph.
-  str(super_klass, Address(sub_klass, sc_offset));
-
+  if (UseSecondarySuperCache) {
+    // Success.  Cache the super we found and proceed in triumph.
+    str(super_klass, Address(sub_klass, sc_offset));
+  }
   if (saved_reg != noreg) {
     // Return success
     pop(saved_reg);

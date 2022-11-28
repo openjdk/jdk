@@ -2427,11 +2427,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // Fall through to failure case.
     }
   } else {
-    bool need_slow_path = true;
+    bool need_slow_path = !k->is_loaded() || !k->can_be_primary_super();
     if (k->is_loaded()) {
-      if ((int) k->super_check_offset() != in_bytes(Klass::secondary_super_cache_offset())) {
-        need_slow_path = false;
-      }
       // Perform the fast part of the checking logic.
       __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, R0, (need_slow_path ? success_target : NULL),
                                        failure_target, NULL, RegisterOrConstant(k->super_check_offset()));

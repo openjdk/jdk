@@ -139,6 +139,12 @@ ciKlass* ciKlass::super_of_depth(juint i) {
   return (super != NULL) ? CURRENT_THREAD_ENV->get_klass(super) : NULL;
 }
 
+bool ciKlass::can_be_primary_super() {
+  assert(is_loaded(), "must be loaded");
+  const juint secondary_offset = in_bytes(Klass::secondary_super_cache_offset());
+  return super_check_offset() != secondary_offset;
+}
+
 // ------------------------------------------------------------------
 // ciKlass::least_common_ancestor
 //

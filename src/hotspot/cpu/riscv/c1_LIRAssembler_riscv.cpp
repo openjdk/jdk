@@ -1093,32 +1093,29 @@ void LIR_Assembler::typecheck_helper_slowcheck(ciKlass *k, Register obj, Registe
   // get object class
   // not a safepoint as obj null check happens earlier
   __ load_klass(klass_RInfo, obj);
-  if (k->is_loaded()) {
-    // See if we get an immediate positive hit
-    __ ld(t0, Address(klass_RInfo, int64_t(k->super_check_offset())));
-    if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
-      __ bne(k_RInfo, t0, *failure_target, /* is_far */ true);
-      // successful cast, fall through to profile or jump
-    } else {
-      // See if we get an immediate positive hit
-      __ beq(k_RInfo, t0, *success_target);
-      // check for self
-      __ beq(klass_RInfo, k_RInfo, *success_target);
 
-      __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
-      __ sd(k_RInfo, Address(sp, 0));             // sub klass
-      __ sd(klass_RInfo, Address(sp, wordSize));  // super klass
-      __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-      // load result to k_RInfo
-      __ ld(k_RInfo, Address(sp, 0));
-      __ addi(sp, sp, 2 * wordSize); // 2: pop out k_RInfo and klass_RInfo
-      // result is a boolean
-      __ beqz(k_RInfo, *failure_target, /* is_far */ true);
-      // successful cast, fall through to profile or jump
+  if (k->is_loaded()) {
+    // check for self
+    __ beq(klass_RInfo, k_RInfo, *success_target);
+
+    if (UseSecondarySuperCache || k->can_be_primary_super()) {
+      // See if we get an immediate positive hit
+      __ ld(t0, Address(klass_RInfo, int64_t(k->super_check_offset())));
+      if (k->can_be_primary_super()) {
+        __ bne(k_RInfo, t0, *failure_target, /* is_far */ true);
+        // successful cast, fall through to profile or jump
+      } else {
+        // See if we get an immediate positive hit
+        __ beq(k_RInfo, t0, *success_target);
+      }
     }
   } else {
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
+  }
+
+  bool needs_slow_path = !k->is_loaded() || !k->can_be_primary_super();
+  if (needs_slow_path) {
     // call out-of-line instance of __ check_klass_subtytpe_slow_path(...)
     __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
     __ sd(klass_RInfo, Address(sp, wordSize));  // sub klass

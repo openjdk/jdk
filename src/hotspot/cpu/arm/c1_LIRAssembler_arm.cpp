@@ -1198,14 +1198,20 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ b(*failure_target, ne);
       } else if (k->is_loaded()) {
         __ b(*success_target, eq);
-        __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
-        if (in_bytes(Klass::secondary_super_cache_offset()) != (int) k->super_check_offset()) {
+        if (k->can_be_primary_super()) {
+          __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
           __ cmp(Rtemp, k_RInfo);
           __ b(*failure_target, ne);
         } else {
-          __ cmp(klass_RInfo, k_RInfo);
-          __ cmp(Rtemp, k_RInfo, ne);
-          __ b(*success_target, eq);
+          if (UseSecondarySuperCache) {
+            __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
+            __ cmp(klass_RInfo, k_RInfo);
+            __ cmp(Rtemp, k_RInfo, ne);
+            __ b(*success_target, eq);
+          } else {
+            __ cmp(klass_RInfo, k_RInfo);
+            __ b(*success_target, eq);
+          }
           assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
           __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
           __ cbz(R0, *failure_target);
@@ -1284,8 +1290,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
           __ b(profile_cast_failure, ne);
         }
       } else if (k->is_loaded()) {
-        __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
-        if (in_bytes(Klass::secondary_super_cache_offset()) != (int) k->super_check_offset()) {
+        if (k->can_be_primary_super()) {
+          __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
           __ cmp(Rtemp, k_RInfo);
           if (!op->should_profile()) {
             set_instanceof_result(_masm, res, eq);
@@ -1293,12 +1299,19 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
             __ b(profile_cast_failure, ne);
           }
         } else {
-          __ cmp(klass_RInfo, k_RInfo);
-          __ cond_cmp(Rtemp, k_RInfo, ne);
-          if (!op->should_profile()) {
-            set_instanceof_result(_masm, res, eq);
+          if (UseSecondarySuperCache) {
+            __ ldr(Rtemp, Address(klass_RInfo, k->super_check_offset()));
+            __ cmp(klass_RInfo, k_RInfo);
+            __ cond_cmp(Rtemp, k_RInfo, ne);
+            if (!op->should_profile()) {
+              set_instanceof_result(_masm, res, eq);
+            }
+            __ b(*success_target, eq);
+          } else {
+            // self check
+            __ cmp(klass_RInfo, k_RInfo);
+            __ b(*success_target, eq);
           }
-          __ b(*success_target, eq);
           assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
           __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
           if (!op->should_profile()) {

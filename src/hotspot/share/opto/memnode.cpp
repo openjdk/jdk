@@ -2350,25 +2350,28 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
 
   // Check for loading klass from an array klass
   const TypeKlassPtr *tkls = tp->isa_klassptr();
-  if (tkls != NULL && !StressReflectiveCode) {
-    if (!tkls->is_loaded())
-     return _type;             // Bail out if not loaded
-    if (tkls->isa_aryklassptr() && tkls->is_aryklassptr()->elem()->isa_klassptr() &&
-        tkls->offset() == in_bytes(ObjArrayKlass::element_klass_offset())) {
-      // // Always returning precise element type is incorrect,
-      // // e.g., element type could be object and array may contain strings
-      // return TypeKlassPtr::make(TypePtr::Constant, elem, 0);
-
-      // The array's TypeKlassPtr was declared 'precise' or 'not precise'
-      // according to the element type's subclassing.
-      return tkls->is_aryklassptr()->elem();
+  if (tkls != NULL) {
+    if (!StressReflectiveCode) {
+      if (!tkls->is_loaded()) {
+        return _type; // bail out if not loaded
+      }
+      if (tkls->isa_aryklassptr() && tkls->is_aryklassptr()->elem()->isa_klassptr() &&
+          tkls->offset() == in_bytes(ObjArrayKlass::element_klass_offset())) {
+        // The array's TypeKlassPtr was declared 'precise' or 'not precise'
+        // according to the element type's subclassing.
+        return tkls->is_aryklassptr()->elem();
+      }
+      if (tkls->isa_instklassptr() != NULL && tkls->klass_is_exact() &&
+          tkls->offset() == in_bytes(Klass::super_offset())) {
+        ciKlass* sup = tkls->is_instklassptr()->instance_klass()->super();
+        // The field is Klass::_super.  Return its (constant) value.
+        // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
+        return sup ? TypeKlassPtr::make(sup) : TypePtr::NULL_PTR;
+      }
     }
-    if (tkls->isa_instklassptr() != NULL && tkls->klass_is_exact() &&
-        tkls->offset() == in_bytes(Klass::super_offset())) {
-      ciKlass* sup = tkls->is_instklassptr()->instance_klass()->super();
-      // The field is Klass::_super.  Return its (constant) value.
-      // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
-      return sup ? TypeKlassPtr::make(sup) : TypePtr::NULL_PTR;
+    if (!UseSecondarySuperCache && tkls->offset() == in_bytes(Klass::secondary_super_cache_offset())) {
+      // Treat Klass::_secondary_super_cache as a constant when the cache is disabled.
+      return TypePtr::NULL_PTR;
     }
   }
 

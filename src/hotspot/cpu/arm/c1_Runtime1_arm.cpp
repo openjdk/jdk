@@ -607,8 +607,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ cmp(LR, R1);
         __ b(loop, ne);
 
-        // We get here if an equal cache entry is found
-        __ str(R1, Address(R0, Klass::secondary_super_cache_offset()));
+        if (UseSecondarySuperCache) {
+          // We get here if an equal cache entry is found
+          __ str(R1, Address(R0, Klass::secondary_super_cache_offset()));
+        }
         __ mov(R0, 1);
         __ raw_pop_and_ret(R2, R3);
 

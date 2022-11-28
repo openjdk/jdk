@@ -4342,44 +4342,49 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
     movl(temp_reg, super_check_offset_addr);
     super_check_offset = RegisterOrConstant(temp_reg);
   }
-  Address super_check_addr(sub_klass, super_check_offset, Address::times_1, 0);
-  cmpptr(super_klass, super_check_addr); // load displayed supertype
 
-  // This check has worked decisively for primary supers.
-  // Secondary supers are sought in the super_cache ('super_cache_addr').
-  // (Secondary supers are interfaces and very deeply nested subtypes.)
-  // This works in the same check above because of a tricky aliasing
-  // between the super_cache and the primary super display elements.
-  // (The 'super_check_addr' can address either, as the case requires.)
-  // Note that the cache is updated below if it does not help us find
-  // what we need immediately.
-  // So if it was a primary super, we can just fail immediately.
-  // Otherwise, it's the slow path for us (no success at this point).
-
-  if (super_check_offset.is_register()) {
-    local_jcc(Assembler::equal, *L_success);
-    cmpl(super_check_offset.as_register(), sc_offset);
-    if (L_failure == &L_fallthrough) {
-      local_jcc(Assembler::equal, *L_slow_path);
-    } else {
-      local_jcc(Assembler::notEqual, *L_failure);
-      final_jmp(*L_slow_path);
-    }
-  } else if (super_check_offset.as_constant() == sc_offset) {
-    // Need a slow path; fast failure is impossible.
-    if (L_slow_path == &L_fallthrough) {
-      local_jcc(Assembler::equal, *L_success);
-    } else {
-      local_jcc(Assembler::notEqual, *L_slow_path);
-      final_jmp(*L_success);
-    }
+  if (!UseSecondarySuperCache && super_check_offset.is_constant() && super_check_offset.as_constant() == sc_offset) {
+    final_jmp(*L_slow_path);
   } else {
-    // No slow path; it's a fast decision.
-    if (L_failure == &L_fallthrough) {
+    Address super_check_addr(sub_klass, super_check_offset, Address::times_1, 0);
+    cmpptr(super_klass, super_check_addr); // load displayed supertype
+
+    // This check has worked decisively for primary supers.
+    // Secondary supers are sought in the super_cache ('super_cache_addr').
+    // (Secondary supers are interfaces and very deeply nested subtypes.)
+    // This works in the same check above because of a tricky aliasing
+    // between the super_cache and the primary super display elements.
+    // (The 'super_check_addr' can address either, as the case requires.)
+    // Note that the cache is updated below if it does not help us find
+    // what we need immediately.
+    // So if it was a primary super, we can just fail immediately.
+    // Otherwise, it's the slow path for us (no success at this point).
+
+    if (super_check_offset.is_register()) {
       local_jcc(Assembler::equal, *L_success);
+      cmpl(super_check_offset.as_register(), sc_offset);
+      if (L_failure == &L_fallthrough) {
+        local_jcc(Assembler::equal, *L_slow_path);
+      } else {
+        local_jcc(Assembler::notEqual, *L_failure);
+        final_jmp(*L_slow_path);
+      }
+    } else if (super_check_offset.as_constant() == sc_offset) {
+      // Need a slow path; fast failure is impossible.
+      if (L_slow_path == &L_fallthrough) {
+        local_jcc(Assembler::equal, *L_success);
+      } else {
+        local_jcc(Assembler::notEqual, *L_slow_path);
+        final_jmp(*L_success);
+      }
     } else {
-      local_jcc(Assembler::notEqual, *L_failure);
-      final_jmp(*L_success);
+      // No slow path; it's a fast decision.
+      if (L_failure == &L_fallthrough) {
+        local_jcc(Assembler::equal, *L_success);
+      } else {
+        local_jcc(Assembler::notEqual, *L_failure);
+        final_jmp(*L_success);
+      }
     }
   }
 
@@ -4470,9 +4475,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
         jccb(Assembler::notEqual, *L_failure);
   else  jcc(Assembler::notEqual, *L_failure);
 
-  // Success.  Cache the super we found and proceed in triumph.
-  movptr(super_cache_addr, super_klass);
-
+  if (UseSecondarySuperCache) {
+    // Success.  Cache the super we found and proceed in triumph.
+    movptr(super_cache_addr, super_klass);
+  }
   if (L_success != &L_fallthrough) {
     jmp(*L_success);
   }

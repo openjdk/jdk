@@ -1927,47 +1927,51 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   }
   // The loaded value is the offset from KlassOopDesc.
 
-  ld(cached_super, super_check_offset, sub_klass);
-  cmpd(CCR0, cached_super, super_klass);
-
-  // This check has worked decisively for primary supers.
-  // Secondary supers are sought in the super_cache ('super_cache_addr').
-  // (Secondary supers are interfaces and very deeply nested subtypes.)
-  // This works in the same check above because of a tricky aliasing
-  // between the super_cache and the primary super display elements.
-  // (The 'super_check_addr' can address either, as the case requires.)
-  // Note that the cache is updated below if it does not help us find
-  // what we need immediately.
-  // So if it was a primary super, we can just fail immediately.
-  // Otherwise, it's the slow path for us (no success at this point).
-
 #define FINAL_JUMP(label) if (&(label) != &L_fallthrough) { b(label); }
 
-  if (super_check_offset.is_register()) {
-    beq(CCR0, *L_success);
-    cmpwi(CCR0, super_check_offset.as_register(), sc_offset);
-    if (L_failure == &L_fallthrough) {
-      beq(CCR0, *L_slow_path);
-    } else {
-      bne(CCR0, *L_failure);
-      FINAL_JUMP(*L_slow_path);
-    }
+  if (!UseSecondarySuperCache && super_check_offset.is_constant() && super_check_offset.as_constant() == sc_offset) {
+    FINAL_JUMP(*L_slow_path);
   } else {
-    if (super_check_offset.as_constant() == sc_offset) {
-      // Need a slow path; fast failure is impossible.
-      if (L_slow_path == &L_fallthrough) {
-        beq(CCR0, *L_success);
-      } else {
-        bne(CCR0, *L_slow_path);
-        FINAL_JUMP(*L_success);
-      }
-    } else {
-      // No slow path; it's a fast decision.
+    ld(cached_super, super_check_offset, sub_klass);
+    cmpd(CCR0, cached_super, super_klass);
+
+    // This check has worked decisively for primary supers.
+    // Secondary supers are sought in the super_cache ('super_cache_addr').
+    // (Secondary supers are interfaces and very deeply nested subtypes.)
+    // This works in the same check above because of a tricky aliasing
+    // between the super_cache and the primary super display elements.
+    // (The 'super_check_addr' can address either, as the case requires.)
+    // Note that the cache is updated below if it does not help us find
+    // what we need immediately.
+    // So if it was a primary super, we can just fail immediately.
+    // Otherwise, it's the slow path for us (no success at this point).
+
+    if (super_check_offset.is_register()) {
+      beq(CCR0, *L_success);
+      cmpwi(CCR0, super_check_offset.as_register(), sc_offset);
       if (L_failure == &L_fallthrough) {
-        beq(CCR0, *L_success);
+        beq(CCR0, *L_slow_path);
       } else {
         bne(CCR0, *L_failure);
-        FINAL_JUMP(*L_success);
+        FINAL_JUMP(*L_slow_path);
+      }
+    } else {
+      if (super_check_offset.as_constant() == sc_offset) {
+        // Need a slow path; fast failure is impossible.
+        if (L_slow_path == &L_fallthrough) {
+          beq(CCR0, *L_success);
+        } else {
+          bne(CCR0, *L_slow_path);
+          FINAL_JUMP(*L_success);
+        }
+      } else {
+        // No slow path; it's a fast decision.
+        if (L_failure == &L_fallthrough) {
+          beq(CCR0, *L_success);
+        } else {
+          bne(CCR0, *L_failure);
+          FINAL_JUMP(*L_success);
+        }
       }
     }
   }
@@ -2017,7 +2021,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   b(fallthru);
 
   bind(hit);
-  std(super_klass, target_offset, sub_klass); // save result to cache
+  if (UseSecondarySuperCache) {
+    std(super_klass, target_offset, sub_klass); // save result to cache
+  }
   if (result_reg != noreg) { li(result_reg, 0); } // load zero result (indicates a hit)
   if (L_success != NULL) { b(*L_success); }
   else if (result_reg == noreg) { blr(); } // return with CR0.eq if neither label nor result reg provided
