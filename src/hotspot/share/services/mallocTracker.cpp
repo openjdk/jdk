@@ -192,7 +192,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   return memblock;
 }
 
-void* MallocTracker::record_free(void* memblock) {
+void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
   assert(memblock != NULL, "precondition");
 

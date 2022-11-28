@@ -291,8 +291,9 @@ class MallocTracker : AllStatic {
   static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
     const NativeCallStack& stack);
 
-  // Record free on specified memory block
-  static void* record_free(void* memblock);
+  // Record free on specified memory block.
+  // Returns the outer pointer to this block.
+  static void* record_free_block(void* memblock);
   // Record free given the relevant data.
   static void record_free_header(FreePackage pkg);
 
