@@ -469,7 +469,7 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
     return sign_bit; // Positive or negative zero
   }
 
-  jint exp = ((0x7f800000 & doppel) >> (24 -1)) - 127;
+  jint exp = ((0x7f800000 & doppel) >> (24 - 1)) - 127;
 
   // For binary16 subnormals, beside forcing exp to -15, retain
   // the difference exp_delta = E_min - exp.  This is the excess
