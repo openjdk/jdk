@@ -57,8 +57,8 @@ public class HttpResponseInputStreamInterruptTest {
 
     HttpServer server;
     int port;
-    private CountDownLatch interruptReadyLatch = new CountDownLatch(2);
-    private CountDownLatch interruptDoneLatch = new CountDownLatch(1);
+    private final CountDownLatch interruptReadyLatch = new CountDownLatch(2);
+    private final CountDownLatch interruptDoneLatch = new CountDownLatch(1);
     static final String FIRST_MESSAGE = "Should be received";
     static final String SECOND_MESSAGE = "Shouldn't be received";
 
@@ -164,7 +164,7 @@ public class HttpResponseInputStreamInterruptTest {
 
                 // countdown on latch, and assert that an IOException is throw due to the interrupt
                 interruptReadyLatch.countDown();
-                assertThrows(InterruptedIOException.class, () -> response.body().readAllBytes(), "excepted IOException");
+                assertThrows(InterruptedIOException.class, () -> response.body().readAllBytes(), "expected InterruptedIoException");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

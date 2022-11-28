@@ -37,6 +37,7 @@ import javax.net.ssl.SSLSession;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
@@ -1131,5 +1132,11 @@ public final class Utils {
             }
         }
         return sb.toString();
+    }
+
+    public static InterruptedIOException toInterruptedIOException(InterruptedException ex){
+        InterruptedIOException interruptedIOException = new InterruptedIOException();
+        interruptedIOException.initCause(ex);
+        return interruptedIOException;
     }
 }
