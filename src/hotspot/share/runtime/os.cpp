@@ -774,8 +774,8 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock);
+  // When NMT is enabled this checks for heap overwrites, then de-accounts the old block.
+  void* const old_outer_ptr = MemTracker::enabled() ? MemTracker::record_free(memblock) : memblock;
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
