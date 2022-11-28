@@ -199,7 +199,7 @@ void* MallocTracker::record_free(void* memblock) {
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();
 
-  record_free_header(header->free_recording_data());
+  record_free_header(header->free_package());
 
   header->mark_block_as_dead();
 

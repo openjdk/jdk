@@ -717,7 +717,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     MallocHeader* header = MallocTracker::malloc_header(memblock);
     header->assert_block_integrity(); // Assert block hasn't been tampered with.
-    const FreePackage free_package = header->free_recording_data();
+    const FreePackage free_package = header->free_package();
     header->mark_block_as_dead();
 
     // the real realloc

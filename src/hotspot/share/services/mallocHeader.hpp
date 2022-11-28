@@ -130,7 +130,8 @@ class MallocHeader {
   inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 
-  FreePackage free_recording_data() {
+  // Return the necessary data to record the block this belongs to as freed
+  FreePackage free_package() {
     return FreePackage{this->size(), this->flags(), this->mst_marker()};
   }
   inline void mark_block_as_dead();
