@@ -148,8 +148,6 @@ public class CertificateExtensions implements DerEncoder {
      *
      * @param out the DerOutputStream to marshal the contents to.
      * @param isCertReq if true then no context specific tag is added.
-     * @exception CertificateException on encoding errors.
-     * @exception IOException on errors.
      */
     public void encode(DerOutputStream out, boolean isCertReq) {
         DerOutputStream extOut = new DerOutputStream();

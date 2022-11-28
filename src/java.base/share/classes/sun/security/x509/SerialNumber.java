@@ -108,7 +108,6 @@ public class SerialNumber {
      * Encode the SerialNumber in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     public void encode(DerOutputStream out) {
         out.putInteger(serialNum);

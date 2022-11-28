@@ -145,7 +145,6 @@ public class X509CertInfo {
      *
      * @param out an output stream to which the certificate is appended.
      * @exception CertificateException on encoding errors.
-     * @exception IOException on other errors.
      */
     public void encode(DerOutputStream out)
             throws CertificateException {

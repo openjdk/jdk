@@ -317,8 +317,6 @@ public class X509Key implements PublicKey, DerEncoder {
 
     /**
      * Returns the DER-encoded form of the key as a byte array.
-     *
-     * @exception InvalidKeyException on encoding errors.
      */
     public byte[] encode() {
         return getEncodedInternal().clone();
