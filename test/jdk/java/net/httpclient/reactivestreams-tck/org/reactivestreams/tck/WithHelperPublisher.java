@@ -64,7 +64,7 @@ public abstract class WithHelperPublisher<T> {
    * By default an <b>asynchronously signalling Publisher</b> is provided, which will use {@link #createElement(int)}
    * to generate elements type your Subscriber is able to consume.
    * <p>
-   * Sometimes you may want to implement your own custom custom helper Publisher - to validate behaviour of a Subscriber
+   * Sometimes you may want to implement your own custom helper Publisher - to validate behaviour of a Subscriber
    * when facing a synchronous Publisher for example. If you do, it MUST emit the exact number of elements asked for
    * (via the {@code elements} parameter) and MUST also must treat the following numbers of elements in these specific ways:
    * <ul>

@@ -57,7 +57,7 @@ import java.util.Optional;
  *         ["first", "second", "incorrect", "u\nprintable"]
  *                            ^^^^^^^^^^^^
  * </pre>
- * <p> two char arrays arrays: </p>
+ * <p> two char arrays: </p>
  * <pre>
  * Arrays differ starting from [index: 7]:
  *         ... &#92;u0001, &#92;u0002, &#92;u0007, a, b, \n, ...
