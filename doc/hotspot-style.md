@@ -692,6 +692,10 @@ This may work or may have worked in some versions of some compilers, but was
 later (C++14) explicitly disallowed
 [CWG 1437](https://cplusplus.github.io/CWG/issues/1437.html).
 
+The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
+platforms that define it. This macro predates the use by HotSpot of C++
+versions providing `alignas`. New code should use `alignas`.
+
 ### thread_local
 
 Avoid use of `thread_local`
