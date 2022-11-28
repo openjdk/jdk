@@ -35,7 +35,7 @@ constexpr jushort max_jushort = std::numeric_limits<jushort>::max();
 constexpr juint   max_juint   = std::numeric_limits<juint>::max();
 constexpr julong  max_julong  = std::numeric_limits<julong>::max();
 
-using uint = juint;
+using uint = unsigned int;
 
 //----------------------------------------------------------------------------------------------------
 // Sum and product which can never overflow: they wrap, just like the
