@@ -44,7 +44,7 @@ constexpr julong  max_julong  = std::numeric_limits<julong>::max();
 // The goal of this code to avoid undefined or implementation-defined
 // behavior.
 #define JAVA_INTEGER_OP(OP, NAME, TYPE, UNSIGNED_TYPE)  \
-inline TYPE NAME (TYPE in1, TYPE in2) {                 \
+inline constexpr TYPE NAME (TYPE in1, TYPE in2) {                 \
   UNSIGNED_TYPE ures = static_cast<UNSIGNED_TYPE>(in1); \
   ures OP ## = static_cast<UNSIGNED_TYPE>(in2);         \
   return ures;                                          \
@@ -67,7 +67,7 @@ JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
 // values; left shift discards bits, right shift sign extends.  We use
 // the same safe conversion technique as above for java_add and friends.
 #define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)         \
-inline TYPE NAME (TYPE lhs, jint rhs) {                      \
+inline constexpr TYPE NAME (TYPE lhs, jint rhs) {                      \
   constexpr juint rhs_mask = (sizeof(TYPE) * 8) - 1;         \
   static_assert(rhs_mask == 31 || rhs_mask == 63, "sanity"); \
   XTYPE xres = static_cast<XTYPE>(lhs);                      \
@@ -90,7 +90,7 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.
 #define SATURATED_INTEGER_OP(OP, NAME, TYPE1, TYPE2) \
-inline int NAME (TYPE1 in1, TYPE2 in2) {             \
+inline constexpr int NAME (TYPE1 in1, TYPE2 in2) {             \
   jlong res = static_cast<jlong>(in1);               \
   res OP ## = static_cast<jlong>(in2);               \
   if (res > max_jint) {                              \
