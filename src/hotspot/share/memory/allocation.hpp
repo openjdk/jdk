@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_ALLOCATION_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -138,11 +139,13 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 /*
  * Memory types
  */
-enum class MEMFLAGS {
+enum class MEMFLAGS : uint8_t  {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };
+// Extra insurance that MEMFLAGS truly has the same size as uint8_t.
+STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
 
 #define MEMORY_TYPE_SHORTNAME(type, human_readable) \
   constexpr MEMFLAGS type = MEMFLAGS::type;
@@ -627,6 +630,8 @@ class ArrayAllocator : public AllStatic {
   static E* allocate_malloc(size_t length, MEMFLAGS flags);
   static E* allocate_mmap(size_t length, MEMFLAGS flags);
 
+  static E* reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags);
+
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
@@ -656,6 +661,7 @@ class MallocArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
   static E* allocate(size_t length, MEMFLAGS flags);
+  static E* reallocate(E* addr, size_t new_length, MEMFLAGS flags);
   static void free(E* addr);
 };
 

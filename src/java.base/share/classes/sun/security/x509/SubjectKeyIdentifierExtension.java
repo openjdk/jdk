@@ -73,7 +73,7 @@ public class SubjectKeyIdentifierExtension extends Extension {
      * @param octetString the octet string identifying the key identifier.
      */
     public SubjectKeyIdentifierExtension(byte[] octetString)
-    throws IOException {
+            throws IOException {
         id = new KeyIdentifier(octetString);
 
         this.extensionId = PKIXExtensions.SubjectKey_Id;

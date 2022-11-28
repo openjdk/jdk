@@ -450,7 +450,9 @@ JRT_END
 
 // Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
 JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  jint doppel = SharedRuntime::f2i(x);
+  union {jfloat f; jint i;} bits;
+  bits.f = x;
+  jint doppel = bits.i;
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
   if (g_isnan(x))
     return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
@@ -467,7 +469,7 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
     return sign_bit; // Positive or negative zero
   }
 
-  jint exp = 0x7f800000 & doppel;
+  jint exp = ((0x7f800000 & doppel) >> (24 - 1)) - 127;
 
   // For binary16 subnormals, beside forcing exp to -15, retain
   // the difference exp_delta = E_min - exp.  This is the excess
@@ -501,6 +503,7 @@ JRT_END
 JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   // Halffloat format has 1 signbit, 5 exponent bits and
   // 10 significand bits
+  union {jfloat f; jint i;} bits;
   jint hf_arg = (jint)x;
   jint hf_sign_bit = 0x8000 & hf_arg;
   jint hf_exp_bits = 0x7c00 & hf_arg;
@@ -516,16 +519,25 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   if (hf_exp == -15) {
     // For subnormal values, return 2^-24 * significand bits
     return (sign * (pow(2,-24)) * hf_significand_bits);
-  }else if (hf_exp == 16) {
-    return (hf_significand_bits == 0) ? sign * float_infinity : (SharedRuntime::i2f((hf_sign_bit << 16) | 0x7f800000 |
-           (hf_significand_bits << significand_shift)));
+  } else if (hf_exp == 16) {
+    if (hf_significand_bits == 0) {
+      bits.i = 0x7f800000;
+      return sign * bits.f;
+    } else {
+      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
+               (hf_significand_bits << significand_shift);
+      return bits.f;
+    }
   }
 
   // Add the bias of float exponent and shift
-  int float_exp_bits = (hf_exp + 127) << (24 - 1);
+  jint float_exp_bits = (hf_exp + 127) << (24 - 1);
 
   // Combine sign, exponent and significand bits
-  return SharedRuntime::i2f((hf_sign_bit << 16) | float_exp_bits | (hf_significand_bits << significand_shift));
+  bits.i = (hf_sign_bit << 16) | float_exp_bits |
+           (hf_significand_bits << significand_shift);
+
+  return bits.f;
 JRT_END
 
 // Exception handling across interpreter/compiler boundaries
@@ -3126,11 +3138,15 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       struct { double data[20]; } locs_buf;
       struct { double data[20]; } stubs_locs_buf;
       buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-#if defined(AARCH64)
+#if defined(AARCH64) || defined(PPC64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops
       // accesses. For native_wrappers we need a constant.
-      buffer.initialize_consts_size(8);
+      // On PPC64 the continuation enter intrinsic needs the constant pool for the compiled
+      // static java call that is resolved in the runtime.
+      if (PPC64_ONLY(method->is_continuation_enter_intrinsic() &&) true) {
+        buffer.initialize_consts_size(8 PPC64_ONLY(+ 24));
+      }
 #endif
       buffer.stubs()->initialize_shared_locs((relocInfo*)&stubs_locs_buf, sizeof(stubs_locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);

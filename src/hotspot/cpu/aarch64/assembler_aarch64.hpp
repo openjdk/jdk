@@ -1895,31 +1895,33 @@ void mvnw(Register Rd, Register Rm,
 #undef INSN
 
   // Floating-point data-processing (1 source)
-  void data_processing(unsigned op31, unsigned type, unsigned opcode,
+  void data_processing(unsigned type, unsigned opcode,
                        FloatRegister Vd, FloatRegister Vn) {
     starti;
-    f(op31, 31, 29);
+    f(0b000, 31, 29);
     f(0b11110, 28, 24);
     f(type, 23, 22), f(1, 21), f(opcode, 20, 15), f(0b10000, 14, 10);
     rf(Vn, 5), rf(Vd, 0);
   }
 
-#define INSN(NAME, op31, type, opcode)                  \
+#define INSN(NAME, type, opcode)                        \
   void NAME(FloatRegister Vd, FloatRegister Vn) {       \
-    data_processing(op31, type, opcode, Vd, Vn);        \
+    data_processing(type, opcode, Vd, Vn);              \
   }
 
-  INSN(fmovs,  0b000, 0b00, 0b000000);
-  INSN(fabss,  0b000, 0b00, 0b000001);
-  INSN(fnegs,  0b000, 0b00, 0b000010);
-  INSN(fsqrts, 0b000, 0b00, 0b000011);
-  INSN(fcvts,  0b000, 0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fmovs,  0b00, 0b000000);
+  INSN(fabss,  0b00, 0b000001);
+  INSN(fnegs,  0b00, 0b000010);
+  INSN(fsqrts, 0b00, 0b000011);
+  INSN(fcvts,  0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fcvths, 0b11, 0b000100);   // Half-precision to single-precision
+  INSN(fcvtsh, 0b00, 0b000111);   // Single-precision to half-precision
 
-  INSN(fmovd,  0b000, 0b01, 0b000000);
-  INSN(fabsd,  0b000, 0b01, 0b000001);
-  INSN(fnegd,  0b000, 0b01, 0b000010);
-  INSN(fsqrtd, 0b000, 0b01, 0b000011);
-  INSN(fcvtd,  0b000, 0b01, 0b000100);   // Double-precision to single-precision
+  INSN(fmovd,  0b01, 0b000000);
+  INSN(fabsd,  0b01, 0b000001);
+  INSN(fnegd,  0b01, 0b000010);
+  INSN(fsqrtd, 0b01, 0b000011);
+  INSN(fcvtd,  0b01, 0b000100);   // Double-precision to single-precision
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
