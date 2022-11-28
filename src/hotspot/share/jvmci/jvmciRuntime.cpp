@@ -581,8 +581,6 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* current,
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool as_string, bool newline))
-  assert(thread == JavaThread::current(), "pre-condition");
-
   ttyLocker ttyl;
 
   if (obj == NULL) {
@@ -608,20 +606,16 @@ JRT_END
 #if INCLUDE_G1GC
 
 void JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj) {
-  assert(thread == JavaThread::current(), "pre-condition");
   G1BarrierSetRuntime::write_ref_field_pre_entry(obj, thread);
 }
 
 void JVMCIRuntime::write_barrier_post(JavaThread* thread, volatile CardValue* card_addr) {
-  assert(thread == JavaThread::current(), "pre-condition");
   G1BarrierSetRuntime::write_ref_field_post_entry(card_addr, thread);
 }
 
 #endif // INCLUDE_G1GC
 
 JRT_LEAF(jboolean, JVMCIRuntime::validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child))
-  assert(thread == JavaThread::current(), "pre-condition");
-
   bool ret = true;
   if(!Universe::heap()->is_in(parent)) {
     tty->print_cr("Parent Object " INTPTR_FORMAT " not in heap", p2i(parent));
@@ -650,7 +644,6 @@ JRT_ENTRY(void, JVMCIRuntime::vm_error(JavaThread* current, jlong where, jlong f
 JRT_END
 
 JRT_LEAF(oopDesc*, JVMCIRuntime::load_and_clear_exception(JavaThread* thread))
-  assert(thread == JavaThread::current(), "pre-condition");
   oop exception = thread->exception_oop();
   assert(exception != NULL, "npe");
   thread->set_exception_oop(NULL);
@@ -661,7 +654,6 @@ JRT_END
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 JRT_LEAF(void, JVMCIRuntime::log_printf(JavaThread* thread, const char* format, jlong v1, jlong v2, jlong v3))
-  assert(thread == JavaThread::current(), "pre-condition");
   ResourceMark rm;
   tty->print(format, v1, v2, v3);
 JRT_END
@@ -711,8 +703,6 @@ JRT_END
 PRAGMA_DIAG_POP
 
 JRT_LEAF(void, JVMCIRuntime::log_primitive(JavaThread* thread, jchar typeChar, jlong value, jboolean newline))
-  assert(thread == JavaThread::current(), "pre-condition");
-
   union {
       jlong l;
       jdouble d;

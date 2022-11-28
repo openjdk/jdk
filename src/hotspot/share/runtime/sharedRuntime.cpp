@@ -723,8 +723,6 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 //
 JRT_LEAF(int, SharedRuntime::rc_trace_method_entry(
     JavaThread* thread, Method* method))
-  assert(thread == JavaThread::current(), "pre-condition");
-
   if (method->is_obsolete()) {
     // We are calling an obsolete method, but this is not necessarily
     // an error. Our method could have been redefined just after we
