@@ -916,7 +916,6 @@ void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
 void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   uint hrm_index = r->hrm_index();
 
-  // we call prepare_remset_for_scan unconditionally because optional evacuation doesn't not call this method again.
   r->prepare_remset_for_scan();
 
   // Only update non-collection set old regions, others must have already been set
