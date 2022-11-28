@@ -26,10 +26,10 @@
 package sun.security.util;
 
 import java.io.*;
-import java.lang.invoke.MethodHandles;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A utility class for reading passwords
@@ -55,15 +55,8 @@ public class Password {
             // Use the new java.io.Console class
             Console con;
             if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
-                // check if `System.in` is overridden or not
-                BufferedInputStream initIn = null;
-                try {
-                    initIn = (BufferedInputStream) MethodHandles.privateLookupIn(System.class, MethodHandles.lookup())
-                            .findStaticGetter(System.class, "initIn", BufferedInputStream.class)
-                            .invoke();
-                } catch (Throwable ignore) {}
-
-                if (System.in == initIn) {
+                // Only use Console if System.in is not replaced.
+                if (initIn == System.in) {
                     consoleEntered = con.readPassword();
                     // readPassword returns "" if you just press ENTER with the built-in Console,
                     // to be compatible with old Password class, change to null
@@ -167,4 +160,5 @@ public class Password {
         return ba;
     }
     private static volatile CharsetEncoder enc;
+    private static final InputStream initIn = SharedSecrets.getJavaLangAccess().initialSystemIn();
 }

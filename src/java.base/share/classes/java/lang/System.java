@@ -2130,7 +2130,7 @@ public final class System {
         return properties;
     }
 
-    private static BufferedInputStream initIn = null;
+    private static InputStream initIn = null;
 
     /**
      * Initialize the system class.  Called after thread initialization.
@@ -2485,6 +2485,10 @@ public final class System {
 
             public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            }
+
+            public InputStream initialSystemIn() {
+                return initIn;
             }
 
             public void setCause(Throwable t, Throwable cause) {
