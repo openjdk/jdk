@@ -730,7 +730,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
     // realloc(3) succeeded, variable header now points to invalid memory and we need to record the free:ing
-    MallocTracker::record_free(free_package);
+    MemTracker::record_free(free_package);
 
     // After a successful realloc(3), we re-account the resized block with its new size
     // to NMT. This re-instantiates the NMT header.
@@ -775,7 +775,7 @@ void  os::free(void *memblock) {
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
   // When NMT is enabled this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::enabled() ? MemTracker::record_free(memblock) : memblock;
+  void* const old_outer_ptr = MemTracker::enabled() ? MemTracker::record_free_block(memblock) : memblock;
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }

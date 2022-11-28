@@ -206,10 +206,10 @@ void* MallocTracker::record_free_block(void* memblock) {
   return (void*)header;
 }
 
-void MallocTracker::record_free(FreePackage pkg) {
-  MallocMemorySummary::record_free(pkg.size, pkg.flags);
+void MallocTracker::record_free(FreePackage free_package) {
+  MallocMemorySummary::record_free(free_package.size, free_package.flags);
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(pkg.size, pkg.mst_marker);
+    MallocSiteTable::deallocation_at(free_package.size, free_package.mst_marker);
   }
 }
 

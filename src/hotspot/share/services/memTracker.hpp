@@ -103,11 +103,15 @@ class MemTracker : AllStatic {
   }
 
   // Record malloc free and return malloc base address
-  static inline void* record_free(void* memblock) {
+  static inline void* record_free_block(void* memblock) {
     // Never turned on
     assert(memblock != NULL, "caller should handle NULL");
     assert(enabled(), "NMT must be enabled");
     return MallocTracker::record_free_block(memblock);
+  }
+  static inline void record_free(FreePackage free_package) {
+    assert(enabled(), "NMT must be enabled");
+    MallocTracker::record_free(free_package);
   }
 
   // Record creation of an arena
