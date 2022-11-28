@@ -300,16 +300,6 @@ inline jdouble jdouble_cast(jlong x);
 #define CONST64(x)  (x ## LL)
 #define UCONST64(x) (x ## ULL)
 
-const jlong min_jlong = CONST64(0x8000000000000000);
-const jlong max_jlong = CONST64(0x7fffffffffffffff);
-
-//-------------------------------------------
-// Constant for jdouble
-const jlong min_jlongDouble = CONST64(0x0000000000000001);
-const jdouble min_jdouble = jdouble_cast(min_jlongDouble);
-const jlong max_jlongDouble = CONST64(0x7fefffffffffffff);
-const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
-
 const size_t K                  = 1024;
 const size_t M                  = K*K;
 const size_t G                  = M*K;
@@ -533,28 +523,10 @@ typedef jushort u2;
 typedef juint   u4;
 typedef julong  u8;
 
-const jubyte  max_jubyte  = (jubyte)-1;  // 0xFF       largest jubyte
-const jushort max_jushort = (jushort)-1; // 0xFFFF     largest jushort
-const juint   max_juint   = (juint)-1;   // 0xFFFFFFFF largest juint
-const julong  max_julong  = (julong)-1;  // 0xFF....FF largest julong
-
 typedef jbyte  s1;
 typedef jshort s2;
 typedef jint   s4;
 typedef jlong  s8;
-
-const jbyte min_jbyte = -(1 << 7);       // smallest jbyte
-const jbyte max_jbyte = (1 << 7) - 1;    // largest jbyte
-const jshort min_jshort = -(1 << 15);    // smallest jshort
-const jshort max_jshort = (1 << 15) - 1; // largest jshort
-
-const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
-const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
-
-const jint min_jintFloat = (jint)(0x00000001);
-const jfloat min_jfloat = jfloat_cast(min_jintFloat);
-const jint max_jintFloat = (jint)(0x7f7fffff);
-const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions

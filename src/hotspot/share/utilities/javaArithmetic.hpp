@@ -2,13 +2,38 @@
 #define SHARE_UTILITIES_JAVAARITHMETIC_HPP
 
 #include "jni.h"
+#include <limits>
 #include <type_traits>
+
+// Basic types' bounds
+constexpr jbyte  min_jbyte  = std::numeric_limits<jbyte>::min();
+constexpr jbyte  max_jbyte  = std::numeric_limits<jbyte>::max();
+constexpr jshort min_jshort = std::numeric_limits<jshort>::min();
+constexpr jshort max_jshort = std::numeric_limits<jshort>::max();
+constexpr jint   min_jint   = std::numeric_limits<jint>::min();
+constexpr jint   max_jint   = std::numeric_limits<jint>::max();
+constexpr jlong  min_jlong  = std::numeric_limits<jlong>::min();
+constexpr jlong  max_jlong  = std::numeric_limits<jlong>::max();
+
+constexpr jfloat  min_jfloat      = std::numeric_limits<jfloat>::min();
+constexpr jint    min_jintFloat   = (jint)0x00000001;
+constexpr jfloat  max_jfloat      = std::numeric_limits<jfloat>::max();
+constexpr jint    max_jintFloat   = (jint)0x7f7fffff;
+constexpr jdouble min_jdouble     = std::numeric_limits<jdouble>::min();
+constexpr jlong   min_jlongDouble = (jlong)0x0000000000000001;
+constexpr jdouble max_jdouble     = std::numeric_limits<jdouble>::max();
+constexpr jlong   max_jlongDouble = (jlong)0x7fefffffffffffff;
 
 // Additional Java basic types
 using jubyte  = std::make_unsigned<jbyte> ::type;
 using jushort = std::make_unsigned<jshort>::type;
 using juint   = std::make_unsigned<jint>  ::type;
 using julong  = std::make_unsigned<jlong> ::type;
+
+constexpr jubyte  max_jubyte  = std::numeric_limits<jubyte>::max();
+constexpr jushort max_jushort = std::numeric_limits<jushort>::max();
+constexpr juint   max_juint   = std::numeric_limits<juint>::max();
+constexpr julong  max_julong  = std::numeric_limits<julong>::max();
 
 //----------------------------------------------------------------------------------------------------
 // Sum and product which can never overflow: they wrap, just like the
@@ -68,8 +93,6 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 inline int NAME (TYPE1 in1, TYPE2 in2) {             \
   jlong res = static_cast<jlong>(in1);               \
   res OP ## = static_cast<jlong>(in2);               \
-  constexpr jint max_jint = (jint)0x7FFFFFFF;        \
-  constexpr jint min_jint = (jint)0x80000000;        \
   if (res > max_jint) {                              \
     res = max_jint;                                  \
   } else if (res < min_jint) {                       \
