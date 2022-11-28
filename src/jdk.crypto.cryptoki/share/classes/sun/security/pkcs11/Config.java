@@ -479,12 +479,12 @@ final class Config {
             }
             case "nssDbMode"-> {
                 String mode = parseStringEntry(st.sval);
-                switch (mode) {
-                    case "readWrite" -> nssDbMode = Secmod.DbMode.READ_WRITE;
-                    case "readOnly" -> nssDbMode = Secmod.DbMode.READ_ONLY;
-                    case "noDb" -> nssDbMode = Secmod.DbMode.NO_DB;
+                nssDbMode = switch (mode) {
+                    case "readWrite" -> Secmod.DbMode.READ_WRITE;
+                    case "readOnly" -> Secmod.DbMode.READ_ONLY;
+                    case "noDb" -> Secmod.DbMode.NO_DB;
                     default -> throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
-                }
+                };
                 nssUseSecmod = true;
             }
             case "nssNetscapeDbWorkaround"-> {
@@ -1034,12 +1034,12 @@ final class Config {
         checkDup(keyword);
         parseEquals();
         String val = parseWord();
-        switch (val) {
-            case "ignoreAll" -> handleStartupErrors = ERR_IGNORE_ALL;
-            case "ignoreMissingLibrary" -> handleStartupErrors = ERR_IGNORE_LIB;
-            case "halt" -> handleStartupErrors = ERR_HALT;
+        handleStartupErrors = switch (val) {
+            case "ignoreAll" -> ERR_IGNORE_ALL;
+            case "ignoreMissingLibrary" -> ERR_IGNORE_LIB;
+            case "halt" -> ERR_HALT;
             default -> throw excToken("Invalid value for handleStartupErrors:");
-        }
+        };
         if (DEBUG) {
             System.out.println("handleStartupErrors: " + handleStartupErrors);
         }

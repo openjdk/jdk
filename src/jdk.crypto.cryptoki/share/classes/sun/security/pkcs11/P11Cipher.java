@@ -225,20 +225,18 @@ final class P11Cipher extends CipherSpi {
 
     private int parseMode(String mode) throws NoSuchAlgorithmException {
         mode = mode.toUpperCase(Locale.ENGLISH);
-        int result;
-        switch (mode) {
-            case "ECB" -> result = MODE_ECB;
+        return switch (mode) {
+            case "ECB" -> MODE_ECB;
             case "CBC" -> {
                 if (blockSize == 0) {
                     throw new NoSuchAlgorithmException
                             ("CBC mode not supported with stream ciphers");
                 }
-                result = MODE_CBC;
+                yield MODE_CBC;
             }
-            case "CTR" -> result = MODE_CTR;
+            case "CTR" -> MODE_CTR;
             default -> throw new NoSuchAlgorithmException("Unsupported mode " + mode);
-        }
-        return result;
+        };
     }
 
     // see JCE spec
@@ -362,15 +360,15 @@ final class P11Cipher extends CipherSpi {
                             key.getEncoded().length) != fixedKeySize) {
             throw new InvalidKeyException("Key size is invalid");
         }
-        switch (opmode) {
-            case Cipher.ENCRYPT_MODE -> encrypt = true;
-            case Cipher.DECRYPT_MODE -> encrypt = false;
+        encrypt = switch (opmode) {
+            case Cipher.ENCRYPT_MODE -> true;
+            case Cipher.DECRYPT_MODE -> false;
             case Cipher.WRAP_MODE, Cipher.UNWRAP_MODE -> throw new UnsupportedOperationException
                     ("Unsupported mode: " + opmode);
             default ->
                 // should never happen; checked by Cipher.init()
                     throw new AssertionError("Unknown mode: " + opmode);
-        }
+        };
         if (blockMode == MODE_ECB) { // ECB or stream cipher
             if (iv != null) {
                 if (blockSize == 0) {

@@ -353,7 +353,7 @@ public final class Secmod {
         return null;
     }
 
-    static final String TEMPLATE_EXTERNAL =  """
+    static final String TEMPLATE_EXTERNAL = """
                     library = %s
                     name = "%s"
                     slotListIndex = %d

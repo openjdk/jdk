@@ -753,7 +753,6 @@ final class P11KeyWrapCipher extends CipherSpi {
             default -> // should never happen
                     throw new AssertionError();
         }
-        ;
 
         CK_ATTRIBUTE[] attributes;
         try {

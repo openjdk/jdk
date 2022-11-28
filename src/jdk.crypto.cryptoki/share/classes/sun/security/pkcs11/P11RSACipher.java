@@ -367,11 +367,10 @@ final class P11RSACipher extends CipherSpi {
         try {
             ensureInitialized();
             PKCS11 p11 = token.p11;
-            int n;
-            switch (mode) {
-                case MODE_ENCRYPT -> n = p11.C_Encrypt
+            return switch (mode) {
+                case MODE_ENCRYPT -> p11.C_Encrypt
                         (session.id(), 0, buffer, 0, bufOfs, 0, out, outOfs, outLen);
-                case MODE_DECRYPT -> n = p11.C_Decrypt
+                case MODE_DECRYPT ->  p11.C_Decrypt
                         (session.id(), 0, buffer, 0, bufOfs, 0, out, outOfs, outLen);
                 case MODE_SIGN -> {
                     byte[] tmpBuffer = new byte[bufOfs];
@@ -383,13 +382,12 @@ final class P11RSACipher extends CipherSpi {
                                         "hold the produced data (" + tmpBuffer.length + ")");
                     }
                     System.arraycopy(tmpBuffer, 0, out, outOfs, tmpBuffer.length);
-                    n = tmpBuffer.length;
+                    yield tmpBuffer.length;
                 }
-                case MODE_VERIFY -> n = p11.C_VerifyRecover
+                case MODE_VERIFY -> p11.C_VerifyRecover
                         (session.id(), buffer, 0, bufOfs, out, outOfs, outLen);
                 default -> throw new ProviderException("internal error");
-            }
-            return n;
+            };
         } catch (PKCS11Exception e) {
             throw (BadPaddingException)new BadPaddingException
                 ("doFinal() failed").initCause(e);
