@@ -26,17 +26,14 @@
  * @test
  * @bug 8295737
  * @summary macOS: Print content cut off when width > height with portrait orientation
- * @run main/othervm/manual CutOffImage
+ * @run main/othervm/manual PaperA5OrientationTest
  */
 
-import javax.print.PrintServiceLookup;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.font.FontRenderContext;
-import java.awt.font.GlyphVector;
-import java.awt.geom.AffineTransform;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -47,20 +44,26 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import java.awt.print.Book;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.print.Paper;
 
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.Size2DSyntax;
+import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.MediaSizeName;
 
-public class CutOffImage {
+
+public class PaperA5OrientationTest {
 
     private static final String DESCRIPTION =
-            " 1. Setup printer on the system.\n" +
+            " 1. To run the test either setup the printer to use paper size A5" +
+                    " and put A5 paper into the paper tray" +
+                    " or use a virtual PDF printer.\n" +
                     " 2. Press Print button to print 4 rectangles.\n" +
-                    "    - rectangle size: 300x100, orientation portrait\n" +
-                    "    - rectangle size: 300x100, orientation landscape\n" +
-                    "    - rectangle size: 100x300, orientation portrait\n" +
-                    "    - rectangle size: 100x300, orientation landscape\n" +
+                    "    - rectangle with width is less than height, orientation portrait\n" +
+                    "    - rectangle with width is less than height, orientation landscape\n" +
+                    "    - rectangle with width is greater than height, orientation portrait\n" +
+                    "    - rectangle with width is greater than height, orientation landscape\n" +
                     " 3. Check that 4 printed rectangles have fully drawn 8 vertical areas labeled from 1 to 8.\n" +
                     " 4. If so, press PASS button, otherwise press FAIL button.\n";
 
@@ -71,8 +74,137 @@ public class CutOffImage {
     private static volatile boolean testPassed;
     private static volatile boolean testFinished;
 
-    private static final double DOC_WIDTH = 300;
-    private static final double DOC_HEIGHT = 100;
+    private static final double DOC_WIDTH;
+    private static final double DOC_HEIGHT;
+
+    static {
+        MediaSize isoSize = MediaSize.getMediaSizeForName(MediaSizeName.ISO_A5);
+        float[] size = isoSize.getSize(Size2DSyntax.INCH);
+
+        DOC_WIDTH = size[0] * 72.0;
+        DOC_HEIGHT = size[1] * 72.0;
+    }
+
+    private static void paintImage(Graphics2D g, PageFormat page, int pageIndex) {
+        BufferedImage img = createImage((int) page.getWidth(), (int) page.getHeight(), page.getOrientation(), pageIndex);
+        g.drawImage(img, 0, 0, null);
+    }
+
+    private static void appendToBook(PrinterJob job, Book book, double width, double height, int orientation) {
+
+        PageFormat page = job.getPageFormat(null);
+        page.setOrientation(orientation);
+        Paper paper = page.getPaper();
+
+        paper.setSize(width, height);
+        paper.setImageableArea(0, 0, width, height);
+
+        page.setPaper(paper);
+        page.setOrientation(orientation);
+        book.append(new TestPrintable(), page);
+    }
+
+    private static void print(double width, double height) throws PrinterException {
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPrintService(PrintServiceLookup.lookupDefaultPrintService());
+
+        Book book = new Book();
+        appendToBook(job, book, width, height, PageFormat.PORTRAIT);
+        appendToBook(job, book, width, height, PageFormat.LANDSCAPE);
+        appendToBook(job, book, height, width, PageFormat.PORTRAIT);
+        appendToBook(job, book, height, width, PageFormat.LANDSCAPE);
+
+        job.setPageable(book);
+
+        if (job.printDialog()) {
+            job.print();
+        } else {
+            throw new RuntimeException("Printing was canceled!");
+        }
+    }
+
+    private static String getOrientation(int orientation) {
+        switch (orientation) {
+            case PageFormat.LANDSCAPE:
+                return "LANDSCAPE";
+            case PageFormat.PORTRAIT:
+                return "PORTRAIT";
+            case PageFormat.REVERSE_LANDSCAPE:
+                return "REVERSE_LANDSCAPE";
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    private static String getLabel(int width, int height, int orientation) {
+        return String.format("%dx%d %s", width, height, getOrientation(orientation));
+    }
+
+    private static BufferedImage createImage(int w, int h, int orientation, int pageIndex) {
+
+        System.out.printf("create image size: [%d, %d], orientation: %s%n", w, h, getOrientation(orientation));
+
+        int x = 0;
+        int y = 0;
+
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+
+        g.setClip(null);
+
+        g.setColor(Color.ORANGE);
+        g.fillRect(x, y, w, h);
+
+        g.setColor(Color.BLUE);
+        g.drawRect(x, y, w, h);
+        g.drawRect(x + 1, y + 1, w - 2, h - 2);
+        g.drawLine(x, y, x + w, y + h);
+        g.drawLine(x, y + h, x + w, y);
+
+        g.setFont(g.getFont().deriveFont(10.0f));
+
+        int N = 8;
+        int dx = w / N;
+
+        for (int i = 0; i < N; i++) {
+            int xx = i * dx + x;
+            g.setColor(Color.BLUE);
+            g.drawLine(xx, y, xx, y + h);
+            g.setColor(Color.BLUE);
+            g.drawString("" + (i + 1), xx + 3, y + h / 2);
+        }
+
+        int NN = 5;
+        int arrX = x + w / 2 - 4;
+        g.setColor(Color.RED);
+        for (int i = 0; i < NN; i++) {
+            g.drawLine(arrX + i, y + h / 3, arrX + i, y + 2 * h / 3);
+        }
+
+        int r = 7;
+        g.fillOval(arrX + NN / 2 - r, y + h / 3 - r - 5, 2 * r, 2 * r);
+
+        g.setColor(Color.RED);
+        String label = getLabel(w, h, orientation);
+        int strW = g.getFontMetrics().stringWidth(label);
+        g.drawString(label, x + (w - strW) / 2, y + h / 5);
+
+        g.setColor(Color.BLACK);
+        g.setFont(g.getFont().deriveFont(24.0f));
+        g.drawString(String.format("P:%d", pageIndex + 1), x + w / 2, y + 2 * h / 3);
+
+        g.dispose();
+        return img;
+    }
+
+    private static class TestPrintable implements Printable {
+
+        @Override
+        public int print(Graphics graphics, PageFormat pageFormat, int index) {
+            paintImage((Graphics2D) graphics, pageFormat, index);
+            return PAGE_EXISTS;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -207,118 +339,5 @@ public class CutOffImage {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private static String getOrientation(int orientation) {
-        switch (orientation) {
-            case PageFormat.LANDSCAPE:
-                return "LANDSCAPE";
-            case PageFormat.PORTRAIT:
-                return "PORTRAIT";
-            case PageFormat.REVERSE_LANDSCAPE:
-                return "REVERSE_LANDSCAPE";
-            default:
-                return "UNKNOWN";
-        }
-    }
-
-    private static void paintImage(Graphics2D g, int width, int height, int orientation) {
-        BufferedImage img = createImage(width, height, orientation);
-        g.drawImage(img, 0, 0, null);
-    }
-
-    private static void appendToBook(PrinterJob job, Book book, double width, double height, int orientation) {
-
-        PageFormat page = job.getPageFormat(null);
-        page.setOrientation(orientation);
-        Paper paper = page.getPaper();
-
-        boolean isPortrait = (orientation == PageFormat.PORTRAIT);
-        double w = (isPortrait) ? width : height;
-        double h = (isPortrait) ? height : width;
-        paper.setSize(w, h);
-        paper.setImageableArea(0, 0, w, h);
-
-        page.setPaper(paper);
-        page.setOrientation(orientation);
-        book.append(new TestPrintable(width, height), page);
-    }
-
-    private static void print(double width, double height) throws PrinterException {
-        PrinterJob job = PrinterJob.getPrinterJob();
-        job.setPrintService(PrintServiceLookup.lookupDefaultPrintService());
-
-        Book book = new Book();
-        appendToBook(job, book, width, height, PageFormat.PORTRAIT);
-        appendToBook(job, book, width, height, PageFormat.LANDSCAPE);
-        appendToBook(job, book, height, width, PageFormat.PORTRAIT);
-        appendToBook(job, book, height, width, PageFormat.LANDSCAPE);
-
-        job.setPageable(book);
-
-        if (job.printDialog()) {
-            job.print();
-        } else {
-            throw new RuntimeException("Printing was canceled!");
-        }
-    }
-
-    private static String getLabel(int width, int height, int orientation) {
-        return String.format("%dx%d %s", width, height, getOrientation(orientation));
-    }
-
-    private static BufferedImage createImage(int w, int h, int orientation) {
-
-        int x = 0;
-        int y = 0;
-
-        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = img.createGraphics();
-
-        g.setColor(Color.ORANGE);
-        g.fillRect(x, y, w, h);
-
-        g.setColor(Color.BLUE);
-        g.drawRect(x, y, w, h);
-        g.drawRect(x + 1, y + 1, w - 2, h - 2);
-        g.drawLine(x, y, x + w, y + h);
-        g.drawLine(x, y + h, x + w, y);
-
-        g.setFont(g.getFont().deriveFont(10.0f));
-
-        int N = 8;
-        int dx = w / N;
-
-        for (int i = 0; i < N; i++) {
-            int xx = i * dx + x;
-            g.setColor(Color.BLUE);
-            g.drawLine(xx, y, xx, y + h);
-            g.setColor(Color.BLUE);
-            g.drawString("" + (i + 1), xx + 3, y + h / 2);
-        }
-
-        g.setColor(Color.RED);
-        String label = getLabel(w, h, orientation);
-        g.drawString(label, x + w / 10, y + h / 4);
-
-        g.dispose();
-        return img;
-    }
-
-    private static class TestPrintable implements Printable {
-
-        private final double width;
-        private final double height;
-
-        TestPrintable(double width, double height) {
-            this.width = width;
-            this.height = height;
-        }
-
-        @Override
-        public int print(Graphics graphics, PageFormat pageFormat, int index) {
-            paintImage((Graphics2D) graphics, (int) width, (int) height, pageFormat.getOrientation());
-            return PAGE_EXISTS;
-        }
     }
 }
