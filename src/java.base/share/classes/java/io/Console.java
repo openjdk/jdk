@@ -598,7 +598,9 @@ public class Console implements Flushable
             public Console console() {
                 if (cons == null) {
                     // Try loading providers
-                    var consModName = System.getProperty("jdk.console", JdkConsoleProvider.DEFAULT_PROVIDER);
+                    var consModName =
+                            GetPropertyAction.privilegedGetProperty("jdk.console",
+                                    JdkConsoleProvider.DEFAULT_PROVIDER);
                     cons = ServiceLoader.load(JdkConsoleProvider.class).stream()
                        .map(ServiceLoader.Provider::get)
                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
