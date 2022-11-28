@@ -878,7 +878,7 @@ public final class CPrinterJob extends RasterPrinterJob {
     // NSPrintInfo which paper width is less than height
     // has portrait orientation.
     // NSPrintInfo which paper width is greater than height
-    // has portrait orientation.
+    // has landscape orientation.
     // (w < h) <-> portrait
     // (w > h) <-> landscape
     //
