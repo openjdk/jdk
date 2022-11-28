@@ -213,7 +213,7 @@ void ADLParser::instr_parse(void) {
           assert(match_rules_cnt < 100," too many match rule clones");
           const size_t buf_size = strlen(instr->_ident) + 4;
           char* buf = (char*) AdlAllocateHeap(buf_size);
-          snprintf_checked(buf, buf_size, "%s_%d", instr->_ident, match_rules_cnt++);
+          snprintf(buf, buf_size, "%s_%d", instr->_ident, match_rules_cnt++);
           rule->_result = buf;
           // Check for commutative operations with tree operands.
           matchrule_clone_and_swap(rule, instr->_ident, match_rules_cnt);
@@ -258,6 +258,7 @@ void ADLParser::instr_parse(void) {
     }
     skipws();
   } while(_curchar != '%');
+//assert(false, "abort");
   next_char();
   if (_curchar != '}') {
     parse_err(SYNERR, "missing '%%}' in instruction definition\n");

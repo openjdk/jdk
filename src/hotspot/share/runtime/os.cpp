@@ -105,7 +105,7 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   int result = os::vsnprintf(buf, len, fmt, args);
   va_end(args);
   assert(result >= 0, "os::snprintf error");
-  assert(static_cast<size_t>(result) < size, "os::snprintf truncated");
+  assert(static_cast<size_t>(result) < len, "os::snprintf truncated");
   return result;
 }
 
