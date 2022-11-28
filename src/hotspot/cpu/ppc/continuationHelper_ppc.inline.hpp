@@ -34,13 +34,11 @@ static inline intptr_t** link_address(const frame& f) {
 }
 
 inline int ContinuationHelper::frame_align_words(int size) {
-  Unimplemented();
-  return 0;
+  return size & 1;
 }
 
-inline intptr_t* ContinuationHelper::frame_align_pointer(intptr_t* sp) {
-  Unimplemented();
-  return NULL;
+inline intptr_t* ContinuationHelper::frame_align_pointer(intptr_t* p) {
+  return align_down(p, frame::frame_alignment);
 }
 
 template<typename FKind>
@@ -53,72 +51,135 @@ inline void ContinuationHelper::update_register_map_with_callee(const frame& f, 
 }
 
 inline void ContinuationHelper::push_pd(const frame& f) {
-  Unimplemented();
+  f.own_abi()->callers_sp = (uint64_t)f.fp();
 }
 
 
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* cont) {
-  Unimplemented();
+  // nothing to do
 }
 
 #ifdef ASSERT
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
-  Unimplemented();
+  // nothing to do
 }
 
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
-  Unimplemented();
-  return false;
+  intptr_t* sp = f.sp();
+  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  intptr_t* fp = (intptr_t*)f.own_abi()->callers_sp;
+  assert(f.raw_pc() == pc, "f.ra_pc: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.raw_pc()), p2i(pc));
+  assert(f.fp() == fp, "f.fp: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.fp()), p2i(fp));
+  return f.raw_pc() == pc && f.fp() == fp;
 }
 #endif
 
 inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f) {
-  Unimplemented();
-  return NULL;
-}
-
-template<typename FKind>
-static inline intptr_t* real_fp(const frame& f) {
-  Unimplemented();
-  return NULL;
+  return (intptr_t**)&f.own_abi()->callers_sp;
 }
 
 inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {
-  Unimplemented();
-  return NULL;
+  return (address*)&f.callers_abi()->lr;
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
-  Unimplemented();
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
+  intptr_t* sp = caller.unextended_sp();
+  if (!f.is_heap_frame() && caller.is_interpreted_frame()) {
+    // See diagram "Interpreter Calling Procedure on PPC" at the end of continuationFreezeThaw_ppc.inline.hpp
+    sp = (intptr_t*)caller.at(ijava_idx(top_frame_sp));
+  }
+  assert(f.is_interpreted_frame(), "");
+  assert(f.is_heap_frame() || is_aligned(sp, frame::alignment_in_bytes), "");
+  intptr_t* la = f.addr_at(ijava_idx(sender_sp));
+  *la = f.is_heap_frame() ? (intptr_t)(sp - f.fp()) : (intptr_t)sp;
 }
 
 inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
-  Unimplemented();
-  return NULL;
+  return (address*)&f.callers_abi()->lr;
 }
 
 inline address ContinuationHelper::Frame::real_pc(const frame& f) {
-  Unimplemented();
-  return NULL;
+  return (address)f.own_abi()->lr;
 }
 
 inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
-  Unimplemented();
+  f.own_abi()->lr = (uint64_t)pc;
 }
 
+//                     | Minimal ABI          |
+//                     | (frame::abi_minframe)|
+//                     | 4 words              |
+//                     | Caller's SP          |<- FP of f's caller
+//                     |======================|
+//                     |                      |                                 Frame of f's caller
+//                     |                      |
+// frame_bottom of f ->|                      |
+//                     |----------------------|
+//                     | L0 aka P0            |
+//                     | :                    |
+//                     | :      Pn            |
+//                     | :                    |
+//                     | Lm                   |
+//                     |----------------------|
+//                     | SP alignment (opt.)  |
+//                     |----------------------|
+//                     | Minimal ABI          |
+//                     | (frame::abi_minframe)|
+//                     | 4 words              |
+//                     | Caller's SP          |<- SP of f's caller / FP of f
+//                     |======================|
+//                     |ijava_state (metadata)|                                 Frame of f
+//                     |                      |
+//                     |                      |
+//                     |----------------------|
+//                     | Expression stack     |
+//                     |                      |
+//    frame_top of f ->|                      |
+//   if callee interp. |......................|
+//                     | L0 aka P0            |<- ijava_state.esp + callee_argsize
+//                     | :                    |
+//    frame_top of f ->| :      Pn            |
+//  + metadata_words   | :                    |<- ijava_state.esp (1 slot below Pn)
+//    if callee comp.  | Lm                   |
+//                     |----------------------|
+//                     | SP alignment (opt.)  |
+//                     |----------------------|
+//                     | Minimal ABI          |
+//                     | (frame::abi_minframe)|
+//                     | 4 words              |
+//                     | Caller's SP          |<- SP of f / FP of f's callee
+//                     |======================|
+//                     |ijava_state (metadata)|                                 Frame of f's callee
+//                     |                      |
+//
+//                           |  Growth  |
+//                           v          v
+//
+// See also diagram at the end of continuation_ppc.inline.hpp
+//
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, InterpreterOopMap* mask) { // inclusive; this will be copied with the frame
-  Unimplemented();
-  return NULL;
+  int expression_stack_sz = expression_stack_size(f, mask);
+  intptr_t* res = (intptr_t*)f.interpreter_frame_monitor_end() - expression_stack_sz;
+  assert(res <= (intptr_t*)f.get_ijava_state() - expression_stack_sz,
+         "res=" PTR_FORMAT " f.get_ijava_state()=" PTR_FORMAT " expression_stack_sz=%d",
+         p2i(res), p2i(f.get_ijava_state()), expression_stack_sz);
+  assert(res >= f.unextended_sp(),
+         "res: " INTPTR_FORMAT " ijava_state: " INTPTR_FORMAT " esp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " expression_stack_size: %d",
+         p2i(res), p2i(f.get_ijava_state()), f.get_ijava_state()->esp, p2i(f.unextended_sp()), expression_stack_sz);
+  return res;
 }
 
-inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) { // exclusive; this will not be copied with the frame
-  Unimplemented();
-  return NULL;
+inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) {
+  return (intptr_t*)f.at(ijava_idx(locals)) + 1; // exclusive (will not be copied), so we add 1 word
 }
 
-inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
-  Unimplemented();
-  return NULL;
+inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize_incl_metadata, bool callee_interpreted) {
+  intptr_t* pseudo_unextended_sp = f.interpreter_frame_esp() + 1 - frame::metadata_words_at_top;
+  return pseudo_unextended_sp + (callee_interpreted ? callee_argsize_incl_metadata : 0);
+}
+
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp();
 }
 
 #endif // CPU_PPC_CONTINUATIONFRAMEHELPERS_PPC_INLINE_HPP
