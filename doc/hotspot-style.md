@@ -573,7 +573,7 @@ There are a few exceptions to this rule.
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
 * `#include <type_traits>`.
-* `#include <cstddef>` to use `std::nullptr_t`.
+* `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
