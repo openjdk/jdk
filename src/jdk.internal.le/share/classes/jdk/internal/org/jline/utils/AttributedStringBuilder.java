@@ -416,7 +416,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
-    private class TabStops {
+    private static class TabStops {
         private List<Integer> tabs = new ArrayList<>();
         private int lastStop = 0;
         private int lastSize = 0;

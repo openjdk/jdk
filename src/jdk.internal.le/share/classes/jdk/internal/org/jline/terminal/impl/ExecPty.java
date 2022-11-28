@@ -97,19 +97,7 @@ public class ExecPty extends AbstractPty implements Pty {
                 commands.add(1, OSUtils.STTY_F_OPTION);
                 commands.add(2, getName());
             }
-            try {
-                exec(system, commands.toArray(new String[commands.size()]));
-            } catch (IOException e) {
-                // Handle partial failures with GNU stty, see #97
-                if (e.toString().contains("unable to perform all requested operations")) {
-                    commands = getFlagsToSet(attr, getAttr());
-                    if (!commands.isEmpty()) {
-                        throw new IOException("Could not set the following flags: " + String.join(", ", commands), e);
-                    }
-                } else {
-                    throw e;
-                }
-            }
+            exec(system, commands.toArray(new String[commands.size()]));
         }
     }
 

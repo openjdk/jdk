@@ -67,12 +67,11 @@ public class OSUtils {
         } else {
             tty = "tty";
             stty = "stty";
+            sttyfopt = "-F";
             infocmp = "infocmp";
             if (IS_OSX) {
+                stty = "/bin/stty";
                 sttyfopt = "-f";
-            }
-            else {
-                sttyfopt = "-F";
             }
         }
         TTY_COMMAND = tty;

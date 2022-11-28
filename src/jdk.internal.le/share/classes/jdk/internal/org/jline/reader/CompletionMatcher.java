@@ -29,7 +29,7 @@ public interface CompletionMatcher {
     /**
      *
      * @param candidates list of candidates
-     * @return a map of candidates that completion matcher matches
+     * @return a list of candidates that completion matcher matches
      */
     List<Candidate> matches(List<Candidate> candidates);
 

@@ -12,7 +12,7 @@ import java.io.Flushable;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Stack;
+import java.util.ArrayDeque;
 
 /**
  * Curses helper methods.
@@ -21,8 +21,8 @@ import java.util.Stack;
  */
 public final class Curses {
 
-    private static Object[] sv = new Object[26];
-    private static Object[] dv = new Object[26];
+    private static final Object[] sv = new Object[26];
+    private static final Object[] dv = new Object[26];
 
     private static final int IFTE_NONE = 0;
     private static final int IFTE_IF = 1;
@@ -68,7 +68,7 @@ public final class Curses {
         int length = str.length();
         int ifte = IFTE_NONE;
         boolean exec = true;
-        Stack<Object> stack = new Stack<>();
+        ArrayDeque<Object> stack = new ArrayDeque<>();
         while (index < length) {
             char ch = str.charAt(index++);
             switch (ch) {
@@ -197,7 +197,7 @@ public final class Curses {
                             int start = index;
                             while (str.charAt(index++) != '}') ;
                             if (exec) {
-                                int v = Integer.valueOf(str.substring(start, index - 1));
+                                int v = Integer.parseInt(str.substring(start, index - 1));
                                 stack.push(v);
                             }
                             break;
@@ -470,7 +470,7 @@ public final class Curses {
         } else if (pop instanceof Boolean) {
             return (Boolean) pop ? 1 : 0;
         } else {
-            return Integer.valueOf(pop.toString());
+            return Integer.parseInt(pop.toString());
         }
     }
 

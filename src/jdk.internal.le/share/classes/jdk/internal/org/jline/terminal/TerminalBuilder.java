@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2021, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -340,27 +340,26 @@ public final class TerminalBuilder {
                     Log.warn("Attributes and size fields are ignored when creating a system terminal");
                 }
                 if (OSUtils.IS_WINDOWS) {
-                    if (!OSUtils.IS_CYGWIN && !OSUtils.IS_MSYSTEM) {
-                        boolean ansiPassThrough = OSUtils.IS_CONEMU;
-                        if (tbs.hasJnaSupport()) {
-                            try {
-                                terminal = tbs.getJnaSupport().winSysTerminal(name, type, ansiPassThrough, encoding, codepage
-                                        , nativeSignals, signalHandler, paused, inputStreamWrapper);
-                            } catch (Throwable t) {
-                                Log.debug("Error creating JNA based terminal: ", t.getMessage(), t);
-                                exception.addSuppressed(t);
-                            }
+                    boolean ansiPassThrough = OSUtils.IS_CONEMU;
+                    if (tbs.hasJnaSupport()) {
+                        try {
+                            terminal = tbs.getJnaSupport().winSysTerminal(name, type, ansiPassThrough, encoding, codepage
+                                    , nativeSignals, signalHandler, paused, inputStreamWrapper);
+                        } catch (Throwable t) {
+                            Log.debug("Error creating JNA based terminal: ", t.getMessage(), t);
+                            exception.addSuppressed(t);
                         }
-                        if (terminal == null && tbs.hasJansiSupport()) {
-                            try {
-                                terminal = tbs.getJansiSupport().winSysTerminal(name, type, ansiPassThrough, encoding, codepage
-                                        , nativeSignals, signalHandler, paused);
-                            } catch (Throwable t) {
-                                Log.debug("Error creating JANSI based terminal: ", t.getMessage(), t);
-                                exception.addSuppressed(t);
-                            }
+                    }
+                    if (terminal == null && tbs.hasJansiSupport()) {
+                        try {
+                            terminal = tbs.getJansiSupport().winSysTerminal(name, type, ansiPassThrough, encoding, codepage
+                                    , nativeSignals, signalHandler, paused);
+                        } catch (Throwable t) {
+                            Log.debug("Error creating JANSI based terminal: ", t.getMessage(), t);
+                            exception.addSuppressed(t);
                         }
-                    } else if (exec) {
+                    }
+                    if (terminal == null && exec && (OSUtils.IS_CYGWIN || OSUtils.IS_MSYSTEM)) {
                         //
                         // Cygwin support
                         //
@@ -445,8 +444,8 @@ public final class TerminalBuilder {
                     }
                     if (!color && dumb == null) {
                         if (Log.isDebugEnabled()) {
-                            Log.warn("input is tty: {}", tbs.isConsoleInput());
-                            Log.warn("output is tty: {}", tbs.isConsoleOutput());
+                            Log.warn("input is tty: ", tbs.isConsoleInput());
+                            Log.warn("output is tty: ", tbs.isConsoleOutput());
                             Log.warn("Creating a dumb terminal", exception);
                         } else {
                             Log.warn("Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)");
@@ -548,6 +547,8 @@ public final class TerminalBuilder {
     private static class TerminalBuilderSupport {
         private JansiSupport jansiSupport = null;
         private JnaSupport jnaSupport = null;
+        private boolean jnaFullSupport;
+        private boolean jansiFullSupport;
         private Pty pty = null;
         private boolean consoleOutput;
 
@@ -556,8 +557,8 @@ public final class TerminalBuilder {
                 try {
                     jnaSupport = load(JnaSupport.class);
                     consoleOutput = jnaSupport.isConsoleOutput();
+                    jnaFullSupport = true;
                 } catch (Throwable e) {
-                    jnaSupport = null;
                     Log.debug("jnaSupport.isConsoleOutput(): ", e);
                 }
             }
@@ -565,12 +566,12 @@ public final class TerminalBuilder {
                 try {
                     jansiSupport = load(JansiSupport.class);
                     consoleOutput = jansiSupport.isConsoleOutput();
+                    jansiFullSupport = true;
                 } catch (Throwable e) {
-                    jansiSupport = null;
                     Log.debug("jansiSupport.isConsoleOutput(): ", e);
                 }
             }
-            if (jnaSupport == null && jansiSupport == null) {
+            if (!jnaFullSupport && !jansiFullSupport) {
                 try {
                     pty = ExecPty.current();
                     consoleOutput = true;
@@ -585,12 +586,12 @@ public final class TerminalBuilder {
         }
 
         public boolean isConsoleInput() {
-            if (pty != null) {
-                return true;
-            } else if (hasJnaSupport()) {
+            if (jnaFullSupport) {
                 return jnaSupport.isConsoleInput();
-            } else if (hasJansiSupport()) {
+            } else if (jansiFullSupport) {
                 return jansiSupport.isConsoleInput();
+            } else if (pty != null) {
+                return true;
             } else {
                 return false;
             }

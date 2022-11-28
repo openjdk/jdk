@@ -143,7 +143,7 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
         }
     }
 
-    private class InputStreamWrapper extends NonBlockingInputStream {
+    private static class InputStreamWrapper extends NonBlockingInputStream {
 
         private final NonBlockingInputStream in;
         private final AtomicBoolean closed = new AtomicBoolean();
