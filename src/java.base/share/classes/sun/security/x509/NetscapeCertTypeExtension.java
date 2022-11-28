@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.*;
 
 import sun.security.util.*;
 
@@ -85,13 +84,6 @@ public class NetscapeCertTypeExtension extends Extension {
         new MapEntry(S_MIME_CA, 6),
         new MapEntry(OBJECT_SIGNING_CA, 7),
     };
-
-    private static final Vector<String> mAttributeNames = new Vector<>();
-    static {
-        for (MapEntry entry : mMapData) {
-            mAttributeNames.add(entry.mName);
-        }
-    }
 
     private static int getPosition(String name) throws IOException {
         for (int i = 0; i < mMapData.length; i++) {
