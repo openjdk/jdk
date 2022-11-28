@@ -164,10 +164,12 @@ inline void ParCompactionManager::update_contents(oop obj) {
 
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
+  PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
+
   if (obj->is_objArray()) {
+    cl.do_klass(obj->klass());
     follow_array(objArrayOop(obj), 0);
   } else {
-    PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
     obj->oop_iterate(&cl);
   }
 }
