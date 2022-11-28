@@ -28,7 +28,7 @@ import nsk.share.Wicket;
 
 /*
  * Class used to create deadlocked threads. It is possible create 2 or more deadlocked thread, also
- * is is possible to specify resource of which type should lock each deadlocked thread
+ * is possible to specify resource of which type should lock each deadlocked thread
  */
 public class DeadlockMaker {
     // create deadlock with 2 threads
