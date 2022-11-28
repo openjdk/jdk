@@ -920,7 +920,6 @@ void
 FreeOptions() {
   for (int i = 0; i < numOptionStrings; i++) {
     JLI_MemFree(optionStrings[i]);
-    optionStrings[i] = NULL;
   }
   JLI_MemFree(optionStrings);
   optionStrings = NULL;
