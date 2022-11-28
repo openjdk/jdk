@@ -186,7 +186,8 @@ class HostPortrange {
                 }
                 sb.append((char)(c - CASE_DIFF));
             } else {
-                throw new IllegalArgumentException("Invalid characters in hostname");
+                final String invalidChar = String.format("\\u%04x", (int) c);
+                throw new IllegalArgumentException("Invalid character " + invalidChar + " in hostname");
             }
         }
         return sb == null ? s : sb.toString();
