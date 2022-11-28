@@ -90,12 +90,12 @@ public:
   static inline intptr_t* frame_top(const frame& f);
   static inline intptr_t* frame_top(const frame& f, int callee_argsize, bool callee_interpreted);
   static inline intptr_t* frame_bottom(const frame& f);
-  static inline intptr_t* sender_unextended_sp(const frame& f);
+  static inline intptr_t* callers_sp(const frame& f);
   static inline int stack_argsize(const frame& f);
 
   static inline address* return_pc_address(const frame& f);
   static address return_pc(const frame& f);
-  static void patch_sender_sp(frame& f, intptr_t* sp);
+  static void patch_sender_sp(frame& f, const frame& caller);
 
   static int size(const frame& f, InterpreterOopMap* mask);
   static int size(const frame& f);

@@ -98,7 +98,7 @@ inline void stackChunkOopDesc::set_cont_raw(oop value)    {  jdk_internal_vm_Sta
 template<DecoratorSet decorators>
 inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
-inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize(); }
+inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize() - frame::metadata_words_at_top; }
 
 inline HeapWord* stackChunkOopDesc::start_of_stack() const {
    return (HeapWord*)(cast_from_oop<intptr_t>(as_oop()) + InstanceStackChunkKlass::offset_of_stack());
@@ -123,7 +123,7 @@ inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
 
 inline bool stackChunkOopDesc::is_empty() const {
   assert(sp() <= stack_size(), "");
-  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize()),
+  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize() - frame::metadata_words_at_top),
     "sp: %d size: %d argsize: %d", sp(), stack_size(), argsize());
   return sp() == stack_size();
 }
@@ -135,12 +135,7 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 }
 
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
-#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
-  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words;
-#else
-  Unimplemented();
-  HeapWord* start = NULL;
-#endif
+  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words_at_bottom;
   HeapWord* end = start + stack_size();
   return (HeapWord*)p >= start && (HeapWord*)p < end;
 }
@@ -324,7 +319,7 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
-#if !defined(AMD64) || !defined(AARCH64) || !defined(RISCV64) || defined(ZERO)
+#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.
@@ -343,7 +338,7 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   assert(from >= start_address(), "");
   assert(from + size <= end_address(), "");
 
-#if !defined(AMD64) || !defined(AARCH64) || !defined(RISCV64) || defined(ZERO)
+#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.
