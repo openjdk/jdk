@@ -676,10 +676,9 @@ public class BindingSpecializer {
         Class<?> fromType = cast.fromType();
         Class<?> toType = cast.toType();
 
-        if (fromType == int.class) {
-            popType(int.class);
-
-            if (toType == boolean.class) {
+        popType(fromType);
+        switch (cast) {
+            case INT_TO_BOOLEAN -> {
                 // implement least significant byte non-zero test
 
                 // select first byte
@@ -688,28 +687,16 @@ public class BindingSpecializer {
 
                 // convert to boolean
                 emitInvokeStatic(Utils.class, "byteToBoolean", "(B)Z");
-            } else if (toType == byte.class) {
-                mv.visitInsn(I2B);
-            } else if (toType == short.class) {
-                mv.visitInsn(I2S);
-            } else {
-                assert toType == char.class;
-                mv.visitInsn(I2C);
             }
-
-            pushType(toType);
-        } else {
-            popType(fromType);
-
-            assert fromType == boolean.class
-                    || fromType == byte.class
-                    || fromType == short.class
-                    || fromType == char.class;
-            // no-op in bytecode
-
-            assert toType == int.class;
-            pushType(int.class);
+            case INT_TO_BYTE -> mv.visitInsn(I2B);
+            case INT_TO_CHAR -> mv.visitInsn(I2C);
+            case INT_TO_SHORT -> mv.visitInsn(I2S);
+            case BOOLEAN_TO_INT, BYTE_TO_INT, CHAR_TO_INT, SHORT_TO_INT -> {
+                // no-op in bytecode
+            }
+            default -> throw new IllegalStateException("Unknown cast: " + cast);
         }
+        pushType(toType);
     }
 
     private void emitUnboxAddress() {
