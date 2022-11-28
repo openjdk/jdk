@@ -1089,7 +1089,7 @@ class LambdaForm {
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
-        @Stable MethodHandle invoker;
+        private final MethodType type;
 
         NamedFunction(MethodHandle resolvedHandle) {
             this(resolvedHandle.internalMemberName(), resolvedHandle);
@@ -1097,6 +1097,7 @@ class LambdaForm {
         NamedFunction(MemberName member, MethodHandle resolvedHandle) {
             this.member = member;
             this.resolvedHandle = resolvedHandle;
+            this.type = calculateMethodType(member, resolvedHandle);
              // The following assert is almost always correct, but will fail for corner cases, such as PrivateInvokeTest.
              //assert(!isInvokeBasic(member));
         }
@@ -1109,6 +1110,7 @@ class LambdaForm {
                 // necessary to pass BigArityTest
                 this.member = Invokers.invokeBasicMethod(basicInvokerType);
             }
+            this.type = calculateMethodType(member, resolvedHandle);
             assert(isInvokeBasic(member));
         }
 
@@ -1185,10 +1187,6 @@ class LambdaForm {
             Object rval;
             try {
                 traceInterpreter("[ call", this, arguments);
-                if (invoker == null) {
-                    traceInterpreter("| getInvoker", this);
-                    invoker();
-                }
                 // resolvedHandle might be uninitialized, ok for tracing
                 if (resolvedHandle == null) {
                     traceInterpreter("| resolve", this);
@@ -1204,17 +1202,20 @@ class LambdaForm {
         }
 
         private MethodHandle invoker() {
-            if (invoker != null)  return invoker;
-            // Get an invoker and cache it.
-            return invoker = computeInvoker(methodType().form());
+            return computeInvoker(type.form());
         }
 
         MethodType methodType() {
-            if (resolvedHandle != null)
+            return type;
+        }
+
+        private static MethodType calculateMethodType(MemberName member, MethodHandle resolvedHandle) {
+            if (resolvedHandle != null) {
                 return resolvedHandle.type();
-            else
+            } else {
                 // only for certain internal LFs during bootstrapping
                 return member.getInvocationType();
+            }
         }
 
         MemberName member() {
@@ -1236,15 +1237,15 @@ class LambdaForm {
         }
 
         BasicType returnType() {
-            return basicType(methodType().returnType());
+            return basicType(type.returnType());
         }
 
         BasicType parameterType(int n) {
-            return basicType(methodType().parameterType(n));
+            return basicType(type.parameterType(n));
         }
 
         int arity() {
-            return methodType().parameterCount();
+            return type.parameterCount();
         }
 
         public String toString() {
