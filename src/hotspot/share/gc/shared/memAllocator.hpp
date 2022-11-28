@@ -85,7 +85,6 @@ protected:
 public:
   // Allocate and fully construct the object, and perform various instrumentation. Could safepoint.
   oop allocate() const;
-  oop try_allocate_in_existing_tlab();
 };
 
 class ObjAllocator: public MemAllocator {
@@ -94,8 +93,6 @@ public:
     : MemAllocator(klass, word_size, thread) {}
 
   virtual oop initialize(HeapWord* mem) const;
-
-  using MemAllocator::allocate;
 };
 
 class ObjArrayAllocator: public MemAllocator {
@@ -113,8 +110,6 @@ public:
       _do_zero(do_zero) {}
 
   virtual oop initialize(HeapWord* mem) const;
-
-  using MemAllocator::allocate;
 };
 
 class ClassAllocator: public MemAllocator {
@@ -123,8 +118,6 @@ public:
     : MemAllocator(klass, word_size, thread) {}
 
   virtual oop initialize(HeapWord* mem) const;
-
-  using MemAllocator::allocate;
 };
 
 #endif // SHARE_GC_SHARED_MEMALLOCATOR_HPP
