@@ -769,6 +769,12 @@ public abstract class InputStream implements Closeable {
      * interrupted during the transfer, is highly input and output stream
      * specific, and therefore not specified.
      * <p>
+     * At most {@linkplain Long#MAX_VALUE} bytes may be transferred by a
+     * single invocation of this method. If this input stream has more than
+     * {@code Long.MAX_VALUE} bytes available to transfer, then to transfer
+     * all bytes it should be invoked repeatedly with the same output stream
+     * parameter until it returns zero.
+     * <p>
      * If an I/O error occurs reading from the input stream or writing to the
      * output stream, then it may do so after some bytes have been read or
      * written. Consequently the input stream may not be at end of stream and
@@ -784,13 +790,28 @@ public abstract class InputStream implements Closeable {
      */
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
-        long transferred = 0;
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+        long transferred = 0;
+        final long threshold = Long.MAX_VALUE - DEFAULT_BUFFER_SIZE;
+
+        // Read to EOF or until transferred count would overflow
         int read;
         while ((read = this.read(buffer, 0, DEFAULT_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, read);
             transferred += read;
+            if (transferred > threshold) {
+                // Read any remaining bytes then exit the loop
+                int remaining = (int)(Long.MAX_VALUE - transferred);
+                while (remaining > 0 &&
+                    (read = this.read(buffer, 0, remaining)) >= 0) {
+                    out.write(buffer, 0, read);
+                    transferred += read;
+                    remaining -= read;
+                }
+                break;
+            }
         }
+
         return transferred;
     }
 }
