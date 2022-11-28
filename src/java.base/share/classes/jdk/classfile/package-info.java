@@ -52,7 +52,7 @@
  * <p>
  * We can enumerate the names of the fields and methods in a class by:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="enumerateFieldsMethods1"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="enumerateFieldsMethods1"}
  * <p>
  * When we enumerate the methods, we get a {@link jdk.classfile.MethodModel} for each method; like a
  * {@code ClassModel}, it gives us access to method metadata and
@@ -70,7 +70,7 @@
  * and more, and which can be distinguished with pattern matching.  We could
  * rewrite the above example as:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="enumerateFieldsMethods2"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="enumerateFieldsMethods2"}
  * <p>
  * The models returned as elements from traversing {@code ClassModel} can in
  * turn be sources of elements.  If we wanted to
@@ -80,12 +80,12 @@
  * finally pick out the code elements that describe field access and invocation
  * instructions:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="gatherDependencies1"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="gatherDependencies1"}
  * <p>
  * This same query could alternately be processed as a stream pipeline over
  * class elements:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="gatherDependencies2"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="gatherDependencies2"}
  *
  * <h3>Models and elements</h3>
  * The view of classfiles presented by this API is framed in terms of
@@ -208,7 +208,7 @@
  * method builders to create a {@code Code} attribute and use the code builders
  * to generate the instructions:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="helloWorld"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="helloWorld"}
  * <p>
  * Builders often support multiple ways of expressing the same entity at
  * different levels of abstraction.  For example, the {@code invokevirtual}
@@ -254,7 +254,7 @@
  * original {@link jdk.classfile.ClassModel}, and pass through all of them to
  * the builder except the methods we want to drop:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="stripDebugMethods1"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="stripDebugMethods1"}
  * <p>
  * This hands every class element, except for those corresponding to methods
  * whose names start with {@code debug}, back to the builder.  Transformations
@@ -273,7 +273,7 @@
  * builder and an element, and an implementation "flatMap"s elements
  * into the builder.  We could express the above as:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="stripDebugMethods2"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="stripDebugMethods2"}
  *
  * <h3>Lifting transforms</h3>
  * While the second example is only slightly shorter than the first, the
@@ -283,7 +283,7 @@
  * {@code Bar} instead.  We could express this as a transformation on {@link
  * jdk.classfile.CodeElement}:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="fooToBarTransform"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="fooToBarTransform"}
  * <p>
  * We can then <em>lift</em> this transformation on code elements into a
  * transformation on method elements.  This intercepts method elements that
@@ -311,7 +311,7 @@
  * This is much more concise (and less error-prone) than the equivalent
  * expressed by traversing the classfile structure directly:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="fooToBarUnrolled"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="fooToBarUnrolled"}
  *
  * <h3>Composing transforms</h3>
  * Transforms on the same type of element can be composed in sequence, where the
@@ -319,7 +319,7 @@
  * instrument all method calls, where we print the name of a method before
  * calling it:
  * <p>
- * {@snippet class="jdk.classfile.snippets.PackageSnippets" region="instrumentCallsTransform"}
+ * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="instrumentCallsTransform"}
  * <p>
  * Then we can compose {@code fooToBar} and {@code instrumentCalls} with {@link
  * jdk.classfile.CodeTransform#andThen(jdk.classfile.CodeTransform)}:

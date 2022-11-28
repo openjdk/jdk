@@ -22,9 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package jdk.classfile.snippets;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -58,6 +55,7 @@ import jdk.classfile.components.ClassPrinter;
 import jdk.classfile.components.ClassRemapper;
 import jdk.classfile.components.CodeLocalsShifter;
 import jdk.classfile.components.CodeRelabeler;
+import jdk.classfile.instruction.ReturnInstruction;
 import jdk.classfile.instruction.StoreInstruction;
 
 class PackageSnippets {
@@ -329,18 +327,18 @@ class PackageSnippets {
 
     // @start region="classInstrumentation"
     byte[] classInstrumentation(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
-        Map<String, CodeModel> instrumentorCodeMap = instrumentor.methods().stream()
-                        .filter(instrumentedMethodsFilter)
-                        .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElse(null)));
-        Set<String> targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
-        Set<String> targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
-        ClassRemapper instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
+        var instrumentorCodeMap = instrumentor.methods().stream()
+                                              .filter(instrumentedMethodsFilter)
+                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElse(null)));
+        var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
+        var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
+        var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
         return target.transform(
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
                             if (me instanceof CodeModel targetCodeModel) {
-                                MethodModel mm = targetCodeModel.parent().get();
+                                var mm = targetCodeModel.parent().get();
                                 //instrumented methods code is taken from instrumentor
                                 mb.transformCode(instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue()),
                                         //all references to the instrumentor class are remapped to target class
@@ -357,8 +355,8 @@ class PackageSnippets {
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
                                                     storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
-                                                for (ClassDesc pt : mm.methodTypeSymbol().parameterList()) {
-                                                    TypeKind tk = TypeKind.fromDescriptor(pt.descriptorString());
+                                                for (var pt : mm.methodTypeSymbol().parameterList()) {
+                                                    var tk = TypeKind.fromDescriptor(pt.descriptorString());
                                                     storeStack.addFirst(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }
@@ -370,7 +368,7 @@ class PackageSnippets {
                                                         .andThen(CodeRelabeler.of())
                                                         .andThen((innerBuilder, shiftedTargetCode) -> {
                                                             //returns must be replaced with jump to the end of the inlined method
-                                                            if (shiftedTargetCode.opcode() == Opcode.Kind.RETURN)
+                                                            if (shiftedTargetCode instanceof ReturnInstruction)
                                                                 innerBuilder.goto_(inlinedBlockBuilder.breakLabel());
                                                             else
                                                                 innerBuilder.with(shiftedTargetCode);

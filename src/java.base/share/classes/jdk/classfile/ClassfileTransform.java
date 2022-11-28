@@ -64,10 +64,10 @@ import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * corresponding methods for other classfile locations.)
  *
  * <p>Class transformation sample where code transformation is stateful:
- * <p>{@snippet class="jdk.classfile.snippets.PackageSnippets" region="codeRelabeling"}
+ * <p>{@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="codeRelabeling"}
  *
  * <p>Complex class instrumentation sample chaining multiple transformations:
- * <p>{@snippet class="jdk.classfile.snippets.PackageSnippets" region="classInstrumentation"}
+ * <p>{@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="classInstrumentation"}
  */
 sealed public interface ClassfileTransform<
         C extends ClassfileTransform<C, E, B>,
