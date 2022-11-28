@@ -57,10 +57,9 @@ import sun.security.pkcs.PKCS9Attribute;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
 public class NameConstraintsExtension extends Extension
-        implements CertAttrSet, Cloneable {
+        implements Cloneable {
 
     public static final String NAME = "NameConstraints";
 
@@ -128,8 +127,8 @@ public class NameConstraintsExtension extends Extension
     }
 
     /**
-     * The default constructor for this class. Both parameters
-     * are optional and can be set to null.  The extension criticality
+     * The default constructor for this class. Both parameters are optional
+     * but at least one should be non null.  The extension criticality
      * is set to true.
      *
      * @param permitted the permitted GeneralSubtrees (null for optional).
@@ -137,7 +136,11 @@ public class NameConstraintsExtension extends Extension
      */
     public NameConstraintsExtension(GeneralSubtrees permitted,
                                     GeneralSubtrees excluded)
-    throws IOException {
+            throws IOException {
+        if (permitted == null && excluded == null) {
+            throw new IllegalArgumentException(
+                    "permitted and excluded cannot both be null");
+        }
         this.permitted = permitted;
         this.excluded = excluded;
 
@@ -281,6 +284,8 @@ public class NameConstraintsExtension extends Extension
             return;
         }
 
+        boolean updated = false;
+
         /*
          * If excludedSubtrees is present in the certificate, set the
          * excluded subtrees state variable to the union of its previous
@@ -289,12 +294,15 @@ public class NameConstraintsExtension extends Extension
 
         GeneralSubtrees newExcluded = newConstraints.getExcludedSubtrees();
         if (excluded == null) {
-            excluded = (newExcluded != null) ?
-                        (GeneralSubtrees)newExcluded.clone() : null;
+            if (newExcluded != null) {
+                excluded = (GeneralSubtrees) newExcluded.clone();
+                updated = true;
+            }
         } else {
             if (newExcluded != null) {
                 // Merge new excluded with current excluded (union)
                 excluded.union(newExcluded);
+                updated = true;
             }
         }
 
@@ -306,8 +314,10 @@ public class NameConstraintsExtension extends Extension
 
         GeneralSubtrees newPermitted = newConstraints.getPermittedSubtrees();
         if (permitted == null) {
-            permitted = (newPermitted != null) ?
-                        (GeneralSubtrees)newPermitted.clone() : null;
+            if (newPermitted != null) {
+                permitted = (GeneralSubtrees) newPermitted.clone();
+                updated = true;
+            }
         } else {
             if (newPermitted != null) {
                 // Merge new permitted with current permitted (intersection)
@@ -320,6 +330,7 @@ public class NameConstraintsExtension extends Extension
                     } else {
                         excluded = (GeneralSubtrees)newExcluded.clone();
                     }
+                    updated = true;
                 }
             }
         }
@@ -330,12 +341,14 @@ public class NameConstraintsExtension extends Extension
         // less space.
         if (permitted != null) {
             permitted.reduce(excluded);
+            updated = true;
         }
 
         // The NameConstraints have been changed, so re-encode them.  Methods in
         // this class assume that the encodings have already been done.
-        encodeThis();
-
+        if (updated) {
+            encodeThis();
+        }
     }
 
     /**

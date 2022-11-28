@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -49,6 +48,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -113,9 +113,9 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;

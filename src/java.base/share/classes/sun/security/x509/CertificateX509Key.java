@@ -36,9 +36,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateX509Key implements CertAttrSet {
+public class CertificateX509Key implements DerEncoder {
 
     public static final String NAME = "key";
 

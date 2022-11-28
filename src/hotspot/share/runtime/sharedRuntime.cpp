@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -42,6 +41,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -2685,7 +2685,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
 ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
-                  ResourceObj::C_HEAP, mtCode,
+                  AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals> _adapter_handler_table;
 
@@ -3126,11 +3126,15 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       struct { double data[20]; } locs_buf;
       struct { double data[20]; } stubs_locs_buf;
       buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-#if defined(AARCH64)
+#if defined(AARCH64) || defined(PPC64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops
       // accesses. For native_wrappers we need a constant.
-      buffer.initialize_consts_size(8);
+      // On PPC64 the continuation enter intrinsic needs the constant pool for the compiled
+      // static java call that is resolved in the runtime.
+      if (PPC64_ONLY(method->is_continuation_enter_intrinsic() &&) true) {
+        buffer.initialize_consts_size(8 PPC64_ONLY(+ 24));
+      }
 #endif
       buffer.stubs()->initialize_shared_locs((relocInfo*)&stubs_locs_buf, sizeof(stubs_locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);

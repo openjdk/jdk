@@ -55,10 +55,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class PrivateKeyUsageExtension extends Extension
-        implements CertAttrSet {
+public class PrivateKeyUsageExtension extends Extension {
 
     public static final String NAME = "PrivateKeyUsage";
 
@@ -95,15 +93,20 @@ public class PrivateKeyUsageExtension extends Extension
     }
 
     /**
-     * The default constructor for PrivateKeyUsageExtension.
+     * The default constructor for PrivateKeyUsageExtension. At least one
+     * of the arguments must be non null.
      *
      * @param notBefore the date/time before which the private key
-     *         should not be used.
+     *         should not be used
      * @param notAfter the date/time after which the private key
      *         should not be used.
      */
     public PrivateKeyUsageExtension(Date notBefore, Date notAfter)
-    throws IOException {
+            throws IOException {
+        if (notBefore == null && notAfter == null) {
+            throw new IllegalArgumentException(
+                    "notBefore and notAfter cannot both be null");
+        }
         this.notBefore = notBefore;
         this.notAfter = notAfter;
 

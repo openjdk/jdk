@@ -53,11 +53,9 @@ import sun.security.util.*;
  * SkipCerts ::= INTEGER (0..MAX)
  * }</pre>
  * @author Anne Anderson
- * @see CertAttrSet
  * @see Extension
  */
-public class InhibitAnyPolicyExtension extends Extension
-        implements CertAttrSet {
+public class InhibitAnyPolicyExtension extends Extension {
 
     /**
      * Object identifier for "any-policy"
@@ -85,7 +83,7 @@ public class InhibitAnyPolicyExtension extends Extension
      */
     public InhibitAnyPolicyExtension(int skipCerts) throws IOException {
         if (skipCerts < -1)
-            throw new IOException("Invalid value for skipCerts");
+            throw new IllegalArgumentException("Invalid value for skipCerts");
         if (skipCerts == -1)
             this.skipCerts = Integer.MAX_VALUE;
         else

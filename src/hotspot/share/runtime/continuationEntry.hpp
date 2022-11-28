@@ -30,6 +30,8 @@
 #include "runtime/continuation.hpp"
 #include "utilities/sizes.hpp"
 
+#include CPU_HEADER(continuationEntry)
+
 class CompiledMethod;
 class JavaThread;
 class OopMap;
@@ -37,6 +39,7 @@ class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
+  ContinuationEntryPD _pd;
 #ifdef ASSERT
 private:
   static const int COOKIE_VALUE = 0x1234;
@@ -66,6 +69,8 @@ private:
   oopDesc* _cont;
   oopDesc* _chunk;
   int _flags;
+  // Size in words of the stack arguments of the bottom frame on stack if compiled 0 otherwise.
+  // The caller (if there is one) is the still frozen top frame in the StackChunk.
   int _argsize;
   intptr_t* _parent_cont_fastpath;
 #ifdef _LP64

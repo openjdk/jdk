@@ -76,10 +76,8 @@ import sun.security.util.ObjectIdentifier;
  * @since 1.4.2
  * @see DistributionPoint
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLDistributionPointsExtension extends Extension
-        implements CertAttrSet {
+public class CRLDistributionPointsExtension extends Extension {
 
     public static final String NAME = "CRLDistributionPoints";
 
@@ -108,7 +106,8 @@ public class CRLDistributionPointsExtension extends Extension
      * DistributionPoint.
      *
      * @param isCritical the criticality setting.
-     * @param distributionPoints the list of distribution points
+     * @param distributionPoints the list of distribution points,
+     *                           cannot be null or empty.
      * @throws IOException on error
      */
     public CRLDistributionPointsExtension(boolean isCritical,
@@ -122,8 +121,13 @@ public class CRLDistributionPointsExtension extends Extension
      * Creates the extension (also called by the subclass).
      */
     protected CRLDistributionPointsExtension(ObjectIdentifier extensionId,
-        boolean isCritical, List<DistributionPoint> distributionPoints,
+            boolean isCritical, List<DistributionPoint> distributionPoints,
             String extensionName) throws IOException {
+
+        if (distributionPoints == null || distributionPoints.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "distribution points cannot be null or empty");
+        }
 
         this.extensionId = extensionId;
         this.critical = isCritical;

@@ -36,10 +36,8 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  * @see java.security.cert.CRLReason
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLReasonCodeExtension extends Extension
-        implements CertAttrSet {
+public class CRLReasonCodeExtension extends Extension {
 
     public static final String NAME = "CRLReasonCode";
 
@@ -71,10 +69,13 @@ public class CRLReasonCodeExtension extends Extension
      * Create a CRLReasonCodeExtension with the passed in reason.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param reason the enumerated value for the reason code.
+     * @param reason the enumerated value for the reason code, must be positive.
      */
     public CRLReasonCodeExtension(boolean critical, int reason)
-    throws IOException {
+            throws IOException {
+        if (reason <= 0) {
+            throw new IllegalArgumentException("reason code must be positive");
+        }
         this.extensionId = PKIXExtensions.ReasonCode_Id;
         this.critical = critical;
         this.reasonCode = reason;

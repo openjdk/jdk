@@ -48,10 +48,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class SubjectAlternativeNameExtension extends Extension
-        implements CertAttrSet {
+public class SubjectAlternativeNameExtension extends Extension {
 
     public static final String NAME = "SubjectAlternativeName";
 
@@ -86,25 +84,18 @@ public class SubjectAlternativeNameExtension extends Extension
      * criticality and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the subject.
+     * @param names the GeneralNames for the subject, cannot be null or empty.
      * @exception IOException on error.
      */
     public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+            throws IOException {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names cannot be null or empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.SubjectAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default SubjectAlternativeNameExtension. The extension
-     * is marked non-critical.
-     */
-    public SubjectAlternativeNameExtension() {
-        extensionId = PKIXExtensions.SubjectAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**

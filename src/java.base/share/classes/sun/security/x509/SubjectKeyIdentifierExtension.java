@@ -48,10 +48,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class SubjectKeyIdentifierExtension extends Extension
-        implements CertAttrSet {
+public class SubjectKeyIdentifierExtension extends Extension {
 
     public static final String NAME = "SubjectKeyIdentifier";
 
@@ -75,7 +73,7 @@ public class SubjectKeyIdentifierExtension extends Extension
      * @param octetString the octet string identifying the key identifier.
      */
     public SubjectKeyIdentifierExtension(byte[] octetString)
-    throws IOException {
+            throws IOException {
         id = new KeyIdentifier(octetString);
 
         this.extensionId = PKIXExtensions.SubjectKey_Id;

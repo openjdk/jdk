@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
@@ -46,6 +45,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -965,7 +965,7 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-ResourceHashtable<const InstanceKlass*, OopHandle, 107, ResourceObj::C_HEAP, mtClass>
+ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>
       _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {

@@ -32,15 +32,14 @@
 // with the ones that should pick up the mocks removed. Those should be included
 // later after the mocks have been defined.
 
-#include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "logging/log.hpp"
 #include "runtime/os.hpp"
-
+#include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
 namespace {

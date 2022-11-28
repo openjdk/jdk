@@ -56,10 +56,8 @@ import sun.security.util.DerOutputStream;
  * @author Sean Mullan
  * @since 1.5
  * @see Extension
- * @see CertAttrSet
  */
-public class CertificateIssuerExtension extends Extension
-        implements CertAttrSet {
+public class CertificateIssuerExtension extends Extension {
 
     public static final String NAME = "CertificateIssuer";
 
@@ -82,10 +80,13 @@ public class CertificateIssuerExtension extends Extension
      * Create a CertificateIssuerExtension containing the specified issuer name.
      * Criticality is automatically set to true.
      *
-     * @param issuer the certificate issuer
+     * @param issuer the certificate issuer, cannot be null or empty.
      * @throws IOException on error
      */
     public CertificateIssuerExtension(GeneralNames issuer) throws IOException {
+        if (issuer == null || issuer.isEmpty()) {
+            throw new IllegalArgumentException("issuer cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.CertificateIssuer_Id;
         this.critical = true;
         this.names = issuer;

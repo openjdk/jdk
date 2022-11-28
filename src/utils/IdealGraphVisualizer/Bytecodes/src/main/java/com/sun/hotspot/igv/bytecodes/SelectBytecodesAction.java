@@ -42,7 +42,8 @@ public final class SelectBytecodesAction extends CookieAction {
         InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
             p.clearSelectedNodes();
-            p.addSelectedNodes(c.getNodes());
+            p.addSelectedNodes(c.getNodes(), true);
+            p.centerSelectedNodes();
         }
     }
 
