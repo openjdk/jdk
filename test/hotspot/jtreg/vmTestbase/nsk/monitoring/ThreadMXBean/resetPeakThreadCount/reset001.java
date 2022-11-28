@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,48 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ *
+ * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001..reset005
+ * VM Testbase keywords: [quick, monitoring]
+ * VM Testbase readme:
+ * DESCRIPTION
+ *     The test checks that
+ *         ThreadMXBean.resetPeakThreadCount()
+ *     returns correct result.
+ *     The test starts a couple of user threads and waits until they finish. After
+ *     that, resetPeakThreadCount() is invoked to reset the peak. Then
+ *     getPeakThreadCount() and getThreadCount() must return the same values. The
+ *     preposition is that no threads are appered/disappeared between
+ *     "getPeakThreadCount()" and getThreadCount()" calls.
+ *     The test implements defferent ways to access to the metrics.
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ *
+ * @comment Direct access to the metrics.
+ * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
+ *
+ * @comment Access to the metrics via default MBean server.
+ * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001 -testMode=server
+ *
+ * @comment Access to the metrics via custom MBean server.
+ * @run main/othervm
+ *      nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
+ *      -testMode=server
+ *      -MBeanServer=custom
+ *
+ * @comment Access to the metrics via default MBean server proxy.
+ * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001 -testMode=proxy
+ *
+ * @comment Access to the metrics via custom MBean server proxy.
+ * @run main/othervm
+ *      nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
+ *      -testMode=proxy
+ *      -MBeanServer=custom
  */
 
 package nsk.monitoring.ThreadMXBean.resetPeakThreadCount;
