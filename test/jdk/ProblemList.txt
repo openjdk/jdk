@@ -723,8 +723,6 @@ sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x
 
 # svc_tools
 
-sun/tools/jhsdb/BasicLauncherTest.java                          8228649 linux-ppc64,linux-ppc64le
-
 sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259,8293577 generic-all
 sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
