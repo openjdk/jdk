@@ -30,8 +30,6 @@ import java.lang.foreign.SegmentAllocator;
 
 public final class SlicingAllocator implements SegmentAllocator {
 
-    public static final long DEFAULT_BLOCK_SIZE = 4 * 1024;
-
     private final MemorySegment segment;
     private final long maxAlign;
 
