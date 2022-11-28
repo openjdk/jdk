@@ -66,13 +66,13 @@ JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
 // No undefined or implementation defined behavior for shifting negative
 // values; left shift discards bits, right shift sign extends.  We use
 // the same safe conversion technique as above for java_add and friends.
-#define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)    \
-inline TYPE NAME (TYPE lhs, jint rhs) {                 \
+#define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)         \
+inline TYPE NAME (TYPE lhs, jint rhs) {                      \
   constexpr juint rhs_mask = (sizeof(TYPE) * 8) - 1;         \
-  static_assert(rhs_mask == 31 || rhs_mask == 63);      \
-  XTYPE xres = static_cast<XTYPE>(lhs);                 \
-  xres OP ## = (rhs & rhs_mask);                        \
-  return xres;                                          \
+  static_assert(rhs_mask == 31 || rhs_mask == 63, "sanity"); \
+  XTYPE xres = static_cast<XTYPE>(lhs);                      \
+  xres OP ## = (rhs & rhs_mask);                             \
+  return xres;                                               \
 }
 
 JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jint, juint)
