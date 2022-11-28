@@ -184,12 +184,19 @@ int JavaCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage
 class ComputeMoveOrder: public StackObj {
   class MoveOperation;
 
+  static inline unsigned hash(const VMStorage& vms) {
+    // segment_mask_or_size is not taken into account since
+    // VMStorages that differ only in mask or size can still
+    // conflict
+    return static_cast<unsigned int>(vms.type()) ^ vms.index_or_offset();
+  }
+
   using KillerTable = ResourceHashtable<
     VMStorage, MoveOperation*,
     32, // doesn't need to be big. don't have that many argument registers (in known ABIs)
-    ResourceObj::RESOURCE_AREA,
+    AnyObj::RESOURCE_AREA,
     mtInternal,
-    ::hash,
+    ComputeMoveOrder::hash,
     ::operator==
     >;
 

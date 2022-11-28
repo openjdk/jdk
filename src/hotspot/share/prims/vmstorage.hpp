@@ -90,12 +90,6 @@ public:
   void print_on(outputStream* os) const;
 };
 
-inline unsigned hash(const VMStorage& vms) {
-  return static_cast<unsigned int>(vms._type)
-    ^ vms._index_or_offset
-    ^ vms._segment_mask_or_size;
-}
-
 inline bool operator==(const VMStorage& a, const VMStorage& b) {
   return a._type == b._type
     && a._index_or_offset == b._index_or_offset
