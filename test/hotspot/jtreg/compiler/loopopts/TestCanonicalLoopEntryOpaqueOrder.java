@@ -26,7 +26,7 @@
  * @bug 8269820
  * @summary C2 PhaseIdealLoop::do_unroll get wrong opaque node
  *
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 TestCanonicalLoopEntryOpaqueOrder
+ * @run main/othervm -Xbatch -XX:-TieredCompilation TestCanonicalLoopEntryOpaqueOrder
  *
  */
 

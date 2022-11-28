@@ -46,6 +46,7 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
   return this;
 }
 
+// If this node is part of the zero trip guard for a loop, find that loop.
 CountedLoopNode* Opaque1Node::guarded_counted_loop() const {
   if (Opcode() != Op_Opaque1) {
     return NULL;
@@ -69,17 +70,17 @@ CountedLoopNode* Opaque1Node::guarded_counted_loop() const {
               if (ctrl_true != NULL && ctrl_true->is_CountedLoop()) {
                 CountedLoopNode* cl = ctrl_true->as_CountedLoop();
                 if (cl->is_canonical_loop_entry(false) == this) {
-                  assert(loop == NULL, "");
+                  assert(loop == NULL, "this Opaque1 should guard a single loop");
                   loop = cl;
                 }
               }
               if (ctrl_false != NULL && ctrl_false->is_CountedLoop()) {
                 CountedLoopNode* cl = ctrl_false->as_CountedLoop();
                 if (cl->is_canonical_loop_entry(false) == this) {
-                  assert(loop == NULL, "");
+                  assert(loop == NULL, "this Opaque1 should guard a single loop");
                   loop = cl;
                 }
-                assert(loop == NULL || (outcnt() == 1 && cmp->outcnt() == 1 && bol->outcnt() == 1), "opaq can't be shared");
+                assert(loop == NULL || (outcnt() == 1 && cmp->outcnt() == 1 && bol->outcnt() == 1), "this Opaque1 can't be shared");
               }
             }
           }
@@ -95,6 +96,7 @@ Node* Opaque1Node::try_find_loop(const IfNode* iff, uint proj) const {
   if (ctrl != NULL) {
     ctrl = ctrl->unique_ctrl_out_or_null();
   }
+  // step over skeleton predicates
   while (ctrl != NULL && ctrl->is_If()) {
     Node* ctrl_true = ctrl->as_If()->proj_out_or_null(0);
     if (ctrl_true != NULL) {
