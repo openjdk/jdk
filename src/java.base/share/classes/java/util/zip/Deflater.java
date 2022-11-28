@@ -340,7 +340,8 @@ public class Deflater {
             if (dictionary.isDirect()) {
                 var scope = NIO_ACCESS.acquireSession(dictionary);
                 try {
-                    setDictionaryBuffer(zsRef.address(), ((DirectBuffer) dictionary).address() + position, remaining);
+                    long address = ((DirectBuffer) dictionary).address();
+                    setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     NIO_ACCESS.releaseSession(dictionary, scope);
                 }
