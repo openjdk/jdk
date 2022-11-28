@@ -100,6 +100,9 @@ static char* splash_jar_entry = NULL;
  */
 static JavaVMOption *options = NULL;
 static int numOptions = 0, maxOptions = 0;
+// VM option strings that need to be freed along with the options array above.
+static char** optionStrings = NULL;
+static int numOptionStrings = 0, maxOptionStrings = 0;
 
 /*
  * Prototypes for functions internal to launcher.
@@ -119,6 +122,7 @@ static jstring NewPlatformString(JNIEnv *env, char *s);
 static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
 static jclass GetApplicationClass(JNIEnv *env);
 static void AddOption(const char *str);
+static void AddAllocatedOption(char* str);
 static void FreeOptions();
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
@@ -858,7 +862,7 @@ AddOption(const char *str)
             options = tmp;
         }
     }
-    options[numOptions].optionString = JLI_StringDup(str);
+    options[numOptions].optionString = str;
     options[numOptions++].extraInfo = NULL;
 
     /*
@@ -894,11 +898,33 @@ AddOption(const char *str)
 }
 
 void
-FreeOptions() {
-  for (int i = 0; i < numOptions; i++) {
-    JLI_MemFree(options[i].optionString);
-    options[i].optionString = NULL;
+AddAllocatedOption(char* str) {
+  if (numOptionStrings >= maxOptionStrings) {
+      if (optionStrings == NULL) {
+          maxOptionStrings = 4;
+          optionStrings = JLI_MemAlloc(maxOptionStrings * sizeof(char*));
+      } else {
+          char** tmp;
+          maxOptionStrings *= 2;
+          tmp = JLI_MemAlloc(maxOptionStrings * sizeof(char*));
+          memcpy(tmp, optionStrings, numOptionStrings * sizeof(char*));
+          JLI_MemFree(optionStrings);
+          optionStrings = tmp;
+      }
   }
+  options[numOptionStrings++] = str;
+  AddOption(str);
+}
+
+void
+FreeOptions() {
+  for (int i = 0; i < numOptionStrings; i++) {
+    JLI_MemFree(optionStrings[i]);
+    optionStrings[i] = NULL;
+  }
+  JLI_MemFree(optionStrings);
+  optionStrings = NULL;
+  numOptionStrings = maxOptionStrings = 0;
   JLI_MemFree(options);
   options = NULL;
   numOptions = maxOptions = 0;
@@ -925,8 +951,7 @@ SetClassPath(const char *s)
                        - 2 /* strlen("%s") */
                        + JLI_StrLen(s));
     sprintf(def, format, s);
-    AddOption(def);
-    JLI_MemFree(def);
+    AddAllocatedOption(def);
     if (s != orig)
         JLI_MemFree((char *) s);
     _have_classpath = JNI_TRUE;
@@ -942,8 +967,7 @@ AddLongFormOption(const char *option, const char *arg)
     def_len = JLI_StrLen(option) + 1 + JLI_StrLen(arg) + 1;
     def = JLI_MemAlloc(def_len);
     JLI_Snprintf(def, def_len, format, option, arg);
-    AddOption(def);
-    JLI_MemFree(def);
+    AddAllocatedOption(def);
 }
 
 static void
@@ -965,8 +989,7 @@ SetMainModule(const char *s)
                + s_len;
     def = JLI_MemAlloc(def_len);
     JLI_Snprintf(def, def_len, format, s);
-    AddOption(def);
-    JLI_MemFree(def);
+    AddAllocatedOption(def);
 }
 
 /*
@@ -1257,8 +1280,7 @@ ParseArguments(int *pargc, char ***pargv,
                 size_t size = JLI_StrLen(prop) + JLI_StrLen(value) + 1;
                 char *propValue = (char *)JLI_MemAlloc(size);
                 JLI_Snprintf(propValue, size, "%s%s", prop, value);
-                AddOption(propValue);
-                JLI_MemFree(propValue);
+                AddAllocatedOption(propValue);
             }
         } else if (JLI_StrCmp(arg, "--class-path") == 0 ||
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
@@ -1383,8 +1405,7 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCCmp(arg, "-mx") == 0) {
             char *tmp = JLI_MemAlloc(JLI_StrLen(arg) + 6);
             sprintf(tmp, "-X%s", arg + 1); /* skip '-' */
-            AddOption(tmp);
-            JLI_MemFree(tmp);
+            AddAllocatedOption(tmp);
         } else if (JLI_StrCmp(arg, "-checksource") == 0 ||
                    JLI_StrCmp(arg, "-cs") == 0 ||
                    JLI_StrCmp(arg, "-noasyncgc") == 0) {
@@ -1719,8 +1740,7 @@ AddApplicationOptions(int cpathc, const char **cpathv)
             if (JLI_StrLen(s) + 40 > JLI_StrLen(s)) { // Safeguard from overflow
                 envcp = (char *)JLI_MemAlloc(JLI_StrLen(s) + 40);
                 sprintf(envcp, "-Denv.class.path=%s", s);
-                AddOption(envcp);
-                JLI_MemFree(envcp);
+                AddAllocatedOption(envcp);
             }
         }
     }
@@ -1733,8 +1753,7 @@ AddApplicationOptions(int cpathc, const char **cpathv)
     /* 40 for '-Dapplication.home=' */
     apphome = (char *)JLI_MemAlloc(JLI_StrLen(home) + 40);
     sprintf(apphome, "-Dapplication.home=%s", home);
-    AddOption(apphome);
-    JLI_MemFree(apphome);
+    AddAllocatedOption(apphome);
 
     /* How big is the application's classpath? */
     if (cpathc > 0) {
@@ -1750,8 +1769,7 @@ AddApplicationOptions(int cpathc, const char **cpathv)
             JLI_StrCat(appcp, separator);           /* ;                      */
         }
         appcp[JLI_StrLen(appcp)-1] = '\0';  /* remove trailing path separator */
-        AddOption(appcp);
-        JLI_MemFree(appcp);
+        AddAllocatedOption(appcp);
     }
     return JNI_TRUE;
 }
@@ -1808,8 +1826,7 @@ SetJavaCommandLineProp(char *what, int argc, char **argv)
         JLI_StrCat(javaCommand, argv[i]);
     }
 
-    AddOption(javaCommand);
-    JLI_MemFree(javaCommand);
+    AddAllocatedOption(javaCommand);
 }
 
 /*
