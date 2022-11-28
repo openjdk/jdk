@@ -598,10 +598,6 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
     return;   // return the exception (which is cleared)
   }
 
-  // The store into method must be released. On platforms without
-  // total store order (TSO) the reference may become visible before
-  // the initialization of data otherwise.
-  OrderAccess::release();
   if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
     MetadataFactory::free_metadata(loader_data, method_data);
     return;
