@@ -31,6 +31,8 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include "cds/filemap.hpp"
+
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
 }
@@ -43,6 +45,12 @@ void MemReporterBase::print_total(size_t reserved, size_t committed) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
+}
+
+void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only) const {
+  const char* scale = current_scale();
+  output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s, readonly=" SIZE_FORMAT "%s",
+    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale, amount_in_current_scale(read_only), scale);
 }
 
 void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
@@ -105,6 +113,13 @@ void MemSummaryReporter::report() {
   size_t total_reserved_amount = total_malloced_bytes + total_mmap_reserved_bytes;
   size_t total_committed_amount = total_malloced_bytes + total_mmap_committed_bytes;
 
+  size_t read_only_bytes = 0;
+  FileMapInfo* c = FileMapInfo::current_info();
+  FileMapRegion* r = c->region_at(MetaspaceShared::ro);
+  if (r->read_only()) {
+    read_only_bytes = r->used();
+  }
+
   // Overall total
   out->print_cr("\nNative Memory Tracking:\n");
 
@@ -114,7 +129,7 @@ void MemSummaryReporter::report() {
   }
 
   out->print("Total: ");
-  print_total(total_reserved_amount, total_committed_amount);
+  print_total(total_reserved_amount, total_committed_amount, read_only_bytes);
   out->cr();
   out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT,
                 amount_in_current_scale(total_malloced_bytes), current_scale(),
@@ -132,12 +147,12 @@ void MemSummaryReporter::report() {
     MallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
     VirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
 
-    report_summary_of_type(flag, malloc_memory, virtual_memory);
+    report_summary_of_type(flag, malloc_memory, virtual_memory, read_only_bytes);
   }
 }
 
 void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
-  MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
+  MallocMemory*  malloc_memory, VirtualMemory* virtual_memory, size_t read_only_bytes) {
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
   size_t committed_amount = committed_total(malloc_memory, virtual_memory);
@@ -165,7 +180,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     outputStream* out   = output();
     const char*   scale = current_scale();
     out->print("-%26s (", NMTUtil::flag_to_name(flag));
-    print_total(reserved_amount, committed_amount);
+    flag == mtClassShared ? print_total(reserved_amount, committed_amount, read_only_bytes) : print_total(reserved_amount, committed_amount);
     out->print_cr(")");
 
     if (flag == mtClass) {
