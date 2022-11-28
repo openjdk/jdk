@@ -262,7 +262,8 @@ public class Inflater {
             if (dictionary.isDirect()) {
                 var scope = NIO_ACCESS.acquireSession(dictionary);
                 try {
-                    setDictionaryBuffer(zsRef.address(), ((DirectBuffer) dictionary).address() + position, remaining);
+                    long address = ((DirectBuffer) dictionary).address();
+                    setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     NIO_ACCESS.releaseSession(dictionary, scope);
                 }
@@ -386,8 +387,9 @@ public class Inflater {
                         if (input.isDirect()) {
                             var inScope = NIO_ACCESS.acquireSession(input);
                             try {
+                                long inputAddress = ((DirectBuffer) input).address();
                                 result = inflateBufferBytes(zsRef.address(),
-                                    ((DirectBuffer) input).address() + inputPos, inputRem,
+                                    inputAddress + inputPos, inputRem,
                                     output, off, len);
                             } finally {
                                 NIO_ACCESS.releaseSession(input, inScope);
@@ -520,9 +522,10 @@ public class Inflater {
                         if (output.isDirect()) {
                             var outScope = NIO_ACCESS.acquireSession(output);
                             try {
+                                long outputAddress = ((DirectBuffer) output).address();
                                 result = inflateBytesBuffer(zsRef.address(),
                                     inputArray, inputPos, inputLim - inputPos,
-                                    ((DirectBuffer)output).address() + outputPos, outputRem);
+                                    outputAddress + outputPos, outputRem);
                             } finally {
                                 NIO_ACCESS.releaseSession(output, outScope);
                             }
@@ -544,12 +547,14 @@ public class Inflater {
                         if (input.isDirect()) {
                             var inScope = NIO_ACCESS.acquireSession(input);
                             try {
+                                long inputAddress = ((DirectBuffer) input).address();
                                 if (output.isDirect()) {
                                     var outScope = NIO_ACCESS.acquireSession(output);
                                     try {
+                                        long outputAddress = ((DirectBuffer) output).address();
                                         result = inflateBufferBuffer(zsRef.address(),
-                                            ((DirectBuffer) input).address() + inputPos, inputRem,
-                                            ((DirectBuffer) output).address() + outputPos, outputRem);
+                                            inputAddress + inputPos, inputRem,
+                                            outputAddress + outputPos, outputRem);
                                     } finally {
                                         NIO_ACCESS.releaseSession(output, outScope);
                                     }
@@ -557,7 +562,7 @@ public class Inflater {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
                                     int outputOffset = ZipUtils.getBufferOffset(output);
                                     result = inflateBufferBytes(zsRef.address(),
-                                        ((DirectBuffer)input).address() + inputPos, inputRem,
+                                        inputAddress + inputPos, inputRem,
                                         outputArray, outputOffset + outputPos, outputRem);
                                 }
                             } finally {
@@ -569,9 +574,10 @@ public class Inflater {
                             if (output.isDirect()) {
                                 var outScope = NIO_ACCESS.acquireSession(output);
                                 try {
+                                    long outputAddress = ((DirectBuffer) output).address();
                                     result = inflateBytesBuffer(zsRef.address(),
                                         inputArray, inputOffset + inputPos, inputRem,
-                                        ((DirectBuffer) output).address() + outputPos, outputRem);
+                                        outputAddress + outputPos, outputRem);
                                 } finally {
                                     NIO_ACCESS.releaseSession(output, outScope);
                                 }
