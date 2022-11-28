@@ -486,7 +486,8 @@ public class ResponseSubscribers {
                         close();
                     } catch (IOException ignored) {
                     }
-                    // Throw InterruptedIOException where the initCause is set to the caught InterruptedException
+                    // Throw InterruptedIOException where the initCause is
+                    // set to the caught InterruptedException
                     throw Utils.toInterruptedIOException(ex);
                 }
             }
