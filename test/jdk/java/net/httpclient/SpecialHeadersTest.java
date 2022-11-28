@@ -302,6 +302,11 @@ public class SpecialHeadersTest implements HttpServerAdapters {
     static final Map<String, Function<URI,String>> DEFAULTS = Map.of(
         "USER-AGENT", u -> userAgent(), "HOST", u -> u.getRawAuthority());
 
+    static void throwIfNotNull(Throwable throwable) throws Exception {
+        if (throwable instanceof Exception ex) throw ex;
+        if (throwable instanceof Error e) throw e;
+    }
+
     @Test(dataProvider = "variants")
     void test(String uriString,
               String headerNameAndValue,
@@ -380,6 +385,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                     }
                 }
             }
+            throwIfNotNull(thrown);
         }
     }
 
@@ -454,10 +460,15 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                 }
             }
         }
+        throwIfNotNull(thrown);
     }
 
+
+
     @Test(dataProvider = "variants")
-    void testAsync(String uriString, String headerNameAndValue, boolean sameClient) {
+    void testAsync(String uriString, String headerNameAndValue, boolean sameClient)
+            throws Exception
+    {
         out.println("\n--- Starting testAsync " + now());
         int index = headerNameAndValue.indexOf(":");
         String name = headerNameAndValue.substring(0, index);
@@ -532,6 +543,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                     }
                 }
             }
+            throwIfNotNull(thrown);
         }
     }
 
