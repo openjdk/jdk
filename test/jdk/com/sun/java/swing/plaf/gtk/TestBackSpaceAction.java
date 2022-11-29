@@ -26,8 +26,8 @@
  * @bug 8078471
  * @key headful
  * @requires (os.family == "linux")
- * @summary Verifies if filechooser current directory changed to parent directory on
- * BACKSPACE key press from keyboard except root directory.
+ * @summary Verifies if filechooser current directory changed to parent
+ * directory on BACKSPACE key press except root directory.
  * @run main TestBackSpaceAction
  */
 
@@ -62,7 +62,8 @@ public class TestBackSpaceAction {
         try {
             // create test directory
             String tmpDir = System.getProperty("java.io.tmpdir");
-            if (tmpDir.length() == 0) { //'java.io.tmpdir' isn't guaranteed to be defined
+            //'java.io.tmpdir' isn't guaranteed to be defined
+            if (tmpDir.length() == 0) {
                 tmpDir = System.getProperty("user.home");
             }
             testDir = new File(tmpDir, "testDir");
@@ -98,7 +99,8 @@ public class TestBackSpaceAction {
         }
     }
 
-    private static void doTesting(UIManager.LookAndFeelInfo laf) throws Exception{
+    private static void doTesting(UIManager.LookAndFeelInfo laf)
+            throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
@@ -115,7 +117,7 @@ public class TestBackSpaceAction {
             }
 
             // check if backspace key changes directory at root level
-            while(!fileChooser.getFileSystemView().isFileSystemRoot(prevDir)) {
+            while (!fileChooser.getFileSystemView().isFileSystemRoot(prevDir)) {
                 clickBackSpace();
                 if (prevDir == crntDir) {
                     passed_2 = true;
@@ -126,8 +128,8 @@ public class TestBackSpaceAction {
             if (passed_1 && passed_2) {
                 System.out.println("Passed");
             } else {
-                throw new RuntimeException("BackSpace keyboard button does not" +
-                        "lead to parent directory for LAF: " + laf.getClassName());
+                throw new RuntimeException("BackSpace does not lead to " +
+                        "parent directory for LAF: " + laf.getClassName());
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
@@ -144,8 +146,7 @@ public class TestBackSpaceAction {
         fileChooser = new JFileChooser(subDir);
         fileChooser.setControlButtonsAreShown(false);
         fileChooser.addHierarchyListener(new HierarchyListener(){
-            public void hierarchyChanged(HierarchyEvent he)
-            {
+            public void hierarchyChanged(HierarchyEvent he) {
                 grabFocusForComboBox(fileChooser.getComponents());
             }
         });
