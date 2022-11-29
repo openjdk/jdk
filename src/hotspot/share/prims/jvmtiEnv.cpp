@@ -715,9 +715,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     }
     delete zip_entry;   // no longer needed
 
-    // lock the loader
-    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    ObjectLocker ol(loader, THREAD);
+    Handle loader(THREAD, SystemDictionary::java_system_loader());
 
     // need the path as java.lang.String
     Handle path = java_lang_String::create_from_platform_dependent_str(segment, THREAD);

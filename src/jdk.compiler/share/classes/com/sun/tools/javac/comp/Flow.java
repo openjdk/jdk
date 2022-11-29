@@ -779,7 +779,9 @@ public class Flow {
                 }
             }
             for (Entry<UniqueType, List<JCRecordPattern>> e : deconstructionPatternsByType.entrySet()) {
-                if (coversDeconstructionFromComponent(pos, e.getKey().type, e.getValue(), 0)) {
+                if (e.getValue().stream().anyMatch(r -> r.nested.size() != r.record.getRecordComponents().size())) {
+                    coveredSymbols.add(syms.errSymbol);
+                } else if (coversDeconstructionFromComponent(pos, e.getKey().type, e.getValue(), 0)) {
                     coveredSymbols.add(e.getKey().type.tsym);
                 }
             }
@@ -2176,10 +2178,6 @@ public class Flow {
             Lint lintPrev = lint;
             lint = lint.augment(tree.sym);
             try {
-                if (tree.sym == null) {
-                    return;
-                }
-
                 JCClassDecl classDefPrev = classDef;
                 int firstadrPrev = firstadr;
                 int nextadrPrev = nextadr;
@@ -2266,15 +2264,6 @@ public class Flow {
             Lint lintPrev = lint;
             lint = lint.augment(tree.sym);
             try {
-                if (tree.body == null) {
-                    return;
-                }
-                /*  Ignore synthetic methods, except for translated lambda methods.
-                 */
-                if ((tree.sym.flags() & (SYNTHETIC | LAMBDA_METHOD)) == SYNTHETIC) {
-                    return;
-                }
-
                 final Bits initsPrev = new Bits(inits);
                 final Bits uninitsPrev = new Bits(uninits);
                 int nextadrPrev = nextadr;

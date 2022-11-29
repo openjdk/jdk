@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import java.awt.Button;
 import java.awt.Choice;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.Window;
@@ -32,8 +34,13 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.imageio.ImageIO;
 
 /**
  * @test
@@ -49,12 +56,12 @@ public class AccessibleChoiceTest {
     Button def = new Button("default owner");
     CountDownLatch go = new CountDownLatch(1);
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         AccessibleChoiceTest app = new AccessibleChoiceTest();
         app.test();
     }
 
-    private void test() {
+    private void test() throws IOException {
         try {
             init();
             start();
@@ -77,7 +84,7 @@ public class AccessibleChoiceTest {
         win.add(choice);
     }
 
-    public void start () {
+    public void start () throws IOException {
         frame.setVisible(true);
         win.pack();
         win.setLocation(100, 200);
@@ -89,15 +96,16 @@ public class AccessibleChoiceTest {
         } catch (Exception ex) {
             throw new RuntimeException("Can't create robot");
         }
-        robot.delay(2000);
+        robot.waitForIdle();
+        robot.delay(1000);
         robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
 
         // Focus default button and wait till it gets focus
         Point loc = def.getLocationOnScreen();
         robot.mouseMove(loc.x+2, loc.y+2);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         try {
             go.await(1, TimeUnit.SECONDS);
@@ -120,10 +128,13 @@ public class AccessibleChoiceTest {
         robot.keyPress(KeyEvent.VK_DOWN);
         robot.keyRelease(KeyEvent.VK_DOWN);
 
+        robot.delay(500);
+
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("mac")) {
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.delay(500);
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
         }
@@ -132,6 +143,16 @@ public class AccessibleChoiceTest {
 
         // On success second item should be selected
         if (choice.getSelectedItem() != choice.getItem(1)) {
+            // Print out os name to check if mac conditional is relevant
+            System.err.println("Failed on os: " + osName);
+
+            // Save image to better debug the status of test when failing
+            GraphicsConfiguration ge = GraphicsEnvironment
+                    .getLocalGraphicsEnvironment().getDefaultScreenDevice()
+                    .getDefaultConfiguration();
+            BufferedImage failImage = robot.createScreenCapture(ge.getBounds());
+            ImageIO.write(failImage, "png", new File("failImage.png"));
+
             throw new RuntimeException("Choice can't be controlled by keyboard");
         }
     }

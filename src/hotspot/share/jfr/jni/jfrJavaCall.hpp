@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_JNI_JFRJAVACALL_HPP
 #define SHARE_JFR_JNI_JFRJAVACALL_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 

@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 
 class ClassLoaderData;
