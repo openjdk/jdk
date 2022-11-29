@@ -52,20 +52,19 @@ public class Password {
         byte[] consoleBytes = null;
 
         try {
-            // Use the new java.io.Console class
+            // Only use Console if `in` is the initial System.in
             Console con;
-            if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
-                // Only use Console if System.in is not replaced.
-                if (initIn == System.in) {
-                    consoleEntered = con.readPassword();
-                    // readPassword returns "" if you just press ENTER with the built-in Console,
-                    // to be compatible with old Password class, change to null
-                    if (consoleEntered == null || consoleEntered.length == 0) {
-                        return null;
-                    }
-                    consoleBytes = convertToBytes(consoleEntered);
-                    in = new ByteArrayInputStream(consoleBytes);
+            if (!isEchoOn &&
+                    in == SharedSecrets.getJavaLangAccess().initialSystemIn() &&
+                    ((con = System.console()) != null)) {
+                consoleEntered = con.readPassword();
+                // readPassword returns "" if you just press ENTER with the built-in Console,
+                // to be compatible with old Password class, change to null
+                if (consoleEntered == null || consoleEntered.length == 0) {
+                    return null;
                 }
+                consoleBytes = convertToBytes(consoleEntered);
+                in = new ByteArrayInputStream(consoleBytes);
             }
 
             // Rest of the lines still necessary for KeyStoreLoginModule
@@ -160,5 +159,4 @@ public class Password {
         return ba;
     }
     private static volatile CharsetEncoder enc;
-    private static final InputStream initIn = SharedSecrets.getJavaLangAccess().initialSystemIn();
 }
