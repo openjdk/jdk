@@ -1089,7 +1089,7 @@ class LambdaForm {
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
-        private final MethodType type;
+        private @Stable MethodType type;
 
         NamedFunction(MethodHandle resolvedHandle) {
             this(resolvedHandle.internalMemberName(), resolvedHandle);
@@ -1097,7 +1097,6 @@ class LambdaForm {
         NamedFunction(MemberName member, MethodHandle resolvedHandle) {
             this.member = member;
             this.resolvedHandle = resolvedHandle;
-            this.type = calculateMethodType(member, resolvedHandle);
              // The following assert is almost always correct, but will fail for corner cases, such as PrivateInvokeTest.
              //assert(!isInvokeBasic(member));
         }
@@ -1110,7 +1109,6 @@ class LambdaForm {
                 // necessary to pass BigArityTest
                 this.member = Invokers.invokeBasicMethod(basicInvokerType);
             }
-            this.type = calculateMethodType(member, resolvedHandle);
             assert(isInvokeBasic(member));
         }
 
@@ -1202,10 +1200,14 @@ class LambdaForm {
         }
 
         private MethodHandle invoker() {
-            return computeInvoker(type.form());
+            return computeInvoker(methodType().form());
         }
 
         MethodType methodType() {
+            MethodType type = this.type;
+            if (type == null) {
+                this.type = type = calculateMethodType(member, resolvedHandle);
+            }
             return type;
         }
 
@@ -1237,15 +1239,15 @@ class LambdaForm {
         }
 
         BasicType returnType() {
-            return basicType(type.returnType());
+            return basicType(methodType().returnType());
         }
 
         BasicType parameterType(int n) {
-            return basicType(type.parameterType(n));
+            return basicType(methodType().parameterType(n));
         }
 
         int arity() {
-            return type.parameterCount();
+            return methodType().parameterCount();
         }
 
         public String toString() {
