@@ -27,7 +27,9 @@ package sun.nio.ch.sctp;
 import com.sun.nio.sctp.SctpSocketOption;
 import java.lang.annotation.Native;
 
-public class SctpStdSocketOption<T>
+public record SctpStdSocketOption<T>(String name,
+                                     Class<T> type,
+                                     int constValue)
     implements SctpSocketOption<T>
 {
     /* for native mapping of int options */
@@ -39,39 +41,7 @@ public class SctpStdSocketOption<T>
     @Native public static final int SO_RCVBUF = 6;
     @Native public static final int SO_LINGER = 7;
 
-    private final String name;
-    private final Class<T> type;
-
-    /* for native mapping of int options */
-    private int constValue;
-
     public SctpStdSocketOption(String name, Class<T> type) {
-        this.name = name;
-        this.type = type;
-    }
-
-    public SctpStdSocketOption(String name, Class<T> type, int constValue) {
-        this.name = name;
-        this.type = type;
-        this.constValue = constValue;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public Class<T> type() {
-        return type;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    int constValue() {
-        return constValue;
+        this(name, type, 0);
     }
 }

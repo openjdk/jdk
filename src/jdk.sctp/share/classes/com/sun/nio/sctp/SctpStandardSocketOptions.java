@@ -34,14 +34,14 @@ import sun.nio.ch.sctp.SctpStdSocketOption;
  *
  * @since 1.7
  */
-public class SctpStandardSocketOptions {
+public final class SctpStandardSocketOptions {
     private SctpStandardSocketOptions() {}
     /**
      * Enables or disables message fragmentation.
      *
      * <P> The value of this socket option is a {@code Boolean} that represents
      * whether the option is enabled or disabled. If enabled no SCTP message
-     * fragmentation will be performed. Instead if a message being sent
+     * fragmentation will be performed. Instead, if a message being sent
      * exceeds the current PMTU size, the message will NOT be sent and
      * an error will be indicated to the user.
      *
@@ -49,7 +49,7 @@ public class SctpStandardSocketOptions {
      * supported.
      */
     public static final SctpSocketOption<Boolean> SCTP_DISABLE_FRAGMENTS = new
-        SctpStdSocketOption<Boolean>("SCTP_DISABLE_FRAGMENTS", Boolean.class,
+        SctpStdSocketOption<>("SCTP_DISABLE_FRAGMENTS", Boolean.class,
         sun.nio.ch.sctp.SctpStdSocketOption.SCTP_DISABLE_FRAGMENTS);
 
     /**
@@ -68,7 +68,7 @@ public class SctpStandardSocketOptions {
      * option is supported.
      */
     public static final SctpSocketOption<Boolean> SCTP_EXPLICIT_COMPLETE = new
-        SctpStdSocketOption<Boolean>("SCTP_EXPLICIT_COMPLETE", Boolean.class,
+        SctpStdSocketOption<>("SCTP_EXPLICIT_COMPLETE", Boolean.class,
         sun.nio.ch.sctp.SctpStdSocketOption.SCTP_EXPLICIT_COMPLETE);
 
     /**
@@ -118,7 +118,7 @@ public class SctpStandardSocketOptions {
      * supported.
      */
     public static final SctpSocketOption<Integer> SCTP_FRAGMENT_INTERLEAVE =
-            new SctpStdSocketOption<Integer>("SCTP_FRAGMENT_INTERLEAVE",
+            new SctpStdSocketOption<>("SCTP_FRAGMENT_INTERLEAVE",
                   Integer.class,
                   sun.nio.ch.sctp.SctpStdSocketOption.SCTP_FRAGMENT_INTERLEAVE);
 
@@ -158,7 +158,7 @@ public class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption
         <SctpStandardSocketOptions.InitMaxStreams> SCTP_INIT_MAXSTREAMS =
-        new SctpStdSocketOption<SctpStandardSocketOptions.InitMaxStreams>(
+        new SctpStdSocketOption<>(
         "SCTP_INIT_MAXSTREAMS", SctpStandardSocketOptions.InitMaxStreams.class);
 
     /**
@@ -170,7 +170,7 @@ public class SctpStandardSocketOptions {
      * improve network efficiency.
      */
     public static final SctpSocketOption<Boolean> SCTP_NODELAY =
-        new SctpStdSocketOption<Boolean>("SCTP_NODELAY", Boolean.class,
+        new SctpStdSocketOption<>("SCTP_NODELAY", Boolean.class,
         sun.nio.ch.sctp.SctpStdSocketOption.SCTP_NODELAY);
 
     /**
@@ -191,7 +191,7 @@ public class SctpStandardSocketOptions {
      * set or queried directly.
      */
     public static final SctpSocketOption<SocketAddress> SCTP_PRIMARY_ADDR =
-            new SctpStdSocketOption<SocketAddress>
+            new SctpStdSocketOption<>
             ("SCTP_PRIMARY_ADDR", SocketAddress.class);
 
     /**
@@ -216,7 +216,7 @@ public class SctpStandardSocketOptions {
      * option is supported.
      */
     public static final SctpSocketOption<SocketAddress> SCTP_SET_PEER_PRIMARY_ADDR =
-            new SctpStdSocketOption<SocketAddress>
+            new SctpStdSocketOption<>
             ("SCTP_SET_PEER_PRIMARY_ADDR", SocketAddress.class);
 
     /**
@@ -245,7 +245,7 @@ public class SctpStandardSocketOptions {
      * dependent.
      */
     public static final SctpSocketOption<Integer> SO_SNDBUF =
-        new SctpStdSocketOption<Integer>("SO_SNDBUF", Integer.class,
+        new SctpStdSocketOption<>("SO_SNDBUF", Integer.class,
         sun.nio.ch.sctp.SctpStdSocketOption.SO_SNDBUF);
 
     /**
@@ -303,7 +303,7 @@ public class SctpStandardSocketOptions {
      * its maximum value.
      */
     public static final SctpSocketOption<Integer> SO_LINGER =
-        new SctpStdSocketOption<Integer>("SO_LINGER", Integer.class,
+        new SctpStdSocketOption<>("SO_LINGER", Integer.class,
         sun.nio.ch.sctp.SctpStdSocketOption.SO_LINGER);
 
     /**
@@ -316,8 +316,8 @@ public class SctpStandardSocketOptions {
      * @since 1.7
      */
     public static class InitMaxStreams {
-        private int maxInStreams;
-        private int maxOutStreams;
+        private final int maxInStreams;
+        private final int maxOutStreams;
 
         private InitMaxStreams(int maxInStreams, int maxOutStreams) {
            this.maxInStreams = maxInStreams;
@@ -378,11 +378,9 @@ public class SctpStandardSocketOptions {
          */
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(super.toString()).append(" [");
-            sb.append("maxInStreams:").append(maxInStreams);
-            sb.append("maxOutStreams:").append(maxOutStreams).append("]");
-            return sb.toString();
+            return super.toString() + " [" +
+                    "maxInStreams:" + maxInStreams +
+                    "maxOutStreams:" + maxOutStreams + "]";
         }
 
         /**
@@ -398,11 +396,9 @@ public class SctpStandardSocketOptions {
          */
         @Override
         public boolean equals(Object obj) {
-            if (obj != null && obj instanceof InitMaxStreams) {
-                InitMaxStreams that = (InitMaxStreams) obj;
-                if (this.maxInStreams == that.maxInStreams &&
-                    this.maxOutStreams == that.maxOutStreams)
-                    return true;
+            if (obj instanceof InitMaxStreams that) {
+                return this.maxInStreams == that.maxInStreams &&
+                        this.maxOutStreams == that.maxOutStreams;
             }
             return false;
         }

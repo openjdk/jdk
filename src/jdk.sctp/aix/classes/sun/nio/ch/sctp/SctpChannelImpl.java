@@ -36,115 +36,115 @@ import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 
+import static sun.nio.ch.sctp.Util.sctpNotSupported;
+
 /**
  * Unimplemented.
  */
 public class SctpChannelImpl extends SctpChannel
 {
-    private static final String message = "SCTP not supported on this platform";
-
     public SctpChannelImpl(SelectorProvider provider) {
         super(provider);
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public Association association() {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public SctpChannel bind(SocketAddress local)
                             throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public SctpChannel bindAddress(InetAddress address)
          throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public SctpChannel unbindAddress(InetAddress address)
          throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public boolean connect(SocketAddress remote) throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public boolean connect(SocketAddress remote, int maxOutStreams,
        int maxInStreams) throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public boolean isConnectionPending() {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public boolean finishConnect() throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public Set<SocketAddress> getAllLocalAddresses()
             throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public Set<SocketAddress> getRemoteAddresses()
             throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public SctpChannel shutdown() throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public <T> T getOption(SctpSocketOption<T> name)
             throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public <T> SctpChannel setOption(SctpSocketOption<T> name, T value)
         throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public Set<SctpSocketOption<?>> supportedOptions() {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public <T> MessageInfo receive(ByteBuffer dst, T attachment,
             NotificationHandler<T> handler) throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public int send(ByteBuffer src, MessageInfo messageInfo)
             throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 
     @Override
     public void implCloseSelectableChannel() throws IOException {
-        throw new UnsupportedOperationException(message);
+        throw sctpNotSupported();
     }
 }
