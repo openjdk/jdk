@@ -48,6 +48,7 @@ public final class ChoicePopupLocation {
 
     private static final int SIZE = 350;
     private static int frameWidth;
+    private static Rectangle bounds;
 
     public static void main(final String[] args) throws Exception {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -56,7 +57,7 @@ public final class ChoicePopupLocation {
         Point right = null;
         for (GraphicsDevice sd : sds) {
             GraphicsConfiguration gc = sd.getDefaultConfiguration();
-            Rectangle bounds = gc.getBounds();
+            bounds = gc.getBounds();
             if (left == null || left.x > bounds.x) {
                 left = new Point(bounds.x, bounds.y + bounds.height / 2);
             }
@@ -127,7 +128,7 @@ public final class ChoicePopupLocation {
             GraphicsConfiguration ge = GraphicsEnvironment
                     .getLocalGraphicsEnvironment().getDefaultScreenDevice()
                     .getDefaultConfiguration();
-            BufferedImage failImage = robot.createScreenCapture(ge.getBounds());
+            BufferedImage failImage = robot.createScreenCapture(bounds);
             ImageIO.write(failImage, "png", new File("failImage.png"));
             throw new RuntimeException();
         }
