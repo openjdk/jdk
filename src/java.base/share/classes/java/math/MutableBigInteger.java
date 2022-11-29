@@ -1531,7 +1531,6 @@ class MutableBigInteger {
         quotient.intLen = limit;
         int[] q = quotient.value;
 
-
         // Insert leading 0 in rem
         rem.offset = 0;
         rem.value[0] = 0;
