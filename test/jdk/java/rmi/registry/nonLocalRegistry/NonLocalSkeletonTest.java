@@ -30,7 +30,6 @@ import java.lang.reflect.InvocationHandler;
 
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
-import java.rmi.AccessException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -99,8 +98,11 @@ public class NonLocalSkeletonTest extends NonLocalRegistryBase {
 
         // Check if running the test on a local system; it only applies to remote
         String myHostName = InetAddress.getLocalHost().getHostName();
-        Set<InetAddress> myAddrs = Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
-        Set<InetAddress> hostAddrs = Set.copyOf(Arrays.asList(InetAddress.getAllByName(host)));
+        // Eliminate duplicate IP address and save result into an unmodifiable set.
+        Set<InetAddress> myAddrs =
+                Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
+        Set<InetAddress> hostAddrs =
+                Set.copyOf(Arrays.asList(InetAddress.getAllByName(host)));
         boolean isLocal = (hostAddrs.stream().anyMatch(i -> myAddrs.contains(i))
                 || hostAddrs.stream().anyMatch(h -> h.isLoopbackAddress()));
 

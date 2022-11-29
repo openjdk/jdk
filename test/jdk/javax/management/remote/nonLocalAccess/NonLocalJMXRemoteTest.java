@@ -161,6 +161,7 @@ public class NonLocalJMXRemoteTest {
 
         // Check if running the test on a local system; it only applies to remote
         String myHostName = InetAddress.getLocalHost().getHostName();
+        // Eliminate duplicate IP address and save result into an unmodifiable set.
         Set<InetAddress> myAddrs =
                 Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
         Set<InetAddress> hostAddrs =

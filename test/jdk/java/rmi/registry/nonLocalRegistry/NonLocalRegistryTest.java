@@ -23,7 +23,6 @@
 import jdk.test.lib.Utils;
 
 import java.net.InetAddress;
-import java.rmi.AccessException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
@@ -73,6 +72,7 @@ public class NonLocalRegistryTest extends NonLocalRegistryBase {
 
         // Check if running the test on a local system; it only applies to remote
         String myHostName = InetAddress.getLocalHost().getHostName();
+        // Eliminate duplicate IP address and save result into an unmodifiable set.
         Set<InetAddress> myAddrs =
                 Set.copyOf(Arrays.asList(InetAddress.getAllByName(myHostName)));
         Set<InetAddress> hostAddrs =
