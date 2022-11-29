@@ -1071,7 +1071,6 @@
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
-  nonstatic_field(vframeArray,                 _next,                                         vframeArray*)                          \
   nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
   nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
   nonstatic_field(vframeArray,                 _frames,                                       int)                                   \
