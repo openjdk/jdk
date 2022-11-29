@@ -76,7 +76,7 @@ public class MetalBorders {
      * indicator. Only used with the Ocean theme.
      */
     static Object NO_BUTTON_ROLLOVER =
-            new StringUIClientPropertyKey("NoButtonRollover");
+        new StringUIClientPropertyKey("NoButtonRollover");
 
     /**
      * Constructs a {@code MetalBorders}.
@@ -94,7 +94,7 @@ public class MetalBorders {
         public Flush3DBorder() {}
 
         public void paintBorder(Component c, Graphics g, int x, int y,
-                                int w, int h) {
+                          int w, int h) {
             if (c.isEnabled()) {
                 MetalUtils.drawFlush3DBorder(g, x, y, w, h);
             } else {
@@ -185,9 +185,9 @@ public class MetalBorders {
                     }
                 }
                 else {
-                    g.setColor(UIManager.getColor(
-                            "Button.disabledToolBarBorderBackground"));
-                    g.drawRect(0, 0, w - 2, h - 2);
+                   g.setColor(UIManager.getColor(
+                           "Button.disabledToolBarBorderBackground"));
+                   g.drawRect(0, 0, w - 2, h - 2);
                 }
             }
             else if (model.isEnabled()) {
@@ -207,7 +207,7 @@ public class MetalBorders {
                     g.fillRect(1, h - 1, w - 2, 1);
                 }
                 else if (model.isRollover() && button.getClientProperty(
-                        NO_BUTTON_ROLLOVER) == null) {
+                               NO_BUTTON_ROLLOVER) == null) {
                     g.setColor(MetalLookAndFeel.getPrimaryControl());
                     g.drawRect(0, 0, w - 1, h - 1);
                     g.drawRect(2, 2, w - 5, h - 5);
@@ -373,7 +373,7 @@ public class MetalBorders {
         private static final int corner = 14;
 
         public void paintBorder(Component c, Graphics g, int x, int y,
-                                int w, int h) {
+            int w, int h) {
 
             Color background;
             Color highlight;
@@ -612,7 +612,7 @@ public class MetalBorders {
             int messageType = JOptionPane.PLAIN_MESSAGE;
             if (c instanceof JInternalFrame) {
                 Object obj = ((JInternalFrame) c).getClientProperty(
-                        "JInternalFrame.messageType");
+                              "JInternalFrame.messageType");
                 if (obj instanceof Integer) {
                     messageType = (Integer) obj;
                 }
@@ -621,37 +621,37 @@ public class MetalBorders {
             Color borderColor;
 
             switch (messageType) {
-                case(JOptionPane.ERROR_MESSAGE):
-                    borderColor = UIManager.getColor(
-                            "OptionPane.errorDialog.border.background");
-                    break;
-                case(JOptionPane.QUESTION_MESSAGE):
-                    borderColor = UIManager.getColor(
-                            "OptionPane.questionDialog.border.background");
-                    break;
-                case(JOptionPane.WARNING_MESSAGE):
-                    borderColor = UIManager.getColor(
-                            "OptionPane.warningDialog.border.background");
-                    break;
-                case(JOptionPane.INFORMATION_MESSAGE):
-                case(JOptionPane.PLAIN_MESSAGE):
-                default:
-                    borderColor = MetalLookAndFeel.getPrimaryControlDarkShadow();
-                    break;
+            case(JOptionPane.ERROR_MESSAGE):
+                borderColor = UIManager.getColor(
+                    "OptionPane.errorDialog.border.background");
+                break;
+            case(JOptionPane.QUESTION_MESSAGE):
+                borderColor = UIManager.getColor(
+                    "OptionPane.questionDialog.border.background");
+                break;
+            case(JOptionPane.WARNING_MESSAGE):
+                borderColor = UIManager.getColor(
+                    "OptionPane.warningDialog.border.background");
+                break;
+            case(JOptionPane.INFORMATION_MESSAGE):
+            case(JOptionPane.PLAIN_MESSAGE):
+            default:
+                borderColor = MetalLookAndFeel.getPrimaryControlDarkShadow();
+                break;
             }
 
             g.setColor(borderColor);
 
-            // Draw outermost lines
-            g.drawLine( 1, 0, w-2, 0);
-            g.drawLine( 0, 1, 0, h-2);
-            g.drawLine( w-1, 1, w-1, h-2);
-            g.drawLine( 1, h-1, w-2, h-1);
+              // Draw outermost lines
+              g.drawLine( 1, 0, w-2, 0);
+              g.drawLine( 0, 1, 0, h-2);
+              g.drawLine( w-1, 1, w-1, h-2);
+              g.drawLine( 1, h-1, w-2, h-1);
 
-            // Draw the bulk of the border
-            for (int i = 1; i < 3; i++) {
-                g.drawRect(i, i, w-(i*2)-1, h-(i*2)-1);
-            }
+              // Draw the bulk of the border
+              for (int i = 1; i < 3; i++) {
+                  g.drawRect(i, i, w-(i*2)-1, h-(i*2)-1);
+              }
 
             g.translate(-x,-y);
 
@@ -875,9 +875,9 @@ public class MetalBorders {
          * The instance of {@code MetalBumps}.
          */
         private MetalBumps bumps = new MetalBumps( 10, 10,
-                MetalLookAndFeel.getControlHighlight(),
-                MetalLookAndFeel.getControlDarkShadow(),
-                UIManager.getColor("ToolBar.background"));
+                                      MetalLookAndFeel.getControlHighlight(),
+                                      MetalLookAndFeel.getControlDarkShadow(),
+                                     UIManager.getColor("ToolBar.background"));
 
         /**
          * Constructs a {@code ToolBarBorder}.
@@ -901,7 +901,7 @@ public class MetalBorders {
                         bumps.paintIcon( c, g, 2, 2 + shift );
                     } else {
                         bumps.paintIcon( c, g, w-12,
-                                2 + shift );
+                                         2 + shift );
                     }
                 }
                 else // vertical
@@ -913,7 +913,7 @@ public class MetalBorders {
             }
 
             if (((JToolBar) c).getOrientation() == HORIZONTAL &&
-                    MetalLookAndFeel.usingOcean()) {
+                               MetalLookAndFeel.usingOcean()) {
                 g.setColor(MetalLookAndFeel.getControl());
                 g.drawLine(0, h - 2, w, h - 2);
                 g.setColor(UIManager.getColor("ToolBar.borderColor"));
@@ -970,8 +970,8 @@ public class MetalBorders {
     public static Border getButtonBorder() {
         if (buttonBorder == null) {
             buttonBorder = new BorderUIResource.CompoundBorderUIResource(
-                    new MetalBorders.ButtonBorder(),
-                    new BasicBorders.MarginBorder());
+                                                   new MetalBorders.ButtonBorder(),
+                                                   new BasicBorders.MarginBorder());
         }
         return buttonBorder;
     }
@@ -987,8 +987,8 @@ public class MetalBorders {
     public static Border getTextBorder() {
         if (textBorder == null) {
             textBorder = new BorderUIResource.CompoundBorderUIResource(
-                    new MetalBorders.Flush3DBorder(),
-                    new BasicBorders.MarginBorder());
+                                                   new MetalBorders.Flush3DBorder(),
+                                                   new BasicBorders.MarginBorder());
         }
         return textBorder;
     }
@@ -1004,8 +1004,8 @@ public class MetalBorders {
     public static Border getTextFieldBorder() {
         if (textFieldBorder == null) {
             textFieldBorder = new BorderUIResource.CompoundBorderUIResource(
-                    new MetalBorders.TextFieldBorder(),
-                    new BasicBorders.MarginBorder());
+                                                   new MetalBorders.TextFieldBorder(),
+                                                   new BasicBorders.MarginBorder());
         }
         return textFieldBorder;
     }
@@ -1024,7 +1024,7 @@ public class MetalBorders {
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
 
-            if (!(c instanceof JTextComponent)) {
+          if (!(c instanceof JTextComponent)) {
                 // special case for non-text components (bug ID 4144840)
                 if (c.isEnabled()) {
                     MetalUtils.drawFlush3DBorder(g, x, y, w, h);
@@ -1054,7 +1054,7 @@ public class MetalBorders {
         public ScrollPaneBorder() {}
 
         public void paintBorder(Component c, Graphics g, int x, int y,
-                                int w, int h) {
+                          int w, int h) {
 
             if (!(c instanceof JScrollPane)) {
                 return;
@@ -1063,12 +1063,12 @@ public class MetalBorders {
             JComponent colHeader = scroll.getColumnHeader();
             int colHeaderHeight = 0;
             if (colHeader != null)
-                colHeaderHeight = colHeader.getHeight();
+               colHeaderHeight = colHeader.getHeight();
 
             JComponent rowHeader = scroll.getRowHeader();
             int rowHeaderWidth = 0;
             if (rowHeader != null)
-                rowHeaderWidth = rowHeader.getWidth();
+               rowHeaderWidth = rowHeader.getWidth();
 
 
             g.translate( x, y);
@@ -1105,8 +1105,8 @@ public class MetalBorders {
     public static Border getToggleButtonBorder() {
         if (toggleButtonBorder == null) {
             toggleButtonBorder = new BorderUIResource.CompoundBorderUIResource(
-                    new MetalBorders.ToggleButtonBorder(),
-                    new BasicBorders.MarginBorder());
+                                                   new MetalBorders.ToggleButtonBorder(),
+                                                   new BasicBorders.MarginBorder());
         }
         return toggleButtonBorder;
     }
@@ -1131,16 +1131,16 @@ public class MetalBorders {
                     super.paintBorder(c, g, x, y, w, h);
                 }
                 else {
-                    g.setColor(MetalLookAndFeel.getControlDarkShadow());
-                    g.drawRect(0, 0, w - 1, h - 1);
-                }
-                return;
+                 g.setColor(MetalLookAndFeel.getControlDarkShadow());
+                 g.drawRect(0, 0, w - 1, h - 1);
             }
+            return;
+        }
             if (! c.isEnabled() ) {
                 MetalUtils.drawDisabledBorder( g, x, y, w-1, h-1 );
             } else {
                 if ( model.isPressed() && model.isArmed() ) {
-                    MetalUtils.drawPressed3DBorder( g, x, y, w, h );
+                   MetalUtils.drawPressed3DBorder( g, x, y, w, h );
                 } else if ( model.isSelected() ) {
                     MetalUtils.drawDark3DBorder( g, x, y, w, h );
                 } else {
@@ -1194,27 +1194,27 @@ public class MetalBorders {
      */
     public static Border getDesktopIconBorder() {
         return new BorderUIResource.CompoundBorderUIResource(
-                new LineBorder(MetalLookAndFeel.getControlDarkShadow(), 1),
-                new MatteBorder (2,2,1,2, MetalLookAndFeel.getControl()));
+                                          new LineBorder(MetalLookAndFeel.getControlDarkShadow(), 1),
+                                          new MatteBorder (2,2,1,2, MetalLookAndFeel.getControl()));
     }
 
     static Border getToolBarRolloverBorder() {
         if (MetalLookAndFeel.usingOcean()) {
             return new CompoundBorder(
-                    new MetalBorders.ButtonBorder(),
-                    new MetalBorders.RolloverMarginBorder());
+                new MetalBorders.ButtonBorder(),
+                new MetalBorders.RolloverMarginBorder());
         }
         return new CompoundBorder(new MetalBorders.RolloverButtonBorder(),
-                new MetalBorders.RolloverMarginBorder());
+                                  new MetalBorders.RolloverMarginBorder());
     }
 
     static Border getToolBarNonrolloverBorder() {
         if (MetalLookAndFeel.usingOcean()) {
             new CompoundBorder(
-                    new MetalBorders.ButtonBorder(),
-                    new MetalBorders.RolloverMarginBorder());
+                new MetalBorders.ButtonBorder(),
+                new MetalBorders.RolloverMarginBorder());
         }
         return new CompoundBorder(new MetalBorders.ButtonBorder(),
-                new MetalBorders.RolloverMarginBorder());
+                                  new MetalBorders.RolloverMarginBorder());
     }
 }
