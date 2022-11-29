@@ -346,7 +346,7 @@ public abstract class EmbeddedFrame extends Frame
         }
     }
 
-    // These three functions consitute RFE 4100710. Do not remove.
+    // These three functions constitute RFE 4100710. Do not remove.
     public void setCursorAllowed(boolean isCursorAllowed) {
         this.isCursorAllowed = isCursorAllowed;
         final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
@@ -415,7 +415,7 @@ public abstract class EmbeddedFrame extends Frame
      * (0, 0) for backward compatibility. To allow getting location and size
      * of embedded frame getLocationPrivate() and getBoundsPrivate() were
      * introduced, and they work just the same way as getLocation() and getBounds()
-     * for ususal, non-embedded components.
+     * for usual, non-embedded components.
      * </p>
      * <p>
      * Using usual get/setLocation() and get/setBounds() together with new
@@ -480,7 +480,7 @@ public abstract class EmbeddedFrame extends Frame
      * (0, 0) for backward compatibility. To allow getting location and size
      * of embedded frames getLocationPrivate() and getBoundsPrivate() were
      * introduced, and they work just the same way as getLocation() and getBounds()
-     * for ususal, non-embedded components.
+     * for usual, non-embedded components.
      * </p>
      * <p>
      * Using usual get/setLocation() and get/setBounds() together with new
@@ -537,7 +537,7 @@ public abstract class EmbeddedFrame extends Frame
     }
 
     /**
-     * This method should be overriden in subclasses. It is
+     * This method should be overridden in subclasses. It is
      * called when window this frame is within should be blocked
      * by some modal dialog.
      */

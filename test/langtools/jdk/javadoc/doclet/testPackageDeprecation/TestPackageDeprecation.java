@@ -56,7 +56,7 @@ public class TestPackageDeprecation extends JavadocTester {
 
         checkOutput("deprecated-list.html", true,
             """
-                <li><a href="#package">Packages</a></li>"""
+                <li id="contents-package"><a href="#package">Packages</a></li>"""
         );
     }
 

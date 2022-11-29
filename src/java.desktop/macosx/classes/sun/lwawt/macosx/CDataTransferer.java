@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,13 +145,15 @@ public class CDataTransferer extends DataTransferer {
             String xml = new String(bytes, charset);
             // macosx pasteboard returns a property list that consists of one URL
             // let's extract it.
-            return new URL(extractURL(xml));
+            @SuppressWarnings("deprecation")
+            var result = new URL(extractURL(xml));
+            return result;
         }
 
         if(isUriListFlavor(flavor) && format == CF_FILE) {
             // dragQueryFile works fine with files and url,
             // it parses and extracts values from property list.
-            // maxosx always returns property list for
+            // macosx always returns property list for
             // CF_URL and CF_FILE
             String[] strings = dragQueryFile(bytes);
             if(strings == null) {
@@ -160,7 +162,7 @@ public class CDataTransferer extends DataTransferer {
             bytes = String.join(System.getProperty("line.separator"),
                     strings).getBytes();
             // now we extracted uri from xml, now we should treat it as
-            // regular string that allows to translate data to target represantation
+            // regular string that allows to translate data to target representation
             // class by base method
             format = CF_STRING;
         }

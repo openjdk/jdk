@@ -190,6 +190,7 @@ public final class MetadataDescriptor {
     static final String ATTRIBUTE_ID = "id";
     static final String ATTRIBUTE_SIMPLE_TYPE = "simpleType";
     static final String ATTRIBUTE_GMT_OFFSET = "gmtOffset";
+    static final String ATTRIBUTE_DST = "dst";
     static final String ATTRIBUTE_LOCALE = "locale";
     static final String ELEMENT_TYPE = "class";
     static final String ELEMENT_SETTING = "setting";
@@ -205,6 +206,7 @@ public final class MetadataDescriptor {
     final List<EventType> eventTypes = new ArrayList<>();
     final Collection<Type> types = new ArrayList<>();
     long gmtOffset;
+    long dst;
     String locale;
     Element root;
     public long metadataId;
@@ -242,6 +244,10 @@ public final class MetadataDescriptor {
         return (int) gmtOffset;
     }
 
+    public int getDST() {
+        return (int) dst;
+    }
+
     public String getLocale() {
         return locale;
     }
@@ -254,7 +260,9 @@ public final class MetadataDescriptor {
     static void write(List<Type> types, DataOutput output) throws IOException {
         MetadataDescriptor m = new MetadataDescriptor();
         m.locale = Locale.getDefault().toString();
-        m.gmtOffset = TimeZone.getDefault().getRawOffset();
+        TimeZone tz = TimeZone.getDefault();
+        m.gmtOffset = tz.getRawOffset();
+        m.dst = tz.getDSTSavings();
         m.types.addAll(types);
         MetadataWriter w = new MetadataWriter(m);
         w.writeBinary(output);

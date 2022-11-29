@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,61 @@ import sun.security.util.ManifestEntryVerifier;
 import jdk.internal.util.jar.JarIndex;
 
 /**
- * The {@code JarInputStream} class is used to read the contents of
- * a JAR file from any input stream. It extends the class
- * {@code java.util.zip.ZipInputStream} with support for reading
- * an optional {@code Manifest} entry. The {@code Manifest}
- * can be used to store meta-information about the JAR file and its entries.
+ * The {@code JarInputStream} class, which extends {@link ZipInputStream},
+ * is used to read the contents of a JAR file from an input stream.
+ * It provides support for reading an optional
+ * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
+ * entry. The {@code Manifest} can be used to store
+ * meta-information about the JAR file and its entries.
+ *
+ * <h2>Accessing the Manifest</h2>
+ * <p>
+ * The {@link #getManifest() getManifest} method is used to return the
+ * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
+ * from the entry {@code META-INF/MANIFEST.MF} when it is the first entry
+ * in the stream (or the second entry if the first entry in the stream is
+ * {@code META-INF/} and the second entry is {@code META-INF/MANIFEST.MF}).
+ * </p>
+ * <p> The {@link #getNextJarEntry()} and {@link #getNextEntry()} methods are
+ * used to read JAR file entries from the stream. These methods skip over the
+ * Manifest ({@code META-INF/MANIFEST.MF}) when it is at the beginning of the
+ * stream. In other words, these methods do not return an entry for the Manifest
+ * when the Manifest is the first entry in the stream. If the first entry is
+ * {@code META-INF/} and the second entry is the Manifest then both are skipped
+ * over by these methods. Whether these methods skip over the Manifest when it
+ * appears later in the stream is not specified.
+ * </p>
+ * <h2>Signed JAR Files</h2>
+ *
+ * A {@code JarInputStream} verifies the signatures of entries in a
+ * <a href="{@docRoot}/../specs/jar/jar.html#signed-jar-file">Signed JAR file</a>
+ * when:
+ *  <ul>
+ *      <li>
+ *         The {@code Manifest} is the first entry in the stream (or the second
+ *         entry if the first entry in the stream is {@code META-INF/} and the
+ *         second entry is {@code META-INF/MANIFEST.MF}).
+ *      </li>
+ *      <li>
+ *         All signature-related entries immediately follow the {@code Manifest}
+ *      </li>
+ *  </ul>
+ *  <p>
+ *  Once the {@code JarEntry} has been completely verified, which is done by
+ *  reading until the end of the entry's input stream,
+ *  {@link JarEntry#getCertificates()} may be called to obtain the certificates
+ *  for this entry and {@link JarEntry#getCodeSigners()} may be called to obtain
+ *  the signers.
+ *  </p>
+ *  <p>
+ *  It is important to note that the verification process does not include validating
+ *  the signer's certificate. A caller should inspect the return value of
+ *  {@link JarEntry#getCodeSigners()} to further determine if the signature
+ *  can be trusted.
+ *  </p>
+ * @apiNote
+ * If a {@code JarEntry} is modified after the JAR file is signed,
+ * a {@link SecurityException} will be thrown when the entry is read.
  *
  * @author  David Connelly
  * @see     Manifest
@@ -103,11 +153,13 @@ public class JarInputStream extends ZipInputStream {
     }
 
     /**
-     * Returns the {@code Manifest} for this JAR file, or
-     * {@code null} if none.
+     * Returns the {@code Manifest} for this JAR file when it is the first entry
+     * in the stream (or the second entry if the first entry in the stream is
+     * {@code META-INF/} and the second entry is {@code META-INF/MANIFEST.MF}), or
+     * {@code null} otherwise.
      *
      * @return the {@code Manifest} for this JAR file, or
-     *         {@code null} if none.
+     *         {@code null} otherwise.
      */
     public Manifest getManifest() {
         return man;

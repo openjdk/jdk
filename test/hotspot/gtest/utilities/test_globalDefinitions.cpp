@@ -27,8 +27,9 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include <type_traits>
 #include "unittest.hpp"
+
+#include <type_traits>
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
@@ -240,10 +241,12 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(UINT16_FORMAT_X_0,      (uint16_t)0x0123u, "0x0123");
 
   check_format(INT32_FORMAT,           123,               "123");
+  check_format(INT32_FORMAT_X,         0x123,             "0x123");
   check_format(INT32_FORMAT_X_0,       0x123,             "0x00000123");
   check_format(INT32_FORMAT_W(5),      123,               "  123");
   check_format(INT32_FORMAT_W(-5),     123,               "123  ");
   check_format(UINT32_FORMAT,          123u,              "123");
+  check_format(UINT32_FORMAT_X,        0x123u,            "0x123");
   check_format(UINT32_FORMAT_X_0,      0x123u,            "0x00000123");
   check_format(UINT32_FORMAT_W(5),     123u,              "  123");
   check_format(UINT32_FORMAT_W(-5),    123u,              "123  ");

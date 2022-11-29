@@ -2076,10 +2076,13 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ addptr(pos, 1);
   __ addptr(used, 1);
   __ decrement(len_reg);
-  __ jmp(PRELOOP_START);
+  __ jcc(Assembler::notEqual, PRELOOP_START);
 
   __ bind(EXIT_PRELOOP);
   __ movl(Address(used_addr, 0), used);
+
+  __ cmpl(len_reg, 0);
+  __ jcc(Assembler::equal, EXIT);
 
   // Calculate number of rounds i.e. 10, 12, 14,  based on key length(128, 192, 256).
   __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));

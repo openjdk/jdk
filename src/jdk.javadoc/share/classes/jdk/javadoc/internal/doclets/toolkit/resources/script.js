@@ -133,7 +133,9 @@ function toggleGlobal(checkbox, selected, columns) {
                     toggleStyle(elem.classList, isEvenRow, evenRowColor, oddRowColor);
                 }
             });
-        t.parentElement.style.display = visible === 0 ? 'none' : '';
+        var displaySection = visible === 0 ? 'none' : '';
+        t.parentElement.style.display = displaySection;
+        document.querySelector("li#contents-" + id).style.display = displaySection;
     })
 }
 

@@ -51,7 +51,7 @@ inline KlassInfoEntry::~KlassInfoEntry() {
 
 inline void KlassInfoEntry::add_subclass(KlassInfoEntry* cie) {
   if (_subclasses == NULL) {
-    _subclasses = new  (ResourceObj::C_HEAP, mtServiceability) GrowableArray<KlassInfoEntry*>(4, mtServiceability);
+    _subclasses = new (mtServiceability) GrowableArray<KlassInfoEntry*>(4, mtServiceability);
   }
   _subclasses->append(cie);
 }
@@ -279,7 +279,7 @@ int KlassInfoHisto::sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2) {
 
 KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit) :
   _cit(cit) {
-  _elements = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<KlassInfoEntry*>(_histo_initial_size, mtServiceability);
+  _elements = new (mtServiceability) GrowableArray<KlassInfoEntry*>(_histo_initial_size, mtServiceability);
 }
 
 KlassInfoHisto::~KlassInfoHisto() {

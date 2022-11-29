@@ -28,8 +28,7 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @compile --enable-preview -source ${jdk.version} DisambiguatePatterns.java
- * @run main/othervm --enable-preview DisambiguatePatterns
+ * @enablePreview
  */
 
 import com.sun.source.tree.CaseLabelTree;

@@ -82,7 +82,7 @@ class ImageScalingHelper {
     static final int PAINT_ALL = 512;
 
     /**
-     * Paints using the algorightm specified by <code>paintType</code>.
+     * Paints using the algorithm specified by <code>paintType</code>.
      *
      * @param g         Graphics to render to
      * @param x         X-coordinate

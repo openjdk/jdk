@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.nio.file.Path;
 import java.util.List;
 
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.Executor.Result;
@@ -145,6 +146,24 @@ public class SigningBase {
     public static void verifyPkgutil(Path target) {
         List<String> result = pkgutilResult(target);
         verifyPkgutilResult(result);
+    }
+
+    public static void verifyAppImageSignature(JPackageCommand appImageCmd,
+            boolean isSigned, String... launchers) throws Exception {
+        Path launcherPath = appImageCmd.appLauncherPath();
+        SigningBase.verifyCodesign(launcherPath, isSigned);
+
+        final List<String> launchersList = List.of(launchers);
+        launchersList.forEach(launcher -> {
+            Path testALPath = launcherPath.getParent().resolve(launcher);
+            SigningBase.verifyCodesign(testALPath, isSigned);
+        });
+
+        Path appImage = appImageCmd.outputBundle();
+        SigningBase.verifyCodesign(appImage, isSigned);
+        if (isSigned) {
+            SigningBase.verifySpctl(appImage, "exec");
+        }
     }
 
 }

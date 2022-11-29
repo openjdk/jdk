@@ -175,6 +175,7 @@ extern Mutex* tty_lock;                          // lock to synchronize output.
 // Print all mutexes/monitors that are currently owned by a thread; called
 // by fatal error handler.
 void print_owned_locks_on_error(outputStream* st);
+void print_lock_ranks(outputStream* st);
 
 char *lock_name(Mutex *mutex);
 
@@ -225,6 +226,8 @@ class MutexLocker: public StackObj {
       _mutex->unlock();
     }
   }
+
+  static void post_initialize();
 };
 
 // A MonitorLocker is like a MutexLocker above, except it allows

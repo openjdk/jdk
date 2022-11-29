@@ -22,11 +22,6 @@
  */
 
 /*
-    (this test doesn't have an at-test tag because it's run by Bug4170614TestRun.java
-     instead of directly by the test harness)
-*/
-
-/*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
@@ -61,13 +56,22 @@
  * DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
  *
  */
+
+/* @test
+ * @bug 4170614
+ * @summary Test internal hashCode() and equals() functions
+ * @library ../../../../patch-src
+ * @build java.base/java.text.Bug4170614Test
+ * @run main java.base/java.text.Bug4170614Test
+ */
+
 package java.text;
 import sun.text.IntHashtable;
 
 
 /**
  * This class tests some internal hashCode() functions.
- * Bug #4170614 complained that we had two iternal classes that
+ * Bug #4170614 complained that we had two internal classes that
  * break the invariant that if a.equals(b) than a.hashCode() ==
  * b.hashCode().  This is because these classes overrode equals()
  * but not hashCode().  These are both purely internal classes, and
@@ -142,15 +146,15 @@ public class Bug4170614Test {
 
     public static void testPatternEntry() throws Exception {
         PatternEntry fred = new PatternEntry(1,
-                                             new StringBuffer("hello"),
-                                             new StringBuffer("up"));
+                                             new StringBuilder("hello"),
+                                             new StringBuilder("up"));
         PatternEntry barney = new PatternEntry(1,
-                                               new StringBuffer("hello"),
-                                               new StringBuffer("down"));
+                                               new StringBuilder("hello"),
+                                               new StringBuilder("down"));
         // (equals() only considers the "chars" field, so fred and barney are equal)
         PatternEntry homer = new PatternEntry(1,
-                                              new StringBuffer("goodbye"),
-                                              new StringBuffer("up"));
+                                              new StringBuilder("goodbye"),
+                                              new StringBuilder("up"));
 
         if (fred.equals(barney)) {
             System.out.println("fred.equals(barney)");

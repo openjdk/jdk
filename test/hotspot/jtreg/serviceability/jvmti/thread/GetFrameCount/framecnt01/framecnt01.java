@@ -74,7 +74,9 @@ public class framecnt01 {
             Thread.sleep(1);
         }
         // Let vthread1 to park
-        Thread.sleep(100);
+        while(vThread1.getState() != Thread.State.WAITING) {
+            Thread.sleep(1);
+        }
 
         // this is too fragile, implementation can change at any time.
         checkFrames(vThread1, false, 14);
@@ -95,7 +97,10 @@ public class framecnt01 {
         while (!pThread1Started) {
             Thread.sleep(1);
         }
-        Thread.sleep(10);
+
+        while(pThread1.getState() != Thread.State.WAITING) {
+            Thread.sleep(1);
+        }
         checkFrames(pThread1, false, 5);
         LockSupport.unpark(pThread1);
         pThread1.join();

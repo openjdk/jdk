@@ -312,7 +312,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 2);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>2] = (result[j>>2] << 8) | seed[j];
+            result[j>>2] = (result[j>>2] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
@@ -2399,7 +2399,7 @@ public class RandomSupport {
             long multiplier = (1L << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
             while ((salt & multiplier) == 0) {
-                long digit = Math.multiplyHigh(bits, multiplier);
+                long digit = Math.unsignedMultiplyHigh(bits, multiplier);
                 salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
                 bits *= multiplier;
             }

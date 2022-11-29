@@ -314,7 +314,7 @@ public class OceanTheme extends DefaultMetalTheme {
     }
 
     /**
-     * Overriden to enable picking up the system fonts, if applicable.
+     * Overridden to enable picking up the system fonts, if applicable.
      */
     boolean isSystemTheme() {
         return true;
