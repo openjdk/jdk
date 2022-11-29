@@ -1,9 +1,9 @@
 #ifndef SHARE_UTILITIES_JAVAARITHMETIC_HPP
 #define SHARE_UTILITIES_JAVAARITHMETIC_HPP
 
-#include "jni.h"
+#include <cstdint>
 #include <limits>
-#include <type_traits>
+#include "jni.h"
 
 // Basic types' bounds
 constexpr jbyte  min_jbyte  = std::numeric_limits<jbyte>::min();
@@ -25,10 +25,10 @@ constexpr jdouble max_jdouble     = std::numeric_limits<jdouble>::max();
 constexpr jlong   max_jlongDouble = 0x7fefffffffffffff;
 
 // Additional Java basic types
-using jubyte  = std::make_unsigned<jbyte> ::type;
-using jushort = std::make_unsigned<jshort>::type;
-using juint   = std::make_unsigned<jint>  ::type;
-using julong  = std::make_unsigned<jlong> ::type;
+using jubyte  = uint8_t;
+using jushort = uint16_t;
+using juint   = uint32_t;
+using julong  = uint64_t;
 
 constexpr jubyte  max_jubyte  = std::numeric_limits<jubyte>::max();
 constexpr jushort max_jushort = std::numeric_limits<jushort>::max();
