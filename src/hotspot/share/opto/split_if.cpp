@@ -221,7 +221,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     }
   }
 
-  if (n->Opcode() == Op_Opaque1) {
+  if (n->Opcode() == Op_OpaqueZeroTripGuard) {
     CountedLoopNode* cl = n->as_Opaque1()->guarded_counted_loop();
     // If this Opaque1 is part of the zero trip guard for a loop:
     // 1- it can't be shared
@@ -242,6 +242,16 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
       set_ctrl(bol, ctrl->in(0)->in(0));
       return true;
     }
+//    Node* cmp = n->unique_out();
+//    assert(cmp->Opcode() == Op_CmpI, "");
+//    Node* bol = cmp->unique_out();
+//    assert(bol->Opcode() == Op_Bool, "");
+//    Node* iff = bol->unique_out();
+//    assert(iff->Opcode() == Op_If, "");
+//    set_ctrl(n, iff->in(0));
+//    set_ctrl(cmp, iff->in(0));
+//    set_ctrl(bol, iff->in(0));
+//    return true;
   }
 
   // See if splitting-up a Store.  Any anti-dep loads must go up as

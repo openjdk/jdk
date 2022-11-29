@@ -48,7 +48,7 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
 
 // If this node is part of the zero trip guard for a loop, find that loop.
 CountedLoopNode* Opaque1Node::guarded_counted_loop() const {
-  if (Opcode() != Op_Opaque1) {
+  if (Opcode() != Op_OpaqueZeroTripGuard) {
     return NULL;
   }
 

@@ -74,6 +74,13 @@ class OpaqueLoopStrideNode : public Opaque1Node {
   virtual int Opcode() const;
 };
 
+class OpaqueZeroTripGuardNode : public Opaque1Node {
+public:
+  OpaqueZeroTripGuardNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+  }
+  virtual int Opcode() const;
+};
+
 //------------------------------Opaque2Node------------------------------------
 // A node to prevent unwanted optimizations.  Allows constant folding.  Stops
 // value-numbering, most Ideal calls or Identity functions.  This Node is
