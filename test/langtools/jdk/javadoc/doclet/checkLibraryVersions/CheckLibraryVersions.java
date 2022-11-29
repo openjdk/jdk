@@ -25,6 +25,8 @@
  * @test
  * @bug 8293177
  * @summary Verify version numbers in legal files
+ * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main CheckLibraryVersions
  */
 
@@ -35,6 +37,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import jtreg.SkippedException;
 
 /**
  * Checks the names and version strings of 3rd party libraries in legal files
@@ -58,7 +62,7 @@ public class CheckLibraryVersions {
         try {
             new CheckLibraryVersions().run(args);
         } catch (SourceDirNotFound e) {
-            System.err.println("NOTE: Cannot find src directory; test skipped");
+            throw new SkippedException("NOTE: Cannot find src directory; test skipped");
         }
     }
 
