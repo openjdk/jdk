@@ -691,9 +691,9 @@ final class P11Cipher extends CipherSpi {
             throw new ShortBufferException();
         }
         int origPos = inBuffer.position();
-        var inScope = NIO_ACCESS.acquireSession(inBuffer);
+        NIO_ACCESS.acquireSession(inBuffer);
         try {
-            var outScope = NIO_ACCESS.acquireSession(outBuffer);
+            NIO_ACCESS.acquireSession(outBuffer);
             try {
                 ensureInitialized();
 
@@ -804,10 +804,10 @@ final class P11Cipher extends CipherSpi {
                 reset(true);
                 throw new ProviderException("update() failed", e);
             } finally {
-                NIO_ACCESS.releaseSession(outBuffer, outScope);
+                NIO_ACCESS.releaseSession(outBuffer);
             }
         } finally {
-            NIO_ACCESS.releaseSession(inBuffer, inScope);
+            NIO_ACCESS.releaseSession(inBuffer);
         }
     }
 
@@ -898,7 +898,7 @@ final class P11Cipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        var scope = NIO_ACCESS.acquireSession(outBuffer);
+        NIO_ACCESS.acquireSession(outBuffer);
         try {
             try {
                 ensureInitialized();
@@ -995,7 +995,7 @@ final class P11Cipher extends CipherSpi {
                 reset(doCancel);
             }
         } finally {
-            NIO_ACCESS.releaseSession(outBuffer, scope);
+            NIO_ACCESS.releaseSession(outBuffer);
         }
     }
 

@@ -591,7 +591,7 @@ final class P11Signature extends SignatureSpi {
                 return;
             }
             int ofs = byteBuffer.position();
-            var scope = NIO_ACCESS.acquireSession(byteBuffer);
+            NIO_ACCESS.acquireSession(byteBuffer);
             try {
                 if (mode == M_SIGN) {
                     token.p11.C_SignUpdate
@@ -606,7 +606,7 @@ final class P11Signature extends SignatureSpi {
                 reset(false);
                 throw new ProviderException("Update failed", e);
             } finally {
-                NIO_ACCESS.releaseSession(byteBuffer, scope);
+                NIO_ACCESS.releaseSession(byteBuffer);
             }
             break;
         case T_DIGEST:

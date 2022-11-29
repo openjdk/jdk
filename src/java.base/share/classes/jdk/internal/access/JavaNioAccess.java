@@ -26,7 +26,6 @@
 package jdk.internal.access;
 
 import jdk.internal.access.foreign.UnmapperProxy;
-import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.VM.BufferPool;
 
 import java.lang.foreign.MemorySegment;
@@ -89,23 +88,24 @@ public interface JavaNioAccess {
     /**
      * Used by operations to make a buffer's session non-closeable
      * (for the duration of the operation) by acquiring the session.
-     * The buffers scope is returned if it has one, otherwise {@code null} is returned.
      * {@snippet lang = java:
-     * var guard = acquireSession(buffer);
+     * acquireSession(buffer);
      * try {
      *     performOperation(buffer);
      * } finally {
-     *     releaseSession(buffer, guard);
+     *     releaseSession(buffer);
      * }
      *}
      *
-     * @see #releaseSession(Buffer, MemorySessionImpl)
+     * @see #releaseSession(Buffer)
      */
-    MemorySessionImpl acquireSession(Buffer buffer);
+    void acquireSession(Buffer buffer);
 
-    void releaseSession(Buffer buffer, MemorySessionImpl scope);
+    void releaseSession(Buffer buffer);
 
     boolean isThreadConfined(Buffer buffer);
+
+    boolean hasSession(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.

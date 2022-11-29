@@ -825,19 +825,17 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public MemorySessionImpl acquireSession(Buffer buffer) {
+                public void acquireSession(Buffer buffer) {
                     var scope = buffer.session();
-                    if (scope == null) {
-                        return null;
+                    if (scope != null) {
+                        scope.acquire0();
                     }
-                    scope.acquire0();
-                    return scope;
                 }
 
                 @Override
-                public void releaseSession(Buffer buffer, MemorySessionImpl scope) {
-                    assert buffer.session() == scope;
+                public void releaseSession(Buffer buffer) {
                     try {
+                        var scope = buffer.session();
                         if (scope != null) {
                             scope.release0();
                         }
@@ -850,6 +848,11 @@ public abstract sealed class Buffer
                 public boolean isThreadConfined(Buffer buffer) {
                     var scope = buffer.session();
                     return scope != null && scope.ownerThread() != null;
+                }
+
+                @Override
+                public boolean hasSession(Buffer buffer) {
+                    return buffer.session() != null;
                 }
 
                 @Override
