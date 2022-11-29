@@ -121,7 +121,6 @@ class MemoryPool;
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class G1MonitoringScope;
   friend class G1YoungGCMonitoringScope;
   friend class G1FullGCMonitoringScope;
   friend class G1ConcGCMonitoringScope;

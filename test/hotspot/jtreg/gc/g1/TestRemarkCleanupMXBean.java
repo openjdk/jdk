@@ -28,52 +28,47 @@ package gc.g1;
  * @bug 8297247
  * @summary Test that Remark and Cleanup are correctly reported by
  *          a GarbageCollectorMXBean
- * @requires vm.gc.G1
- * @library /test/lib
+ * @requires vm.gc.G1 & vm.compMode != "Xcomp"
+ * @library /test/lib /
+ * @build   jdk.test.whitebox.WhiteBox
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -Xlog:gc
- *                   -Xmx16m -Xms16m -XX:G1HeapRegionSize=1m gc.g1.TestRemarkCleanupMXBean
+ * @run     driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UseG1GC -Xlog:gc
+ *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   gc.g1.TestRemarkCleanupMXBean
  */
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
+import gc.testlibrary.g1.MixedGCProvoker;
 
 public class TestRemarkCleanupMXBean {
-    public static List<byte[]> memory = new ArrayList<>();
-    static List<GarbageCollectorMXBean> beans = ManagementFactory.getGarbageCollectorMXBeans();
-
     public static void main(String[] args) throws Exception {
-        HashMap<String, Long> counts = new HashMap<>();
-        int num = 16;
-        for (int i = 0; i < num; i++) {
-            memory.add(new byte[1024 * 128]);
-        }
-        System.gc();
-
-        for (int i = 0; i < beans.size(); i++) {
-            GarbageCollectorMXBean bean = beans.get(i);
-            counts.put(bean.getName(), bean.getCollectionCount());
-        }
-        memory = null;
-        System.gc();
-        boolean found = false;
-        for (int i = 0; i < beans.size(); i++) {
-            GarbageCollectorMXBean bean = beans.get(i);
-            long before = counts.get(bean.getName());
-            long after = bean.getCollectionCount();
-            if (after >= before + 2) { // Must report a Remark and a Cleanup
-                found = true;
-                System.out.println(bean.getName() + " reports a difference " +
-                                   after + " - " + before + " = " + (after - before));
+        GarbageCollectorMXBean g1ConcGCBean = null;
+        String expectedName = "G1 Concurrent GC";
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            if (expectedName.equals(bean.getName())) {
+                g1ConcGCBean = bean;
+                break;
             }
         }
+        if (g1ConcGCBean == null) {
+            throw new RuntimeException("Unable to find GC bean: " + expectedName);
+        }
 
-        if (found == false) {
-            throw new RuntimeException("Remark or Cleanup not reported by GarbageCollectorMXBean");
+        long before = g1ConcGCBean.getCollectionCount();
+        MixedGCProvoker.provokeConcMarkCycle();
+        long after = g1ConcGCBean.getCollectionCount();
+
+        if (after >= before + 2) { // Must report a Remark and a Cleanup
+            System.out.println(g1ConcGCBean.getName() + " reports a difference " +
+                               after + " - " + before + " = " + (after - before));
+        } else {
+            throw new RuntimeException("Remark or Cleanup not reported by " +
+                                       g1ConcGCBean.getName());
         }
     }
 }
