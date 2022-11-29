@@ -795,7 +795,7 @@ public abstract class InputStream implements Closeable {
             if (transferred < Long.MAX_VALUE) {
                 try {
                     transferred = Math.addExact(transferred, read);
-                } catch (ArithmeticException e) {
+                } catch (ArithmeticException ignore) {
                     transferred = Long.MAX_VALUE;
                 }
             }

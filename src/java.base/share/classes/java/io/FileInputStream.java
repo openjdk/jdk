@@ -392,7 +392,11 @@ public class FileInputStream extends InputStream
                 return transferred;
             }
         }
-        return transferred + super.transferTo(out);
+        try {
+            return Math.addExact(transferred, super.transferTo(out));
+        } catch (ArithmeticException ignore) {
+            return Long.MAX_VALUE;
+        }
     }
 
     private long length() throws IOException {
