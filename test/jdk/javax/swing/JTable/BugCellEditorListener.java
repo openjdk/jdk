@@ -66,7 +66,7 @@ public class BugCellEditorListener {
             System.out.println("Testing l&f : " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             test();
-	}
+        }
     }
 
     private static void test() throws Exception {
