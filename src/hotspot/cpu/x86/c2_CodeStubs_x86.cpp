@@ -31,7 +31,8 @@
 #define __ masm.
 
 int C2SafepointPollStub::size() const {
-  return 22;
+  LP64_ONLY(return 22;)
+  NOT_LP64(return 33;)
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
