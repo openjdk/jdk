@@ -71,7 +71,11 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
         var object = loaded.getDeclaredConstructor().newInstance();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), className + " should be loaded and live");
-        System.out.println("testClassIsUnloaded loaded klass: " + className);
+
+        // Printing the object to ensure the class is kept alive. If the test
+        // is run with -Xcomp and ergonomically triggered GCs occur the class
+        // could otherwise be unloaded before verified to be alive above.
+        System.out.println("testClassIsUnloaded loaded klass: " + className + " and created object: " + object);
 
         // Make class unloadable.
         classLoader = null;
@@ -98,8 +102,12 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(parentClassName), parentClassName + " should be loaded and live");
         ClassUnloadCommon.failIf(!wb.isClassAlive(childClassName), childClassName + " should be loaded and live");
-        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedParent);
-        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedChild);
+
+        // Printing the objects to ensure the classes are kept alive. If the test
+        // is run with -Xcomp and ergonomically triggered GCs occur they could
+        // otherwise be unloaded before verified to be alive above.
+        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedParent + " and created object: " + parent);
+        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedChild + " and created object: " + child);
 
         // Clear to allow unloading.
         parentClassLoader = null;
