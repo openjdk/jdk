@@ -129,7 +129,7 @@ public interface ObjectReference extends Value {
      * @param field the field containing the requested value
      * @param value the new value to assign
      * @throws java.lang.IllegalArgumentException if the field is not valid for
-     * this object's class.
+     * this object's class or the field is final.
      * @throws InvalidTypeException if the value's type does not match
      * the field's type.
      * @throws ClassNotLoadedException if 'value' is not null, and the field
