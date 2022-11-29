@@ -342,7 +342,6 @@ public class TestSearchScript extends JavadocTester {
         javadoc("-d", "out-channel",
                 "-Xdoclint:none",
                 "-use",
-                "-use",
                 "-sourcepath", testSrc,
                 "channels");
         checkExit(Exit.OK);
