@@ -190,7 +190,12 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamSchedule(__unused JNIEnv* env,
     const CFRunLoopRef     runLoop = jlong_to_ptr(runLoopRef);
 
     FSEventStreamScheduleWithRunLoop(stream, runLoop, kCFRunLoopDefaultMode);
-    FSEventStreamStart(stream);
+    jboolean rc = FSEventStreamStart(stream);
+    if (!rc) {
+      fprintf(stdout, "WatchService: event stream %lx failed to start\n",
+              ptr_to_jlong(stream));
+      JNU_ThrowInternalError(env, "FSEventStreamStart() failed");
+    }
     fprintf(stdout, "WatchService: scheduled event stream %lx on run loop %lx\n",
             ptr_to_jlong(stream), ptr_to_jlong(runLoopRef));
     fflush(stdout);
