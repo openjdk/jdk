@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,6 +366,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         }
     }
 
+    private int savedBlinkRate = 0;
     // --- FocusListener methods --------------------------
 
     /**
@@ -379,8 +380,18 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     public void focusGained(FocusEvent e) {
         if (component.isEnabled()) {
             if (component.isEditable()) {
-                setVisible(true);
+                if (savedBlinkRate != 0) {
+                    setBlinkRate(savedBlinkRate);
+                    savedBlinkRate = 0;
+                }
+            } else {
+                if (getBlinkRate() != 0) {
+                    savedBlinkRate = getBlinkRate();
+                    setBlinkRate(0);
+                }
+
             }
+            setVisible(true);
             setSelectionVisible(true);
             updateSystemSelection();
         }
