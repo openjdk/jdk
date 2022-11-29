@@ -498,7 +498,7 @@ public:
     int num_oops = f.num_oops();
     assert(num_oops >= 0, "");
 
-    _argsize   = f.stack_argsize();
+    _argsize   = f.stack_argsize() + frame::metadata_words_at_top;
     _size     += fsize;
     _num_oops += num_oops;
     if (f.is_interpreted()) {
@@ -602,7 +602,7 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
     assert(closure._size <= size + argsize() + frame::metadata_words,
            "size: %d argsize: %d closure.size: %d end sp: " PTR_FORMAT " start sp: %d chunk size: %d",
            size, argsize(), closure._size, closure._sp - start_address(), sp(), stack_size());
-    assert(argsize() == closure._argsize,
+    assert(argsize() == closure._argsize - (closure._num_frames > 0 ? frame::metadata_words_at_top : 0),
            "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
            argsize(), closure._argsize, closure._callee_interpreted);
 
@@ -633,13 +633,13 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
     if (UseCompressedOops) {
       StackChunkVerifyBitmapClosure<narrowOop> bitmap_closure(this);
       bitmap().iterate(&bitmap_closure,
-                       bit_index_for((narrowOop*)(sp_address() - frame::metadata_words)),
+                       bit_index_for((narrowOop*)(sp_address() - frame::metadata_words_at_bottom)),
                        bit_index_for((narrowOop*)end_address()));
       oop_count = bitmap_closure._count;
     } else {
       StackChunkVerifyBitmapClosure<oop> bitmap_closure(this);
       bitmap().iterate(&bitmap_closure,
-                       bit_index_for((oop*)(sp_address() - frame::metadata_words)),
+                       bit_index_for((oop*)(sp_address() - frame::metadata_words_at_bottom)),
                        bit_index_for((oop*)end_address()));
       oop_count = bitmap_closure._count;
     }

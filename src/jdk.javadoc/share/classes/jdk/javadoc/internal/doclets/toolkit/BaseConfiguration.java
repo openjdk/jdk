@@ -471,9 +471,13 @@ public abstract class BaseConfiguration {
                     tagletManager.addCustomTag(args.get(1), fileManager);
                     continue;
                 }
-                List<String> tokens = tokenize(args.get(1), TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
+                /* Since there are few constraints on the characters in a tag name,
+                 * and real world examples with ':' in the tag name, we cannot simply use
+                 * String.split(regex);  instead, we tokenize the string, allowing
+                 * special characters to be escaped with '\'. */
+                List<String> tokens = tokenize(args.get(1), 3);
                 switch (tokens.size()) {
-                    case 1:
+                    case 1 -> {
                         String tagName = args.get(1);
                         if (tagletManager.isKnownCustomTag(tagName)) {
                             //reorder a standard tag
@@ -484,18 +488,16 @@ public abstract class BaseConfiguration {
                             heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
                             tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
                         }
-                        break;
+                    }
 
-                    case 2:
+                    case 2 ->
                         //Add simple taglet without heading, probably to excluding it in the output.
                         tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
-                        break;
 
-                    case 3:
+                    case 3 ->
                         tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
-                        break;
 
-                    default:
+                    default ->
                         messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
                 }
             }
@@ -505,18 +507,17 @@ public abstract class BaseConfiguration {
     }
 
     /**
-     * Given a string, return an array of tokens.  The separator can be escaped
-     * with the '\' character.  The '\' character may also be escaped by the
-     * '\' character.
+     * Given a string, return an array of tokens, separated by ':'.
+     * The separator character can be escaped with the '\' character.
+     * The '\' character may also be escaped with the '\' character.
      *
-     * @param s         the string to tokenize.
-     * @param separator the separator char.
+     * @param s         the string to tokenize
      * @param maxTokens the maximum number of tokens returned.  If the
      *                  max is reached, the remaining part of s is appended
      *                  to the end of the last token.
-     * @return an array of tokens.
+     * @return an array of tokens
      */
-    private List<String> tokenize(String s, char separator, int maxTokens) {
+    private List<String> tokenize(String s, int maxTokens) {
         List<String> tokens = new ArrayList<>();
         StringBuilder token = new StringBuilder();
         boolean prevIsEscapeChar = false;
@@ -526,7 +527,7 @@ public abstract class BaseConfiguration {
                 // Case 1:  escaped character
                 token.appendCodePoint(currentChar);
                 prevIsEscapeChar = false;
-            } else if (currentChar == separator && tokens.size() < maxTokens - 1) {
+            } else if (currentChar == ':' && tokens.size() < maxTokens - 1) {
                 // Case 2:  separator
                 tokens.add(token.toString());
                 token = new StringBuilder();

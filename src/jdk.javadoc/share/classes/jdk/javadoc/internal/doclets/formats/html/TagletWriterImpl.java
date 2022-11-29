@@ -811,17 +811,17 @@ public class TagletWriterImpl extends TagletWriter {
         return HtmlTree.DT(contents.throws_);
     }
 
-    @Override
-    public Content throwsTagOutput(Element element, ThrowsTree throwsTag, TypeMirror substituteType) {
+    @Deprecated(forRemoval = true)
+    private Content throwsTagOutput(Element element, ThrowsTree throwsTag, TypeMirror substituteType) {
         ContentBuilder body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
         Element exception = ch.getException(throwsTag);
         Content excName;
         if (substituteType != null) {
-           excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
+            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
                    substituteType));
         } else if (exception == null) {
-            excName = RawHtml.of(throwsTag.getExceptionName().toString());
+            excName = Text.of(throwsTag.getExceptionName().toString());
         } else if (exception.asType() == null) {
             excName = Text.of(utils.getFullyQualifiedName(exception));
         } else {
@@ -841,9 +841,16 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    public Content throwsTagOutput(TypeMirror throwsType) {
-        return HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
-                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType))));
+    public Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content) {
+        var linkInfo = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType);
+        linkInfo.excludeTypeBounds = true;
+        var link = htmlWriter.getLink(linkInfo);
+        var concat = new ContentBuilder(HtmlTree.CODE(link));
+        if (content.isPresent()) {
+            concat.add(" - ");
+            concat.add(content.get());
+        }
+        return HtmlTree.DD(concat);
     }
 
     @Override

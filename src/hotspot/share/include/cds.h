@@ -39,7 +39,7 @@
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
-#define CURRENT_CDS_ARCHIVE_VERSION 16
+#define CURRENT_CDS_ARCHIVE_VERSION 17
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -73,8 +73,6 @@ typedef struct GenericCDSFileMapHeader {
   int          _crc;                      // header crc checksum, start from _base_archive_name_offset
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
-  unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
-                                                  //    0 if no common prefix exists
   unsigned int _base_archive_name_offset; // offset where the base archive name is stored
                                           //   static archive:  0
                                           //   dynamic archive:

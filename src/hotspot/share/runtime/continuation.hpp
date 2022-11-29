@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_RUNTIME_CONTINUATION_HPP
 #define SHARE_VM_RUNTIME_CONTINUATION_HPP
 
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "jni.h"
 
 class ContinuationEntry;
 class frame;

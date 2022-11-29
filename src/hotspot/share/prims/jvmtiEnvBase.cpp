@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -534,29 +536,34 @@ void JvmtiEnvBase::destroy_jni_reference(JavaThread *thread, jobject jobj) {
 // Threads
 //
 
-jobject *
-JvmtiEnvBase::new_jobjectArray(int length, Handle *handles) {
+jthread *
+JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
   if (length == 0) {
     return NULL;
   }
 
-  jobject *objArray = (jobject *) jvmtiMalloc(sizeof(jobject) * length);
+  jthread* objArray = (jthread *) jvmtiMalloc(sizeof(jthread) * length);
   NULL_CHECK(objArray, NULL);
 
-  for (int i=0; i<length; i++) {
-    objArray[i] = jni_reference(handles[i]);
+  for (int i = 0; i < length; i++) {
+    objArray[i] = (jthread)jni_reference(handles[i]);
   }
   return objArray;
 }
 
-jthread *
-JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
-  return (jthread *) new_jobjectArray(length,handles);
-}
-
 jthreadGroup *
-JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
-  return (jthreadGroup *) new_jobjectArray(length,handles);
+JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
+  if (length == 0) {
+    return NULL;
+  }
+
+  jthreadGroup* objArray = (jthreadGroup *) jvmtiMalloc(sizeof(jthreadGroup) * length);
+  NULL_CHECK(objArray, NULL);
+
+  for (int i = 0; i < length; i++) {
+    objArray[i] = (jthreadGroup)JNIHandles::make_local(groups->obj_at(i));
+  }
+  return objArray;
 }
 
 // Return the vframe on the specified thread and depth, NULL if no such frame.
@@ -792,43 +799,33 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
 }
 
 jvmtiError
-JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **group_objs_p) {
-  ObjectLocker ol(group_hdl, current_thread);
+JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p) {
 
-  int ngroups = java_lang_ThreadGroup::ngroups(group_hdl());
-  int nweaks = java_lang_ThreadGroup::nweaks(group_hdl());
-
-  jint count = 0;
-  Handle *group_objs = NULL;
-  if (ngroups > 0 || nweaks > 0) {
-    group_objs = NEW_RESOURCE_ARRAY_RETURN_NULL(Handle, ngroups + nweaks);
-    NULL_CHECK(group_objs, JVMTI_ERROR_OUT_OF_MEMORY);
-
-    if (ngroups > 0) {
-      // Strongly reachable subgroups:
-      objArrayOop groups = java_lang_ThreadGroup::groups(group_hdl());
-      for (int j = 0; j < ngroups; j++) {
-        oop group_obj = groups->obj_at(j);
-        assert(group_obj != NULL, "group_obj != NULL");
-        group_objs[count++] = Handle(current_thread, group_obj);
-      }
-    }
-
-    if (nweaks > 0) {
-      // Weakly reachable subgroups:
-      objArrayOop weaks = java_lang_ThreadGroup::weaks(group_hdl());
-      for (int j = 0; j < nweaks; j++) {
-        oop weak_obj = weaks->obj_at(j);
-        assert(weak_obj != NULL, "weak_obj != NULL");
-        oop group_obj = java_lang_ref_Reference::weak_referent(weak_obj);
-        if (group_obj != NULL) {
-          group_objs[count++] = Handle(current_thread, group_obj);
-        }
-      }
+  // This call collects the strong and weak groups
+  JavaThread* THREAD = current_thread;
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result,
+                          group_hdl,
+                          vmClasses::ThreadGroup_klass(),
+                          SymbolTable::new_permanent_symbol("subgroupsAsArray"),
+                          vmSymbols::void_threadgroup_array_signature(),
+                          THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+    CLEAR_PENDING_EXCEPTION;
+    if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    } else {
+      return JVMTI_ERROR_INTERNAL;
     }
   }
-  *group_objs_p = group_objs;
-  *count_ptr = count;
+
+  assert(result.get_type() == T_OBJECT, "just checking");
+  objArrayOop groups = (objArrayOop)result.get_oop();
+
+  *count_ptr = groups == nullptr ? 0 : groups->length();
+  *group_objs_p = objArrayHandle(current_thread, groups);
+
   return JVMTI_ERROR_NONE;
 }
 

@@ -484,9 +484,15 @@ import jdk.internal.util.regex.Grapheme;
  * <p> The regular expression {@code .} matches any character except a line
  * terminator unless the {@link #DOTALL} flag is specified.
  *
- * <p> By default, the regular expressions {@code ^} and {@code $} ignore
- * line terminators and only match at the beginning and the end, respectively,
- * of the entire input sequence. If {@link #MULTILINE} mode is activated then
+ * <p> If {@link #MULTILINE} mode is not activated, the regular expression
+ * {@code ^} ignores line terminators and only matches at the beginning of
+ * the entire input sequence. The regular expression {@code $} matches at the
+ * end of the entire input sequence, but also matches just before the last line
+ * terminator if this is not followed by any other input character. Other line
+ * terminators are ignored, including the last one if it is followed by other
+ * input characters.
+ *
+ * <p> If {@link #MULTILINE} mode is activated then
  * {@code ^} matches at the beginning of input and after any line terminator
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.

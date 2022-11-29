@@ -770,10 +770,13 @@ define SetupRunJtregTestBody
   # Make sure the tmp dir is normalized as some tests will react badly otherwise
   $1_TEST_TMP_DIR := $$(abspath $$($1_TEST_SUPPORT_DIR)/tmp)
 
+  # test.boot.jdk is used by some test cases that want to execute a previous
+  # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
       -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
+      -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
 
   $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet

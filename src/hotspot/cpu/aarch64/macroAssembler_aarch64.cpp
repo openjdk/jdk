@@ -26,10 +26,11 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "compiler/compileTask.hpp"
+#include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -39,8 +40,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/disassembler.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"

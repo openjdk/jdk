@@ -1670,7 +1670,7 @@ enum Nf {
 
 // ====================================
 // RISC-V Bit-Manipulation Extension
-// Currently only support Zba and Zbb.
+// Currently only support Zba and Zbb bitmanip extensions.
 // ====================================
 #define INSN(NAME, op, funct3, funct7)                  \
   void NAME(Register Rd, Register Rs1, Register Rs2) {  \
@@ -2751,12 +2751,6 @@ public:
   INSN(jalr, x1);
 
 #undef INSN
-
-  // RVB pseudo instructions
-  // zero extend word
-  void zext_w(Register Rd, Register Rs) {
-    add_uw(Rd, Rs, zr);
-  }
 
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset) { Unimplemented(); }
