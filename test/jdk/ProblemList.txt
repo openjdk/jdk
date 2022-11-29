@@ -690,7 +690,6 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 ############################################################################
 
 # core_svc
-tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
 
 ############################################################################
 
