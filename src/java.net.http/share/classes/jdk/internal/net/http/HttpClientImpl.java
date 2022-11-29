@@ -112,7 +112,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     final Logger debugtimeout = Utils.getDebugLogger(this::dbgString, DEBUGTIMEOUT);
     static final AtomicLong CLIENT_IDS = new AtomicLong();
     private final AtomicLong CONNECTION_IDS = new AtomicLong();
-    static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 1200;
+    static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 30;
     static final long KEEP_ALIVE_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout", DEFAULT_KEEP_ALIVE_TIMEOUT);
     // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
     static final long IDLE_CONNECTION_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
