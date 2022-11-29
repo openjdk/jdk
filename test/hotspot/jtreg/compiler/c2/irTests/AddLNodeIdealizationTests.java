@@ -44,7 +44,7 @@ public class AddLNodeIdealizationTests {
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
-                 "test20","test21", "test22"})
+                 "test20", "test21", "test22"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();

@@ -15,12 +15,103 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="ar" draft="unconfirmed">ᱚᱨᱵᱤ</language>
+			<language type="ab">ᱟᱹᱵᱠᱷᱟᱡᱤᱭᱟᱹᱱ</language>
+			<language type="ace">ᱟᱠᱷᱤᱱᱤᱡᱽ</language>
+			<language type="ada">ᱟᱹᱰᱟᱱᱜᱽᱢᱮ</language>
+			<language type="ady">ᱟᱹᱰᱭᱜᱷᱮ</language>
+			<language type="af">ᱟᱯᱷᱨᱤᱠᱟᱱᱥ</language>
+			<language type="agq">ᱟᱜᱷᱮᱢ</language>
+			<language type="ain">ᱟᱭᱤᱱᱩ</language>
+			<language type="ak">ᱟᱠᱟᱱ</language>
+			<language type="ale">ᱟᱞᱮᱣᱴ</language>
+			<language type="alt" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱟᱹᱞᱴᱟᱭᱤ</language>
+			<language type="am">ᱟᱢᱦᱟᱨᱤᱠ</language>
+			<language type="an">ᱟᱨᱟᱜᱚᱱᱤᱡᱽ</language>
+			<language type="ann" draft="unconfirmed">ᱳᱵᱚᱞᱳ</language>
+			<language type="anp">ᱟᱹᱝᱜᱤᱠᱟ</language>
+			<language type="ar">ᱚᱨᱵᱤ</language>
 			<language type="ar_001" draft="unconfirmed">ᱟᱫᱷᱩᱱᱤᱠ ᱢᱟᱱᱚᱠ ᱚᱨᱵᱤ</language>
-			<language type="bn" draft="unconfirmed">ᱵᱟᱹᱝᱞᱟ</language>
+			<language type="arn" draft="unconfirmed">ᱢᱟᱯᱩᱪᱷᱮ</language>
+			<language type="arp">ᱟᱨᱟᱯᱟᱦᱚ</language>
+			<language type="ars" draft="unconfirmed">ᱱᱟᱹᱡᱫᱤ ᱚᱨᱵᱤ</language>
+			<language type="as" draft="unconfirmed">ᱟᱥᱟᱢᱤᱡᱽ</language>
+			<language type="asa" draft="unconfirmed">ᱟᱥᱩ</language>
+			<language type="ast" draft="unconfirmed">ᱚᱥᱴᱨᱤᱭᱟᱹᱱ</language>
+			<language type="atj" draft="unconfirmed">ᱟᱹᱴᱤᱠᱟᱢᱮᱠᱟᱹᱣ</language>
+			<language type="av" draft="unconfirmed">ᱟᱣᱟᱨᱤᱠ</language>
+			<language type="awa" draft="unconfirmed">ᱟᱹᱣᱟᱹᱫᱷᱤ</language>
+			<language type="ay" draft="unconfirmed">ᱟᱭᱢᱟᱨᱟ</language>
+			<language type="az" draft="unconfirmed">ᱟᱹᱡᱟᱹᱨᱵᱮᱡᱟᱱᱤ</language>
+			<language type="az" alt="short" draft="unconfirmed">ᱟᱹᱡᱮᱨᱤ</language>
+			<language type="ba" draft="unconfirmed">ᱵᱟᱥᱠᱤᱨ</language>
+			<language type="ban" draft="unconfirmed">ᱵᱟᱞᱤᱱᱤᱡᱽ</language>
+			<language type="bas" draft="unconfirmed">ᱵᱟᱥᱟ</language>
+			<language type="be" draft="unconfirmed">ᱵᱮᱞᱟᱨᱩᱥᱤᱭᱟᱹᱱ</language>
+			<language type="bem" draft="unconfirmed">ᱵᱮᱢᱵᱟ</language>
+			<language type="bez" draft="unconfirmed">ᱵᱮᱱᱟ</language>
+			<language type="bg" draft="unconfirmed">ᱵᱩᱞᱜᱮᱨᱤ</language>
+			<language type="bho" draft="unconfirmed">ᱵᱽᱷᱚᱡᱽᱯᱩᱨᱤ</language>
+			<language type="bi" draft="unconfirmed">ᱵᱤᱥᱞᱟᱢᱟ</language>
+			<language type="bin" draft="unconfirmed">ᱵᱤᱱᱤ</language>
+			<language type="bla" draft="unconfirmed">ᱥᱤᱠᱥᱤᱠᱟ</language>
+			<language type="bm" draft="unconfirmed">ᱵᱟᱢᱵᱟᱨᱟ</language>
+			<language type="bn" draft="unconfirmed">ᱵᱟᱝᱞᱟ</language>
+			<language type="bo" draft="unconfirmed">ᱛᱤᱵᱮᱛᱟᱱ</language>
+			<language type="br" draft="unconfirmed">ᱵᱽᱨᱚᱴᱚᱱ</language>
+			<language type="brx" draft="unconfirmed">ᱵᱳᱰᱳ</language>
+			<language type="bs" draft="unconfirmed">ᱵᱚᱥᱱᱤᱭᱟᱹᱱ</language>
+			<language type="bug" draft="unconfirmed">ᱵᱩᱜᱤᱱᱤᱡᱽ</language>
+			<language type="byn" draft="unconfirmed">ᱵᱞᱤᱱ</language>
+			<language type="ca" draft="unconfirmed">ᱠᱟᱴᱟᱞᱟᱱ</language>
+			<language type="cay" draft="unconfirmed">ᱠᱟᱭᱩᱜᱟ</language>
+			<language type="ccp" draft="unconfirmed">ᱪᱷᱚᱠᱢᱟ</language>
+			<language type="ce" draft="unconfirmed">ᱪᱷᱮᱪᱷᱮᱱ</language>
+			<language type="ceb" draft="unconfirmed">ᱥᱤᱵᱩᱣᱟᱱᱳ</language>
+			<language type="cgg" draft="unconfirmed">ᱪᱷᱤᱜᱟ</language>
+			<language type="ch" draft="unconfirmed">ᱪᱷᱟᱢᱳᱨᱳ</language>
+			<language type="chk" draft="unconfirmed">ᱪᱷᱩᱠᱤᱡᱽ</language>
+			<language type="chm" draft="unconfirmed">ᱢᱟᱨᱤ</language>
+			<language type="cho" draft="unconfirmed">ᱪᱷᱚᱠᱴᱟᱣ</language>
+			<language type="chp" draft="unconfirmed">ᱪᱤᱯᱮᱭᱟᱱ</language>
+			<language type="chr" draft="unconfirmed">ᱪᱷᱮᱨᱚᱠᱤ</language>
+			<language type="chy" draft="unconfirmed">ᱪᱷᱮᱭᱮᱱ</language>
+			<language type="ckb" draft="unconfirmed">ᱥᱮᱱᱴᱨᱟᱞ ᱠᱩᱨᱫᱤᱥ</language>
+			<language type="ckb" alt="menu" draft="unconfirmed">ᱠᱩᱨᱫᱤᱥ, ᱥᱮᱱᱴᱨᱟᱞ</language>
+			<language type="ckb" alt="variant" draft="unconfirmed">ᱠᱩᱨᱫᱤᱥ, ᱥᱚᱨᱟᱱᱤ</language>
+			<language type="clc" draft="unconfirmed">ᱪᱷᱤᱞᱠᱚᱴᱤᱱ</language>
+			<language type="co" draft="unconfirmed">ᱠᱚᱨᱥᱤᱠᱟᱱ</language>
+			<language type="crg" draft="unconfirmed">ᱢᱤᱪᱷᱤᱯᱷ</language>
+			<language type="crj" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱮᱛᱚᱢ ᱠᱨᱤ</language>
+			<language type="crk" draft="unconfirmed">ᱯᱞᱮᱱᱥ ᱠᱨᱤ</language>
+			<language type="crl" draft="unconfirmed">ᱮᱛᱚᱢ ᱥᱟᱢᱟᱝ ᱠᱨᱤ</language>
+			<language type="crm" draft="unconfirmed">ᱢᱩᱥ ᱠᱨᱤ</language>
+			<language type="crr" draft="unconfirmed">ᱠᱟᱨᱚᱞᱤᱱᱟ ᱟᱞᱜᱚᱱᱠᱣᱤᱭᱟᱱ</language>
+			<language type="cs" draft="unconfirmed">ᱪᱮᱠ</language>
+			<language type="csw" draft="unconfirmed">ᱥᱣᱟᱢᱯᱤ ᱠᱨᱤ</language>
+			<language type="cu" draft="unconfirmed">ᱪᱚᱨᱪ ᱥᱞᱟᱣᱤᱠ</language>
+			<language type="cv" draft="unconfirmed">ᱪᱷᱩᱣᱟᱥ</language>
+			<language type="cy" draft="unconfirmed">ᱣᱮᱞᱥ</language>
+			<language type="da" draft="unconfirmed">ᱰᱟᱱᱤᱥ</language>
+			<language type="dak" draft="unconfirmed">ᱰᱟᱠᱚᱴᱟ</language>
+			<language type="dar" draft="unconfirmed">ᱰᱟᱨᱜᱣᱟ</language>
+			<language type="dav" draft="unconfirmed">ᱴᱟᱭᱤᱴᱟ</language>
 			<language type="de">ᱡᱟᱨᱢᱟᱱ</language>
 			<language type="de_AT">ᱚᱥᱴᱨᱤᱭᱟ ᱡᱟᱨᱢᱟᱱ</language>
 			<language type="de_CH">ᱥᱩᱣᱤᱥ ᱦᱟᱤ ᱡᱟᱨᱢᱟᱱ</language>
+			<language type="dgr" draft="unconfirmed">ᱰᱚᱜᱽᱨᱤᱵᱽ</language>
+			<language type="dje" draft="unconfirmed">ᱡᱟᱨᱢᱟ</language>
+			<language type="doi" draft="unconfirmed">ᱰᱚᱜᱽᱨᱤ</language>
+			<language type="dsb" draft="unconfirmed">ᱞᱚᱣᱟᱹᱨ ᱥᱚᱨᱵᱤᱭᱟᱱ</language>
+			<language type="dua" draft="unconfirmed">ᱰᱩᱣᱟᱞᱟ</language>
+			<language type="dv" draft="unconfirmed">ᱰᱤᱣᱮᱦᱤ</language>
+			<language type="dyo" draft="unconfirmed">ᱡᱚᱞᱟᱼᱯᱷᱚᱱᱤ</language>
+			<language type="dz" draft="unconfirmed">ᱡᱚᱝᱠᱷᱟ</language>
+			<language type="dzg" draft="unconfirmed">ᱰᱟᱡᱟᱜᱟ</language>
+			<language type="ebu" draft="unconfirmed">ᱮᱢᱵᱩ</language>
+			<language type="ee" draft="unconfirmed">ᱤᱣ</language>
+			<language type="efi" draft="unconfirmed">ᱮᱯᱷᱤᱠ</language>
+			<language type="eka" draft="unconfirmed">ᱮᱠᱟᱡᱩᱠ</language>
+			<language type="el" draft="unconfirmed">ᱜᱽᱨᱤᱠ</language>
 			<language type="en">ᱟᱝᱜᱽᱨᱮᱡᱤ</language>
 			<language type="en_AU">ᱚᱥᱴᱨᱮᱞᱤᱭᱟᱱ ᱟᱝᱜᱽᱨᱮᱡᱤ</language>
 			<language type="en_CA">ᱠᱟᱱᱟᱰᱤᱭᱟᱱ ᱟᱝᱜᱽᱨᱮᱡᱤ</language>
@@ -28,49 +119,522 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB" alt="short">ᱭᱩᱠᱮ ᱟᱝᱜᱽᱨᱮᱡᱤ</language>
 			<language type="en_US">ᱟᱢᱮᱨᱤᱠᱟᱱ ᱟᱝᱜᱽᱨᱮᱡᱤ</language>
 			<language type="en_US" alt="short">ᱭᱩᱮᱥ ᱟᱝᱜᱽᱨᱮᱡᱤ</language>
-			<language type="es">ᱮᱥᱯᱮᱱᱤᱥ</language>
-			<language type="es_419">ᱞᱮᱴᱤᱱ ᱟᱢᱮᱨᱤᱠᱟᱱ ᱮᱥᱯᱮᱱᱤᱥ</language>
-			<language type="es_ES">ᱨᱩᱥᱤᱭᱟᱱ ᱮᱥᱯᱮᱱᱤᱥ</language>
-			<language type="es_MX">ᱢᱮᱠᱥᱤᱠᱟᱱ ᱮᱥᱯᱮᱱᱤᱥ</language>
+			<language type="eo" draft="unconfirmed">ᱮᱥᱯᱟᱹᱨᱟᱱᱴᱳ</language>
+			<language type="es">ᱥᱯᱮᱱᱤᱥ</language>
+			<language type="es_419">ᱞᱮᱴᱤᱱ ᱟᱢᱮᱨᱤᱠᱟᱱ ᱥᱯᱮᱱᱤᱥ</language>
+			<language type="es_ES">ᱨᱩᱥᱤᱭᱟᱱ ᱥᱯᱮᱱᱤᱥ</language>
+			<language type="es_MX">ᱢᱮᱠᱥᱤᱠᱟᱱ ᱥᱯᱮᱱᱤᱥ</language>
+			<language type="et" draft="unconfirmed">ᱮᱥᱴᱚᱱᱤᱭᱟᱭ</language>
+			<language type="eu" draft="unconfirmed">ᱵᱟᱥᱠ</language>
+			<language type="ewo" draft="unconfirmed">ᱤᱣᱚᱱᱰᱩ</language>
+			<language type="fa" draft="unconfirmed">ᱯᱟᱹᱨᱥᱤᱭᱟᱭ</language>
+			<language type="fa_AF" draft="unconfirmed">ᱰᱟᱨᱤ</language>
+			<language type="ff" draft="unconfirmed">ᱯᱷᱩᱞᱟ</language>
+			<language type="fi" draft="unconfirmed">ᱯᱷᱤᱱᱤᱥ</language>
+			<language type="fil" draft="unconfirmed">ᱯᱷᱤᱞᱤᱯᱟᱱᱳ</language>
+			<language type="fj" draft="unconfirmed">ᱯᱷᱤᱡᱤᱭᱟᱱ</language>
+			<language type="fo" draft="unconfirmed">ᱯᱷᱟᱨᱚᱤᱥ</language>
+			<language type="fon" draft="unconfirmed">ᱯᱷᱚᱱ</language>
 			<language type="fr">ᱯᱷᱨᱮᱧᱪ</language>
 			<language type="fr_CA">ᱠᱟᱱᱟᱰᱤᱭᱟᱱ ᱯᱷᱨᱮᱧᱪ</language>
 			<language type="fr_CH">ᱥᱩᱣᱤᱥ ᱯᱷᱨᱮᱧᱪ</language>
+			<language type="frc" draft="unconfirmed">ᱠᱟᱡᱩᱱ ᱯᱷᱨᱮᱧᱪ</language>
+			<language type="fur" draft="unconfirmed">ᱯᱷᱨᱤᱣᱞᱤᱭᱟᱱ</language>
+			<language type="fy" draft="unconfirmed">ᱯᱟᱪᱮ ᱯᱷᱨᱤᱥᱤᱭᱟᱭ</language>
+			<language type="ga" draft="unconfirmed">ᱤᱨᱤᱥ</language>
+			<language type="gaa" draft="unconfirmed">ᱜᱟ</language>
+			<language type="gd" draft="unconfirmed">ᱥᱠᱚᱴᱤᱥ ᱜᱮᱞᱤᱠ</language>
+			<language type="gez" draft="unconfirmed">ᱜᱤᱡᱽ</language>
+			<language type="gil" draft="unconfirmed">ᱜᱤᱞᱵᱟᱹᱨᱴᱤᱡᱽ</language>
+			<language type="gl" draft="unconfirmed">ᱜᱟᱞᱤᱥᱤᱭᱟᱱ</language>
+			<language type="gn" draft="unconfirmed">ᱜᱩᱟᱨᱟᱱᱤ</language>
+			<language type="gor" draft="unconfirmed">ᱜᱚᱨᱚᱱᱴᱟᱞᱳ</language>
+			<language type="gsw" draft="unconfirmed">ᱥᱣᱤᱥ ᱡᱚᱨᱢᱚᱱ</language>
+			<language type="gu" draft="unconfirmed">ᱜᱩᱡᱽᱨᱟᱴᱤ</language>
+			<language type="guz" draft="unconfirmed">ᱜᱩᱥᱤ</language>
+			<language type="gv" draft="unconfirmed">ᱢᱟᱱᱠᱥ</language>
+			<language type="gwi" draft="unconfirmed">ᱜᱣᱤᱪᱤᱱ</language>
+			<language type="ha" draft="unconfirmed">ᱦᱟᱣᱥᱟ</language>
+			<language type="hai" draft="unconfirmed">ᱦᱟᱭᱰᱟ</language>
+			<language type="haw" draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱭᱟᱭ</language>
+			<language type="hax" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱦᱟᱭᱤᱰᱟ</language>
+			<language type="he" draft="unconfirmed">ᱦᱮᱵᱽᱨᱤᱣ</language>
 			<language type="hi" draft="unconfirmed">ᱦᱤᱱᱫᱤ</language>
+			<language type="hil" draft="unconfirmed">ᱦᱤᱞᱤᱜᱟᱭᱱᱚᱱ</language>
+			<language type="hmn" draft="unconfirmed">ᱢᱟᱹᱝ</language>
+			<language type="hr" draft="unconfirmed">ᱠᱨᱚᱮᱥᱤᱭᱟᱹᱱ</language>
+			<language type="hsb" draft="unconfirmed">ᱪᱮᱛᱟᱱ ᱥᱚᱨᱵᱤᱭᱟᱭ</language>
+			<language type="ht" draft="unconfirmed">ᱦᱟᱭᱴᱤᱭᱟᱭ ᱠᱨᱮᱚᱞᱮ</language>
+			<language type="hu" draft="unconfirmed">ᱦᱚᱝᱜᱽᱨᱤᱭᱟᱭ</language>
+			<language type="hup" draft="unconfirmed">ᱦᱩᱯᱟ</language>
+			<language type="hur" draft="unconfirmed">ᱦᱟᱞᱠᱚᱢᱮᱞᱮᱢ</language>
+			<language type="hy">ᱟᱨᱢᱮᱱᱤᱭᱟᱹᱱ</language>
+			<language type="hz" draft="unconfirmed">ᱦᱮᱨᱮᱨᱚ</language>
+			<language type="ia" draft="unconfirmed">ᱤᱱᱴᱚᱨᱞᱤᱝᱜᱣᱟ</language>
+			<language type="iba" draft="unconfirmed">ᱤᱵᱟᱱ</language>
+			<language type="ibb" draft="unconfirmed">ᱤᱵᱤᱵᱤᱭᱚ</language>
 			<language type="id" draft="unconfirmed">ᱤᱱᱰᱚᱱᱮᱥᱤᱭᱟᱹᱱ</language>
+			<language type="ig" draft="unconfirmed">ᱤᱜᱽᱵᱚ</language>
+			<language type="ii" draft="unconfirmed">ᱥᱤᱪᱷᱩᱣᱟᱱ ᱭᱤ</language>
+			<language type="ikt" draft="unconfirmed">ᱯᱟᱪᱮ ᱠᱟᱱᱟᱰᱤᱭᱟᱭ ᱤᱱᱩᱠᱴᱤᱴᱩᱴ</language>
+			<language type="ilo" draft="unconfirmed">ᱤᱞᱚᱠᱚ</language>
+			<language type="inh" draft="unconfirmed">ᱤᱱᱜᱩᱥ</language>
+			<language type="io" draft="unconfirmed">ᱤᱰᱳ</language>
+			<language type="is" draft="unconfirmed">ᱟᱭᱞᱟᱱᱰᱤᱠ</language>
 			<language type="it">ᱤᱴᱟᱞᱤᱟᱱ</language>
+			<language type="iu" draft="unconfirmed">ᱤᱱᱩᱠᱴᱤᱭᱩᱴ</language>
 			<language type="ja">ᱡᱟᱯᱟᱱᱤ</language>
+			<language type="jbo" draft="unconfirmed">ᱞᱚᱡᱽᱵᱟᱱ</language>
+			<language type="jgo" draft="unconfirmed">ᱜᱚᱢᱵᱟ</language>
+			<language type="jmc" draft="unconfirmed">ᱢᱟᱹᱪᱢᱮ</language>
+			<language type="jv" draft="unconfirmed">ᱡᱟᱣᱟᱱᱤᱡᱽ</language>
+			<language type="ka" draft="unconfirmed">ᱡᱭᱚᱨᱡᱤᱭᱟᱱ</language>
+			<language type="kab" draft="unconfirmed">ᱠᱟᱵᱮᱞ</language>
+			<language type="kac" draft="unconfirmed">ᱠᱟᱪᱤᱱ</language>
+			<language type="kaj" draft="unconfirmed">ᱡᱩ</language>
+			<language type="kam" draft="unconfirmed">ᱠᱟᱢᱵᱟ</language>
+			<language type="kbd" draft="unconfirmed">ᱠᱟᱵᱟᱨᱰᱤᱭᱟᱭ</language>
+			<language type="kcg" draft="unconfirmed">ᱴᱭᱟᱯ</language>
+			<language type="kde" draft="unconfirmed">ᱢᱟᱠᱚᱱᱰᱮ</language>
+			<language type="kea" draft="unconfirmed">ᱠᱟᱵᱩᱣᱟᱹᱨᱰᱤᱭᱟᱹᱱᱩ</language>
+			<language type="kfo" draft="unconfirmed">ᱠᱚᱨᱚ</language>
+			<language type="kgp" draft="unconfirmed">ᱠᱟᱭᱮᱱᱜᱮᱝ</language>
+			<language type="kha" draft="unconfirmed">ᱠᱷᱟᱥᱤ</language>
+			<language type="khq" draft="unconfirmed">ᱠᱚᱭᱨᱟ ᱪᱷᱤᱱᱤ</language>
+			<language type="ki" draft="unconfirmed">ᱠᱤᱠᱩᱭᱩ</language>
+			<language type="kj" draft="unconfirmed">ᱠᱩᱣᱟᱱᱭᱟᱢᱟ</language>
+			<language type="kk" draft="unconfirmed">ᱠᱟᱡᱟᱠᱷ</language>
+			<language type="kkj" draft="unconfirmed">ᱠᱟᱠᱚ</language>
+			<language type="kl" draft="unconfirmed">ᱠᱟᱞᱟᱞᱤᱥᱩᱴ</language>
+			<language type="kln" draft="unconfirmed">ᱠᱟᱞᱮᱱᱡᱤᱱ</language>
+			<language type="km" draft="unconfirmed">ᱠᱷᱟᱹᱢᱮᱨ</language>
+			<language type="kmb" draft="unconfirmed">ᱠᱤᱢᱵᱩᱱᱰᱩ</language>
+			<language type="kn" draft="unconfirmed">ᱠᱟᱱᱟᱰᱟ</language>
 			<language type="ko" draft="unconfirmed">ᱠᱚᱨᱤᱭᱟᱹᱱ</language>
+			<language type="kok" draft="unconfirmed">ᱠᱚᱱᱠᱟᱱᱤ</language>
+			<language type="kpe" draft="unconfirmed">ᱯᱮᱞᱮ</language>
+			<language type="kr" draft="unconfirmed">ᱠᱟᱱᱩᱨᱤ</language>
+			<language type="krc" draft="unconfirmed">ᱠᱟᱨᱟᱪᱟᱭᱼᱵᱟᱞᱠᱟᱨ</language>
+			<language type="krl" draft="unconfirmed">ᱠᱟᱨᱮᱞᱤᱭᱟᱹᱱ</language>
+			<language type="kru" draft="unconfirmed">ᱠᱩᱨᱩᱠᱷ</language>
+			<language type="ks" draft="unconfirmed">ᱠᱟᱹᱥᱢᱤᱨᱤ</language>
+			<language type="ksb" draft="unconfirmed">ᱥᱟᱢᱵᱟᱞᱟ</language>
+			<language type="ksf" draft="unconfirmed">ᱵᱟᱯᱷᱤᱭᱟ</language>
+			<language type="ksh" draft="unconfirmed">ᱠᱚᱞᱚᱜᱱᱤᱭᱟᱹᱱ</language>
+			<language type="ku" draft="unconfirmed">ᱠᱩᱨᱫᱤᱥ</language>
+			<language type="kum" draft="unconfirmed">ᱠᱩᱢᱤᱠ</language>
+			<language type="kv" draft="unconfirmed">ᱠᱚᱢᱤ</language>
+			<language type="kw" draft="unconfirmed">ᱠᱚᱨᱱᱤᱥ</language>
+			<language type="kwk" draft="unconfirmed">ᱠᱣᱟᱠᱷᱣᱟᱞᱟ</language>
+			<language type="ky" draft="unconfirmed">ᱠᱭᱨᱜᱩᱡᱽ</language>
+			<language type="la" draft="unconfirmed">ᱞᱟᱴᱤᱱ</language>
+			<language type="lad" draft="unconfirmed">ᱞᱟᱰᱤᱱᱚ</language>
+			<language type="lag" draft="unconfirmed">ᱞᱟᱝᱜᱤ</language>
+			<language type="lb" draft="unconfirmed">ᱞᱩᱠᱥᱮᱢᱵᱚᱨᱜᱤᱥ</language>
+			<language type="lez" draft="unconfirmed">ᱞᱮᱡᱜᱷᱤᱭᱟᱱ</language>
+			<language type="lg" draft="unconfirmed">ᱜᱟᱱᱰᱟ</language>
+			<language type="li" draft="unconfirmed">ᱞᱤᱢᱵᱩᱨᱜᱤᱥ</language>
+			<language type="lij" draft="unconfirmed">ᱞᱤᱜᱩᱨᱤᱭᱟᱱ</language>
+			<language type="lil" draft="unconfirmed">ᱞᱤᱞᱚᱮᱴ</language>
+			<language type="lkt" draft="unconfirmed">ᱞᱟᱠᱚᱴᱟ</language>
+			<language type="ln" draft="unconfirmed">ᱞᱤᱝᱜᱟᱞᱟ</language>
+			<language type="lo" draft="unconfirmed">ᱞᱟᱣ</language>
+			<language type="lou" draft="unconfirmed">ᱞᱚᱣᱤᱥᱤᱭᱟᱱᱟ ᱠᱨᱮᱚᱞᱮ</language>
+			<language type="loz" draft="unconfirmed">ᱞᱚᱡᱤ</language>
+			<language type="lrc" draft="unconfirmed">ᱮᱛᱚᱢ ᱞᱩᱨᱤ</language>
+			<language type="lsm" draft="unconfirmed">ᱥᱟᱢᱤᱭᱟ</language>
+			<language type="lt" draft="unconfirmed">ᱞᱤᱛᱷᱩᱣᱟᱱᱤᱭᱟᱭ</language>
+			<language type="lu" draft="unconfirmed">ᱞᱩᱵᱟᱼᱠᱟᱴᱟᱹᱝᱜᱟ</language>
+			<language type="lua" draft="unconfirmed">ᱞᱩᱵᱟᱼᱞᱩᱞᱟ</language>
+			<language type="lun" draft="unconfirmed">ᱞᱩᱱᱰᱟ</language>
+			<language type="luo" draft="unconfirmed">ᱞᱩᱣᱚ</language>
+			<language type="lus" draft="unconfirmed">ᱢᱤᱡᱚ</language>
+			<language type="luy" draft="unconfirmed">ᱞᱩᱭᱤᱭᱟ</language>
+			<language type="lv" draft="unconfirmed">ᱞᱟᱴᱤᱣᱟᱱ</language>
+			<language type="mad" draft="unconfirmed">ᱢᱟᱱᱰᱩᱨᱤᱡᱽ</language>
+			<language type="mag" draft="unconfirmed">ᱢᱟᱜᱟᱦᱤ</language>
+			<language type="mai" draft="unconfirmed">ᱢᱟᱭᱛᱷᱤᱞᱤ</language>
+			<language type="mak" draft="unconfirmed">ᱢᱟᱠᱟᱥᱟᱨ</language>
+			<language type="mas" draft="unconfirmed">ᱢᱟᱥᱟᱭᱤ</language>
+			<language type="mdf" draft="unconfirmed">ᱢᱚᱠᱥᱟ</language>
+			<language type="men" draft="unconfirmed">ᱢᱮᱱᱰᱮ</language>
+			<language type="mer" draft="unconfirmed">ᱢᱮᱨᱩ</language>
+			<language type="mfe" draft="unconfirmed">ᱢᱚᱨᱤᱥᱭᱮᱱ</language>
+			<language type="mg" draft="unconfirmed">ᱢᱟᱞᱟᱜᱟᱥᱭ</language>
+			<language type="mgh" draft="unconfirmed">ᱢᱟᱠᱷᱩᱣᱟᱼᱢᱤᱴᱳ</language>
+			<language type="mgo" draft="unconfirmed">ᱢᱮᱴᱟ</language>
+			<language type="mh" draft="unconfirmed">ᱢᱟᱨᱥᱟᱞᱤᱥ</language>
+			<language type="mi" draft="unconfirmed">ᱢᱟᱣᱨᱤ</language>
+			<language type="mic" draft="unconfirmed">ᱢᱤᱠᱢᱟᱠ</language>
+			<language type="min" draft="unconfirmed">ᱢᱤᱱᱟᱜᱠᱟᱵᱩ</language>
+			<language type="mk" draft="unconfirmed">ᱢᱟᱥᱮᱰᱚᱱᱤᱭᱟᱭ</language>
+			<language type="ml" draft="unconfirmed">ᱢᱟᱞᱟᱭᱟᱞᱟᱹᱢ</language>
+			<language type="mn" draft="unconfirmed">ᱢᱚᱱᱜᱚᱞᱤᱭᱟᱱ</language>
+			<language type="mni" draft="unconfirmed">ᱢᱟᱹᱱᱤᱯᱩᱨᱤ</language>
+			<language type="moe" draft="unconfirmed">ᱤᱱᱩᱼᱟᱭᱢᱩᱱ</language>
+			<language type="moh" draft="unconfirmed">ᱢᱚᱦᱟᱠ</language>
+			<language type="mos" draft="unconfirmed">ᱢᱚᱥᱤ</language>
+			<language type="mr" draft="unconfirmed">ᱢᱟᱨᱟᱴᱷᱤ</language>
+			<language type="ms" draft="unconfirmed">ᱢᱟᱞᱟᱮ</language>
+			<language type="mt" draft="unconfirmed">ᱢᱟᱞᱴᱤᱡᱽ</language>
+			<language type="mua" draft="unconfirmed">ᱢᱩᱱᱰᱟᱝ</language>
+			<language type="mul" draft="unconfirmed">ᱟᱭᱢᱟᱸ ᱯᱟᱹᱨᱥᱤ ᱠᱚ</language>
+			<language type="mus" draft="unconfirmed">ᱢᱩᱥᱠᱚᱜᱤ</language>
+			<language type="mwl" draft="unconfirmed">ᱢᱤᱨᱟᱱᱰᱮᱥᱮ</language>
+			<language type="my" draft="unconfirmed">ᱵᱩᱨᱢᱤᱡᱽ</language>
+			<language type="myv" draft="unconfirmed">ᱮᱨᱡᱭᱟ</language>
+			<language type="mzn" draft="unconfirmed">ᱢᱟᱡᱟᱱᱰᱮᱨᱟᱱᱤ</language>
+			<language type="na" draft="unconfirmed">ᱱᱟᱣᱨᱩ</language>
+			<language type="nap" draft="unconfirmed">ᱱᱤᱭᱟᱯᱚᱞᱤᱴᱟᱱ</language>
+			<language type="naq" draft="unconfirmed">ᱱᱟᱢᱟ</language>
+			<language type="nb" draft="unconfirmed">ᱱᱚᱨᱣᱮᱤᱭᱟᱭ ᱵᱚᱠᱢᱟᱞ</language>
+			<language type="nd" draft="unconfirmed">ᱮᱛᱚᱢ ᱱᱮᱫᱮᱵᱮᱞᱮ</language>
+			<language type="nds" draft="unconfirmed">ᱞᱚ ᱡᱟᱹᱨᱢᱟᱹᱱ</language>
+			<language type="nds_NL" draft="unconfirmed">ᱞᱚ ᱥᱟᱠᱥᱚᱱ</language>
+			<language type="ne" draft="unconfirmed">ᱱᱮᱯᱟᱞᱤ</language>
+			<language type="new" draft="unconfirmed">ᱱᱚᱣᱟᱨᱤ</language>
+			<language type="ng" draft="unconfirmed">ᱰᱚᱝᱜᱟ</language>
+			<language type="nia" draft="unconfirmed">ᱱᱤᱭᱟᱥ</language>
+			<language type="niu" draft="unconfirmed">ᱱᱤᱭᱩᱭᱤᱭᱮᱱ</language>
 			<language type="nl" draft="unconfirmed">ᱰᱚᱪ</language>
 			<language type="nl_BE" draft="unconfirmed">ᱯᱷᱞᱮᱢᱤᱥ</language>
+			<language type="nmg" draft="unconfirmed">ᱠᱣᱟᱥᱤᱭᱳ</language>
+			<language type="nn" draft="unconfirmed">ᱱᱚᱨᱣᱮᱤᱭᱟᱭ ᱱᱟᱭᱱᱚᱨᱥᱠ</language>
+			<language type="nnh" draft="unconfirmed">ᱜᱤᱭᱮᱢᱵᱩᱱ</language>
+			<language type="no" draft="unconfirmed">ᱱᱚᱨᱣᱮᱤᱭᱟᱭ</language>
+			<language type="nog" draft="unconfirmed">ᱱᱚᱜᱟᱭᱤ</language>
+			<language type="nqo" draft="unconfirmed">ᱮᱱᱠᱚ</language>
+			<language type="nr" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱱᱟᱹᱫᱮᱵᱮᱞᱮ</language>
+			<language type="nso" draft="unconfirmed">ᱮᱛᱚᱢ ᱥᱚᱛᱷᱚ</language>
+			<language type="nus" draft="unconfirmed">ᱱᱩᱣᱮᱨ</language>
+			<language type="nv" draft="unconfirmed">ᱱᱟᱣᱟᱡᱚ</language>
+			<language type="ny" draft="unconfirmed">ᱱᱭᱟᱱᱡᱟ</language>
+			<language type="nyn" draft="unconfirmed">ᱱᱭᱟᱱᱠᱚᱞᱮ</language>
+			<language type="oc" draft="unconfirmed">ᱳᱥᱤᱴᱟᱱ</language>
+			<language type="ojb" draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱚᱡᱤᱵᱣᱟ</language>
+			<language type="ojc" draft="unconfirmed">ᱥᱮᱱᱴᱨᱟᱞ ᱳᱡᱤᱵᱽᱣᱟ</language>
+			<language type="ojs" draft="unconfirmed">ᱳᱡᱤᱼᱠᱨᱤ</language>
+			<language type="ojw" draft="unconfirmed">ᱯᱟᱪᱮ ᱳᱡᱤᱵᱣᱟ</language>
+			<language type="oka" draft="unconfirmed">ᱳᱠᱟᱱᱟᱜᱟᱱ</language>
+			<language type="om" draft="unconfirmed">ᱳᱨᱳᱢᱚ</language>
+			<language type="or" draft="unconfirmed">ᱳᱰᱤᱭᱟ</language>
+			<language type="os" draft="unconfirmed">ᱳᱥᱮᱴᱤᱠ</language>
+			<language type="pa" draft="unconfirmed">ᱯᱚᱧᱡᱟᱵᱤ</language>
+			<language type="pag" draft="unconfirmed">ᱯᱟᱱᱜᱮᱥᱤᱱᱟᱱ</language>
+			<language type="pam" draft="unconfirmed">ᱯᱟᱢᱯᱟᱱᱜᱟ</language>
+			<language type="pap" draft="unconfirmed">ᱯᱟᱯᱤᱭᱟᱢᱮᱱᱴᱚ</language>
+			<language type="pau" draft="unconfirmed">ᱯᱟᱞᱟᱣᱟᱱ</language>
+			<language type="pcm" draft="unconfirmed">ᱱᱟᱭᱡᱮᱨᱤᱭᱟᱹᱭ ᱯᱤᱰᱜᱤᱱ</language>
+			<language type="pis" draft="unconfirmed">ᱯᱤᱡᱤᱱ</language>
 			<language type="pl" draft="unconfirmed">ᱯᱚᱞᱤᱥ</language>
+			<language type="pqm" draft="unconfirmed">ᱢᱟᱞᱤᱥᱮᱴᱼᱯᱟᱥᱟᱢᱟᱠᱣᱚᱰᱭ</language>
+			<language type="prg" draft="unconfirmed">ᱯᱨᱤᱥᱤᱭᱟᱭ</language>
+			<language type="ps" draft="unconfirmed">ᱯᱟᱥᱛᱚ</language>
 			<language type="pt">ᱯᱩᱨᱛᱜᱟᱞᱤ</language>
 			<language type="pt_BR">ᱵᱨᱟᱡᱤᱞᱤᱭᱟᱱ ᱯᱩᱨᱛᱜᱟᱞᱤ</language>
 			<language type="pt_PT">ᱭᱩᱨᱚᱯᱤᱭᱟᱱ ᱯᱩᱨᱛᱜᱟᱞᱤ</language>
+			<language type="qu" draft="unconfirmed">ᱠᱣᱮᱪᱷᱩᱣᱟ</language>
+			<language type="rap" draft="unconfirmed">ᱨᱟᱯᱟᱱᱩᱣᱤ</language>
+			<language type="rar" draft="unconfirmed">ᱨᱟᱨᱚᱴᱚᱱᱜᱟᱱ</language>
+			<language type="rhg" draft="unconfirmed">ᱨᱚᱦᱤᱱᱭᱟ</language>
+			<language type="rm" draft="unconfirmed">ᱨᱚᱢᱟᱱᱤᱥᱤᱭᱟᱹᱭ</language>
+			<language type="rn" draft="unconfirmed">ᱨᱩᱱᱰᱤ</language>
+			<language type="ro" draft="unconfirmed">ᱨᱚᱢᱟᱱᱤ</language>
+			<language type="ro_MD" draft="unconfirmed">ᱢᱚᱞᱰᱤᱣᱤ</language>
+			<language type="rof" draft="unconfirmed">ᱴᱚᱢᱵᱚ</language>
 			<language type="ru">ᱨᱩᱥᱤᱭᱟᱱ</language>
+			<language type="rup" draft="unconfirmed">ᱟᱨᱚᱢᱟᱱᱤᱭᱟᱹᱱ</language>
+			<language type="rw" draft="unconfirmed">ᱠᱤᱱᱭᱟᱨᱣᱟᱱᱰᱟ</language>
+			<language type="rwk" draft="unconfirmed">ᱨᱚᱣᱟ</language>
+			<language type="sa" draft="unconfirmed">ᱥᱟᱹᱱᱥᱠᱨᱤᱛ</language>
+			<language type="sad" draft="unconfirmed">ᱥᱟᱱᱰᱟᱣᱮ</language>
+			<language type="sah" draft="unconfirmed">ᱥᱟᱠᱷᱟ</language>
+			<language type="saq" draft="unconfirmed">ᱥᱟᱢᱵᱩᱨᱩ</language>
 			<language type="sat">ᱥᱟᱱᱛᱟᱲᱤ</language>
-			<language type="th" draft="unconfirmed">ᱛᱷᱟᱭ</language>
+			<language type="sba" draft="unconfirmed">ᱜᱟᱢᱵᱮ</language>
+			<language type="sbp" draft="unconfirmed">ᱥᱟᱱᱜᱩ</language>
+			<language type="sc" draft="unconfirmed">ᱥᱟᱨᱰᱤᱱᱤᱭᱟᱭ</language>
+			<language type="scn" draft="unconfirmed">ᱥᱤᱠᱤᱞᱤᱭᱟᱱ</language>
+			<language type="sco" draft="unconfirmed">ᱥᱠᱚᱴᱥ</language>
+			<language type="sd" draft="unconfirmed">ᱥᱤᱱᱫᱷᱤ</language>
+			<language type="se" draft="unconfirmed">ᱮᱛᱚᱢ ᱥᱟᱢᱤ</language>
+			<language type="seh" draft="unconfirmed">ᱥᱮᱱᱟ</language>
+			<language type="ses" draft="unconfirmed">ᱠᱚᱭᱨᱟᱵᱚᱨᱚ ᱥᱮᱱᱤ</language>
+			<language type="sg" draft="unconfirmed">ᱥᱟᱱᱜᱚ</language>
+			<language type="shi" draft="unconfirmed">ᱛᱟᱹᱪᱮᱞᱦᱤᱴ</language>
+			<language type="shn" draft="unconfirmed">ᱥᱟᱱ</language>
+			<language type="si" draft="unconfirmed">ᱥᱤᱱᱦᱟᱞᱟ</language>
+			<language type="sk" draft="unconfirmed">ᱥᱞᱚᱣᱟᱠ</language>
+			<language type="sl" draft="unconfirmed">ᱥᱞᱚᱣᱮᱱᱤᱭᱟᱭ</language>
+			<language type="slh" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱞᱩᱥᱚᱴᱷᱥᱤᱰ</language>
+			<language type="sm" draft="unconfirmed">ᱥᱟᱢᱚᱣᱟᱱ</language>
+			<language type="smn" draft="unconfirmed">ᱤᱱᱟᱨᱤ ᱥᱟᱢᱤ</language>
+			<language type="sms" draft="unconfirmed">ᱥᱠᱚᱞᱴ ᱥᱟᱢᱤ</language>
+			<language type="sn" draft="unconfirmed">ᱥᱚᱱᱟ</language>
+			<language type="snk" draft="unconfirmed">ᱥᱚᱱᱤᱱᱠᱮ</language>
+			<language type="so" draft="unconfirmed">ᱥᱚᱢᱟᱞᱤ</language>
+			<language type="sq">ᱟᱞᱵᱟᱱᱤᱭᱟᱹᱱ</language>
+			<language type="sr" draft="unconfirmed">ᱥᱟᱹᱨᱵᱤᱭᱟᱭ</language>
+			<language type="srn" draft="unconfirmed">ᱥᱨᱟᱱᱟᱱ ᱴᱚᱝᱜᱚ</language>
+			<language type="ss" draft="unconfirmed">ᱥᱣᱟᱛᱤ</language>
+			<language type="st" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱥᱚᱛᱷᱚ</language>
+			<language type="str" draft="unconfirmed">ᱥᱴᱨᱟᱭᱮᱴᱥ ᱥᱟᱞᱤᱥ</language>
+			<language type="su" draft="unconfirmed">ᱥᱩᱱᱥᱟᱱᱤᱥ</language>
+			<language type="suk" draft="unconfirmed">ᱥᱩᱠᱩᱢᱟ</language>
+			<language type="sv" draft="unconfirmed">ᱥᱣᱤᱫᱤᱥ</language>
+			<language type="sw" draft="unconfirmed">ᱥᱣᱟᱦᱤᱞᱤ</language>
+			<language type="sw_CD" draft="unconfirmed">ᱠᱚᱝᱜᱚ ᱥᱣᱟᱦᱤᱞᱤ</language>
+			<language type="swb" draft="unconfirmed">ᱠᱚᱢᱚᱨᱤᱭᱟᱹᱱ</language>
+			<language type="syr" draft="unconfirmed">ᱥᱭᱨᱤᱭᱟᱠ</language>
+			<language type="ta" draft="unconfirmed">ᱛᱟᱹᱢᱤᱞ</language>
+			<language type="tce" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱴᱩᱴᱪᱷᱚᱱ</language>
+			<language type="te" draft="unconfirmed">ᱛᱮᱞᱩᱜᱩ</language>
+			<language type="tem" draft="unconfirmed">ᱴᱤᱢᱱᱮ</language>
+			<language type="teo" draft="unconfirmed">ᱴᱮᱥᱳ</language>
+			<language type="tet" draft="unconfirmed">ᱴᱮᱴᱩᱢ</language>
+			<language type="tg" draft="unconfirmed">ᱛᱟᱡᱤᱠ</language>
+			<language type="tgx" draft="unconfirmed">ᱴᱟᱜᱤᱥ</language>
+			<language type="th" draft="unconfirmed">ᱛᱷᱟᱭᱤ</language>
+			<language type="tht" draft="unconfirmed">ᱛᱟᱦᱞᱴᱟᱱ</language>
+			<language type="ti" draft="unconfirmed">ᱴᱤᱜᱽᱨᱤᱭᱟᱱᱟ</language>
+			<language type="tig" draft="unconfirmed">ᱴᱤᱜᱽᱨᱮ</language>
+			<language type="tk" draft="unconfirmed">ᱛᱩᱨᱠᱢᱮᱱ</language>
+			<language type="tlh" draft="unconfirmed">ᱠᱞᱤᱝᱜᱚᱱ</language>
+			<language type="tli" draft="unconfirmed">ᱴᱞᱤᱱᱜᱤᱴ</language>
+			<language type="tn" draft="unconfirmed">ᱛᱥᱣᱟᱱᱟ</language>
+			<language type="to" draft="unconfirmed">ᱴᱚᱝᱜᱟᱱ</language>
+			<language type="tok" draft="unconfirmed">ᱴᱚᱠᱤ ᱯᱚᱱᱟ</language>
+			<language type="tpi" draft="unconfirmed">ᱴᱚᱠ ᱯᱤᱥᱤᱱ</language>
 			<language type="tr" draft="unconfirmed">ᱛᱩᱨᱠᱤᱥ</language>
+			<language type="trv" draft="unconfirmed">ᱴᱟᱨᱚᱠᱚ</language>
+			<language type="ts" draft="unconfirmed">ᱛᱥᱚᱝᱜᱟ</language>
+			<language type="tt" draft="unconfirmed">ᱴᱟᱴᱟᱨ</language>
+			<language type="ttm" draft="unconfirmed">ᱮᱛᱚᱢ ᱴᱩᱴᱠᱷᱚᱱ</language>
+			<language type="tum" draft="unconfirmed">ᱴᱩᱢᱵᱩᱠᱟ</language>
+			<language type="tvl" draft="unconfirmed">ᱴᱩᱣᱟᱞᱩ</language>
+			<language type="twq" draft="unconfirmed">ᱴᱟᱥᱟᱣᱟᱠ</language>
+			<language type="ty" draft="unconfirmed">ᱛᱟᱦᱤᱴᱤᱭᱟᱱ</language>
+			<language type="tyv" draft="unconfirmed">ᱴᱩᱣᱤᱱᱤᱭᱟᱭ</language>
+			<language type="tzm" draft="unconfirmed">ᱥᱮᱱᱴᱨᱟᱞ ᱮᱴᱞᱟᱥ ᱛᱟᱢᱟᱡᱟᱭᱮᱛ</language>
+			<language type="udm" draft="unconfirmed">ᱩᱰᱢᱩᱨᱛ</language>
+			<language type="ug" draft="unconfirmed">ᱩᱭᱜᱷᱩᱨ</language>
+			<language type="uk" draft="unconfirmed">ᱩᱠᱨᱮᱱᱤᱭᱟᱭ</language>
+			<language type="umb" draft="unconfirmed">ᱩᱢᱵᱩᱱᱰᱩ</language>
 			<language type="und">ᱵᱟᱝ ᱩᱨᱩᱢ ᱯᱟᱹᱨᱥᱤ</language>
+			<language type="ur" draft="unconfirmed">ᱩᱨᱫᱤ</language>
+			<language type="uz" draft="unconfirmed">ᱩᱡᱵᱮᱠ</language>
+			<language type="vai" draft="unconfirmed">ᱣᱟᱭ</language>
+			<language type="ve" draft="unconfirmed">ᱣᱮᱱᱰᱟ</language>
+			<language type="vi" draft="unconfirmed">ᱣᱮᱭᱮᱛᱱᱟᱢᱤᱡᱽ</language>
+			<language type="vo" draft="unconfirmed">ᱵᱷᱚᱞᱟᱯᱩᱠ</language>
+			<language type="vun" draft="unconfirmed">ᱵᱷᱩᱱᱡᱚ</language>
+			<language type="wa" draft="unconfirmed">ᱣᱟᱞᱩᱱ</language>
+			<language type="wae" draft="unconfirmed">ᱣᱟᱞᱥᱟᱹᱨ</language>
+			<language type="wal" draft="unconfirmed">ᱣᱚᱞᱚᱭᱴᱟ</language>
+			<language type="war" draft="unconfirmed">ᱣᱟᱨᱮᱭ</language>
+			<language type="wo" draft="unconfirmed">ᱣᱚᱞᱚᱯᱷ</language>
+			<language type="wuu" draft="unconfirmed">ᱣᱩ ᱪᱟᱭᱱᱤᱡᱽ</language>
+			<language type="xal" draft="unconfirmed">ᱠᱟᱞᱢᱤᱠ</language>
+			<language type="xh" draft="unconfirmed">ᱥᱚᱥᱟ</language>
+			<language type="xog" draft="unconfirmed">ᱥᱚᱜᱟ</language>
+			<language type="yav" draft="unconfirmed">ᱭᱟᱝᱵᱮᱱ</language>
+			<language type="ybb" draft="unconfirmed">ᱭᱮᱢᱵᱟ</language>
+			<language type="yi" draft="unconfirmed">ᱭᱤᱫᱤᱥ</language>
+			<language type="yo" draft="unconfirmed">ᱭᱚᱨᱩᱵᱟ</language>
+			<language type="yrl" draft="unconfirmed">ᱱᱤᱱᱜᱟᱴᱩ</language>
+			<language type="yue" draft="unconfirmed">ᱠᱟᱱᱴᱚᱱᱤᱡᱽ</language>
+			<language type="yue" alt="menu" draft="unconfirmed">ᱪᱟᱭᱱᱤᱡᱽ, ᱠᱟᱱᱴᱚᱱᱤᱡᱽ</language>
+			<language type="zgh" draft="unconfirmed">ᱢᱟᱱᱚᱠ ᱢᱚᱨᱚᱠᱟᱱ ᱛᱟᱢᱟᱡᱤᱛ</language>
 			<language type="zh">ᱪᱟᱭᱱᱤᱡᱽ</language>
 			<language type="zh" alt="menu">ᱪᱟᱭᱱᱤᱡᱽ, ᱢᱟᱱᱰᱟᱨᱤᱱ</language>
 			<language type="zh_Hans">ᱟᱞᱜᱟᱣᱟᱠᱟᱱ ᱪᱟᱭᱱᱤᱡᱽ</language>
 			<language type="zh_Hans" alt="long">ᱟᱞᱜᱟᱣᱟᱠᱟᱱ ᱢᱟᱫᱟᱨᱤᱱ ᱪᱟᱭᱱᱤᱡᱽ</language>
 			<language type="zh_Hant">ᱴᱨᱮᱰᱤᱥᱱᱟᱞ ᱪᱟᱭᱱᱤᱡᱽ</language>
 			<language type="zh_Hant" alt="long">ᱴᱨᱮᱰᱤᱥᱱᱟᱞ ᱢᱟᱫᱟᱨᱤᱱ ᱪᱟᱭᱱᱤᱡᱽ</language>
+			<language type="zu" draft="unconfirmed">ᱡᱩᱞᱩ</language>
+			<language type="zun" draft="unconfirmed">ᱡᱩᱱᱤ</language>
+			<language type="zxx" draft="unconfirmed">ᱪᱮᱫ ᱯᱟᱹᱨᱥᱤ ᱡᱤᱱᱤᱥ ᱵᱟᱹᱱᱩᱜᱼᱟ</language>
+			<language type="zza" draft="unconfirmed">ᱡᱟᱡᱟ</language>
 		</languages>
 		<scripts>
+			<script type="Adlm" draft="unconfirmed">ᱟᱰᱞᱟᱢ</script>
+			<script type="Aghb" draft="unconfirmed">ᱠᱟᱹᱣᱠᱮᱥᱤᱭᱟᱱ ᱟᱹᱞᱵᱮᱱᱤᱭᱟᱭ</script>
+			<script type="Ahom" draft="unconfirmed">ᱟᱹᱦᱚᱢ</script>
 			<script type="Arab">ᱟᱨᱵᱤᱠ</script>
+			<script type="Aran" draft="unconfirmed">ᱱᱟᱥᱛᱟᱞᱤᱠ</script>
+			<script type="Armi" draft="unconfirmed">ᱤᱢᱯᱮᱨᱤᱭᱮᱞ ᱟᱨᱟᱢᱟᱭᱤᱠ</script>
+			<script type="Armn" draft="unconfirmed">ᱟᱨᱢᱮᱱᱤᱭᱟᱭ</script>
+			<script type="Avst" draft="unconfirmed">ᱟᱹᱣᱮᱥᱛᱟᱱ</script>
+			<script type="Bali" draft="unconfirmed">ᱵᱟᱞᱤᱱᱤᱥ</script>
+			<script type="Bamu" draft="unconfirmed">ᱵᱟᱢᱩᱱ</script>
+			<script type="Bass" draft="unconfirmed">ᱵᱟᱥᱟ ᱣᱟᱦ</script>
+			<script type="Batk" draft="unconfirmed">ᱵᱟᱴᱟᱠ</script>
+			<script type="Beng" draft="unconfirmed">ᱵᱟᱝᱞᱟ</script>
+			<script type="Bhks" draft="unconfirmed">ᱵᱷᱟᱭᱤᱠ ᱥᱩᱠᱤ</script>
+			<script type="Bopo" draft="unconfirmed">ᱵᱚᱯᱚᱢᱚᱯᱷᱚ</script>
+			<script type="Brah" draft="unconfirmed">ᱵᱽᱨᱟᱢᱦᱤ</script>
+			<script type="Brai" draft="unconfirmed">ᱵᱽᱨᱟᱭᱞᱮ</script>
+			<script type="Bugi" draft="unconfirmed">ᱵᱩᱜᱤᱱᱤᱡᱽ</script>
+			<script type="Buhd" draft="unconfirmed">ᱵᱩᱦᱩᱤᱫ</script>
+			<script type="Cakm" draft="unconfirmed">ᱪᱟᱹᱠᱢᱟ</script>
+			<script type="Cans" draft="unconfirmed">ᱡᱩᱢᱤᱫ ᱠᱚᱱᱮᱰᱤᱭᱟᱭ ᱟᱫᱤᱵᱟᱥᱤ ᱥᱤᱞᱟᱵᱤᱠᱥ</script>
+			<script type="Cari" draft="unconfirmed">ᱠᱟᱨᱤᱭᱟᱱ</script>
+			<script type="Cham" draft="unconfirmed">ᱪᱷᱟᱢ</script>
+			<script type="Cher" draft="unconfirmed">ᱪᱷᱮᱨᱚᱠᱤ</script>
+			<script type="Chrs" draft="unconfirmed">ᱠᱷᱚᱨᱟᱥᱢᱤᱭᱟᱱ</script>
+			<script type="Copt" draft="unconfirmed">ᱠᱚᱯᱴᱤᱠ</script>
+			<script type="Cpmn" draft="unconfirmed">ᱥᱟᱭᱯᱨᱚᱼᱢᱤᱱᱚᱣᱟᱱ</script>
+			<script type="Cprt" draft="unconfirmed">ᱥᱟᱭᱯᱨᱤᱭᱚᱴ</script>
 			<script type="Cyrl">ᱥᱤᱨᱤᱞᱤᱠ</script>
 			<script type="Deva" draft="contributed">ᱫᱮᱣᱟᱱᱟᱜᱟᱨᱤ</script>
+			<script type="Diak" draft="unconfirmed">ᱰᱤᱵᱷᱮᱥ ᱟᱠᱩᱨᱩ</script>
+			<script type="Dogr" draft="unconfirmed">ᱰᱚᱜᱽᱨᱟ</script>
+			<script type="Dsrt" draft="unconfirmed">ᱰᱮᱥᱮᱨᱮᱴ</script>
+			<script type="Dupl" draft="unconfirmed">ᱰᱩᱯᱞᱚᱭᱟᱱ ᱥᱚᱛᱷᱟᱱᱰ</script>
+			<script type="Egyp" draft="unconfirmed">ᱤᱡᱤᱯᱴᱤᱭᱟᱭ ᱦᱟᱭᱟᱹᱨᱚ ᱡᱷᱚᱞᱚᱠ</script>
+			<script type="Elba" draft="unconfirmed">ᱮᱞᱵᱟᱥᱟᱱ</script>
+			<script type="Elym" draft="unconfirmed">ᱮᱞᱤᱢᱟᱭᱤᱠ</script>
+			<script type="Ethi" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱠ</script>
+			<script type="Geor" draft="unconfirmed">ᱡᱭᱚᱨᱡᱤᱭᱟᱭ</script>
+			<script type="Glag" draft="unconfirmed">ᱜᱞᱟᱜᱚᱞᱤᱴᱤᱠ</script>
+			<script type="Gong" draft="unconfirmed">ᱜᱩᱱᱡᱟ ᱜᱚᱱᱰᱤ</script>
+			<script type="Gonm" draft="unconfirmed">ᱢᱟᱥᱟᱨᱟᱢ ᱜᱚᱱᱰᱤ</script>
+			<script type="Goth" draft="unconfirmed">ᱜᱚᱛᱷᱤᱠ</script>
+			<script type="Gran" draft="unconfirmed">ᱜᱽᱨᱟᱱᱛᱷᱟᱹ</script>
+			<script type="Grek" draft="unconfirmed">ᱜᱽᱨᱤᱠ</script>
+			<script type="Gujr" draft="unconfirmed">ᱜᱩᱡᱽᱨᱟᱴᱤ</script>
+			<script type="Guru" draft="unconfirmed">ᱜᱩᱨᱩᱢᱩᱠᱷᱤ</script>
+			<script type="Hanb" draft="unconfirmed">ᱦᱟᱱ ᱥᱟᱶ ᱵᱚᱯᱚᱢᱚᱯᱷᱚ</script>
+			<script type="Hang" draft="unconfirmed">ᱦᱟᱱᱜᱩᱞ</script>
+			<script type="Hani" draft="unconfirmed">ᱦᱟᱱ</script>
+			<script type="Hano" draft="unconfirmed">ᱦᱟᱱᱩᱱᱳ</script>
 			<script type="Hans">ᱥᱤᱢᱯᱞᱤᱯᱟᱭᱤᱰ</script>
 			<script type="Hans" alt="stand-alone">ᱥᱤᱢᱯᱞᱤᱯᱟᱭᱤᱰ ᱦᱟᱱ</script>
-			<script type="Hant">ᱴᱨᱮᱰᱤᱥᱚᱱ</script>
+			<script type="Hant">ᱴᱨᱮᱰᱤᱥᱚᱱᱟᱞ</script>
 			<script type="Hant" alt="stand-alone">ᱴᱨᱮᱰᱤᱥᱚᱱ ᱦᱟᱱ</script>
+			<script type="Hatr" draft="unconfirmed">ᱦᱟᱴᱨᱟᱱ</script>
+			<script type="Hebr" draft="unconfirmed">ᱦᱮᱵᱽᱨᱤᱣ</script>
+			<script type="Hira" draft="unconfirmed">ᱦᱤᱨᱟᱜᱟᱱᱟ</script>
+			<script type="Hluw" draft="unconfirmed">ᱟᱱᱟᱴᱚᱞᱤᱭᱟᱱ ᱦᱟᱭᱨᱚ ᱡᱷᱟᱹᱞᱟᱹᱠ</script>
+			<script type="Hmng" draft="unconfirmed">ᱯᱟᱦ ᱦᱟᱹᱢᱚᱝ</script>
+			<script type="Hmnp" draft="unconfirmed">ᱱᱭᱟᱠᱮᱝ ᱯᱩᱣᱟᱪᱩ ᱦᱟᱹᱢᱚᱝᱜᱽ</script>
+			<script type="Hrkt" draft="unconfirmed">ᱡᱟᱯᱟᱱᱤᱡᱽ ᱥᱭᱞᱟᱵᱮᱞ</script>
+			<script type="Hung" draft="unconfirmed">ᱢᱟᱨᱮ ᱦᱚᱝᱜᱮᱨᱤᱭᱟᱭ</script>
+			<script type="Ital" draft="unconfirmed">ᱢᱟᱨᱮ ᱤᱴᱟᱞᱤᱠ</script>
+			<script type="Jamo" draft="unconfirmed">ᱡᱟᱢᱚ</script>
+			<script type="Java" draft="unconfirmed">ᱡᱟᱣᱟᱱᱤᱡᱽ</script>
 			<script type="Jpan" draft="unconfirmed">ᱡᱟᱯᱟᱱᱤᱡᱽ</script>
+			<script type="Kali" draft="unconfirmed">ᱠᱟᱭᱟᱦ ᱞᱤ</script>
+			<script type="Kana" draft="unconfirmed">ᱠᱟᱴᱟᱠᱟᱱᱟ</script>
+			<script type="Kawi" draft="unconfirmed">ᱠᱟᱣᱤ</script>
+			<script type="Khar" draft="unconfirmed">ᱠᱷᱟᱨᱚᱥᱴᱤ</script>
+			<script type="Khmr" draft="unconfirmed">ᱠᱷᱢᱮᱨ</script>
+			<script type="Khoj" draft="unconfirmed">ᱠᱷᱚᱡᱠᱤ</script>
+			<script type="Kits" draft="unconfirmed">ᱠᱷᱤᱛᱟᱱ ᱦᱩᱰᱤᱧ ᱪᱤᱠᱤ</script>
+			<script type="Knda" draft="unconfirmed">ᱠᱚᱱᱚᱰ</script>
 			<script type="Kore" draft="unconfirmed">ᱠᱚᱨᱤᱭᱟᱹᱱ</script>
+			<script type="Kthi" draft="unconfirmed">ᱠᱟᱹᱭᱛᱷᱤ</script>
+			<script type="Lana" draft="unconfirmed">ᱞᱟᱱᱟ</script>
+			<script type="Laoo" draft="unconfirmed">ᱞᱟᱣ</script>
 			<script type="Latn">ᱞᱮᱴᱤᱱ</script>
+			<script type="Lepc" draft="unconfirmed">ᱯᱮᱯᱟ</script>
+			<script type="Limb" draft="unconfirmed">ᱞᱤᱢᱵᱩ</script>
+			<script type="Lina" draft="unconfirmed">ᱞᱤᱱᱤᱭᱟᱹᱨ ᱮ</script>
+			<script type="Linb" draft="unconfirmed">ᱞᱤᱱᱤᱭᱟᱹᱨ ᱵᱤ</script>
+			<script type="Lisu" draft="unconfirmed">ᱯᱷᱨᱟᱥᱟᱹᱨ</script>
+			<script type="Lyci" draft="unconfirmed">ᱞᱟᱭᱥᱤᱭᱟᱱ</script>
+			<script type="Lydi" draft="unconfirmed">ᱞᱟᱭᱰᱤᱭᱟᱱ</script>
+			<script type="Mahj" draft="unconfirmed">ᱢᱟᱦᱟᱡᱟᱱᱤ</script>
+			<script type="Maka" draft="unconfirmed">ᱢᱟᱠᱟᱥᱟᱨ</script>
+			<script type="Mand" draft="unconfirmed">ᱢᱟᱱᱰᱟᱤᱭᱟᱱ</script>
+			<script type="Mani" draft="unconfirmed">ᱢᱟᱱᱤᱪᱷᱟᱤᱭᱟᱱ</script>
+			<script type="Marc" draft="unconfirmed">ᱢᱟᱨᱪᱷᱮᱱ</script>
+			<script type="Medf" draft="unconfirmed">ᱢᱮᱰᱮᱯᱷᱟᱭᱰᱨᱤᱱ</script>
+			<script type="Mend" draft="unconfirmed">ᱢᱮᱱᱰᱮ</script>
+			<script type="Merc" draft="unconfirmed">ᱢᱮᱨᱤᱭᱚᱴᱤᱠ ᱠᱚᱨᱥᱤᱣ</script>
+			<script type="Mero" draft="unconfirmed">ᱢᱮᱨᱚᱭᱤᱴᱤᱠ</script>
+			<script type="Mlym" draft="unconfirmed">ᱢᱟᱞᱟᱭᱟᱞᱟᱢ</script>
+			<script type="Modi" draft="unconfirmed">ᱢᱚᱰᱤ</script>
+			<script type="Mong" draft="unconfirmed">ᱢᱚᱝᱜᱚᱞᱤᱭᱟᱭ</script>
+			<script type="Mroo" draft="unconfirmed">ᱢᱨᱚ</script>
+			<script type="Mtei" draft="unconfirmed">ᱢᱮᱭᱴᱤ ᱢᱟᱭᱮᱠ</script>
+			<script type="Mult" draft="unconfirmed">ᱢᱩᱞᱛᱟᱱᱤ</script>
+			<script type="Mymr" draft="unconfirmed">ᱢᱭᱟᱱᱢᱟᱨ</script>
+			<script type="Nagm" draft="unconfirmed">ᱱᱟᱜ ᱢᱩᱱᱰᱟᱨᱤ</script>
+			<script type="Nand" draft="unconfirmed">ᱱᱟᱹᱱᱫᱤᱱᱟᱜᱤᱨᱤ</script>
+			<script type="Narb" draft="unconfirmed">ᱢᱟᱨᱮ ᱮᱛᱚᱢ ᱚᱨᱵᱤ</script>
+			<script type="Nbat" draft="unconfirmed">ᱱᱚᱵᱚᱴᱟᱤᱭᱟᱱ</script>
+			<script type="Newa" draft="unconfirmed">ᱱᱚᱣᱟ</script>
+			<script type="Nkoo" draft="unconfirmed">ᱮᱱᱠᱚᱥ</script>
+			<script type="Nshu" draft="unconfirmed">ᱱᱩᱥᱩ</script>
+			<script type="Ogam" draft="unconfirmed">ᱚᱜᱷᱟᱢ</script>
 			<script type="Olck">ᱚᱞ ᱪᱤᱠᱤ</script>
+			<script type="Orkh" draft="unconfirmed">ᱚᱨᱠᱷᱚᱱ</script>
+			<script type="Orya" draft="unconfirmed">ᱳᱰᱤᱭᱟ</script>
+			<script type="Osge" draft="unconfirmed">ᱳᱥᱟᱜᱮ</script>
+			<script type="Osma" draft="unconfirmed">ᱚᱥᱢᱟᱱᱭᱟ</script>
+			<script type="Ougr" draft="unconfirmed">ᱢᱟᱨᱮ ᱩᱭᱜᱷᱩᱨ</script>
+			<script type="Palm" draft="unconfirmed">ᱯᱟᱞᱢᱭᱨᱮᱱᱮ</script>
+			<script type="Pauc" draft="unconfirmed">ᱯᱟᱣ ᱪᱤᱱ ᱦᱟᱣ</script>
+			<script type="Perm" draft="unconfirmed">ᱢᱟᱨᱮ ᱯᱟᱹᱨᱢᱤᱠ</script>
+			<script type="Phag" draft="unconfirmed">ᱯᱷᱟᱜᱥᱼᱯᱟ</script>
+			<script type="Phli" draft="unconfirmed">ᱴᱷᱚᱠᱟᱣᱚᱞ ᱯᱟᱦᱞᱚᱣᱤ</script>
+			<script type="Phlp" draft="unconfirmed">ᱥᱟᱞᱴᱚᱨ ᱯᱟᱦᱟᱞᱣᱤ</script>
+			<script type="Phnx" draft="unconfirmed">ᱯᱷᱚᱮᱱᱥᱤᱭᱟᱱ</script>
+			<script type="Plrd" draft="unconfirmed">ᱯᱚᱞᱟᱰ ᱯᱷᱚᱱᱮᱴᱤᱠ</script>
+			<script type="Prti" draft="unconfirmed">ᱴᱷᱚᱠᱟᱣ ᱯᱟᱨᱛᱷᱤᱭᱟᱱ</script>
+			<script type="Qaag" draft="unconfirmed">ᱡᱟᱣᱜᱣᱤ</script>
+			<script type="Rjng" draft="unconfirmed">ᱨᱮᱡᱟᱝ</script>
+			<script type="Rohg" draft="unconfirmed">ᱦᱟᱱᱟᱯᱷᱤ</script>
+			<script type="Runr" draft="unconfirmed">ᱨᱩᱱᱤᱠ</script>
+			<script type="Samr" draft="unconfirmed">ᱥᱟᱢᱟᱨᱤᱴᱟᱱ</script>
+			<script type="Sarb" draft="unconfirmed">ᱠᱟᱨᱮ ᱠᱚᱸᱭᱮ ᱚᱨᱵᱤ</script>
+			<script type="Saur" draft="unconfirmed">ᱥᱟᱹᱣᱨᱟᱥᱴᱨᱚ</script>
+			<script type="Sgnw" draft="unconfirmed">ᱪᱤᱱᱦᱟᱹᱚᱞ</script>
+			<script type="Shaw" draft="unconfirmed">ᱥᱟᱣᱤᱭᱟᱱ</script>
+			<script type="Shrd" draft="unconfirmed">ᱥᱟᱨᱟᱰᱟ</script>
+			<script type="Sidd" draft="unconfirmed">ᱥᱤᱫᱷᱟᱹᱢ</script>
+			<script type="Sind" draft="unconfirmed">ᱠᱷᱩᱰᱟᱣᱟᱰᱤ</script>
+			<script type="Sinh" draft="unconfirmed">ᱥᱤᱱᱦᱟᱞᱟ</script>
+			<script type="Sogd" draft="unconfirmed">ᱥᱚᱜᱰᱤᱭᱟᱱ</script>
+			<script type="Sogo" draft="unconfirmed">ᱢᱟᱨᱮ ᱥᱚᱜᱰᱤᱭᱟᱱ</script>
+			<script type="Sora" draft="unconfirmed">ᱥᱚᱨᱟ ᱥᱚᱢᱯᱮᱝ</script>
+			<script type="Soyo" draft="unconfirmed">ᱥᱚᱭᱚᱢᱵᱚ</script>
+			<script type="Sund" draft="unconfirmed">ᱥᱩᱱᱫᱟᱱᱤᱥ</script>
+			<script type="Sylo" draft="unconfirmed">ᱥᱟᱭᱞᱚᱴᱤ ᱟᱱᱜᱽᱨᱤ</script>
+			<script type="Syrc" draft="unconfirmed">ᱥᱭᱨᱤᱭᱟᱠ</script>
+			<script type="Tagb" draft="unconfirmed">ᱴᱟᱜᱵᱟᱱᱣᱟ</script>
+			<script type="Takr" draft="unconfirmed">ᱴᱟᱠᱨᱤ</script>
+			<script type="Tale" draft="unconfirmed">ᱛᱟᱭᱤ ᱞᱮ</script>
+			<script type="Talu" draft="unconfirmed">ᱱᱚᱶᱟ ᱛᱟᱭᱤ ᱞᱩᱣᱮ</script>
+			<script type="Taml" draft="unconfirmed">ᱛᱟᱹᱢᱤᱞ</script>
+			<script type="Tang" draft="unconfirmed">ᱴᱟᱝᱜᱩᱴ</script>
+			<script type="Tavt" draft="unconfirmed">ᱛᱟᱭᱤ ᱣᱤᱭᱮᱛ</script>
+			<script type="Telu" draft="unconfirmed">ᱛᱮᱞᱩᱜᱩ</script>
+			<script type="Tfng" draft="unconfirmed">ᱴᱤᱯᱷᱤᱱᱟᱜᱷ</script>
+			<script type="Tglg" draft="unconfirmed">ᱴᱟᱜᱟᱞᱚᱜ</script>
+			<script type="Thaa" draft="unconfirmed">ᱛᱷᱟᱱᱟ</script>
+			<script type="Thai" draft="unconfirmed">ᱛᱷᱟᱭᱤ</script>
+			<script type="Tibt" draft="unconfirmed">ᱛᱤᱵᱮᱛᱟᱱ</script>
+			<script type="Tirh" draft="unconfirmed">ᱛᱤᱨᱦᱩᱛᱟ</script>
+			<script type="Tnsa" draft="unconfirmed">ᱴᱟᱝᱥᱟ</script>
+			<script type="Toto" draft="unconfirmed">ᱴᱚᱴᱚ</script>
+			<script type="Ugar" draft="unconfirmed">ᱩᱜᱟᱨᱤᱴᱤᱠ</script>
+			<script type="Vaii" draft="unconfirmed">ᱣᱟᱭᱤ</script>
+			<script type="Vith" draft="unconfirmed">ᱵᱷᱤᱛᱠᱷᱩᱠᱤ</script>
+			<script type="Wara" draft="unconfirmed">ᱣᱨᱟᱝ ᱠᱥᱤᱛᱤ</script>
+			<script type="Wcho" draft="unconfirmed">ᱣᱟᱱᱪᱷᱚ</script>
+			<script type="Xpeo" draft="unconfirmed">ᱢᱟᱨᱮ ᱯᱟᱹᱨᱥᱤᱭᱟᱭ</script>
+			<script type="Xsux" draft="unconfirmed">ᱥᱩᱢᱮᱨᱚᱼᱟᱠᱟᱰᱤᱭᱟᱱ ᱠᱩᱱᱮᱭᱯᱷᱚᱨᱢ</script>
+			<script type="Yezi" draft="unconfirmed">ᱭᱮᱡᱤᱫᱤ</script>
+			<script type="Yiii" draft="unconfirmed">ᱭᱤ</script>
+			<script type="Zanb" draft="unconfirmed">ᱡᱟᱱᱟᱵᱟᱡᱟᱨ ᱥᱠᱣᱮᱨ</script>
+			<script type="Zinh" draft="unconfirmed">ᱵᱚᱸᱥᱚ ᱞᱮᱠᱟᱛᱮ</script>
+			<script type="Zmth" draft="unconfirmed">ᱮᱞᱠᱷᱟ ᱩᱫᱩᱜ</script>
+			<script type="Zsye" draft="unconfirmed">ᱤᱢᱚᱡᱤ</script>
+			<script type="Zsym" draft="unconfirmed">ᱪᱤᱱᱦᱟᱹ ᱠᱚ</script>
 			<script type="Zxxx">ᱵᱟᱝ ᱚᱞ ᱟᱠᱟᱱ</script>
+			<script type="Zyyy" draft="unconfirmed">ᱥᱟᱫᱷᱨᱚᱱ</script>
 			<script type="Zzzz">ᱵᱟᱝ ᱩᱨᱩᱢ ᱪᱤᱠᱤ</script>
 		</scripts>
 		<territories>
@@ -380,11 +944,142 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW" draft="unconfirmed">ᱡᱤᱢᱵᱟᱣᱮ</territory>
 			<territory type="ZZ">ᱵᱟᱝᱩᱨᱩᱢ ᱴᱚᱴᱷᱟ</territory>
 		</territories>
+		<variants>
+			<variant type="POLYTON" draft="unconfirmed">ᱯᱚᱞᱤᱴᱚᱱᱤᱠ</variant>
+			<variant type="POSIX" draft="unconfirmed">ᱠᱚᱢᱯᱩᱴᱚᱨ</variant>
+		</variants>
+		<keys>
+			<key type="calendar" draft="unconfirmed">ᱢᱟᱦᱮᱛᱟ</key>
+			<key type="cf" draft="unconfirmed">ᱯᱩᱭᱥᱟᱹ ᱯᱷᱚᱨᱢᱟᱴ</key>
+			<key type="collation" draft="unconfirmed">ᱛᱷᱟᱨ ᱟᱸᱫᱮ</key>
+			<key type="currency" draft="unconfirmed">ᱯᱩᱭᱥᱟᱹ</key>
+			<key type="hc" draft="unconfirmed">ᱴᱟᱰᱟᱝ ᱨᱮᱭᱟᱜ ᱪᱚᱠᱚᱨ (12 ᱵᱚᱱᱟᱢ 24)</key>
+			<key type="lb" draft="unconfirmed">ᱞᱟᱹᱭᱤᱱ ᱨᱟᱹᱯᱩᱫ ᱥᱟᱡᱟᱣ</key>
+			<key type="ms" draft="unconfirmed">ᱢᱟᱯ ᱰᱟᱦᱮᱨᱟ</key>
+			<key type="numbers" draft="unconfirmed">ᱞᱮᱠᱷᱟ</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist" draft="unconfirmed">ᱵᱚᱣᱫᱷ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="chinese" draft="unconfirmed">ᱪᱟᱭᱱᱤᱡᱽ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="coptic" draft="unconfirmed">ᱠᱚᱯᱴᱤᱠ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="dangi" draft="unconfirmed">ᱰᱟᱱᱜᱤ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="ethiopic" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱠ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱠ ᱟᱢᱮᱴᱮ ᱟᱞᱮᱢ ᱢᱟᱦᱮᱛᱟ</type>
 			<type key="calendar" type="gregorian">ᱜᱨᱮᱜᱚᱨᱤᱭᱟᱱ ᱠᱟᱞᱮᱱᱰᱟᱨ</type>
+			<type key="calendar" type="hebrew" draft="unconfirmed">ᱦᱮᱵᱽᱨᱤᱣ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="indian" draft="unconfirmed">ᱵᱷᱟᱨᱚᱛ ᱡᱟᱹᱛᱤᱭᱟᱹᱨᱤ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">ᱤᱥᱞᱟᱢᱤᱠ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">ᱤᱥᱞᱟᱢᱤᱠ ᱱᱟᱜᱽᱨᱤᱠ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="islamic-rgsa" draft="unconfirmed">ᱤᱥᱞᱟᱢᱤᱠ ᱚᱨᱵᱤ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="islamic-tbla" draft="unconfirmed">ᱤᱥᱞᱟᱢᱤᱠ ᱛᱷᱚᱠ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">ᱤᱥᱞᱟᱢᱤᱠ ᱩᱢ ᱟᱹᱞ ᱠᱩᱨᱟ ᱢᱟᱦᱮᱛᱟ</type>
 			<type key="calendar" type="iso8601" draft="unconfirmed">ᱟᱭᱮᱥᱚᱼ8601 ᱠᱮᱞᱮᱱᱰᱚᱨ</type>
+			<type key="calendar" type="japanese" draft="unconfirmed">ᱡᱟᱯᱟᱱᱤᱡᱽ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="persian" draft="unconfirmed">ᱯᱟᱨᱥᱤ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="roc" draft="unconfirmed">ᱢᱤᱱᱜᱩᱣᱚ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="cf" type="account" draft="unconfirmed">ᱯᱩᱭᱥᱟᱹ ᱠᱷᱟᱛᱟ ᱯᱷᱚᱨᱢᱟᱴ</type>
+			<type key="cf" type="standard" draft="unconfirmed">ᱢᱩᱞ ᱯᱩᱭᱥᱟᱹ ᱯᱷᱚᱨᱢᱟᱴ</type>
+			<type key="collation" type="big5han" draft="unconfirmed">ᱫᱤᱥᱤ ᱪᱟᱭᱱᱤᱡᱽ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="compat" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="dictionary" draft="unconfirmed">ᱥᱟᱵᱟᱫ ᱜᱟᱫᱮᱞ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="ducet" draft="unconfirmed">ᱢᱩᱞ ᱭᱩᱱᱤᱠᱳᱰ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="emoji" draft="unconfirmed">ᱤᱢᱚᱡᱤ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="eor" draft="unconfirmed">ᱭᱩᱨᱚᱯᱤᱭᱟᱹᱱ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="gb2312han" draft="unconfirmed">ᱥᱚᱦᱚᱡᱽ ᱪᱟᱭᱱᱤᱡᱽ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="phonebook" draft="unconfirmed">ᱯᱷᱚᱱᱯᱚᱛᱚᱵ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="pinyin" draft="unconfirmed">ᱯᱤᱱᱭᱟᱱ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="reformed" draft="unconfirmed">ᱫᱩᱦᱲᱟᱹ ᱛᱮᱭᱟᱨ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="search" draft="unconfirmed">ᱥᱟᱱᱟᱢ ᱠᱟᱹᱢᱤᱦᱚᱨᱟ ᱥᱮᱸᱫᱽᱨᱟ</type>
+			<type key="collation" type="searchjl" draft="unconfirmed">ᱦᱟᱱᱜᱩᱞ ᱮᱛᱦᱚᱵ ᱠᱮᱪᱮᱫ ᱟᱲᱟᱝ ᱛᱮ ᱥᱮᱸᱫᱽᱨᱟ</type>
 			<type key="collation" type="standard">ᱮᱥᱴᱮᱱᱰᱟᱨᱰ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="stroke" draft="unconfirmed">ᱥᱴᱨᱚᱠ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="traditional" draft="unconfirmed">ᱫᱤᱥᱤ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="unihan" draft="unconfirmed">ᱨᱮᱰᱤᱠᱟᱼᱥᱴᱨᱚᱠ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="collation" type="zhuyin" draft="unconfirmed">ᱡᱷᱩᱣᱤᱱ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="hc" type="h11" draft="unconfirmed">12 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (0–11)</type>
+			<type key="hc" type="h12" draft="unconfirmed">12 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (1–12)</type>
+			<type key="hc" type="h23" draft="unconfirmed">24 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (0–23)</type>
+			<type key="hc" type="h24" draft="unconfirmed">24 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (1–24)</type>
+			<type key="lb" type="loose" draft="unconfirmed">ᱰᱷᱤᱞ ᱞᱟᱹᱭᱤᱱ ᱨᱟᱹᱯᱩᱫ ᱥᱟᱡᱟᱣ</type>
+			<type key="lb" type="normal" draft="unconfirmed">ᱥᱟᱫᱷᱨᱚᱬ ᱞᱟᱹᱭᱤᱱ ᱨᱟᱹᱯᱩᱫ ᱥᱟᱡᱟᱣ</type>
+			<type key="lb" type="strict" draft="unconfirmed">ᱟᱸᱴ ᱞᱟᱹᱭᱤᱱ ᱨᱟᱹᱯᱩᱫ ᱥᱟᱡᱟᱣ</type>
+			<type key="ms" type="metric" draft="unconfirmed">ᱢᱮᱴᱨᱤᱠ ᱰᱟᱦᱮᱨᱟ</type>
+			<type key="ms" type="uksystem" draft="unconfirmed">ᱤᱢᱯᱮᱨᱤᱭᱮᱞ ᱢᱟᱯ ᱰᱟᱦᱮᱨᱟ</type>
+			<type key="ms" type="ussystem" draft="unconfirmed">ᱭᱩ ᱮᱥ ᱢᱟᱯ ᱰᱟᱦᱮᱨᱟ</type>
+			<type key="numbers" type="ahom" draft="unconfirmed">ᱟᱹᱦᱚᱢ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="arab" draft="unconfirmed">ᱚᱨᱵᱤᱼᱚᱱᱰᱤᱠ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="arabext" draft="unconfirmed">ᱯᱟᱥᱱᱟᱣ ᱠᱟᱱ ᱚᱨᱵᱤᱼᱤᱱᱰᱤᱠ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="armn" draft="unconfirmed">ᱟᱨᱢᱮᱱᱤᱟᱭ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="armnlow" draft="unconfirmed">ᱟᱨᱢᱮᱱᱤᱭᱟᱭ ᱦᱩᱰᱤᱧ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="bali" draft="unconfirmed">ᱵᱟᱞᱤᱱᱮᱥ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="beng" draft="unconfirmed">ᱵᱟᱝᱞᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="brah" draft="unconfirmed">ᱵᱽᱨᱟᱢᱦᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="cakm" draft="unconfirmed">ᱪᱷᱟᱠᱢᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="cham" draft="unconfirmed">ᱪᱷᱟᱢ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="cyrl" draft="unconfirmed">ᱥᱟᱭᱠᱨᱤᱞᱤᱠ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="deva" draft="unconfirmed">ᱫᱮᱣᱟᱹᱱᱟᱜᱽᱨᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="diak" draft="unconfirmed">ᱰᱤᱣᱮᱥ ᱟᱠᱨᱩ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="ethi" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱠ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="fullwide" draft="unconfirmed">ᱯᱩᱨᱟᱹ ᱚᱥᱟᱨ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="geor" draft="unconfirmed">ᱡᱭᱚᱨᱡᱤᱭᱟᱱ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="gong" draft="unconfirmed">ᱜᱩᱧᱡᱟᱞᱟ ᱜᱚᱱᱰᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="gonm" draft="unconfirmed">ᱢᱟᱥᱟᱨᱟᱢ ᱜᱚᱱᱰᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="grek" draft="unconfirmed">ᱜᱽᱨᱤᱠ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="greklow" draft="unconfirmed">ᱜᱽᱨᱤᱠ ᱦᱩᱰᱤᱧ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="gujr" draft="unconfirmed">ᱜᱩᱡᱽᱨᱟᱴᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="guru" draft="unconfirmed">ᱜᱩᱨᱩᱢᱩᱠᱷᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="hanidec">ᱪᱟᱭᱱᱤᱡᱽ ᱰᱮᱥᱤᱢᱟᱹᱞ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="hans" draft="unconfirmed">ᱥᱚᱦᱚᱡᱽ ᱪᱤᱱ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="hansfin">ᱥᱚᱦᱚᱡᱽ ᱪᱤᱱ ᱯᱷᱟᱭᱱᱮᱱᱥᱤᱟᱹᱞ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="hebr" draft="unconfirmed">ᱦᱮᱵᱽᱨᱤᱣ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="hmng" draft="unconfirmed">ᱯᱟᱦᱟᱣ ᱢᱚᱝ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="hmnp" draft="unconfirmed">ᱱᱤᱭᱟᱠᱮᱝ ᱯᱩᱣᱟᱪᱷᱮ ᱢᱚᱝ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="java" draft="unconfirmed">ᱡᱟᱣᱟᱱᱤᱡᱽ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="jpan" draft="unconfirmed">ᱡᱟᱯᱟᱱᱤᱡᱽ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="jpanfin">ᱡᱟᱯᱟᱱᱤᱡᱽ ᱯᱷᱟᱭᱱᱮᱱᱥᱤᱟᱹᱞ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="kali" draft="unconfirmed">ᱡᱟᱭᱟᱦ ᱞᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="kawi" draft="unconfirmed">ᱠᱟᱣᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="khmr" draft="unconfirmed">ᱠᱷᱟᱹᱢᱮᱨ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="knda" draft="unconfirmed">ᱠᱚᱱᱚᱰ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="lana" draft="unconfirmed">ᱛᱟᱭᱤ ᱛᱷᱟᱢ ᱦᱚᱨᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="lanatham" draft="unconfirmed">ᱛᱟᱭᱤ ᱛᱷᱟᱢ ᱛᱷᱟᱢ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="laoo" draft="unconfirmed">ᱞᱟᱣ ᱮᱞᱠᱷᱟ</type>
 			<type key="numbers" type="latn">ᱣᱮᱥᱴᱟᱨᱱ ᱮᱞ</type>
+			<type key="numbers" type="lepc" draft="unconfirmed">ᱞᱮᱯᱪᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="limb" draft="unconfirmed">ᱞᱤᱢᱵᱩ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mlym" draft="unconfirmed">ᱢᱟᱹᱞᱭᱟᱞᱟᱹᱢ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="modi" draft="unconfirmed">ᱢᱚᱰᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mong" draft="unconfirmed">ᱢᱚᱱᱜᱚᱞᱤᱭᱟᱭ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mroo" draft="unconfirmed">ᱢᱨᱚ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mtei" draft="unconfirmed">ᱢᱤᱴᱮᱭᱤ ᱢᱮᱭᱟᱠ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mymr" draft="unconfirmed">ᱢᱭᱟᱱᱢᱟᱨ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mymrshan" draft="unconfirmed">ᱢᱭᱟᱱᱢᱟᱨ ᱥᱟᱱ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="mymrtlng" draft="unconfirmed">ᱢᱭᱟᱱᱢᱟᱨ ᱴᱚᱭᱤ ᱞᱤᱭᱟᱝ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="nagm" draft="unconfirmed">ᱱᱚᱜᱽ ᱢᱩᱱᱰᱟᱨᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="nkoo" draft="unconfirmed">ᱱᱚᱠᱚ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="olck" draft="unconfirmed">ᱚᱞ ᱪᱤᱠᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="orya" draft="unconfirmed">ᱳᱰᱤᱭᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="osma" draft="unconfirmed">ᱚᱥᱢᱟᱱᱭᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="rohg" draft="unconfirmed">ᱦᱟᱱᱤᱯᱷᱤ ᱨᱚᱦᱤᱱᱭᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="roman" draft="unconfirmed">ᱨᱚᱢᱟᱱ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="romanlow" draft="unconfirmed">ᱨᱚᱢᱟᱱ ᱦᱩᱰᱤᱧ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="saur" draft="unconfirmed">ᱥᱟᱹᱣᱨᱟᱥᱴᱨᱚ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="shrd" draft="unconfirmed">ᱥᱟᱨᱟᱰᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="sind" draft="unconfirmed">ᱠᱷᱩᱰᱟᱣᱟᱰᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="sinh" draft="unconfirmed">ᱥᱤᱱᱦᱟᱞᱟ ᱞᱤᱛᱷ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="sora" draft="unconfirmed">ᱥᱚᱨᱟ ᱥᱚᱢᱯᱮᱝ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="sund" draft="unconfirmed">ᱥᱩᱱᱰᱟᱱᱥ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="takr" draft="unconfirmed">ᱴᱟᱠᱨᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="talu" draft="unconfirmed">ᱱᱟᱶᱟ ᱴᱟᱭᱤ ᱞᱩᱣᱮ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="tamldec" draft="unconfirmed">ᱛᱟᱹᱢᱤᱞ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="telu" draft="unconfirmed">ᱛᱮᱞᱩᱜᱩ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="thai" draft="unconfirmed">ᱛᱷᱟᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="tibt" draft="unconfirmed">ᱛᱤᱵᱮᱛᱟᱱ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="tirh" draft="unconfirmed">ᱛᱤᱨᱦᱩᱴᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="tnsa" draft="unconfirmed">ᱴᱟᱝᱥᱟ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="vaii" draft="unconfirmed">ᱣᱟᱭ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="wara" draft="unconfirmed">ᱨᱟᱝ ᱪᱤᱛᱤ ᱮᱞᱠᱷᱟ</type>
+			<type key="numbers" type="wcho" draft="unconfirmed">ᱣᱟᱱᱪᱩ ᱮᱞᱠᱷᱟ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ᱢᱮᱴᱨᱤᱠ</measurementSystemName>
@@ -628,10 +1323,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">ᱡᱤᱥᱩ ᱢᱟᱲᱟᱝ</era>
+						<era type="0" alt="variant" draft="unconfirmed">ᱥᱟᱫᱷᱨᱚᱬ ᱡᱩᱜᱽ ᱢᱟᱲᱟᱝ</era>
+						<era type="1" draft="unconfirmed">ᱥᱮᱨᱢᱟ ᱥᱚᱱ</era>
+						<era type="1" alt="variant" draft="unconfirmed">ᱥᱟᱫ ᱥᱮᱨᱢᱟ ᱥᱚᱱ</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">ᱥᱮᱨᱢᱟ ᱞᱟᱦᱟ</era>
 						<era type="1">ᱤᱥᱣᱤ</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="unconfirmed">ᱡᱤ</era>
+						<era type="0" alt="variant" draft="unconfirmed">ᱵᱤ ᱥᱤ ᱤ</era>
+						<era type="1" draft="unconfirmed">ᱥᱮ</era>
+						<era type="1" alt="variant" draft="unconfirmed">ᱥᱟ</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -708,10 +1415,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">᱑</month>
+							<month type="2" draft="unconfirmed">᱒</month>
+							<month type="3" draft="unconfirmed">᱓</month>
+							<month type="4" draft="unconfirmed">᱔</month>
+							<month type="5" draft="unconfirmed">᱕</month>
+							<month type="6" draft="unconfirmed">᱖</month>
+							<month type="7" draft="unconfirmed">᱗</month>
+							<month type="8" draft="unconfirmed">᱘</month>
+							<month type="9" draft="unconfirmed">᱙</month>
+							<month type="10" draft="unconfirmed">᱑᱐</month>
+							<month type="11" draft="unconfirmed">᱑᱑</month>
+							<month type="12" draft="unconfirmed">᱑᱒</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ᱢᱟᱜᱽ</month>
+							<month type="2" draft="unconfirmed">ᱯᱷᱟ.ᱜᱩᱱ</month>
+							<month type="3" draft="unconfirmed">ᱪᱟ.ᱛ</month>
+							<month type="4" draft="unconfirmed">ᱵᱟ.ᱭᱥᱟ.ᱠ</month>
+							<month type="5" draft="unconfirmed">ᱡᱷᱮᱴ</month>
+							<month type="6" draft="unconfirmed">ᱟᱥᱟᱲ</month>
+							<month type="7" draft="unconfirmed">ᱥᱟᱱ</month>
+							<month type="8" draft="unconfirmed">ᱵᱷᱟᱫᱚᱨᱵ</month>
+							<month type="9" draft="unconfirmed">ᱫᱟᱥᱟᱸᱭ</month>
+							<month type="10" draft="unconfirmed">ᱥᱚᱦᱨᱟᱭ</month>
+							<month type="11" draft="unconfirmed">ᱟᱜᱷᱟᱲ</month>
+							<month type="12" draft="unconfirmed">ᱯᱩᱥ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">᱑</month>
+							<month type="2" draft="unconfirmed">᱒</month>
+							<month type="3" draft="unconfirmed">᱓</month>
+							<month type="4" draft="unconfirmed">᱔</month>
+							<month type="5" draft="unconfirmed">᱕</month>
+							<month type="6" draft="unconfirmed">᱖</month>
+							<month type="7" draft="unconfirmed">᱗</month>
+							<month type="8" draft="unconfirmed">᱘</month>
+							<month type="9" draft="unconfirmed">᱙</month>
+							<month type="10" draft="unconfirmed">᱑᱐</month>
+							<month type="11" draft="unconfirmed">᱑᱑</month>
+							<month type="12" draft="unconfirmed">᱑᱒</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">ᱥᱟᱠᱟ</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
 				<displayName>ᱡᱩᱜᱽ</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>ᱡᱩ</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>ᱡ</displayName>
 			</field>
 			<field type="year">
 				<displayName>ᱥᱮᱨᱢᱟ/ᱵᱚᱪᱷᱚᱞᱨ</displayName>
@@ -778,6 +1546,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱦᱟᱯᱛᱟ</relative>
 				<relativePeriod draft="unconfirmed">{0} ᱨᱮᱭᱟᱜ ᱦᱟᱯᱛᱟ</relativePeriod>
 			</field>
+			<field type="weekOfMonth">
+				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱦᱟᱯᱛᱟ</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱦᱟᱯᱛᱟ</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱦᱟᱯᱛᱟ</displayName>
+			</field>
 			<field type="day">
 				<displayName>ᱢᱟᱦᱟ</displayName>
 				<relative type="-1">ᱦᱚᱞᱟ</relative>
@@ -790,8 +1567,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="day-narrow">
 				<displayName>ᱢᱟᱦᱟ</displayName>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ᱥᱮᱨᱢᱟ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ᱥᱮᱨᱢᱟ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ᱥᱮᱨᱢᱟ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>ᱦᱟᱯᱛᱟ ᱨᱮᱭᱟᱜ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">ᱢᱟᱲᱟᱝ ᱥᱤᱸᱜᱮ</relative>
+				<relative type="0">ᱱᱤᱭᱟᱹ ᱥᱤᱸᱜᱮ</relative>
+				<relative type="1">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱤᱸᱜᱮ</relative>
 			</field>
 			<field type="dayperiod">
 				<displayName>ᱥᱮᱛᱟᱜ/ᱟᱹᱭᱩᱵ</displayName>
@@ -820,7 +1617,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<gmtZeroFormat>ᱡᱤᱮᱢᱴᱤ</gmtZeroFormat>
 			<regionFormat>{0} ᱚᱠᱛᱚ</regionFormat>
 			<regionFormat type="daylight">{0} ᱫᱤᱱᱵᱮᱲᱟ ᱚᱠᱛᱚ</regionFormat>
-			<regionFormat type="standard">{0} ᱮᱴᱮᱱᱰᱟᱨᱰ ᱚᱠᱛᱚ</regionFormat>
+			<regionFormat type="standard">{0} ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ᱠᱚᱨᱰᱤᱱᱮᱴᱮᱰ ᱭᱩᱱᱤᱣᱟᱨᱥᱟᱞ ᱚᱠᱛᱚ</standard>
@@ -829,6 +1626,347 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>ᱵᱟᱝ ᱪᱤᱱᱦᱟᱹᱣ ᱵᱟᱡᱟᱨ</exemplarCity>
 			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity draft="unconfirmed">ᱟᱱᱴᱤᱜᱩᱣᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity draft="unconfirmed">ᱟᱱᱜᱩᱭᱞᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity draft="unconfirmed">ᱟᱨᱩᱵᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity draft="unconfirmed">ᱵᱟᱨᱵᱟᱰᱚᱥ</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity draft="unconfirmed">ᱮᱥ ᱴᱤ ᱵᱟᱨᱛᱷᱮᱞᱢᱤ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">ᱵᱟᱹᱨᱢᱩᱱᱰᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity draft="unconfirmed">ᱠᱨᱟᱞᱮᱱᱰᱤᱡᱽᱠᱚ</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">ᱱᱟᱥᱟᱣ</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">ᱵᱮᱞᱤᱡᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="unconfirmed">ᱰᱟᱣᱥᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="unconfirmed">ᱣᱟᱭᱤᱴᱦᱚᱨᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="unconfirmed">ᱤᱱᱩᱣᱤᱠ</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="unconfirmed">ᱣᱟᱱᱠᱚᱣᱟᱹᱨ</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity draft="unconfirmed">ᱯᱷᱚᱴ ᱱᱮᱞᱥᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="unconfirmed">ᱰᱟᱣᱥᱚᱱ ᱠᱨᱤᱠ</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity draft="unconfirmed">ᱠᱨᱮᱥᱴᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity draft="unconfirmed">ᱭᱮᱞᱚᱱᱟᱭᱤᱯᱷ</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="unconfirmed">ᱮᱰᱢᱚᱱᱴᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="unconfirmed">ᱥᱣᱤᱯᱷᱴ ᱠᱚᱨᱮᱱᱴ</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="unconfirmed">ᱠᱮᱢᱵᱽᱨᱮᱡᱽ ᱵᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="unconfirmed">ᱨᱮᱜᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="unconfirmed">ᱣᱤᱱᱤᱯᱮᱜᱽ</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="unconfirmed">ᱨᱤᱥᱚᱞᱭᱩᱴ</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity draft="unconfirmed">ᱨᱚᱱᱤ ᱜᱟᱰᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="unconfirmed">ᱨᱟᱱᱠᱤᱱ ᱤᱱᱞᱮᱴ</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="unconfirmed">ᱟᱴᱤᱠᱚᱠᱟᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity draft="unconfirmed">ᱛᱷᱚᱱᱰᱚᱨ ᱵᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity draft="unconfirmed">ᱱᱤᱯᱤᱜᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="unconfirmed">ᱴᱚᱨᱚᱱᱴᱚ</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="unconfirmed">ᱤᱠᱟᱞᱩᱣᱤᱛ</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity draft="unconfirmed">ᱯᱟᱝᱱᱤᱨᱛᱩᱝ</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="unconfirmed">ᱢᱚᱱᱠᱴᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="unconfirmed">ᱦᱟᱞᱤᱯᱷᱟᱠᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="unconfirmed">ᱜᱩᱥ ᱵᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="unconfirmed">ᱜᱞᱮᱥ ᱵᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="unconfirmed">ᱵᱞᱟᱱᱠᱼᱥᱟᱵᱞᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">ᱮᱥ ᱴᱤ ᱡᱚᱱᱥ</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">ᱟ.ᱵᱤᱰᱡᱟᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">ᱠᱚᱥᱴᱟ ᱨᱤᱠᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">ᱦᱟᱣᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">ᱠᱭᱩᱨᱟᱠᱟᱣ</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity draft="unconfirmed">ᱰᱚᱢᱤᱱᱤᱠᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity draft="unconfirmed">ᱥᱟᱱᱴᱚ ᱰᱚᱢᱤᱱᱜᱚ</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">ᱜᱽᱨᱮᱱᱟᱰᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="unconfirmed">ᱛᱷᱩᱞᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity draft="unconfirmed">ᱱᱩᱠ</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="unconfirmed">ᱤᱛᱚᱠᱚᱛᱚᱨᱢᱤᱛ</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="unconfirmed">ᱰᱟᱱᱢᱟᱨᱠᱥᱟᱣᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">ᱜᱩᱣᱟᱰᱮᱞᱚᱯ</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity draft="unconfirmed">ᱜᱩᱣᱟᱴᱮᱢᱟᱞᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity draft="unconfirmed">ᱛᱮᱜᱩᱪᱤᱜᱟᱞᱯᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">ᱯᱚᱨᱴ ᱟᱣ ᱯᱨᱤᱱᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">ᱡᱟᱢᱟᱭᱠᱟ</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">ᱮᱥ ᱴᱤ ᱠᱤᱴᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">ᱠᱚᱢᱟᱱ</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">ᱮᱥ ᱴᱤ ᱞᱩᱥᱤᱭᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity draft="unconfirmed">ᱢᱟᱨᱤᱜᱚᱴ</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">ᱢᱟᱨᱴᱤᱱᱠ</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">ᱢᱚᱱᱴᱥᱮᱨᱟᱴ</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="unconfirmed">ᱴᱤᱡᱩᱣᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">ᱦᱟᱹᱨᱢᱚᱥᱤᱞᱚ</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="unconfirmed">ᱢᱟᱡᱟᱴᱞᱟᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="unconfirmed">ᱪᱷᱤᱦᱩᱣᱟᱦᱩᱣᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity draft="unconfirmed">ᱵᱟᱦᱤᱭᱟ ᱵᱟᱱᱰᱮᱨᱟᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity draft="unconfirmed">ᱚᱡᱤᱱᱟᱜᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">ᱢᱚᱱᱴᱮᱨᱮᱭ</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">ᱢᱮᱠᱥᱤᱠᱚ ᱥᱚᱦᱚᱨ</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity draft="unconfirmed">ᱢᱟᱴᱟᱢᱚᱨᱚᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">ᱢᱮᱨᱤᱰᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">ᱠᱟᱱᱠᱩᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity draft="unconfirmed">ᱢᱟᱱᱟᱜᱩᱣᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">ᱯᱟᱱᱟᱢᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity draft="unconfirmed">ᱢᱤᱠᱣᱮᱞᱚᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">ᱯᱭᱩᱨᱴᱚ ᱨᱤᱠᱚ</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity draft="unconfirmed">ᱮᱞ ᱥᱟᱞᱣᱮᱰᱚᱨ</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity draft="unconfirmed">ᱞᱚᱣᱟᱹᱨ ᱯᱨᱤᱱᱥ ᱠᱣᱟᱴᱟᱹᱨ</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">ᱜᱽᱨᱟᱱᱰ ᱴᱩᱨᱠ</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity draft="unconfirmed">ᱯᱚᱨᱴ ᱚᱯᱷ ᱥᱯᱮᱱ</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="unconfirmed">ᱟᱰᱟᱠ</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="unconfirmed">ᱱᱚᱢᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="unconfirmed">ᱟᱱᱠᱷᱚᱨᱮᱡᱽ</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">ᱭᱟᱠᱩᱛᱟᱛ</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity draft="unconfirmed">ᱥᱤᱛᱠᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="unconfirmed">ᱡᱩᱱᱮᱟᱹᱣ</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity draft="unconfirmed">ᱢᱮᱴᱞᱟᱠᱟᱴᱞᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="unconfirmed">ᱞᱮᱥ ᱮᱧᱡᱮᱞᱮᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="unconfirmed">ᱵᱚᱭᱤᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="unconfirmed">ᱯᱷᱤᱱᱤᱠᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="unconfirmed">ᱰᱮᱱᱣᱮᱨ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">ᱵᱮᱣᱞᱟᱦ, ᱮᱛᱚᱢ ᱰᱟᱠᱚᱴᱟ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">ᱱᱤᱣ ᱥᱮᱞᱮᱢ, ᱮᱛᱚᱢ ᱰᱟᱠᱚᱴᱟ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">ᱥᱮᱱᱴᱚᱨ, ᱮᱛᱚᱢ ᱰᱟᱠᱚᱴᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="unconfirmed">ᱪᱤᱠᱟᱜᱚ</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="unconfirmed">ᱢᱮᱱᱚᱢᱤᱱᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">ᱵᱷᱤᱱᱥᱮᱱᱥ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">ᱯᱤᱴᱚᱨᱥᱵᱚᱨᱜᱽ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">ᱴᱚᱞ ᱥᱤᱴᱭ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">ᱱᱚᱠᱥ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">ᱣᱤᱱᱟᱢᱟᱠ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">ᱢᱮᱨᱮᱝᱜᱚ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="unconfirmed">ᱤᱱᱰᱤᱭᱟᱱᱟᱯᱚᱞᱤᱥ</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">ᱞᱩᱣᱤᱥᱣᱤᱞᱮ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">ᱵᱷᱮᱵᱷᱟᱭ, ᱤᱱᱰᱤᱭᱟᱱᱟ</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">ᱢᱚᱱᱴᱤᱥᱮᱞᱚ, ᱠᱮᱱᱴᱩᱠᱭ</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="unconfirmed">ᱰᱮᱴᱨᱚᱭᱮᱴ</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">ᱱᱤᱣ ᱭᱚᱨᱠ</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">ᱮᱥ ᱴᱤ ᱣᱤᱱᱥᱮᱴ</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">ᱴᱚᱨᱴᱚᱞᱟ</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity draft="unconfirmed">ᱮᱥ ᱴᱤ ᱛᱷᱚᱢᱟᱥ</exemplarCity>
+			</zone>
+			<metazone type="Alaska">
+				<long>
+					<generic>ᱟᱹᱞᱟᱥᱠᱟ ᱚᱠᱛᱚ</generic>
+					<standard>ᱟᱹᱞᱟᱥᱠᱟ ᱮᱥᱴᱮᱱᱰᱟᱨᱰ ᱚᱠᱛᱚ</standard>
+					<daylight>ᱟᱹᱞᱟᱥᱠᱟ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>ᱟᱢᱟᱡᱚᱱ ᱚᱠᱴᱚ</generic>
+					<standard>ᱟᱢᱟᱡᱚᱱ ᱮᱴᱮᱱᱰᱟᱨᱰ ᱚᱠᱴᱚ</standard>
+					<daylight>ᱟᱢᱟᱡᱚᱱ ᱥᱤᱛᱩᱝ ᱚᱠᱴᱚ</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>ᱛᱟᱱᱟᱞᱟ ᱚᱠᱛᱚ</generic>
@@ -857,11 +1995,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ᱯᱮᱥᱤᱯᱷᱤᱠ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>ᱟᱹᱨᱡᱮᱱᱴᱤᱱᱟ ᱚᱠᱴᱚ</generic>
+					<standard>ᱟᱹᱨᱡᱮᱱᱴᱤᱱᱟ ᱮᱴᱮᱱᱰᱟᱨᱰ ᱚᱠᱴᱚ</standard>
+					<daylight>ᱟᱹᱨᱡᱮᱱᱴᱤᱱᱟ ᱥᱤᱛᱩᱝ ᱚᱠᱴᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>ᱯᱟᱪᱮ ᱟᱹᱨᱡᱮᱱᱴᱤᱱᱟ ᱚᱠᱴᱚ</generic>
+					<standard>ᱯᱟᱪᱮ ᱟᱹᱨᱡᱮᱱᱴᱤᱱᱟ ᱮᱥᱴᱮᱱᱰᱟᱨᱰ ᱚᱠᱴᱚ</standard>
+					<daylight>ᱯᱟᱪᱮ ᱟᱹᱨᱡᱮᱱᱴᱤᱱᱟ ᱥᱤᱛᱩᱝ ᱚᱠᱴᱚ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>ᱮᱴᱞᱟᱱᱴᱤᱠ ᱚᱠᱛᱚ</generic>
 					<standard>ᱮᱴᱞᱟᱱᱴᱤᱠ ᱮᱥᱴᱮᱱᱰᱟᱨᱰ ᱚᱠᱛᱚ</standard>
 					<daylight>ᱮᱴᱞᱟᱱᱴᱤᱠ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">ᱠᱭᱩᱵᱟ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱠᱭᱩᱵᱟ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱠᱭᱩᱵᱟ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
@@ -890,6 +2049,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ᱜᱨᱤᱱᱣᱤᱪ ᱢᱤᱱ ᱚᱠᱛᱚ</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱥᱤᱛᱩᱝ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">ᱯᱟᱪᱮ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱯᱟᱪᱮ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱯᱟᱪᱮ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱥᱤᱛᱩᱝ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">ᱢᱮᱠᱥᱤᱠᱟᱱ ᱯᱨᱚᱥᱟᱱᱛ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱢᱮᱠᱥᱤᱠᱟᱱ ᱯᱨᱚᱥᱟᱱᱛ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱢᱮᱠᱥᱤᱠᱟᱱ ᱯᱨᱚᱥᱟᱱᱛ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">ᱱᱤᱭᱩᱯᱷᱟᱩᱱᱰᱞᱮᱸᱰ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱱᱤᱭᱩᱯᱷᱟᱩᱱᱰᱞᱮᱸᱰ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱱᱤᱭᱩᱯᱷᱟᱩᱱᱰᱞᱮᱸᱰ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">ᱮᱥ ᱴᱤ ᱯᱤᱭᱮᱨᱮ ᱟᱨ ᱢᱤᱠᱮᱞᱚᱱ ᱚᱠᱛᱚ</generic>
+					<standard draft="unconfirmed">ᱮᱥ ᱴᱤ ᱯᱤᱭᱮᱨᱮ ᱟᱨ ᱢᱤᱠᱮᱞᱚᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight draft="unconfirmed">ᱮᱥ ᱴᱤ ᱯᱤᱭᱮᱨᱮ ᱟᱨ ᱢᱤᱠᱮᱞᱚᱱ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">ᱭᱩᱠᱚᱱ ᱚᱠᱛᱚ</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -901,7 +2114,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
 		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="one">¤0 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="1000" count="two">¤ 0 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="1000" count="other">¤ 0 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="10000" count="one" draft="unconfirmed">¤ 00 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="10000" count="two" draft="unconfirmed">¤ 00 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">¤ 00 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="100000" count="one">¤ 000 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="100000" count="two">¤ 000 ᱜᱮᱞᱥᱟᱭ</pattern>
+					<pattern type="100000" count="other">¤ 000 ᱜᱮᱞᱥᱟᱭ</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">ᱵᱟᱹᱨᱢᱩᱰᱟ ᱰᱚᱞᱟᱨ</displayName>
+				<displayName count="one" draft="unconfirmed">ᱵᱟᱹᱨᱢᱩᱰᱟ ᱰᱚᱞᱟᱨ</displayName>
+				<displayName count="two" draft="unconfirmed">ᱵᱟᱹᱨᱢᱩᱰᱟ ᱰᱚᱞᱟᱨ ᱠᱤᱱ</displayName>
+				<displayName count="other" draft="unconfirmed">ᱵᱟᱹᱨᱢᱩᱰᱟ ᱰᱚᱞᱟᱨ ᱠᱚ</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>ᱵᱨᱟᱡᱤᱞᱤᱭᱟᱱ ᱨᱤᱭᱟᱹᱞ</displayName>
 				<displayName count="one">ᱵᱨᱟᱡᱤᱞᱤᱭᱟᱱ ᱨᱤᱭᱟᱹᱞ</displayName>
@@ -955,16 +2189,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="unconfirmed">{0} ᱰᱟᱹᱝᱜᱽᱨᱤ</pluralMinimalPairs>
+			<pluralMinimalPairs count="two" draft="unconfirmed">{0} ᱰᱟᱹᱝᱜᱽᱨᱤ ᱠᱤᱱ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} ᱰᱟᱹᱝᱜᱽᱨᱤ ᱠᱚ</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">{0} ᱛᱮ ᱡᱚᱡᱚᱢ ᱤᱫᱤ ᱢᱮ ᱾</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">ᱢᱩᱞ ᱟᱸᱫᱮ</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">ᱟᱸᱫᱮ</displayName>
+			</coordinateUnit>
+		</unitLength>
 		<unitLength type="narrow">
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="two">{0} dstspn Imp</unitPattern>
 				<unitPattern count="other">{0} dstspn Imp</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">ᱟᱸᱫᱮ</displayName>
+			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>
@@ -978,19 +2228,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</units>
 	<listPatterns>
 		<listPattern type="or">
-			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="end" draft="unconfirmed">{0}, ᱟᱨ {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
@@ -1003,4 +2249,118 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>ᱵᱟᱝᱺᱵ</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — ᱡᱷᱚᱛᱚ</characterLabelPattern>
+		<characterLabelPattern type="compatibility" draft="unconfirmed">{0} — ᱵᱮᱥ ᱠᱟᱹᱢᱤ ᱦᱚᱪᱚ</characterLabelPattern>
+		<characterLabelPattern type="enclosed" draft="unconfirmed">{0} — ᱵᱚᱸᱫ</characterLabelPattern>
+		<characterLabelPattern type="extended" draft="unconfirmed">{0} — ᱵᱟᱰᱷᱟᱣ</characterLabelPattern>
+		<characterLabelPattern type="historic" draft="unconfirmed">{0} — ᱢᱟᱨᱮ</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous" draft="unconfirmed">{0} — ᱣᱤᱣᱤᱫ</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — ᱮᱴᱟᱜ</characterLabelPattern>
+		<characterLabelPattern type="scripts" draft="unconfirmed">ᱞᱤᱯᱤ — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one" draft="unconfirmed">{0} ᱜᱟᱨ</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="two" draft="unconfirmed">{0} ᱜᱟᱨ ᱠᱤᱱ</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other" draft="unconfirmed">{0} ᱜᱟᱨ ᱠᱚ</characterLabelPattern>
+		<characterLabelPattern type="subscript" draft="unconfirmed">ᱥᱟᱹᱵᱥᱠᱨᱤᱯᱴ {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript" draft="unconfirmed">ᱥᱩᱯᱚᱨᱥᱠᱨᱤᱯᱴ {0}</characterLabelPattern>
+		<characterLabel type="activities">ᱠᱟᱹᱢᱤ</characterLabel>
+		<characterLabel type="african_scripts">ᱟᱯᱷᱨᱤᱠᱟᱭ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="american_scripts">ᱟᱢᱮᱨᱤᱠᱤ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="animal" draft="unconfirmed">ᱡᱟᱱᱣᱟ</characterLabel>
+		<characterLabel type="animals_nature" draft="unconfirmed">ᱡᱟᱱᱣᱟ ᱵᱟᱝᱠᱷᱟᱱ ᱡᱟᱹ</characterLabel>
+		<characterLabel type="arrows" draft="unconfirmed">ᱥᱟᱨ</characterLabel>
+		<characterLabel type="body">ᱦᱚᱲᱢᱚ</characterLabel>
+		<characterLabel type="box_drawing" draft="unconfirmed">ᱵᱟᱠᱚᱥ ᱪᱤᱛᱟᱹᱨ</characterLabel>
+		<characterLabel type="braille" draft="unconfirmed">ᱵᱽᱨᱟᱭᱞᱮ</characterLabel>
+		<characterLabel type="building" draft="unconfirmed">ᱯᱟᱠᱟ ᱚᱲᱟᱜ</characterLabel>
+		<characterLabel type="bullets_stars" draft="unconfirmed">ᱵᱩᱞᱮᱴ ᱵᱟᱝᱠᱷᱟᱱ ᱤᱯᱤᱞ</characterLabel>
+		<characterLabel type="consonantal_jamo" draft="unconfirmed">ᱠᱮᱪᱮᱫ ᱡᱟᱢᱳ</characterLabel>
+		<characterLabel type="currency_symbols">ᱯᱩᱭᱥᱟᱹ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="dash_connector" draft="unconfirmed">ᱰᱮᱥ ᱵᱟᱝᱠᱷᱟᱱ ᱡᱩᱲᱟᱹᱣ</characterLabel>
+		<characterLabel type="digits">ᱮᱞᱠᱷᱟ</characterLabel>
+		<characterLabel type="dingbats" draft="unconfirmed">ᱰᱤᱝᱵᱮᱴ</characterLabel>
+		<characterLabel type="divination_symbols" draft="unconfirmed">ᱰᱤᱣᱤᱱᱮᱥᱚᱱ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="downwards_arrows" draft="unconfirmed">ᱞᱟᱛᱟᱨ ᱥᱟᱨ</characterLabel>
+		<characterLabel type="downwards_upwards_arrows" draft="unconfirmed">ᱞᱟᱛᱟᱨ ᱪᱮᱛᱟᱱ ᱥᱟᱨ</characterLabel>
+		<characterLabel type="east_asian_scripts" draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱮᱥᱤᱭᱟᱭ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="emoji">ᱤᱢᱚᱡᱤ</characterLabel>
+		<characterLabel type="european_scripts" draft="unconfirmed">ᱭᱩᱨᱚᱯᱤᱭᱟᱭ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="female">ᱠᱩᱲᱤ</characterLabel>
+		<characterLabel type="flag">ᱪᱤᱨ</characterLabel>
+		<characterLabel type="flags">ᱪᱤᱨ ᱠᱚ</characterLabel>
+		<characterLabel type="food_drink" draft="unconfirmed">ᱡᱚᱢᱟᱜ ᱟᱨ ᱧᱩᱸᱣᱟᱜ</characterLabel>
+		<characterLabel type="format" draft="unconfirmed">ᱯᱷᱚᱨᱢᱟᱴ</characterLabel>
+		<characterLabel type="format_whitespace" draft="unconfirmed">ᱯᱷᱚᱨᱢᱟᱴ ᱟᱨ ᱥᱟᱫᱟ ᱡᱟᱭᱜᱟ ᱟᱲᱟᱜ</characterLabel>
+		<characterLabel type="full_width_form_variant" draft="unconfirmed">ᱯᱩᱨᱟᱹ ᱚᱥᱟᱨ ᱯᱨᱚᱠᱟᱨ</characterLabel>
+		<characterLabel type="geometric_shapes" draft="unconfirmed">ᱚᱛᱥᱚᱝ ᱜᱚᱰᱷᱚᱱ</characterLabel>
+		<characterLabel type="half_width_form_variant" draft="unconfirmed">ᱟᱫᱷᱟᱼᱚᱥᱟᱨ ᱯᱨᱚᱠᱟᱨ</characterLabel>
+		<characterLabel type="han_characters" draft="unconfirmed">ᱦᱟᱱ ᱚᱞ</characterLabel>
+		<characterLabel type="han_radicals" draft="unconfirmed">ᱦᱟᱱ ᱨᱮᱰᱤᱠᱟᱞ</characterLabel>
+		<characterLabel type="hanja" draft="unconfirmed">ᱦᱟᱧᱡᱟ</characterLabel>
+		<characterLabel type="hanzi_simplified" draft="unconfirmed">ᱦᱟᱧᱡᱤ (ᱥᱟᱫᱷᱨᱚᱬ)</characterLabel>
+		<characterLabel type="hanzi_traditional" draft="unconfirmed">ᱦᱟᱧᱡᱤ (ᱫᱤᱥᱤ)</characterLabel>
+		<characterLabel type="heart" draft="unconfirmed">ᱢᱟᱭᱟᱢ ᱠᱩᱸᱰᱤ</characterLabel>
+		<characterLabel type="historic_scripts" draft="unconfirmed">ᱢᱟᱨᱮ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="ideographic_desc_characters" draft="unconfirmed">ᱤᱰᱤᱭᱳᱜᱽᱨᱟᱯᱷᱤᱠ ᱰᱮᱥ ᱚᱞ</characterLabel>
+		<characterLabel type="japanese_kana" draft="unconfirmed">ᱡᱟᱯᱟᱱᱤᱡᱽ ᱠᱟᱱᱟ</characterLabel>
+		<characterLabel type="kanbun" draft="unconfirmed">ᱠᱩᱱᱵᱩᱱ</characterLabel>
+		<characterLabel type="kanji" draft="unconfirmed">ᱠᱟᱧᱡᱤ</characterLabel>
+		<characterLabel type="keycap" draft="unconfirmed">ᱠᱤᱠᱮᱯ</characterLabel>
+		<characterLabel type="leftwards_arrows" draft="unconfirmed">ᱞᱮᱝᱜᱟ ᱥᱟᱨ</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows" draft="unconfirmed">ᱞᱮᱝᱜᱟ ᱡᱚᱡᱚᱢ ᱥᱟᱨ</characterLabel>
+		<characterLabel type="letterlike_symbols" draft="unconfirmed">ᱚᱞ ᱞᱮᱠᱷᱟ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="limited_use" draft="unconfirmed">ᱥᱤᱢᱤᱛ ᱵᱮᱵᱷᱟᱨ</characterLabel>
+		<characterLabel type="male" draft="unconfirmed">ᱠᱚᱲᱟ</characterLabel>
+		<characterLabel type="math_symbols" draft="unconfirmed">ᱮᱞᱠᱷᱟ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="middle_eastern_scripts" draft="unconfirmed">ᱛᱟᱞᱟ ᱥᱟᱢᱟᱝ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="miscellaneous" draft="unconfirmed">ᱣᱤᱣᱤᱫ</characterLabel>
+		<characterLabel type="modern_scripts" draft="unconfirmed">ᱱᱟᱦᱟᱜ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="modifier" draft="unconfirmed">ᱵᱚᱫᱚᱞᱤᱭᱟᱹ</characterLabel>
+		<characterLabel type="musical_symbols" draft="unconfirmed">ᱥᱮᱨᱮᱧ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="nature" draft="unconfirmed">ᱡᱟᱹ</characterLabel>
+		<characterLabel type="nonspacing" draft="unconfirmed">ᱡᱟᱭᱜᱟ ᱵᱟᱝ ᱟᱲᱟᱜᱟᱜ</characterLabel>
+		<characterLabel type="numbers" draft="unconfirmed">ᱮᱞᱠᱷᱟ</characterLabel>
+		<characterLabel type="objects" draft="unconfirmed">ᱡᱤᱱᱤᱥ</characterLabel>
+		<characterLabel type="other" draft="unconfirmed">ᱮᱴᱟᱜ</characterLabel>
+		<characterLabel type="paired" draft="unconfirmed">ᱡᱩᱨᱤ</characterLabel>
+		<characterLabel type="person" draft="unconfirmed">ᱦᱚᱲ</characterLabel>
+		<characterLabel type="phonetic_alphabet" draft="unconfirmed">ᱯᱷᱚᱱᱮᱴᱤᱠ ᱚᱞ</characterLabel>
+		<characterLabel type="pictographs" draft="unconfirmed">ᱚᱞᱞᱮᱠᱷ</characterLabel>
+		<characterLabel type="place" draft="unconfirmed">ᱡᱟᱭᱜᱟ</characterLabel>
+		<characterLabel type="plant" draft="unconfirmed">ᱫᱟᱨᱮ</characterLabel>
+		<characterLabel type="punctuation" draft="unconfirmed">ᱪᱤᱠᱷᱱᱟᱹ</characterLabel>
+		<characterLabel type="rightwards_arrows" draft="unconfirmed">ᱡᱚᱡᱚᱢ ᱛᱤ ᱯᱟᱦᱴᱟ ᱥᱟᱨ</characterLabel>
+		<characterLabel type="sign_standard_symbols" draft="unconfirmed">ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="small_form_variant" draft="unconfirmed">ᱱᱟᱥᱮ ᱧᱚᱜ ᱵᱷᱮᱜᱟᱨ</characterLabel>
+		<characterLabel type="smiley" draft="unconfirmed">ᱞᱟᱱᱫᱟᱤᱭᱟᱹ</characterLabel>
+		<characterLabel type="smileys_people" draft="unconfirmed">ᱞᱟᱱᱫᱟᱤᱭᱟᱹ ᱵᱟᱝᱠᱷᱟᱱ ᱦᱚᱲ</characterLabel>
+		<characterLabel type="south_asian_scripts" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱮᱥᱤᱭᱟ ᱨᱮᱭᱟᱜ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="southeast_asian_scripts" draft="unconfirmed">ᱠᱚᱸᱭᱮᱥᱟᱢᱟᱝ ᱮᱥᱤᱭᱟ ᱨᱮᱭᱟᱜ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="spacing" draft="unconfirmed">ᱥᱟᱫᱟ ᱡᱟᱭᱜᱟ</characterLabel>
+		<characterLabel type="sport" draft="unconfirmed">ᱠᱷᱮᱞ</characterLabel>
+		<characterLabel type="symbols" draft="unconfirmed">ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="technical_symbols" draft="unconfirmed">ᱴᱮᱠᱱᱤᱠᱟᱞ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="tone_marks" draft="unconfirmed">ᱥᱟᱰᱮ ᱪᱤᱱᱦᱟᱹ</characterLabel>
+		<characterLabel type="travel" draft="unconfirmed">ᱫᱟᱬᱟ</characterLabel>
+		<characterLabel type="travel_places" draft="unconfirmed">ᱡᱟᱭᱜᱟ ᱛᱮ ᱫᱟᱬᱟᱸ</characterLabel>
+		<characterLabel type="upwards_arrows" draft="unconfirmed">ᱪᱮᱛᱟᱱ ᱩᱫᱩᱜ</characterLabel>
+		<characterLabel type="variant_forms" draft="unconfirmed">ᱵᱷᱮᱜᱟᱨ</characterLabel>
+		<characterLabel type="vocalic_jamo" draft="unconfirmed">ᱣᱚᱠᱟᱞᱤᱠ ᱡᱟᱢᱚ</characterLabel>
+		<characterLabel type="weather" draft="unconfirmed">ᱦᱚᱭ ᱫᱟᱜ</characterLabel>
+		<characterLabel type="western_asian_scripts" draft="unconfirmed">ᱯᱟᱪᱮ ᱮᱥᱤᱭᱟ ᱨᱮᱭᱟᱜ ᱞᱤᱯᱤ</characterLabel>
+		<characterLabel type="whitespace" draft="unconfirmed">ᱥᱟᱫᱟ ᱡᱟᱭᱜᱟ</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<styleName type="ital" subtype="1" draft="unconfirmed">ᱩᱥᱟᱹᱨᱟᱹ ᱚᱞ</styleName>
+		<styleName type="opsz" subtype="12" draft="unconfirmed">ᱚᱞ</styleName>
+		<styleName type="opsz" subtype="72" draft="unconfirmed">ᱫᱮᱠᱷᱟᱣ</styleName>
+		<styleName type="slnt" subtype="0" draft="unconfirmed">ᱥᱤᱫᱷᱟᱹ</styleName>
+		<styleName type="slnt" subtype="12" draft="unconfirmed">ᱛᱤᱨᱪᱷᱟᱹ</styleName>
+		<styleName type="slnt" subtype="24" draft="unconfirmed">ᱰᱷᱮᱨ ᱛᱤᱨᱪᱷᱟᱹ</styleName>
+		<styleName type="wght" subtype="380" draft="unconfirmed">ᱯᱚᱛᱚᱵ</styleName>
+	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und sat</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

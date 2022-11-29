@@ -392,7 +392,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         // get free pointer (ie length in bytes)
         final int edgePtr = _edges.used;
 
-        // use substraction to avoid integer overflow:
+        // use subtraction to avoid integer overflow:
         if (_edges.length - edgePtr < _SIZEOF_EDGE_BYTES) {
             // suppose _edges.length > _SIZEOF_EDGE_BYTES
             // so doubling size is enough to add needed bytes
@@ -623,7 +623,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         blkFlags  = blkFlags_ref.putArray(blkFlags, 0, 0); // already zero filled
 
         if (edgeMinY != Integer.MAX_VALUE) {
-            // if context is maked as DIRTY:
+            // if context is marked as DIRTY:
             if (rdrCtx.dirty) {
                 // may happen if an exception if thrown in the pipeline processing:
                 // clear completely buckets arrays:
@@ -825,7 +825,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
 
         final int stroking = rdrCtx.stroking;
 
-        int lastY = -1; // last emited row
+        int lastY = -1; // last emitted row
 
 
         // Iteration on scanlines

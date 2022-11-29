@@ -28,7 +28,8 @@
  * @bug 8280152
  * @library /test/lib
  *
- * @requires vm.debug & os.arch=="aarch64"
+ * @requires os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires vm.debug
  *
  * @run driver compiler.sharedstubs.SharedTrampolineTest
  */

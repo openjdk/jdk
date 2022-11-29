@@ -25,11 +25,7 @@
 
 package com.sun.hotspot.igv.data;
 
-import com.sun.hotspot.igv.data.Properties.InvertPropertyMatcher;
-import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
-import com.sun.hotspot.igv.data.Properties.PropertySelector;
-import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
-import com.sun.hotspot.igv.data.Properties.StringPropertyMatcher;
+import com.sun.hotspot.igv.data.Properties.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;

@@ -32,9 +32,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 #include "interpreter/bytecodes.hpp"
-#include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
-#include "logging/logTag.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"

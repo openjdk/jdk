@@ -28,12 +28,12 @@
 #pragma alloca
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -997,8 +997,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return ".so"; }
 
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.

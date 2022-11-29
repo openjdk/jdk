@@ -820,11 +820,13 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       // an InvalidInstalledCodeException.
       HotSpotJVMCI::InstalledCode::set_address(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
+      HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
     } else if (nm->is_not_entrant()) {
       // Zero the entry point so any new invocation will fail but keep
       // the address link around that so that existing activations can
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
+      HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
     }
   }
 
@@ -1580,14 +1582,10 @@ void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool c
     const char* exception_file = THREAD->exception_file();
     int exception_line = THREAD->exception_line();
     CLEAR_PENDING_EXCEPTION;
-    if (exception->is_a(vmClasses::ThreadDeath_klass())) {
-      // Don't print anything if we are being killed.
-    } else {
-      java_lang_Throwable::print_stack_trace(exception, tty);
+    java_lang_Throwable::print_stack_trace(exception, tty);
 
-      // Clear and ignore any exceptions raised during printing
-      CLEAR_PENDING_EXCEPTION;
-    }
+    // Clear and ignore any exceptions raised during printing
+    CLEAR_PENDING_EXCEPTION;
     if (!clear) {
       THREAD->set_pending_exception(exception(), exception_file, exception_line);
     }

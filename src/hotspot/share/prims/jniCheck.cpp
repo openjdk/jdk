@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"

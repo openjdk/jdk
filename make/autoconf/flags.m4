@@ -342,6 +342,7 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
       AC_MSG_CHECKING([if @file is supported by gcc])
       # Extra empty "" to prevent ECHO from interpreting '--version' as argument
       $ECHO "" "--version" > command.file
+      # Redirect stderr and stdout to config.log (AS_MESSAGE_LOG_FD) via merge
       if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
         AC_MSG_RESULT(yes)
         COMPILER_COMMAND_FILE_FLAG="@"

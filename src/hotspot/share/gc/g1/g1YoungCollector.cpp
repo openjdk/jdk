@@ -290,7 +290,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1SegmentedArrayMemoryStats _card_set_stats;
+    G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
@@ -404,7 +404,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1SegmentedArrayMemoryStats card_set_stats() const {
+    G1MonotonicArenaMemoryStats card_set_stats() const {
       return _card_set_stats;
     }
   };
@@ -414,7 +414,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
-  G1SegmentedArrayMemoryStats _all_card_set_stats;
+  G1MonotonicArenaMemoryStats _all_card_set_stats;
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
@@ -448,7 +448,7 @@ public:
     return _humongous_total;
   }
 
-  const G1SegmentedArrayMemoryStats all_card_set_stats() const {
+  const G1MonotonicArenaMemoryStats all_card_set_stats() const {
     return _all_card_set_stats;
   }
 };
@@ -467,6 +467,16 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
+void G1YoungCollector::flush_dirty_card_queues() {
+  Ticks start = Ticks::now();
+  G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+  size_t old_cards = qset.num_cards();
+  qset.concatenate_logs();
+  size_t added_cards = qset.num_cards() - old_cards;
+  Tickspan concat_time = Ticks::now() - start;
+  policy()->record_concatenate_dirty_card_logs(concat_time, added_cards);
+}
+
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
@@ -483,14 +493,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
     phase_times()->record_prepare_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
-  {
-    // Flush dirty card queues to qset, so later phases don't need to account
-    // for partially filled per-thread queues and such.
-    Ticks start = Ticks::now();
-    G1BarrierSet::dirty_card_queue_set().concatenate_logs();
-    Tickspan dt = Ticks::now() - start;
-    phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
-  }
+  // Flush dirty card queues to qset, so later phases don't need to account
+  // for partially filled per-thread queues and such.
+  flush_dirty_card_queues();
 
   hot_card_cache()->reset_hot_cache_claimed_index();
 
@@ -1021,11 +1026,9 @@ public:
   }
 };
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
-                                   double target_pause_time_ms) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
-  _target_pause_time_ms(target_pause_time_ms),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {
@@ -1070,7 +1073,7 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    calculate_collection_set(jtm.evacuation_info(), _target_pause_time_ms);
+    calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
 
     G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
     G1PreservedMarksSet preserved_marks_set(workers()->active_workers());

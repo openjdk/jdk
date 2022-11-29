@@ -61,7 +61,7 @@ final class MergeSort {
         // Merge sorted parts (auxX/auxY) into x/y arrays
         if ((insertionSortIndex == 0)
             || (auxX[insertionSortIndex - 1] <= auxX[insertionSortIndex])) {
-            // 34 occurences
+            // 34 occurrences
             // no initial left part or both sublists (auxX, auxY) are sorted:
             // copy back data into (x, y):
             System.arraycopy(auxX, 0, x, 0, toIndex);
@@ -134,7 +134,7 @@ final class MergeSort {
 
         // If arrays are inverted ie all(A) > all(B) do swap A and B to dst
         if (srcX[high - 1] <= srcX[low]) {
-            // 1561 occurences
+            // 1561 occurrences
             final int left = mid - low;
             final int right = high - mid;
             final int off = (left != right) ? 1 : 0;
@@ -149,7 +149,7 @@ final class MergeSort {
         // If arrays are already sorted, just copy from src to dest.  This is an
         // optimization that results in faster sorts for nearly ordered lists.
         if (srcX[mid - 1] <= srcX[mid]) {
-            // 14 occurences
+            // 14 occurrences
             System.arraycopy(srcX, low, dstX, low, length);
             System.arraycopy(srcY, low, dstY, low, length);
             return;

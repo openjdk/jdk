@@ -237,7 +237,7 @@ void TemplateTable::sipush() {
   __ get_2_byte_integer_at_bcp(1, R17_tos, InterpreterMacroAssembler::Signed);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   Register Rscratch1 = R11_scratch1,
            Rscratch2 = R12_scratch2,
            Rcpool    = R3_ARG1;
@@ -246,7 +246,7 @@ void TemplateTable::ldc(bool wide) {
   Label notInt, notFloat, notClass, exit;
 
   __ get_cpool_and_tags(Rcpool, Rscratch2); // Set Rscratch2 = &tags.
-  if (wide) { // Read index.
+  if (is_ldc_wide(type)) { // Read index.
     __ get_2_byte_integer_at_bcp(1, Rscratch1, InterpreterMacroAssembler::Unsigned);
   } else {
     __ lbz(Rscratch1, 1, R14_bcp);
@@ -268,7 +268,7 @@ void TemplateTable::ldc(bool wide) {
   __ crnor(CCR0, Assembler::equal, CCR1, Assembler::equal); // Neither resolved class nor unresolved case from above?
   __ beq(CCR0, notClass);
 
-  __ li(R4, wide ? 1 : 0);
+  __ li(R4, is_ldc_wide(type) ? 1 : 0);
   call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), R4);
   __ push(atos);
   __ b(exit);
@@ -301,10 +301,10 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label is_null;
 
   // We are resolved if the resolved reference cache entry contains a

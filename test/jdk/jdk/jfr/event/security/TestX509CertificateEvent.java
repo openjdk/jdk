@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.jfr.event.security;
 
-import java.security.cert.CertificateFactory;
 import java.util.List;
 
 import jdk.jfr.Recording;
@@ -31,35 +30,63 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+import jdk.test.lib.jfr.VoidFunction;
 import jdk.test.lib.security.TestCertificate;
 
 /*
  * @test
- * @bug 8148188
+ * @bug 8148188 8292033
  * @summary Enhance the security libraries to record events of interest
  * @key jfr
  * @requires vm.hasJFR
+ * @modules java.base/sun.security.x509 java.base/sun.security.tools.keytool
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.security.TestX509CertificateEvent
  */
 public class TestX509CertificateEvent {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
+        testCall(() -> {
+            // test regular cert construction
+            TestCertificate.ONE.certificate();
+            TestCertificate.TWO.certificate();
+            // Generate twice to make sure we (now) capture all generate cert events
+            TestCertificate.ONE.certificate();
+            TestCertificate.TWO.certificate();
+        }, 4, true);
+
+        testCall(() -> {
+            // test generateCertificates method
+            TestCertificate.certificates();
+        }, 2, true);
+
+        testCall(() -> {
+            // test generateCertPath method
+            TestCertificate.certPath();
+        }, 4, true);
+
+        testCall(() -> {
+            // test keytool cert generation with JFR enabled
+            // The keytool test will load the dedicated keystore
+            // and call CertificateFactory.generateCertificate
+            // cacerts
+            TestCertificate.keyToolTest();
+        }, -1, false);
+    }
+
+    private static void testCall(VoidFunction f, int expected, boolean runAsserts) throws Throwable {
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.X509Certificate);
             recording.start();
-
-            TestCertificate.ONE.certificate();
-            TestCertificate.TWO.certificate();
-            // Generate twice to make sure only one event per certificate is generated
-            TestCertificate.ONE.certificate();
-            TestCertificate.TWO.certificate();
-
+            f.run();
             recording.stop();
-
             List<RecordedEvent> events = Events.fromRecording(recording);
-            Asserts.assertEquals(events.size(), 2, "Incorrect number of X509Certificate events");
-            assertEvent(events, TestCertificate.ONE);
-            assertEvent(events, TestCertificate.TWO);
+            if (expected >= 0) {
+                Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
+            }
+            if (runAsserts) {
+                assertEvent(events, TestCertificate.ONE);
+                assertEvent(events, TestCertificate.TWO);
+            }
         }
     }
 

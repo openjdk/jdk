@@ -65,11 +65,13 @@ public class TestDockerCpuMetrics {
                 testCpuSet((((numCpus - 1) / 2) + 1) + "-" + (numCpus - 1));
             }
             testCpuSet(IntStream.range(0, numCpus).mapToObj(a -> Integer.toString(a)).collect(Collectors.joining(",")));
+            testCpuSet("0", true /* additional cgroup fs mount */);
 
             testCpuQuota(50 * 1000, 100 * 1000);
             testCpuQuota(100 * 1000, 100 * 1000);
             testCpuQuota(150 * 1000, 100 * 1000);
             testCpuQuota(400 * 1000, 100 * 1000);
+            testCpuQuota(200 * 1000, 100 * 1000, true /* additional cgroup fs mount */);
 
             testCpuShares(256);
             testCpuShares(2048);
@@ -108,10 +110,18 @@ public class TestDockerCpuMetrics {
     }
 
     private static void testCpuSet(String value) throws Exception {
+        testCpuSet(value, false);
+    }
+
+    private static void testCpuSet(String value, boolean addCgroupMount) throws Exception {
         Common.logNewTestCase("testCpuSet, value = " + value);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
+            opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
+        }
         opts.addJavaOpts("-cp", "/test-classes/");
         opts.addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
         opts.addClassOptions("cpusets", value);
@@ -120,10 +130,18 @@ public class TestDockerCpuMetrics {
     }
 
     private static void testCpuQuota(long quota, long period) throws Exception {
+        testCpuQuota(quota, period, false);
+    }
+
+    private static void testCpuQuota(long quota, long period, boolean addCgroupMount) throws Exception {
         Common.logNewTestCase("testCpuQuota, quota = " + quota + ", period = " + period);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
+            opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
+        }
         opts.addDockerOpts("--cpu-period=" + period).addDockerOpts("--cpu-quota=" + quota);
         opts.addJavaOpts("-cp", "/test-classes/").addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
         opts.addClassOptions("cpuquota", quota + "", period + "");

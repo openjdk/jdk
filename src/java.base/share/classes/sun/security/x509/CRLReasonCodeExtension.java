@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.cert.CRLReason;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -38,16 +36,10 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  * @see java.security.cert.CRLReason
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLReasonCodeExtension extends Extension
-        implements CertAttrSet<String> {
+public class CRLReasonCodeExtension extends Extension {
 
-    /**
-     * Attribute name
-     */
     public static final String NAME = "CRLReasonCode";
-    public static final String REASON = "reason";
 
     private static final CRLReason[] values = CRLReason.values();
 
@@ -105,47 +97,6 @@ public class CRLReasonCodeExtension extends Extension
     }
 
     /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Integer)) {
-            throw new IOException("Attribute must be of type Integer.");
-        }
-        if (name.equalsIgnoreCase(REASON)) {
-            reasonCode = ((Integer)obj).intValue();
-        } else {
-            throw new IOException
-                ("Name not supported by CRLReasonCodeExtension");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Integer get(String name) throws IOException {
-        if (name.equalsIgnoreCase(REASON)) {
-            return reasonCode;
-        } else {
-            throw new IOException
-                ("Name not supported by CRLReasonCodeExtension");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(REASON)) {
-            reasonCode = 0;
-        } else {
-            throw new IOException
-                ("Name not supported by CRLReasonCodeExtension");
-        }
-        encodeThis();
-    }
-
-    /**
      * Returns a printable representation of the Reason code.
      */
     public String toString() {
@@ -158,32 +109,21 @@ public class CRLReasonCodeExtension extends Extension
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream  tmp = new DerOutputStream();
-
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.ReasonCode_Id;
             this.critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(REASON);
-
-        return elements.elements();
-    }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -198,5 +138,9 @@ public class CRLReasonCodeExtension extends Extension
         } else {
             return CRLReason.UNSPECIFIED;
         }
+    }
+
+    public int getReason() {
+        return reasonCode;
     }
 }

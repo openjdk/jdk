@@ -29,7 +29,7 @@
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "utilities/growableArray.hpp"
 
-class ShenandoahBarrierSetC2State : public ResourceObj {
+class ShenandoahBarrierSetC2State : public ArenaObj {
 private:
   GrowableArray<ShenandoahIUBarrierNode*>* _iu_barriers;
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
@@ -112,6 +112,7 @@ public:
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
   // Support for GC barriers emitted during parsing
+  virtual bool is_gc_pre_barrier_node(Node* node) const;
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
@@ -138,7 +139,7 @@ public:
 #endif
 
   virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const;
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const;
+  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const;
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const;
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const;

@@ -31,6 +31,7 @@ import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.net.http.HttpClient;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -61,15 +62,24 @@ public class ReferenceTracker {
         return diagnose(warnings, (t) -> t.getOutstandingHttpOperations() > 0);
     }
 
+    public StringBuilder diagnose(Tracker tracker, StringBuilder warnings, Predicate<Tracker> hasOutstanding) {
+        checkOutstandingOperations(warnings, tracker, hasOutstanding);
+        return warnings;
+    }
+
     public StringBuilder diagnose(StringBuilder warnings, Predicate<Tracker> hasOutstanding) {
         for (Tracker tracker : TRACKERS) {
-            checkOutstandingOperations(warnings, tracker, hasOutstanding);
+            diagnose(tracker, warnings, hasOutstanding);
         }
         return warnings;
     }
 
     public boolean hasOutstandingOperations() {
         return TRACKERS.stream().anyMatch(t -> t.getOutstandingOperations() > 0);
+    }
+
+    public boolean hasOutstandingSubscribers() {
+        return TRACKERS.stream().anyMatch(t -> t.getOutstandingSubscribers() > 0);
     }
 
     public long getOutstandingOperationsCount() {
@@ -86,10 +96,24 @@ public class ReferenceTracker {
                 .count();
     }
 
+    public AssertionError check(Tracker tracker, long graceDelayMs) {
+        Predicate<Tracker> hasOperations = (t) -> t.getOutstandingOperations() > 0;
+        Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
+        return check(tracker, graceDelayMs,
+                hasOperations.or(hasSubscribers)
+                        .or(Tracker::isFacadeReferenced)
+                        .or(Tracker::isSelectorAlive),
+                "outstanding operations or unreleased resources", false);
+    }
+
     public AssertionError check(long graceDelayMs) {
+        Predicate<Tracker> hasOperations = (t) -> t.getOutstandingOperations() > 0;
+        Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
         return check(graceDelayMs,
-                (t) -> t.getOutstandingHttpOperations() > 0,
-                "outstanding operations", true);
+                hasOperations.or(hasSubscribers)
+                .or(Tracker::isFacadeReferenced)
+                .or(Tracker::isSelectorAlive),
+        "outstanding operations or unreleased resources", true);
     }
 
     // This method is copied from ThreadInfo::toString, but removes the
@@ -173,6 +197,49 @@ public class ReferenceTracker {
                 .forEach(out::println);
     }
 
+    public Tracker getTracker(HttpClient client) {
+        return OperationTrackers.getTracker(Objects.requireNonNull(client));
+    }
+
+    public AssertionError check(Tracker tracker,
+                                long graceDelayMs,
+                                Predicate<Tracker> hasOutstanding,
+                                String description,
+                                boolean printThreads) {
+        AssertionError fail = null;
+        graceDelayMs = Math.max(graceDelayMs, 100);
+        long delay = Math.min(graceDelayMs, 10);
+        var count = delay > 0 ? graceDelayMs / delay : 1;
+        for (int i = 0; i < count; i++) {
+            if (hasOutstanding.test(tracker)) {
+                System.gc();
+                try {
+                    if (i == 0) {
+                        System.out.println("Waiting for HTTP operations to terminate...");
+                    }
+                    Thread.sleep(Math.min(graceDelayMs, Math.max(delay, 1)));
+                } catch (InterruptedException x) {
+                    // OK
+                }
+            } else break;
+        }
+        if (hasOutstanding.test(tracker)) {
+            StringBuilder warnings = diagnose(tracker, new StringBuilder(), hasOutstanding);
+            if (hasOutstanding.test(tracker)) {
+                fail = new AssertionError(warnings.toString());
+            }
+        } else {
+            System.out.println("PASSED: No " + description + " found in " + tracker.getName());
+        }
+        if (fail != null) {
+            if (printThreads && tracker.isSelectorAlive()) {
+                printThreads("Some selector manager threads are still alive: ", System.out);
+                printThreads("Some selector manager threads are still alive: ", System.err);
+            }
+        }
+        return fail;
+    }
+
     public AssertionError check(long graceDelayMs,
                                 Predicate<Tracker> hasOutstanding,
                                 String description,
@@ -243,6 +310,7 @@ public class ReferenceTracker {
             warning.append("\n\tPending HTTP/2 streams: " + tracker.getOutstandingHttp2Streams());
             warning.append("\n\tPending WebSocket operations: " + tracker.getOutstandingWebSocketOperations());
             warning.append("\n\tPending TCP connections: " + tracker.getOutstandingTcpConnections());
+            warning.append("\n\tPending Subscribers: " + tracker.getOutstandingSubscribers());
             warning.append("\n\tTotal pending operations: " + tracker.getOutstandingOperations());
             warning.append("\n\tFacade referenced: " + tracker.isFacadeReferenced());
             warning.append("\n\tSelector alive: " + tracker.isSelectorAlive());
@@ -267,8 +335,11 @@ public class ReferenceTracker {
         Predicate<Tracker> isAlive = Tracker::isSelectorAlive;
         Predicate<Tracker> hasPendingRequests = (t) -> t.getOutstandingHttpRequests() > 0;
         Predicate<Tracker> hasPendingConnections = (t) -> t.getOutstandingTcpConnections() > 0;
+        Predicate<Tracker> hasPendingSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
         AssertionError failed = check(graceDelayMs,
-                isAlive.or(hasPendingRequests).or(hasPendingConnections),
+                isAlive.or(hasPendingRequests)
+                        .or(hasPendingConnections)
+                        .or(hasPendingSubscribers),
                 "outstanding unclosed resources", true);
         return failed;
     }

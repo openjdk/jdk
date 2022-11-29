@@ -335,7 +335,7 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         } catch (Error e) {
             // Pass through an Error, including BootstrapMethodError, any other
             // form of linkage error, such as IllegalAccessError if the bootstrap
-            // method is inaccessible, or say ThreadDeath/OutOfMemoryError
+            // method is inaccessible, or say OutOfMemoryError
             // See the "Linking Exceptions" section for the invokedynamic
             // instruction in JVMS 6.5.
             throw e;

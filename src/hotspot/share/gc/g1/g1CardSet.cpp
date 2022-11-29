@@ -41,6 +41,17 @@ G1CardSet::ContainerPtr G1CardSet::FullCardSet = (G1CardSet::ContainerPtr)-1;
 uint G1CardSet::_split_card_shift = 0;
 size_t G1CardSet::_split_card_mask = 0;
 
+class G1CardSetHashTableConfig : public StackObj {
+public:
+  using Value = G1CardSetHashTableValue;
+
+  static uintx get_hash(Value const& value, bool* is_dead);
+  static void* allocate_node(void* context, size_t size, Value const& value);
+  static void free_node(void* context, void* memory, Value const& value);
+};
+
+using CardSetHash = ConcurrentHashTable<G1CardSetHashTableConfig, mtGCCardSet>;
+
 static uint default_log2_card_regions_per_region() {
   uint log2_card_regions_per_heap_region = 0;
 
@@ -241,7 +252,7 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   public:
     explicit G1CardSetHashTableLookUp(uint region_idx) : _region_idx(region_idx) { }
 
-    uintx get_hash() const { return _region_idx; }
+    uintx get_hash() const { return G1CardSetHashTable::get_hash(_region_idx); }
 
     bool equals(G1CardSetHashTableValue* value, bool* is_dead) {
       *is_dead = false;
@@ -307,6 +318,10 @@ public:
     return found.value();
   }
 
+  static uint get_hash(uint region_idx) {
+    return region_idx;
+  }
+
   G1CardSetHashTableValue* get(uint region_idx) {
     G1CardSetHashTableLookUp lookup(region_idx);
     G1CardSetHashTableFound found;
@@ -344,6 +359,11 @@ public:
 
   size_t log_table_size() { return _table.get_size_log2(Thread::current()); }
 };
+
+uintx G1CardSetHashTableConfig::get_hash(Value const& value, bool* is_dead) {
+  *is_dead = false;
+  return G1CardSetHashTable::get_hash(value._region_idx);
+}
 
 void* G1CardSetHashTableConfig::allocate_node(void* context, size_t size, Value const& value) {
   G1CardSetMemoryManager* mm = (G1CardSetMemoryManager*)context;

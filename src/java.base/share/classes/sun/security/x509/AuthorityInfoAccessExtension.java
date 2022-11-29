@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import java.util.*;
 
@@ -60,24 +59,11 @@ import sun.security.util.DerValue;
  * </pre>
  *
  * @see Extension
- * @see CertAttrSet
  */
 
-public class AuthorityInfoAccessExtension extends Extension
-        implements CertAttrSet<String> {
+public class AuthorityInfoAccessExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.AuthorityInfoAccess";
-
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "AuthorityInfoAccess";
-    public static final String DESCRIPTIONS = "descriptions";
 
     /**
      * The List of AccessDescription objects.
@@ -137,8 +123,9 @@ public class AuthorityInfoAccessExtension extends Extension
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -149,73 +136,17 @@ public class AuthorityInfoAccessExtension extends Extension
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
             this.critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with an instanceof check
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            accessDescriptions = (List<AccessDescription>)obj;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public List<AccessDescription> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            return accessDescriptions;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions = new ArrayList<>();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DESCRIPTIONS);
-        return elements.elements();
-    }
-
-     // Encode this extension value
+    // Encode this extension value
     private void encodeThis() throws IOException {
         if (accessDescriptions.isEmpty()) {
             this.extensionValue = null;

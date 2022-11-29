@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.DerValue;
 import sun.security.util.DerOutputStream;
@@ -58,16 +56,10 @@ import sun.security.util.DerOutputStream;
  * @author Sean Mullan
  * @since 1.5
  * @see Extension
- * @see CertAttrSet
  */
-public class CertificateIssuerExtension extends Extension
-    implements CertAttrSet<String> {
+public class CertificateIssuerExtension extends Extension {
 
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "CertificateIssuer";
-    public static final String ISSUER = "issuer";
 
     private GeneralNames names;
 
@@ -117,52 +109,8 @@ public class CertificateIssuerExtension extends Extension
         this.names = new GeneralNames(val);
     }
 
-    /**
-     * Set the attribute value.
-     *
-     * @throws IOException on error
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER)) {
-            if (!(obj instanceof GeneralNames)) {
-                throw new IOException("Attribute value must be of type " +
-                    "GeneralNames");
-            }
-            this.names = (GeneralNames)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:CertificateIssuer");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Gets the attribute value.
-     *
-     * @throws IOException on error
-     */
-    public GeneralNames get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER)) {
-            return names;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:CertificateIssuer");
-        }
-    }
-
-    /**
-     * Deletes the attribute value.
-     *
-     * @throws IOException on error
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER)) {
-            names = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:CertificateIssuer");
-        }
-        encodeThis();
+    public GeneralNames getNames() {
+        return names;
     }
 
     /**
@@ -176,33 +124,24 @@ public class CertificateIssuerExtension extends Extension
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to
+     * @param out the DerOutputStream to write the extension to
      * @exception IOException on encoding errors
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream  tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.CertificateIssuer_Id;
             critical = true;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(ISSUER);
-        return elements.elements();
-    }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return NAME;
     }
