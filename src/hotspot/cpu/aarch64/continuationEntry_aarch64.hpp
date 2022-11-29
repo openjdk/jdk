@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <jni.h>
-#include <stdio.h>
+#ifndef CPU_AARCH64_CONTINUATIONENTRY_AARCH64_HPP
+#define CPU_AARCH64_CONTINUATIONENTRY_AARCH64_HPP
 
-void reduceLocalCapacity(JNIEnv* env) {
-    puts("reduceLocalCapacity: setting to 1");
-    (*env)->EnsureLocalCapacity(env,1);
-}
+class ContinuationEntryPD {
+  // empty
+};
 
-JNIEXPORT void JNICALL
-Java_TestCheckedEnsureLocalCapacity_ensureCapacity(JNIEnv *env,
-                                                   jobject unused,
-                                                   jobject target,
-                                                   jint capacity,
-                                                   jint copies) {
-  int i;
-  printf("ensureCapacity: setting to %d\n", capacity);
-  (*env)->EnsureLocalCapacity(env, capacity); // set high
-  reduceLocalCapacity(env);     // sets low
-
-  printf("ensureCapacity: creating %d LocalRefs\n", copies);
-  for (i = 0; i < copies; i++) {
-    target = (*env)->NewLocalRef(env, target);
-  }
-
-  puts("ensureCapacity: done");
-}
+#endif // CPU_AARCH64_CONTINUATIONENTRY_AARCH64_HPP
