@@ -115,7 +115,8 @@ public class LocalVariableTableWriter extends  InstructionDetailWriter {
                     print(" local ");
                     print(entry.slot());
                     print(" // ");
-                    print(classWriter.sigPrinter.print(Signature.parseFrom(entry.type().stringValue())));
+                    print(classWriter.sigPrinter.print(
+                            Signature.parseFrom(entry.type().stringValue())));
                     print(" ");
                     print(entry.name().stringValue());
                     println();

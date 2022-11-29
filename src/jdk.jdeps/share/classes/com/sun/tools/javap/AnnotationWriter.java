@@ -99,13 +99,16 @@ public class AnnotationWriter extends BasicWriter {
         indent(-1);
     }
 
-    public void write(TypeAnnotation annot, boolean showOffsets, boolean resolveIndices, CodeAttribute lr) {
+    public void write(TypeAnnotation annot, boolean showOffsets,
+            boolean resolveIndices, CodeAttribute lr) {
         write(annot, resolveIndices);
         print(": ");
         write(annot.targetInfo(), annot.targetPath(), showOffsets, lr);
     }
 
-    public void write(TypeAnnotation.TargetInfo targetInfo, List<TypeAnnotation.TypePathComponent> targetPath, boolean showOffsets, CodeAttribute lr) {
+    public void write(TypeAnnotation.TargetInfo targetInfo,
+            List<TypeAnnotation.TypePathComponent> targetPath,
+            boolean showOffsets, CodeAttribute lr) {
         print(targetInfo.targetType());
 
         switch (targetInfo) {
@@ -178,15 +181,17 @@ public class AnnotationWriter extends BasicWriter {
                 // Do nothing
             }
             default ->
-                throw new AssertionError("AnnotationWriter: Unhandled target type: " + targetInfo.getClass());
+                throw new AssertionError("AnnotationWriter: Unhandled target type: "
+                        + targetInfo.getClass());
         }
 
         // Append location data for generics/arrays.
         if (!targetPath.isEmpty()) {
             print(", location=");
-            print(targetPath.stream().map(tp ->
-                tp.typePathKind().toString() +
-                        (tp.typePathKind() == TypeAnnotation.TypePathComponent.Kind.TYPE_ARGUMENT ? ("(" + tp.typeArgumentIndex() + ")") : "")).toList());
+            print(targetPath.stream().map(tp -> tp.typePathKind().toString() +
+                    (tp.typePathKind() == TypeAnnotation.TypePathComponent.Kind.TYPE_ARGUMENT
+                            ? ("(" + tp.typeArgumentIndex() + ")")
+                            : "")).toList());
         }
     }
 
@@ -266,7 +271,8 @@ public class AnnotationWriter extends BasicWriter {
                     print(".");
                     writeIndex(ev.constantName(), resolveIndices);
                 } else {
-                    print(ev.tag() + "#" + ev.className().index() + ".#" + ev.constantName().index());
+                    print(ev.tag() + "#" + ev.className().index() + ".#"
+                            + ev.constantName().index());
                 }
             }
             case AnnotationValue.OfClass ev -> {

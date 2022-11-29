@@ -62,7 +62,8 @@ public class StackMapWriter extends InstructionDetailWriter {
     }
 
     void setStackMap(CodeAttribute code) {
-        StackMapTableAttribute attr = code.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
+        StackMapTableAttribute attr = code.findAttribute(Attributes.STACK_MAP_TABLE)
+                .orElse(null);
         if (attr == null) {
             map = null;
             return;
@@ -101,7 +102,8 @@ public class StackMapWriter extends InstructionDetailWriter {
 
     }
 
-    void print(String label, List<StackMapTableAttribute.VerificationTypeInfo> entries, boolean firstThis) {
+    void print(String label, List<StackMapTableAttribute.VerificationTypeInfo> entries,
+            boolean firstThis) {
         print(label);
         for (var e : entries) {
             print(" ");

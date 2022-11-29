@@ -128,7 +128,8 @@ public class CodeWriter extends BasicWriter {
             case InvokeDynamicInstruction instr ->
                 printConstantPoolRefAndValue(instr.invokedynamic(), 0);
             case InvokeInstruction instr -> {
-                if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC) printConstantPoolRefAndValue(instr.method(), instr.count());
+                if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC)
+                    printConstantPoolRefAndValue(instr.method(), instr.count());
                 else printConstantPoolRef(instr.method());
             }
             case LoadInstruction instr ->
@@ -142,7 +143,8 @@ public class CodeWriter extends BasicWriter {
                 print("{ // " + cases.size());
                 indent(indent);
                 for (var c : cases)
-                    print(String.format("%n%12d: %d", c.caseValue(), lr.labelToBci(c.target())));
+                    print(String.format("%n%12d: %d", c.caseValue(),
+                            lr.labelToBci(c.target())));
                 print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
                 indent(-indent);
             }
@@ -157,9 +159,11 @@ public class CodeWriter extends BasicWriter {
             case TableSwitchInstruction instr -> {
                 print("{ // " + instr.lowValue() + " to " + instr.highValue());
                 indent(indent);
-                var caseMap = instr.cases().stream().collect(Collectors.toMap(SwitchCase::caseValue, SwitchCase::target));
+                var caseMap = instr.cases().stream().collect(
+                        Collectors.toMap(SwitchCase::caseValue, SwitchCase::target));
                 for (int i = instr.lowValue(); i <= instr.highValue(); i++)
-                    print(String.format("%n%12d: %d", i, lr.labelToBci(caseMap.getOrDefault(i, instr.defaultTarget()))));
+                    print(String.format("%n%12d: %d", i,
+                            lr.labelToBci(caseMap.getOrDefault(i, instr.defaultTarget()))));
                 print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
                 indent(-indent);
             }
@@ -192,7 +196,9 @@ public class CodeWriter extends BasicWriter {
             println(" from    to  target type");
             for (var handler : excTable) {
                 print(String.format(" %5d %5d %5d",
-                        attr.labelToBci(handler.tryStart()), attr.labelToBci(handler.tryEnd()), attr.labelToBci(handler.handler())));
+                        attr.labelToBci(handler.tryStart()),
+                        attr.labelToBci(handler.tryEnd()),
+                        attr.labelToBci(handler.handler())));
                 print("   ");
                 var catch_type = handler.catchType();
                 if (catch_type.isEmpty()) {

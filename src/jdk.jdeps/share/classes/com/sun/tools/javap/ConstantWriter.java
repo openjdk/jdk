@@ -75,12 +75,14 @@ public class ConstantWriter extends BasicWriter {
                     println(stringValue(info));
                 }
                 case MemberRefEntry info -> {
-                    print("#" + info.owner().index() + ".#" + info.nameAndType().index());
+                    print("#" + info.owner().index() + ".#"
+                            + info.nameAndType().index());
                     tab();
                     println("// " + stringValue(info));
                 }
                 case DynamicConstantPoolEntry info -> {
-                    print("#" + info.bootstrap().bsmIndex() + ":#" + info.nameAndType().index());
+                    print("#" + info.bootstrap().bsmIndex() + ":#"
+                            + info.nameAndType().index());
                     tab();
                     println("// " + stringValue(info));
                 }
@@ -114,7 +116,8 @@ public class ConstantWriter extends BasicWriter {
                     tab();
                     println("// " + stringValue(info));
                 }
-                default -> throw new IllegalArgumentException("unknown entry: " + cpInfo);
+                default ->
+                    throw new IllegalArgumentException("unknown entry: "+ cpInfo);
             }
             cpx += cpInfo.poolEntries();
         }
@@ -191,7 +194,8 @@ public class ConstantWriter extends BasicWriter {
     }
 
     String booleanValue(int constant_pool_index) {
-        var info = classWriter.getClassModel().constantPool().entryByIndex(constant_pool_index);
+        var info = classWriter.getClassModel().constantPool()
+                .entryByIndex(constant_pool_index);
         if (info instanceof IntegerEntry ie) {
            switch (ie.intValue()) {
                case 0: return "false";
@@ -211,7 +215,8 @@ public class ConstantWriter extends BasicWriter {
     }
 
     String charValue(int constant_pool_index) {
-        var info = classWriter.getClassModel().constantPool().entryByIndex(constant_pool_index);
+        var info = classWriter.getClassModel().constantPool()
+                .entryByIndex(constant_pool_index);
         if (info instanceof IntegerEntry ie) {
             int value = ie.intValue();
             return String.valueOf((char) value);
@@ -221,20 +226,24 @@ public class ConstantWriter extends BasicWriter {
     }
 
     String stringValue(int constant_pool_index) {
-        return stringValue(classWriter.getClassModel().constantPool().entryByIndex(constant_pool_index));
+        return stringValue(classWriter.getClassModel().constantPool()
+                .entryByIndex(constant_pool_index));
     }
 
     String stringValue(PoolEntry cpInfo) {
         return switch (cpInfo) {
             case ClassEntry info -> checkName(info.asInternalName());
             case DoubleEntry info -> info.doubleValue() + "d";
-            case MemberRefEntry info -> checkName(info.owner().asInternalName()) + '.' + stringValue(info.nameAndType());
+            case MemberRefEntry info -> checkName(info.owner().asInternalName())
+                + '.' + stringValue(info.nameAndType());
             case FloatEntry info -> info.floatValue()+ "f";
             case IntegerEntry info -> String.valueOf(info.intValue());
-            case DynamicConstantPoolEntry info -> "#" + info.bootstrap().bsmIndex() + ":" + stringValue(info.nameAndType());
+            case DynamicConstantPoolEntry info -> "#" + info.bootstrap().bsmIndex()
+                + ":" + stringValue(info.nameAndType());
             case LongEntry info -> info.longValue()+ "l";
             case ModuleEntry info -> checkName(info.name().stringValue());
-            case NameAndTypeEntry info -> checkName(info.name().stringValue()) + ':' + info.type().stringValue();
+            case NameAndTypeEntry info -> checkName(info.name().stringValue())
+                + ':' + info.type().stringValue();
             case PackageEntry info -> checkName(info.name().stringValue());
             case MethodHandleEntry info -> {
                 String kind = switch (info.asSymbol().kind()) {
@@ -264,7 +273,8 @@ public class ConstantWriter extends BasicWriter {
                         case '\"' -> "\\\"";
                         case '\'' -> "\\\'";
                         case '\\' -> "\\\\";
-                        default -> Character.isISOControl(c) ? String.format("\\u%04x", (int) c) : c;
+                        default -> Character.isISOControl(c)
+                                ? String.format("\\u%04x", (int) c) : c;
                     });
                 }
                 yield sb.toString();

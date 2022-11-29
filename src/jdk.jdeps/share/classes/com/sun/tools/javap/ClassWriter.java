@@ -124,7 +124,8 @@ public class ClassWriter extends BasicWriter {
                 Date lm = new Date(lastModified);
                 DateFormat df = DateFormat.getDateInstance();
                 if (size > 0) {
-                    println("Last modified " + df.format(lm) + "; size " + size + " bytes");
+                    println("Last modified " + df.format(lm) + "; size " + size
+                            + " bytes");
                 } else {
                     println("Last modified " + df.format(lm));
                 }
@@ -179,7 +180,8 @@ public class ClassWriter extends BasicWriter {
         var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
         if (sigAttr == null) {
             // use info from class file header
-            if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0 && classModel.superclass().isPresent()) {
+            if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
+                    && classModel.superclass().isPresent()) {
                 String sn = getJavaName(classModel.superclass().get().asInternalName());
                 if (!sn.equals("java.lang.Object")) {
                     print(" extends ");
@@ -188,7 +190,8 @@ public class ClassWriter extends BasicWriter {
             }
             var interfaces = classModel.interfaces();
             for (int i = 0; i < interfaces.size(); i++) {
-                print(i == 0 ? ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0 ? " implements " : " extends ") : ",");
+                print(i == 0 ? ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
+                        ? " implements " : " extends ") : ",");
                 print(getJavaName(interfaces.get(i).asInternalName()));
             }
         } else {
@@ -205,12 +208,14 @@ public class ClassWriter extends BasicWriter {
             indent(+1);
             println("minor version: " + classModel.minorVersion());
             println("major version: " + classModel.majorVersion());
-            writeList(String.format("flags: (0x%04x) ", cm.flags().flagsMask()), getClassFlags(cm.flags().flagsMask()), "\n");
+            writeList(String.format("flags: (0x%04x) ", cm.flags().flagsMask()),
+                    getClassFlags(cm.flags().flagsMask()), "\n");
             print("this_class: #" + classModel.thisClass().index());
             tab();
             print("// " + classModel.thisClass().asInternalName());
             println();
-            print("super_class: #" + classModel.superclass().map(ClassEntry::index).orElse(0));
+            print("super_class: #" + classModel.superclass()
+                    .map(ClassEntry::index).orElse(0));
             if (classModel.superclass().isPresent()) {
                 tab();
                 print("// " + classModel.superclass().get().asInternalName());
@@ -284,7 +289,8 @@ public class ClassWriter extends BasicWriter {
             return sb.toString();
         }
 
-        public String printList(String prefix, List<? extends Signature> args, String postfix) {
+        public String printList(String prefix, List<? extends Signature> args,
+                String postfix) {
             var sb = new StringBuilder();
             sb.append(prefix);
             String sep = "";
@@ -378,7 +384,8 @@ public class ClassWriter extends BasicWriter {
             return;
 
         var flags = AccessFlags.ofField(f.flags().flagsMask());
-        writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier()).map(fl -> Modifier.toString(fl.mask())).toList());
+        writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier())
+                .map(fl -> Modifier.toString(fl.mask())).toList());
         print(sigPrinter.print(
                 f.findAttribute(Attributes.SIGNATURE)
                         .map(SignatureAttribute::asTypeSignature)
@@ -404,7 +411,9 @@ public class ClassWriter extends BasicWriter {
             println("descriptor: " + f.fieldType().stringValue());
 
         if (options.verbose)
-            writeList(String.format("flags: (0x%04x) ", flags.flagsMask()), flags.flags().stream().map(fl -> "ACC_" + fl.name()).toList(), "\n");
+            writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
+                    flags.flags().stream().map(fl -> "ACC_" + fl.name()).toList(),
+                    "\n");
 
         if (options.showAllAttrs) {
             attrWriter.write(f.attributes());
@@ -451,7 +460,8 @@ public class ClassWriter extends BasicWriter {
         if ((classModel.flags().flagsMask() & ACC_INTERFACE) != 0 &&
                 ((flags & ACC_ABSTRACT) == 0) && !name.equals("<clinit>")) {
             if (classModel.majorVersion() > DEFAULT_ALLOWED_MAJOR_VERSION ||
-                    (classModel.majorVersion() == DEFAULT_ALLOWED_MAJOR_VERSION && classModel.minorVersion() >= DEFAULT_ALLOWED_MINOR_VERSION)) {
+                    (classModel.majorVersion() == DEFAULT_ALLOWED_MAJOR_VERSION
+                    && classModel.minorVersion() >= DEFAULT_ALLOWED_MINOR_VERSION)) {
                 if ((flags & (ACC_STATIC | ACC_PRIVATE)) == 0) {
                     modifiers.add("default");
                 }
@@ -479,7 +489,8 @@ public class ClassWriter extends BasicWriter {
         }
 
         var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
-        if (e_attr.isPresent()) { // if there are generic exceptions, there must be erased exceptions
+        // if there are generic exceptions, there must be erased exceptions
+        if (e_attr.isPresent()) {
             var exceptions = e_attr.get();
             print(" throws ");
             if (!d.throwableSignatures().isEmpty()) { // use generic list if available
@@ -525,8 +536,10 @@ public class ClassWriter extends BasicWriter {
             }
 
             if (options.showLineAndLocalVariableTables) {
-                code.findAttribute(Attributes.LINE_NUMBER_TABLE).ifPresent(a -> attrWriter.write(a, code));
-                code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).ifPresent(a -> attrWriter.write(a, code));
+                code.findAttribute(Attributes.LINE_NUMBER_TABLE)
+                        .ifPresent(a -> attrWriter.write(a, code));
+                code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE)
+                        .ifPresent(a -> attrWriter.write(a, code));
             }
         }
 
@@ -663,7 +676,8 @@ public class ClassWriter extends BasicWriter {
     }
 
     String getJavaParameterTypes(MethodSignature d, int flags) {
-        return getJavaName(adjustVarargs(flags, sigPrinter.printList("(", d.arguments(), ")")));
+        return getJavaName(adjustVarargs(flags,
+                sigPrinter.printList("(", d.arguments(), ")")));
     }
 
     static String getJavaName(String name) {
@@ -737,7 +751,8 @@ public class ClassWriter extends BasicWriter {
     }
 
     private static Set<String> getClassModifiers(int mask) {
-        return getModifiers(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0 ? mask & ~ACC_ABSTRACT : mask).flags());
+        return getModifiers(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
+                ? mask & ~ACC_ABSTRACT : mask).flags());
     }
 
     private static Set<String> getMethodModifiers(int mask) {
@@ -806,7 +821,8 @@ public class ClassWriter extends BasicWriter {
         public final String modifier;
         public final boolean isClass, isInnerClass, isField, isMethod;
 
-        AccessFlag(int flag, String modifier, boolean isClass, boolean isInnerClass, boolean isField, boolean isMethod) {
+        AccessFlag(int flag, String modifier, boolean isClass,
+                boolean isInnerClass, boolean isField, boolean isMethod) {
             this.flag = flag;
             this.modifier = modifier;
             this.isClass = isClass;

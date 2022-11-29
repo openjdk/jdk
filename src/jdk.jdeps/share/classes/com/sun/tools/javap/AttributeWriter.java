@@ -139,8 +139,10 @@ public class AttributeWriter extends BasicWriter {
                     tab();
                     print(String.format("// %2d, %2d, %4d:%02d, %4d:%02d",
                             e.startPc(), e.endPc(),
-                            (e.characterRangeStart() >> 10), (e.characterRangeStart() & 0x3ff),
-                            (e.characterRangeEnd() >> 10), (e.characterRangeEnd() & 0x3ff)));
+                            (e.characterRangeStart() >> 10),
+                            (e.characterRangeStart() & 0x3ff),
+                            (e.characterRangeEnd() >> 10),
+                            (e.characterRangeEnd() & 0x3ff)));
                     if ((e.flags() & CRT_STATEMENT) != 0)
                         print(", statement");
                     if ((e.flags() & CRT_BLOCK) != 0)
@@ -164,7 +166,8 @@ public class AttributeWriter extends BasicWriter {
                 indent(-1);
             }
             case CodeAttribute attr -> codeWriter.write(attr);
-            case CompilationIDAttribute attr -> constantWriter.write(attr.compilationId().index());
+            case CompilationIDAttribute attr ->
+                constantWriter.write(attr.compilationId().index());
             case ConstantValueAttribute attr -> {
                 print("ConstantValue: ");
                 constantWriter.write(attr.constant().index());
@@ -172,7 +175,8 @@ public class AttributeWriter extends BasicWriter {
             }
             case DeprecatedAttribute attr -> println("Deprecated: true");
             case EnclosingMethodAttribute attr -> {
-                print("EnclosingMethod: #" + attr.enclosingClass().index() + ".#" +  attr.enclosingMethod().map(PoolEntry::index).orElse(0));
+                print("EnclosingMethod: #" + attr.enclosingClass().index() + ".#"
+                        +  attr.enclosingMethod().map(PoolEntry::index).orElse(0));
                 tab();
                 print("// " + getJavaName(attr.enclosingClass().asInternalName()));
                 if (attr.enclosingMethod().isPresent())
@@ -203,8 +207,12 @@ public class AttributeWriter extends BasicWriter {
                             indent(+1);
                             first = false;
                         }
-                        for (var flag : info.flags())
-                            if (flag.sourceModifier() && (flag != AccessFlag.ABSTRACT || !info.has(AccessFlag.INTERFACE))) print(Modifier.toString(flag.mask()) + " ");
+                        for (var flag : info.flags()) {
+                            if (flag.sourceModifier() && (flag != AccessFlag.ABSTRACT
+                                    || !info.has(AccessFlag.INTERFACE))) {
+                                print(Modifier.toString(flag.mask()) + " ");
+                            }
+                        }
                         if (info.innerName().isPresent()) {
                             print("#" + info.innerName().get().index() + "= ");
                         }
@@ -313,7 +321,8 @@ public class AttributeWriter extends BasicWriter {
                     println("// " + "requires");
                     indent(+1);
                     for (var e: entries) {
-                        print("#" + e.requires().index() + "," + String.format("%x", e.requiresFlagsMask()));
+                        print("#" + e.requires().index() + ","
+                                + String.format("%x", e.requiresFlagsMask()));
                         tab();
                         print("// " + constantWriter.stringValue(e.requires()));
                         if (e.has(AccessFlag.TRANSITIVE))
@@ -342,7 +351,8 @@ public class AttributeWriter extends BasicWriter {
                     println("// exports");
                     indent(+1);
                     for (var e: entries) {
-                        printExportOpenEntry(e.exportedPackage().index(), e.exportsFlagsMask(), e.exportsTo());
+                        printExportOpenEntry(e.exportedPackage().index(),
+                                e.exportsFlagsMask(), e.exportsTo());
                     }
                     indent(-1);
                 }
@@ -353,7 +363,8 @@ public class AttributeWriter extends BasicWriter {
                     println("// opens");
                     indent(+1);
                     for (var e: entries) {
-                        printExportOpenEntry(e.openedPackage().index(), e.opensFlagsMask(), e.opensTo());
+                        printExportOpenEntry(e.openedPackage().index(),
+                                e.opensFlagsMask(), e.opensTo());
                     }
                     indent(-1);
                 }
@@ -474,7 +485,8 @@ public class AttributeWriter extends BasicWriter {
                     print(getJavaName(
                             new ClassWriter.SignaturePrinter(options.verbose).print(
                                     sigAttr.map(SignatureAttribute::asTypeSignature)
-                                            .orElse(Signature.of(componentInfo.descriptorSymbol())))));
+                                            .orElse(Signature.of(
+                                                    componentInfo.descriptorSymbol())))));
                     print(" ");
                     print(componentInfo.name().stringValue());
                     print(";");
@@ -496,13 +508,17 @@ public class AttributeWriter extends BasicWriter {
             case RuntimeInvisibleAnnotationsAttribute attr ->
                 printAnnotations("RuntimeInvisibleAnnotations:", attr.annotations());
             case RuntimeVisibleTypeAnnotationsAttribute attr ->
-                printTypeAnnotations("RuntimeVisibleTypeAnnotations:", attr.annotations(), lr);
+                printTypeAnnotations("RuntimeVisibleTypeAnnotations:",
+                        attr.annotations(), lr);
             case RuntimeInvisibleTypeAnnotationsAttribute attr ->
-                printTypeAnnotations("RuntimeInvisibleTypeAnnotations:", attr.annotations(), lr);
+                printTypeAnnotations("RuntimeInvisibleTypeAnnotations:",
+                        attr.annotations(), lr);
             case RuntimeVisibleParameterAnnotationsAttribute attr ->
-                printParameterAnnotations("RuntimeVisibleParameterAnnotations:", attr.parameterAnnotations());
+                printParameterAnnotations("RuntimeVisibleParameterAnnotations:",
+                        attr.parameterAnnotations());
             case RuntimeInvisibleParameterAnnotationsAttribute attr ->
-                printParameterAnnotations("RuntimeInvisibleParameterAnnotations:", attr.parameterAnnotations());
+                printParameterAnnotations("RuntimeInvisibleParameterAnnotations:",
+                        attr.parameterAnnotations());
             case PermittedSubclassesAttribute attr -> {
                 println("PermittedSubclasses:");
                 indent(+1);
@@ -519,7 +535,8 @@ public class AttributeWriter extends BasicWriter {
             case SourceDebugExtensionAttribute attr -> {
                 println("SourceDebugExtension:");
                 indent(+1);
-                for (String s: new String(attr.contents(), StandardCharsets.UTF_8).split("[\r\n]+")) {
+                for (String s: new String(attr.contents(), StandardCharsets.UTF_8)
+                        .split("[\r\n]+")) {
                     println(s);
                 }
                 indent(-1);
@@ -570,7 +587,8 @@ public class AttributeWriter extends BasicWriter {
                                 indent(+1);
                                 println("offset_delta = " + offsetDelta);
                                 var locals = frame.locals();
-                                printMap("locals", locals.subList(locals.size() - frameType + 251, locals.size()), lr);
+                                printMap("locals", locals.subList(locals.size()
+                                        - frameType + 251, locals.size()), lr);
                                 indent(-1);
                             }
                             case 255 -> {
@@ -635,7 +653,8 @@ public class AttributeWriter extends BasicWriter {
         indent(-1);
     }
 
-    private void printTypeAnnotations(String message, List<? extends TypeAnnotation> anno, CodeAttribute lr) {
+    private void printTypeAnnotations(String message,
+            List<? extends TypeAnnotation> anno, CodeAttribute lr) {
         println(message);
         indent(+1);
         for (int i = 0; i < anno.size(); i++) {

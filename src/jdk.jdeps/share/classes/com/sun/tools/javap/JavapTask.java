@@ -891,7 +891,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                         if (result == null)
                             result = l;
                         else
-                            throw new IOException("multiple definitions found for " + moduleName);
+                            throw new IOException("multiple definitions found for "
+                                    + moduleName);
                     }
                 }
                 if (result != null)
@@ -904,7 +905,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     private void showHelp() {
         printLines(getMessage("main.usage", progname));
         for (Option o: recognizedOptions) {
-            String name = o.aliases[0].replaceAll("^-+", "").replaceAll("-+", "_"); // there must always be at least one name
+            // there must always be at least one name
+            String name = o.aliases[0].replaceAll("^-+", "").replaceAll("-+", "_");
             if (name.startsWith("X") || name.equals("fullversion"))
                 continue;
             printLines(getMessage("main.opt." + name));
@@ -947,7 +949,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             try {
                 versionRB = ResourceBundle.getBundle(versionRBName);
             } catch (MissingResourceException e) {
-                return getMessage("version.resource.missing", System.getProperty("java.version"));
+                return getMessage("version.resource.missing",
+                        System.getProperty("java.version"));
             }
         }
         try {
@@ -1011,7 +1014,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
             @Override
             public String toString() {
-                return getClass().getName() + "[key=" + key + ",args=" + Arrays.asList(args) + "]";
+                return getClass().getName() + "[key=" + key + ",args="
+                        + Arrays.asList(args) + "]";
             }
 
         };
@@ -1036,10 +1040,12 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         ResourceBundle b = bundles.get(locale);
         if (b == null) {
             try {
-                b = ResourceBundle.getBundle("com.sun.tools.javap.resources.javap", locale);
+                b = ResourceBundle.getBundle("com.sun.tools.javap.resources.javap",
+                        locale);
                 bundles.put(locale, b);
             } catch (MissingResourceException e) {
-                throw new InternalError("Cannot find javap resource bundle for locale " + locale);
+                throw new InternalError("Cannot find javap resource bundle for locale "
+                        + locale);
             }
         }
 

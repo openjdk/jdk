@@ -75,8 +75,12 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
         MethodModel m = attr.parent().get();
         pcMap = new HashMap<>();
         lr = attr;
-        check(NoteKind.VISIBLE, m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).map(a -> a.annotations()));
-        check(NoteKind.INVISIBLE, m.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS).map(a -> a.annotations()));
+        check(NoteKind.VISIBLE,
+                m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
+                        .map(a -> a.annotations()));
+        check(NoteKind.INVISIBLE,
+                m.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS)
+                        .map(a -> a.annotations()));
     }
 
     private void check(NoteKind kind, Optional<List<TypeAnnotation>> annos) {
