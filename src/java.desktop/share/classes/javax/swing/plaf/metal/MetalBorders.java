@@ -266,7 +266,6 @@ public class MetalBorders {
 
             AffineTransform at = null;
             Stroke oldStk = null;
-            Color oldColor = null;
             boolean resetTransform = false;
             int stkWidth = 1;
             double scaleFactor = 1;
@@ -274,7 +273,6 @@ public class MetalBorders {
             if (g instanceof Graphics2D g2d) {
                 at = g2d.getTransform();
                 scaleFactor = at.getScaleX();
-                oldColor = g2d.getColor();
                 oldStk = g2d.getStroke();
 
                 // if m01 or m10 is non-zero, then there is a rotation or shear
@@ -309,8 +307,7 @@ public class MetalBorders {
             g.translate(xtranslation, ytranslation);
 
             // scaled border
-            int thickness = (scaleFactor == 1) ? 4 :
-                    (int) Math.ceil(4 * scaleFactor);
+            int thickness = (int) Math.ceil(4 * scaleFactor);
 
             g.setColor(background);
             // Draw the bulk of the border
@@ -326,8 +323,7 @@ public class MetalBorders {
                 int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
                 int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
                 // scaled corner
-                int corner = (scaleFactor == 1) ? CORNER :
-                        (int) Math.round(CORNER * scaleFactor);
+                int corner = (int) Math.round(CORNER * scaleFactor);
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
@@ -352,7 +348,6 @@ public class MetalBorders {
             g.translate(-xtranslation, -ytranslation);
             if (resetTransform) {
                 Graphics2D g2d = (Graphics2D) g;
-                g2d.setColor(oldColor);
                 g2d.setTransform(at);
                 g2d.setStroke(oldStk);
             }
