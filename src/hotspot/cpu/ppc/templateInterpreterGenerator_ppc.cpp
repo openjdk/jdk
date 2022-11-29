@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1010,7 +1010,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   if (native_call) {
     __ li(R14_bcp, 0); // Must initialize.
   } else {
-    __ add(R14_bcp, in_bytes(ConstMethod::codes_offset()), Rconst_method);
+    __ addi(R14_bcp, Rconst_method, in_bytes(ConstMethod::codes_offset()));
   }
 
   // Resize parent frame.

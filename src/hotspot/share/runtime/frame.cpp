@@ -1253,10 +1253,10 @@ private:
 
 public:
   FrameValuesOopClosure() {
-    _oops = new (ResourceObj::C_HEAP, mtThread) GrowableArray<oop*>(100, mtThread);
-    _narrow_oops = new (ResourceObj::C_HEAP, mtThread) GrowableArray<narrowOop*>(100, mtThread);
-    _base = new (ResourceObj::C_HEAP, mtThread) GrowableArray<oop*>(100, mtThread);
-    _derived = new (ResourceObj::C_HEAP, mtThread) GrowableArray<derived_pointer*>(100, mtThread);
+    _oops = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(100, mtThread);
+    _base = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _derived = new (mtThread) GrowableArray<derived_pointer*>(100, mtThread);
   }
   ~FrameValuesOopClosure() {
     delete _oops;

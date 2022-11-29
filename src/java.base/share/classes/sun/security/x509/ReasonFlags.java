@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.BitArray;
 import sun.security.util.DerInputStream;
@@ -191,13 +190,6 @@ public class ReasonFlags {
     }
 
     /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        set(name, Boolean.FALSE);
-    }
-
-    /**
      * Returns a printable representation of the ReasonFlags.
      */
     public String toString() {
@@ -243,17 +235,5 @@ public class ReasonFlags {
      */
     public void encode(DerOutputStream out) throws IOException {
         out.putTruncatedUnalignedBitString(new BitArray(this.bitString));
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements () {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        for( int i=0; i<NAMES.length; i++ ) {
-            elements.addElement(NAMES[i]);
-        }
-        return (elements.elements());
     }
 }

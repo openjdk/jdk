@@ -519,13 +519,18 @@ class methodHandle;
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
-   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                   \
+   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                  \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
    do_name(processBlocks_name, "processBlocks")                                                                         \
    do_signature(ghash_processBlocks_signature, "([BII[J[J)V")                                                           \
+                                                                                                                        \
+  /* support for com.sun.crypto.provider.Poly1305 */                                                                    \
+  do_class(com_sun_crypto_provider_Poly1305, "com/sun/crypto/provider/Poly1305")                                        \
+  do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, ghash_processBlocks_signature, F_R) \
+   do_name(processMultipleBlocks_name, "processMultipleBlocks")                                                         \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
@@ -1178,6 +1183,18 @@ class methodHandle;
                                       "Ljdk/internal/vm/vector/VectorSupport$CompressExpandOperation;)"                                        \
                                       "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                  \
    do_name(vector_compress_expand_op_name,     "compressExpandOp")                                                                             \
+                                                                                                                                               \
+  do_intrinsic(_IndexVector, jdk_internal_vm_vector_VectorSupport, index_vector_op_name, index_vector_op_sig, F_S)                             \
+    do_signature(index_vector_op_sig, "(Ljava/lang/Class;"                                                                                     \
+                                       "Ljava/lang/Class;"                                                                                     \
+                                       "I"                                                                                                     \
+                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                         \
+                                       "I"                                                                                                     \
+                                       "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                  \
+                                       "Ljdk/internal/vm/vector/VectorSupport$IndexOperation;)"                                                \
+                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
+    do_name(index_vector_op_name, "indexVector")                                                                                               \
+                                                                                                                                               \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
@@ -1286,7 +1303,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _VectorCompressExpand,
+  LAST_COMPILER_INLINE = _IndexVector,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,

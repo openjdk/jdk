@@ -183,7 +183,8 @@ public final class OCSP {
                     Base64.getEncoder().encodeToString(bytes), UTF_8));
 
             if (encodedGetReq.length() <= 255) {
-                url = new URL(encodedGetReq.toString());
+                @SuppressWarnings("deprecation")
+                var _unused = url = new URL(encodedGetReq.toString());
                 con = (HttpURLConnection)url.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);

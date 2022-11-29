@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jfr.internal.tool;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.function.Predicate;
 import jdk.jfr.EventType;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
+import jdk.jfr.Unsigned;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
@@ -47,7 +49,7 @@ import jdk.jfr.internal.consumer.JdkJfrConsumer;
 abstract class EventPrintWriter extends StructuredWriter {
 
     enum ValueType {
-        TIMESPAN, TIMESTAMP, OTHER
+        TIMESPAN, TIMESTAMP, UNSIGNED, OTHER
     }
 
     protected static final String STACK_TRACE_FIELD = "stackTrace";
@@ -118,22 +120,43 @@ abstract class EventPrintWriter extends StructuredWriter {
             valueType = determineValueType(v);
             typeOfValues.put(v, valueType);
         }
-        switch (valueType) {
-        case TIMESPAN:
-            return object.getDuration(v.getName());
-        case TIMESTAMP:
-            return PRIVATE_ACCESS.getOffsetDataTime(object, v.getName());
-        default:
-            return object.getValue(v.getName());
-        }
+        String name = v.getName();
+        return switch (valueType) {
+            case TIMESPAN -> object.getDuration(name);
+            case TIMESTAMP -> PRIVATE_ACCESS.getOffsetDataTime(object, name);
+            case UNSIGNED -> getUnsigned(object, name);
+            case OTHER -> object.getValue(name);
+        };
     }
-    // It's expensive t check
+
+    private Object getUnsigned(RecordedObject object, String name) {
+        // RecordedObject::getLong handles unsigned byte, short, int
+        long value = object.getLong(name);
+        // If unsigned long value exceeds 2^63, return (upper << 32) + lower
+        if (value < 0) {
+            int upper = (int) (value >>> 32);
+            int lower = (int) value;
+            BigInteger u = BigInteger.valueOf(Integer.toUnsignedLong(upper));
+            u = u.shiftLeft(32);
+            BigInteger l = BigInteger.valueOf(Integer.toUnsignedLong(lower));
+            return u.add(l);
+        }
+        return Long.valueOf(value);
+    }
+
+    // Somewhat expensive operation
     private ValueType determineValueType(ValueDescriptor v) {
         if (v.getAnnotation(Timespan.class) != null) {
             return ValueType.TIMESPAN;
         }
         if (v.getAnnotation(Timestamp.class) != null) {
             return ValueType.TIMESTAMP;
+        }
+        if (v.getAnnotation(Unsigned.class) != null) {
+            return switch(v.getTypeName()) {
+                case "byte", "short", "int", "long" -> ValueType.UNSIGNED;
+                default -> ValueType.OTHER;
+            };
         }
         return ValueType.OTHER;
     }

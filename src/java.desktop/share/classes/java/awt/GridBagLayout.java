@@ -345,7 +345,7 @@ import java.util.Hashtable;
  * </pre></blockquote><hr>
  *
  * @author Doug Stein
- * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
+ * @author Bill Spitzak (original NeWS &amp; OLIT implementation)
  * @see       java.awt.GridBagConstraints
  * @see       java.awt.GridBagLayoutInfo
  * @see       java.awt.ComponentOrientation

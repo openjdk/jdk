@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.Enumeration;
 import java.util.Random;
 
 import sun.security.util.*;
@@ -38,20 +36,11 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateSerialNumber implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.serialNumber";
+public class CertificateSerialNumber implements DerEncoder {
 
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
     public static final String NAME = "serialNumber";
-    public static final String NUMBER = "number";
 
     private SerialNumber        serial;
 
@@ -108,7 +97,7 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
      */
     public String toString() {
         if (serial == null) return "";
-        return (serial.toString());
+        return serial.toString();
     }
 
     /**
@@ -117,68 +106,13 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
      * @param out the DerOutputStream to marshal the contents to.
      * @exception IOException on errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
-        serial.encode(tmp);
-
-        out.write(tmp.toByteArray());
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
+        serial.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof SerialNumber)) {
-            throw new IOException("Attribute must be of type SerialNumber.");
-        }
-        if (name.equalsIgnoreCase(NUMBER)) {
-            serial = (SerialNumber)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:CertificateSerialNumber.");
-        }
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public SerialNumber get(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            return (serial);
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:CertificateSerialNumber.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            serial = null;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:CertificateSerialNumber.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NUMBER);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return (NAME);
+    public SerialNumber getSerial() {
+        return serial;
     }
 
     /**

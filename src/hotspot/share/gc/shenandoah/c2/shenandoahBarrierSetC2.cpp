@@ -716,6 +716,11 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
   return result;
 }
 
+
+bool ShenandoahBarrierSetC2::is_gc_pre_barrier_node(Node* node) const {
+  return is_shenandoah_wb_pre_call(node);
+}
+
 // Support for GC barriers emitted during parsing
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
   if (node->Opcode() == Op_ShenandoahLoadReferenceBarrier || node->Opcode() == Op_ShenandoahIUBarrier) return true;

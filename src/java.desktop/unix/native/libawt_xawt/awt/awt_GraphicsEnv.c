@@ -919,7 +919,7 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
         resetXShmAttachFailed();
         /**
          * The J2DXErrHandler handler will set xshmAttachFailed
-         * to JNI_TRUE if any Shm error has occured.
+         * to JNI_TRUE if any Shm error has occurred.
          */
         EXEC_WITH_XERROR_HANDLER(XShmAttachXErrHandler,
                                  XShmAttach(awt_display, &shminfo));

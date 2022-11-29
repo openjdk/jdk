@@ -170,8 +170,8 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    String internalProperties() {
-        return "\n& DMH.MN="+internalMemberName();
+    String internalProperties(int indentLevel) {
+        return "\n" + debugPrefix(indentLevel) + "& DMH.MN=" + internalMemberName();
     }
 
     //// Implementation methods.

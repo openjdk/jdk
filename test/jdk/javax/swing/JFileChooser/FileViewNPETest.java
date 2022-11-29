@@ -22,80 +22,112 @@
  */
 
 import java.awt.BorderLayout;
-
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Robot;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
+import java.util.function.Predicate;
 
-import javax.swing.JFrame;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
-
 import javax.swing.filechooser.FileView;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
 /*
  * @test
  * @bug 6616245
  * @key headful
- * @requires (os.family == "windows" | os.family == "linux")
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @summary Test to check if NPE occurs when using custom FileView.
- * @run main/manual FileViewNPETest
+ * @run main FileViewNPETest
  */
 public class FileViewNPETest {
-    static PassFailJFrame passFailJFrame;
+
+    private static JFrame frame;
+    private static JFileChooser jfc;
+    private static File path;
+
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                try {
-                    initialize();
-                } catch (InterruptedException | InvocationTargetException e) {
-                    throw new RuntimeException(e);
+        final Robot robot = new Robot();
+        try {
+            SwingUtilities.invokeAndWait(FileViewNPETest::initialize);
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(() -> {
+                jfc.setCurrentDirectory(path.getParentFile());
+                if (null != jfc.getCurrentDirectory()) {
+                    // The current directory to become null because
+                    // the parent directory is not traversable
+                    throw new RuntimeException("Current directory is not null");
                 }
-            }
-        });
-        passFailJFrame.awaitAndCheck();
+            });
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(() -> {
+                JComboBox<?> dirs = findDirectoryComboBox(jfc);
+                // No NPE is expected
+                dirs.setSelectedIndex(dirs.getSelectedIndex());
+                if (!jfc.getCurrentDirectory().equals(path)) {
+                    throw new RuntimeException("The current directory is not restored");
+                }
+            });
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
-    static void initialize() throws InterruptedException, InvocationTargetException {
-        JFrame frame;
-        JFileChooser jfc;
-
-        //Initialize the components
-        final String INSTRUCTIONS = """
-                Instructions to Test:
-                1. The traversable folder is set to the Documents folder,
-                 if it exists, in the user's home folder, otherwise
-                 it's the user's home. Other folders are non-traversable.
-                2. When the file chooser appears on the screen, select any
-                 non-traversable folder from "Look-In" combo box,
-                 for example the user's folder or a folder above it.
-                 (The folder will not be opened since it's non-traversable).
-                3. Select the Documents folder again.
-                4. If NullPointerException does not occur in the step 3,
-                 click Pass, otherwise the test fails automatically.
-                """;
-        frame = new JFrame("JFileChooser File View NPE test");
-        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS,
-                5L, 13, 40);
-        jfc = new JFileChooser();
+    private static void initialize() {
+        try {
+            UIManager.setLookAndFeel(new MetalLookAndFeel());
+        } catch (UnsupportedLookAndFeelException e) {
+            throw new RuntimeException(e);
+        }
 
         String userHome = System.getProperty("user.home");
         String docs = userHome + File.separator + "Documents";
-        String path = (new File(docs).exists()) ? docs : userHome;
+        path = new File((new File(docs).exists()) ? docs : userHome);
 
-        jfc.setCurrentDirectory(new File(path));
-        jfc.setFileView(new CustomFileView(path));
+        jfc = new JFileChooser();
+        jfc.setCurrentDirectory(path);
+        jfc.setFileView(new CustomFileView(path.getPath()));
         jfc.setControlButtonsAreShown(false);
 
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+        frame = new JFrame("JFileChooser FileView NPE test");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
         frame.add(jfc, BorderLayout.CENTER);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private static JComboBox<?> findDirectoryComboBox(final Container container) {
+        Component result = findComponent(container,
+                                         c -> c instanceof JComboBox<?>);
+        return (JComboBox<?>) result;
+    }
+
+    private static Component findComponent(final Container container,
+                                           final Predicate<Component> predicate) {
+        for (Component child : container.getComponents()) {
+            if (predicate.test(child)) {
+                return child;
+            }
+            if (child instanceof Container cont && cont.getComponentCount() > 0) {
+                Component result = findComponent(cont, predicate);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 }
 
@@ -106,6 +138,7 @@ class CustomFileView extends FileView {
         basePath = path;
     }
 
+    @Override
     public Boolean isTraversable(File filePath) {
         return ((filePath != null) && (filePath.isDirectory()))
                 && filePath.getAbsolutePath().startsWith(basePath);

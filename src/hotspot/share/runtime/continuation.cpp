@@ -239,7 +239,7 @@ frame Continuation::continuation_parent_frame(RegisterMap* map) {
 
   map->set_stack_chunk(nullptr);
 
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   frame sender(cont.entrySP(), cont.entryFP(), cont.entryPC());
 #else
   frame sender = frame();

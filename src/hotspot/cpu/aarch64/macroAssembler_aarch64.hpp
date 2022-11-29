@@ -110,13 +110,6 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
-  // Helper functions for statistics gathering.
-  // Unconditional atomic increment.
-  void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
-  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2, Register tmp3) {
-    lea(tmp1, counter_addr);
-    atomic_incw(tmp1, tmp2, tmp3);
-  }
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
@@ -657,8 +650,8 @@ public:
   void extend_sign(Register hi, Register lo);
 
   // Load and store values by size and signed-ness
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2 = noreg);
-  void store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2 = noreg);
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
+  void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
   // Support for inc/dec with optimal instruction selection depending on value
 
@@ -850,16 +843,16 @@ public:
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register tmp2);
 
-  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register tmp2 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1,
+                     Register tmp2, DecoratorSet decorators = 0);
 
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register tmp2 = noreg, DecoratorSet decorators = 0);
-  void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                              Register tmp2, DecoratorSet decorators = 0);
+  void store_heap_oop(Address dst, Register val, Register tmp1,
+                      Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be

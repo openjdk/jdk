@@ -83,7 +83,7 @@ public:
     static void ModalActivateNextWindow(HWND dialogHWnd,
                                         jobject dialogTarget, jobject dialogPeer);
 
-    // some methods called on Tookit thread
+    // some methods called on Toolkit thread
     static void _ShowModal(void *param);
     static void _EndModal(void *param);
     static void _SetIMMOption(void *param);

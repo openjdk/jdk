@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -42,6 +41,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -2097,8 +2097,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
 
   AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
 
-  address entry_point = moop->from_compiled_entry_no_trampoline();
-
   // It's possible that deoptimization can occur at a call site which hasn't
   // been resolved yet, in which case this function will be called from
   // an nmethod that has been patched for deopt and we can ignore the
@@ -2109,8 +2107,16 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // "to interpreter" stub in order to load up the Method*. Don't
   // ask me how I know this...
 
+  // Result from nmethod::is_unloading is not stable across safepoints.
+  NoSafepointVerifier nsv;
+
+  CompiledMethod* callee = moop->code();
+  if (callee == NULL) {
+    return;
+  }
+
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
-  if (cb == NULL || !cb->is_compiled() || entry_point == moop->get_c2i_entry()) {
+  if (cb == NULL || !cb->is_compiled() || callee->is_unloading()) {
     return;
   }
 
@@ -2168,6 +2174,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         }
       }
       address destination = call->destination();
+      address entry_point = callee->verified_entry_point();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
         call->set_destination_mt_safe(entry_point);
       }
@@ -2678,7 +2685,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
 ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
-                  ResourceObj::C_HEAP, mtCode,
+                  AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals> _adapter_handler_table;
 
@@ -3113,7 +3120,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {
-        buffer.initialize_stubs_size(128);
+        buffer.initialize_stubs_size(192);
       }
 
       struct { double data[20]; } locs_buf;

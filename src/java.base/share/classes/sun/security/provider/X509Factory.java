@@ -26,12 +26,9 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.security.PublicKey;
+
 import java.security.cert.*;
 import java.util.*;
-
-import jdk.internal.event.EventHelper;
-import jdk.internal.event.X509CertificateEvent;
 
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.ParsingException;
@@ -39,7 +36,6 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.DerValue;
-import sun.security.util.KeyUtil;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;
 
@@ -116,8 +112,6 @@ public class X509Factory extends CertificateFactorySpi {
         }
         cert = new X509CertImpl(encoding);
         addToCache(certCache, cert.getEncodedInternal(), cert);
-        // record cert details if necessary
-        commitEvent(cert);
         return cert;
     }
 
@@ -478,7 +472,7 @@ public class X509Factory extends CertificateFactorySpi {
             }
         } catch (ParsingException e) {
             while (data != null) {
-                coll.add(new X509CertImpl(data));
+                coll.add(X509CertImpl.newX509CertImpl(data));
                 data = readOneBlock(pbis);
             }
         }
@@ -771,44 +765,5 @@ public class X509Factory extends CertificateFactorySpi {
             }
         }
         return tag;
-    }
-
-    private static void commitEvent(X509CertImpl info) {
-        X509CertificateEvent xce = new X509CertificateEvent();
-        if (xce.shouldCommit() || EventHelper.isLoggingSecurity()) {
-            PublicKey pKey = info.getPublicKey();
-            String algId = info.getSigAlgName();
-            String serNum = info.getSerialNumber().toString(16);
-            String subject = info.getSubjectDN().getName();
-            String issuer = info.getIssuerDN().getName();
-            String keyType = pKey.getAlgorithm();
-            int length = KeyUtil.getKeySize(pKey);
-            int hashCode = info.hashCode();
-            long beginDate = info.getNotBefore().getTime();
-            long endDate = info.getNotAfter().getTime();
-            if (xce.shouldCommit()) {
-                xce.algorithm = algId;
-                xce.serialNumber = serNum;
-                xce.subject = subject;
-                xce.issuer = issuer;
-                xce.keyType = keyType;
-                xce.keyLength = length;
-                xce.certificateId = hashCode;
-                xce.validFrom = beginDate;
-                xce.validUntil = endDate;
-                xce.commit();
-            }
-            if (EventHelper.isLoggingSecurity()) {
-                EventHelper.logX509CertificateEvent(algId,
-                        serNum,
-                        subject,
-                        issuer,
-                        keyType,
-                        length,
-                        hashCode,
-                        beginDate,
-                        endDate);
-            }
-        }
     }
 }

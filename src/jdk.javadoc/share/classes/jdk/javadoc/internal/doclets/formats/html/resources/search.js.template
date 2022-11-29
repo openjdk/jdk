@@ -43,7 +43,7 @@ const categories = {
 };
 const highlight = "<span class='result-highlight'>$&</span>";
 const NO_MATCH = {};
-const MAX_RESULTS = 500;
+const MAX_RESULTS = 300;
 function checkUnnamed(name, separator) {
     return name === "<Unnamed>" || !name ? "" : name + separator;
 }
@@ -300,11 +300,11 @@ function doSearch(request, response) {
                 }
                 matches.push(m);
             }
-            return matches.length < maxResults;
+            return true;
         });
         return matches.sort(function(e1, e2) {
             return e2.score - e1.score;
-        });
+        }).slice(0, maxResults);
     }
 
     var result = searchIndex(moduleSearchIndex, "modules")

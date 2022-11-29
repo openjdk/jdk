@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -52,6 +51,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -360,14 +360,8 @@ bool ciEnv::jvmti_state_changed() const {
 // Cache DTrace flags
 void ciEnv::cache_dtrace_flags() {
   // Need lock?
-  _dtrace_extended_probes = ExtendedDTraceProbes;
-  if (_dtrace_extended_probes) {
-    _dtrace_method_probes   = true;
-    _dtrace_alloc_probes    = true;
-  } else {
-    _dtrace_method_probes   = DTraceMethodProbes;
-    _dtrace_alloc_probes    = DTraceAllocProbes;
-  }
+  _dtrace_method_probes = DTraceMethodProbes;
+  _dtrace_alloc_probes  = DTraceAllocProbes;
 }
 
 // ------------------------------------------------------------------
@@ -1087,8 +1081,7 @@ void ciEnv::register_method(ciMethod* target,
 
     // Change in DTrace flags may invalidate compilation.
     if (!failing() &&
-        ( (!dtrace_extended_probes() && ExtendedDTraceProbes) ||
-          (!dtrace_method_probes() && DTraceMethodProbes) ||
+        ( (!dtrace_method_probes() && DTraceMethodProbes) ||
           (!dtrace_alloc_probes() && DTraceAllocProbes) )) {
       record_failure("DTrace flags change invalidated dependencies");
     }

@@ -46,8 +46,6 @@ import jdk.jfr.Period;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.SettingControl;
-import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.RequestEngine.RequestHook;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
@@ -57,8 +55,8 @@ public final class MetadataRepository {
     private static final JVM jvm = JVM.getJVM();
     private static final MetadataRepository instance = new MetadataRepository();
 
-    private final List<EventType> nativeEventTypes = new ArrayList<>(100);
-    private final List<EventControl> nativeControls = new ArrayList<EventControl>(100);
+    private final List<EventType> nativeEventTypes = new ArrayList<>(150);
+    private final List<EventControl> nativeControls = new ArrayList<EventControl>(nativeEventTypes.size());
     private final TypeLibrary typeLibrary = TypeLibrary.getInstance();
     private final SettingsManager settingsManager = new SettingsManager();
     private final Map<String, Class<? extends Event>> mirrors = new HashMap<>();

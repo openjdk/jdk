@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8215181 8230284 8231273
+ * @bug 8215181 8230284 8231273 8284840
  * @summary Tests the "u-cf" extension
  * @modules jdk.localedata
  * @run testng/othervm -Djava.locale.providers=CLDR CurrencyFormatTests
@@ -90,10 +90,10 @@ public class CurrencyFormatTests {
             {Locale.forLanguageTag("zh-CN-u-cf-standard"), -100, "-\u00a5100.00"},
             {Locale.forLanguageTag("zh-CN-u-cf-account"), -100, "(\u00a5100.00)"},
             {Locale.forLanguageTag("zh-CN-u-cf-bogus"), -100, "-\u00a5100.00"},
-            {Locale.forLanguageTag("ar-SA"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
-            {Locale.forLanguageTag("ar-SA-u-cf-standard"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
-            {Locale.forLanguageTag("ar-SA-u-cf-account"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
-            {Locale.forLanguageTag("ar-SA-u-cf-bogus"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA"), -100, "\u061c-\u200f\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA-u-cf-standard"), -100, "\u061c-\u200f\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA-u-cf-account"), -100, "\u061c-\u200f\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA-u-cf-bogus"), -100, "\u061c-\u200f\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
         };
     }
 

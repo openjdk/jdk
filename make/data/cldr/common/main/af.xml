@@ -33,15 +33,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="alt">Suid-Altai</language>
 			<language type="am">Amharies</language>
 			<language type="an">Aragonees</language>
+			<language type="ann">Obolo</language>
 			<language type="anp">Angika</language>
 			<language type="ar">Arabies</language>
 			<language type="ar_001">Moderne Standaardarabies</language>
 			<language type="arc">Aramees</language>
 			<language type="arn">Mapuche</language>
 			<language type="arp">Arapaho</language>
+			<language type="ars">Najdi-Arabies</language>
 			<language type="as">Assamees</language>
 			<language type="asa">Asu</language>
 			<language type="ast">Asturies</language>
+			<language type="atj">Atikamekw</language>
 			<language type="av">Avaries</language>
 			<language type="awa">Awadhi</language>
 			<language type="ay">Aymara</language>
@@ -68,6 +71,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">Buginees</language>
 			<language type="byn">Blin</language>
 			<language type="ca">Katalaans</language>
+			<language type="cay">Cayuga</language>
 			<language type="ccp">Tsjaakma</language>
 			<language type="ce">Tsjetsjeens</language>
 			<language type="ceb">Cebuano</language>
@@ -76,14 +80,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">Chuukees</language>
 			<language type="chm">Mari</language>
 			<language type="cho">Choctaw</language>
+			<language type="chp">Chipewyan</language>
 			<language type="chr">Cherokees</language>
 			<language type="chy">Cheyennees</language>
 			<language type="ckb">Sorani</language>
 			<language type="ckb" alt="variant">Koerdies Sorani</language>
+			<language type="clc">Tzilkotin</language>
 			<language type="co">Korsikaans</language>
 			<language type="cop">Kopties</language>
+			<language type="crg">Michif</language>
+			<language type="crj">Suidoos-Cree</language>
+			<language type="crk">Laagvlakte-Cree</language>
+			<language type="crl">Noordoos-Cree</language>
+			<language type="crm">Moose Cree</language>
+			<language type="crr">Carolina-Algonkin</language>
 			<language type="crs">Seselwa Franskreools</language>
 			<language type="cs">Tsjeggies</language>
+			<language type="csw">Swampy Cree</language>
 			<language type="cu">Kerkslawies</language>
 			<language type="cv">Chuvash</language>
 			<language type="cy">Wallies</language>
@@ -124,6 +137,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fo">Faroëes</language>
 			<language type="fon">Fon</language>
 			<language type="fr">Frans</language>
+			<language type="frc">Cajun</language>
+			<language type="frr">Noord-Fries</language>
 			<language type="fur">Friuliaans</language>
 			<language type="fy">Fries</language>
 			<language type="ga">Iers</language>
@@ -144,8 +159,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">Manx</language>
 			<language type="gwi">Gwichʼin</language>
 			<language type="ha">Hausa</language>
+			<language type="hai">Haida</language>
 			<language type="hak">Hakka-Sjinees</language>
 			<language type="haw">Hawais</language>
+			<language type="hax">Suid-Haida</language>
 			<language type="he">Hebreeus</language>
 			<language type="hi">Hindi</language>
 			<language type="hil">Hiligaynon</language>
@@ -157,6 +174,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">Haïtiaans</language>
 			<language type="hu">Hongaars</language>
 			<language type="hup">Hupa</language>
+			<language type="hur">Halkomelem</language>
 			<language type="hy">Armeens</language>
 			<language type="hz">Herero</language>
 			<language type="ia">Interlingua</language>
@@ -166,6 +184,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ie">Interlingue</language>
 			<language type="ig">Igbo</language>
 			<language type="ii">Sichuan Yi</language>
+			<language type="ikt">Wes-Kanadese Inoektitoet</language>
 			<language type="ilo">Iloko</language>
 			<language type="inh">Ingush</language>
 			<language type="io">Ido</language>
@@ -188,6 +207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">Kabuverdianu</language>
 			<language type="kfo">Koro</language>
 			<language type="kg">Kongolees</language>
+			<language type="kgp">Kaingang</language>
 			<language type="kha">Khasi</language>
 			<language type="khq">Koyra Chiini</language>
 			<language type="ki">Kikuyu</language>
@@ -215,6 +235,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">Kumyk</language>
 			<language type="kv">Komi</language>
 			<language type="kw">Kornies</language>
+			<language type="kwk">Kwak’wala</language>
 			<language type="ky">Kirgisies</language>
 			<language type="la">Latyn</language>
 			<language type="lad">Ladino</language>
@@ -223,11 +244,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">Lezghies</language>
 			<language type="lg">Ganda</language>
 			<language type="li">Limburgs</language>
+			<language type="lil">Lillooet</language>
 			<language type="lkt">Lakota</language>
 			<language type="ln">Lingaals</language>
 			<language type="lo">Lao</language>
+			<language type="lou">Louisiana Kreool</language>
 			<language type="loz">Lozi</language>
 			<language type="lrc">Noord-Luri</language>
+			<language type="lsm">Saamia</language>
 			<language type="lt">Litaus</language>
 			<language type="lu">Luba-Katanga</language>
 			<language type="lua">Luba-Lulua</language>
@@ -256,6 +280,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">Malabaars</language>
 			<language type="mn">Mongools</language>
 			<language type="mni">Manipuri</language>
+			<language type="moe">Innu-aimun</language>
 			<language type="moh">Mohawk</language>
 			<language type="mos">Mossi</language>
 			<language type="mr">Marathi</language>
@@ -296,6 +321,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ny">Nyanja</language>
 			<language type="nyn">Nyankole</language>
 			<language type="oc">Oksitaans</language>
+			<language type="ojb">Noordwes-Ojibwa</language>
+			<language type="ojc">Sentraal-Ojibwa</language>
+			<language type="ojs">Oji-Cree</language>
+			<language type="ojw">Wes-Ojibwa</language>
+			<language type="oka">Okanagan</language>
 			<language type="om">Oromo</language>
 			<language type="or">Oriya</language>
 			<language type="os">Osseties</language>
@@ -306,10 +336,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pau">Palauaans</language>
 			<language type="pcm">Nigeriese Pidgin</language>
 			<language type="phn">Fenisies</language>
+			<language type="pis">Pijin</language>
 			<language type="pl">Pools</language>
+			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Pruisies</language>
 			<language type="ps">Pasjto</language>
-			<language type="ps" alt="variant">Pushto</language>
 			<language type="pt">Portugees</language>
 			<language type="qu">Quechua</language>
 			<language type="quc">K’iche’</language>
@@ -346,6 +377,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">Sinhala</language>
 			<language type="sk">Slowaaks</language>
 			<language type="sl">Sloweens</language>
+			<language type="slh">Suid-Lushootseed</language>
 			<language type="sm">Samoaans</language>
 			<language type="sma">Suid-Sami</language>
 			<language type="smj">Lule Sami</language>
@@ -360,6 +392,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">Swazi</language>
 			<language type="ssy">Saho</language>
 			<language type="st">Suid-Sotho</language>
+			<language type="str">Straits Salish</language>
 			<language type="su">Sundanees</language>
 			<language type="suk">Sukuma</language>
 			<language type="sv">Sweeds</language>
@@ -367,23 +400,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">Comoraans</language>
 			<language type="syr">Siries</language>
 			<language type="ta">Tamil</language>
+			<language type="tce">Suid-Tutchone</language>
 			<language type="te">Teloegoe</language>
 			<language type="tem">Timne</language>
 			<language type="teo">Teso</language>
 			<language type="tet">Tetoem</language>
 			<language type="tg">Tadjiks</language>
+			<language type="tgx">Tagish</language>
 			<language type="th">Thai</language>
+			<language type="tht">Tahltan</language>
 			<language type="ti">Tigrinya</language>
 			<language type="tig">Tigre</language>
 			<language type="tk">Turkmeens</language>
 			<language type="tlh">Klingon</language>
+			<language type="tli">Tlingit</language>
 			<language type="tn">Tswana</language>
 			<language type="to">Tongaans</language>
+			<language type="tok">Toki Pona</language>
 			<language type="tpi">Tok Pisin</language>
 			<language type="tr">Turks</language>
 			<language type="trv">Taroko</language>
 			<language type="ts">Tsonga</language>
 			<language type="tt">Tataars</language>
+			<language type="ttm">Noord-Tutchone</language>
 			<language type="tum">Toemboeka</language>
 			<language type="tvl">Tuvalu</language>
 			<language type="tw">Twi</language>
@@ -417,6 +456,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">Yemba</language>
 			<language type="yi">Jiddisj</language>
 			<language type="yo">Yoruba</language>
+			<language type="yrl">Nheengatu</language>
 			<language type="yue">Kantonees</language>
 			<language type="yue" alt="menu">Kantonese Chinees</language>
 			<language type="zgh">Standaard Marokkaanse Tamazight</language>
@@ -430,12 +470,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">Zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Adlam</script>
 			<script type="Arab">Arabies</script>
 			<script type="Arab" alt="variant">Perso-Arabies</script>
+			<script type="Aran">Nastaliq</script>
 			<script type="Armn">Armeens</script>
 			<script type="Beng">Bengaals</script>
 			<script type="Bopo">Bopomofo</script>
 			<script type="Brai">Braille</script>
+			<script type="Cakm">Chakma</script>
+			<script type="Cans">Verenigde Kanadese Inheemse Lettergreepskrif</script>
+			<script type="Cher">Cherokee</script>
 			<script type="Copt" draft="unconfirmed">Koptieses</script>
 			<script type="Cyrl">Sirillies</script>
 			<script type="Cyrs" draft="unconfirmed">Ou Kerkslawiese Sirillieses</script>
@@ -467,17 +512,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Latn">Latyn</script>
 			<script type="Mlym">Malabaars</script>
 			<script type="Mong">Mongools</script>
+			<script type="Mtei">Meitei-Majek</script>
 			<script type="Mymr">Mianmar</script>
+			<script type="Nkoo">N’Ko</script>
+			<script type="Olck">Ol Chiki</script>
 			<script type="Orya">Oriya</script>
 			<script type="Phnx" draft="unconfirmed">Fenisieses</script>
+			<script type="Rohg">Hanifi</script>
 			<script type="Sinh">Sinhala</script>
+			<script type="Sund">Soendanees</script>
+			<script type="Syrc">Siries</script>
 			<script type="Taml">Tamil</script>
 			<script type="Telu">Teloegoe</script>
+			<script type="Tfng">Tifinagh</script>
 			<script type="Thaa">Thaana</script>
 			<script type="Thai">Thai</script>
 			<script type="Tibt">Tibettaans</script>
 			<script type="Ugar" draft="unconfirmed">Ugaritieses</script>
+			<script type="Vaii">Vai</script>
 			<script type="Visp" draft="unconfirmed">Visible Speech-karakters</script>
+			<script type="Yiii">Yi</script>
 			<script type="Zmth">Wiskundige notasie</script>
 			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Simbole</script>
@@ -820,7 +874,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Boeddhistiese kalender</type>
-			<type key="calendar" type="chinese">Sjinese kalender</type>
+			<type key="calendar" type="chinese">Chinese kalender</type>
 			<type key="calendar" type="coptic">Koptiese kalender</type>
 			<type key="calendar" type="dangi">Dangi-kalender</type>
 			<type key="calendar" type="ethiopic">Etiopiese kalender</type>
@@ -830,6 +884,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">Indiese nasionale kalender</type>
 			<type key="calendar" type="islamic">Islamitiese kalender</type>
 			<type key="calendar" type="islamic-civil">Islamitiese siviele kalender</type>
+			<type key="calendar" type="islamic-umalqura">Islamitiese kalender (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601-kalender</type>
 			<type key="calendar" type="japanese">Japannese kalender</type>
 			<type key="calendar" type="persian">Persiese kalender</type>
@@ -888,6 +943,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">Armeense syfers</type>
 			<type key="numbers" type="armnlow">Armeense kleinletter-syfers</type>
 			<type key="numbers" type="beng">Bengaalse syfers</type>
+			<type key="numbers" type="cakm">Chakma-syfers</type>
 			<type key="numbers" type="deva">Devanagari-syfers</type>
 			<type key="numbers" type="ethi">Etiopiese syfers</type>
 			<type key="numbers" type="finance">Finansiële syfers</type>
@@ -903,6 +959,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">Tradisionele Sjinese syfers</type>
 			<type key="numbers" type="hantfin">Tradisionele Sjinese finansiële syfers</type>
 			<type key="numbers" type="hebr">Hebreeuse syfers</type>
+			<type key="numbers" type="java">Javaanse syfers</type>
 			<type key="numbers" type="jpan">Japannese syfers</type>
 			<type key="numbers" type="jpanfin">Japannese finansiële syfers</type>
 			<type key="numbers" type="khmr">Khmer-syfers</type>
@@ -911,8 +968,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="latn">Westerse syfers</type>
 			<type key="numbers" type="mlym">Malabaarse syfers</type>
 			<type key="numbers" type="mong">Mongoliese syfers</type>
+			<type key="numbers" type="mtei">Meetei Mayak-syfers</type>
 			<type key="numbers" type="mymr">Mianmar-syfers</type>
 			<type key="numbers" type="native">Inheemse syfers</type>
+			<type key="numbers" type="olck">Ol Chiki-syfers</type>
 			<type key="numbers" type="orya">Odia-syfers</type>
 			<type key="numbers" type="roman">Romeinse syfers</type>
 			<type key="numbers" type="romanlow">Romeinse kleinletter-syfers</type>
@@ -938,7 +997,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[a á â b c d e é è ê ë f g h i î ï j k l m n o ô ö p q r s t u û v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à å ä ã æ ç í ì ó ò ú ù ü ý]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
@@ -987,11 +1046,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -999,9 +1064,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1014,20 +1085,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E hh:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E hh:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E hh:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E hh:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E hh:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
+						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -1051,140 +1122,140 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">y-M GGGGG – y-M GGGGG</greatestDifference>
-							<greatestDifference id="M">y-M – y-M GGGGG</greatestDifference>
-							<greatestDifference id="y">y-M – y-M GGGGG</greatestDifference>
+							<greatestDifference id="G">y-M GGGGG – y-M GGGGG</greatestDifference>
+							<greatestDifference id="M">y-M – y-M GGGGG</greatestDifference>
+							<greatestDifference id="y">y-M – y-M GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d-M-y – d-M-y GGGGG</greatestDifference>
-							<greatestDifference id="G">d-M-y GGGGG – d-M-y GGGGG</greatestDifference>
-							<greatestDifference id="M">d-M-y – d-M-y GGGGG</greatestDifference>
-							<greatestDifference id="y">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="d">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="G">d-M-y GGGGG – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="M">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="y">d-M-y – d-M-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E d-M-y – E d-M-y GGGGG</greatestDifference>
-							<greatestDifference id="G">E d-M-y GGGGG – E d-M-y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d-M-y – E d-M-y GGGGG</greatestDifference>
-							<greatestDifference id="y">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d-M-y GGGGG – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d-M-y – E d-M-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d–d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
+							<greatestDifference id="M">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
-							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM–MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1537,19 +1608,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'om' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1562,23 +1645,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E hh:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E hh:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E hh:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E hh:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E hh:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">dd MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E dd MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
@@ -1608,85 +1691,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">hh:mm B – hh:mm B</greatestDifference>
-							<greatestDifference id="h">hh:mm B – hh:mm B</greatestDifference>
+							<greatestDifference id="B">hh:mm B – hh:mm B</greatestDifference>
+							<greatestDifference id="h">hh:mm B – hh:mm B</greatestDifference>
 							<greatestDifference id="m">hh:mm–hh:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">y-M GGGGG – y-M GGGGG</greatestDifference>
-							<greatestDifference id="M">y-M – y-M GGGGG</greatestDifference>
-							<greatestDifference id="y">y-M – y-M GGGGG</greatestDifference>
+							<greatestDifference id="G">y-M GGGGG – y-M GGGGG</greatestDifference>
+							<greatestDifference id="M">y-M – y-M GGGGG</greatestDifference>
+							<greatestDifference id="y">y-M – y-M GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">y-M-d – y-M-d GGGGG</greatestDifference>
-							<greatestDifference id="G">y-M-d GGGGG – y-M-d GGGGG</greatestDifference>
-							<greatestDifference id="M">y-M-d – y-M-d GGGGG</greatestDifference>
-							<greatestDifference id="y">y-M-d – y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="d">y-M-d – y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="G">y-M-d GGGGG – y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="M">y-M-d – y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="y">y-M-d – y-M-d GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E y-M-d – E y-M-d GGGGG</greatestDifference>
-							<greatestDifference id="G">E y-M-d GGGGG – E y-M-d GGGGG</greatestDifference>
-							<greatestDifference id="M">E y-M-d – E y-M-d GGGGG</greatestDifference>
-							<greatestDifference id="y">E y-M-d – E y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="d">E y-M-d – E y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="G">E y-M-d GGGGG – E y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="M">E y-M-d – E y-M-d GGGGG</greatestDifference>
+							<greatestDifference id="y">E y-M-d – E y-M-d GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d–d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm a – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1695,58 +1778,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
-							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d–d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
-							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
-							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -3019,6 +3102,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Enderbury</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Kanton</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati</exemplarCity>
@@ -4601,18 +4687,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4623,7 +4709,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -4701,9 +4787,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4715,23 +4805,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000" count="one">¤000 k</pattern>
 					<pattern type="100000" count="other">¤000 k</pattern>
 					<pattern type="1000000" count="one">¤0 m</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤0 m</pattern>
 					<pattern type="1000000" count="other">¤0 m</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤0 m</pattern>
 					<pattern type="10000000" count="one">¤00 m</pattern>
 					<pattern type="10000000" count="other">¤00 m</pattern>
 					<pattern type="100000000" count="one">¤000 m</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 000 m</pattern>
 					<pattern type="100000000" count="other">¤000 m</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 m</pattern>
 					<pattern type="1000000000" count="one">¤0 mjd</pattern>
 					<pattern type="1000000000" count="other">¤0 mjd</pattern>
 					<pattern type="10000000000" count="one">¤00 mjd</pattern>
 					<pattern type="10000000000" count="other">¤00 mjd</pattern>
 					<pattern type="100000000000" count="one">¤000 mjd</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000 mjd</pattern>
 					<pattern type="100000000000" count="other">¤000 mjd</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 mjd</pattern>
 					<pattern type="1000000000000" count="one">¤0 bn</pattern>
 					<pattern type="1000000000000" count="other">¤0 bn</pattern>
 					<pattern type="10000000000000" count="one">¤00 bn</pattern>
 					<pattern type="10000000000000" count="other">¤00 bn</pattern>
 					<pattern type="100000000000000" count="one">¤000 bn</pattern>
-					<pattern type="100000000000000" count="other">¤000 bn</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000 bn</pattern>
+					<pattern type="100000000000000" count="other">¤ 000 bn</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 bn</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -4742,158 +4840,158 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Verenigde Arabiese Emirate-dirham</displayName>
 				<displayName count="one">VAE-dirham</displayName>
 				<displayName count="other">VAE-dirham</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>Afgaanse afgani</displayName>
 				<displayName count="one">Afgaanse afgani</displayName>
 				<displayName count="other">Afgaanse afgani</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>Albanese lek</displayName>
 				<displayName count="one">Albanese lek</displayName>
 				<displayName count="other">Albanese lek</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>Armeense dram</displayName>
 				<displayName count="one">Armeense dram</displayName>
 				<displayName count="other">Armeense dram</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>Nederlands-Antilliaanse gulde</displayName>
 				<displayName count="one">Nederlands-Antilliaanse gulde</displayName>
 				<displayName count="other">Nederlands-Antilliaanse gulde</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>Angolese kwanza</displayName>
 				<displayName count="one">Angolese kwanza</displayName>
 				<displayName count="other">Angolese kwanza</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>Argentynse peso</displayName>
 				<displayName count="one">Argentynse peso</displayName>
 				<displayName count="other">Argentynse peso</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>Australiese dollar</displayName>
 				<displayName count="one">Australiese dollar</displayName>
 				<displayName count="other">Australiese dollar</displayName>
-				<symbol draft="contributed">A$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>A$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Arubaanse floryn</displayName>
 				<displayName count="one">Arubaanse floryn</displayName>
 				<displayName count="other">Arubaanse floryn</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>Azerbeidjaanse manat</displayName>
 				<displayName count="one">Azerbeidjaanse manat</displayName>
 				<displayName count="other">Azerbeidjaanse manat</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>Bosnies-Herzegowiniese omskakelbare marka</displayName>
 				<displayName count="one">Bosnies-Herzegowiniese omskakelbare marka</displayName>
 				<displayName count="other">Bosnies-Herzegowiniese omskakelbare marka</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>Barbados-dollar</displayName>
 				<displayName count="one">Barbados-dollar</displayName>
 				<displayName count="other">Barbados-dollar</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Bangladesjiese taka</displayName>
 				<displayName count="one">Bangladesjiese taka</displayName>
 				<displayName count="other">Bangladesjiese taka</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>Bulgaarse lev</displayName>
 				<displayName count="one">Bulgaarse lev</displayName>
 				<displayName count="other">Bulgaarse lev</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>Bahreinse dinar</displayName>
 				<displayName count="one">Bahreinse dinar</displayName>
 				<displayName count="other">Bahreinse dinar</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>Burundiese frank</displayName>
 				<displayName count="one">Burundiese frank</displayName>
 				<displayName count="other">Burundiese frank</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Bermuda-dollar</displayName>
 				<displayName count="one">Bermuda-dollar</displayName>
 				<displayName count="other">Bermuda-dollar</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Broeneise dollar</displayName>
 				<displayName count="one">Broeneise dollar</displayName>
 				<displayName count="other">Broeneise dollar</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>Boliviaanse boliviano</displayName>
 				<displayName count="one">Boliviaanse boliviano</displayName>
 				<displayName count="other">Boliviaanse boliviano</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>Brasilliaanse reaal</displayName>
 				<displayName count="one">Brasillianse reaal</displayName>
 				<displayName count="other">Brasillianse reaal</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol>R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>Bahamiaanse dollar</displayName>
 				<displayName count="one">Bahamiaanse dollar</displayName>
 				<displayName count="other">Bahamiaanse dollar</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>Bhoetanese ngoeltroem</displayName>
 				<displayName count="one">Bhoetanese ngoeltroem</displayName>
 				<displayName count="other">Bhoetanese ngoeltroem</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>Botswana-pula</displayName>
 				<displayName count="one">Botswana-pula</displayName>
 				<displayName count="other">Botswana-pula</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>Belarusiese roebel</displayName>
 				<displayName count="one">Belarusiese roebel</displayName>
 				<displayName count="other">Belarusiese roebel</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Belo-Russiese roebel (2000–2016)</displayName>
@@ -4905,168 +5003,168 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Beliziese dollar</displayName>
 				<displayName count="one">Beliziese dollar</displayName>
 				<displayName count="other">Beliziese dollar</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Kanadese dollar</displayName>
 				<displayName count="one">Kanadese dollar</displayName>
 				<displayName count="other">Kanadese dollar</displayName>
-				<symbol draft="contributed">CAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Kongolese frank</displayName>
 				<displayName count="one">Kongolese frank</displayName>
 				<displayName count="other">Kongolese frank</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>Switserse frank</displayName>
 				<displayName count="one">Switserse frank</displayName>
 				<displayName count="other">Switserse frank</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>Chileense peso</displayName>
 				<displayName count="one">Chileense peso</displayName>
 				<displayName count="other">Chileense peso</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>Chinese joean (buiteland)</displayName>
 				<displayName count="one">Chinese joean (buiteland)</displayName>
 				<displayName count="other">Chinese joean (buiteland)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>Chinese joean</displayName>
 				<displayName count="one">Chinese joean</displayName>
 				<displayName count="other">Chinese joean</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>CN¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Colombiaanse peso</displayName>
 				<displayName count="one">Colombiaanse peso</displayName>
 				<displayName count="other">Colombiaanse peso</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>Costa Ricaanse colón</displayName>
 				<displayName count="one">Costa Ricaanse colón</displayName>
 				<displayName count="other">Costa Ricaanse colón</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>Kubaanse omskakelbare peso</displayName>
 				<displayName count="one">Kubaanse omskakelbare peso</displayName>
 				<displayName count="other">Kubaanse omskakelbare peso</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Kubaanse peso</displayName>
 				<displayName count="one">Kubaanse peso</displayName>
 				<displayName count="other">Kubaanse peso</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Kaap Verdiese escudo</displayName>
 				<displayName count="one">Kaap Verdiese escudo</displayName>
 				<displayName count="other">Kaap Verdiese escudo</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>Tsjeggiese kroon</displayName>
 				<displayName count="one">Tsjeggiese kroon</displayName>
 				<displayName count="other">Tsjeggiese kroon</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>Djiboeti-frank</displayName>
 				<displayName count="one">Djiboeti-frank</displayName>
 				<displayName count="other">Djiboeti-frank</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>Deense kroon</displayName>
 				<displayName count="one">Deense kroon</displayName>
 				<displayName count="other">Deense kroon</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Dominikaanse peso</displayName>
 				<displayName count="one">Dominikaanse peso</displayName>
 				<displayName count="other">Dominikaanse peso</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>Algeriese dinar</displayName>
 				<displayName count="one">Algeriese dinar</displayName>
 				<displayName count="other">Algeriese dinar</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>Egiptiese pond</displayName>
 				<displayName count="one">Egiptiese pond</displayName>
 				<displayName count="other">Egiptiese pond</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Eritrese nakfa</displayName>
 				<displayName count="one">Eritrese nakfa</displayName>
 				<displayName count="other">Eritrese nakfa</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>Etiopiese birr</displayName>
 				<displayName count="one">Etiopiese birr</displayName>
 				<displayName count="other">Etiopiese birr</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="one">euro</displayName>
 				<displayName count="other">euro</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol>€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>Fidjiaanse dollar</displayName>
 				<displayName count="one">Fidjiaanse dollar</displayName>
 				<displayName count="other">Fidjiaanse dollar</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Falkland-eilandse pond</displayName>
 				<displayName count="one">Falkland-eilandse pond</displayName>
 				<displayName count="other">Falkland-eilandse pond</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>Britse pond</displayName>
 				<displayName count="one">Britse pond</displayName>
 				<displayName count="other">Britse pond</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>Georgiese lari</displayName>
 				<displayName count="one">Georgiese lari</displayName>
 				<displayName count="other">Georgiese lari</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ghanese cedi (1979–2007)</displayName>
@@ -5075,27 +5173,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ghanese cedi</displayName>
 				<displayName count="one">Ghanese cedi</displayName>
 				<displayName count="other">Ghanese cedi</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Gibraltarese pond</displayName>
 				<displayName count="one">Gibraltarese pond</displayName>
 				<displayName count="other">Gibraltarese pond</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Gambiese dalasi</displayName>
 				<displayName count="one">Gambiese dalasi</displayName>
 				<displayName count="other">Gambiese dalasi</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>Guinese frank</displayName>
 				<displayName count="one">Guinese frank</displayName>
 				<displayName count="other">Guinese frank</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Guinese syli</displayName>
@@ -5104,89 +5202,89 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Guatemalaanse quetzal</displayName>
 				<displayName count="one">Guatemalaanse quetzal</displayName>
 				<displayName count="other">Guatemalaanse quetzal</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>Guyanese dollar</displayName>
 				<displayName count="one">Guyanese dollar</displayName>
 				<displayName count="other">Guyanese dollar</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hongkongse dollar</displayName>
 				<displayName count="one">Hongkongse dollar</displayName>
 				<displayName count="other">Hongkongse dollar</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>HK$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>Hondurese lempira</displayName>
 				<displayName count="one">Hondurese lempira</displayName>
 				<displayName count="other">Hondurese lempira</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>Kroatiese kuna</displayName>
 				<displayName count="one">Kroatiese kuna</displayName>
 				<displayName count="other">Kroatiese kuna</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Haïtiaanse gourde</displayName>
 				<displayName count="one">Haïtiaanse gourde</displayName>
 				<displayName count="other">Haïtiaanse gourde</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>Hongaarse florint</displayName>
 				<displayName count="one">Hongaarse florint</displayName>
 				<displayName count="other">Hongaarse florint</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol>HUF</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesiese roepia</displayName>
 				<displayName count="one">Indonesiese roepia</displayName>
 				<displayName count="other">Indonesiese roepia</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>Israeliese nuwe sikkel</displayName>
 				<displayName count="one">Israeliese nuwe sikkel</displayName>
 				<displayName count="other">Israeliese nuwe sikkel</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol>₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Indiese roepee</displayName>
 				<displayName count="one">Indiese rupee</displayName>
 				<displayName count="other">Indiese rupee</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol>₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>Irakse dinar</displayName>
 				<displayName count="one">Irakse dinar</displayName>
 				<displayName count="other">Irakse dinar</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>Iranse rial</displayName>
 				<displayName count="one">Iranse rial</displayName>
 				<displayName count="other">Iranse rial</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>Yslandse kroon</displayName>
 				<displayName count="one">Yslandse kroon</displayName>
 				<displayName count="other">Yslandse kroon</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName draft="contributed">Italiaanse lier</displayName>
@@ -5195,109 +5293,109 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Jamaikaanse dollar</displayName>
 				<displayName count="one">Jamaikaanse dollar</displayName>
 				<displayName count="other">Jamaikaanse dollar</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>Jordaniese dinar</displayName>
 				<displayName count="one">Jordaniese dinar</displayName>
 				<displayName count="other">Jordaniese dinar</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Japannese jen</displayName>
 				<displayName count="one">Japannese jen</displayName>
 				<displayName count="other">Japannese jen</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>JP¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Keniaanse sjieling</displayName>
 				<displayName count="one">Keniaanse sjieling</displayName>
 				<displayName count="other">Keniaanse sjieling</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>Kirgisiese som</displayName>
 				<displayName count="one">Kirgisiese som</displayName>
 				<displayName count="other">Kirgisiese som</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>Kambodjaanse riel</displayName>
 				<displayName count="one">Kambodjaanse riel</displayName>
 				<displayName count="other">Kambodjaanse riel</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>Comoraanse frank</displayName>
 				<displayName count="one">Comoraanse frank</displayName>
 				<displayName count="other">Comoraanse frank</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Noord-Koreaanse won</displayName>
 				<displayName count="one">Noord-Koreaanse won</displayName>
 				<displayName count="other">Noord-Koreaanse won</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>Suid-Koreaanse won</displayName>
 				<displayName count="one">Suid-Koreaanse won</displayName>
 				<displayName count="other">Suid-Koreaanse won</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Koeweitse dinar</displayName>
 				<displayName count="one">Koeweitse dinar</displayName>
 				<displayName count="other">Koeweitse dinar</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Cayman-eilandse dollar</displayName>
 				<displayName count="one">Cayman-eilandse dollar</displayName>
 				<displayName count="other">Cayman-eilandse dollar</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>Kazakse tenge</displayName>
 				<displayName count="one">Kazakse tenge</displayName>
 				<displayName count="other">Kazakse tenge</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>Laosiaanse kip</displayName>
 				<displayName count="one">Laosiaanse kip</displayName>
 				<displayName count="other">Laosiaanse kip</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>Libanese pond</displayName>
 				<displayName count="one">Libanese pond</displayName>
 				<displayName count="other">Libanese pond</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Sri Lankaanse roepee</displayName>
 				<displayName count="one">Sri Lankaanse roepee</displayName>
 				<displayName count="other">Sri Lankaanse roepee</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Liberiese dollar</displayName>
 				<displayName count="one">Liberiese dollar</displayName>
 				<displayName count="other">Liberiese dollar</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>Lesotho loti</displayName>
@@ -5316,52 +5414,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Libiese dinar</displayName>
 				<displayName count="one">Libiese dinar</displayName>
 				<displayName count="other">Libiese dinar</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Marokkaanse dirham</displayName>
 				<displayName count="one">Marokkaanse dirham</displayName>
 				<displayName count="other">Marokkaanse dirham</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>Moldowiese leu</displayName>
 				<displayName count="one">Moldowiese leu</displayName>
 				<displayName count="other">Moldowiese leu</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Malgassiese ariary</displayName>
 				<displayName count="one">Malgassiese ariary</displayName>
 				<displayName count="other">Malgassiese ariary</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>Macedoniese denar</displayName>
 				<displayName count="one">Macedoniese denar</displayName>
 				<displayName count="other">Macedoniese denar</displayName>
-				<symbol draft="contributed">MKD</symbol>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>Mianmese kyat</displayName>
 				<displayName count="one">Mianmese kyat</displayName>
 				<displayName count="other">Mianmese kyat</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Mongoolse toegrik</displayName>
 				<displayName count="one">Mongoolse toegrik</displayName>
 				<displayName count="other">Mongoolse toegrik</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Macaose pataca</displayName>
 				<displayName count="one">Macaose pataca</displayName>
 				<displayName count="other">Macaose pataca</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Mauritaniese ouguiya (1973–2017)</displayName>
@@ -5373,40 +5471,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mauritaniese ouguiya</displayName>
 				<displayName count="one">Mauritaniese ouguiya</displayName>
 				<displayName count="other">Mauritaniese ouguiya</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>Mauritiaanse roepee</displayName>
 				<displayName count="one">Mauritiaanse roepee</displayName>
 				<displayName count="other">Mauritiaanse roepee</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>Malediviese rufia</displayName>
 				<displayName count="one">Malediviese rufia</displayName>
 				<displayName count="other">Malediviese rufia</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>Malawiese kwacha</displayName>
 				<displayName count="one">Malawiese kwacha</displayName>
 				<displayName count="other">Malawiese kwacha</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>Meksikaanse peso</displayName>
 				<displayName count="one">Meksikaanse peso</displayName>
 				<displayName count="other">Meksikaanse peso</displayName>
 				<symbol>MXN</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>Maleisiese ringgit</displayName>
 				<displayName count="one">Maleisiese ringgit</displayName>
 				<displayName count="other">Maleisiese ringgit</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZM">
 				<displayName>Mosambiekse metical (1980–2006)</displayName>
@@ -5415,160 +5513,160 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mosambiekse metical</displayName>
 				<displayName count="one">Mosambiekse metical</displayName>
 				<displayName count="other">Mosambiekse metical</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>Namibiese dollar</displayName>
 				<displayName count="one">Namibiese dollar</displayName>
 				<displayName count="other">Namibiese dollar</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Nigeriese naira</displayName>
 				<displayName count="one">Nigeriese naira</displayName>
 				<displayName count="other">Nigeriese naira</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>Nicaraguaanse córdoba</displayName>
 				<displayName count="one">Nicaraguaanse córdoba</displayName>
 				<displayName count="other">Nicaraguaanse córdoba</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>Noorse kroon</displayName>
 				<displayName count="one">Noorse kroon</displayName>
 				<displayName count="other">Noorse kroon</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Nepalese roepee</displayName>
 				<displayName count="one">Nepalese roepee</displayName>
 				<displayName count="other">Nepalese roepee</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Nieu-Seelandse dollar</displayName>
 				<displayName count="one">Nieu-Seelandse dollar</displayName>
 				<displayName count="other">Nieu-Seelandse dollar</displayName>
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NZ$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Omaanse rial</displayName>
 				<displayName count="one">Omaanse rial</displayName>
 				<displayName count="other">Omaanse rial</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>Panamese balboa</displayName>
 				<displayName count="one">Panamese balboa</displayName>
 				<displayName count="other">Panamese balboa</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>Peruaanse sol</displayName>
 				<displayName count="one">Peruaanse sol</displayName>
 				<displayName count="other">Peruaanse sol</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>Papoea-Nieu-Guinese kina</displayName>
 				<displayName count="one">Papoea-Nieu-Guinese kina</displayName>
 				<displayName count="other">Papoea-Nieu-Guinese kina</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>Filippynse peso</displayName>
 				<displayName count="one">Filippynse peso</displayName>
 				<displayName count="other">Filippynse peso</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakistanse roepee</displayName>
 				<displayName count="one">Pakistanse roepee</displayName>
 				<displayName count="other">Pakistanse roepee</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Poolse zloty</displayName>
 				<displayName count="one">Poolse zloty</displayName>
 				<displayName count="other">Poolse zloty</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>Paraguaanse guarani</displayName>
 				<displayName count="one">Paraguaanse guarani</displayName>
 				<displayName count="other">Paraguaanse guarani</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Katarrese rial</displayName>
 				<displayName count="one">Katarese rial</displayName>
 				<displayName count="other">Katarese rial</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>Roemeense leu</displayName>
 				<displayName count="one">Roemeense leu</displayName>
 				<displayName count="other">Roemeense leu</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">leu</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">leu</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serwiese dinar</displayName>
 				<displayName count="one">Serwiese dinar</displayName>
 				<displayName count="other">Serwiese dinar</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Russiese roebel</displayName>
 				<displayName count="one">Russiese roebel</displayName>
 				<displayName count="other">Russiese roebel</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 				<symbol alt="variant">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Rwandese frank</displayName>
 				<displayName count="one">Rwandese frank</displayName>
 				<displayName count="other">Rwandese frank</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Saoedi-Arabiese riyal</displayName>
 				<displayName count="one">Saoedi-Arabiese riyal</displayName>
 				<displayName count="other">Saoedi-Arabiese riyal</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Salomonseilandse dollar</displayName>
 				<displayName count="one">Salomonseilandse dollar</displayName>
 				<displayName count="other">Salomonseilandse dollar</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Seychellese roepee</displayName>
 				<displayName count="one">Seychellese roepee</displayName>
 				<displayName count="other">Seychellese roepee</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>Soedannese pond</displayName>
 				<displayName count="one">Soedannese pond</displayName>
 				<displayName count="other">Soedannese pond</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Soedannese pond (1957–1998)</displayName>
@@ -5577,48 +5675,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sweedse kroon</displayName>
 				<displayName count="one">Sweedse kroon</displayName>
 				<displayName count="other">Sweedse kroon</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Singapoer-dollar</displayName>
 				<displayName count="one">Singapoer-dollar</displayName>
 				<displayName count="other">Singapoer-dollar</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Sint Helena-pond</displayName>
 				<displayName count="one">Sint Helena-pond</displayName>
 				<displayName count="other">Sint Helena-pond</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>Sierra Leoniese leone</displayName>
 				<displayName count="one">Sierra Leoniese leone</displayName>
 				<displayName count="other">Sierra Leoniese leone</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somaliese sjieling</displayName>
 				<displayName count="one">Somaliese sjieling</displayName>
 				<displayName count="other">Somaliese sjieling</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Surinaamse dollar</displayName>
 				<displayName count="one">Surinaamse dollar</displayName>
 				<displayName count="other">Surinaamse dollar</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>Suid-Soedanese pond</displayName>
 				<displayName count="one">Suid-Soedanese pond</displayName>
 				<displayName count="other">Suid-Soedanese pond</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>São Tomé en Príncipe dobra (1977–2017)</displayName>
@@ -5630,53 +5728,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>São Tomé en Príncipe-dobra</displayName>
 				<displayName count="one">São Tomé en Príncipe-dobra</displayName>
 				<displayName count="other">São Tomé en Príncipe-dobra</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>Siriese pond</displayName>
 				<displayName count="one">Siriese pond</displayName>
 				<displayName count="other">Siriese pond</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>Swazilandse lilangeni</displayName>
 				<displayName count="one">Swazilandse lilangeni</displayName>
 				<displayName count="other">Swazilandse lilangeni</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>Thaise baht</displayName>
 				<displayName count="one">Thaise baht</displayName>
 				<displayName count="other">Thaise baht</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>Tadjikse somoni</displayName>
 				<displayName count="one">Tadjikse somoni</displayName>
 				<displayName count="other">Tadjikse somoni</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>Turkmeense manat</displayName>
 				<displayName count="one">Turkmeense manat</displayName>
 				<displayName count="other">Turkmeense manat</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>Tunisiese dinar</displayName>
 				<displayName count="one">Tunisiese dinar</displayName>
 				<displayName count="other">Tunisiese dinar</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Tongaanse pa’anga</displayName>
 				<displayName count="one">Tongaanse pa’anga</displayName>
 				<displayName count="other">Tongaanse pa’anga</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName>Turkse lier (1922–2005)</displayName>
@@ -5685,62 +5783,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Turkse lira</displayName>
 				<displayName count="one">Turkse lira</displayName>
 				<displayName count="other">Turkse lira</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Trinidad en Tobago-dollar</displayName>
 				<displayName count="one">Trinidad en Tobago-dollar</displayName>
 				<displayName count="other">Trinidad en Tobago-dollar</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Nuwe Taiwanese dollar</displayName>
 				<displayName count="one">Nuwe Taiwanese dollar</displayName>
 				<displayName count="other">Nuwe Taiwanese dollar</displayName>
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">NT$</symbol>
+				<symbol>NT$</symbol>
+				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Tanzaniese sjieling</displayName>
 				<displayName count="one">Tanzaniese sjieling</displayName>
 				<displayName count="other">Tanzaniese sjieling</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>Oekraïnse hriwna</displayName>
 				<displayName count="one">Oekraïnse hriwna</displayName>
 				<displayName count="other">Oekraïnse hriwna</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>Ugandese sjieling</displayName>
 				<displayName count="one">Ugandese sjieling</displayName>
 				<displayName count="other">Ugandese sjieling</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>VSA-dollar</displayName>
 				<displayName count="one">VSA-dollar</displayName>
 				<displayName count="other">VSA-dollar</displayName>
-				<symbol draft="contributed">USD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>USD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>Uruguaanse peso</displayName>
 				<displayName count="one">Uruguaanse peso</displayName>
 				<displayName count="other">Uruguaanse peso</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>Oezbekiese som</displayName>
 				<displayName count="one">Oezbekiese som</displayName>
 				<displayName count="other">Oezbekiese som</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName>Venezolaanse bolivar</displayName>
@@ -5753,51 +5851,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Venezolaanse bolívar</displayName>
 				<displayName count="one">Venezolaanse bolívar</displayName>
 				<displayName count="other">Venezolaanse bolívar</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Viëtnamese dong</displayName>
 				<displayName count="one">Viëtnamese dong</displayName>
 				<displayName count="other">Viëtnamese dong</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol>₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>Vanuatuse vatu</displayName>
 				<displayName count="one">Vanuatuse vatu</displayName>
 				<displayName count="other">Vanuatuse vatu</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>Samoaanse tala</displayName>
 				<displayName count="one">Samoaanse tala</displayName>
 				<displayName count="other">Samoaanse tala</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Sentraal Afrikaanse CFA-frank</displayName>
 				<displayName count="one">Sentraal Afrikaanse CFA-frank</displayName>
 				<displayName count="other">Sentraal Afrikaanse CFA-frank</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>Oos-Karibiese dollar</displayName>
 				<displayName count="one">Oos-Karibiese dollar</displayName>
 				<displayName count="other">Oos-Karibiese dollar</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>EC$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>Wes-Afrikaanse CFA-frank</displayName>
 				<displayName count="one">Wes-Afrikaanse CFA-frank</displayName>
 				<displayName count="other">Wes-Afrikaanse CFA-frank</displayName>
-				<symbol draft="contributed">F CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP-frank</displayName>
 				<displayName count="one">CFP-frank</displayName>
 				<displayName count="other">CFP-frank</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>Onbekende geldeenheid</displayName>
@@ -5808,14 +5906,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Jemenitiese rial</displayName>
 				<displayName count="one">Jemenitiese rial</displayName>
 				<displayName count="other">Jemenitiese rial</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>Suid-Afrikaanse rand</displayName>
 				<displayName count="one">Suid-Afrikaanse rand</displayName>
 				<displayName count="other">Suid-Afrikaanse rand</displayName>
 				<symbol>R</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Zambiese kwacha (1968–2012)</displayName>
@@ -5824,8 +5922,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Zambiese kwacha</displayName>
 				<displayName count="one">Zambiese kwacha</displayName>
 				<displayName count="other">Zambiese kwacha</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZWD">
 				<displayName>Zimbabwiese dollar</displayName>
@@ -6141,6 +6239,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} jaar</unitPattern>
 				<unitPattern count="other">{0} jaar</unitPattern>
 				<perUnitPattern>{0} per jaar</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>kwartale</displayName>
+				<unitPattern count="one">{0} kwartaal</unitPattern>
+				<unitPattern count="other">{0} kwartale</unitPattern>
+				<perUnitPattern>{0}/kwartaal</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>maande</displayName>
@@ -6460,7 +6564,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} sonligsterkte</unitPattern>
 				<unitPattern count="other">{0} sonligsterkte</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metrieke ton</displayName>
 				<unitPattern count="one">{0} metrieke ton</unitPattern>
 				<unitPattern count="other">{0} metrieke ton</unitPattern>
@@ -7074,6 +7178,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} j.</unitPattern>
 				<perUnitPattern>{0}/j.</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>kw.</displayName>
+				<unitPattern count="one">{0} kw.</unitPattern>
+				<unitPattern count="other">{0} kwe.</unitPattern>
+				<perUnitPattern>{0}/kw.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>maande</displayName>
 				<unitPattern count="one">{0} md.</unitPattern>
@@ -7378,7 +7488,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -7956,6 +8066,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} j.</unitPattern>
 				<unitPattern count="other">{0} j.</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>kw.</displayName>
+				<unitPattern count="one">{0} kw.</unitPattern>
+				<unitPattern count="other">{0} kwe.</unitPattern>
+				<perUnitPattern>{0}/kw.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>maand</displayName>
 				<unitPattern count="one">{0} md.</unitPattern>
@@ -8226,7 +8342,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}L☉</unitPattern>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
@@ -8786,4 +8902,157 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">tabelvormige nommers</featureName>
 		<featureName type="zero">deurkruisde nul</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und af</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Piet</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Irene</nameField>
+			<nameField type="surname">Rossouw</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Jan</nameField>
+			<nameField type="given2">Koos</nameField>
+			<nameField type="surname">Van der Merwe</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Prof. dr.</nameField>
+			<nameField type="given">Cornelia Margarita</nameField>
+			<nameField type="given-informal">Nellie</nameField>
+			<nameField type="given2">Sofia Aletta</nameField>
+			<nameField type="surname-prefix">van den</nameField>
+			<nameField type="surname-core">Berg</nameField>
+			<nameField type="surname2">Wessels Swart</nameField>
+			<nameField type="suffix">MBChB PhD</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

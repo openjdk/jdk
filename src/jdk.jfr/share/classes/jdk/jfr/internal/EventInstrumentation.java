@@ -290,7 +290,6 @@ public final class EventInstrumentation {
                         String fieldName = field.getName();
                         if (!fieldSet.contains(fieldName)) {
                             Type fieldType = Type.getType(field.getType());
-                            String internalClassName = ASMToolkit.getInternalName(c.getName());
                             fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor()));
                             fieldSet.add(fieldName);
                         }

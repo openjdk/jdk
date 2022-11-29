@@ -113,8 +113,11 @@ public class CoreUtils {
             Asserts.assertGT(coreFileSize, 0L, "Unexpected core size");
 
             // Make sure the core file is moved into the cwd if not already there.
+            // Core/minidump usually created in current directory (Linux and Windows).
             Path corePath = Paths.get(coreFileLocation);
-            if (corePath.getParent() != null) {
+            File parent = new File(coreFileLocation).getParentFile();
+            File cwdParent = new File(".").getAbsoluteFile().getParentFile();
+            if (parent != null && !parent.equals(cwdParent)) {
                 Path coreFileName = corePath.getFileName();
                 System.out.println("Moving core file to cwd: " +  coreFileName);
                 long startTime = System.currentTimeMillis();

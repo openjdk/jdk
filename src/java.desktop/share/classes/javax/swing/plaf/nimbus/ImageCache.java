@@ -167,7 +167,7 @@ class ImageCache {
                     currentPixelCount -= entry.getValue().pixelCount;
                 }
             }
-            // finaly put new in map
+            // finally put new in map
             map.put(hash, new PixelCountSoftReference(image, referenceQueue, newPixelCount,hash, config, w, h, args));
             return true;
         } finally {

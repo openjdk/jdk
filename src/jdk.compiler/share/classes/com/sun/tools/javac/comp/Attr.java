@@ -4119,6 +4119,10 @@ public class Attr extends JCTree.Visitor {
                                          Type exprType,
                                          Type pattType) {
         Warner warner = new Warner();
+        // if any type is erroneous, the problem is reported elsewhere
+        if (exprType.isErroneous() || pattType.isErroneous()) {
+            return false;
+        }
         if (!types.isCastable(exprType, pattType, warner)) {
             chk.basicHandler.report(pos,
                     diags.fragment(Fragments.InconvertibleTypes(exprType, pattType)));
@@ -4180,9 +4184,10 @@ public class Attr extends JCTree.Visitor {
             tree.record = record;
         } else {
             log.error(tree.pos(), Errors.DeconstructionPatternOnlyRecords(site.tsym));
-            expectedRecordTypes = Stream.generate(() -> Type.noType)
+            expectedRecordTypes = Stream.generate(() -> types.createErrorType(tree.type))
                                 .limit(tree.nested.size())
                                 .collect(List.collector());
+            tree.record = syms.errSymbol;
         }
         ListBuffer<BindingSymbol> outBindings = new ListBuffer<>();
         List<Type> recordTypes = expectedRecordTypes;

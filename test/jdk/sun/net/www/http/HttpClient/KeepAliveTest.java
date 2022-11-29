@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @bug 8291226 8291638
  * @modules java.base/sun.net:+open
  *          java.base/sun.net.www.http:+open
  *          java.base/sun.net.www:+open
@@ -1015,12 +1016,6 @@ public class KeepAliveTest {
     }
 
     private void startScenario(int scenarioNumber) throws Exception {
-        //test scenarios are skipped because of JDK-8291638
-        if((scenarioNumber >= 112 && scenarioNumber <= 127) || (scenarioNumber >= 144 && scenarioNumber <= 159)) {
-            System.out.println("Scenario Skipped:"+scenarioNumber);
-            this.countDownLatch.countDown();
-            return;
-        }
         System.out.println("serverScenarios[" + scenarioNumber + "]=" + getServerScenario(scenarioNumber));
         System.out.println("clientScenarios[" + scenarioNumber + "]=" + clientScenarios[getClientScenarioNumber(scenarioNumber)]);
         if(expectedValues[scenarioNumber] == 0) {

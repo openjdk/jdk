@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class JAXPTestPolicy extends BasePolicy {
             policyManager.addPermission(new RuntimePermission("accessClassInPackage.com.sun.org.apache.xalan.internal.xsltc.trax"));
             policyManager.addPermission(new RuntimePermission("accessClassInPackage.com.sun.xml.internal.stream"));
 
-            policyManager.addPermission(new SocketPermission("openjdk.java.net:80", "connect,resolve"));
+            policyManager.addPermission(new SocketPermission("openjdk.org:80", "connect,resolve"));
             policyManager.addPermission(new SocketPermission("www.w3.org:80", "connect,resolve"));
         }
     }

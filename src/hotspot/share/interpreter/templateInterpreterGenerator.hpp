@@ -94,7 +94,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-#if defined(AMD64) || defined(AARCH64)
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   address generate_currentThread();
 #endif
 #ifdef IA32

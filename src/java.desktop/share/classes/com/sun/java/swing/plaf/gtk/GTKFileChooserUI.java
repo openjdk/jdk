@@ -488,7 +488,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (chooser.getFileSelectionMode() != JFileChooser.DIRECTORIES_ONLY
+                            && (chooser.getFileSelectionMode() == JFileChooser.FILES_ONLY
                                 || !chooser.getFileSystemView().isFileSystem(((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
@@ -1383,7 +1383,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public String getName() {
             // As SynthComboBoxRenderer's are asked for a size BEFORE they
-            // are parented getName is overriden to force the name to be
+            // are parented getName is overridden to force the name to be
             // ComboBox.renderer if it isn't set. If we didn't do this the
             // wrong style could be used for size calculations.
             String name = super.getName();

@@ -253,8 +253,6 @@ class java_lang_Class : AllStatic {
                             Handle protection_domain, Handle classData, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
-  static void update_archived_primitive_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
-  static void update_archived_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -481,13 +479,7 @@ class java_lang_ThreadGroup : AllStatic {
   static int _maxPriority_offset;
   static int _daemon_offset;
 
-  static int _ngroups_offset;
-  static int _groups_offset;
-  static int _nweaks_offset;
-  static int _weaks_offset;
-
   static void compute_offsets();
-
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
@@ -499,15 +491,6 @@ class java_lang_ThreadGroup : AllStatic {
   static ThreadPriority maxPriority(oop java_thread_group);
   // Daemon
   static bool is_daemon(oop java_thread_group);
-
-  // Number of strongly reachable thread groups
-  static int ngroups(oop java_thread_group);
-  // Strongly reachable thread groups
-  static objArrayOop groups(oop java_thread_group);
-  // Number of weakly reachable thread groups
-  static int nweaks(oop java_thread_group);
-  // Weakly reachable thread groups
-  static objArrayOop weaks(oop java_thread_group);
 
   // Debugging
   friend class JavaClasses;

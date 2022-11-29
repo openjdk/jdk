@@ -117,7 +117,6 @@ public class TestG1ParallelPhases {
             "YoungFreeCSet",
             "RebuildFreeList",
             "SampleCandidates",
-            "CLDClearClaimedMarks",
             "ResetMarkingState",
             "NoteStartOfMark"
         );
