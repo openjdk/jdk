@@ -269,10 +269,11 @@ public class MetalBorders {
             Color oldColor = null;
             boolean resetTransform = false;
             int stkWidth = 1;
+            double scaleFactor = 1;
 
-            if (g instanceof Graphics2D) {
-                Graphics2D g2d = (Graphics2D) g;
+            if (g instanceof Graphics2D g2d) {
                 at = g2d.getTransform();
+                scaleFactor = at.getScaleX();
                 oldColor = g2d.getColor();
                 oldStk = g2d.getStroke();
 
@@ -308,7 +309,8 @@ public class MetalBorders {
             g.translate(xtranslation, ytranslation);
 
             // scaled border
-            int thickness = (int) Math.ceil(4 * at.getScaleX());
+            int thickness = (scaleFactor == 1) ? 4 :
+                    (int) Math.ceil(4 * scaleFactor);
 
             g.setColor(background);
             // Draw the bulk of the border
@@ -320,11 +322,12 @@ public class MetalBorders {
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
                 int midPoint = thickness / 2;
-                int offset = ((at.getScaleX() - stkWidth) >= 0 && stkWidth % 2 != 0) ? 1 : 0;
+                int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
                 int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
                 int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
                 // scaled corner
-                int corner = (int) Math.round(CORNER * at.getScaleX());
+                int corner = (scaleFactor == 1) ? CORNER :
+                        (int) Math.round(CORNER * scaleFactor);
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
