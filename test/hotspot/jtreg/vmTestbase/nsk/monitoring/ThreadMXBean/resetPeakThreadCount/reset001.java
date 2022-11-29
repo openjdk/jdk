@@ -34,7 +34,7 @@
  *     The test starts a couple of user threads and waits until they finish. After
  *     that, resetPeakThreadCount() is invoked to reset the peak. Then
  *     getPeakThreadCount() and getThreadCount() must return the same values. The
- *     preposition is that no threads are appered/disappeared between
+ *     expectation is that no threads are created, or terminated, between
  *     "getPeakThreadCount()" and getThreadCount()" calls.
  *     The test implements defferent ways to access to the metrics.
  *
@@ -115,7 +115,7 @@ public class reset001 {
             testFailed = true;
         }
 
-        // The test supposes that no threads are appered/disappeared between
+        // The test assumes that no threads are created or terminated between
         // "getPeakThreadCount()" and "getThreadCount()" calls
         monitor.resetPeakThreadCount();
         int peak = monitor.getPeakThreadCount();
