@@ -187,8 +187,7 @@ module java.base {
     exports jdk.internal.org.objectweb.asm to
         jdk.jartool,
         jdk.jfr,
-        jdk.jlink,
-        jdk.jshell;
+        jdk.jlink;
     exports jdk.internal.org.objectweb.asm.tree to
         jdk.jfr,
         jdk.jlink;
@@ -368,7 +367,10 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
-
+    exports jdk.classfile to
+        jdk.jshell;
+    exports jdk.classfile.instruction to
+        jdk.jshell;
     // the service types defined by the APIs in this module
 
     uses java.lang.System.LoggerFinder;
