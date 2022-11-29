@@ -187,6 +187,7 @@ public class Basic {
                 new ExType("xls", List.of("application/vnd.ms-excel")),
                 new ExType("xlsx", List.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
                 new ExType("7z", List.of("application/x-7z-compressed")),
+                new ExType("wasm", List.of("application/wasm")),
         };
         failures += checkContentTypes(exTypes);
 
