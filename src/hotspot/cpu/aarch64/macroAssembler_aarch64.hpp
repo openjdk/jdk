@@ -113,7 +113,6 @@ class MacroAssembler: public Assembler {
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
-    code_section()->relocate(inst_mark(), a.rspec());
     a.lea(this, r);
   }
 
