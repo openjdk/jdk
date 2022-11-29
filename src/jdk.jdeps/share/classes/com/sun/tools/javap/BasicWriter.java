@@ -27,10 +27,6 @@ package com.sun.tools.javap;
 
 import java.io.PrintWriter;
 
-import com.sun.tools.classfile.AttributeException;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.DescriptorException;
-
 /*
  *  A writer similar to a PrintWriter but which does not hide exceptions.
  *  The standard print calls are line-buffered; report calls write messages directly.
@@ -83,17 +79,7 @@ public class BasicWriter {
         lineWriter.pendingNewline = b;
     }
 
-    protected String report(AttributeException e) {
-        out.println("Error: " + e.getMessage()); // i18n?
-        return "???";
-    }
-
-    protected String report(ConstantPoolException e) {
-        out.println("Error: " + e.getMessage()); // i18n?
-        return "???";
-    }
-
-    protected String report(DescriptorException e) {
+    protected String report(Exception e) {
         out.println("Error: " + e.getMessage()); // i18n?
         return "???";
     }
