@@ -37,8 +37,8 @@ uint32_t VM_Version::_initial_vector_length = 0;
 void VM_Version::initialize() {
   get_os_cpu_info();
 
-  // check if satp.mode is supported, currently supports up to SV48(RV64)/SV32(RV32)
-  if (get_satp_mode() > RISCV64_ONLY(VM_SV48) RISCV32_ONLY(VM_SV32)) {
+  // check if satp.mode is supported, currently supports up to SV48(RV64)
+  if (get_satp_mode() > VM_SV48) {
     vm_exit_during_initialization(err_msg("Unsupported satp mode: %s", _vm_mode));
   }
 

@@ -41,7 +41,6 @@ private:
 // VM modes (satp.mode) privileged ISA 1.10
 enum VM_MODE {
   VM_MBARE = 0,
-  VM_SV32  = 1,
   VM_SV39  = 8,
   VM_SV48  = 9,
   VM_SV57  = 10,

@@ -76,9 +76,7 @@ uint32_t VM_Version::get_current_vector_length() {
 }
 
 VM_Version::VM_MODE VM_Version::get_satp_mode() {
-  if (!strcmp(_vm_mode, "sv32")) {
-    return VM_SV32;
-  } else if (!strcmp(_vm_mode, "sv39")) {
+  if (!strcmp(_vm_mode, "sv39")) {
     return VM_SV39;
   } else if (!strcmp(_vm_mode, "sv48")) {
     return VM_SV48;
