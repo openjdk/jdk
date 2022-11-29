@@ -816,10 +816,6 @@ A JNI call was made without checking for a pending exception from a
 previous JNI call, and the current call is not safe when an exception
 may be pending.
 .IP \[bu] 2
-The number of JNI local references existing when a JNI function
-terminates exceeds the number guaranteed to be available.
-See the \f[V]EnsureLocalcapacity\f[R] function.
-.IP \[bu] 2
 A class descriptor is in decorated format (\f[V]Lname;\f[R]) when it
 should not be.
 .IP \[bu] 2
