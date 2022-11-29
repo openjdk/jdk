@@ -3943,6 +3943,17 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   INSN(sve_bdep, 0b01);
 #undef INSN
 
+// SVE2 bitwise ternary operations
+#define INSN(NAME, opc)                                               \
+  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {  \
+    starti;                                                           \
+    f(0b00000100, 31, 24), f(opc, 23, 21), rf(Zm, 16);                \
+    f(0b001110, 15, 10), rf(Zk, 5), rf(Zdn, 0);                       \
+  }
+
+  INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+#undef INSN
+
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
   }
 
