@@ -38,25 +38,44 @@
  *     "getPeakThreadCount()" and getThreadCount()" calls.
  *     The test implements defferent ways to access to the metrics.
  *
+ * @comment Direct access to the metrics.
  * @library /vmTestbase
  *          /test/lib
- *
- * @comment Direct access to the metrics.
  * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
- *
+ */
+
+/*
+ * @test
  * @comment Access to the metrics via default MBean server.
+ * @library /vmTestbase
+ *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001 -testMode=server
- *
+ */
+
+/*
+ * @test
  * @comment Access to the metrics via custom MBean server.
+ * @library /vmTestbase
+ *          /test/lib
  * @run main/othervm
  *      nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
  *      -testMode=server
  *      -MBeanServer=custom
- *
+ */
+
+/*
+ * @test
  * @comment Access to the metrics via default MBean server proxy.
+ * @library /vmTestbase
+ *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001 -testMode=proxy
- *
+ */
+
+/*
+ * @test
  * @comment Access to the metrics via custom MBean server proxy.
+ * @library /vmTestbase
+ *          /test/lib
  * @run main/othervm
  *      nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
  *      -testMode=proxy
