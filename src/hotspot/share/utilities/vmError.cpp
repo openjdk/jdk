@@ -533,6 +533,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     _current_step = __LINE__;                              \
     {
       // [Begin logic]
+
 # define STEP_IF(s,cond)                                   \
     }                                                      \
   }                                                        \
@@ -543,7 +544,9 @@ void VMError::report(outputStream* st, bool _verbose) {
     _step_did_timeout = false;                             \
     if ((cond)) {
       // [Step logic]
+
 # define STEP(s) STEP_IF(s, true)
+
 # define END                                               \
     }                                                      \
     clear_step_start_time();                               \
