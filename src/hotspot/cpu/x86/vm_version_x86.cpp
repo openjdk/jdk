@@ -1122,6 +1122,22 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  // ChaCha20 Intrinsics
+  // As long as the system supports AVX as a baseline we can do a
+  // SIMD-enabled block function.  StubGenerator makes the determination
+  // based on the VM capabilities whether to use an AVX2 or AVX512-enabled
+  // version.
+  if (UseAVX >= 1) {
+      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          UseChaCha20Intrinsics = true;
+      }
+  } else if (UseChaCha20Intrinsics) {
+      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          warning("ChaCha20 intrinsic requires AVX instructions");
+      }
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
   if ((UseAVX > 2) && supports_avx512vl() && supports_avx512bw()) {
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
