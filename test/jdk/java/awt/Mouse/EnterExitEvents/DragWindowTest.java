@@ -55,7 +55,7 @@ public class DragWindowTest {
     public static void main(String[] args) throws Exception {
 
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(250);
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -81,6 +81,7 @@ public class DragWindowTest {
         robot.waitForIdle();
 
         if (dragWindowMouseEnteredCount != 1) {
+//            System.out.println("dragWindowMouseEnteredCount " + dragWindowMouseEnteredCount);
             throw new RuntimeException("No MouseEntered event on Drag Window!");
         }
 
