@@ -37,6 +37,16 @@ static bool is_def(int usedef) {
   return false;
 }
 
+int snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  assert(result >= 0, "snprintf error");
+  assert(static_cast<size_t>(result) < len, "snprintf truncated");
+  return result;
+}
+
 // Define  an array containing the machine register names, strings.
 static void defineRegNames(FILE *fp, RegisterForm *registers) {
   if (registers) {
@@ -214,7 +224,7 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
   while ( (paramname = pipeclass->_parameters.iter()) != NULL ) {
     const PipeClassOperandForm *tmppipeopnd =
         (const PipeClassOperandForm *)pipeclass->_localUsage[paramname];
-    templen += snprintf(&operand_stages[templen], operand_stages_size - templen, "  stage_%s%c\n",
+    templen += snprintf_checked(&operand_stages[templen], operand_stages_size - templen, "  stage_%s%c\n",
       tmppipeopnd ? tmppipeopnd->_stage : "undefined",
       (++i < paramcount ? ',' : ' ') );
   }
@@ -289,7 +299,7 @@ static int pipeline_res_stages_initializer(
     const char * const resname =
       res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i]-1);
 
-    templen += snprintf(&resource_stages[templen], resource_stages_size - templen, "  stage_%s%-*s // %s\n",
+    templen += snprintf_checked(&resource_stages[templen], resource_stages_size - templen, "  stage_%s%-*s // %s\n",
       resname, max_stage - (int)strlen(resname) + 1,
       (i < pipeline->_rescount-1) ? "," : "",
       pipeline->_reslist.name(i));
@@ -348,7 +358,7 @@ static int pipeline_res_cycles_initializer(
   for (i = 0; i < pipeline->_rescount; i++) {
     if (max_cycles < res_cycles[i])
       max_cycles = res_cycles[i];
-    templen = snprintf(temp, sizeof(temp), "%d", res_cycles[i]);
+    templen = snprintf_checked(temp, sizeof(temp), "%d", res_cycles[i]);
     if (cyclelen < templen)
       cyclelen = templen;
     commentlen += (int)strlen(pipeline->_reslist.name(i));
@@ -363,7 +373,7 @@ static int pipeline_res_cycles_initializer(
   templen = 0;
 
   for (i = 0; i < pipeline->_rescount; i++) {
-    templen += snprintf(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
+    templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
       cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', pipeline->_reslist.name(i));
   }
 
@@ -462,7 +472,7 @@ static int pipeline_res_mask_initializer(
     }
 
     int formatlen =
-      snprintf(&resource_mask[templen], resource_mask_size - templen, "  %s(0x%0*x, %*d, %*d, %s %s(",
+      snprintf_checked(&resource_mask[templen], resource_mask_size - templen, "  %s(0x%0*x, %*d, %*d, %s %s(",
         pipeline_use_element,
         masklen, used_mask,
         cycledigit, lb, cycledigit, ub,
@@ -502,7 +512,7 @@ static int pipeline_res_mask_initializer(
 
     for (j = cyclemasksize-1; j >= 0; j--) {
       formatlen =
-        snprintf(&resource_mask[templen], resource_mask_size - templen, "0x%08x%s", res_mask[j], j > 0 ? ", " : "");
+        snprintf_checked(&resource_mask[templen], resource_mask_size - templen, "0x%08x%s", res_mask[j], j > 0 ? ", " : "");
       templen += formatlen;
     }
 
@@ -533,7 +543,7 @@ static int pipeline_res_mask_initializer(
     // "0x012345678, 0x012345678, 4294967295"
     char* args = new char [36 + 1];
 
-    snprintf(args, 37, "0x%x, 0x%x, %u",
+    snprintf_checked(args, 37, "0x%x, 0x%x, %u",
         resources_used, resources_used_exclusively, element_count);
 
     pipeline_res_args.addName(args);
@@ -1071,9 +1081,9 @@ static void build_instruction_index_mapping( FILE *fp, FormDict &globals, PeepMa
       InstructForm *inst = globals[inst_name]->is_instruction();
       if( inst != NULL ) {
         char inst_prefix[]  = "instXXXX_";
-        snprintf(inst_prefix, sizeof(inst_prefix), "inst%d_",   inst_position);
+        snprintf_checked(inst_prefix, sizeof(inst_prefix), "inst%d_",   inst_position);
         char receiver[]     = "instXXXX->";
-        snprintf(receiver, sizeof(receiver), "inst%d->", inst_position);
+        snprintf_checked(receiver, sizeof(receiver), "inst%d->", inst_position);
         inst->index_temps( fp, globals, inst_prefix, receiver );
       }
     }
@@ -1167,7 +1177,7 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
         char left_reg_index[] = ",inst4294967295_idx4294967295";
         if( left_op_index != 0 ) {
           // Must have index into operands
-          snprintf(left_reg_index, sizeof(left_reg_index), ",inst%u_idx%u", (unsigned)left_index, (unsigned)left_op_index);
+          snprintf_checked(left_reg_index, sizeof(left_reg_index), ",inst%u_idx%u", (unsigned)left_index, (unsigned)left_op_index);
         } else {
           strcpy(left_reg_index, "");
         }
@@ -1179,7 +1189,7 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
           char right_reg_index[] = ",inst4294967295_idx4294967295";
           if( right_op_index != 0 ) {
             // Must have index into operands
-            snprintf(right_reg_index, sizeof(right_reg_index), ",inst%u_idx%u", (unsigned)right_index, (unsigned)right_op_index);
+            snprintf_checked(right_reg_index, sizeof(right_reg_index), ",inst%u_idx%u", (unsigned)right_index, (unsigned)right_op_index);
           } else {
             strcpy(right_reg_index, "");
           }
@@ -2568,19 +2578,19 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
     const char* arg_name = ins_encode->rep_var_name(inst, param_no);
     int idx = inst.operand_position_format(arg_name);
     if (strcmp(arg_name, "constanttablebase") == 0) {
-      ib += snprintf(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
+      ib += snprintf_checked(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
                     name, type, arg_name);
-      nb += snprintf(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      nb += snprintf_checked(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
       // There is no operand for the constanttablebase.
     } else if (inst.is_noninput_operand(idx)) {
       globalAD->syntax_err(inst._linenum,
                            "In %s: you can not pass the non-input %s to a postalloc expand encoding.\n",
                            inst._ident, arg_name);
     } else {
-      ib += snprintf(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
+      ib += snprintf_checked(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
                     name, idx, type, arg_name);
-      nb += snprintf(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
-      ob += snprintf(ob, remaining_buflen(opbuf, ob), "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
+      nb += snprintf_checked(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      ob += snprintf_checked(ob, remaining_buflen(opbuf, ob), "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
     }
     param_no++;
   }
