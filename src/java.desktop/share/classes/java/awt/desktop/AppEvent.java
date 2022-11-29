@@ -36,6 +36,7 @@ import java.util.EventObject;
  * {@link java.awt.Desktop} instance of the current desktop context.
  *
  * @since 9
+ * @sealedGraph
  */
 public sealed class AppEvent extends EventObject
     permits AboutEvent,
