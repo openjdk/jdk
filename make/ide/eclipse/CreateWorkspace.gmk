@@ -149,7 +149,7 @@ define SetupEclipseWorkspaceBody
   # Start with the Workspace file first
   $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(WORKSPACE_FILE))
   $$(call AppendFile,<projectDescription>, $(WORKSPACE_FILE))
-  $$(call AppendFile,    <name>Java SE</name>, $(WORKSPACE_FILE))
+  $$(call AppendFile,    <name>Java</name>, $(WORKSPACE_FILE))
   $$(call AppendFile,    <comment></comment>, $(WORKSPACE_FILE))
   $$(call AppendFile,    <projects>, $(WORKSPACE_FILE))
   $$(call AppendFile,    </projects>, $(WORKSPACE_FILE))
@@ -186,7 +186,7 @@ define SetupEclipseWorkspaceBody
 
     $$(call AppendFile,        <nature>org.eclipse.jdt.core.javanature</nature>, $(WORKSPACE_FILE))
 
-    $$(call WriteFile,<project name="Java SE">, $(ANT_BUILDFILE))
+    $$(call WriteFile,<project name="Java">, $(ANT_BUILDFILE))
 
     $$(call EmitEmptyLine, $(ANT_BUILDFILE))
     $$(call AppendFile,    <macrodef name="call-make">, $(ANT_BUILDFILE))
@@ -240,7 +240,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)">, $(NATIVE_FILE))
     $$(call AppendFile,            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
-    $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" moduleId="org.eclipse.cdt.core.settings" name="Java SE">, $(NATIVE_FILE))
+    $$(call AppendFile,            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" moduleId="org.eclipse.cdt.core.settings" name="Java">, $(NATIVE_FILE))
     $$(call AppendFile,                <externalSettings/>, $(NATIVE_FILE))
 
     # For some strange reason Eclipse requires that the binary parsers be listed for the workspace to be recognised as a C/C++ one
@@ -255,7 +255,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,            </storageModule>, $(NATIVE_FILE))
     $$(call EmitEmptyLine, $(NATIVE_FILE))
     $$(call AppendFile,            <storageModule moduleId="cdtBuildSystem" version="4.0.0">, $(NATIVE_FILE))
-    $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java SE" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
+    $$(call AppendFile,                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java" parent="org.eclipse.cdt.build.core.emptycfg">, $(NATIVE_FILE))
     $$(call AppendFile,                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID).$(call RandomDigits, 9)" name="/" resourcePath="">, $(NATIVE_FILE))
     # $$(call AppendFile,                        <toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.$(call RandomDigits, 9)" name="C/C++ Compiler" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">, $(NATIVE_FILE))
     # $$(call AppendFile,                            <targetPlatform id="org.eclipse.cdt.build.core.prefbase.toolchain.$(call RandomDigits, 9).$(WORKSPACE_ID)" name=""/>, $(NATIVE_FILE))
@@ -316,7 +316,19 @@ define SetupEclipseWorkspaceBody
 
     $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,<project>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java SE">, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java">, $(LANGUAGE_SETTINGS))
+
+    # $$(call AppendFile,        <extension point="org.eclipse.cdt.core.language">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,            <language class="org.eclipse.cdt.core.dom.ast.gnu.c.GCCLanguage" id="org.eclipse.cdt.core.gcc" name="C">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cSource"/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cHeader"/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,            </language>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,            <language class="org.eclipse.cdt.core.dom.ast.gnu.cpp.GPPLanguage" id="org.eclipse.cdt.core.g++" name="C++">, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cxxSource"/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cxxHeader"/>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,            </language>, $(LANGUAGE_SETTINGS))
+    # $$(call AppendFile,        </extension>, $(LANGUAGE_SETTINGS))
+
     $$(call AppendFile,        <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">, $(LANGUAGE_SETTINGS))
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
