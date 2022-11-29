@@ -37,6 +37,7 @@ import java.security.cert.CertificateFactory;
 import java.security.*;
 import java.util.function.Function;
 
+import sun.security.jca.JCAUtil;
 import sun.security.provider.SHAKE256;
 import sun.security.timestamp.*;
 import sun.security.util.*;
@@ -64,23 +65,6 @@ public class PKCS7 {
     private boolean oldStyle = false; // Is this JDK1.1.x-style?
 
     private Principal[] certIssuerNames;
-
-    /*
-     * Random number generator for creating nonce values
-     * (Lazy initialization)
-     */
-    private static class SecureRandomHolder {
-        static final SecureRandom RANDOM;
-        static {
-            SecureRandom tmp = null;
-            try {
-                tmp = SecureRandom.getInstance("SHA1PRNG");
-            } catch (NoSuchAlgorithmException e) {
-                // should not happen
-            }
-            RANDOM = tmp;
-        }
-    }
 
     /**
      * Unmarshals a PKCS7 block from its encoded form, parsing the
@@ -700,9 +684,7 @@ public class PKCS7 {
                 try {
                     X509CertInfo tbsCert =
                         new X509CertInfo(cert.getTBSCertificate());
-                    certIssuerName = (Principal)
-                        tbsCert.get(X509CertInfo.ISSUER + "." +
-                                    X509CertInfo.DN_NAME);
+                    certIssuerName = tbsCert.getIssuer();
                 } catch (Exception e) {
                     // error generating X500Name object from the cert's
                     // issuer DN, leave name as is.
@@ -800,9 +782,9 @@ public class PKCS7 {
             // CMSAlgorithmProtection (RFC6211)
             DerOutputStream derAp = new DerOutputStream();
             DerOutputStream derAlgs = new DerOutputStream();
-            digAlgID.derEncode(derAlgs);
+            digAlgID.encode(derAlgs);
             DerOutputStream derSigAlg = new DerOutputStream();
-            sigAlgID.derEncode(derSigAlg);
+            sigAlgID.encode(derSigAlg);
             derAlgs.writeImplicit((byte)0xA1, derSigAlg);
             derAp.write(DerValue.tag_Sequence, derAlgs);
             authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{
@@ -1017,11 +999,9 @@ public class PKCS7 {
         }
 
         // Generate a nonce
-        BigInteger nonce = null;
-        if (SecureRandomHolder.RANDOM != null) {
-            nonce = new BigInteger(64, SecureRandomHolder.RANDOM);
-            tsQuery.setNonce(nonce);
-        }
+        BigInteger nonce = new BigInteger(64, JCAUtil.getDefSecureRandom());
+        tsQuery.setNonce(nonce);
+
         tsQuery.requestCertificate(true);
 
         TSResponse tsReply = tsa.generateTimestamp(tsQuery);

@@ -249,6 +249,7 @@ class MLetParser {
     /**
      * Parse the document pointed by the URL urlname
      */
+    @SuppressWarnings("deprecation")
     public List<MLetContent> parseURL(String urlname) throws IOException {
         // Parse the document
         //

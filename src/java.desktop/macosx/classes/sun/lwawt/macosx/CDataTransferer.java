@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,9 @@ public class CDataTransferer extends DataTransferer {
             String xml = new String(bytes, charset);
             // macosx pasteboard returns a property list that consists of one URL
             // let's extract it.
-            return new URL(extractURL(xml));
+            @SuppressWarnings("deprecation")
+            var result = new URL(extractURL(xml));
+            return result;
         }
 
         if(isUriListFlavor(flavor) && format == CF_FILE) {

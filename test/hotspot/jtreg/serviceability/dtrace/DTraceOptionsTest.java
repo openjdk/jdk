@@ -56,7 +56,6 @@ public class DTraceOptionsTest {
         }
 
         String[] options = {
-            "ExtendedDTraceProbes",
             "DTraceMethodProbes",
             "DTraceAllocProbes",
             "DTraceMonitorProbes",

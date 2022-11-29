@@ -52,7 +52,7 @@ public class InflaterInputStream extends FilterInputStream {
     protected byte[] buf;
 
     /**
-     * Length of input buffer.
+     * The total number of bytes read into the input buffer.
      */
     protected int len;
 
@@ -251,7 +251,13 @@ public class InflaterInputStream extends FilterInputStream {
 
     /**
      * Fills input buffer with more data to decompress.
+     * @implSpec
+     * This method will read up to {@link #buf}.length bytes into the input
+     * buffer, {@link #buf}, starting at element {@code 0}. The {@link #len}
+     * field will be set to the number of bytes read.
      * @throws    IOException if an I/O error has occurred
+     * @throws    EOFException if the end of input stream has been reached
+     *            unexpectedly
      */
     protected void fill() throws IOException {
         ensureOpen();

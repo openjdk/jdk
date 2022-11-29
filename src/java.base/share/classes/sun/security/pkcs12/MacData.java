@@ -116,36 +116,6 @@ class MacData {
 
     }
 
-    MacData(AlgorithmParameters algParams, byte[] digest,
-        byte[] salt, int iterations) throws NoSuchAlgorithmException
-    {
-        if (algParams == null)
-           throw new NullPointerException("the algParams parameter " +
-                                               "must be non-null");
-
-        AlgorithmId algid = AlgorithmId.get(algParams);
-        this.digestAlgorithmName = algid.getName();
-        this.digestAlgorithmParams = algid.getParameters();
-
-        if (digest == null) {
-            throw new NullPointerException("the digest " +
-                                           "parameter must be non-null");
-        } else if (digest.length == 0) {
-            throw new IllegalArgumentException("the digest " +
-                                                "parameter must not be empty");
-        } else {
-            this.digest = digest.clone();
-        }
-
-        this.macSalt = salt;
-        this.iterations = iterations;
-
-        // delay the generation of ASN.1 encoding until
-        // getEncoded() is called
-        this.encoded = null;
-
-    }
-
     String getDigestAlgName() {
         return digestAlgorithmName;
     }

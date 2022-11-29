@@ -102,7 +102,7 @@ jobs:
         run: |
           # Set a proper suffix for packages if using a different architecture
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
-            echo '::set-output name=suffix:::${{ inputs.apt-architecture }}'
+            echo 'suffix=:${{ inputs.apt-architecture }}' >> $GITHUB_OUTPUT
           fi
 
       # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.

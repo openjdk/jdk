@@ -1047,7 +1047,9 @@ public class JConsole extends JFrame
         if (!file.isFile()) {
             name = name + "/";
         }
-        return new URL("file", "", name);
+        @SuppressWarnings("deprecation")
+        var result = new URL("file", "", name);
+        return result;
     }
 
 

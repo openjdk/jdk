@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
  * @key headful
  * @bug 5009033 6603000 6666362 8159142 8198613
  * @summary Verifies that images transformed with bilinear filtering do not
- * leave artifacts at the edges.
+ *          leave artifacts at the edges.
  * @run main/othervm -Dsun.java2d.uiScale=2.5 DrawImageBilinear
  * @run main/othervm -Dsun.java2d.uiScale=2.5 -Dsun.java2d.d3d=false DrawImageBilinear
- * @author campbelc
  */
 
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -55,28 +54,13 @@ public class DrawImageBilinear extends Canvas {
     private static boolean done;
     private BufferedImage bimg1, bimg2;
     private VolatileImage vimg;
-    private static volatile BufferedImage capture;
-    private static void doCapture(Component test) {
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException ex) {}
-        // Grab the screen region
-        try {
-            Robot robot = new Robot();
-            Point pt1 = test.getLocationOnScreen();
-            Rectangle rect =
-                new Rectangle(pt1.x, pt1.y, test.getWidth(), test.getHeight());
-            capture = robot.createScreenCapture(rect);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    private static BufferedImage capture;
+    private static DrawImageBilinear test;
+    private static Frame frame;
 
     private void renderPattern(Graphics g) {
         g.setColor(Color.red);
         g.fillRect(0, 0, SIZE, SIZE);
-        //g.setColor(Color.green);
-        //g.drawRect(0, 0, SIZE-1, SIZE-1);
         g.dispose();
     }
 
@@ -108,26 +92,17 @@ public class DrawImageBilinear extends Canvas {
 
             // second time will be a texture->surface blit
             g2d.drawImage(bimg2, 80, 10, 40, 40, null);
-            if (!skipOglTextureTest) {
-                g2d.drawImage(bimg2, 80, 10, 40, 40, null);
-            }
+            g2d.drawImage(bimg2, 80, 10, 40, 40, null);
 
             // third time will be a pbuffer->surface blit
-            if (vimg.validate(getGraphicsConfiguration()) != VolatileImage.IMAGE_OK) {
+            if (vimg.validate(getGraphicsConfiguration()) !=
+                VolatileImage.IMAGE_OK) {
                 renderPattern(vimg.createGraphics());
             }
             g2d.drawImage(vimg, 150, 10, 40, 40, null);
 
             Toolkit.getDefaultToolkit().sync();
         } while (vimg.contentsLost());
-
-        synchronized (this) {
-            if (!done) {
-                doCapture(this);
-                done = true;
-            }
-            notifyAll();
-        }
     }
 
     public Dimension getPreferredSize() {
@@ -156,63 +131,55 @@ public class DrawImageBilinear extends Canvas {
         }
     }
 
-    private static boolean skipOglTextureTest = false;
-
-    public static void main(String[] args) {
-        boolean show = false;
-        for (String arg : args) {
-            if ("-show".equals(arg)) {
-                show = true;
-            }
-        }
-
-        String arch = System.getProperty("os.arch");
-        boolean isOglEnabled = Boolean.getBoolean("sun.java2d.opengl");
-        skipOglTextureTest = false;
-        System.out.println("Skip OpenGL texture test: " + skipOglTextureTest);
-
-        DrawImageBilinear test = new DrawImageBilinear();
-        Frame frame = new Frame();
+    private static void createAndShowGUI() {
+        test = new DrawImageBilinear();
+        frame = new Frame();
         frame.add(test);
+        frame.setUndecorated(true);
+        frame.setAlwaysOnTop(true);
+        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
+    }
 
-        // Wait until the component's been painted
-        synchronized (test) {
-            while (!done) {
-                try {
-                    test.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed: Interrupted");
-                }
+    public static void main(String[] args) throws Exception {
+        try {
+            EventQueue.invokeAndWait(() -> createAndShowGUI());
+            GraphicsConfiguration gc = frame.getGraphicsConfiguration();
+            if (gc.getColorModel() instanceof IndexColorModel) {
+                System.out.println("IndexColorModel detected: " +
+                                   "test considered PASSED");
+                return;
+            }
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.mouseMove(0,0);
+            robot.waitForIdle();
+            Point pt1 = frame.getLocationOnScreen();
+            Rectangle rect =
+                new Rectangle(pt1.x, pt1.y,
+                    frame.getWidth(), frame.getHeight());
+            capture = robot.createScreenCapture(rect);
+            robot.waitForIdle();
+            if (capture == null) {
+                throw new RuntimeException("Failed: capture is null");
+            }
+
+            // Test background color
+            int pixel = capture.getRGB(5, 5);
+            if (pixel != 0xffffffff) {
+                throw new RuntimeException("Failed: Incorrect color for " +
+                                           "background");
+            }
+
+            // Test pixels
+            testRegion(capture, new Rectangle(10, 10, 40, 40));
+            testRegion(capture, new Rectangle(80, 10, 40, 40));
+            testRegion(capture, new Rectangle(150, 10, 40, 40));
+        } finally {
+            if (frame != null) {
+                frame.dispose();
             }
         }
-
-        GraphicsConfiguration gc = frame.getGraphicsConfiguration();
-        if (gc.getColorModel() instanceof IndexColorModel) {
-            System.out.println("IndexColorModel detected: " +
-                               "test considered PASSED");
-            frame.dispose();
-            return;
-        }
-
-        if (!show) {
-            frame.dispose();
-        }
-        if (capture == null) {
-            throw new RuntimeException("Failed: capture is null");
-        }
-
-        // Test background color
-        int pixel = capture.getRGB(5, 5);
-        if (pixel != 0xffffffff) {
-            throw new RuntimeException("Failed: Incorrect color for " +
-                                       "background");
-        }
-
-        // Test pixels
-        testRegion(capture, new Rectangle(10, 10, 40, 40));
-        testRegion(capture, new Rectangle(80, 10, 40, 40));
-        testRegion(capture, new Rectangle(150, 10, 40, 40));
     }
 }

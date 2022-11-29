@@ -713,6 +713,7 @@ static int setQTables(JNIEnv *env,
         CHECK_NULL_RETURN(table, 0);
         qdata = (*env)->GetObjectField(env, table, JPEGQTable_tableID);
         qdataBody = (*env)->GetPrimitiveArrayCritical(env, qdata, NULL);
+        CHECK_NULL_RETURN(qdataBody, 0);
 
         if (cinfo->is_decompressor) {
             decomp = (j_decompress_ptr) cinfo;

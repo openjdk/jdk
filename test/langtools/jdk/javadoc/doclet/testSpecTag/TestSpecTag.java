@@ -290,6 +290,61 @@ public class TestSpecTag extends JavadocTester {
                     </div>
                     """);
     }
+    @Test
+    public void testMultipleHosts(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * First sentence.
+                 * @spec http://example.com/1 example-1
+                 * @spec http://example.net/2 example-2
+                 */
+                public class C { }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dt>External Specifications</dt>
+                    <dd><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a>,\s
+                    <a href="http://example.net/2"><span id="example-2" class="search-tag-result">example-2</span></a></dd>
+                    """);
+
+        checkOutput("external-specs.html", true,
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="external-specs-tab0" role="tab" aria-selected="true" aria-controls="external-specs.tabpanel" \
+                    tabindex="0" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs', 2)" \
+                    class="active-table-tab">All Specifications</button>\
+                    <button id="external-specs-tab1" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
+                    tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab1', 2)" \
+                    class="table-tab">example.com</button>\
+                    <button id="external-specs-tab2" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
+                    tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab2', 2)" \
+                    class="table-tab">example.net</button></div>
+                    <div id="external-specs.tabpanel" role="tabpanel">
+                    <div class="summary-table two-column-summary" aria-labelledby="external-specs-tab0">
+                    <div class="table-header col-first">Specification</div>
+                    <div class="table-header col-last">Referenced In</div>""",
+                """
+                    <div class="col-first even-row-color external-specs external-specs-tab1"><a href="http://example.com/1">example-1</a></div>
+                    <div class="col-last even-row-color external-specs external-specs-tab1">
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example-1">class p.C</a></code></li>
+                    </ul>
+                    </div>
+                    <div class="col-first odd-row-color external-specs external-specs-tab2"><a href="http://example.net/2">example-2</a></div>
+                    <div class="col-last odd-row-color external-specs external-specs-tab2">
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#example-2">class p.C</a></code></li>
+                    </ul>
+                    </div>""");
+    }
 
     @Test
     public void testMultipleTitlesForURL(Path base) throws IOException {

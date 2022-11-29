@@ -293,13 +293,14 @@ class LibraryCallKit : public GraphKit {
   bool inline_ghash_processBlocks();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
+  bool inline_poly1305_processBlocks();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
                                         BasicType elem_type, address stubAddr, const char *stubName,
                                         Node* src_start, Node* ofs, Node* limit);
   Node* get_state_from_digest_object(Node *digestBase_object, BasicType elem_type);
-  Node* get_digest_length_from_digest_object(Node *digestBase_object);
+  Node* get_block_size_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
