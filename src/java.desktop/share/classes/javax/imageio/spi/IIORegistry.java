@@ -27,7 +27,6 @@ package javax.imageio.spi;
 
 import java.security.PrivilegedAction;
 import java.security.AccessController;
-import java.util.ArrayList;
 import java.util.Iterator;
 import com.sun.imageio.spi.FileImageInputStreamSpi;
 import com.sun.imageio.spi.FileImageOutputStreamSpi;
@@ -48,6 +47,7 @@ import com.sun.imageio.plugins.wbmp.WBMPImageWriterSpi;
 import com.sun.imageio.plugins.tiff.TIFFImageReaderSpi;
 import com.sun.imageio.plugins.tiff.TIFFImageWriterSpi;
 import sun.awt.AppContext;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 
@@ -83,18 +83,16 @@ import java.util.ServiceConfigurationError;
 public final class IIORegistry extends ServiceRegistry {
 
     /**
-     * An {@code ArrayList} containing the valid IIO registry
+     * A {@code List} containing the valid IIO registry
      * categories (superinterfaces) to be used in the constructor.
      */
-    private static final ArrayList<Class<?>> initialCategories = new ArrayList<>(5);
-
-    static {
-        initialCategories.add(ImageReaderSpi.class);
-        initialCategories.add(ImageWriterSpi.class);
-        initialCategories.add(ImageTranscoderSpi.class);
-        initialCategories.add(ImageInputStreamSpi.class);
-        initialCategories.add(ImageOutputStreamSpi.class);
-    }
+    private static final List<Class<?>> initialCategories = List.of(
+            ImageReaderSpi.class,
+            ImageWriterSpi.class,
+            ImageTranscoderSpi.class,
+            ImageInputStreamSpi.class,
+            ImageOutputStreamSpi.class
+    );
 
     /**
      * Set up the valid service provider categories and automatically
