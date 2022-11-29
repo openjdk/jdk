@@ -63,7 +63,6 @@ public:
   inline StackChunkFrameStream(stackChunkOop chunk, const frame& f);
 
   bool is_done() const { return _sp >= _end; }
-  void set_end(intptr_t* end) { _end = end; }
 
   // Query
   intptr_t*        sp() const  { return _sp; }
@@ -101,12 +100,10 @@ public:
   inline address get_pc() const;
   inline void get_cb();
 
-  inline intptr_t* next_sp() const;
   inline int interpreter_frame_size() const;
   inline int interpreter_frame_num_oops() const;
   inline int interpreter_frame_stack_argsize() const;
   inline void next_for_interpreter_frame();
-  inline intptr_t* next_sp_for_interpreter_frame() const;
   inline intptr_t* unextended_sp_for_interpreter_frame() const;
   inline intptr_t* derelativize(int offset) const;
   inline void get_oopmap() const;

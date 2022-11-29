@@ -237,11 +237,6 @@ inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop
 }
 
 template <ChunkFrames frame_kind>
-inline intptr_t* StackChunkFrameStream<frame_kind>::next_sp() const {
-  return is_interpreted() ? next_sp_for_interpreter_frame() : unextended_sp() + cb()->frame_size();
-}
-
-template <ChunkFrames frame_kind>
 inline void StackChunkFrameStream<frame_kind>::get_cb() {
   _oopmap = nullptr;
   if (is_done() || is_interpreted()) {
