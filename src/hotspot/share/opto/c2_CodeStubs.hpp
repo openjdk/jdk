@@ -41,48 +41,39 @@ protected:
     _entry(),
     _continuation() {}
 
-  // A helper to determine the size of a stub implementation.
-  // It is recommended to call this only once and cache the
-  // result in a static field.
-  static int measure_stub_size(C2CodeStub& stub);
-
-  int stub_size(volatile int* stub_size);
 public:
   Label& entry()        { return _entry; }
   Label& continuation() { return _continuation; }
+
   virtual void emit(C2_MacroAssembler& masm) = 0;
-  virtual int size() = 0;
-  virtual void reinit_labels() {
-    _entry.init();
-    _continuation.init();
-  }
+  virtual int size() const = 0;
 };
 
 class C2CodeStubList {
 private:
   GrowableArray<C2CodeStub*> _stubs;
+
 public:
   C2CodeStubList();
 
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
-  int  measure_code_size() const;
   void emit(CodeBuffer& cb);
 };
 
 class C2SafepointPollStub : public C2CodeStub {
 private:
-  static volatile int _stub_size;
   uintptr_t _safepoint_offset;
+
 public:
   C2SafepointPollStub(uintptr_t safepoint_offset) :
     _safepoint_offset(safepoint_offset) {}
-  int size() { return stub_size(&_stub_size); }
+  int size() const;
   void emit(C2_MacroAssembler& masm);
 };
 
 // We move non-hot code of the nmethod entry barrier to an out-of-line stub
 class C2EntryBarrierStub: public C2CodeStub {
-  static volatile int _stub_size;
+private:
   Label _guard; // Used on AArch64 and RISCV
 
 public:
@@ -91,13 +82,8 @@ public:
 
   Label& guard() { return _guard; }
 
-  int size() { return stub_size(&_stub_size); }
+  int size() const;
   void emit(C2_MacroAssembler& masm);
-
-  virtual void reinit_labels() {
-    C2CodeStub::reinit_labels();
-    _guard.init();
-  }
 };
 
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP

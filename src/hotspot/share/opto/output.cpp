@@ -1244,7 +1244,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
-  stub_req += _stub_list.measure_code_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
