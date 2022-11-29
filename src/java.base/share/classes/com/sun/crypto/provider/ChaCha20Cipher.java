@@ -89,13 +89,14 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private long finalCounterValue;
     private long counter;
 
-    // The 16-int state array and output keystream array:
-    // The base state is created at initialization time and then is copied
-    // into either local variables for computations (Java) or into
-    // SIMD registers (intrinsics).  The output keystream array is sized
-    // to hold keystream from up to 4 blocks worth (in order to support
-    // AVX512 intrinsics).
+    // The base state is created at initialization time as a 16-int array
+    // and then is copied into either local variables for computations (Java) or
+    // into SIMD registers (intrinsics).
     private final int[] startState = new int[KS_SIZE_INTS];
+
+    // The output keystream array is sized to hold keystream output from the
+    // implChaCha20Block method.  This can range from a single block at a time
+    // (Java software) up to 16 blocks on x86_64 with AVX512 support.
     private final byte[] keyStream = new byte[KS_MAX_LEN];
 
     // The keystream buffer limit and offset
