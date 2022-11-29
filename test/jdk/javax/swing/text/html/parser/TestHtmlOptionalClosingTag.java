@@ -54,7 +54,7 @@ public class TestHtmlOptionalClosingTag {
 
         JLabel label = new JLabel(html);
         frame.add(label);
-        frame.pack();
+        frame.setSize(400, 400);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
@@ -70,3 +70,4 @@ public class TestHtmlOptionalClosingTag {
         passFailJFrame.awaitAndCheck();
     }
 }
+
