@@ -1,7 +1,8 @@
 /*
  * @test /nodynamiccopyright/
  * @summary Verify errors related to var patterns
- * @compile/fail/ref=VarErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev VarErrors.java
+ * @enablePreview
+ * @compile/fail/ref=VarErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev VarErrors.java
  */
 public class VarErrors {
     void testIf(CharSequence cs) {

@@ -987,7 +987,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
                 //
                 try {
                     getCellEditorMethod = c.getClass().getMethod(
-                        "getCellEditorMethod", nullClass);
+                        "getCellEditor", nullClass);
                     try {
                         Object o = getCellEditorMethod.invoke(c, nullArgs);
                         if (o != null && o instanceof CellEditor) {
@@ -1633,7 +1633,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
                 //
                 try {
                     getCellEditorMethod = c.getClass().getMethod(
-                        "getCellEditorMethod", nullClass);
+                        "getCellEditor", nullClass);
                     try {
                         Object o = getCellEditorMethod.invoke(c, nullArgs);
                         if (o != null && o instanceof CellEditor) {

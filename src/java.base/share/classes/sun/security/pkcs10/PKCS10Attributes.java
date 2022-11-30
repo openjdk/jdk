@@ -91,11 +91,10 @@ public class PKCS10Attributes implements DerEncoder {
      * Encode the attributes in DER form to the stream.
      * Implements the {@code DerEncoder} interface.
      *
-     * @param out the OutputStream to marshal the contents to.
-     * @exception IOException on encoding errors.
+     * @param out the DerOutputStream to marshal the contents to.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         // first copy the elements into an array
         Collection<PKCS10Attribute> allAttrs = map.values();
         PKCS10Attribute[] attribs =

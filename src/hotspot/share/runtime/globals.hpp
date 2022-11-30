@@ -238,6 +238,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
+  product(bool, UsePolyIntrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for sun.security.util.math.intpoly")              \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
           "page size for the environment as the maximum)")                  \
@@ -319,6 +322,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseAESCTRIntrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
+                                                                            \
+  product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for the vectorized version of ChaCha20")          \
                                                                             \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \

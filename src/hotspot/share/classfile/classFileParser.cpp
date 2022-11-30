@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -39,6 +38,7 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -83,7 +83,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/utf8.hpp"
-
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif

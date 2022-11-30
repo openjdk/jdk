@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,14 +230,9 @@ final class P11ECKeyFactory extends P11KeyFactory {
         // Check whether the X9.63 encoding of an EC point shall be wrapped
         // in an ASN.1 OCTET STRING
         if (!token.config.getUseEcX963Encoding()) {
-            try {
-                encodedPoint =
+            encodedPoint =
                     new DerValue(DerValue.tag_OctetString, encodedPoint)
-                        .toByteArray();
-            } catch (IOException e) {
-                throw new
-                    IllegalArgumentException("Could not DER encode point", e);
-            }
+                            .toByteArray();
         }
 
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
