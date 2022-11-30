@@ -62,6 +62,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  */
 public final class SunPKCS11 extends AuthProvider {
 
+    @Serial
     private static final long serialVersionUID = -1354835039035306505L;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
