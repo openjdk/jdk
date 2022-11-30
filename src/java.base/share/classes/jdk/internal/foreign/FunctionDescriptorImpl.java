@@ -54,14 +54,14 @@ public final class FunctionDescriptorImpl implements FunctionDescriptor {
     /**
      * {@return the return layout (if any) associated with this function descriptor}
      */
-    public final Optional<MemoryLayout> returnLayout() {
+    public Optional<MemoryLayout> returnLayout() {
         return Optional.ofNullable(resLayout);
     }
 
     /**
      * {@return the argument layouts associated with this function descriptor (as an immutable list)}.
      */
-    public final List<MemoryLayout> argumentLayouts() {
+    public List<MemoryLayout> argumentLayouts() {
         return argLayouts;
     }
 
@@ -72,7 +72,7 @@ public final class FunctionDescriptorImpl implements FunctionDescriptor {
      * @param addedLayouts the argument layouts to append.
      * @return the new function descriptor.
      */
-    public final FunctionDescriptorImpl appendArgumentLayouts(MemoryLayout... addedLayouts) {
+    public FunctionDescriptorImpl appendArgumentLayouts(MemoryLayout... addedLayouts) {
         return insertArgumentLayouts(argLayouts.size(), addedLayouts);
     }
 
@@ -141,7 +141,7 @@ public final class FunctionDescriptorImpl implements FunctionDescriptor {
      * {@return the string representation of this function descriptor}
      */
     @Override
-    public final String toString() {
+    public String toString() {
         return String.format("(%s)%s",
                 argLayouts.stream().map(Object::toString)
                         .collect(Collectors.joining()),
@@ -162,7 +162,7 @@ public final class FunctionDescriptorImpl implements FunctionDescriptor {
      * @return {@code true} if the specified object is equal to this function descriptor.
      */
     @Override
-    public final boolean equals(Object other) {
+    public boolean equals(Object other) {
         return other instanceof FunctionDescriptorImpl f &&
                 Objects.equals(resLayout, f.resLayout) &&
                 Objects.equals(argLayouts, f.argLayouts);
@@ -172,7 +172,7 @@ public final class FunctionDescriptorImpl implements FunctionDescriptor {
      * {@return the hash code value for this function descriptor}
      */
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return Objects.hash(argLayouts, resLayout);
     }
 

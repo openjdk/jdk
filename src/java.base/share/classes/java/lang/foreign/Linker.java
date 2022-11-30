@@ -281,7 +281,7 @@ public sealed interface Linker permits AbstractLinker {
     SymbolLookup defaultLookup();
 
     /**
-     * A linker option that can be used to indicate additional linking requirements to the linker,
+     * A linker option is used to indicate additional linking requirements to the linker,
      * besides what is described by a function descriptor.
      * @since 20
      */
@@ -291,7 +291,7 @@ public sealed interface Linker permits AbstractLinker {
                     Option.CaptureCallState {
 
         /**
-         * {@return A linker option used to denote the index of the first variadic argument layout in a
+         * {@return a linker option used to denote the index of the first variadic argument layout in a
          *          foreign function call}
          * @param index the index of the first variadic argument in a downcall handle linkage request.
          */

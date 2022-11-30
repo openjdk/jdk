@@ -34,8 +34,11 @@ import jdk.internal.javac.PreviewFeature;
 import jdk.internal.reflect.CallerSensitive;
 
 /**
- * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
- * (either signed or unsigned) and <em>floating-point</em> types. Each value layout has a size, an alignment (in bits),
+ * A layout that models values of basic data types. Examples of values modelled by a value layout are
+ * <em>integral</em> values (either signed or unsigned), <em>floating-point</em> values and
+ * <em>address</em> values.
+ * <p>
+ * Each value layout has a size, an alignment (in bits),
  * a {@linkplain ByteOrder byte order}, and a <em>carrier</em>, that is, the Java type that should be used when
  * {@linkplain MemorySegment#get(OfInt, long) accessing} a region of memory using the value layout.
  * <p>
@@ -66,7 +69,7 @@ public sealed interface ValueLayout extends MemoryLayout {
     ValueLayout withOrder(ByteOrder order);
 
     /**
-     * Creates a <em>strided</em> access var handle that can be used to access a memory segment as multi-dimensional
+     * Creates a <em>strided</em> var handle that can be used to access a memory segment as multi-dimensional
      * array. The layout of this array is a sequence layout with {@code shape.length} nested sequence layouts. The element
      * layout of the sequence layout at depth {@code shape.length} is this value layout.
      * As a result, if {@code shape.length == 0}, the array layout will feature only one dimension.
@@ -145,9 +148,8 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code boolean.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_BOOLEAN}.
      *
+     * @see #JAVA_BOOLEAN
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -175,9 +177,8 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code byte.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_BYTE}.
      *
+     * @see #JAVA_BYTE
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -205,9 +206,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code char.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_CHAR}.
      *
+     * @see #JAVA_CHAR
+     * @see #JAVA_CHAR_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -235,9 +236,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code short.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_SHORT}.
      *
+     * @see #JAVA_SHORT
+     * @see #JAVA_SHORT_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -265,9 +266,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code int.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_INT}.
      *
+     * @see #JAVA_INT
+     * @see #JAVA_INT_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -295,9 +296,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code float.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_FLOAT}.
      *
+     * @see #JAVA_FLOAT
+     * @see #JAVA_FLOAT_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -325,9 +326,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code long.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_LONG}.
      *
+     * @see #JAVA_LONG
+     * @see #JAVA_LONG_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -355,9 +356,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code double.class}.
-     * <p>
-     * New instances of this type can be created using {@link #JAVA_LONG}.
      *
+     * @see #JAVA_DOUBLE
+     * @see #JAVA_DOUBLE_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
@@ -385,9 +386,9 @@ public sealed interface ValueLayout extends MemoryLayout {
 
     /**
      * A value layout whose carrier is {@code MemorySegment.class}.
-     * <p>
-     * New instances of this type can be created using {@link #ADDRESS}.
      *
+     * @see #ADDRESS
+     * @see #ADDRESS_UNALIGNED
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)

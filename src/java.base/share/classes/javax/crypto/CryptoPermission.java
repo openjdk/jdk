@@ -506,10 +506,8 @@ final class CryptoPermissionCollection extends PermissionCollection
         if (!(permission instanceof CryptoPermission cp))
             return false;
 
-        Enumeration<Permission> e = permissions.elements();
-
-        while (e.hasMoreElements()) {
-            CryptoPermission x = (CryptoPermission) e.nextElement();
+        for (Permission p : permissions) {
+            CryptoPermission x = (CryptoPermission) p;
             if (x.implies(cp)) {
                 return true;
             }

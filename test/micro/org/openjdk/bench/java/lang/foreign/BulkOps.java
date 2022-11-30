@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -60,7 +61,7 @@ public class BulkOps {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
-    final Arena arena = Arena.openConfined();
+    final Arena arena = Arena.openShared();
 
     final long unsafe_addr = unsafe.allocateMemory(ALLOC_SIZE);
     final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, arena.scope());
@@ -138,20 +139,20 @@ public class BulkOps {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static() {
-        MemorySegment.copy(ints, 0, segment, JAVA_BYTE, 0, ints.length);
+        MemorySegment.copy(ints, 0, segment, JAVA_INT_UNALIGNED, 0, ints.length);
     }
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_small() {
-        MemorySegment.copy(ints, 0, segment, JAVA_BYTE, 0, 10);
+        MemorySegment.copy(ints, 0, segment, JAVA_INT_UNALIGNED, 0, 10);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_small_dontinline() {
-        MemorySegment.copy(ints, 0, segment, JAVA_BYTE, 0, 10);
+        MemorySegment.copy(ints, 0, segment, JAVA_INT_UNALIGNED, 0, 10);
     }
 
     @Benchmark
@@ -176,7 +177,7 @@ public class BulkOps {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_dontinline() {
-        MemorySegment.copy(ints, 0, segment, JAVA_BYTE, 0, ints.length);
+        MemorySegment.copy(ints, 0, segment, JAVA_INT_UNALIGNED, 0, ints.length);
     }
 
     @Benchmark

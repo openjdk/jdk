@@ -290,14 +290,14 @@ findRunningThread(jthread thread)
 
 /* Remove a ThreadNode from a ThreadList */
 static void
-removeNode(ThreadList *list, ThreadNode *node)
+removeNode(ThreadNode *node)
 {
     ThreadNode *prev;
     ThreadNode *next;
-
-    JDI_ASSERT(list == node->list);
+    ThreadList *list;
     prev = node->prev;
     next = node->next;
+    list = node->list;
     if ( prev != NULL ) {
         prev->next = next;
     }
@@ -467,7 +467,7 @@ static void
 removeThread(JNIEnv *env, ThreadNode *node)
 {
   JDI_ASSERT(node != NULL);
-  removeNode(node->list, node);
+  removeNode(node);
   clearThread(env, node);
 }
 
@@ -493,7 +493,7 @@ removeVThreads(JNIEnv *env)
     ThreadNode *node = list->first;
     while (node != NULL) {
         ThreadNode *temp = node->next;
-        removeNode(list, node);
+        removeNode(node);
         clearThread(env, node);
         node = temp;
     }
@@ -502,7 +502,7 @@ removeVThreads(JNIEnv *env)
 static void
 moveNode(ThreadList *source, ThreadList *dest, ThreadNode *node)
 {
-    removeNode(source, node);
+    removeNode(node);
     JDI_ASSERT(findThread(dest, node->thread) == NULL);
     addNode(dest, node);
 }

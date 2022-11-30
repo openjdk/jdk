@@ -30,9 +30,9 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * A compound layout that aggregates multiple <em>member layouts</em>. There are two ways in which member layouts
- * can be combined: if member layouts are laid out one after the other, the resulting group layout is said to be a <em>struct</em>
+ * can be combined: if member layouts are laid out one after the other, the resulting group layout is said to be a <em>struct layout</em>
  * (see {@link MemoryLayout#structLayout(MemoryLayout...)}); conversely, if all member layouts are laid out at the same starting offset,
- * the resulting group layout is said to be a <em>union</em> (see {@link MemoryLayout#unionLayout(MemoryLayout...)}).
+ * the resulting group layout is said to be a <em>union layout</em> (see {@link MemoryLayout#unionLayout(MemoryLayout...)}).
  *
  * @implSpec
  * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

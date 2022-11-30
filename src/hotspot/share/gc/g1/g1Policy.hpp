@@ -291,9 +291,6 @@ private:
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
 
-  // Record and log stats before not-full collection.
-  void record_concurrent_refinement_stats();
-
 public:
 
   G1Policy(STWGCTimer* gc_timer);
@@ -311,8 +308,6 @@ public:
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
-
-  void record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
@@ -410,6 +405,12 @@ public:
   size_t estimate_used_young_bytes_locked() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
+
+  // Record and log stats and pending cards before not-full collection.
+  // thread_buffer_cards is the number of cards that were in per-thread
+  // buffers.  pending_cards includes thread_buffer_cards.
+  void record_concurrent_refinement_stats(size_t pending_cards,
+                                          size_t thread_buffer_cards);
 
 private:
   //
