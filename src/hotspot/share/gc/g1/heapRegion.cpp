@@ -220,6 +220,10 @@ void HeapRegion::clear_humongous() {
   _humongous_start_region = NULL;
 }
 
+void HeapRegion::prepare_remset_for_scan() {
+  return _rem_set->reset_table_scanner();
+}
+
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
                        MemRegion mr,

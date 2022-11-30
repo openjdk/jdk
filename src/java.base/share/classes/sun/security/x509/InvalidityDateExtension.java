@@ -64,7 +64,7 @@ public class InvalidityDateExtension extends Extension {
 
     private Date date;
 
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (date == null) {
             this.extensionValue = null;
             return;
@@ -80,7 +80,7 @@ public class InvalidityDateExtension extends Extension {
      *
      * @param date the invalidity date
      */
-    public InvalidityDateExtension(Date date) throws IOException {
+    public InvalidityDateExtension(Date date) {
         this(false, date);
     }
 
@@ -90,8 +90,7 @@ public class InvalidityDateExtension extends Extension {
      * @param critical true if the extension is to be treated as critical.
      * @param date the invalidity date, cannot be null.
      */
-    public InvalidityDateExtension(boolean critical, Date date)
-            throws IOException {
+    public InvalidityDateExtension(boolean critical, Date date) {
         if (date == null) {
             throw new IllegalArgumentException("date cannot be null");
         }
@@ -141,10 +140,9 @@ public class InvalidityDateExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to
-     * @exception IOException on encoding errors
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.InvalidityDate_Id;
             this.critical = false;

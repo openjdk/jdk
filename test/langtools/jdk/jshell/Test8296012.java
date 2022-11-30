@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,27 @@
  * questions.
  */
 
-#include <jni.h>
-#include <stdio.h>
+/*
+ * @test
+ * @bug 8296012
+ * @summary jshell crashes on mismatched record pattern
+ * @build KullaTesting TestingInputStream
+ * @run testng Test8296012
+ */
 
-void reduceLocalCapacity(JNIEnv* env) {
-    puts("reduceLocalCapacity: setting to 1");
-    (*env)->EnsureLocalCapacity(env,1);
-}
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
-JNIEXPORT void JNICALL
-Java_TestCheckedEnsureLocalCapacity_ensureCapacity(JNIEnv *env,
-                                                   jobject unused,
-                                                   jobject target,
-                                                   jint capacity,
-                                                   jint copies) {
-  int i;
-  printf("ensureCapacity: setting to %d\n", capacity);
-  (*env)->EnsureLocalCapacity(env, capacity); // set high
-  reduceLocalCapacity(env);     // sets low
+@Test
+public class Test8296012 extends KullaTesting {
 
-  printf("ensureCapacity: creating %d LocalRefs\n", copies);
-  for (i = 0; i < copies; i++) {
-    target = (*env)->NewLocalRef(env, target);
-  }
+    public void test() {
+        assertEval("record Foo(int x, int y) {}");
+        assertEvalFail("switch (new Foo(1, 2)) { case Foo(int z) -> z; }");
+    }
 
-  puts("ensureCapacity: done");
+    @org.testng.annotations.BeforeMethod
+    public void setUp() {
+        super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
+    }
 }
