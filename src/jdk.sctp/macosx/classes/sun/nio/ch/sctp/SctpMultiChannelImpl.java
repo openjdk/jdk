@@ -56,19 +56,19 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     @Override
     public SctpMultiChannel bind(SocketAddress local,
-                                 int backlog) throws IOException {
+            int backlog) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpMultiChannel bindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpMultiChannel unbindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
@@ -92,13 +92,13 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     @Override
     public <T> T getOption(SctpSocketOption<T> name,
-                           Association association) throws IOException {
+            Association association) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public <T> SctpMultiChannel setOption(SctpSocketOption<T> name,
-                                          T value, Association association) throws IOException {
+            T value, Association association) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
@@ -109,7 +109,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     @Override
     public <T> MessageInfo receive(ByteBuffer buffer, T attachment,
-                                   NotificationHandler<T> handler) throws IOException {
+            NotificationHandler<T> handler) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 

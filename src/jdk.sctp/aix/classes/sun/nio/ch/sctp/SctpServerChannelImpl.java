@@ -52,19 +52,19 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     @Override
     public SctpServerChannel bind(SocketAddress local,
-                                  int backlog) throws IOException {
+            int backlog) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpServerChannel bindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpServerChannel unbindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
@@ -81,7 +81,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     @Override
     public <T> SctpServerChannel setOption(SctpSocketOption<T> name,
-                                           T value) throws IOException {
+            T value) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 

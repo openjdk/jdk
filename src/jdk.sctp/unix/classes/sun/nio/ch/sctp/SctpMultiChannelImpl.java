@@ -722,6 +722,8 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     }
 
     /**
+     * Checks if the given association is controlled by this channel.
+     *
      * @throws IllegalArgumentException If the given association is not controlled by this channel
      */
     private void checkAssociation(Association messageAssoc) {

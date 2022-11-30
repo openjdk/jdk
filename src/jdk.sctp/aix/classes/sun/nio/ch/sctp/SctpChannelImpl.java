@@ -55,19 +55,19 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     public SctpChannel bind(SocketAddress local)
-            throws IOException {
+                            throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpChannel bindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpChannel unbindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
@@ -78,7 +78,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     public boolean connect(SocketAddress remote, int maxOutStreams,
-                           int maxInStreams) throws IOException {
+       int maxInStreams) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
@@ -117,7 +117,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     public <T> SctpChannel setOption(SctpSocketOption<T> name, T value)
-            throws IOException {
+        throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
@@ -128,7 +128,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     public <T> MessageInfo receive(ByteBuffer dst, T attachment,
-                                   NotificationHandler<T> handler) throws IOException {
+            NotificationHandler<T> handler) throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
