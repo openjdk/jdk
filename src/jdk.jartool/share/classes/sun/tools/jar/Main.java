@@ -68,6 +68,7 @@ import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
+import jdk.internal.opt.CommandLine;
 import jdk.internal.util.jar.JarIndex;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
