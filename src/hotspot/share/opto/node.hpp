@@ -1550,7 +1550,6 @@ public:
 
 class Node_List : public Node_Array {
   friend class VMStructs;
-  static Node_List _empty_list;  // static sentinel
   uint _cnt;
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
@@ -1578,13 +1577,6 @@ public:
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
-
-  // If a Node_List *is null, return a reference to an empty sentinel
-  static Node_List &wrap(Node_List *list) {
-    if (list != NULL) return *list;
-    return _empty_list;
-  }
-  bool is_null() { return this == &_empty_list; }
 };
 
 //------------------------------Unique_Node_List-------------------------------
