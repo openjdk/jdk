@@ -1909,7 +1909,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       if (java_lang_VirtualThread::is_instance(_java_thread())) {
         // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
         const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop() != java_lang_VirtualThread::continuation(_java_thread())) {
+        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
           return; // not mounted
         }
       } else {

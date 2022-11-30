@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,25 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/epsilon/epsilonBarrierSet.hpp"
-#include "gc/epsilon/epsilonThreadLocalData.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetAssembler.hpp"
-#include "runtime/javaThread.hpp"
-#ifdef COMPILER1
-#include "gc/shared/c1/barrierSetC1.hpp"
-#endif
-#ifdef COMPILER2
-#include "gc/shared/c2/barrierSetC2.hpp"
-#endif
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zBarrierSetStackChunk.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
-EpsilonBarrierSet::EpsilonBarrierSet() : BarrierSet(
-          make_barrier_set_assembler<BarrierSetAssembler>(),
-          make_barrier_set_c1<BarrierSetC1>(),
-          make_barrier_set_c2<BarrierSetC2>(),
-          NULL /* barrier_set_nmethod */,
-          NULL /* barrier_set_stack_chunk */,
-          BarrierSet::FakeRtti(BarrierSet::EpsilonBarrierSet)) {}
-
-void EpsilonBarrierSet::on_thread_create(Thread *thread) {
-  EpsilonThreadLocalData::create(thread);
+void ZBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  // Do nothing
 }
 
-void EpsilonBarrierSet::on_thread_destroy(Thread *thread) {
-  EpsilonThreadLocalData::destroy(thread);
+void ZBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  // Do nothing
+}
+
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
+  oop obj = Atomic::load(addr);
+  return ZBarrier::load_barrier_on_oop_field_preloaded((volatile oop*)NULL, obj);
+}
+
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
+  ShouldNotReachHere();
+  return NULL;
 }
