@@ -3809,6 +3809,8 @@ void StubGenerator::generate_all() {
 
   generate_ghash_stubs();
 
+  generate_chacha_stubs();
+
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");
     StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true, "md5_implCompressMB");

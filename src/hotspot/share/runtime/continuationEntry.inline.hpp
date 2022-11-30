@@ -34,7 +34,9 @@
 #include CPU_HEADER_INLINE(continuationEntry)
 
 inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
-  intptr_t* sp = entry_sp() - argsize();
+  // the entry frame is extended if the bottom frame has stack arguments
+  int entry_frame_extension = argsize() > 0 ? argsize() + frame::metadata_words_at_top : 0;
+  intptr_t* sp = entry_sp() - entry_frame_extension;
 #ifdef _LP64
   sp = align_down(sp, frame::frame_alignment);
 #endif
