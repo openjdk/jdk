@@ -101,7 +101,7 @@ public class FieldGen {
     }
 
     static FieldParams P256 = new FieldParams(
-            "IntegerPolynomialP256", 29, 9, 2, 256,
+            "IntegerPolynomialP256", 29, 9, 1, 256,
             Arrays.asList(
                     new Term(224, -1),
                     new Term(192, 1),
