@@ -30,6 +30,7 @@ import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.security.AccessController;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
@@ -79,8 +80,8 @@ public class SctpChannelImpl extends SctpChannel
     private final int fdVal;
 
     /* IDs of native threads doing send and receive, for signalling */
-    private volatile long receiverThread = 0;
-    private volatile long senderThread = 0;
+    private volatile long receiverThread;
+    private volatile long senderThread;
 
     /* Lock held by current receiving or connecting thread */
     private final Object receiveLock = new Object();
@@ -1080,7 +1081,7 @@ public class SctpChannelImpl extends SctpChannel
     @SuppressWarnings("removal")
     private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
-        java.security.AccessController.doPrivileged(
+        AccessController.doPrivileged(
             new java.security.PrivilegedAction<>() {
                 public Void run() {
                     System.loadLibrary("sctp");
