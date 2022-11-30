@@ -3398,12 +3398,10 @@ public:
     _g1h(g1h) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb != NULL) ? cb->as_nmethod_or_null() : NULL;
-    if (nm == NULL) {
-      return;
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      _g1h->register_nmethod(nm);
     }
-
-    _g1h->register_nmethod(nm);
   }
 };
 

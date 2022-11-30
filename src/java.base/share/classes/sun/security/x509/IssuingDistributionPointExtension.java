@@ -110,7 +110,8 @@ public class IssuingDistributionPointExtension extends Extension {
      *        issuer CRL entry extension.
      * @throws IllegalArgumentException if more than one of
      *        <code>hasOnlyUserCerts</code>, <code>hasOnlyCACerts</code>,
-     *        <code>hasOnlyAttributeCerts</code> is set to <code>true</code>.
+     *        <code>hasOnlyAttributeCerts</code> is set to <code>true</code>,
+     *        or all arguments are either <code>null</code> or <code>false</code>.
      * @throws IOException on encoding error.
      */
     public IssuingDistributionPointExtension(
@@ -119,6 +120,14 @@ public class IssuingDistributionPointExtension extends Extension {
         boolean hasOnlyAttributeCerts, boolean isIndirectCRL)
             throws IOException {
 
+        if (distributionPoint == null &&
+                revocationReasons == null &&
+                !hasOnlyUserCerts &&
+                !hasOnlyCACerts &&
+                !hasOnlyAttributeCerts &&
+                !isIndirectCRL) {
+            throw new IllegalArgumentException("elements cannot be empty");
+        }
         if ((hasOnlyUserCerts && (hasOnlyCACerts || hasOnlyAttributeCerts)) ||
             (hasOnlyCACerts && (hasOnlyUserCerts || hasOnlyAttributeCerts)) ||
             (hasOnlyAttributeCerts && (hasOnlyUserCerts || hasOnlyCACerts))) {

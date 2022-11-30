@@ -1018,7 +1018,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
-  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
+  if (is_sha3) fields[argp++] = TypeInt::INT; // block_size
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1040,7 +1040,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
-  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
+  if (is_sha3) fields[argp++] = TypeInt::INT; // block_size
   fields[argp++] = TypeInt::INT;     // ofs
   fields[argp++] = TypeInt::INT;     // limit
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
@@ -1263,6 +1263,26 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms + 0] = TypeInt::INT; // count of bytes written to dst
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// Poly1305 processMultipleBlocks function
+const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
+  int argcnt = 4;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // input array
+  fields[argp++] = TypeInt::INT;        // input length
+  fields[argp++] = TypePtr::NOTNULL;    // accumulator array
+  fields[argp++] = TypePtr::NOTNULL;    // r array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
 

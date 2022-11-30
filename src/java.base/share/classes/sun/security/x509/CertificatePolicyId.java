@@ -26,6 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Objects;
+
 import sun.security.util.*;
 
 
@@ -44,7 +46,7 @@ public class CertificatePolicyId {
      * @param id the ObjectIdentifier for the policy id.
      */
     public CertificatePolicyId(ObjectIdentifier id) {
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
     }
 
     /**
