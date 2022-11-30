@@ -1657,7 +1657,6 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& framesize_wor
   __ push_frame(frame_size_in_bytes , R0); // SP -= frame_size_in_bytes
 
   OopMap* map = new OopMap((int)frame_size_in_bytes / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
 
   __ ld_ptr(R0, JavaThread::cont_entry_offset(), R16_thread);
   __ st_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);

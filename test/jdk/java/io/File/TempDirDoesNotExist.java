@@ -42,7 +42,7 @@ public class TempDirDoesNotExist {
     public static void main(String... args) throws Exception {
 
         String userDir = System.getProperty("user.home");
-        String timeStamp = java.time.Instant.now().toString();
+        String timeStamp = System.currentTimeMillis() + "";
         String tempDir = Path.of(userDir,"non-existing-", timeStamp).toString();
 
         for (String arg : args) {
