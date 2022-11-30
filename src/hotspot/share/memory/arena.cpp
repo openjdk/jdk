@@ -379,18 +379,3 @@ bool Arena::contains( const void *ptr ) const {
   }
   return false;                 // Not in any Chunk, so not in Arena
 }
-
-
-
-//--------------------------------------------------------------------------------------
-// Non-product code
-
-#ifndef PRODUCT
-
-// debugging code
-inline void Arena::free_all(char** start, char** end) {
-  for (char** p = start; p < end; p++) if (*p) os::free(*p);
-}
-
-
-#endif // Non-product
