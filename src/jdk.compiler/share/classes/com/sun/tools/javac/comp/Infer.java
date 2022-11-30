@@ -58,7 +58,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -1635,7 +1634,7 @@ public class Infer {
                  * through all its dependencies.
                  */
                 protected Set<Node> closure() {
-                    Set<Node> closure = new HashSet<>();
+                    Set<Node> closure = new LinkedHashSet<>();
                     closureInternal(closure);
                     return closure;
                 }
