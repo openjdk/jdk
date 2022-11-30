@@ -28,7 +28,7 @@
 #include "jlong.h"
 #include "JNICB.h"
 
-#if defined(_WIN64) || defined(_WIN32)
+#ifdef _WIN32
 #define THREAD_LOCAL __declspec(thread)
 #else
 #define THREAD_LOCAL __thread
