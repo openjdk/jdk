@@ -609,6 +609,7 @@ public final class Method extends Executable {
     //  1 = initialized, CS
     // -1 = initialized, not CS
     @Stable private byte callerSensitive;
+
     private boolean isCallerSensitive() {
         byte cs = callerSensitive;
         if (cs == 0) {
