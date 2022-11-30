@@ -54,12 +54,12 @@ public class PeerAddrChange extends PeerAddressChangeNotification
     /* Invoked from native */
     private PeerAddrChange(int assocId, SocketAddress address, int intEvent) {
         this.event = switch (intEvent) {
-            case SCTP_ADDR_AVAILABLE -> AddressChangeEvent.ADDR_AVAILABLE;
+            case SCTP_ADDR_AVAILABLE   -> AddressChangeEvent.ADDR_AVAILABLE;
             case SCTP_ADDR_UNREACHABLE -> AddressChangeEvent.ADDR_UNREACHABLE;
-            case SCTP_ADDR_REMOVED -> AddressChangeEvent.ADDR_REMOVED;
-            case SCTP_ADDR_ADDED -> AddressChangeEvent.ADDR_ADDED;
-            case SCTP_ADDR_MADE_PRIM -> AddressChangeEvent.ADDR_MADE_PRIMARY;
-            case SCTP_ADDR_CONFIRMED -> AddressChangeEvent.ADDR_CONFIRMED;
+            case SCTP_ADDR_REMOVED     -> AddressChangeEvent.ADDR_REMOVED;
+            case SCTP_ADDR_ADDED       -> AddressChangeEvent.ADDR_ADDED;
+            case SCTP_ADDR_MADE_PRIM   -> AddressChangeEvent.ADDR_MADE_PRIMARY;
+            case SCTP_ADDR_CONFIRMED   -> AddressChangeEvent.ADDR_CONFIRMED;
             default -> throw new AssertionError("Unknown event type");
         };
         this.assocId = assocId;

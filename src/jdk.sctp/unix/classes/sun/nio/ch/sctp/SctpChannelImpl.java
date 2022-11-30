@@ -876,18 +876,17 @@ public class SctpChannelImpl extends SctpChannel
 
         /* AbstractNotificationHandler */
         return switch (resultContainer.type()) {
-            case ASSOCIATION_CHANGED -> absHandler.handleNotification(
+            case ASSOCIATION_CHANGED  -> absHandler.handleNotification(
                     resultContainer.getAssociationChanged(), attachment);
             case PEER_ADDRESS_CHANGED -> absHandler.handleNotification(
                     resultContainer.getPeerAddressChanged(), attachment);
-            case SEND_FAILED -> absHandler.handleNotification(
+            case SEND_FAILED          -> absHandler.handleNotification(
                     resultContainer.getSendFailed(), attachment);
-            case SHUTDOWN -> absHandler.handleNotification(
+            case SHUTDOWN             -> absHandler.handleNotification(
                     resultContainer.getShutdown(), attachment);
-            default ->
-                /* implementation specific handlers */
-                    absHandler.handleNotification(
-                            resultContainer.notification(), attachment);
+            /* implementation specific handlers */
+            default                   -> absHandler.handleNotification(
+                    resultContainer.notification(), attachment);
         };
     }
 

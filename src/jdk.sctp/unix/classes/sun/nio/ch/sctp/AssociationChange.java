@@ -56,10 +56,10 @@ public class AssociationChange extends AssociationChangeNotification
                               int maxOutStreams,
                               int maxInStreams) {
         this.event = switch (intEvent) {
-            case SCTP_COMM_UP -> AssocChangeEvent.COMM_UP;
-            case SCTP_COMM_LOST -> AssocChangeEvent.COMM_LOST;
-            case SCTP_RESTART -> AssocChangeEvent.RESTART;
-            case SCTP_SHUTDOWN -> AssocChangeEvent.SHUTDOWN;
+            case SCTP_COMM_UP    -> AssocChangeEvent.COMM_UP;
+            case SCTP_COMM_LOST  -> AssocChangeEvent.COMM_LOST;
+            case SCTP_RESTART    -> AssocChangeEvent.RESTART;
+            case SCTP_SHUTDOWN   -> AssocChangeEvent.SHUTDOWN;
             case SCTP_CANT_START -> AssocChangeEvent.CANT_START;
             default -> throw new AssertionError(
                     "Unknown Association Change Event type: " + intEvent);

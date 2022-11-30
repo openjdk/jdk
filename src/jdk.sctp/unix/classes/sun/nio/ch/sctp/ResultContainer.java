@@ -115,13 +115,13 @@ public class ResultContainer {
         StringBuilder sb = new StringBuilder();
         sb.append("Type: ");
         switch (type) {
-            case NOTHING -> sb.append("NOTHING");
-            case MESSAGE -> sb.append("MESSAGE");
-            case SEND_FAILED -> sb.append("SEND FAILED");
-            case ASSOCIATION_CHANGED -> sb.append("ASSOCIATION CHANGE");
+            case NOTHING              -> sb.append("NOTHING");
+            case MESSAGE              -> sb.append("MESSAGE");
+            case SEND_FAILED          -> sb.append("SEND FAILED");
+            case ASSOCIATION_CHANGED  -> sb.append("ASSOCIATION CHANGE");
             case PEER_ADDRESS_CHANGED -> sb.append("PEER ADDRESS CHANGE");
-            case SHUTDOWN -> sb.append("SHUTDOWN");
-            default -> sb.append("Unknown result type");
+            case SHUTDOWN             -> sb.append("SHUTDOWN");
+            default                   -> sb.append("Unknown result type");
         }
         sb.append(", Value: ");
         sb.append((value == null) ? "null" : value.toString());

@@ -30,8 +30,12 @@ import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
 import java.util.Map.Entry;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ClosedChannelException;
@@ -619,18 +623,17 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             result = handler.handleNotification(notification, attachment);
         } else { /* AbstractNotificationHandler */
             result = switch (resultContainer.type()) {
-                case ASSOCIATION_CHANGED -> absHandler.handleNotification(
+                case ASSOCIATION_CHANGED  -> absHandler.handleNotification(
                         resultContainer.getAssociationChanged(), attachment);
                 case PEER_ADDRESS_CHANGED -> absHandler.handleNotification(
                         resultContainer.getPeerAddressChanged(), attachment);
-                case SEND_FAILED -> absHandler.handleNotification(
+                case SEND_FAILED          -> absHandler.handleNotification(
                         resultContainer.getSendFailed(), attachment);
-                case SHUTDOWN -> absHandler.handleNotification(
+                case SHUTDOWN             -> absHandler.handleNotification(
                         resultContainer.getShutdown(), attachment);
-                default ->
-                    /* implementation specific handlers */
-                        absHandler.handleNotification(
-                                resultContainer.notification(), attachment);
+                /* implementation specific handlers */
+                default                   -> absHandler.handleNotification(
+                        resultContainer.notification(), attachment);
             };
         }
 
