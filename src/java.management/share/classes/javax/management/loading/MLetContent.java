@@ -41,6 +41,7 @@ import java.util.Map;
  *
  * @since 1.6
  */
+@Deprecated(since="20", forRemoval=true)
 public class MLetContent {
 
 

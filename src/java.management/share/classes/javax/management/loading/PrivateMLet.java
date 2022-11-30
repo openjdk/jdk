@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ import java.net.URLStreamHandlerFactory;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial") // Externalizable class w/o no-arg c'tor
+@Deprecated(since="20", forRemoval=true)
+@SuppressWarnings({"serial", "removal"}) // Externalizable class w/o no-arg c'tor
 public class PrivateMLet extends MLet implements PrivateClassLoader {
     private static final long serialVersionUID = 2503458973393711979L;
 

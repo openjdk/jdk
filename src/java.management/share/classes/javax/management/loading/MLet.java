@@ -164,6 +164,8 @@ import javax.management.ServiceNotFoundException;
  *
  * @since 1.5
  */
+@Deprecated(since="20", forRemoval=true)
+@SuppressWarnings("removal")
 public class MLet extends java.net.URLClassLoader
      implements MLetMBean, MBeanRegistration, Externalizable {
 
