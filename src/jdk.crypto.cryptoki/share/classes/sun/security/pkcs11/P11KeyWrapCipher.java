@@ -345,14 +345,10 @@ final class P11KeyWrapCipher extends CipherSpi {
                     session = token.getOpSession();
                 }
                 switch (opmode) {
-                case Cipher.ENCRYPT_MODE:
-                    token.p11.C_EncryptInit(session.id(), mechWithParams,
+                    case Cipher.ENCRYPT_MODE -> token.p11.C_EncryptInit(session.id(), mechWithParams,
                             p11KeyID);
-                break;
-                case Cipher.DECRYPT_MODE:
-                    token.p11.C_DecryptInit(session.id(), mechWithParams,
+                    case Cipher.DECRYPT_MODE -> token.p11.C_DecryptInit(session.id(), mechWithParams,
                             p11KeyID);
-                break;
                 }
             } catch (PKCS11Exception e) {
                 session = token.releaseSession(session);
@@ -386,7 +382,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         } else {
             result -= BLK_SIZE; // minus the leading block including the ICV
         }
-        return (result > 0 ? result : 0);
+        return (Math.max(result, 0));
     }
 
     // reset the states to the pre-initialized values
@@ -744,20 +740,19 @@ final class P11KeyWrapCipher extends CipherSpi {
         long keyClass;
         long keyType;
         switch (wrappedKeyType) {
-            case Cipher.PRIVATE_KEY:
+            case Cipher.PRIVATE_KEY -> {
                 keyClass = CKO_PRIVATE_KEY;
                 keyType = P11KeyFactory.getPKCS11KeyType(wrappedKeyAlgo);
-                break;
-            case Cipher.SECRET_KEY:
+            }
+            case Cipher.SECRET_KEY -> {
                 keyClass = CKO_SECRET_KEY;
                 keyType = P11SecretKeyFactory.getPKCS11KeyType(wrappedKeyAlgo);
-                break;
-            case Cipher.PUBLIC_KEY:
-                throw new UnsupportedOperationException
-                        ("cannot unwrap public keys");
-            default: // should never happen
-                throw new AssertionError();
-        };
+            }
+            case Cipher.PUBLIC_KEY -> throw new UnsupportedOperationException
+                    ("cannot unwrap public keys");
+            default -> // should never happen
+                    throw new AssertionError();
+        }
 
         CK_ATTRIBUTE[] attributes;
         try {
