@@ -63,11 +63,14 @@ public class SummarySanityCheck {
 
     long totalCommitted = 0, totalReserved = 0;
     long totalCommittedSum = 0, totalReservedSum = 0;
+    long totalReadonly = 0;
 
     // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
     Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB\\)");
     // Match 'Total: reserved=<reserved>KB, committed=<committed>KB'
-    Pattern totalMemoryPattern = Pattern.compile("Total\\:\\sreserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB");
+    Pattern totalMemoryPattern = Pattern.compile("Total\\:\\sreserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB,\\sreadonly=(?<readonly>\\d+)KB");
+    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
+    Pattern mtSharedPattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB,\\sreadonly=(?<readonly>\\d+)KB\\)");
 
     for (int i = 0; i < lines.length; i++) {
       if (lines[i].startsWith("Total")) {
@@ -76,12 +79,33 @@ public class SummarySanityCheck {
         if (totalMemoryMatcher.matches()) {
           totalCommitted = Long.parseLong(totalMemoryMatcher.group("committed"));
           totalReserved = Long.parseLong(totalMemoryMatcher.group("reserved"));
+          totalReadonly = Long.parseLong(totalMemoryMatcher.group("readonly"));
         } else {
           throwTestException("Failed to match the expected groups in 'Total' memory part");
         }
       } else if (lines[i].startsWith("-")) {
         Matcher typeMatcher = mtTypePattern.matcher(lines[i]);
-        if (typeMatcher.matches()) {
+        Matcher sharedMatcher = mtSharedPattern.matcher(lines[i]);
+        if (sharedMatcher.matches()) {
+          long typeCommitted = Long.parseLong(sharedMatcher.group("committed"));
+          long typeReserved = Long.parseLong(sharedMatcher.group("reserved"));
+          long typeShared = Long.parseLong(sharedMatcher.group("readonly"));
+
+          // Make sure reserved is always less or equals
+          if (typeCommitted > typeReserved) {
+            throwTestException("Committed (" + typeCommitted + ") was more than Reserved ("
+                + typeReserved + ") for mtType: " + typeMatcher.group("typename"));
+          }
+          // Make sure readonly is always less or equals
+          if (typeShared > typeReserved) {
+            throwTestException("Readonly (" + typeShared + ") was more than Reserved ("
+                + typeReserved + ") for mtType: " + typeMatcher.group("typename"));
+          }
+
+           // Add to total and compare them in the end
+          totalCommittedSum += typeCommitted;
+          totalReservedSum += typeReserved;
+        } else if (typeMatcher.matches()) {
           long typeCommitted = Long.parseLong(typeMatcher.group("committed"));
           long typeReserved = Long.parseLong(typeMatcher.group("reserved"));
 
