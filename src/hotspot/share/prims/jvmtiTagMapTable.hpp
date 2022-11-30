@@ -65,8 +65,7 @@ class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
   ResizeableResourceHashtable <JvmtiTagMapEntry, jlong,
                                AnyObj::C_HEAP, mtInternal,
                                JvmtiTagMapEntry::get_hash,
-                               JvmtiTagMapEntry::equals
-                               > ResizableResourceHT ;
+                               JvmtiTagMapEntry::equals> ResizableResourceHT;
 
 class JvmtiTagMapTable : public CHeapObj<mtInternal> {
   enum Constants {
@@ -76,7 +75,7 @@ class JvmtiTagMapTable : public CHeapObj<mtInternal> {
 private:
 
   void resize_if_needed();
-  ResizableResourceHT  _rrht_table;
+  ResizableResourceHT  _table;
 
 public:
   JvmtiTagMapTable();
@@ -84,6 +83,7 @@ public:
 
   jlong find(oop obj);
   bool add(oop obj, jlong tag);
+  bool update(oop obj, jlong tag);
 
 
   bool remove(oop obj);
@@ -91,7 +91,7 @@ public:
   // iterate over all entries in the hashmap
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
 
-  bool is_empty() const { return _rrht_table.number_of_entries() == 0; }
+  bool is_empty() const { return _table.number_of_entries() == 0; }
 
   // Cleanup cleared entries and store dead object tags in objects array
   void remove_dead_entries(GrowableArray<jlong>* objects);
@@ -101,7 +101,7 @@ public:
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapEntryClosure {
   public:
-  virtual bool do_entry(JvmtiTagMapEntry & key , jlong & value) = 0;
+  virtual bool do_entry(JvmtiTagMapEntry& key , jlong& value) = 0;
 };
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP

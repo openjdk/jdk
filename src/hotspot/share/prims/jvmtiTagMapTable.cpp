@@ -39,7 +39,7 @@
 #include "utilities/macros.hpp"
 #include "gc/shared/oopStorage.hpp"
 
-JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj): _obj(obj){}
+JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj): _obj(obj) {}
 
 JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& src) {
    // move object into WeakHandle when copying into the table
@@ -48,7 +48,7 @@ JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& src) {
    _obj = nullptr;
  }
 
-JvmtiTagMapEntry::~JvmtiTagMapEntry(){
+JvmtiTagMapEntry::~JvmtiTagMapEntry() {
    // If obj is set null it out, this is called for stack object on lookup,
    // and it should not have a WeakHandle created for it yet.
    if (_obj != nullptr) {
@@ -70,19 +70,19 @@ oop JvmtiTagMapEntry::object_no_keepalive() const {
 }
 
 JvmtiTagMapTable::JvmtiTagMapTable()
-  :_rrht_table(Constants::_table_size){
+  :_table(Constants::_table_size) {
 }
 
 void JvmtiTagMapTable::clear() {
-  struct RemoveAll{
+  struct RemoveAll {
     bool do_entry(JvmtiTagMapEntry   & entry, jlong const &  tag)
     {
       return true;
     }
-  }RemoveAll;
-  _rrht_table.unlink(&RemoveAll);
+  } RemoveAll;
+  _table.unlink(&RemoveAll);
 
-  assert(_rrht_table.number_of_entries() == 0, "should have removed all entries");
+  assert(_table.number_of_entries() == 0, "should have removed all entries");
 }
 
 JvmtiTagMapTable::~JvmtiTagMapTable() {
@@ -94,38 +94,46 @@ jlong JvmtiTagMapTable::find(oop obj) {
    //  return 0;
    //} else {
      JvmtiTagMapEntry jtme(obj);
-     jlong* found = _rrht_table.get(jtme);
+     jlong* found = _table.get(jtme);
      return found == NULL ? 0 : *found;
    //}
  }
 
 bool JvmtiTagMapTable::add(oop obj, jlong tag) {
   JvmtiTagMapEntry new_entry(obj);
-  bool is_added = _rrht_table.put(new_entry, tag);
+  bool is_added = false;
+  _table.put_if_absent(new_entry, tag, &is_added);
   assert(is_added, "should be added");
   return is_added;
 }
 
+bool JvmtiTagMapTable::update(oop obj, jlong tag) {
+  JvmtiTagMapEntry new_entry(obj);
+  bool is_updated =  _table.put(new_entry, tag) == false;
+  assert(is_updated, "should be updated and not added");
+  return is_updated;
+}
+
 bool JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapEntry jtme(obj);
-  return _rrht_table.remove(jtme);
+  return _table.remove(jtme);
 }
 
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
-  _rrht_table.iterate(closure);
+  _table.iterate(closure);
 }
 
 void JvmtiTagMapTable::resize_if_needed() {
-  _rrht_table.maybe_grow();
+  _table.maybe_grow();
 }
 
 void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
-  struct IsDead{
+  struct IsDead {
     GrowableArray<jlong>* _objects;
-    IsDead(GrowableArray<jlong>* objects) : _objects(objects){}
-    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag){
-      if ( entry.object_no_keepalive() == NULL){
-        if(_objects!=NULL){
+    IsDead(GrowableArray<jlong>* objects) : _objects(objects) {}
+    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag) {
+      if (entry.object_no_keepalive() == NULL) {
+        if (_objects!=NULL) {
           _objects->append(tag);
         }
         return true;
@@ -133,7 +141,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
       return false;;
     }
   }IsDead(objects);
-  _rrht_table.unlink(&IsDead);
+  _table.unlink(&IsDead);
 }
 
 
