@@ -285,7 +285,7 @@ public sealed interface Linker permits AbstractLinker {
             permits LinkerOptions.FirstVariadicArg {
 
         /**
-         * {@return A linker option used to denote the index of the first variadic argument layout in a
+         * {@return a linker option used to denote the index of the first variadic argument layout in a
          *          foreign function call}
          * @param index the index of the first variadic argument in a downcall handle linkage request.
          */
