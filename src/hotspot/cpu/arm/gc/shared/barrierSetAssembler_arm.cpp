@@ -23,10 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm->
 
@@ -194,4 +197,44 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, RegisterOrC
 
   // Unborrow the Rthread
   __ sub(Rthread, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
+}
+
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+
+  Register tmp0 = Rtemp;
+  Register tmp1 = R5; // wrong register here will lead to crash
+
+  if (bs_nm == NULL) {
+    return;
+  }
+
+  Label skip, guard;
+  Address thread_disarmed_addr(Rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+
+  __ block_comment("nmethod_barrier begin");
+  __ ldr_label(tmp0, guard);
+
+  // Subsequent loads of oops must occur after load of guard value.
+  // BarrierSetNMethod::disarm sets guard with release semantics.
+  __ membar(MacroAssembler::LoadLoad, tmp1);
+  __ ldr(tmp1, thread_disarmed_addr);
+  __ cmp(tmp0, tmp1);
+  __ b(skip, eq);
+
+  __ mov_address(tmp0, StubRoutines::Arm::method_entry_barrier());
+  __ call(tmp0);
+  __ b(skip);
+
+  __ bind(guard);
+
+  // nmethod guard value. Skipped over in common case.
+  //
+  // Put a debug value to make any offsets skew
+  // clearly visible in coredump
+  __ emit_int32(0xDEADBEAF);
+
+  __ bind(skip);
+  __ block_comment("nmethod_barrier end");
 }

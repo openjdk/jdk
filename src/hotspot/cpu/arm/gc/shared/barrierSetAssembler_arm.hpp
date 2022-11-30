@@ -56,6 +56,7 @@ public:
   );
 
   virtual void barrier_stubs_init() {}
+  virtual void nmethod_entry_barrier(MacroAssembler* masm);
 };
 
 #endif // CPU_ARM_GC_SHARED_BARRIERSETASSEMBLER_ARM_HPP
