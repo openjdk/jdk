@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 /**
- * A <em>symbol lookup</em> is an object that may be used to retrieve the address of a symbol in one or more libraries.
+ * A <em>symbol lookup</em> retrieves the address of a symbol in one or more libraries.
  * A symbol is a named entity, such as a function or a global variable.
  * <p>
  * A symbol lookup is created with respect to a particular library (or libraries). Subsequently, the {@link SymbolLookup#find(String)}

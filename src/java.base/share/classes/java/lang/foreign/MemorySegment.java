@@ -105,7 +105,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * That is, a memory segment has <em>temporal bounds</em>.
  * <p>
  * Finally, access operations on a memory segment are subject to the thread-confinement checks enforced by the associated
- * scope; that is, if the segment is the {@linkplain SegmentScope#global() global scope} or an {@linkplain SegmentScope#auto() automatic scope},
+ * scope; that is, if the segment is associated with the {@linkplain SegmentScope#global() global scope} or an {@linkplain SegmentScope#auto() automatic scope},
  * it can be accessed by multiple threads. If the segment is associated with an arena scope, then it can only be
  * accessed compatibly with the <a href="Arena.html#thread-confinement">arena confinement characteristics</a>.
  *
@@ -128,8 +128,8 @@ import jdk.internal.vm.annotation.ForceInline;
  * }
  *
  * For more complex access operations (e.g. structured memory access), clients can obtain a
- * {@linkplain MethodHandles#memorySegmentViewVarHandle(ValueLayout) memory segment view var handle},
- * that is, a var handle that accepts a segment and a {@code long} offset. More complex access var handles
+ * {@linkplain MethodHandles#memorySegmentViewVarHandle(ValueLayout) var handle}
+ * that accepts a segment and a {@code long} offset. More complex var handles
  * can be obtained by adapting a segment var handle view using the var handle combinator functions defined in the
  * {@link java.lang.invoke.MethodHandles} class:
  *
@@ -144,7 +144,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
- * Alternatively, complex access var handles can can be obtained
+ * Alternatively, complex var handles can can be obtained
  * from {@linkplain MemoryLayout#varHandle(MemoryLayout.PathElement...) memory layouts}
  * by providing a so called <a href="MemoryLayout.html#layout-paths"><em>layout path</em></a>:
  *
@@ -173,7 +173,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * of {@code segment}, and is 10 bytes long. That is, the address of the {@code slice} is {@code segment.address() + 50},
  * and its size is 10. As a result, attempting to read an int value at offset 20 of the
  * {@code slice} segment will result in an exception. The {@linkplain SegmentScope temporal bounds} of the original segment
- * is inherited by its slices; that is, when the scope associated with {@code segment} is no longer {@link SegmentScope#isAlive()},
+ * is inherited by its slices; that is, when the scope associated with {@code segment} is no longer {@linkplain SegmentScope#isAlive() alive},
  * {@code slice} will also be become inaccessible.
  * <p>
  * A client might obtain a {@link Stream} from a segment, which can then be used to slice the segment (according to a given
@@ -328,11 +328,11 @@ import jdk.internal.vm.annotation.ForceInline;
  * longSegment.get(ValueLayout.JAVA_INT, 0); // ok: layout alignment is 4, segment max alignment is 8
  * }
  *
- * Alternatively, they can invoke the access operation with a layout whose alignment is smaller:
- *
+ * Alternatively, they can invoke the access operation with an <em>unaligned layout</em>.
+ * All unaligned layout constants (e.g. {@link ValueLayout#JAVA_INT_UNALIGNED}) have their alignment constraint set to 1:
  * {@snippet lang=java :
  * MemorySegment byteSegment = MemorySegment.ofArray(new byte[10]);
- * byteSegment.get(ValueLayout.JAVA_INT.withBitAlignment(8), 0); // ok: layout alignment is 1, segment max alignment is 1
+ * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: layout alignment is 1, segment max alignment is 1
  * }
  *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>

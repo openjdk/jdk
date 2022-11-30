@@ -276,7 +276,7 @@ public sealed interface Linker permits AbstractLinker {
     SymbolLookup defaultLookup();
 
     /**
-     * A linker option that can be used to indicate additional linking requirements to the linker,
+     * A linker option is used to indicate additional linking requirements to the linker,
      * besides what is described by a function descriptor.
      * @since 20
      */

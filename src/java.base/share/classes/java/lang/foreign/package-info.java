@@ -35,7 +35,7 @@
  * segment can be described using a {@link java.lang.foreign.MemoryLayout memory layout}, which provides
  * basic operations to query sizes, offsets and alignment constraints. Memory layouts also provide
  * an alternate, more abstract way, to <a href=MemorySegment.html#segment-deref>access memory segments</a>
- * using {@linkplain java.lang.foreign.MemoryLayout#varHandle(java.lang.foreign.MemoryLayout.PathElement...) access var handles},
+ * using {@linkplain java.lang.foreign.MemoryLayout#varHandle(java.lang.foreign.MemoryLayout.PathElement...) var handles},
  * which can be computed using <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
  *
  * For example, to allocate an off-heap region of memory big enough to hold 10 values of the primitive type {@code int},
@@ -167,7 +167,7 @@
  *                                                                 ValueLayout.ADDRESS.asUnbounded());
  * MethodHandle intCompareHandle = MethodHandles.lookup().findStatic(IntComparator.class,
  *                                                 "intCompare",
- *                                                 Linker.upcallType(comparFunction));
+ *                                                 intCompareDescriptor.toMethodType());
  *}
  *
  * As before, we need to create a {@link java.lang.foreign.FunctionDescriptor} instance, this time describing the signature
