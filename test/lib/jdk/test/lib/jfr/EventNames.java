@@ -86,6 +86,8 @@ public class EventNames {
     public static final String RetransformClasses = PREFIX + "RetransformClasses";
     public static final String ClassRedefinition = PREFIX + "ClassRedefinition";
     public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
+    public static final String NativeMemoryUsagePart = PREFIX + "NativeMemoryUsagePart";
+    public static final String NativeMemoryUsage = PREFIX + "NativeMemoryUsage";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";

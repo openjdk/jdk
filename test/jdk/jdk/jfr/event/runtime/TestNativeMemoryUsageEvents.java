@@ -1,0 +1,179 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.jfr.event.runtime;
+
+import static jdk.test.lib.Asserts.assertGreaterThan;
+import static jdk.test.lib.Asserts.assertTrue;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedThread;
+import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.Events;
+
+/**
+ * @test
+ * @key jfr
+ * @requires vm.opt.NativeMemoryTracking == null
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @modules jdk.jfr
+ *          jdk.management
+ * @run main/othervm -XX:NativeMemoryTracking=summary -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents true
+ * @run main/othervm -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
+ */
+public class TestNativeMemoryUsageEvents {
+    private final static String UsagePartEvent = EventNames.NativeMemoryUsagePart;
+    private final static String UsageEvent = EventNames.NativeMemoryUsage;
+
+    private final static int UsagePeriod = 1000;
+    private final static int K = 1024;
+
+    private final static String[] UsagePartEventTypes = {
+        "Java Heap",
+        "Class",
+        "Thread",
+        "Thread Stack",
+        "Code",
+        "GC",
+        "GCCardSet",
+        "Compiler",
+        "JVMCI",
+        "Internal",
+        "Other",
+        "Symbol",
+        "Native Memory Tracking",
+        "Shared class space",
+        "Arena Chunk",
+        "Test",
+        "Tracing",
+        "Logging",
+        "Statistics",
+        "Arguments",
+        "Module",
+        "Safepoint",
+        "Synchronization",
+        "Serviceability",
+        "Metaspace",
+        "String Deduplication",
+        "Object Monitors"
+    };
+
+    private static ArrayList<byte[]> data = new ArrayList<byte[]>();
+
+    private static void generateHeapContents() {
+        for (int i = 0 ; i < 64; i++) {
+            for (int j = 0; j < K; j++) {
+                data.add(new byte[K]);
+            }
+        }
+    }
+
+    private static void generateEvents(Recording recording) throws Exception {
+        // Start the recording.
+        recording.start();
+
+        // Events are sent each second so wait to to ensure we get at least
+        // one Java Heap event with committed at 16M
+        Thread.sleep(2000);
+
+        // Generate data to force heap to grow.
+        generateHeapContents();
+
+        // Again sleep to make sure events are triggered.
+        Thread.sleep(2000);
+        recording.stop();
+    }
+
+    public static void verifyExpectedEventTypes(Recording recording) throws Exception {
+        List<RecordedEvent> events = Events.fromRecording(recording);
+
+        // First verify that the number of total usage events is greater than 0.
+        long numberOfTotal = events.stream()
+                .filter(e -> e.getEventType().getName().equals(UsageEvent))
+                .count();
+
+        assertGreaterThan(numberOfTotal, 0L, "Should exist events of type: " + UsageEvent);
+
+        // Now verify that we got the expected events.
+        List<String> uniqueEventTypes = events.stream()
+                .filter(e -> e.getEventType().getName().equals(UsagePartEvent))
+                .map(e -> e.getString("type"))
+                .distinct()
+                .toList();
+        for (String type : UsagePartEventTypes) {
+            assertTrue(uniqueEventTypes.contains(type), "Events should include: " + type);
+        }
+    }
+
+    public static void verifyHeapGrowth(Recording recording) throws Exception {
+        List<RecordedEvent> events = Events.fromRecording(recording);
+        List<Long> javaHeapCommitted = events.stream()
+                .filter(e -> e.getEventType().getName().equals(UsagePartEvent))
+                .filter(e -> e.getString("type").equals("Java Heap"))
+                .map(e -> e.getLong("committed"))
+                .toList();
+
+        // Verify that the heap has grown between the first and last sample.
+        long firstSample = javaHeapCommitted.get(0);
+        long lastSample = javaHeapCommitted.get(javaHeapCommitted.size() - 1);
+        assertGreaterThan(lastSample, firstSample, "heap should have grown and NMT should show that");
+    }
+
+    public static void verifyNoUsageEvents(Recording recording) throws Exception {
+        List<RecordedEvent> events = Events.fromRecording(recording);
+        Events.hasNotEvent(events, UsageEvent);
+        Events.hasNotEvent(events, UsagePartEvent);
+    }
+
+    public static void main(String[] args) throws Exception {
+        // The tests takes a single boolean argument that states wether or not
+        // it is run with -XX:NativeMemoryTracking=summary. When tracking is
+        // enabled the tests verifies that the correct events are sent and
+        // the other way around when turned off.
+        assertTrue(args.length == 1, "Must have a single argument");
+        boolean verifyEvents = Boolean.parseBoolean(args[0]);
+
+        Recording recording = new Recording();
+
+        // Enable the two types of events.
+        recording.enable(UsagePartEvent).withPeriod(Duration.ofMillis(UsagePeriod));
+        recording.enable(UsageEvent).withPeriod(Duration.ofMillis(UsagePeriod));
+
+        generateEvents(recording);
+
+        // Now do some verification.
+        if (verifyEvents) {
+            verifyExpectedEventTypes(recording);
+            verifyHeapGrowth(recording);
+        } else {
+            // No events when NativeMemoryTracking is off.
+            verifyNoUsageEvents(recording);
+        }
+    }
+}
