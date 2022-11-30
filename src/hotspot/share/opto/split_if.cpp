@@ -222,36 +222,21 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   }
 
   if (n->Opcode() == Op_OpaqueZeroTripGuard) {
-    CountedLoopNode* cl = n->as_Opaque1()->guarded_counted_loop();
     // If this Opaque1 is part of the zero trip guard for a loop:
     // 1- it can't be shared
     // 2- the zero trip guard can't be the if that's being split
     // As a consequence, this node could be assigned control anywhere between its current control and the zero trip guard.
     // Move it down to get it out of the way of split if and avoid breaking the zero trip guard shape.
-    if (cl != NULL) {
-      // Find the zero trip guard from the loop
-      Node* ctrl = cl->skip_predicates();
-      assert(ctrl->in(0)->is_If(), "expect and If from the zero trip guard");
-      assert(ctrl->in(0) != blk1 && ctrl->in(0) != blk2, "shouldn't split a zero trip guard");
-      Node* bol = ctrl->in(0)->in(1);
-      assert(bol->is_Bool(), "bad zero trip guard shape");
-      Node* cmp = bol->in(1);
-      assert(cmp->Opcode() == Op_CmpI, "bad zero trip guard shape");
-      set_ctrl(n, ctrl->in(0)->in(0));
-      set_ctrl(cmp, ctrl->in(0)->in(0));
-      set_ctrl(bol, ctrl->in(0)->in(0));
-      return true;
-    }
-//    Node* cmp = n->unique_out();
-//    assert(cmp->Opcode() == Op_CmpI, "");
-//    Node* bol = cmp->unique_out();
-//    assert(bol->Opcode() == Op_Bool, "");
-//    Node* iff = bol->unique_out();
-//    assert(iff->Opcode() == Op_If, "");
-//    set_ctrl(n, iff->in(0));
-//    set_ctrl(cmp, iff->in(0));
-//    set_ctrl(bol, iff->in(0));
-//    return true;
+    Node* cmp = n->unique_out();
+    assert(cmp->Opcode() == Op_CmpI, "bad zero trip guard shape");
+    Node* bol = cmp->unique_out();
+    assert(bol->Opcode() == Op_Bool, "bad zero trip guard shape");
+    Node* iff = bol->unique_out();
+    assert(iff->Opcode() == Op_If, "bad zero trip guard shape");
+    set_ctrl(n, iff->in(0));
+    set_ctrl(cmp, iff->in(0));
+    set_ctrl(bol, iff->in(0));
+    return true;
   }
 
   // See if splitting-up a Store.  Any anti-dep loads must go up as
