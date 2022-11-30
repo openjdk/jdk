@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,16 +114,26 @@ public class JibArtifactManager implements ArtifactManager {
     @Override
     public Path resolve(Artifact artifact) throws ArtifactResolverException {
         HashMap<String, Object> artifactDescription = new HashMap<>();
-        artifactDescription.put("module", artifact.name());
-        artifactDescription.put("organization", artifact.organization());
-        artifactDescription.put("ext", artifact.extension());
-        artifactDescription.put("revision", artifact.revision());
+        if (artifact.server().equals("jpg")) {
+            artifactDescription.put("server", artifact.server());
+            artifactDescription.put("product", artifact.product());
+            artifactDescription.put("version", artifact.version());
+            artifactDescription.put("build_number", artifact.build_number());
+            artifactDescription.put("file", artifact.file());
+        } else {
+            artifactDescription.put("module", artifact.name());
+            artifactDescription.put("organization", artifact.organization());
+            artifactDescription.put("ext", artifact.extension());
+            artifactDescription.put("revision", artifact.revision());
+        }
+
         if (artifact.classifier().length() > 0) {
             artifactDescription.put("classifier", artifact.classifier());
         }
         return resolve(artifact.name(), artifactDescription, artifact.unpack());
     }
 
+    @Override
     public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack)
             throws ArtifactResolverException {
         Path path;

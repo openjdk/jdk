@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Check that -XX:+AutoCreateSharedArchive automatically recreates an archive when you change the JDK version.
- * @requires os.family == "linux" & vm.bits == "64" & (os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cds
  * @library /test/lib
  * @compile -source 1.8 -target 1.8 ../test-classes/HelloJDK8.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar Hello.jar HelloJDK8
@@ -34,11 +34,20 @@
  */
 
 import java.io.File;
+import java.util.Properties;
+import jdk.test.lib.artifacts.Artifact;
+import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.util.HashMap;
+
 public class TestAutoCreateSharedArchiveUpgrade {
+
+    static final Properties props = System.getProperties();
+
     // The JDK being tested
     private static final String TEST_JDK = System.getProperty("test.jdk", null);
 
@@ -48,8 +57,9 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     // If you're unning this test using something like
     // "make test TEST=test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java",
-    // the test.boot.jdk property is passed by make/RunTests.gmk
-    private static final String BOOT_JDK = System.getProperty("test.boot.jdk", null);
+    // the test.boot.jdk property is normally passed by make/RunTests.gmk
+    // now it is pulled by the artifactory
+    private static String BOOT_JDK;
 
     private static final String USER_DIR = System.getProperty("user.dir", ".");
     private static final String FS = System.getProperty("file.separator", "/");
@@ -61,21 +71,35 @@ public class TestAutoCreateSharedArchiveUpgrade {
     private static String newJVM;
 
     public static void main(String[] args) throws Throwable {
-        setupJVMs();
-        doTest();
+        // Get OS and CPU type
+        String arch = props.getProperty("os.arch");
+        String os = getOsId();
+        System.out.printf("OS: %s, Arch: %s\n", os, arch);
+        // Earliest testable version is 19
+        int n = java.lang.Runtime.version().major() - 1;
+        for (int i = 19; i < n; i++) {
+            BOOT_JDK = fetchBootJDK(os, arch, i);
+            setupJVMs(os);
+            doTest();
+        }
     }
 
-    static void setupJVMs() throws Throwable {
+    static void setupJVMs(String os) throws Throwable {
         if (TEST_JDK == null) {
             throw new RuntimeException("-Dtest.jdk should point to the JDK being tested");
         }
 
         newJVM = TEST_JDK + FS + "bin" + FS + "java";
 
+        // Example path: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz/jdk-19/bin/java
         if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
-            oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
+            if (os == "MacOSX") {
+                oldJVM = BOOT_JDK + ".jdk" + FS + "Contents" + FS + "Home" + FS + "bin" + FS + "java";
+            } else {
+                oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
+            }
         } else {
             throw new RuntimeException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
@@ -140,5 +164,94 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     static void assertUsedJSA(OutputAnalyzer output) {
         output.shouldContain("Mapped dynamic region #0");
+    }
+
+    // Fetch JDK artifact depending on platform
+    private static String fetchBootJDK(String osID, String arch, int version) {
+        int build;
+        String architecture;
+        HashMap<String, Object> jdkArtifactMap = new HashMap<>();
+        jdkArtifactMap.put("server", "jpg");
+        jdkArtifactMap.put("product", "jdk");
+
+        // Select the correct release build number for each version
+        // *UPDATE THIS* after each release
+        switch(version) {
+            case 19:
+                build = 36;
+                break;
+            case 20:
+                build = 29;
+                break;
+            default:
+                build = 0;
+                break;
+        }
+        // Get correct file name for architecture
+        switch(arch) {
+            case("x86"):
+            case("x86_64"):
+            case("amd64"):
+                architecture = "x";
+                break;
+            case("aarch64"):
+                architecture = "aarch";
+                break;
+            default:
+                architecture = "";
+                break;
+        }
+        // File name is bundles/<os>-<architecture>64/jdk-<version>_<os>-<architecture>64_bin.<extension>
+        // Ex: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz
+        switch (osID) {
+            case "Windows":
+                jdkArtifactMap.put("version", version);
+                jdkArtifactMap.put("build_number", build);
+                jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
+                return fetchBootJDK(jdkArtifactMap, version);
+
+            case "MacOSX":
+                jdkArtifactMap.put("version", version);
+                jdkArtifactMap.put("build_number", build);
+                jdkArtifactMap.put("file", "bundles/macos-" + architecture + "64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
+                return fetchBootJDK(jdkArtifactMap, version);
+            case "Linux":
+                jdkArtifactMap.put("version", version);
+                jdkArtifactMap.put("build_number", build);
+                jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
+                return fetchBootJDK(jdkArtifactMap, version);
+
+            default:
+                return null;
+        }
+    }
+
+    // Fetch JDK version from artifactory
+    private static String fetchBootJDK(HashMap<String, Object> jdkArtifactMap, int version) {
+        String path = null;
+        try {
+            path = ArtifactResolver.resolve("jdk", jdkArtifactMap, true) + "/jdk-" + version;
+            System.out.println("Boot JDK path: " + path);
+        } catch (ArtifactResolverException e) {
+            Throwable cause = e.getCause();
+            if (cause == null) {
+                System.out.println("Cannot resolve artifact, "
+                        + "please check if JIB jar is present in classpath.");
+            } else {
+                throw new RuntimeException("Fetch artifact failed: "
+                        + "\nPlease make sure the artifact is available.", e);
+            }
+        }
+        return path;
+    }
+
+    private static String getOsId() {
+        String osName = props.getProperty("os.name");
+        if (osName.startsWith("Win")) {
+            osName = "Windows";
+        } else if (osName.equals("Mac OS X")) {
+            osName = "MacOSX";
+        }
+        return osName;
     }
 }

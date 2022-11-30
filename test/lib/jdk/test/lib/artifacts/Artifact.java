@@ -29,11 +29,18 @@ import java.lang.annotation.*;
 @Repeatable(ArtifactContainer.class)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Artifact {
-    String organization();
-    String name();
-    String revision();
-    String extension();
+    String organization() default "";
+    String name() default "";
+    String revision() default "";
+    String extension() default "";
     String classifier() default "";
     boolean unpack() default true;
+
+    // For getting jdk versions
+    String server() default "";
+    String product() default "";
+    int version() default 0;
+    int build_number() default 0;
+    String file() default "";
 }
 
