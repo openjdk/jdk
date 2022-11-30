@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
@@ -47,10 +48,6 @@ G1GCPhaseTimes* G1CollectionSet::phase_times() {
   return _policy->phase_times();
 }
 
-double G1CollectionSet::predict_region_non_copy_time_ms(HeapRegion* hr) const {
-  return _policy->predict_region_non_copy_time_ms(hr, collector_state()->in_young_only_phase());
-}
-
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1h(g1h),
   _policy(policy),
@@ -63,20 +60,13 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_max_length(0),
   _num_optional_regions(0),
   _bytes_used_before(0),
-  _recorded_rs_length(0),
   _inc_build_state(Inactive),
   _inc_part_start(0),
-  _inc_collection_set_stats(NULL),
-  _inc_bytes_used_before(0),
-  _inc_recorded_rs_length(0),
-  _inc_recorded_rs_length_diff(0),
-  _inc_predicted_non_copy_time_ms(0.0),
-  _inc_predicted_non_copy_time_ms_diff(0.0) {
+  _inc_bytes_used_before(0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
   FREE_C_HEAP_ARRAY(uint, _collection_set_regions);
-  FREE_C_HEAP_ARRAY(IncCollectionSetRegionStat, _inc_collection_set_stats);
   free_optional_regions();
   clear_candidates();
 }
@@ -99,7 +89,6 @@ void G1CollectionSet::initialize(uint max_region_length) {
   guarantee(_collection_set_regions == NULL, "Must only initialize once.");
   _collection_set_max_length = max_region_length;
   _collection_set_regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
-  _inc_collection_set_stats = NEW_C_HEAP_ARRAY(IncCollectionSetRegionStat, max_region_length, mtGC);
 }
 
 void G1CollectionSet::free_optional_regions() {
@@ -113,10 +102,6 @@ void G1CollectionSet::clear_candidates() {
 
 bool G1CollectionSet::has_candidates() {
   return _candidates != NULL && !_candidates->is_empty();
-}
-
-void G1CollectionSet::set_recorded_rs_length(size_t rs_length) {
-  _recorded_rs_length = rs_length;
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -134,7 +119,6 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
 
   _bytes_used_before += hr->used();
-  _recorded_rs_length += hr->rem_set()->occupied();
   _old_region_length++;
 
   _g1h->old_set_remove(hr);
@@ -152,18 +136,8 @@ void G1CollectionSet::add_optional_region(HeapRegion* hr) {
 void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
-#ifdef ASSERT
-  for (uint i = 0; i < _collection_set_max_length; i++) {
-    _inc_collection_set_stats[i].reset();
-  }
-#endif
 
   _inc_bytes_used_before = 0;
-
-  _inc_recorded_rs_length = 0;
-  _inc_recorded_rs_length_diff = 0;
-  _inc_predicted_non_copy_time_ms = 0.0;
-  _inc_predicted_non_copy_time_ms_diff = 0.0;
 
   update_incremental_marker();
 }
@@ -171,19 +145,6 @@ void G1CollectionSet::start_incremental_building() {
 void G1CollectionSet::finalize_incremental_building() {
   assert(_inc_build_state == Active, "Precondition");
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
-
-  // The two "main" fields, _inc_recorded_rs_length and
-  // _inc_predicted_non_copy_time_ms, are updated by the thread
-  // that adds a new region to the CSet. Further updates by the
-  // concurrent refinement thread that samples the young RSet lengths
-  // are accumulated in the *_diff fields. Here we add the diffs to
-  // the "main" fields.
-
-  _inc_recorded_rs_length += _inc_recorded_rs_length_diff;
-  _inc_predicted_non_copy_time_ms += _inc_predicted_non_copy_time_ms_diff;
-
-  _inc_recorded_rs_length_diff = 0;
-  _inc_predicted_non_copy_time_ms_diff = 0.0;
 }
 
 void G1CollectionSet::clear() {
@@ -239,31 +200,6 @@ void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
                                   worker_id);
 }
 
-void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
-                                                     size_t new_rs_length) {
-  // Update the CSet information that is dependent on the new RS length
-  assert(hr->is_young(), "Precondition");
-  assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint");
-
-  IncCollectionSetRegionStat* stat = &_inc_collection_set_stats[hr->hrm_index()];
-
-  size_t old_rs_length = stat->_rs_length;
-  assert(old_rs_length <= new_rs_length,
-         "Remembered set decreased (changed from " SIZE_FORMAT " to " SIZE_FORMAT " region %u type %s)",
-         old_rs_length, new_rs_length, hr->hrm_index(), hr->get_short_type_str());
-  size_t rs_length_diff = new_rs_length - old_rs_length;
-  stat->_rs_length = new_rs_length;
-  _inc_recorded_rs_length_diff += rs_length_diff;
-
-  double old_non_copy_time = stat->_non_copy_time_ms;
-  assert(old_non_copy_time >= 0.0, "Non copy time for region %u not initialized yet, is %.3f", hr->hrm_index(), old_non_copy_time);
-  double new_non_copy_time = predict_region_non_copy_time_ms(hr);
-  double non_copy_time_ms_diff = new_non_copy_time - old_non_copy_time;
-
-  stat->_non_copy_time_ms = new_non_copy_time;
-  _inc_predicted_non_copy_time_ms_diff += non_copy_time_ms_diff;
-}
-
 void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == Active, "Precondition");
@@ -285,20 +221,6 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   // Ignore calls to this due to retirement during full gc.
 
   if (!_g1h->collector_state()->in_full_gc()) {
-    size_t rs_length = hr->rem_set()->occupied();
-    double non_copy_time = predict_region_non_copy_time_ms(hr);
-
-    // Cache the values we have added to the aggregated information
-    // in the heap region in case we have to remove this region from
-    // the incremental collection set, or it is updated by the
-    // rset sampling code
-
-    IncCollectionSetRegionStat* stat = &_inc_collection_set_stats[hr->hrm_index()];
-    stat->_rs_length = rs_length;
-    stat->_non_copy_time_ms = non_copy_time;
-
-    _inc_recorded_rs_length += rs_length;
-    _inc_predicted_non_copy_time_ms += non_copy_time;
     _inc_bytes_used_before += hr->used();
   }
 
@@ -400,7 +322,8 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  size_t pending_cards = _policy->pending_cards_at_gc_start() + _g1h->hot_card_cache()->num_entries();
+  size_t pending_cards = _policy->pending_cards_at_gc_start() +
+                         _g1h->hot_card_cache()->num_entries();
 
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: " SIZE_FORMAT " target pause time: %1.2fms",
                             pending_cards, target_pause_time_ms);
@@ -417,12 +340,11 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   _bytes_used_before = _inc_bytes_used_before;
 
-  // The number of recorded young regions is the incremental
-  // collection set's current size
-  set_recorded_rs_length(_inc_recorded_rs_length);
-
   double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards);
-  double predicted_eden_time = _inc_predicted_non_copy_time_ms + _policy->predict_eden_copy_time_ms(eden_region_length);
+  // Base time already includes the whole remembered set related time, so do not add that here
+  // again.
+  double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_length) +
+                               _policy->predict_eden_copy_time_ms(eden_region_length);
   double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "

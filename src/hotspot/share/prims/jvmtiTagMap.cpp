@@ -76,7 +76,6 @@ bool JvmtiTagMap::_has_object_free_events = false;
 JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
   _lock(Mutex::nosafepoint, "JvmtiTagMap_lock"),
-  _needs_rehashing(false),
   _needs_cleaning(false),
   _posting_events(false) {
 
@@ -136,7 +135,7 @@ bool JvmtiTagMap::is_empty() {
   return hashmap()->is_empty();
 }
 
-// This checks for posting and rehashing before operations that
+// This checks for posting before operations that use
 // this tagmap table.
 void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
   assert(is_locked(), "checking");
@@ -148,14 +147,9 @@ void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     remove_dead_entries_locked(objects);
   }
-  if (_needs_rehashing) {
-    log_info(jvmti, table)("TagMap table needs rehashing");
-    hashmap()->rehash();
-    _needs_rehashing = false;
-  }
 }
 
-// This checks for posting and rehashing and is called from the heap walks.
+// This checks for posting and is called from the heap walks.
 void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
   assert(SafepointSynchronize::is_at_safepoint(), "called from safepoints");
 
@@ -448,7 +442,7 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
 };
 
 ClassFieldMap::ClassFieldMap() {
-  _fields = new (ResourceObj::C_HEAP, mtServiceability)
+  _fields = new (mtServiceability)
     GrowableArray<ClassFieldDescriptor*>(initial_field_count, mtServiceability);
 }
 
@@ -583,7 +577,7 @@ bool ClassFieldMapCacheMark::_is_active;
 // record that the given InstanceKlass is caching a field map
 void JvmtiCachedClassFieldMap::add_to_class_list(InstanceKlass* ik) {
   if (_class_list == NULL) {
-    _class_list = new (ResourceObj::C_HEAP, mtServiceability)
+    _class_list = new (mtServiceability)
       GrowableArray<InstanceKlass*>(initial_class_count, mtServiceability);
   }
   _class_list->push(ik);
@@ -1263,8 +1257,8 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
     _tags((jlong*)tags),
     _tag_count(tag_count),
     _some_dead_found(false),
-    _object_results(new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jobject>(1, mtServiceability)),
-    _tag_results(new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<uint64_t>(1, mtServiceability)) { }
+    _object_results(new (mtServiceability) GrowableArray<jobject>(1, mtServiceability)),
+    _tag_results(new (mtServiceability) GrowableArray<uint64_t>(1, mtServiceability)) { }
 
   ~TagObjectCollector() {
     delete _object_results;
@@ -2281,7 +2275,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool _reporting_string_values;
 
   GrowableArray<oop>* create_visit_stack() {
-    return new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(initial_visit_stack_size, mtServiceability);
+    return new (mtServiceability) GrowableArray<oop>(initial_visit_stack_size, mtServiceability);
   }
 
   // accessors
@@ -2930,21 +2924,6 @@ void JvmtiTagMap::follow_references(jint heap_filter,
   }
   // Post events outside of Heap_lock
   post_dead_objects(&dead_objects);
-}
-
-// Concurrent GC needs to call this in relocation pause, so after the objects are moved
-// and have their new addresses, the table can be rehashed.
-void JvmtiTagMap::set_needs_rehashing() {
-  assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
-  assert(Thread::current()->is_VM_thread(), "should be the VM thread");
-
-  JvmtiEnvIterator it;
-  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
-    JvmtiTagMap* tag_map = env->tag_map_acquire();
-    if (tag_map != NULL) {
-      tag_map->_needs_rehashing = true;
-    }
-  }
 }
 
 // Verify gc_notification follows set_needs_cleaning.

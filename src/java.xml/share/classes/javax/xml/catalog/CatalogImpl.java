@@ -140,7 +140,8 @@ class CatalogImpl extends GroupEntry implements Catalog {
                 if (verifyCatalogFile(null, uri)) {
                     systemId = temp;
                     try {
-                        baseURI = new URL(systemId);
+                        @SuppressWarnings("deprecation")
+                        URL _unused = baseURI = new URL(systemId);
                     } catch (MalformedURLException e) {
                         CatalogMessages.reportRunTimeError(CatalogMessages.ERR_INVALID_PATH,
                                 new Object[]{temp}, e);

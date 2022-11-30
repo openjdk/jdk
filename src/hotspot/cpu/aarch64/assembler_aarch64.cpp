@@ -238,7 +238,6 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
 #undef starti
 
 Address::Address(address target, relocInfo::relocType rtype) : _mode(literal){
-  _is_lval = false;
   _target = target;
   switch (rtype) {
   case relocInfo::oop_type:

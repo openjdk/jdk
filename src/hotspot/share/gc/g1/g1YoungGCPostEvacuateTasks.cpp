@@ -82,7 +82,7 @@ public:
 
     class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
     public:
-      G1SegmentedArrayMemoryStats _total;
+      G1MonotonicArenaMemoryStats _total;
 
       bool do_heap_region(HeapRegion* r) override {
         _total.add(r->rem_set()->card_set_memory_stats());
@@ -557,7 +557,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     assert(!r->is_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
     stats()->account_evacuated_region(r);
 
-    // Free the region and and its remembered set.
+    // Free the region and its remembered set.
     _g1h->free_region(r, nullptr);
     _g1h->hr_printer()->cleanup(r);
   }

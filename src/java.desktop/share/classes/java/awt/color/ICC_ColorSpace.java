@@ -200,17 +200,13 @@ public class ICC_ColorSpace extends ColorSpace {
         if (this2srgb == null) {
             synchronized (this) {
                 if (this2srgb == null) {
-                    ColorTransform[] transforms = new ColorTransform[2];
-                    var srgb = (ICC_ColorSpace) getInstance(CS_sRGB);
-                    PCMM mdl = CMSManager.getModule();
-                    transforms[0] = mdl.createTransform(thisProfile,
-                                    ColorTransform.Any, ColorTransform.In);
-                    transforms[1] = mdl.createTransform(srgb.getProfile(),
-                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    this2srgb = mdl.createTransform(transforms);
+                    var srgb = ICC_Profile.getInstance(CS_sRGB);
+                    PCMM mdl = CMSManager.getModule();
+                    this2srgb = mdl.createTransform(ColorTransform.Any,
+                                                    thisProfile, srgb);
                 }
             }
         }
@@ -252,17 +248,13 @@ public class ICC_ColorSpace extends ColorSpace {
         if (srgb2this == null) {
             synchronized (this) {
                 if (srgb2this == null) {
-                    ColorTransform[] transforms = new ColorTransform[2];
-                    var srgb = (ICC_ColorSpace) getInstance(CS_sRGB);
-                    PCMM mdl = CMSManager.getModule();
-                    transforms[0] = mdl.createTransform(srgb.getProfile(),
-                                    ColorTransform.Any, ColorTransform.In);
-                    transforms[1] = mdl.createTransform(thisProfile,
-                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    srgb2this = mdl.createTransform(transforms);
+                    var srgb = ICC_Profile.getInstance(CS_sRGB);
+                    PCMM mdl = CMSManager.getModule();
+                    srgb2this = mdl.createTransform(ColorTransform.Any,
+                                                    srgb, thisProfile);
                 }
             }
         }
@@ -384,23 +376,14 @@ public class ICC_ColorSpace extends ColorSpace {
         if (this2xyz == null) {
             synchronized (this) {
                 if (this2xyz == null) {
-                    ColorTransform[] transforms = new ColorTransform[2];
-                    var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
-                    PCMM mdl = CMSManager.getModule();
-                    try {
-                        transforms[0] = mdl.createTransform(thisProfile,
-                                        ICC_Profile.icRelativeColorimetric,
-                                        ColorTransform.In);
-                    } catch (CMMException e) {
-                        transforms[0] = mdl.createTransform(thisProfile,
-                                        ColorTransform.Any, ColorTransform.In);
-                    }
-                    transforms[1] = mdl.createTransform(xyz.getProfile(),
-                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    this2xyz = mdl.createTransform(transforms);
+                    var xyz = ICC_Profile.getInstance(CS_CIEXYZ);
+                    PCMM mdl = CMSManager.getModule();
+                    this2xyz = mdl.createTransform(
+                            ICC_Profile.icRelativeColorimetric,
+                            thisProfile, xyz);
                 }
             }
         }
@@ -524,23 +507,14 @@ public class ICC_ColorSpace extends ColorSpace {
         if (xyz2this == null) {
             synchronized (this) {
                 if (xyz2this == null) {
-                    ColorTransform[] transforms = new ColorTransform[2];
-                    var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
-                    PCMM mdl = CMSManager.getModule();
-                    try {
-                        transforms[0] = mdl.createTransform(xyz.getProfile(),
-                                        ICC_Profile.icRelativeColorimetric,
-                                        ColorTransform.In);
-                    } catch (CMMException e) {
-                        transforms[0] = mdl.createTransform(xyz.getProfile(),
-                                        ColorTransform.Any, ColorTransform.In);
-                    }
-                    transforms[1] = mdl.createTransform(thisProfile,
-                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    xyz2this = mdl.createTransform(transforms);
+                    var xyz = ICC_Profile.getInstance(CS_CIEXYZ);
+                    PCMM mdl = CMSManager.getModule();
+                    xyz2this = mdl.createTransform(
+                            ICC_Profile.icRelativeColorimetric,
+                            xyz, thisProfile);
                 }
             }
         }

@@ -351,6 +351,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             }
             directoryComboBoxModel.addItem(currentDirectory);
             directoryListModel.directoryChanged();
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            getChangeToParentDirectoryAction().setEnabled(!fsv.isFileSystemRoot(currentDirectory));
         }
         super.doDirectoryChanged(e);
     }
@@ -488,7 +490,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (chooser.getFileSelectionMode() != JFileChooser.DIRECTORIES_ONLY
+                            && (chooser.getFileSelectionMode() == JFileChooser.FILES_ONLY
                                 || !chooser.getFileSystemView().isFileSystem(((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));

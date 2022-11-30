@@ -69,6 +69,8 @@ class G1YoungGCEvacFailureInjector {
   void select_evac_failure_regions() EVAC_FAILURE_INJECTOR_RETURN;
 public:
 
+  G1YoungGCEvacFailureInjector() EVAC_FAILURE_INJECTOR_RETURN;
+
   // Arm the evacuation failure injector if needed for the current
   // GC (based upon the type of GC and which command line flags are set);
   void arm_if_needed() EVAC_FAILURE_INJECTOR_RETURN;

@@ -608,9 +608,6 @@ Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
 			-3:00	Arg	-03/-02	2008 Oct 18
 			-3:00	-	-03
 
-# Aruba
-# See America/Puerto_Rico.
-
 # Bolivia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/La_Paz	-4:32:36 -	LMT	1890
@@ -1455,15 +1452,6 @@ Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 # Malpelo, Providencia, San Andres
 # no information; probably like America/Bogota
 
-# Curaçao
-# See America/Puerto_Rico.
-#
-# From Arthur David Olson (2011-06-15):
-# use links for places with new iso3166 codes.
-# The name "Lower Prince's Quarter" is both longer than fourteen characters
-# and contains an apostrophe; use "Lower_Princes"....
-# From Paul Eggert (2021-09-29):
-# These backward-compatibility links now are in the 'northamerica' file.
 
 # Ecuador
 #
@@ -1778,9 +1766,6 @@ Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:40:36 -	PMT	1945 Oct    # The capital moved?
 			-3:30	-	-0330	1984 Oct
 			-3:00	-	-03
-
-# Trinidad and Tobago
-# See America/Puerto_Rico.
 
 # Uruguay
 # From Paul Eggert (1993-11-18):

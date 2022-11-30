@@ -356,7 +356,6 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
   block->_top = 0;
   block->_next = NULL;
   block->_pop_frame_link = NULL;
-  block->_planned_capacity = block_size_in_oops;
   // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
   debug_only(block->_last = NULL);
   debug_only(block->_free_list = NULL);
@@ -548,22 +547,6 @@ size_t JNIHandleBlock::length() const {
     result++;
   }
   return result;
-}
-
-class CountJNIHandleClosure: public OopClosure {
-private:
-  int _count;
-public:
-  CountJNIHandleClosure(): _count(0) {}
-  virtual void do_oop(oop* ooph) { _count++; }
-  virtual void do_oop(narrowOop* unused) { ShouldNotReachHere(); }
-  int count() { return _count; }
-};
-
-const size_t JNIHandleBlock::get_number_of_live_handles() {
-  CountJNIHandleClosure counter;
-  oops_do(&counter);
-  return counter.count();
 }
 
 // This method is not thread-safe, i.e., must be called while holding a lock on the
