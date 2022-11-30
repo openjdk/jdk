@@ -35,5 +35,14 @@ public @interface Artifact {
     String extension();
     String classifier() default "";
     boolean unpack() default true;
+
+    // Added for getting jdk versions
+    String server();
+    String product();
+    String version();
+    String build_number();
+    String file();
+
+
 }
 
