@@ -235,7 +235,7 @@ public class TestSpecTag extends JavadocTester {
                     <ul class="tag-list">
                     <li><a href="http://example.com/"><span id="example" class="search-tag-result">example</span></a></li>
                     </ul>
-                    </dd>                                                                                                     
+                    </dd>
                     """,
                 "<section class=\"field-details\" id=\"field-detail\">",
                 """
