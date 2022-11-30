@@ -33,6 +33,7 @@
  * @run main/othervm DTLSOverDatagram
  */
 
+import java.io.IOException;
 import java.nio.*;
 import java.net.*;
 import java.util.*;
@@ -50,8 +51,6 @@ import jdk.test.lib.hexdump.HexPrinter;
  */
 public class DTLSOverDatagram {
 
-    private static final int MAX_HANDSHAKE_LOOPS = 200;
-    private static final int MAX_APP_READ_LOOPS = 60;
     private static final int SOCKET_TIMEOUT = 10 * 1000; // in millis
     private static final int BUFFER_SIZE = 1024;
     private static final int MAXIMUM_PACKET_SIZE = 1024;
@@ -75,8 +74,10 @@ public class DTLSOverDatagram {
     private static final ByteBuffer CLIENT_APP =
                 ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
 
-    private static Exception clientException = null;
-    private static Exception serverException = null;
+    private volatile Exception clientException = null;
+    private volatile Exception serverException = null;
+
+    private final CountDownLatch serverStarted = new CountDownLatch(1);
     /*
      * =============================================================
      * The test case
@@ -148,18 +149,13 @@ public class DTLSOverDatagram {
             SocketAddress peerAddr, String side) throws Exception {
 
         boolean endLoops = false;
-        int loops = MAX_HANDSHAKE_LOOPS;
+        int loops = 0;
         engine.beginHandshake();
         while (!endLoops &&
                 (serverException == null) && (clientException == null)) {
 
-            if (--loops < 0) {
-                throw new RuntimeException(
-                        "Too many loops to produce handshake packets");
-            }
-
             SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
-            log(side, "=======handshake(" + loops + ", " + hs + ")=======");
+            log(side, "=======handshake(" + ++loops + ", " + hs + ")=======");
 
             switch (hs) {
                 case NEED_UNWRAP, NEED_UNWRAP_AGAIN -> {
@@ -313,16 +309,10 @@ public class DTLSOverDatagram {
     void receiveAppData(SSLEngine engine,
             DatagramSocket socket, ByteBuffer expectedApp) throws Exception {
 
-        int loops = MAX_APP_READ_LOOPS;
         while ((serverException == null) && (clientException == null)) {
-            if (--loops < 0) {
-                throw new RuntimeException(
-                        "Too much loops to receive application data");
-            }
-
             byte[] buf = new byte[BUFFER_SIZE];
-            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-            socket.receive(packet);
+            DatagramPacket packet = readFromSocket(socket, buf);
+
             ByteBuffer netBuffer = ByteBuffer.wrap(buf, 0, packet.getLength());
             ByteBuffer recBuffer = ByteBuffer.allocate(BUFFER_SIZE);
             SSLEngineResult rs = engine.unwrap(netBuffer, recBuffer);
@@ -338,19 +328,32 @@ public class DTLSOverDatagram {
         }
     }
 
+    /*
+    Some tests failed with receive time-out errors when the client tried to read
+    from the server. The server thread had exitted normally so the read _should_
+    succeed. So let's try to read a couple times before giving up.
+     */
+    DatagramPacket readFromSocket(DatagramSocket socket, byte[] buffer) throws IOException {
+        for (int i = 1 ; i <= 2 ; ++i) {
+            try {
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                return packet;
+            } catch (SocketTimeoutException exc) {
+                System.out.println("Attempt " + i + ": Timeout occurred reading from socket.");
+            }
+        }
+        throw new IOException("Did not receive data after 2 attempts.");
+    }
+
     // produce handshake packets
     boolean produceHandshakePackets(SSLEngine engine, SocketAddress socketAddr,
             String side, List<DatagramPacket> packets) throws Exception {
 
         boolean endLoops = false;
-        int loops = MAX_HANDSHAKE_LOOPS / 2;
+        int loops = 0;
         while (!endLoops &&
                 (serverException == null) && (clientException == null)) {
-
-            if (--loops < 0) {
-                throw new RuntimeException(
-                        "Too many loops to produce handshake packets");
-            }
 
             ByteBuffer oNet = ByteBuffer.allocate(32768);
             ByteBuffer oApp = ByteBuffer.allocate(0);
@@ -360,7 +363,7 @@ public class DTLSOverDatagram {
             SSLEngineResult.Status rs = r.getStatus();
             SSLEngineResult.HandshakeStatus hs = r.getHandshakeStatus();
             log(side, "----produce handshake packet(" +
-                    loops + ", " + rs + ", " + hs + ")----");
+                    ++loops + ", " + rs + ", " + hs + ")----");
 
             verifySSLEngineResultStatus(r, side);
 
@@ -541,33 +544,26 @@ public class DTLSOverDatagram {
             InetSocketAddress clientSocketAddr = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), clientSocket.getLocalPort());
 
-            ExecutorService pool = Executors.newFixedThreadPool(2);
-            Future<String> server, client;
+            ExecutorService pool = Executors.newFixedThreadPool(1);
+            Future<String> server;
 
-            try {
-                server = pool.submit(new ServerCallable(
+            server = pool.submit(() -> runServer(
                         testCase, serverSocket, clientSocketAddr));
-                client = pool.submit(new ClientCallable(
-                        testCase, clientSocket, serverSocketAddr));
-            } finally {
-                pool.shutdown();
-            }
+            pool.shutdown();
 
             boolean failed = false;
-
-            // wait for client to finish
             try {
-                System.out.println("Client finished: " + client.get());
-            } catch (CancellationException | InterruptedException
-                        | ExecutionException e) {
+                String msg = runClient(testCase, clientSocket, serverSocketAddr);
+                System.out.println("Client finished: "+msg);
+            } catch (Exception exc) {
                 System.out.println("Exception on client side: ");
-                e.printStackTrace(System.out);
+                exc.printStackTrace(System.out);
                 failed = true;
             }
 
             // wait for server to finish
             try {
-                System.out.println("Client finished: " + server.get());
+                System.out.println("Server finished: " + server.get());
             } catch (CancellationException | InterruptedException
                         | ExecutionException e) {
                 System.out.println("Exception on server side: ");
@@ -581,57 +577,54 @@ public class DTLSOverDatagram {
         }
     }
 
-    record ServerCallable(DTLSOverDatagram testCase, DatagramSocket socket,
-                          InetSocketAddress clientSocketAddr) implements Callable<String> {
-
-        @Override
-        public String call() throws Exception {
-            try {
-                testCase.doServerSide(socket, clientSocketAddr);
-            } catch (Exception e) {
-                System.out.println("Exception in  ServerCallable.call():");
-                e.printStackTrace(System.out);
-                serverException = e;
-
-                if (testCase.isGoodJob()) {
-                    throw e;
-                } else {
-                    return "Well done, server!";
-                }
-            }
+    String runServer(DTLSOverDatagram testCase, DatagramSocket socket,
+                          InetSocketAddress clientSocketAddr) throws Exception {
+        try {
+            serverStarted.countDown();
+            testCase.doServerSide(socket, clientSocketAddr);
+        } catch (Exception e) {
+            System.out.println("Exception in  ServerCallable.call():");
+            e.printStackTrace(System.out);
+            serverException = e;
 
             if (testCase.isGoodJob()) {
-                return "Well done, server!";
+                throw e;
             } else {
-                throw new Exception("No expected exception");
+                return "Well done, server!";
             }
+        }
+
+        if (testCase.isGoodJob()) {
+            return "Well done, server!";
+        } else {
+            throw new Exception("No expected exception");
         }
     }
 
-    record ClientCallable(DTLSOverDatagram testCase, DatagramSocket socket,
-                          InetSocketAddress serverSocketAddr) implements Callable<String> {
-
-        @Override
-        public String call() throws Exception {
-            try {
+    private String runClient(DTLSOverDatagram testCase, DatagramSocket socket, InetSocketAddress serverSocketAddr)
+    throws Exception {
+        try {
+            if(!serverStarted.await(5, TimeUnit.SECONDS)) {
+                throw new Exception("Server did not start within 5 seconds.");
+            } else {
                 testCase.doClientSide(socket, serverSocketAddr);
-            } catch (Exception e) {
-                System.out.println("Exception in ClientCallable.call():");
-                e.printStackTrace(System.out);
-                clientException = e;
-
-                if (testCase.isGoodJob()) {
-                    throw e;
-                } else {
-                    return "Well done, client!";
-                }
             }
+        } catch (Exception e) {
+            System.out.println("Exception in ClientCallable.call():");
+            e.printStackTrace(System.out);
+            clientException = e;
 
             if (testCase.isGoodJob()) {
-                return "Well done, client!";
+                throw e;
             } else {
-                throw new Exception("No expected exception");
+                return "Well done, client!";
             }
+        }
+
+        if (testCase.isGoodJob()) {
+            return "Well done, client!";
+        } else {
+            throw new Exception("No expected exception");
         }
     }
 
