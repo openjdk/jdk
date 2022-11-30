@@ -404,6 +404,13 @@ void StackWalker::process_normal() {
         set_state(STACKWALKER_GC_ACTIVE); // -2
         return;
       }
+      if (_method->is_native()) {
+        // because is_interpreted_frame return true for native method frames too
+        _bci = -1;
+        _inlined = false;
+        set_state(STACKWALKER_NATIVE_FRAME);
+        return;
+      }
       set_state(STACKWALKER_INTERPRETED_FRAME);
       assert(!_inlined || in_c_on_top || !_st.invalid(), "have to advance somehow 2");
       return;
