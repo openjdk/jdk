@@ -215,10 +215,10 @@ public class BasicAttribute implements Attribute {
             answer.append("No values");
         } else {
             boolean start = true;
-            for (Enumeration<Object> e = values.elements(); e.hasMoreElements(); ) {
+            for (Object value : values) {
                 if (!start)
                     answer.append(", ");
-                answer.append(e.nextElement());
+                answer.append(value);
                 start = false;
             }
         }

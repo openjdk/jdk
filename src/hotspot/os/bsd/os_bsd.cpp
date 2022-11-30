@@ -23,13 +23,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -836,9 +836,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
-
 static int local_dladdr(const void* addr, Dl_info* info) {
 #ifdef __APPLE__
   if (addr == (void*)-1) {
@@ -2171,28 +2168,6 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
-
-  fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
-
-  // If the open succeeded, the file might still be a directory
-  {
-    struct stat buf;
-    int ret = ::fstat(fd, &buf);
-    int st_mode = buf.st_mode;
-
-    if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
-        ::close(fd);
-        return -1;
-      }
-    } else {
-      ::close(fd);
-      return -1;
-    }
-  }
 
   // All file descriptors that are opened in the JVM and not
   // specifically destined for a subprocess should have the
@@ -2215,14 +2190,27 @@ int os::open(const char *path, int oflag, int mode) {
   // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
   // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
   //
-#ifdef FD_CLOEXEC
+
+  int fd = ::open(path, oflag | O_CLOEXEC, mode);
+  if (fd == -1) return -1;
+
+  // If the open succeeded, the file might still be a directory
   {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
     }
   }
-#endif
 
   return fd;
 }

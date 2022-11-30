@@ -3528,6 +3528,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 String href = (String) attr.getAttribute(HTML.Attribute.HREF);
                 if (href != null) {
                     try {
+                        @SuppressWarnings("deprecation")
                         URL newBase = new URL(base, href);
                         setBase(newBase);
                         hasBaseTag = true;
@@ -4122,10 +4123,12 @@ public class HTMLDocument extends DefaultStyledDocument {
         void linkCSSStyleSheet(String href) {
             URL url;
             try {
-                url = new URL(base, href);
+                @SuppressWarnings("deprecation")
+                var _unused = url = new URL(base, href);
             } catch (MalformedURLException mfe) {
                 try {
-                    url = new URL(href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = url = new URL(href);
                 } catch (MalformedURLException mfe2) {
                     url = null;
                 }

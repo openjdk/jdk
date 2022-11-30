@@ -71,97 +71,97 @@ public class TestFPComparison {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveEqualTwoDoubles(double x, double y) {
         return x == y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveEqualTwoFloats(float x, float y) {
         return x == y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveNotEqualTwoDoubles(double x, double y) {
         return x != y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveNotEqualTwoFloats(float x, float y) {
         return x != y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveLessThanTwoDoubles(double x, double y) {
         return x < y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveLessThanTwoFloats(float x, float y) {
         return x < y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveMoreThanTwoDoubles(double x, double y) {
         return x > y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveMoreThanTwoFloats(float x, float y) {
         return x > y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveLessEqualTwoDoubles(double x, double y) {
         return x <= y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveLessEqualTwoFloats(float x, float y) {
         return x <= y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveMoreEqualTwoDoubles(double x, double y) {
         return x >= y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveMoreEqualTwoFloats(float x, float y) {
         return x >= y ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveEqualOneDouble(double x) {
         return x == x ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveEqualOneFloat(float x) {
         return x == x ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveNotEqualOneDouble(double x) {
         return x != x ? 1 : 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public int cMoveNotEqualOneFloat(float x) {
         return x != x ? 1 : 0;
     }

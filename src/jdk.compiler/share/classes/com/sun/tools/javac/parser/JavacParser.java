@@ -3846,15 +3846,16 @@ public class JavacParser implements Parser {
             } else if (token.name() == names.provides) {
                 nextToken();
                 JCExpression serviceName = qualident(false);
+                List<JCExpression> implNames;
                 if (token.kind == IDENTIFIER && token.name() == names.with) {
                     nextToken();
-                    List<JCExpression> implNames = qualidentList(false);
-                    accept(SEMI);
-                    defs.append(toP(F.at(pos).Provides(serviceName, implNames)));
+                    implNames = qualidentList(false);
                 } else {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ExpectedStr("'" + names.with + "'"));
-                    skip(false, false, false, false);
+                    implNames = List.nil();
                 }
+                accept(SEMI);
+                defs.append(toP(F.at(pos).Provides(serviceName, implNames)));
             } else if (token.name() == names.uses) {
                 nextToken();
                 JCExpression service = qualident(false);
@@ -3925,29 +3926,23 @@ public class JavacParser implements Parser {
         } else {
             int pos = token.pos;
             List<JCTree> errs;
-            if (token.kind == IDENTIFIER && token.name() == names.record) {
-                checkSourceLevel(Feature.RECORDS);
-                JCErroneous erroneousTree = syntaxError(token.pos, List.of(mods), Errors.RecordHeaderExpected);
-                return toP(F.Exec(erroneousTree));
+            if (LAX_IDENTIFIER.test(token.kind)) {
+                errs = List.of(mods, toP(F.at(pos).Ident(ident())));
+                setErrorEndPos(token.pos);
             } else {
-                if (LAX_IDENTIFIER.test(token.kind)) {
-                    errs = List.of(mods, toP(F.at(pos).Ident(ident())));
-                    setErrorEndPos(token.pos);
-                } else {
-                    errs = List.of(mods);
-                }
-                final JCErroneous erroneousTree;
-                if (parseModuleInfo) {
-                    erroneousTree = syntaxError(pos, errs, Errors.ExpectedModuleOrOpen);
-                } else {
-                    if (allowRecords) {
-                        erroneousTree = syntaxError(pos, errs, Errors.Expected4(CLASS, INTERFACE, ENUM, "record"));
-                    } else {
-                        erroneousTree = syntaxError(pos, errs, Errors.Expected3(CLASS, INTERFACE, ENUM));
-                    }
-                }
-                return toP(F.Exec(erroneousTree));
+                errs = List.of(mods);
             }
+            final JCErroneous erroneousTree;
+            if (parseModuleInfo) {
+                erroneousTree = syntaxError(pos, errs, Errors.ExpectedModuleOrOpen);
+            } else {
+                if (allowRecords) {
+                    erroneousTree = syntaxError(pos, errs, Errors.Expected4(CLASS, INTERFACE, ENUM, "record"));
+                } else {
+                    erroneousTree = syntaxError(pos, errs, Errors.Expected3(CLASS, INTERFACE, ENUM));
+                }
+            }
+            return toP(F.Exec(erroneousTree));
         }
     }
 
@@ -4426,10 +4421,7 @@ public class JavacParser implements Parser {
     }
 
     protected boolean isRecordStart() {
-        if (token.kind == IDENTIFIER && token.name() == names.record &&
-            (peekToken(TokenKind.IDENTIFIER, TokenKind.LPAREN) ||
-             peekToken(TokenKind.IDENTIFIER, TokenKind.EOF) ||
-             peekToken(TokenKind.IDENTIFIER, TokenKind.LT))) {
+        if (token.kind == IDENTIFIER && token.name() == names.record && peekToken(TokenKind.IDENTIFIER)) {
             checkSourceLevel(Feature.RECORDS);
             return true;
         } else {

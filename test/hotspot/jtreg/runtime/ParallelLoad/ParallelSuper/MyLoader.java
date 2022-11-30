@@ -81,7 +81,7 @@ class MyLoader extends ClassLoader {
          } else {
              try {
                 ThreadPrint.println("t1 waits non-parallelCapable loader");
-                wait();  // Give up lock before request to load B
+                wait(200);  // Give up lock before request to load B
               } catch (InterruptedException e) {}
          }
     }

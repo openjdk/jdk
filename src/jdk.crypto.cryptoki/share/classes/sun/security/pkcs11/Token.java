@@ -49,6 +49,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 class Token implements Serializable {
 
     // need to be serializable to allow SecureRandom to be serialized
+    @Serial
     private static final long serialVersionUID = 2541527649100571747L;
 
     // how often to check if the token is still present (in ms)
@@ -441,6 +442,7 @@ class Token implements Serializable {
     // and if the token has not been removed in the meantime
     private static class TokenRep implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = 3503721168218219807L;
 
         private final byte[] tokenId;

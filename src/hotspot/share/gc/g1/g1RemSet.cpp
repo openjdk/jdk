@@ -705,7 +705,12 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
       size_t first_scan_idx = scan.find_next_dirty();
       while (first_scan_idx != claim.size()) {
-        assert(*_ct->byte_for_index(region_card_base_idx + first_scan_idx) <= 0x1, "is %d at region %u idx " SIZE_FORMAT, *_ct->byte_for_index(region_card_base_idx + first_scan_idx), region_idx, first_scan_idx);
+#ifdef ASSERT
+        {
+          CardTable::CardValue value = *_ct->byte_for_index(region_card_base_idx + first_scan_idx);
+          assert(value == CardTable::dirty_card_val(), "is %d at region %u idx " SIZE_FORMAT, value, region_idx, first_scan_idx);
+        }
+#endif
 
         size_t const last_scan_idx = scan.find_next_non_dirty();
         size_t const len = last_scan_idx - first_scan_idx;
@@ -910,6 +915,8 @@ void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
 
 void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   uint hrm_index = r->hrm_index();
+
+  r->prepare_remset_for_scan();
 
   // Only update non-collection set old regions, others must have already been set
   // to NULL (don't scan) in the initialization.
@@ -1353,7 +1360,7 @@ public:
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
 
-        g1h->collection_set_iterate_increment_from(&combined, &_hr_claimer, worker_id);
+        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         stats = merge.stats();
       }
 

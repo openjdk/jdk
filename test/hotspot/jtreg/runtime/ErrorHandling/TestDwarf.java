@@ -123,18 +123,16 @@ public class TestDwarf {
         crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(flags.getFlags()));
         String crashOutputString = crashOut.getOutput();
         Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM should not exit gracefully");
-        Pattern pattern = Pattern.compile("hs_err_pid[0-9]*.log");
-        Matcher matcher = pattern.matcher(crashOutputString);
         System.out.println(crashOutputString);
-        if (matcher.find()) {
-            String hsErrFileName = matcher.group();
-            System.out.println("hs_err_file: " + hsErrFileName);
-            File hs_err_file = new File(hsErrFileName);
-            BufferedReader reader = new BufferedReader(new FileReader(hs_err_file));
+
+        File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(crashOut);
+        try (FileReader fr = new FileReader(hs_err_file);
+             BufferedReader reader = new BufferedReader(fr)) {
             String line;
             boolean foundNativeFrames = false;
             int matches = 0;
             int frameIdx = 0;
+            Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)");
             // Check all stack entries after the line starting with "Native frames" in the hs_err_file until an empty line
             // is found which denotes the end of the stack frames.
             while ((line = reader.readLine()) != null) {
@@ -147,8 +145,7 @@ public class TestDwarf {
                         matches++;
                         // File and library names are non-empty and may contain English letters, underscores, dots or numbers ([a-zA-Z0-9_.]+).
                         // Line numbers have at least one digit and start with non-zero ([1-9][0-9]*).
-                        pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)");
-                        matcher = pattern.matcher(line);
+                        Matcher matcher = pattern.matcher(line);
                         if (!matcher.find()) {
                             checkNoSourceLine(crashOutputString, line);
                         }
@@ -167,8 +164,6 @@ public class TestDwarf {
                 }
             }
             Asserts.assertGreaterThan(matches, 0, "Could not find any stack frames");
-        } else {
-            throw new RuntimeException("Could not find an hs_err_file");
         }
     }
 

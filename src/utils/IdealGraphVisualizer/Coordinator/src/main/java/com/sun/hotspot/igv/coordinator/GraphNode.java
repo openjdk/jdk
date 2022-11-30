@@ -32,6 +32,7 @@ import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import javax.swing.Action;
 import org.openide.actions.OpenAction;
+import org.openide.actions.RenameAction;
 import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
@@ -44,12 +45,28 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class GraphNode extends AbstractNode {
 
-    private InputGraph graph;
+    private final InputGraph graph;
     private boolean selected = false;
 
     /** Creates a new instance of GraphNode */
     public GraphNode(InputGraph graph) {
         this(graph, new InstanceContent());
+    }
+
+    @Override
+    public boolean canRename() {
+        return true;
+    }
+
+    @Override
+    public void setName(String name) {
+        graph.setName(name);
+        fireDisplayNameChange(null, null);
+    }
+
+    @Override
+    public String getName() {
+        return graph.getName();
     }
 
     public void setSelected(boolean selected) {
@@ -58,6 +75,7 @@ public class GraphNode extends AbstractNode {
         fireIconChange();
     }
 
+    @Override
     public String getHtmlDisplayName() {
         String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
         if (selected) {
@@ -65,6 +83,12 @@ public class GraphNode extends AbstractNode {
         }
         return htmlDisplayName;
     }
+
+    @Override
+    public String getDisplayName() {
+        return graph.getDisplayName();
+    }
+
     private GraphNode(InputGraph graph, InstanceContent content) {
         super(Children.LEAF, new AbstractLookup(content));
         this.graph = graph;
@@ -86,13 +110,6 @@ public class GraphNode extends AbstractNode {
 
         // Action for cloning to the current graph
         content.add(new GraphCloneCookie(viewer, graph));
-
-        this.addNodeListener(new NodeAdapter() {
-            @Override
-            public void childrenRemoved(NodeMemberEvent ev) {
-                GraphNode.this.graph = null;
-            }
-        });
     }
 
     @Override
@@ -122,7 +139,12 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Action[] getActions(boolean b) {
-        return new Action[]{DiffGraphAction.findObject(DiffGraphAction.class, true), CloneGraphAction.findObject(CloneGraphAction.class, true), OpenAction.findObject(OpenAction.class, true)};
+        return new Action[]{
+                RenameAction.findObject(RenameAction.class, true),
+                DiffGraphAction.findObject(DiffGraphAction.class, true),
+                CloneGraphAction.findObject(CloneGraphAction.class, true),
+                OpenAction.findObject(OpenAction.class, true)
+        };
     }
 
     @Override

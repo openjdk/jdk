@@ -66,11 +66,11 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomInAction");
+        return NbBundle.getMessage(ZoomInAction.class, "CTL_ZoomInAction");
     }
 
     private String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomInAction");
+        return NbBundle.getMessage(ZoomInAction.class, "HINT_ZoomInAction");
     }
 
     @Override
