@@ -23,7 +23,7 @@
 
 /*
  * @test UnloadTest
- * @bug 8210559
+ * @bug 8210559 8297740
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -48,8 +48,8 @@ import java.lang.reflect.Array;
  *    and verifies the class is unloaded.
  */
 public class UnloadTest {
-    // JDK-8297740: using a global static field to keep the object live in -Xcomp mode.
-    private static Object global_o;
+    // Using a global static field to keep the object live in -Xcomp mode.
+    private static Object o;
 
     public static void main(String... args) throws Exception {
        test_unload_instance_klass();
@@ -63,8 +63,7 @@ public class UnloadTest {
         ClassUnloadCommon.failIf(wb.isClassAlive(className), "is not expected to be alive yet");
 
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
-        Object o = cl.loadClass(className).newInstance();
-        global_o = o;
+        o = cl.loadClass(className).newInstance();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
 
@@ -77,7 +76,7 @@ public class UnloadTest {
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
 
-        global_o = o = null;
+        o = null;
         ClassUnloadCommon.triggerUnloading();
 
 
@@ -92,8 +91,7 @@ public class UnloadTest {
         final WhiteBox wb = WhiteBox.getWhiteBox();
 
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
-        Object o = Array.newInstance(cl.loadClass("test.Empty"), 1);
-        global_o = o;
+        o = Array.newInstance(cl.loadClass("test.Empty"), 1);
         final String className = o.getClass().getName();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
@@ -106,7 +104,7 @@ public class UnloadTest {
         ClassUnloadCommon.triggerUnloading();
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
 
-        global_o = o = null;
+        o = null;
         ClassUnloadCommon.triggerUnloading();
 
         ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
