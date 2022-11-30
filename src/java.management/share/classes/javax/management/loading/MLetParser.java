@@ -47,6 +47,7 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
+@Deprecated(since="20", forRemoval=true)
 class MLetParser {
 
 /*

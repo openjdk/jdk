@@ -38,6 +38,7 @@ import java.lang.reflect.Array;
  *
  * @since 1.5
  */
+@Deprecated(since="20", forRemoval=true)
 class MLetObjectInputStream extends ObjectInputStream {
 
     @SuppressWarnings("removal")
