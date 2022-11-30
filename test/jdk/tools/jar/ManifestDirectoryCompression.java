@@ -24,9 +24,15 @@
 /**
  * @test
  * @bug 8297875
- * @modules jdk.jartool
  * @summary jar should not compress the manifest directory entry
+ * @modules jdk.jartool
+ * @run testng ManifestDirectoryCompression
  */
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+
+import org.testng.annotations.Test;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -56,7 +62,8 @@ public class ManifestDirectoryCompression {
         }
     }
 
-    public static void main(String[] args) throws Throwable {
+    @Test
+    public void run() throws Throwable {
         Path topDir = Files.createTempDirectory("delete");
         try {
             Path entry = Files.writeString(topDir.resolve("test.txt"), "Some text...");
@@ -69,18 +76,13 @@ public class ManifestDirectoryCompression {
     private static void doTest(Path jar, Path entry) throws Throwable {
         String[] jarArgs = new String[] {"cf", jar.toString(), entry.toString()};
         if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
-            throw new AssertionError("Could not create jar file: " + List.of(jarArgs));
+            fail("Could not create jar file: " + List.of(jarArgs));
         }
         try (JarFile jarFile = new JarFile(jar.toFile())) {
             ZipEntry zipEntry = jarFile.getEntry("META-INF/");
+            assertEquals(zipEntry.getMethod(), ZipEntry.STORED);
             assertEquals(zipEntry.getSize(), 0);
             assertEquals(zipEntry.getCompressedSize(), 0);
-        }
-    }
-
-    private static void assertEquals(long actual, long expected) {
-        if (actual != expected) {
-            throw new AssertionError(String.format("actual: %s, expected: %s", actual, expected));
         }
     }
 }
