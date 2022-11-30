@@ -89,12 +89,14 @@ import jdk.internal.reflect.Reflection;
  * shutdown sequence.
  *
  * <p>When the JVM terminates, all threads are immediately prevented from executing any further
- * Java code. This includes shutdown hooks as well as daemon and non-daemon threads. The
- * threads' current methods do not complete normally or abruptly.
- * {@linkplain Thread.UncaughtExceptionHandler Uncaught exception handlers} are not run,
- * no {@code finally} clause of any method is executed, and try-with-resources
- * blocks do not {@linkplain AutoCloseable close} their resources.
- * Other unexpected behaviors may also result.
+ * Java code. This includes shutdown hooks as well as daemon and non-daemon threads.
+ * This means, for example, that:
+ * <ul>
+ * <li>threads' current methods do not complete normally or abruptly;</li>
+ * <li>{@code finally} clauses are not executed;</li>
+ * <li>{@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers} are not run; and</li>
+ * <li>resources opened with try-with-resources are not {@linkplain AutoCloseable close}d;</li>
+ * </ul>
  *
  * @implNote
  * Native code typically uses the
@@ -278,11 +280,10 @@ public class Runtime {
      * to finish if it is already in progress. This method never returns normally.
      *
      * @apiNote
-     * This method should be used with extreme caution &mdash; halting all threads
-     * can have many unexpected results. For instance, it may circumvent cleanup
-     * actions intended to be performed by shutdown hooks,
-     * {@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers},
-     * finally blocks, or try-with-resources blocks. This can lead to data corruption.
+     * This method should be used with extreme caution. Using it may circumvent or disrupt
+     * any cleanup actions intended to be performed by shutdown hooks, possibly leading to
+     * data corruption. See the <a href="#termination">termination</a> section above
+     * for other possible consequences of halting the Java Virtual Machine.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code
