@@ -55,13 +55,13 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     public SctpChannel bind(SocketAddress local)
-         throws IOException {
+                            throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
     @Override
     public SctpChannel bindAddress(InetAddress address)
-            throws IOException {
+         throws IOException {
         throw new UnsupportedOperationException(message);
     }
 
