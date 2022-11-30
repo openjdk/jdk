@@ -1062,7 +1062,7 @@ void GenCollectedHeap::verify(VerifyOption option /* ignored */) {
   log_debug(gc, verify)("%s", _old_gen->name());
   _old_gen->verify();
 
-  log_debug(gc, verify)("%s", _old_gen->name());
+  log_debug(gc, verify)("%s", _young_gen->name());
   _young_gen->verify();
 
   log_debug(gc, verify)("RemSet");

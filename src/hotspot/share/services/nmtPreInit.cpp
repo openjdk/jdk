@@ -159,7 +159,6 @@ void NMTPreInitAllocationTable::verify() const {
 // --------- NMTPreinit --------------
 
 NMTPreInitAllocationTable* NMTPreInit::_table = NULL;
-bool NMTPreInit::_nmt_was_initialized = false;
 
 // Some statistics
 unsigned NMTPreInit::_num_mallocs_pre = 0;
@@ -180,8 +179,7 @@ void* NMTPreInit::do_os_malloc(size_t size) {
 // Switches from NMT pre-init state to NMT post-init state;
 //  in post-init, no modifications to the lookup table are possible.
 void NMTPreInit::pre_to_post() {
-  assert(_nmt_was_initialized == false, "just once");
-  _nmt_was_initialized = true;
+  assert(!MemTracker::is_initialized(), "just once");
   DEBUG_ONLY(verify();)
 }
 

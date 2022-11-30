@@ -80,10 +80,13 @@ public class CertificateIssuerExtension extends Extension {
      * Create a CertificateIssuerExtension containing the specified issuer name.
      * Criticality is automatically set to true.
      *
-     * @param issuer the certificate issuer
+     * @param issuer the certificate issuer, cannot be null or empty.
      * @throws IOException on error
      */
     public CertificateIssuerExtension(GeneralNames issuer) throws IOException {
+        if (issuer == null || issuer.isEmpty()) {
+            throw new IllegalArgumentException("issuer cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.CertificateIssuer_Id;
         this.critical = true;
         this.names = issuer;

@@ -626,6 +626,10 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             }
             limbsToByteArray(limbs, result);
         }
+
+        public long[] getLimbs() {
+            return limbs;
+        }
     }
 
     protected class MutableElement extends Element

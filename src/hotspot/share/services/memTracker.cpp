@@ -47,7 +47,7 @@
 #include <windows.h>
 #endif
 
-volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
+NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
