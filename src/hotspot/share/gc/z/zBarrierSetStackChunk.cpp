@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <jni.h>
-#include <stdio.h>
+#include "precompiled.hpp"
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zBarrierSetStackChunk.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
-void reduceLocalCapacity(JNIEnv* env) {
-    puts("reduceLocalCapacity: setting to 1");
-    (*env)->EnsureLocalCapacity(env,1);
+void ZBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  // Do nothing
 }
 
-JNIEXPORT void JNICALL
-Java_TestCheckedEnsureLocalCapacity_ensureCapacity(JNIEnv *env,
-                                                   jobject unused,
-                                                   jobject target,
-                                                   jint capacity,
-                                                   jint copies) {
-  int i;
-  printf("ensureCapacity: setting to %d\n", capacity);
-  (*env)->EnsureLocalCapacity(env, capacity); // set high
-  reduceLocalCapacity(env);     // sets low
+void ZBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  // Do nothing
+}
 
-  printf("ensureCapacity: creating %d LocalRefs\n", copies);
-  for (i = 0; i < copies; i++) {
-    target = (*env)->NewLocalRef(env, target);
-  }
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
+  oop obj = Atomic::load(addr);
+  return ZBarrier::load_barrier_on_oop_field_preloaded((volatile oop*)NULL, obj);
+}
 
-  puts("ensureCapacity: done");
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
+  ShouldNotReachHere();
+  return NULL;
 }

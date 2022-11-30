@@ -263,13 +263,6 @@ public class BigIntegerModuloP implements IntegerFieldModuloP {
             v = BigInteger.ZERO.subtract(v);
             return this;
         }
-
-        @Override
-        public MutableElement setReduced() {
-            // do nothing
-            return this;
-        }
-
     }
 
     private class SmallElement extends ImmutableElement implements SmallValue {

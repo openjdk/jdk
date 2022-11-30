@@ -1946,6 +1946,8 @@ private:
   void pshufhw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src,     int mode);
+  void vpshufhw(XMMRegister dst, XMMRegister src, int mode, int vector_len);
+  void vpshuflw(XMMRegister dst, XMMRegister src, int mode, int vector_len);
 
   //shuffle floats and doubles
   void shufps(XMMRegister, XMMRegister, int);
