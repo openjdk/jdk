@@ -26,13 +26,11 @@ package jdk.jfr.event.runtime;
 import static jdk.test.lib.Asserts.assertGreaterThan;
 import static jdk.test.lib.Asserts.assertTrue;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordedThread;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -95,24 +93,20 @@ public class TestNativeMemoryUsageEvents {
     }
 
     private static void generateEvents(Recording recording) throws Exception {
-        // Start the recording.
-        recording.start();
+        // Enable the two types of events for "everyChunk", it will give
+        // an event att the beginning of the chunk as well as the end.
+        recording.enable(UsagePartEvent).with("period", "everyChunk");
+        recording.enable(UsageEvent).with("period", "everyChunk");
 
-        // Events are sent each second so wait to to ensure we get at least
-        // one Java Heap event with committed at 16M
-        Thread.sleep(2000);
+        recording.start();
 
         // Generate data to force heap to grow.
         generateHeapContents();
 
-        // Again sleep to make sure events are triggered.
-        Thread.sleep(2000);
         recording.stop();
     }
 
-    public static void verifyExpectedEventTypes(Recording recording) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(recording);
-
+    private static void verifyExpectedEventTypes(List<RecordedEvent> events) throws Exception {
         // First verify that the number of total usage events is greater than 0.
         long numberOfTotal = events.stream()
                 .filter(e -> e.getEventType().getName().equals(UsageEvent))
@@ -131,8 +125,7 @@ public class TestNativeMemoryUsageEvents {
         }
     }
 
-    public static void verifyHeapGrowth(Recording recording) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(recording);
+    private static void verifyHeapGrowth(List<RecordedEvent> events) throws Exception {
         List<Long> javaHeapCommitted = events.stream()
                 .filter(e -> e.getEventType().getName().equals(UsagePartEvent))
                 .filter(e -> e.getString("type").equals("Java Heap"))
@@ -145,8 +138,7 @@ public class TestNativeMemoryUsageEvents {
         assertGreaterThan(lastSample, firstSample, "heap should have grown and NMT should show that");
     }
 
-    public static void verifyNoUsageEvents(Recording recording) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(recording);
+    private static void verifyNoUsageEvents(List<RecordedEvent> events) throws Exception {
         Events.hasNotEvent(events, UsageEvent);
         Events.hasNotEvent(events, UsagePartEvent);
     }
@@ -157,23 +149,18 @@ public class TestNativeMemoryUsageEvents {
         // enabled the tests verifies that the correct events are sent and
         // the other way around when turned off.
         assertTrue(args.length == 1, "Must have a single argument");
-        boolean verifyEvents = Boolean.parseBoolean(args[0]);
+        boolean nmtEnabled = Boolean.parseBoolean(args[0]);
 
-        Recording recording = new Recording();
+        try (Recording recording = new Recording()) {
+            generateEvents(recording);
 
-        // Enable the two types of events.
-        recording.enable(UsagePartEvent).withPeriod(Duration.ofMillis(UsagePeriod));
-        recording.enable(UsageEvent).withPeriod(Duration.ofMillis(UsagePeriod));
-
-        generateEvents(recording);
-
-        // Now do some verification.
-        if (verifyEvents) {
-            verifyExpectedEventTypes(recording);
-            verifyHeapGrowth(recording);
-        } else {
-            // No events when NativeMemoryTracking is off.
-            verifyNoUsageEvents(recording);
+            var events = Events.fromRecording(recording);
+            if (nmtEnabled) {
+                verifyExpectedEventTypes(events);
+                verifyHeapGrowth(events);
+            } else {
+                verifyNoUsageEvents(events);
+            }
         }
     }
 }
