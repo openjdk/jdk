@@ -82,7 +82,7 @@ public class TestSpecTag extends JavadocTester {
                         <dl class="notes">
                         <dt>External Specifications</dt>
                         <dd>
-                        <ul class="spec-list">
+                        <ul class="tag-list">
                         <li><span id="label" class="search-tag-result">label</span></li>
                         </ul>
                         </dd>
@@ -162,7 +162,7 @@ public class TestSpecTag extends JavadocTester {
                         <dl class="notes">
                         <dt>External Specifications</dt>
                         <dd>
-                        <ul class="spec-list-long">
+                        <ul class="tag-list-long">
                         <li><a href="http://example.com/a+b"><span id="space:plus" class="search-tag-result">space: plus</span></a></li>
                         <li><a href="http://example.com/a%20b"><span id="space:percent" class="search-tag-result">space: percent</span></a></li>
                         <li><a href="http://example.com/a%C2%A7b"><span id="other:section;U+00A7,UTF-8c2a7" class="search-tag-result">other: section; U+00A7, UTF-8 c2 a7</span></a></li>
@@ -232,7 +232,7 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <dt>External Specifications</dt>
                     <dd>
-                    <ul class="spec-list">
+                    <ul class="tag-list">
                     <li><a href="http://example.com/"><span id="example" class="search-tag-result">example</span></a></li>
                     </ul>
                     </dd>                                                                                                     
@@ -241,7 +241,7 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <dt>External Specifications</dt>
                     <dd>
-                    <ul class="spec-list">
+                    <ul class="tag-list">
                     <li><a href="http://example.com/"><span id="example-1" class="search-tag-result">example</span></a></li>
                     </ul>
                     </dd>
@@ -250,7 +250,7 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <dt>External Specifications</dt>
                     <dd>
-                    <ul class="spec-list">
+                    <ul class="tag-list">
                     <li><a href="http://example.com/"><span id="example-2" class="search-tag-result">example</span></a></li>
                     </ul>
                     </dd>
@@ -291,7 +291,7 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <dt>External Specifications</dt>
                     <dd>
-                    <ul class="spec-list">
+                    <ul class="tag-list">
                     <li><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a></li>
                     <li><a href="http://example.com/2"><span id="example-2" class="search-tag-result">example-2</span></a></li>
                     </ul>
@@ -336,7 +336,7 @@ public class TestSpecTag extends JavadocTester {
                 """
                     <dt>External Specifications</dt>
                     <dd>
-                    <ul class="spec-list">
+                    <ul class="tag-list">
                     <li><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a></li>
                     <li><a href="http://example.net/2"><span id="example-2" class="search-tag-result">example-2</span></a></li>
                     </ul>
@@ -478,7 +478,7 @@ public class TestSpecTag extends JavadocTester {
                         <dl class="notes">
                         <dt>External Specifications</dt>
                         <dd>
-                        <ul class="spec-list">
+                        <ul class="tag-list">
                         <li><a href="http://example.com/#LK#"><span id="#LK#reference" class="search-tag-result">#LK# reference</span></a></li>
                         </ul>
                         </dd>
