@@ -106,7 +106,7 @@ class MallocHeader {
   // We discount sizes larger than these
   static const size_t max_reasonable_malloc_size = LP64_ONLY(256 * G) NOT_LP64(3500 * M);
 
-  void print_block_on_error(outputStream* st, address bad_address) const;
+  static void print_block_on_error(outputStream* st, address bad_address);
 
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return ((uint16_t)b1 << 8) | (uint16_t)b2; }
 
@@ -129,10 +129,14 @@ class MallocHeader {
   // an option pointer to the corruption in p_corruption, and return false.
   // Return true if block is fine.
   inline bool check_block_integrity(char* msg, size_t msglen, address* p_corruption) const;
+  // Check correct alignment and placement of pointer, fill in short descriptive text and return false
+  // if this is not the case.
+  // Returns true if the memblock looks OK.
+  inline static bool check_pointer_integrity(uintptr_t header, char* msg, size_t msglen, address* p_corruption);
 
   // If block is broken, print out a report to tty (optionally with
   // hex dump surrounding the broken block), then trigger a fatal error
-  inline void assert_block_integrity() const;
+  inline static MallocHeader* assert_block_integrity(const void* memblock);
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms
