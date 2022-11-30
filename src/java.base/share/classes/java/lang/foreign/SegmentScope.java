@@ -91,7 +91,7 @@ sealed public interface SegmentScope permits MemorySessionImpl {
     /**
      * Creates a new scope that is managed, automatically, by the garbage collector.
      * Segments associated with the returned scope can be
-     * {@linkplain SegmentScope#isAccessibleBy(Thread) accessed} by multiple threads.
+     * {@linkplain SegmentScope#isAccessibleBy(Thread) accessed} by any thread.
      *
      * @return a new scope that is managed, automatically, by the garbage collector.
      */
@@ -101,7 +101,7 @@ sealed public interface SegmentScope permits MemorySessionImpl {
 
     /**
      * Obtains the global scope. Segments associated with the global scope can be
-     * {@linkplain SegmentScope#isAccessibleBy(Thread) accessed} by multiple threads.
+     * {@linkplain SegmentScope#isAccessibleBy(Thread) accessed} by any thread.
      *
      * @return the global scope.
      */
