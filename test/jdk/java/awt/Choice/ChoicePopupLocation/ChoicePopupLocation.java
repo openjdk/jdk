@@ -125,9 +125,6 @@ public final class ChoicePopupLocation {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         if (choice.getSelectedIndex() == 0) {
-            GraphicsConfiguration ge = GraphicsEnvironment
-                    .getLocalGraphicsEnvironment().getDefaultScreenDevice()
-                    .getDefaultConfiguration();
             BufferedImage failImage = robot.createScreenCapture(bounds);
             ImageIO.write(failImage, "png", new File("failImage.png"));
             throw new RuntimeException();
