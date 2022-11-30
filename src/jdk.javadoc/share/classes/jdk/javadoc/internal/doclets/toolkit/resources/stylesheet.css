@@ -386,15 +386,20 @@ ul.ref-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
-ul.see-list, ul.see-list-long {
+ul.see-list, ul.see-list-long,
+ul.spec-list, ul.spec-list-long {
     padding-left: 0;
     list-style: none;
 }
-ul.see-list li {
+ul.see-list li,
+ul.spec-list li {
     display: inline;
 }
 ul.see-list li:not(:last-child):after,
-ul.see-list-long li:not(:last-child):after {
+ul.see-list-long li:not(:last-child):after,
+ul.spec-list li:not(:last-child):after,
+ul.spec-list-long li:not(:last-child):after
+ {
     content: ", ";
     white-space: pre-wrap;
 }

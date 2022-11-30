@@ -61,7 +61,6 @@ import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
-import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -85,7 +84,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
@@ -411,13 +409,6 @@ public class TagletWriterImpl extends TagletWriter {
                 .filter(dt -> dt instanceof TextTree)
                 .map(dt -> ((TextTree) dt).getBody().trim())
                 .collect(Collectors.joining(" "));
-    }
-
-    private void appendSeparatorIfNotEmpty(ContentBuilder body) {
-        if (!body.isEmpty()) {
-            body.add(", ");
-            body.add(Text.NL);
-        }
     }
 
     /**
@@ -753,17 +744,24 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     public Content specTagOutput(Element holder, List<? extends SpecTree> specTags) {
-        ContentBuilder body = new ContentBuilder();
-        for (SpecTree st : specTags) {
-            appendSeparatorIfNotEmpty(body);
-            body.add(specTagToContent(holder, st));
+        if (specTags.isEmpty()) {
+            return Text.EMPTY;
         }
-        if (body.isEmpty())
-            return body;
+
+        List<Content> links = specTags.stream()
+                .map(st -> specTagToContent(holder, st))
+                .collect(Collectors.toList());
+
+        // Use a different style if any link label is longer than 30 chars or contains commas.
+        boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
+        var specList = HtmlTree.UL(hasLongLabels ? HtmlStyle.specListLong : HtmlStyle.specList);
+        links.stream()
+                .filter(Predicate.not(Content::isEmpty))
+                .forEach(item -> specList.add(HtmlTree.LI(item)));
 
         return new ContentBuilder(
                 HtmlTree.DT(contents.externalSpecifications),
-                HtmlTree.DD(body));
+                HtmlTree.DD(specList));
     }
 
     private Content specTagToContent(Element holder, SpecTree specTree) {

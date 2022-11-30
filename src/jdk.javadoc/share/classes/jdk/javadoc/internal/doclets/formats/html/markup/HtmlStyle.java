@@ -389,9 +389,20 @@ public enum HtmlStyle {
 
     /**
      * The class for the list containing the {@code @see} tags of an element
-     * when some of the tags have longer labels.
+     * when some tags have longer labels or contain commas.
      */
     seeListLong,
+
+    /**
+     * The class for the list containing the {@code @spec} tags of an element.
+     */
+    specList,
+
+    /**
+     * The class for the list containing the {@code @spec} tags of an element
+     * when some tags have longer labels or contain commas.
+     */
+    specListLong,
 
     //</editor-fold>
 
