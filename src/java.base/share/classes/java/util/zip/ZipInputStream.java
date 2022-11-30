@@ -350,6 +350,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * interrupted during the transfer, is highly input and output stream
      * specific, and therefore not specified.
      * <p>
+     * If the total number of bytes transferred is greater than {@linkplain
+     * Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
+     * <p>
      * If an I/O error occurs reading from the input stream or writing to the
      * output stream, then it may do so after some bytes have been read or
      * written. Consequently, the input stream may not be at end of stream and
