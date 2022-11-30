@@ -1122,8 +1122,9 @@ void java_lang_Class::archive_basic_type_mirrors() {
 
   for (int t = T_BOOLEAN; t < T_VOID+1; t++) {
     BasicType bt = (BasicType)t;
-    oop m = Universe::_mirrors[t].resolve();
-    if (m != NULL) {
+    if (!is_reference_type(bt)) {
+      oop m = Universe::java_mirror(bt);
+      assert(m != NULL, "sanity");
       // Update the field at _array_klass_offset to point to the relocated array klass.
       oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
@@ -1138,7 +1139,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
         "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
         type2name(bt), p2i(m), p2i(archived_m));
 
-      Universe::replace_mirror(bt, archived_m);
+      Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(archived_m));
     }
   }
 }
