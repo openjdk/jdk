@@ -162,6 +162,10 @@ import javax.management.ServiceNotFoundException;
  * <p><STRONG>Note - </STRONG> The <CODE>MLet</CODE> class loader uses the {@link javax.management.MBeanServerFactory#getClassLoaderRepository(javax.management.MBeanServer)}
  * to load classes that could not be found in the loaded jar files.
  *
+ * @deprecated This API is part of Management Applets (m-lets), which is a legacy feature that allows loading
+ * of remote MBeans. This feature is not usable without a Security Manager, which is deprecated and subject to
+ * removal in a future release. Consequently, this API is also deprecated and subject to removal. There is no replacement.
+ *
  * @since 1.5
  */
 @Deprecated(since="20", forRemoval=true)
