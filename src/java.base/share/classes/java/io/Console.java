@@ -612,10 +612,6 @@ public class Console implements Flushable
                 }
                 return cons;
             }
-
-            public Charset charset() {
-                return cons.charset();
-            }
         });
     }
     private static Console cons;
