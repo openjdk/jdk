@@ -361,19 +361,9 @@ final class P11AEADCipher extends CipherSpi {
 
         if (iv == null && tagLen == -1) {
             // generate default values
-            switch (type) {
-                case AES_GCM -> {
-                    iv = new byte[type.defIvLen];
-                    this.random.nextBytes(iv);
-                    tagLen = type.defTagLen;
-                }
-                case CHACHA20_POLY1305 -> {
-                    iv = new byte[type.defIvLen];
-                    this.random.nextBytes(iv);
-                    tagLen = type.defTagLen;
-                }
-                default -> throw new AssertionError("Unsupported type " + type);
-            }
+            iv = new byte[type.defIvLen];
+            this.random.nextBytes(iv);
+            tagLen = type.defTagLen;
         }
         this.iv = iv;
         this.tagLen = tagLen;

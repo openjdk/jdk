@@ -205,15 +205,14 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
             // XXX sanity check params
             case "EC" -> {
                 ECParameterSpec ecParams;
-                if (params instanceof ECParameterSpec) {
-                    ecParams = P11ECKeyFactory.getECParameterSpec(
-                            (ECParameterSpec) params);
+                if (params instanceof ECParameterSpec ecParameterSpec) {
+                    ecParams = P11ECKeyFactory.getECParameterSpec(ecParameterSpec);
                     if (ecParams == null) {
                         throw new InvalidAlgorithmParameterException
                                 ("Unsupported curve: " + params);
                     }
-                } else if (params instanceof ECGenParameterSpec) {
-                    String name = ((ECGenParameterSpec) params).getName();
+                } else if (params instanceof ECGenParameterSpec ecGenParameterSpec) {
+                    String name = ecGenParameterSpec.getName();
                     ecParams = P11ECKeyFactory.getECParameterSpec(name);
                     if (ecParams == null) {
                         throw new InvalidAlgorithmParameterException
