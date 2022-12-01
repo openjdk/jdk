@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,27 @@
  * questions.
  */
 
-
 /*
  * @test
- *
- * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset004.
- * VM Testbase keywords: [quick, monitoring]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test checks that
- *         ThreadMXBean.resetPeakThreadCount()
- *     returns correct result.
- *     The test starts a couple of user threads and waits until they finish. After
- *     that, resetPeakThreadCount() is invoked to reset the peak. Then
- *     getPeakThreadCount() and getThreadCount() must return the same values. The
- *     preposition is that no threads are appered/disappeared between
- *     "getPeakThreadCount()" and getThreadCount()" calls.
- *     The test implements access to the metrics via default MBean server proxy.
- * COMMENT
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001 -testMode=proxy
+ * @bug 8296012
+ * @summary jshell crashes on mismatched record pattern
+ * @build KullaTesting TestingInputStream
+ * @run testng Test8296012
  */
 
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+
+@Test
+public class Test8296012 extends KullaTesting {
+
+    public void test() {
+        assertEval("record Foo(int x, int y) {}");
+        assertEvalFail("switch (new Foo(1, 2)) { case Foo(int z) -> z; }");
+    }
+
+    @org.testng.annotations.BeforeMethod
+    public void setUp() {
+        super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
+    }
+}

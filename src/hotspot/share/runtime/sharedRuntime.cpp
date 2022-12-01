@@ -1124,6 +1124,8 @@ int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t si
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
     JavaThread* current, Method* method))
+  assert(current == JavaThread::current(), "pre-condition");
+
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -1138,6 +1140,7 @@ JRT_END
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
     JavaThread* current, Method* method))
+  assert(current == JavaThread::current(), "pre-condition");
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -2328,6 +2331,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 
 // Handles the uncommon cases of monitor unlocking in compiled code
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
 JRT_END
 
@@ -3280,6 +3284,8 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
+  assert(current == JavaThread::current(), "pre-condition");
+
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be
@@ -3414,6 +3420,7 @@ void AdapterHandlerLibrary::print_statistics() {
 #endif /* PRODUCT */
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   StackOverflow* overflow_state = current->stack_overflow_state();
   overflow_state->enable_stack_reserved_zone(/*check_if_disabled*/true);
   overflow_state->set_reserved_stack_activation(current->stack_base());
