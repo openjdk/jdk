@@ -23,54 +23,38 @@
  * questions.
  */
 
-package javacserver.comp;
+package javacserver.server;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import javacserver.Log;
-import javacserver.Result;
-import javacserver.server.Sjavac;
+import javacserver.util.Log;
 
 /**
- * An sjavac implementation that limits the number of concurrent calls by
- * wrapping invocations in Callables and delegating them to a FixedThreadPool.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Use a fixed thread pool to limit the amount of concurrent javac compilation
+ * that can happen.
  */
-public class PooledSjavac implements Sjavac {
+public class CompilerThreadPool {
+    private static final int POOLSIZE = Runtime.getRuntime().availableProcessors();
 
-    final Sjavac delegate;
-    final ExecutorService pool;
+    private final ExecutorService pool;
 
-    public PooledSjavac(Sjavac delegate, int poolsize) {
-        Objects.requireNonNull(delegate);
-        this.delegate = delegate;
-        pool = Executors.newFixedThreadPool(poolsize);
+    public CompilerThreadPool() {
+        this.pool = Executors.newFixedThreadPool(POOLSIZE);
     }
 
-    @Override
-    public Result compile(String[] args) {
+    public int dispatchCompilation(String[] args) {
         Log log = Log.get();
         try {
-            return pool.submit(() -> {
-                Log.setLogForCurrentThread(log);
-                return delegate.compile(args);
-            }).get();
+            return pool.submit(() -> Server.runCompiler(log, args)).get();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error during compile", e);
         }
     }
 
-    @Override
     public void shutdown() {
-        Log.debug("Shutting down PooledSjavac");
+        Log.debug("Shutting down javacserver thread pool");
         pool.shutdown(); // Disable new tasks from being submitted
         try {
             // Wait a while for existing tasks to terminate
@@ -78,16 +62,17 @@ public class PooledSjavac implements Sjavac {
                 pool.shutdownNow(); // Cancel currently executing tasks
                 // Wait a while for tasks to respond to being cancelled
                 if (!pool.awaitTermination(60, TimeUnit.SECONDS))
-                    Log.error("ThreadPool did not terminate");
+                    Log.error("Thread pool did not terminate");
             }
         } catch (InterruptedException ie) {
-          // (Re-)Cancel if current thread also interrupted
-          pool.shutdownNow();
-          // Preserve interrupt status
-          Thread.currentThread().interrupt();
+            // (Re-)Cancel if current thread also interrupted
+            pool.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
         }
-
-        delegate.shutdown();
     }
 
+    public int poolSize() {
+        return POOLSIZE;
+    }
 }

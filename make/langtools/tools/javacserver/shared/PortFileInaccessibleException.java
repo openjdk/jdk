@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,15 @@
  * questions.
  */
 
-package javacserver.server;
+package javacserver.shared;
 
-import javacserver.Result;
+import java.io.IOException;
 
-/**
- * Interface of the SjavacImpl, the sjavac client and all wrappers such as
- * PooledSjavac etc.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public interface Sjavac {
-    Result compile(String[] args);
-    void shutdown();
+public class PortFileInaccessibleException extends IOException {
+
+    private static final long serialVersionUID = -4755261881545398973L;
+
+    public PortFileInaccessibleException(Throwable cause) {
+        super(cause);
+    }
 }
