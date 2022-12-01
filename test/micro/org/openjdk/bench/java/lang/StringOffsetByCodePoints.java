@@ -26,11 +26,11 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
 
+@Fork(3)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
 public class StringOffsetByCodePoints {
 
     @Benchmark
@@ -38,7 +38,7 @@ public class StringOffsetByCodePoints {
         return data.value.offsetByCodePoints(data.index, data.offset);
     }
 
-    @State(Scope.Benchmark)
+    @State(Scope.Thread)
     public static class Data {
         String value = "abc";
         int index = 0;
