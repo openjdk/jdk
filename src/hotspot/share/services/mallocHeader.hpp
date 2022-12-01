@@ -129,7 +129,7 @@ class MallocHeader {
   inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 
-  // Return the necessary data to record the block this belongs to as freed
+  // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
     return FreeInfo{this->size(), this->flags(), this->mst_marker()};
   }

@@ -106,12 +106,14 @@ class MemTracker : AllStatic {
   static inline void* record_free(void* memblock) {
     // Never turned on
     assert(memblock != NULL, "caller should handle NULL");
-    assert(enabled(), "NMT must be enabled");
+    if(!enabled()) {
+      return memblock;
+    }
     return MallocTracker::record_free_block(memblock);
   }
   static inline void deaccount(MallocHeader::FreeInfo free_info) {
     assert(enabled(), "NMT must be enabled");
-    MallocTracker::record_free(free_info);
+    MallocTracker::deaccount(free_info);
   }
 
   // Record creation of an arena
