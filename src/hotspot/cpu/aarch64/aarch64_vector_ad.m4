@@ -695,6 +695,30 @@ BITWISE_OP_IMM(vxorImmS, S, XorV, sve_eor, H)
 BITWISE_OP_IMM(vxorImmI, I, XorV, sve_eor, S)
 BITWISE_OP_IMM(vxorImmL, L, XorV, sve_eor, D)
 
+// vector eor3 (unpredicated)
+
+instruct veor3_neon(vReg dst, vReg src1, vReg src2, vReg src3) %{
+  predicate(VM_Version::supports_sha3() &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (XorV src1 (XorV src2 src3)));
+  format %{ "veor3_neon $dst, $src1, $src2, $src3" %}
+  ins_encode %{
+    __ eor3($dst$$FloatRegister, __ T16B, $src1$$FloatRegister,
+            $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct veor3_sve(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseSVE == 2 && !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (XorV dst_src1 (XorV src2 src3)));
+  format %{ "veor3_sve $dst_src1, $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    __ sve_eor3($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector not -----------------------------------
 
 dnl

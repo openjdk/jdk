@@ -96,7 +96,7 @@ public class ConcurrentLoadAndStoreXML {
                 task[i] = pool.submit(basher[i]);
             }
 
-            // give them time to interfere with each each
+            // give them time to interfere with each other
             Thread.sleep(2000);
             done = true;
 

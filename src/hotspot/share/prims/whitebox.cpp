@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include <new>
+#include "cds.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
@@ -46,7 +46,6 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "include/cds.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
@@ -112,7 +111,6 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
