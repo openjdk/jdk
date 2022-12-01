@@ -45,6 +45,9 @@
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
+  product(double, ZCollectionInterval, -1,                                  \
+          "Backwards compatible alias for ZCollectionIntervalMajor")        \
+                                                                            \
   product(double, ZCollectionIntervalMinor, -1,                             \
           "Force Minor GC at a fixed time interval (in seconds)")           \
                                                                             \

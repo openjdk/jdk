@@ -72,6 +72,11 @@ void ZArguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
   }
 
+  // Backwards compatible alias for ZCollectionIntervalMajor
+  if (!FLAG_IS_DEFAULT(ZCollectionInterval)) {
+    FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
+  }
+
   if (FLAG_IS_DEFAULT(MaxTenuringThreshold)) {
     uint tenuring_threshold;
     for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
