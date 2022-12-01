@@ -98,8 +98,7 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (!textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent not triggered when text entered in "
-                            + textComp);
+                        "FAIL: TextEvent not triggered when text entered in " + textComp);
                 }
 
                 typeKey(KeyEvent.VK_E);
@@ -112,10 +111,10 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (textComp instanceof TextField && textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent triggered when Enter pressed on "+ textComp);
+                        "FAIL: TextEvent triggered when Enter pressed on " + textComp);
                 } else if (textComp instanceof TextArea && !textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent not triggered when Enter pressed on "+ textComp);
+                        "FAIL: TextEvent not triggered when Enter pressed on " + textComp);
                 }
 
                 textChanged = false;
@@ -131,7 +130,7 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent triggered when selection made in "+ textComp);
+                        "FAIL: TextEvent triggered when selection made in " + textComp);
                 }
 
                 textChanged = false;
@@ -140,7 +139,7 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent triggered when F3 pressed on "+ textComp);
+                        "FAIL: TextEvent triggered when F3 pressed on " + textComp);
                 }
             }
             System.out.println("Test passed!");
