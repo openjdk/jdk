@@ -61,9 +61,9 @@ public class TestCreateNewIfForPredicateCloning {
         int limit = 2;
         int constantAfterCCP = 2;
         for (; limit < 4; limit *= 2);
-		for (int i = 2; i < limit; i++) {
-			constantAfterCCP = 6; // Only known to be constant 6 after CCP.
-		}
+        for (int i = 2; i < limit; i++) {
+            constantAfterCCP = 6; // Only known to be constant 6 after CCP.
+        }
 
         for (int i = 51; i > 9; i -= 3) {
             if (bFld) {
@@ -92,12 +92,12 @@ public class TestCreateNewIfForPredicateCloning {
                 int y = 34;
                 if (constantAfterCCP == 2) {
                     // Known to be never taken after CCP, so y will always be 34.
-                	y = 35;
+                    y = 35;
                 }
                 if (y == iFld) { // Folds to 34 == iFld after CCP and trigger another unswitching
-                	continue;
+                    continue;
                 }
-				iFld3 = 34; // Just another statement sucht that the second round of unswitching is done
+                iFld3 = 34; // Just another statement sucht that the second round of unswitching is done
 
             }
         }
