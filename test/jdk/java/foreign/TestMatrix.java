@@ -26,7 +26,7 @@
  * libraries compiled, and then execute it with plain jtreg, like:
  *
  *  $ bin/jtreg -jdk:<path-to-tested-jdk> \
- *              -nativepath:<path-to-build-dir>/support/test/jdk/jtreg/native/manual/lib/ \
+ *              -nativepath:<path-to-build-dir>/images/test/jdk/jtreg/native/ \
  *              -concurrency:auto \
  *              ./test/jdk/java/foreign/TestMatrix.java
  */
@@ -38,8 +38,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallHighArity
  */
 
@@ -50,8 +50,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallHighArity
  */
 
@@ -62,8 +62,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallHighArity
  */
 
@@ -74,31 +74,53 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallHighArity
  */
 
-/* @test id=Downcall-F
+/* @test id=DowncallScope-F
  * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @build NativeTestHelper CallGeneratorHelper TestDowncall
+ * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   TestDowncall
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   TestDowncallScope
  */
 
-/* @test id=Downcall-T
+/* @test id=DowncallScope-T
  * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @build NativeTestHelper CallGeneratorHelper TestDowncall
+ * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   TestDowncall
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   TestDowncallScope
+ */
+
+/* @test id=DowncallStack-F
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
+ *
+ * @run testng/othervm/native/manual
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   TestDowncallStack
+ */
+
+/* @test id=DowncallStack-T
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
+ *
+ * @run testng/othervm/native/manual
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   TestDowncallStack
  */
 
 /* @test id=UpcallScope-FF
@@ -108,8 +130,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallScope
  */
 
@@ -120,8 +142,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallScope
  */
 
@@ -132,8 +154,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallScope
  */
 
@@ -144,8 +166,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallScope
  */
 
@@ -156,8 +178,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallAsync
  */
 
@@ -168,8 +190,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallAsync
  */
 
@@ -180,8 +202,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallAsync
  */
 
@@ -192,8 +214,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallAsync
  */
 
@@ -204,8 +226,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallStack
  */
 
@@ -216,8 +238,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestUpcallStack
  */
 
@@ -228,8 +250,8 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallStack
  */
 
@@ -240,7 +262,18 @@
  *
  * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
  *   TestUpcallStack
+ */
+
+/*
+ * @test id=VarArgs
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @build NativeTestHelper CallGeneratorHelper
+ *
+ * @run testng/othervm/native/manual
+ *   --enable-native-access=ALL-UNNAMED
+ *   TestVarArgs
  */

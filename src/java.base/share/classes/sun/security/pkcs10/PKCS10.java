@@ -195,7 +195,7 @@ public class PKCS10 {
      * @exception InvalidKeyException key has a problem
      */
     public void encodeAndSign(X500Name subject, PrivateKey key, String algorithm)
-            throws IOException, SignatureException,
+            throws SignatureException,
                     NoSuchAlgorithmException, InvalidKeyException {
 
         DerOutputStream out, scratch;
@@ -217,7 +217,7 @@ public class PKCS10 {
         scratch = new DerOutputStream();
         scratch.putInteger(BigInteger.ZERO);            // PKCS #10 v1.0
         subject.encode(scratch);                        // X.500 name
-        scratch.write(subjectPublicKeyInfo.getEncoded()); // public key
+        scratch.writeBytes(subjectPublicKeyInfo.getEncoded()); // public key
         attributeSet.encode(scratch);
 
         out = new DerOutputStream();

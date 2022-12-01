@@ -323,23 +323,6 @@ public class TransPatterns extends TreeTranslator {
             nestedPatterns = nestedPatterns.tail;
         }
 
-        if (tree.var != null) {
-            BindingSymbol binding = (BindingSymbol) tree.var.sym;
-            Type castTargetType = principalType(tree);
-            VarSymbol bindingVar = bindingContext.bindingDeclared(binding);
-
-            JCAssign fakeInit =
-                    (JCAssign) make.at(TreeInfo.getStartPos(tree))
-                                   .Assign(make.Ident(bindingVar),
-                                           convert(make.Ident(currentValue), castTargetType))
-                                   .setType(bindingVar.erasure(types));
-            LetExpr nestedLE = make.LetExpr(List.of(make.Exec(fakeInit)),
-                                            make.Literal(true));
-            nestedLE.needsCond = true;
-            nestedLE.setType(syms.booleanType);
-            test = test != null ? makeBinary(Tag.AND, test, nestedLE) : nestedLE;
-        }
-
         Assert.check(components.isEmpty() == nestedPatterns.isEmpty());
         Assert.check(components.isEmpty() == nestedFullComponentTypes.isEmpty());
         result = test != null ? test : makeLit(syms.booleanType, 1);
@@ -441,15 +424,6 @@ public class TransPatterns extends TreeTranslator {
             // return -1 when the input is null
             //
             //note the selector is evaluated only once and stored in a temporary variable
-            ListBuffer<JCCase> newCases = new ListBuffer<>();
-            for (List<JCCase> c = cases; c.nonEmpty(); c = c.tail) {
-                if (c.head.stats.isEmpty() && c.tail.nonEmpty()) {
-                    c.tail.head.labels = c.tail.head.labels.prependList(c.head.labels);
-                } else {
-                    newCases.add(c.head);
-                }
-            }
-            cases = newCases.toList();
             ListBuffer<JCStatement> statements = new ListBuffer<>();
             VarSymbol temp = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("selector" + tree.pos + target.syntheticNameChar() + "temp"),
@@ -757,7 +731,7 @@ public class TransPatterns extends TreeTranslator {
         if (bindingVar == null) {
             super.visitIdent(tree);
         } else {
-            result = make.at(tree.pos).Ident(bindingVar);
+            result = make.at(tree.pos).Ident(bindingVar).setType(bindingVar.erasure(types));
         }
     }
 
