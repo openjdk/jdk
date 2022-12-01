@@ -472,8 +472,8 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Size computations: sizes in bytes.
   size_t capacity() const        { return byte_size(bottom(), end()); }
-  size_t used() const override            { return byte_size(bottom(), top()); }
-  size_t free() const override            { return byte_size(top(),    end()); }
+  size_t used() const override   { return byte_size(bottom(), top()); }
+  size_t free() const override   { return byte_size(top(),    end()); }
 
   bool is_free_block(const HeapWord* p) const override;
 
