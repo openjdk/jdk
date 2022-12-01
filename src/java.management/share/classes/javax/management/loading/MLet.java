@@ -406,6 +406,7 @@ public class MLet extends java.net.URLClassLoader
       */
      public void addURL(String url) throws ServiceNotFoundException {
          try {
+             @SuppressWarnings("deprecation")
              URL ur = new URL(url);
              if (!Arrays.asList(getURLs()).contains(ur))
                  super.addURL(ur);
@@ -571,8 +572,10 @@ public class MLet extends java.net.URLClassLoader
                  // Appends the specified JAR file URL to the list of
                  // URLs to search for classes and resources.
                  try {
+                     @SuppressWarnings("deprecation")
+                     var u = new URL(codebase.toString() + tok);
                      if (!Arrays.asList(getURLs())
-                         .contains(new URL(codebase.toString() + tok))) {
+                         .contains(u)) {
                          addURL(codebase + tok);
                      }
                  } catch (MalformedURLException me) {

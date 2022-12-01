@@ -77,7 +77,7 @@
 
 
 // Structure to pass around
-struct OopFlow : public ResourceObj {
+struct OopFlow : public ArenaObj {
   short *_callees;              // Array mapping register to callee-saved
   Node **_defs;                 // array mapping register to reaching def
                                 // or NULL if dead/conflict
@@ -344,10 +344,26 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     } else {
       // Other - some reaching non-oop value
 #ifdef ASSERT
-      if( t->isa_rawptr() && C->cfg()->_raw_oops.member(def) ) {
-        def->dump();
-        n->dump();
-        assert(false, "there should be a oop in OopMap instead of a live raw oop at safepoint");
+      if (t->isa_rawptr()) {
+        ResourceMark rm;
+        Unique_Node_List worklist;
+        worklist.push(def);
+        for (uint i = 0; i < worklist.size(); i++) {
+          Node* m = worklist.at(i);
+          if (C->cfg()->_raw_oops.member(m)) {
+            def->dump();
+            m->dump();
+            n->dump();
+            assert(false, "there should be an oop in OopMap instead of a live raw oop at safepoint");
+          }
+          // Check users as well because def might be spilled
+          for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
+            Node* u = m->fast_out(j);
+            if ((u->is_SpillCopy() && u->in(1) == m) || u->is_Phi()) {
+              worklist.push(u);
+            }
+          }
+        }
       }
 #endif
     }

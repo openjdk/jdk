@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,8 @@ class Argument {
     // in a register. This is not documented, but we follow this convention, too.
     n_regs_not_on_stack_c = 8,
 
-    n_int_register_parameters_j = 8,
-    n_float_register_parameters_j = 13
+    n_int_register_parameters_j   = 8,  // duplicates num_java_iarg_registers
+    n_float_register_parameters_j = 13, // num_java_farg_registers
   };
   // creation
   Argument(int number) : _number(number) {}
@@ -1372,7 +1372,7 @@ class Assembler : public AbstractAssembler {
 
   // Issue an illegal instruction.
   inline void illtrap();
-  static inline bool is_illtrap(int x);
+  static inline bool is_illtrap(address instr_addr);
 
   // PPC 1, section 3.3.8, Fixed-Point Arithmetic Instructions
   inline void addi( Register d, Register a, int si16);
@@ -1932,7 +1932,7 @@ class Assembler : public AbstractAssembler {
 
   // More convenient version.
   int condition_register_bit(ConditionRegister cr, Condition c) {
-    return 4 * (int)(intptr_t)cr + c;
+    return 4 * cr.encoding() + c;
   }
   void crand( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
   void crnand(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);

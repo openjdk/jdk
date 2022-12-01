@@ -87,13 +87,15 @@ public class BlockQuickSearch implements SearchProvider {
             final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
             for (final InputBlock b : matches) {
                 if (!response.addResult(() -> {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            assert(comp != null);
+                            final EditorTopComponent editor = EditorTopComponent.getActive();
+                            assert(editor != null);
                             if (theGraph != null) {
-                                comp.getModel().selectGraph(theGraph);
+                                editor.getModel().selectGraph(theGraph);
                             }
-                            comp.setSelectedNodes(b);
-                            comp.requestActive();
+                            editor.clearSelectedNodes();
+                            editor.addSelectedNodes(b.getNodes(), true);
+                            editor.centerSelectedNodes();
+                            editor.requestActive();
                         },
                         "B" + b.getName() + (theGraph != null ? " in " + theGraph.getName() : ""))) {
                     return;

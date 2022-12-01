@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -42,6 +41,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -450,7 +450,9 @@ JRT_END
 
 // Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
 JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  jint doppel = SharedRuntime::f2i(x);
+  union {jfloat f; jint i;} bits;
+  bits.f = x;
+  jint doppel = bits.i;
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
   if (g_isnan(x))
     return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
@@ -467,7 +469,7 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
     return sign_bit; // Positive or negative zero
   }
 
-  jint exp = 0x7f800000 & doppel;
+  jint exp = ((0x7f800000 & doppel) >> (24 - 1)) - 127;
 
   // For binary16 subnormals, beside forcing exp to -15, retain
   // the difference exp_delta = E_min - exp.  This is the excess
@@ -501,6 +503,7 @@ JRT_END
 JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   // Halffloat format has 1 signbit, 5 exponent bits and
   // 10 significand bits
+  union {jfloat f; jint i;} bits;
   jint hf_arg = (jint)x;
   jint hf_sign_bit = 0x8000 & hf_arg;
   jint hf_exp_bits = 0x7c00 & hf_arg;
@@ -516,16 +519,25 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   if (hf_exp == -15) {
     // For subnormal values, return 2^-24 * significand bits
     return (sign * (pow(2,-24)) * hf_significand_bits);
-  }else if (hf_exp == 16) {
-    return (hf_significand_bits == 0) ? sign * float_infinity : (SharedRuntime::i2f((hf_sign_bit << 16) | 0x7f800000 |
-           (hf_significand_bits << significand_shift)));
+  } else if (hf_exp == 16) {
+    if (hf_significand_bits == 0) {
+      bits.i = 0x7f800000;
+      return sign * bits.f;
+    } else {
+      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
+               (hf_significand_bits << significand_shift);
+      return bits.f;
+    }
   }
 
   // Add the bias of float exponent and shift
-  int float_exp_bits = (hf_exp + 127) << (24 - 1);
+  jint float_exp_bits = (hf_exp + 127) << (24 - 1);
 
   // Combine sign, exponent and significand bits
-  return SharedRuntime::i2f((hf_sign_bit << 16) | float_exp_bits | (hf_significand_bits << significand_shift));
+  bits.i = (hf_sign_bit << 16) | float_exp_bits |
+           (hf_significand_bits << significand_shift);
+
+  return bits.f;
 JRT_END
 
 // Exception handling across interpreter/compiler boundaries
@@ -1112,6 +1124,8 @@ int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t si
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
     JavaThread* current, Method* method))
+  assert(current == JavaThread::current(), "pre-condition");
+
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -1126,6 +1140,7 @@ JRT_END
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
     JavaThread* current, Method* method))
+  assert(current == JavaThread::current(), "pre-condition");
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -2097,8 +2112,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
 
   AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
 
-  address entry_point = moop->from_compiled_entry_no_trampoline();
-
   // It's possible that deoptimization can occur at a call site which hasn't
   // been resolved yet, in which case this function will be called from
   // an nmethod that has been patched for deopt and we can ignore the
@@ -2109,8 +2122,16 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // "to interpreter" stub in order to load up the Method*. Don't
   // ask me how I know this...
 
+  // Result from nmethod::is_unloading is not stable across safepoints.
+  NoSafepointVerifier nsv;
+
+  CompiledMethod* callee = moop->code();
+  if (callee == NULL) {
+    return;
+  }
+
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
-  if (cb == NULL || !cb->is_compiled() || entry_point == moop->get_c2i_entry()) {
+  if (cb == NULL || !cb->is_compiled() || callee->is_unloading()) {
     return;
   }
 
@@ -2168,6 +2189,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         }
       }
       address destination = call->destination();
+      address entry_point = callee->verified_entry_point();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
         call->set_destination_mt_safe(entry_point);
       }
@@ -2309,6 +2331,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 
 // Handles the uncommon cases of monitor unlocking in compiled code
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
 JRT_END
 
@@ -2678,7 +2701,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
 ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
-                  ResourceObj::C_HEAP, mtCode,
+                  AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals> _adapter_handler_table;
 
@@ -3113,17 +3136,21 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {
-        buffer.initialize_stubs_size(128);
+        buffer.initialize_stubs_size(192);
       }
 
       struct { double data[20]; } locs_buf;
       struct { double data[20]; } stubs_locs_buf;
       buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-#if defined(AARCH64)
+#if defined(AARCH64) || defined(PPC64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops
       // accesses. For native_wrappers we need a constant.
-      buffer.initialize_consts_size(8);
+      // On PPC64 the continuation enter intrinsic needs the constant pool for the compiled
+      // static java call that is resolved in the runtime.
+      if (PPC64_ONLY(method->is_continuation_enter_intrinsic() &&) true) {
+        buffer.initialize_consts_size(8 PPC64_ONLY(+ 24));
+      }
 #endif
       buffer.stubs()->initialize_shared_locs((relocInfo*)&stubs_locs_buf, sizeof(stubs_locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);
@@ -3257,6 +3284,8 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
+  assert(current == JavaThread::current(), "pre-condition");
+
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be
@@ -3391,6 +3420,7 @@ void AdapterHandlerLibrary::print_statistics() {
 #endif /* PRODUCT */
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   StackOverflow* overflow_state = current->stack_overflow_state();
   overflow_state->enable_stack_reserved_zone(/*check_if_disabled*/true);
   overflow_state->set_reserved_stack_activation(current->stack_base());

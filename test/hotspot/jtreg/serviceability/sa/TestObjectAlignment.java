@@ -38,7 +38,7 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @library /test/lib
- * @requires vm.hasSA
+ * @requires vm.hasSA & vm.bits == "64"
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
  * @run driver TestObjectAlignment

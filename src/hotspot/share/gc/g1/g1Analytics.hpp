@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1ANALYTICS_HPP
 #define SHARE_GC_G1_G1ANALYTICS_HPP
 
+#include "gc/g1/g1AnalyticsSequences.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -37,66 +38,62 @@ class G1Analytics: public CHeapObj<mtGC> {
   const G1Predictions* _predictor;
 
   // These exclude marking times.
-  TruncatedSeq* _recent_gc_times_ms;
+  TruncatedSeq _recent_gc_times_ms;
 
-  TruncatedSeq* _concurrent_mark_remark_times_ms;
-  TruncatedSeq* _concurrent_mark_cleanup_times_ms;
+  TruncatedSeq _concurrent_mark_remark_times_ms;
+  TruncatedSeq _concurrent_mark_cleanup_times_ms;
 
-  TruncatedSeq* _alloc_rate_ms_seq;
+  TruncatedSeq _alloc_rate_ms_seq;
   double        _prev_collection_pause_end_ms;
 
-  TruncatedSeq* _young_rs_length_diff_seq;
-  TruncatedSeq* _mixed_rs_length_diff_seq;
-  TruncatedSeq* _concurrent_refine_rate_ms_seq;
-  TruncatedSeq* _dirtied_cards_rate_ms_seq;
-  TruncatedSeq* _dirtied_cards_in_thread_buffers_seq;
+  TruncatedSeq _concurrent_refine_rate_ms_seq;
+  TruncatedSeq _dirtied_cards_rate_ms_seq;
+  TruncatedSeq _dirtied_cards_in_thread_buffers_seq;
   // The ratio between the number of scanned cards and actually merged cards, for
   // young-only and mixed gcs.
-  TruncatedSeq* _young_card_scan_to_merge_ratio_seq;
-  TruncatedSeq* _mixed_card_scan_to_merge_ratio_seq;
+  G1PhaseDependentSeq _card_scan_to_merge_ratio_seq;
 
   // The cost to scan a card during young-only and mixed gcs in ms.
-  TruncatedSeq* _young_cost_per_card_scan_ms_seq;
-  TruncatedSeq* _mixed_cost_per_card_scan_ms_seq;
-
+  G1PhaseDependentSeq _cost_per_card_scan_ms_seq;
   // The cost to merge a card during young-only and mixed gcs in ms.
-  TruncatedSeq* _young_cost_per_card_merge_ms_seq;
-  TruncatedSeq* _mixed_cost_per_card_merge_ms_seq;
-
+  G1PhaseDependentSeq _cost_per_card_merge_ms_seq;
   // The cost to copy a byte in ms.
-  TruncatedSeq* _copy_cost_per_byte_ms_seq;
-  TruncatedSeq* _constant_other_time_ms_seq;
-  TruncatedSeq* _young_other_cost_per_region_ms_seq;
-  TruncatedSeq* _non_young_other_cost_per_region_ms_seq;
+  G1PhaseDependentSeq _cost_per_byte_copied_ms_seq;
 
-  TruncatedSeq* _young_pending_cards_seq;
-  TruncatedSeq* _mixed_pending_cards_seq;
-  TruncatedSeq* _young_rs_length_seq;
-  TruncatedSeq* _mixed_rs_length_seq;
+  G1PhaseDependentSeq _pending_cards_seq;
+  G1PhaseDependentSeq _rs_length_seq;
 
-  TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
+  TruncatedSeq _constant_other_time_ms_seq;
+  TruncatedSeq _young_other_cost_per_region_ms_seq;
+  TruncatedSeq _non_young_other_cost_per_region_ms_seq;
+
+  TruncatedSeq _cost_per_byte_ms_during_cm_seq;
 
   // Statistics kept per GC stoppage, pause or full.
-  TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
+  TruncatedSeq _recent_prev_end_times_for_all_gcs_sec;
 
   // Cached values for long and short term pause time ratios. See
   // compute_pause_time_ratios() for how they are computed.
   double _long_term_pause_time_ratio;
   double _short_term_pause_time_ratio;
 
-  // Returns whether the sequence have enough samples to get a "good" prediction.
-  // The constant used is random but "small".
-  bool enough_samples_available(TruncatedSeq const* seq) const;
-
   double predict_in_unit_interval(TruncatedSeq const* seq) const;
   size_t predict_size(TruncatedSeq const* seq) const;
   double predict_zero_bounded(TruncatedSeq const* seq) const;
+
+  double predict_in_unit_interval(G1PhaseDependentSeq const* seq, bool for_young_only_phase) const;
+  size_t predict_size(G1PhaseDependentSeq const* seq, bool for_young_only_phase) const;
+  double predict_zero_bounded(G1PhaseDependentSeq const* seq, bool for_young_only_phase) const;
 
   double oldest_known_gc_end_time_sec() const;
   double most_recent_gc_end_time_sec() const;
 
 public:
   G1Analytics(const G1Predictions* predictor);
+
+  // Returns whether the sequence have enough samples to get a "good" prediction.
+  // The constant used is random but "small".
+  static bool enough_samples_available(TruncatedSeq const* seq);
 
   double prev_collection_pause_end_ms() const {
     return _prev_collection_pause_end_ms;
@@ -132,7 +129,7 @@ public:
   void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
   void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
   void report_rs_length_diff(double rs_length_diff, bool for_young_only_phase);
-  void report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_rebuild_in_progress);
+  void report_cost_per_byte_ms(double cost_per_byte_ms, bool for_young_only_phase);
   void report_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_non_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_constant_other_time_ms(double constant_other_time_ms);
@@ -153,9 +150,7 @@ public:
   double predict_card_merge_time_ms(size_t card_num, bool for_young_only_phase) const;
   double predict_card_scan_time_ms(size_t card_num, bool for_young_only_phase) const;
 
-  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const;
-
-  double predict_object_copy_time_ms(size_t bytes_to_copy, bool during_concurrent_mark) const;
+  double predict_object_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const;
 
   double predict_constant_other_time_ms() const;
 

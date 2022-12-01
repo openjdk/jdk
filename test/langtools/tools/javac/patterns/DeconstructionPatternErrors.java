@@ -1,9 +1,9 @@
 /**
  * @test /nodynamiccopyright/
  * @summary Verify error reports for erroneous deconstruction patterns are sensible
- * @compile/fail/ref=DeconstructionPatternErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
+ * @enablePreview
+ * @compile/fail/ref=DeconstructionPatternErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
  */
-
 import java.util.ArrayList;
 import java.util.List;
 

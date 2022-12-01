@@ -42,9 +42,9 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
       out->print("No tag set matches selection:");
       valid = false;
 
-      char buf[256];
-      _selections[i].describe_tags(buf, sizeof(buf));
-      out->print(" %s. ", buf);
+      out->print(" ");
+      _selections[i].describe_tags_on(out);
+      out->print(". ");
 
       _selections[i].suggest_similar_matching(out);
       out->cr();

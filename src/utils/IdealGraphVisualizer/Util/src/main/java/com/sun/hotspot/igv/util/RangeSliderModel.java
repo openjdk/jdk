@@ -45,28 +45,11 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     private int secondPosition;
     private List<Color> colors;
 
-    public void setData(RangeSliderModel model) {
-        boolean changed = (positions != model.positions);
-        positions = model.positions;
-        changed |= (firstPosition != model.firstPosition);
-        firstPosition = model.firstPosition;
-        changed |= (secondPosition != model.secondPosition);
-        secondPosition = model.secondPosition;
-        boolean colorChanged = (colors != model.colors);
-        colors = model.colors;
-        if (changed) {
-            changedEvent.fire();
-        }
-        if (colorChanged) {
-            colorChangedEvent.fire();
-        }
-    }
-
-    public RangeSliderModel(List<String> positions) {
-        assert positions.size() > 0;
-        this.changedEvent = new ChangedEvent<>(this);
-        this.colorChangedEvent = new ChangedEvent<>(this);
-        setPositions(positions);
+    public RangeSliderModel() {
+        changedEvent = new ChangedEvent<>(this);
+        colorChangedEvent = new ChangedEvent<>(this);
+        positions = new ArrayList<>();
+        colors = new ArrayList<>();
     }
 
     protected void setPositions(List<String> positions) {
@@ -90,12 +73,6 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
         return colors;
     }
 
-    public RangeSliderModel copy() {
-        RangeSliderModel newModel = new RangeSliderModel(positions);
-        newModel.setData(this);
-        return newModel;
-    }
-
     public List<String> getPositions() {
         return Collections.unmodifiableList(positions);
     }
@@ -111,10 +88,12 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     public void setPositions(int fp, int sp) {
         assert fp >= 0 && fp < positions.size();
         assert sp >= 0 && sp < positions.size();
-        firstPosition = fp;
-        secondPosition = sp;
-        ensureOrder();
-        changedEvent.fire();
+        if (firstPosition != fp || secondPosition != sp) {
+            firstPosition = fp;
+            secondPosition = sp;
+            ensureOrder();
+            changedEvent.fire();
+        }
     }
 
     private void ensureOrder() {

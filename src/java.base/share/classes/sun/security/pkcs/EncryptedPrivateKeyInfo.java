@@ -115,9 +115,7 @@ public class EncryptedPrivateKeyInfo {
     /**
      * Returns the ASN.1 encoding of this class.
      */
-    public byte[] getEncoded()
-        throws IOException
-    {
+    public byte[] getEncoded() {
         if (this.encoded != null) return this.encoded.clone();
 
         DerOutputStream out = new DerOutputStream();
@@ -141,20 +139,16 @@ public class EncryptedPrivateKeyInfo {
             return true;
         if (!(other instanceof EncryptedPrivateKeyInfo))
             return false;
-        try {
-            byte[] thisEncrInfo = this.getEncoded();
-            byte[] otherEncrInfo
-                = ((EncryptedPrivateKeyInfo)other).getEncoded();
+        byte[] thisEncrInfo = this.getEncoded();
+        byte[] otherEncrInfo
+                = ((EncryptedPrivateKeyInfo) other).getEncoded();
 
-            if (thisEncrInfo.length != otherEncrInfo.length)
-                return false;
-            for (int i = 0; i < thisEncrInfo.length; i++)
-                 if (thisEncrInfo[i] != otherEncrInfo[i])
-                     return false;
-            return true;
-        } catch (IOException e) {
+        if (thisEncrInfo.length != otherEncrInfo.length)
             return false;
-        }
+        for (int i = 0; i < thisEncrInfo.length; i++)
+            if (thisEncrInfo[i] != otherEncrInfo[i])
+                return false;
+        return true;
     }
 
     /**

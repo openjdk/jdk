@@ -51,7 +51,7 @@ public class NonBootLoaderClasses {
             .setUseVersion(false)
             .addSuffix("-Djava.class.path=",
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
-                "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary");
+                "-XX:+PrintSharedArchiveAndExit");
         CDSTestUtils.run(opts)
             .assertNormalExit(output -> {
                 output.shouldContain("archive is valid");

@@ -130,6 +130,7 @@ class MulFNode : public MulNode {
 public:
   MulFNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeF::ONE; }
   const Type *add_id() const { return TypeF::ZERO; }
@@ -147,6 +148,7 @@ class MulDNode : public MulNode {
 public:
   MulDNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeD::ONE; }
   const Type *add_id() const { return TypeD::ZERO; }

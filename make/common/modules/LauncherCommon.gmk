@@ -45,7 +45,6 @@ endif
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
-    -I$(TOPDIR)/src/java.desktop/share/native/include \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \

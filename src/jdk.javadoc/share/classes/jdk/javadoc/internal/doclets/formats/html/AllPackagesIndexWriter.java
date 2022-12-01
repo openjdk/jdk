@@ -94,7 +94,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addPackages(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<PackageElement>(HtmlStyle.summaryTable)
                 .setCaption(Text.of(contents.packageSummaryLabel.toString()))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
