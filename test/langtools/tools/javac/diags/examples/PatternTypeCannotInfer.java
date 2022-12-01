@@ -21,15 +21,16 @@
  * questions.
  */
 
-// key: compiler.err.raw.deconstruction.pattern
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
+// key: compiler.err.pattern.type.cannot.infer
+// key: compiler.warn.preview.feature.use.plural
+// key: compiler.misc.feature.deconstruction.patterns
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-class RawDeconstructionPattern {
-    boolean test(Object o) {
-        return o instanceof R(String s);
+class PatternTypeCannotInfer {
+    interface A<T> {}
+    record R<T extends Number>() implements A<T> {}
+    void test(A<String> i) {
+        if (i instanceof R()) {
+        }
     }
-
-    record R<T>(T t) {}
 }
