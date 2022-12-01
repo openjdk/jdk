@@ -39,6 +39,11 @@ public class GenericRecordDeconstructionPattern {
         runTest(this::runIf);
         runTest(this::runSwitch);
         runTest(this::runSwitchExpression);
+        runTest(this::runSwitchInference1);
+        runTest(this::runSwitchInference2);
+        runTest(this::runSwitchInference3);
+        runTest(this::runSwitchInference4);
+        testInference3();
     }
 
     void runTest(Function<Box<String>, Integer> test) {
@@ -65,7 +70,49 @@ public class GenericRecordDeconstructionPattern {
         };
     }
 
-    record Box<V>(V v) {
+    int runSwitchInference1(I<String> b) {
+        switch (b) {
+            case Box(String s): return s == null ? 1 : s.length();
+            default: return -1;
+        }
+    }
+
+    int runSwitchInference2(I<String> b) {
+        switch (b) {
+            case Box(var s): return s == null ? 1 : s.length();
+            default: return -1;
+        }
+    }
+
+    int runSwitchInference3(I<String> b) {
+        return b instanceof Box(var s) ? s == null ? 1 : s.length()
+                                       : -1;
+    }
+
+    <Z extends I<String>> int runSwitchInference4(Z b) {
+        return b instanceof Box(var s) ? s == null ? 1 : s.length()
+                                       : -1;
+    }
+
+    <B extends CharSequence & Runnable, Z extends I<B>> int runSwitchInference5(Z b) {
+        return b instanceof Box(var s) ? s == null ? 1 : s.length()
+                                       : -1;
+    }
+
+    void testInference3() {
+        I<I<String>> b = new Box<>(new Box<>(null));
+        assertEquals(1, runSwitchInferenceNested(b));
+    }
+
+    int runSwitchInferenceNested(I<I<String>> b) {
+        switch (b) {
+            case Box(Box(var s)): return s == null ? 1 : s.length();
+            default: return -1;
+        }
+    }
+
+    sealed interface I<T> {}
+    record Box<V>(V v) implements I<V> {
     }
 
     void assertEquals(Object expected, Object actual) {

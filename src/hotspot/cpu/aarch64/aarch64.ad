@@ -3377,7 +3377,8 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none, "unexpected reloc type");
-        if (con < (address)(uintptr_t)os::vm_page_size()) {
+        if (! __ is_valid_AArch64_address(con) ||
+            con < (address)(uintptr_t)os::vm_page_size()) {
           __ mov(dst_reg, con);
         } else {
           uint64_t offset;
