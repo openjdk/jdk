@@ -1521,32 +1521,28 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
           }
         }
         st->print_cr("]");
-#ifdef ASSERT
-        {
-          if (ErrorLogSecondaryErrorDetails) {
-            static bool recursed = false;
-            if (!recursed) {
-              recursed = true;
-              // Print even more information for secondary errors. This may generate a lot of output
-              // and possibly disturb error reporting, therefore its optional and only available in debug builds.
-              if (siginfo != nullptr) {
-                st->print("[");
-                os::print_siginfo(st, siginfo);
-                st->print_cr("]");
-              }
-              st->print("[stack: ");
-              frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
-              // Subsequent secondary errors build up stack; to avoid flooding the hs-err file with irrelevant
-              // call stacks, limit the stack we print here (we are only interested in what happened before the
-              // last assert/fault).
-              const int max_stack_size = 15;
-              print_native_stack(st, fr, _thread, true, max_stack_size, tmp, sizeof(tmp));
+        if (ErrorLogSecondaryErrorDetails) {
+          static bool recursed = false;
+          if (!recursed) {
+            recursed = true;
+            // Print even more information for secondary errors. This may generate a lot of output
+            // and possibly disturb error reporting, therefore its optional and only available in debug builds.
+            if (siginfo != nullptr) {
+              st->print("[");
+              os::print_siginfo(st, siginfo);
               st->print_cr("]");
-            } // !recursed
-            recursed = false; // Note: reset outside !recursed
-          }
+            }
+            st->print("[stack: ");
+            frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
+            // Subsequent secondary errors build up stack; to avoid flooding the hs-err file with irrelevant
+            // call stacks, limit the stack we print here (we are only interested in what happened before the
+            // last assert/fault).
+            const int max_stack_size = 15;
+            print_native_stack(st, fr, _thread, true, max_stack_size, tmp, sizeof(tmp));
+            st->print_cr("]");
+          } // !recursed
+          recursed = false; // Note: reset outside !recursed
         }
-#endif // ASSERT
       }
     }
   }
