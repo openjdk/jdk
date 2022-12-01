@@ -409,6 +409,7 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
+    // Uncompressed oops are not supported by loaded heaps.
     Unimplemented();
   }
 };
