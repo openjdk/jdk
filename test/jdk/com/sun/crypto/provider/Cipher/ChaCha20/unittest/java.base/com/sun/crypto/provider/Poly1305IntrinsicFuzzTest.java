@@ -53,6 +53,7 @@ public class Poly1305IntrinsicFuzzTest {
                 rnd.nextBytes(key);
                 int msgLen = rnd.nextInt(128, 4096); // x86_64 intrinsic requires 256 bytes minimum
                 byte[] message = new byte[msgLen];
+                rnd.nextBytes(message);
 
                 Poly1305 authenticator = new Poly1305();
                 Poly1305 authenticatorSlow = new Poly1305();
@@ -63,17 +64,19 @@ public class Poly1305IntrinsicFuzzTest {
                 authenticator.engineInit(new SecretKeySpec(key, 0, 32, "Poly1305"), null);
                 authenticatorSlow.engineInit(new SecretKeySpec(key, 0, 32, "Poly1305"), null);
 
-                if (rnd.nextBoolean()) {
+                if (rnd.nextBoolean() && message.length > 16) {
                         // Prime just the buffer and/or accumulator (buffer can keep at most 16 bytes from previous engineUpdate)
-                        int initDataLen = rnd.nextInt(8, 24);
-                        fastUpdate(authenticator, rnd, message, 0, initDataLen);
-                        slowUpdate(authenticatorSlow, message, 0, initDataLen);
+                        int initDataLen = rnd.nextInt(1, 16);
+                        int initDataOffset = rnd.nextInt(0, message.length - initDataLen);
+                        fastUpdate(authenticator, rnd, message, initDataOffset, initDataLen);
+                        slowUpdate(authenticatorSlow, message, initDataOffset, initDataLen);
                 }
 
                 if (rnd.nextBoolean()) {
                         // Multiple calls to engineUpdate
-                        fastUpdate(authenticator, rnd, message, 0, message.length);
-                        slowUpdate(authenticatorSlow, message, 0, message.length);
+                        int initDataOffset = rnd.nextInt(0, message.length);
+                        fastUpdate(authenticator, rnd, message, initDataOffset, message.length - initDataOffset);
+                        slowUpdate(authenticatorSlow, message, initDataOffset, message.length - initDataOffset);
                 }
 
                 fastUpdate(authenticator, rnd, message, 0, message.length);
@@ -88,22 +91,35 @@ public class Poly1305IntrinsicFuzzTest {
         }
 
         static void slowUpdate(Poly1305 authenticator, byte[] message, int offset, int len) {
-                len = Math.min(message.length, offset + len);
-                for (int i = offset; i < len; i++) {
+                for (int i = offset; i < offset + len; i++) {
                         authenticator.engineUpdate(message[i]);
                 }
         }
 
         static void fastUpdate(Poly1305 authenticator, Random rnd, byte[] message, int offset, int len) {
-                switch(rnd.nextInt(3)) {
+                ByteBuffer buf;
+                switch(rnd.nextInt(4)) {
                         case 0: // byte[]
                                 authenticator.engineUpdate(message, offset, len);
                                 break;
                         case 1: // ByteArray with backing array
-                                authenticator.engineUpdate(ByteBuffer.wrap(message, offset, len));
+                                buf = ByteBuffer.wrap(message, offset, len)
+                                                .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                                authenticator.engineUpdate(buf);
                                 break;
-                        case 2: // ByteArray without backing array (wont be sent to intrinsic)
-                                authenticator.engineUpdate(ByteBuffer.wrap(message, offset, len).asReadOnlyBuffer());
+                        case 2: // ByteArray with backing array (non-zero position)
+                                buf = ByteBuffer.wrap(message, 0, len+offset)
+                                                .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                                                .position(offset);
+                                authenticator.engineUpdate(buf);
+                                break;
+                        case 3: // ByteArray without backing array (wont be sent to intrinsic)
+                                buf = ByteBuffer.wrap(message, offset, len)
+                                                //.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                                                // .order(java.nio.ByteOrder.BIG_ENDIAN)
+                                                .asReadOnlyBuffer()
+                                                .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                                authenticator.engineUpdate(buf);
                                 break;
                 }
         }

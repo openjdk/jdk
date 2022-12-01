@@ -257,14 +257,15 @@ final class Poly1305 {
     private void processMultipleBlocks(ByteBuffer buf, int blockMultipleLength) {
         if (buf.hasArray()) {
             byte[] input = buf.array();
-            int offset = buf.arrayOffset();
+            int offset = buf.arrayOffset() + buf.position();
             long[] aLimbs = a.getLimbs();
             long[] rLimbs = r.getLimbs();
 
             processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
             processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
+            buf.position(offset + blockMultipleLength);
         } else {
-            while (blockMultipleLength > 0) {
+            while (blockMultipleLength >= BLOCK_LENGTH) {
                 processBlock(buf, BLOCK_LENGTH);
                 blockMultipleLength -= BLOCK_LENGTH;
             }
