@@ -23,7 +23,7 @@
  * questions.
  */
 
-package javacserver.server.log;
+package javacserver.util;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,10 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javacserver.Log;
-
 public class LazyInitFileLog extends Log {
-
     String baseFilename;
     Path destination = null;
 

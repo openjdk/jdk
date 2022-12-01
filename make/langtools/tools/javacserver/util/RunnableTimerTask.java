@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,22 @@
  * questions.
  */
 
-package javacserver.server;
+package javacserver.util;
+
+import java.util.TimerTask;
 
 /**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Wrapper class since TimerTask is not up to modern standards
  */
-public interface Terminable {
-    void shutdown(String quitMsg);
+public class RunnableTimerTask extends TimerTask {
+    private final Runnable task;
+
+    public RunnableTimerTask(Runnable task) {
+        this.task = task;
+    }
+
+    @Override
+    public void run() {
+        task.run();
+    }
 }

@@ -23,17 +23,16 @@
  * questions.
  */
 
-package javacserver;
+package javacserver.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Locale;
 
 /**
- * Utility class only for sjavac logging.
+ * Utility class only for javacserver logging.
  *
- * Logging in sjavac has special requirements when running in server/client
+ * Logging in javacserver has special requirements when running in server/client
  * mode. Most of the log messages is generated server-side, but the server
  * is typically spawned by the client in the background, so the user usually
  * does not see the server stdout/stderr. For this reason log messages needs
@@ -42,16 +41,9 @@ import java.util.Locale;
  * instance so that each connected client can have its own instance that
  * relays messages back to the requesting client.
  *
- * On the client-side (or when running sjavac without server-mode) there will
- * typically just be one Log instance.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * On the client-side there will typically just be one Log instance.
  */
 public class Log {
-
     public enum Level {
         ERROR,
         WARN,
@@ -61,7 +53,7 @@ public class Log {
     }
 
     private static Log stdOutErr = new Log(new PrintWriter(System.out), new PrintWriter(System.err));
-    private static ThreadLocal<Log> loggers = new ThreadLocal<>();
+    private static ThreadLocal<Log> logger = new ThreadLocal<>();
 
     protected PrintWriter err; // Used for error and warning messages
     protected PrintWriter out; // Used for other messages
@@ -73,31 +65,19 @@ public class Log {
     }
 
     public static void setLogForCurrentThread(Log log) {
-        loggers.set(log);
-    }
-
-    public static void setLogLevel(String l) {
-        setLogLevel(Level.valueOf(l.toUpperCase(Locale.US)));
+        logger.set(log);
     }
 
     public static void setLogLevel(Level l) {
         get().level = l;
     }
 
-    public static void trace(String msg) {
-        log(Level.TRACE, msg);
-    }
-
     public static void debug(String msg) {
         log(Level.DEBUG, msg);
     }
 
-    public static void info(String msg) {
-        log(Level.INFO, msg);
-    }
-
-    public static void warn(String msg) {
-        log(Level.WARN, msg);
+    public static void debug(Throwable t) {
+        log(Level.DEBUG, t);
     }
 
     public static void error(String msg) {
@@ -110,10 +90,6 @@ public class Log {
 
     public static void log(Level l, String msg) {
         get().printLogMsg(l, msg);
-    }
-
-    public static void debug(Throwable t) {
-        log(Level.DEBUG, t);
     }
 
     public static void log(Level l, Throwable t) {
@@ -131,7 +107,7 @@ public class Log {
     }
 
     public static Log get() {
-        Log log = loggers.get();
+        Log log = logger.get();
         return log != null ? log : stdOutErr;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,18 @@
  * questions.
  */
 
-package javacserver;
+package javacserver.util;
 
-import java.io.FilterWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-public class AutoFlushWriter extends FilterWriter {
-
-    public AutoFlushWriter(Writer out) {
-        super(out);
-    }
-
-    @Override
-    public void write(int c) throws IOException {
-        super.write(c);
-        if (c == '\n' || c == '\r')
-            flush();
-    }
-
-    @Override
-    public void write(String str, int off, int len) throws IOException {
-        super.write(str, off, len);
-        if (str.contains("\n") || str.contains("\r"))
-            flush();
-    }
-
-    @Override
-    public void write(char[] cbuf, int off, int len) throws IOException {
-        super.write(cbuf, off, len);
-        for (char c : cbuf) {
-            if (c == '\n' || c == '\r') {
-                flush();
-                break;
-            }
-        }
+public class Util {
+    /**
+     * Return a stream of strings, where the input string is split at line separators.
+     */
+    public static Stream<String> getLines(String str) {
+        return str.isEmpty()
+                ? Stream.empty()
+                : Stream.of(str.split(Pattern.quote(System.lineSeparator())));
     }
 }
