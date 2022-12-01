@@ -577,10 +577,10 @@ abstract class GaloisCounterMode extends CipherSpi {
      * large chunks of data into 1MB sized chunks. This is to place
      * an upper limit on the number of blocks encrypted in the intrinsic.
      *
-     * For decrypting in-place byte[], calling methods must ct must set to null
+     * For decrypting in-place byte[], calling methods must set ct to null
      * to avoid combined intrinsic, call GHASH directly before GCTR to avoid
      * a bad tag exception. This check is not performed here because it would
-     * impose a check every operation which is less efficient.
+     * impose a check for every operation which is less efficient.
      *
      * The value of ctOfs is irrelevant if ct is null.
      */
