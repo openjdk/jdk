@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2013, 2022 SAP. All rights reserved.
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,12 @@
 
 /*
  * @test
+<<<<<<< HEAD
  * @summary Check secondary error handling
+=======
+ * @bug 8065895
+ * @summary Synchronous signals during error reporting may terminate or hang VM process
+>>>>>>> master
  * @library /test/lib
  * @requires vm.debug
  * @requires os.family != "windows"
@@ -98,28 +103,15 @@ public class SecondaryErrorTest {
     output_detail.shouldMatch("#.+SIGFPE.*");
 
     // extract hs-err file
-    String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-    if (hs_err_file == null) {
-      throw new RuntimeException("Did not find hs-err file in output.\n");
-    }
+    File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
 
     // scan hs-err file: File should contain the "[error occurred during error reporting..]"
     // markers which show that the secondary error handling kicked in and handled the
     // error successfully. As an added test, we check that the last line contains "END.",
     // which is an end marker written in the last step and proves that hs-err file was
     // completely written.
-    File f = new File(hs_err_file);
-    if (!f.exists()) {
-      throw new RuntimeException("hs-err file missing at "
-          + f.getAbsolutePath() + ".\n");
-    }
 
-    System.out.println("Found hs_err file. Scanning...");
-
-    FileInputStream fis = new FileInputStream(f);
-    BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-    String line = null;
-
+<<<<<<< HEAD
     ArrayList<Pattern> patternlist = new ArrayList<>();
     patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
     patternlist.add(Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"));
@@ -160,6 +152,16 @@ public class SecondaryErrorTest {
     } else {
       System.out.println("End marker found.");
     }
+=======
+    Pattern [] pattern = new Pattern[] {
+        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
+        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"),
+        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
+        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 2\\).*\\]"),
+    };
+
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
+>>>>>>> master
 
     System.out.println("OK.");
 

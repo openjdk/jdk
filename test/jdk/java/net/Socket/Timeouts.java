@@ -252,7 +252,7 @@ public class Timeouts {
             int b = s2.getInputStream().read();
             assertTrue(b == 99);
 
-            // schedule s2 to be be closed
+            // schedule s2 to be closed
             scheduleClose(s2, 3000);
 
             // write a lot so that write blocks

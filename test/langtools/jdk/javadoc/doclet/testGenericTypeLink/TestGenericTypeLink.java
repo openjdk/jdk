@@ -70,7 +70,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><code><a href="http://example.com/docs/api/java.base/java/util/Map.html" title="\
                     class or interface in java.util" class="external-link">Map</a>&lt;<a href="http://ex\
                     ample.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
@@ -106,7 +106,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://example.c\
                     om/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang\
                     " class="external-link">String</a>,<wbr><a href="A.SomeException.html" title="class\
@@ -123,7 +123,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://exampl\
                     e.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
                     a.lang" class="external-link">String</a>,<wbr><a href="http://example.com/docs/a\
@@ -189,7 +189,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li>
                     <details class="invalid-tag">
                     <summary>invalid @see</summary>

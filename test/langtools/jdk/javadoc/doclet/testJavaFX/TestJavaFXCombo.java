@@ -329,7 +329,7 @@ public class TestJavaFXCombo extends JavadocTester {
         return sb.isEmpty() ? "" : """
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list">
+                <ul class="tag-list">
                 """ + sb + """
                 </ul>
                 </dd>""";

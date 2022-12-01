@@ -778,7 +778,10 @@ public class Flow {
                 }
             }
             for (Entry<Symbol, List<JCRecordPattern>> e : deconstructionPatternsBySymbol.entrySet()) {
-                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), 0)) {
+                if (e.getValue().stream().anyMatch(r -> r.nested.size() != r.record.getRecordComponents().size())) {
+                    coveredSymbols.add(syms.errSymbol);
+                }
+                else if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), 0)) {
                     coveredSymbols.add(e.getKey());
                 }
             }
