@@ -37,64 +37,63 @@ import java.util.Set;
 /**
  * Unimplemented.
  */
-sealed class UnsupportedSctpServerChannelImpl
-        extends SctpServerChannel
-        permits SctpServerChannelImpl {
+public final class SctpServerChannelImpl
+        extends SctpServerChannel {
 
-    UnsupportedSctpServerChannelImpl(SelectorProvider provider) {
+    public SctpServerChannelImpl(SelectorProvider provider) {
         super(provider);
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpChannel accept() throws IOException {
+    public SctpChannel accept() throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpServerChannel bind(SocketAddress local,
-                                        int backlog) throws IOException {
+    public SctpServerChannel bind(SocketAddress local,
+                                  int backlog) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpServerChannel bindAddress(InetAddress address) throws IOException {
+    public SctpServerChannel bindAddress(InetAddress address) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpServerChannel unbindAddress(InetAddress address) throws IOException {
+    public SctpServerChannel unbindAddress(InetAddress address) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final Set<SocketAddress> getAllLocalAddresses() throws IOException {
+    public Set<SocketAddress> getAllLocalAddresses() throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final <T> T getOption(SctpSocketOption<T> name) throws IOException {
+    public <T> T getOption(SctpSocketOption<T> name) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final <T> SctpServerChannel setOption(SctpSocketOption<T> name,
-                                                 T value) throws IOException {
+    public <T> SctpServerChannel setOption(SctpSocketOption<T> name,
+                                           T value) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final Set<SctpSocketOption<?>> supportedOptions() {
+    public Set<SctpSocketOption<?>> supportedOptions() {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    protected final void implConfigureBlocking(boolean block) throws IOException {
+    protected void implConfigureBlocking(boolean block) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final void implCloseSelectableChannel() throws IOException {
+    public void implCloseSelectableChannel() throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 }

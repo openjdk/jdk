@@ -41,94 +41,93 @@ import java.util.Set;
 /**
  * Unimplemented.
  */
-sealed class UnsupportedSctpMultiChannelImpl
-        extends SctpMultiChannel
-        permits SctpMultiChannelImpl {
+public final class SctpMultiChannelImpl
+        extends SctpMultiChannel {
 
-    UnsupportedSctpMultiChannelImpl(SelectorProvider provider) {
+    public SctpMultiChannelImpl(SelectorProvider provider) {
         super(provider);
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final Set<Association> associations() {
+    public Set<Association> associations() {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpMultiChannel bind(SocketAddress local,
-                                       int backlog) throws IOException {
+    public SctpMultiChannel bind(SocketAddress local,
+                                 int backlog) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpMultiChannel bindAddress(InetAddress address) throws IOException {
+    public SctpMultiChannel bindAddress(InetAddress address) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpMultiChannel unbindAddress(InetAddress address) throws IOException {
+    public SctpMultiChannel unbindAddress(InetAddress address) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final Set<SocketAddress> getAllLocalAddresses() throws IOException {
+    public Set<SocketAddress> getAllLocalAddresses() throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final Set<SocketAddress> getRemoteAddresses(Association association) throws IOException {
+    public Set<SocketAddress> getRemoteAddresses(Association association) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpMultiChannel shutdown(Association association) throws IOException {
+    public SctpMultiChannel shutdown(Association association) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final <T> T getOption(SctpSocketOption<T> name,
-                                 Association association) throws IOException {
+    public <T> T getOption(SctpSocketOption<T> name,
+                           Association association) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final <T> SctpMultiChannel setOption(SctpSocketOption<T> name,
-                                                T value,
-                                                Association association) throws IOException {
+    public <T> SctpMultiChannel setOption(SctpSocketOption<T> name,
+                                          T value,
+                                          Association association) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final Set<SctpSocketOption<?>> supportedOptions() {
+    public Set<SctpSocketOption<?>> supportedOptions() {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final <T> MessageInfo receive(ByteBuffer buffer,
-                                         T attachment,
-                                         NotificationHandler<T> handler) throws IOException {
+    public <T> MessageInfo receive(ByteBuffer buffer,
+                                   T attachment,
+                                   NotificationHandler<T> handler) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final int send(ByteBuffer buffer,
-                          MessageInfo messageInfo) throws IOException {
+    public int send(ByteBuffer buffer,
+                    MessageInfo messageInfo) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final SctpChannel branch(Association association) throws IOException {
+    public SctpChannel branch(Association association) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    protected final void implConfigureBlocking(boolean block) throws IOException {
+    protected void implConfigureBlocking(boolean block) throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 
     @Override
-    public final void implCloseSelectableChannel() throws IOException {
+    public void implCloseSelectableChannel() throws IOException {
         throw UnsupportedUtil.sctpUnsupported();
     }
 }
