@@ -1729,9 +1729,8 @@ void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState*
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
-  if (java_thread != NULL) {
-    java_thread->obj_field_put(_scopedValueBindings_offset, NULL);
-  }
+  assert(java_thread != NULL, "need a java_lang_Thread pointer here");
+  java_thread->obj_field_put(_scopedValueBindings_offset, NULL);
 }
 
 oop java_lang_Thread::holder(oop java_thread) {

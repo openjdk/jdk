@@ -200,7 +200,12 @@ void JavaThread::set_scopedValueCache(oop p) {
 
 void JavaThread::clear_scopedValueBindings() {
   set_scopedValueCache(NULL);
-  java_lang_Thread::clear_scopedValueBindings(vthread());
+  oop vthread_oop = vthread();
+  // vthread may be null here if we get a VM error during startup,
+  // before the java.lang.Thread instance has been created.
+  if (vthread_oop != NULL) {
+    java_lang_Thread::clear_scopedValueBindings(vthread_oop);
+  }
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
