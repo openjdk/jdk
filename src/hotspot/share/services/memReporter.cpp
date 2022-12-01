@@ -116,8 +116,6 @@ void MemSummaryReporter::report() {
   size_t total_committed_amount = total_malloced_bytes + total_mmap_committed_bytes;
 
   size_t read_only_bytes = 0;
-  //FileMapInfo* c = FileMapInfo::current_info();
-  //FileMapRegion* r = c->region_at(MetaspaceShared::ro);
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
   assert(r->read_only(), "Region should be read only");
   read_only_bytes = r->used();
