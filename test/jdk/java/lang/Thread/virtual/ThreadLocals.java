@@ -26,8 +26,7 @@
  * @summary Test Virtual threads using thread locals
  * @library /test/lib
  * @enablePreview
- * @compile ThreadLocals.java
- * @run testng/othervm ThreadLocals
+ * @run testng ThreadLocals
  */
 
 import jdk.test.lib.thread.VThreadRunner;

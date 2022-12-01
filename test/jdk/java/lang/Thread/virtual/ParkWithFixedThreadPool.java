@@ -27,8 +27,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @enablePreview
- * @compile ParkWithFixedThreadPool.java
- * @run testng/othervm ParkWithFixedThreadPool
+ * @run testng ParkWithFixedThreadPool
  */
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;

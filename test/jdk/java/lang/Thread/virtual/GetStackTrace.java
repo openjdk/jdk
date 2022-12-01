@@ -27,8 +27,7 @@
  *     thread and its carrier
  * @modules java.base/java.lang:+open
  * @enablePreview
- * @compile GetStackTrace.java
- * @run testng/othervm GetStackTrace
+ * @run testng GetStackTrace
  */
 
 import java.util.Objects;

@@ -27,8 +27,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @enablePreview
- * @compile CustomScheduler.java
- * @run testng/othervm CustomScheduler
+ * @run testng CustomScheduler
  */
 
 import java.lang.reflect.Field;

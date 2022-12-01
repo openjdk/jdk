@@ -28,8 +28,7 @@
  * @modules java.base/java.lang:+open
  * @enablePreview
  * @compile GetStackTraceALot.java ../ThreadBuilders.java
- * @run main/othervm GetStackTraceALot
- *
+ * @run main GetStackTraceALot
  */
 
 /**
@@ -37,7 +36,7 @@
  * @requires vm.debug == true & vm.continuations
  * @modules java.base/java.lang:+open
  * @compile GetStackTraceALot.java ../ThreadBuilders.java
- * @run main/othervm/timeout=300 GetStackTraceALot 1000
+ * @run main/timeout=300 GetStackTraceALot 1000
  */
 
 import java.time.Duration;

@@ -29,8 +29,7 @@
  * @modules java.management
  * @library /test/lib
  * @enablePreview
- * @compile StackTraces.java
- * @run testng/othervm StackTraces
+ * @run testng StackTraces
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
  */
 

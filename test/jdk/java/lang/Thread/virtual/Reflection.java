@@ -27,8 +27,7 @@
  * @modules java.base/java.lang:+open
  * @library /test/lib
  * @enablePreview
- * @compile Reflection.java
- * @run testng/othervm Reflection
+ * @run testng Reflection
  */
 
 import java.lang.reflect.Constructor;
