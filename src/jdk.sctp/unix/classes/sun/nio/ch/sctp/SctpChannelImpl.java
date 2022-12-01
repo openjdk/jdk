@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
@@ -1082,7 +1083,7 @@ public class SctpChannelImpl extends SctpChannel
     private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
         AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
+            new PrivilegedAction<>() {
                 public Void run() {
                     System.loadLibrary("sctp");
                     return null;

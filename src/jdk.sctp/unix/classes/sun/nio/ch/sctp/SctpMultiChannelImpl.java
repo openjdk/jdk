@@ -76,8 +76,8 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     private final int fdVal;
 
     /* IDs of native threads doing send and receives, for signalling */
-    private volatile long receiverThread = 0;
-    private volatile long senderThread = 0;
+    private volatile long receiverThread;
+    private volatile long senderThread;
 
     /* Lock held by current receiving thread */
     private final Object receiveLock = new Object();
