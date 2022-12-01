@@ -42,16 +42,16 @@ public class setvalue004t {
     static final boolean sBooleanFld = false;
     static final String  sStrFld = "instance field";
 
-    // tested static final fields
-    static final byte    iByteFld = 127;
-    static final short   iShortFld = -32768;
-    static final int     iIntFld = 2147483647;
-    static final long    iLongFld = 9223372036854775807L;
-    static final float   iFloatFld = 5.1F;
-    static final double  iDoubleFld = 6.2D;
-    static final char    iCharFld = 'a';
-    static final boolean iBooleanFld = false;
-    static final String  iStrFld = "instance field";
+    // tested instance final fields
+    final byte    iByteFld = 127;
+    final short   iShortFld = -32768;
+    final int     iIntFld = 2147483647;
+    final long    iLongFld = 9223372036854775807L;
+    final float   iFloatFld = 5.1F;
+    final double  iDoubleFld = 6.2D;
+    final char    iCharFld = 'a';
+    final boolean iBooleanFld = false;
+    final String  iStrFld = "instance field";
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
