@@ -530,13 +530,3 @@ bool JNIHandleBlock::chain_contains(jobject handle) const {
   }
   return false;
 }
-
-class CountJNIHandleClosure: public OopClosure {
-private:
-  int _count;
-public:
-  CountJNIHandleClosure(): _count(0) {}
-  virtual void do_oop(oop* ooph) { _count++; }
-  virtual void do_oop(narrowOop* unused) { ShouldNotReachHere(); }
-  int count() { return _count; }
-};
