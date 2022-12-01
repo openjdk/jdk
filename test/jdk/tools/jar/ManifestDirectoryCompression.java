@@ -29,8 +29,11 @@
  * @run testng ManifestDirectoryCompression
  */
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -48,38 +51,43 @@ public class ManifestDirectoryCompression {
             ToolProvider.findFirst("jar")
                     .orElseThrow(() -> new RuntimeException("jar tool not found"));
 
+    private Path tempDir;
+
+    @BeforeMethod
+    private void setUp() throws Exception {
+        tempDir = Files.createTempDirectory("temp");
+    }
+
     /** Remove dirs & files needed for test. */
-    private static void cleanup(Path dir) {
+    @AfterMethod
+    private void cleanup() {
+        deleteRecursively(tempDir);
+    }
+
+    private static void deleteRecursively(Path path) {
         try {
-            if (Files.isDirectory(dir)) {
-                try (Stream<Path> s = Files.list(dir)) {
-                    s.forEach(p -> cleanup(p));
+            if (Files.isDirectory(path)) {
+                try (Stream<Path> s = Files.list(path)) {
+                    s.forEach(p -> deleteRecursively(p));
                 }
             }
-            Files.delete(dir);
+            Files.delete(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     @Test
-    public void run() throws Throwable {
-        Path topDir = Files.createTempDirectory("delete");
-        try {
-            Path entry = Files.writeString(topDir.resolve("test.txt"), "Some text...");
-            doTest(topDir.resolve("test.jar"), entry);
-        } finally {
-            cleanup(topDir);
-        }
-    }
-
-    private static void doTest(Path jar, Path entry) throws Throwable {
-        String[] jarArgs = new String[] {"cf", jar.toString(), entry.toString()};
+    public void run() throws Exception {
+        Path entryPath = Files.writeString(tempDir.resolve("test.txt"), "Some text...");
+        Path jar = tempDir.resolve("test.jar");
+        String[] jarArgs = new String[] {"cf", jar.toString(), entryPath.toString()};
         if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
             fail("Could not create jar file: " + List.of(jarArgs));
         }
         try (JarFile jarFile = new JarFile(jar.toFile())) {
             ZipEntry zipEntry = jarFile.getEntry("META-INF/");
+            assertNotNull(zipEntry);
             assertEquals(zipEntry.getMethod(), ZipEntry.STORED);
             assertEquals(zipEntry.getSize(), 0);
             assertEquals(zipEntry.getCompressedSize(), 0);
