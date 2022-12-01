@@ -706,15 +706,15 @@
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
-  <Event name="NativeMemoryUsagePart" category="Java Virtual Machine, Memory" label="Component Native Memory Usage" description="Native memory usage for a component" stackTrace="false" thread="false"
-    startTime="false" period="everyChunk">
+  <Event name="NativeMemoryUsagePart" category="Java Virtual Machine, Memory" label="Component Native Memory Usage" description="Native memory usage for a component"
+    period="everyChunk" experimental="true">
     <Field type="string" name="type" label="Memory Type" description="Component allocating the native memory" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes by this component" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes by this component" />
   </Event>
 
-  <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Total Native Memory Usage" description="Total Native Memory Usage" stackTrace="false" thread="false"
-    startTime="false" period="everyChunk">
+  <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Total Native Memory Usage" description="Total Native Memory Usage"
+    period="everyChunk" experimental="true">
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this component" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this component" />
   </Event>

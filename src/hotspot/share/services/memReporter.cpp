@@ -844,8 +844,9 @@ void MemJFRReporter::sendTotalEvent() {
   event.commit();
 }
 
-void MemJFRReporter::sendTypeEvent(const char* type, size_t reserved, size_t committed) {
+void MemJFRReporter::sendTypeEvent(const Ticks& starttime, const char* type, size_t reserved, size_t committed) {
   EventNativeMemoryUsagePart event;
+  event.set_starttime(starttime);
   event.set_type(type);
   event.set_reserved(reserved);
   event.set_committed(committed);
@@ -859,6 +860,9 @@ void MemJFRReporter::sendTypeEvents() {
 
   MemBaseline usage;
   usage.baseline(true);
+
+  // Use the same start time to allow better grouping of events.
+  Ticks startime = Ticks::now();
   for (int index = 0; index < mt_number_of_types; index ++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
     MallocMemory* malloc_memory = usage.malloc_memory(flag);
@@ -884,6 +888,6 @@ void MemJFRReporter::sendTypeEvents() {
       reserved += usage.malloc_memory_snapshot()->malloc_overhead();
       committed += usage.malloc_memory_snapshot()->malloc_overhead();
     }
-    sendTypeEvent(NMTUtil::flag_to_name(flag), reserved, committed);
+    sendTypeEvent(startime, NMTUtil::flag_to_name(flag), reserved, committed);
   }
 }
