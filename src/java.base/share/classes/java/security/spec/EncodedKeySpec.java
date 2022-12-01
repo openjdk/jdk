@@ -109,10 +109,6 @@ public abstract class EncodedKeySpec implements KeySpec {
     public String getAlgorithm() {
         return algorithmName;
     }
-//    public EncodedKeySpec from(EncodedKeySpec eks) {
-//        public static PEMEncodedKeySpec from(EncodedKeySpec eks) {
-//        return null;
-//    }
 
     /**
      * Returns the encoded key.
@@ -146,31 +142,5 @@ public abstract class EncodedKeySpec implements KeySpec {
      */
     void clear() {
         Arrays.fill(encodedKey, (byte)0);
-    }
-
-    /**
-     * Encode encoded key spec.
-     *
-     * @return the encoded key spec
-     * @throws IOException the io exception
-     */
-    public byte[] encode() throws IOException {
-        return null;
-    }
-
-
-
-    /**
-     * With the given encodedBytes, decode from the class's specified format
-     * and return an EncodedKeySpec that matches decoded data format.  If
-     * the decoded format is not recognized an exception will be thrown.
-     *
-     *
-     * @param encodedBytes the encoded bytes
-     * @return the EncodedKeySpec
-     * @throws IOException On format error or unrecognized formats
-     */
-    public EncodedKeySpec decode(byte[] encodedBytes) throws IOException {
-        return null;
     }
 }

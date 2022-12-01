@@ -25,21 +25,13 @@
 
 package javax.crypto;
 
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.KnownOIDs;
+import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 
+import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.Security;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
@@ -62,7 +54,7 @@ import java.util.List;
  *
  * @author Valerie Peng
  *
- * @see java.security.spec.PKCS8EncodedKeySpec
+ * @see PKCS8EncodedKeySpec
  *
  * @since 1.4
  *
@@ -107,6 +99,9 @@ public class EncryptedPrivateKeyInfo {
 
     // the ASN.1 encoded contents of this class
     private final byte[] encoded;
+
+    //
+    Cipher cipher = null;
 
     /**
      * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
@@ -259,6 +254,34 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
+     * Instantiates a new Encrypted private key info.
+     *
+     * @param key the key
+     * @throws IOException the io exception
+     */
+    public EncryptedPrivateKeyInfo(Key key) throws IOException {
+        this(key, null);
+    }
+
+    /**
+     * Instantiates a new Encrypted private key info.
+     *
+     * @param key    the key
+     * @param cipher the cipher
+     * @throws IOException the io exception
+     */
+    public EncryptedPrivateKeyInfo(Key key, Cipher cipher) throws IOException {
+        if (key instanceof PublicKey) {
+            throw new IOException("Key provided was not a PrivateKey");
+        }
+        encoded = key.getEncoded();
+        algid = null;
+        params = null;
+        encryptedData = new byte[0];
+    }
+
+
+    /**
      * Returns the encryption algorithm.
      * <p>Note: Standard name is returned instead of the specified one
      * in the constructor when such mapping is available.
@@ -342,6 +365,119 @@ public class EncryptedPrivateKeyInfo {
         } catch (GeneralSecurityException | IOException ex) {
             throw new InvalidKeyException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
+        }
+    }
+
+    /*
+    private PKCS8EncodedKeySpec encryptKey(Key key, Provider provider,
+        byte[] encoded)
+        throws NoSuchAlgorithmException, InvalidKeyException {
+        Cipher c;
+        try {
+            checkPKCS8Encoding(encoded);
+            if (provider == null) {
+                // use the most preferred one
+                c = Cipher.getInstance(algid.getName());
+            } else {
+                c = Cipher.getInstance(algid.getName(), provider);
+            }
+            c.init(Cipher.ENCRYPT_MODE, key, algid.getParameters());
+            encryptedData = c.doFinal(encoded);
+        } catch (NoSuchAlgorithmException nsae) {
+            // rethrow
+            throw nsae;
+        } catch (GeneralSecurityException | IOException ex) {
+            throw new InvalidKeyException(
+                    "Cannot retrieve the PKCS8EncodedKeySpec", ex);
+        }
+        return new PKCS8EncodedKeySpec(encoded, keyAlg);
+    }
+*/
+
+    /**
+     * Instantiates a new Encrypt key.
+     *
+     * @param password the password
+     * @return the encoded key spec
+     * @throws IOException the io exception
+     */
+    public byte[] encryptKey(char[] password) throws
+        IOException {
+        return encryptKey("PBEWithHmacSHA256AndAES_128", password, null);
+    }
+    /**
+     * Encrypt key encoded key spec.
+     *
+     * @param algorithm the algorithm
+     * @param password  the password
+     * @return the encoded key spec
+     * @throws IOException the io exception
+     */
+    public byte[] encryptKey(String algorithm, char[] password)
+        throws IOException {
+        return encryptKey(algorithm, password, null);
+    }
+
+    /**
+     * Encrypted private key info encoded key spec.
+     *
+     * @param algorithm the algorithm
+     * @param password  the password
+     * @param aps        the ap
+     * @return the encoded key spec
+     * @throws IOException the io exception
+     */
+    public byte[] encryptKey(String algorithm, char[] password,
+        AlgorithmParameterSpec aps) throws IOException {
+
+        AlgorithmId algid;
+        byte[] encryptedData;
+
+//        DerValue val = DerValue.wrap(this.encoded);
+//        if (val.tag != DerValue.tag_Sequence) {
+//            throw new IOException("DER header error: no SEQ tag");
+//        }
+        DerOutputStream out = new DerOutputStream();
+
+//        DerValue[] seq = new DerValue[2];
+//        seq[0] = val.data.getDerValue();
+//        seq[1] = val.data.getDerValue();
+
+        //byte[] encoded = null;
+        try {
+           //var algo = "PBEWithHmacSHA256AndAES_128";
+            var spec = new PBEKeySpec(password);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
+            var key = factory.generateSecret(spec);
+            if (cipher == null) {
+                cipher = Cipher.getInstance(algorithm);
+                cipher.init(Cipher.ENCRYPT_MODE, key, aps);
+            }
+            encryptedData = cipher.doFinal(encoded);
+            //algid = AlgorithmId.get("PBES2");
+            //algid = new AlgorithmId(algid.getOID(), cipher.getParameters());
+            algid = new AlgorithmId(getPBEID(algorithm), cipher.getParameters());
+            algid.encode(out);
+            out.putOctetString(encryptedData);
+            byte[] encoded = DerValue.wrap(DerValue.tag_Sequence, out).toByteArray();
+        } catch (Exception e) {
+            throw new IOException(e);
+        } finally {
+            cipher = null;
+        }
+        return encoded;
+    }
+
+    // Sorta hack to get the right OID for PBBS2
+    private ObjectIdentifier getPBEID(String algorithm) throws IOException {
+        try {
+            if (algorithm.contains("AES")) {
+                return AlgorithmId.get("PBES2").getOID();
+            } else {
+                return AlgorithmId.get(algorithm).getOID();
+            }
+        } catch (Exception e) {
+            throw new IOException(e);
         }
     }
 
@@ -512,7 +648,7 @@ public class EncryptedPrivateKeyInfo {
         if (algo.endsWith("AES_128")) {
             list.add(KnownOIDs.findMatch("AES_128/CBC/NoPadding"));
         } else if (algo.endsWith("AES_256")) {
-            list.add(KnownOIDs.findMatch("AES_128/CBC/NoPadding"));
+            list.add(KnownOIDs.findMatch("AES_258/CBC/NoPadding"));
         }
         return list;
     }
