@@ -87,7 +87,7 @@ void ZPage::reset_seqnum() {
 }
 
 void ZPage::remset_clear() {
-  _remembered_set.clear_all("remset_clear");
+  _remembered_set.clear_all();
 }
 
 void ZPage::verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type) {
@@ -274,8 +274,8 @@ void ZPage::clear_remset_current() {
  _remembered_set.clear_current();
 }
 
-void ZPage::clear_remset_previous(const char* where) {
- _remembered_set.clear_previous(where);
+void ZPage::clear_remset_previous() {
+ _remembered_set.clear_previous();
 }
 
 void ZPage::swap_remset_bitmaps() {

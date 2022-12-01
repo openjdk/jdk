@@ -349,7 +349,7 @@ public:
         // Visit all entries pointing into young gen
         _remembered.scan_page(page);
         // ... and as a side-effect clear the previous entries
-        page->clear_remset_previous("after scan page");
+        page->clear_remset_previous();
       }
 
       // The remset scanning maintains the "maybe old" pages optimization.

@@ -953,7 +953,7 @@ public:
     if (in_place) {
       // Clear 'previous' remset bits. For in-place relocated pages, the previous
       // remset bits are always used, even when active_remset_is_current().
-      page->clear_remset_previous("in-place before reuse");
+      page->clear_remset_previous();
 
       return;
     }
@@ -964,7 +964,7 @@ public:
     if (active_remset_is_current()) {
       page->clear_remset_current();
     } else {
-      page->clear_remset_previous("normal before reuse");
+      page->clear_remset_previous();
     }
 
     // Verify that inactive remset bits are all cleared

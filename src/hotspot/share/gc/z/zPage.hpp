@@ -199,7 +199,7 @@ public:
   void verify_remset_cleared_previous() const;
 
   void clear_remset_current();
-  void clear_remset_previous(const char* where);
+  void clear_remset_previous();
 
   void* remset_current();
 

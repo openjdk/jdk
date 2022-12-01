@@ -133,9 +133,9 @@ public:
   bool is_cleared_current() const;
   bool is_cleared_previous() const;
 
-  void clear_all(const char* where);
+  void clear_all();
   void clear_current();
-  void clear_previous(const char* where);
+  void clear_previous();
   void swap_remset_bitmaps();
 
   BitMapReverseIterator iterator_reverse_previous();
