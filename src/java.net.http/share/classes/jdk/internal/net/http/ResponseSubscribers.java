@@ -486,6 +486,7 @@ public class ResponseSubscribers {
                         close();
                     } catch (IOException ignored) {
                     }
+                    Thread.currentThread().interrupt();
                     throw new IOException(ex);
                 }
             }
