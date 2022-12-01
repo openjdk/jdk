@@ -44,7 +44,7 @@ InlineTree::InlineTree(Compile* c,
                        JVMState* caller_jvms, int caller_bci,
                        int max_inline_level) :
   C(c),
-  _caller_jvms(caller_jvms),
+  _caller_jvms(NULL),
   _method(callee),
   _late_inline(false),
   _caller_tree((InlineTree*) caller_tree),
@@ -57,7 +57,7 @@ InlineTree::InlineTree(Compile* c,
   _count_inlines = 0;
   _forced_inline = false;
 #endif
-  if (_caller_jvms != NULL) {
+  if (caller_jvms != NULL) {
     // Keep a private copy of the caller_jvms:
     _caller_jvms = new (C) JVMState(caller_jvms->method(), caller_tree->caller_jvms());
     _caller_jvms->set_bci(caller_jvms->bci());

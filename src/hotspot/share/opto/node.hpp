@@ -1524,10 +1524,8 @@ protected:
   void   grow( uint i );        // Grow array node to fit
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
-    if (a != NULL) {
-      _nodes = NEW_ARENA_ARRAY(a, Node*, max);
-      clear();
-    }
+    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+    clear();
   }
 
   Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
