@@ -52,9 +52,9 @@ import jdk.internal.reflect.Reflection;
  * As such, this interface only supports reading {@code int}, {@code double},
  * and any other type that fits into a {@code long}.
  * <h2 id="safety">Safety considerations</h2>
- * The behavior of any attempts to access a value in the va list, whether through one of the {@code nextVarg} overloads
+ * The behavior of any attempts to access a value in the variable argument list, whether through one of the {@code nextVarg} overloads
  * or {@link #skip(MemoryLayout...)}, using a memory layout other than the layout of the accessed value, or any subsequent
- * accesses to the same va list, is undefined.
+ * accesses to the same variable argument list, is undefined.
  * <p>
  * It is possible for clients to access elements outside the spatial bounds of a variable argument list.
  * Variable argument list implementations will try to detect out-of-bounds reads on a best-effort basis.
