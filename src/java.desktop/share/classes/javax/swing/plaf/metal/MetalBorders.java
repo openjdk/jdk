@@ -286,10 +286,10 @@ public class MetalBorders {
                 }
             }
 
-            int width;
-            int height;
             int xtranslation;
             int ytranslation;
+            int width;
+            int height;
 
             if (resetTransform) {
                 double xx = at.getScaleX() * x + at.getTranslateX();
@@ -299,10 +299,10 @@ public class MetalBorders {
                 width = clipRound(at.getScaleX() * w + xx) - xtranslation;
                 height = clipRound(at.getScaleY() * h + yy) - ytranslation;
             } else {
-                width = w;
-                height = h;
                 xtranslation = x;
                 ytranslation = y;
+                width = w;
+                height = h;
             }
             g.translate(xtranslation, ytranslation);
 
