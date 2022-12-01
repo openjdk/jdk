@@ -38,6 +38,10 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import jdk.test.lib.artifacts.Artifact;
+import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
+
 public class TestAutoCreateSharedArchiveUpgrade {
     // The JDK being tested
     private static final String TEST_JDK = System.getProperty("test.jdk", null);
@@ -63,6 +67,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
     public static void main(String[] args) throws Throwable {
         setupJVMs();
         doTest();
+        String path = fetchBootJDK(LINUX_X64.class);
+        System.out.println(path);
     }
 
     static void setupJVMs() throws Throwable {
@@ -141,4 +147,52 @@ public class TestAutoCreateSharedArchiveUpgrade {
     static void assertUsedJSA(OutputAnalyzer output) {
         output.shouldContain("Mapped dynamic region #0");
     }
+
+    // Earliest testable version is 19
+    int n = java.lang.Runtime.version().major() - 1;
+
+    private static String fetchBootJDK(Class<?> clazz) {
+        String path = null;
+        try {
+            path = ArtifactResolver.resolve(clazz).entrySet().stream()
+                    .findAny().get().getValue() + "eee";
+            System.out.println("path: " + path);
+        } catch (ArtifactResolverException e) {
+            Throwable cause = e.getCause();
+            if (cause == null) {
+                System.out.println("Cannot resolve artifact, "
+                        + "please check if JIB jar is present in classpath.");
+            } else {
+                throw new RuntimeException("Fetch artifact failed: " + clazz
+                        + "\nPlease make sure the artifact is available.", e);
+            }
+        }
+        return path;
+    }
+
+    @Artifact(
+            organization = "",
+            name = "",
+            revision = "",
+            extension = "tar.gz",
+            server = "jpg",
+            product = "jdk",
+            version = "19",
+            build_number = "36",
+            file = "bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz")
+    private static class LINUX_X64 { }
+
+    /*@Artifact(
+            organization = "jpg.tests.jdk.openssl",
+            name = "openssl-macosx_x64",
+            revision = "1.1.1g",
+            extension = "zip")
+    private static class MACOSX_X64 { }
+
+    @Artifact(
+            organization = "jpg.tests.jdk.openssl",
+            name = "openssl-windows_x64",
+            revision = "1.1.1g",
+            extension = "zip")
+    private static class WINDOWS_X64 { }*/
 }

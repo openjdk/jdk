@@ -118,10 +118,23 @@ public class JibArtifactManager implements ArtifactManager {
         artifactDescription.put("organization", artifact.organization());
         artifactDescription.put("ext", artifact.extension());
         artifactDescription.put("revision", artifact.revision());
+
+        artifactDescription.put("server", artifact.server());
+        artifactDescription.put("product", artifact.product());
+        artifactDescription.put("version", artifact.version());
+        artifactDescription.put("build_number", artifact.build_number());
+        artifactDescription.put("file", artifact.file());
+
         if (artifact.classifier().length() > 0) {
             artifactDescription.put("classifier", artifact.classifier());
         }
-        return resolve(artifact.name(), artifactDescription, artifact.unpack());
+        if (name.length() > 0) {
+            return resolve(artifact.name(), artifactDescription, artifact.unpack());
+        } else {
+            return "--server-type " + artifact.server() + "--product " + artifact.product() + "--product-version " + artifact.version() +
+                "--build-number " + artifact.build_number() + "--file " + artifact.file() + "--build-type PROMOTED";
+        }
+
     }
 
     public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack)
