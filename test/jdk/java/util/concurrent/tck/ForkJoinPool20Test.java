@@ -123,6 +123,33 @@ public class ForkJoinPool20Test extends JSR166TestCase {
     }
 
     /**
+     * Test that tasks submitted with submit(ForkJoinTask) are pushed to a
+     * submission queue.
+     */
+    public void testSubmit() throws Exception {
+        try (var pool = new ForkJoinPool(1)) {
+            ForkJoinWorkerThread worker = submitBusyTask(pool);
+            try {
+                assertTrue(worker.getQueuedTaskCount() == 0);
+                assertTrue(pool.getQueuedTaskCount() == 0);
+                assertTrue(pool.getQueuedSubmissionCount() == 0);
+
+                for (int count = 1; count <= 3; count++) {
+                    var task = ForkJoinTask.adapt(() -> { });
+                    pool.submit(task);
+
+                    // task should be in submission queue
+                    assertTrue(worker.getQueuedTaskCount() == 0);
+                    assertTrue(pool.getQueuedTaskCount() == 0);
+                    assertTrue(pool.getQueuedSubmissionCount() == count);
+                }
+            } finally {
+                LockSupport.unpark(worker);
+            }
+        }
+    }
+
+    /**
      * Test ForkJoinWorkerThread::getQueuedTaskCount returns the number of tasks in the
      * current thread's queue. This test runs with parallelism of 1 to ensure that tasks
      * aren't stolen.
@@ -136,7 +163,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
                 for (int count = 1; count <= 3; count++) {
                     pool.submit(() -> { });
 
-                    // task should be pushed to this thread's task queue
+                    // task should be in this thread's task queue
                     assertTrue(worker.getQueuedTaskCount() == count);
                     assertTrue(pool.getQueuedTaskCount() == count);
                     assertTrue(pool.getQueuedSubmissionCount() == 0);
@@ -152,25 +179,15 @@ public class ForkJoinPool20Test extends JSR166TestCase {
      */
     public void testGetQueuedTaskCount2() throws Exception {
         try (var pool = new ForkJoinPool(2)) {
-            // submit task to keep one worker thread active
-            var ref = new AtomicReference<ForkJoinWorkerThread>();
-            pool.submit(() -> {
-                ref.set((ForkJoinWorkerThread) Thread.currentThread());
-                LockSupport.park();
-            });
-            ForkJoinWorkerThread t;
-            while ((t = ref.get()) == null) {
-                Thread.sleep(20);
-            }
-            ForkJoinWorkerThread worker1 = t;
-
+            // keep one worker thread active
+            ForkJoinWorkerThread worker1 = submitBusyTask(pool);
             try {
                 pool.submit(() -> {
                     var worker2 = (ForkJoinWorkerThread) Thread.currentThread();
                     for (int count = 1; count <= 3; count++) {
                         pool.submit(() -> { });
 
-                        // task should be pushed to this thread's task queue
+                        // task should be in this thread's task queue
                         assertTrue(worker1.getQueuedTaskCount() == 0);
                         assertTrue(worker2.getQueuedTaskCount() == count);
                         assertTrue(pool.getQueuedTaskCount() == count);
@@ -181,5 +198,22 @@ public class ForkJoinPool20Test extends JSR166TestCase {
                 LockSupport.unpark(worker1);  // release worker1
             }
         }
+    }
+
+    /**
+     * Submits a task to the pool, returning the worker thread that runs the
+     * task. The task runs until the thread is unparked.
+     */
+    static ForkJoinWorkerThread submitBusyTask(ForkJoinPool pool) throws Exception {
+        var ref = new AtomicReference<ForkJoinWorkerThread>();
+        pool.submit(() -> {
+            ref.set((ForkJoinWorkerThread) Thread.currentThread());
+            LockSupport.park();
+        });
+        ForkJoinWorkerThread worker;
+        while ((worker = ref.get()) == null) {
+            Thread.sleep(20);
+        }
+        return worker;
     }
 }
