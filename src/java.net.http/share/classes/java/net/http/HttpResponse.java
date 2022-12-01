@@ -1178,6 +1178,12 @@ public interface HttpResponse<T> {
          * the underlying HTTP connection to be closed and prevent it
          * from being reused for subsequent operations.
          *
+         * @implNote The read method of the default implementation returned
+         * by this method will throw an IOException with the thread interrupt
+         * status set if the thread is interrupted while blocking on read.
+         * In that case, the request will also be cancelled and the
+         * input stream will be closed.
+         *
          * @return a body subscriber that streams the response body as an
          *         {@link InputStream}.
          */

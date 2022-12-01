@@ -1134,9 +1134,4 @@ public final class Utils {
         return sb.toString();
     }
 
-    public static InterruptedIOException toInterruptedIOException(InterruptedException ex){
-        InterruptedIOException interruptedIOException = new InterruptedIOException();
-        interruptedIOException.initCause(ex);
-        return interruptedIOException;
-    }
 }

@@ -39,7 +39,6 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -164,7 +163,7 @@ public class HttpResponseInputStreamInterruptTest {
 
                 // countdown on latch, and assert that an IOException is throw due to the interrupt
                 interruptReadyLatch.countDown();
-                assertThrows(InterruptedIOException.class, () -> response.body().readAllBytes(), "expected InterruptedIoException");
+                assertThrows(IOException.class, () -> response.body().readAllBytes(), "expected IOException");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

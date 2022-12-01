@@ -486,9 +486,7 @@ public class ResponseSubscribers {
                         close();
                     } catch (IOException ignored) {
                     }
-                    // Throw InterruptedIOException where the initCause is
-                    // set to the caught InterruptedException
-                    throw Utils.toInterruptedIOException(ex);
+                    throw new IOException(ex);
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();
