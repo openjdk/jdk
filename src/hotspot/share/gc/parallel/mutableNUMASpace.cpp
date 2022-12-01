@@ -373,12 +373,6 @@ void MutableNUMASpace::update() {
     }
   }
 
-  if (NUMAStats) {
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      lgrp_spaces()->at(i)->accumulate_statistics(page_size());
-    }
-  }
-
   scan_pages(NUMAPageScanRate);
 }
 
@@ -892,28 +886,26 @@ void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
   clear_space_stats();
   char *start = (char*)align_up(space()->bottom(), page_size);
   char* end = (char*)align_down(space()->end(), page_size);
-  if (start < end) {
-    for (char *p = start; p < end;) {
-      os::page_info info;
-      if (os::get_page_info(p, &info)) {
-        if (info.size > 0) {
-          if (info.size > (size_t)os::vm_page_size()) {
-            space_stats()->_large_pages++;
-          } else {
-            space_stats()->_small_pages++;
-          }
-          if (info.lgrp_id == lgrp_id()) {
-            space_stats()->_local_space += info.size;
-          } else {
-            space_stats()->_remote_space += info.size;
-          }
-          p += info.size;
-        } else {
-          p += os::vm_page_size();
+  for (char *p = start; p < end; ) {
+    static const size_t PagesPerIteration = 128;
+    const void* pages[PagesPerIteration];
+    int lgrp_ids[PagesPerIteration];
+
+    size_t npages = 0;
+    for (; npages < PagesPerIteration && p < end; p += os::vm_page_size())
+      pages[npages++] = p;
+
+    if (os::numa_get_group_ids_for_range(pages, lgrp_ids, npages)) {
+      for (size_t i = 0; i < npages; i++) {
+        // No way to distinguish small/large pages on currently supported systems
+        space_stats()->_small_pages++;
+
+        if (lgrp_ids[i] < 0)
           space_stats()->_uncommited_space += os::vm_page_size();
-        }
-      } else {
-        return;
+        else if (lgrp_ids[i] == lgrp_id())
+          space_stats()->_local_space += os::vm_page_size();
+        else
+          space_stats()->_remote_space += os::vm_page_size();
       }
     }
   }

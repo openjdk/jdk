@@ -2757,6 +2757,11 @@ int os::numa_get_group_id_for_address(const void* address) {
   return id;
 }
 
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
+  void** pages = const_cast<void**>(addresses);
+  return os::Linux::numa_move_pages(0, count, pages, NULL, lgrp_ids, 0) == 0;
+}
+
 int os::Linux::get_existing_num_nodes() {
   int node;
   int highest_node_number = Linux::numa_max_node();
@@ -2785,10 +2790,6 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
     }
   }
   return i;
-}
-
-bool os::get_page_info(char *start, page_info* info) {
-  return false;
 }
 
 char *os::scan_pages(char *start, char* end, page_info* page_expected,
