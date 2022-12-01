@@ -229,15 +229,4 @@ public class MeteredStream extends FilterInputStream {
     public final boolean isLockHeldByCurrentThread() {
         return readLock.isHeldByCurrentThread();
     }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        }
-        finally {
-            // Call super class
-            super.finalize();
-        }
-    }
 }
