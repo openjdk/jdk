@@ -62,7 +62,7 @@ package javax.naming.ldap;
   * java.util.Date now = resp.getDate();
   *</pre></blockquote>
   *
-  * @spec https://www.ietf.org/rfc/rfc2251.html RFC 2251: Lightweight Directory Access Protocol (v3)
+  * @spec https://www.rfc-editor.org/info/rfc2251 RFC 2251: Lightweight Directory Access Protocol (v3)
   * @author Rosanna Lee
   * @author Scott Seligman
   * @author Vincent Ryan

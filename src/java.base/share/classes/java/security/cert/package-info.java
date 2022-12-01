@@ -53,7 +53,7 @@
  * </ul>
  *
  * @spec security/standard-names.html Java Security Standard Algorithm Names
- * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.rfc-editor.org/info/rfc5280 RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @since 1.2
  */
 package java.security.cert;

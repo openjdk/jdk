@@ -46,7 +46,7 @@ import sun.nio.ch.DirectBuffer;
  * {@link NullPointerException} to be thrown.
  * </p>
  *
- * @spec https://www.ietf.org/rfc/rfc3720.html RFC 3720: Internet Small Computer Systems Interface (iSCSI)
+ * @spec https://www.rfc-editor.org/info/rfc3720 RFC 3720: Internet Small Computer Systems Interface (iSCSI)
  * @since 9
  */
 public final class CRC32C implements Checksum {

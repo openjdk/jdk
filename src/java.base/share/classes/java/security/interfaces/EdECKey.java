@@ -35,7 +35,7 @@ import java.security.spec.NamedParameterSpec;
  * This interface allows access to the algorithm parameters associated with
  * the key.
  *
- * @spec https://www.ietf.org/rfc/rfc8032.html RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
+ * @spec https://www.rfc-editor.org/info/rfc8032 RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public interface EdECKey {

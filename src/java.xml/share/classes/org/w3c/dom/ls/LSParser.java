@@ -307,8 +307,8 @@ public interface LSParser {
      * @spec https://www.w3.org/TR/2004/REC-xml11-20040204 Extensible Markup Language (XML) 1.1
      * @spec https://www.w3.org/TR/1999/REC-xml-names-19990114 Namespaces in XML
      * @spec https://www.w3.org/TR/2004/REC-xml-names11-20040204 Namespaces in XML 1.1
-     * @spec https://www.ietf.org/rfc/rfc2616.html RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
-     * @spec https://www.ietf.org/rfc/rfc3023.html RFC 3023: XML Media Types
+     * @spec https://www.rfc-editor.org/info/rfc2616 RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
+     * @spec https://www.rfc-editor.org/info/rfc3023 RFC 3023: XML Media Types
      */
     public DOMConfiguration getDomConfig();
 
@@ -399,7 +399,7 @@ public interface LSParser {
      * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
      * if they wish to get details on the error.
      * @spec https://www.w3.org/TR/DOM-Level-3-Core Document Object Model (DOM) Level 3 Core Specification
-     * @spec https://www.ietf.org/rfc/rfc2396.html RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
+     * @spec https://www.rfc-editor.org/info/rfc2396 RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
      */
     public Document parseURI(String uri)
                              throws DOMException, LSException;

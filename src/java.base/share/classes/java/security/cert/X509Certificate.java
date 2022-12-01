@@ -95,7 +95,7 @@ import java.util.List;
  * }
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc5280.html RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+ * @spec https://www.rfc-editor.org/info/rfc5280 RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @since 1.2
  *
@@ -387,7 +387,7 @@ implements X509Extension {
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
-     * @spec https://www.ietf.org/rfc/rfc3279.html RFC 3279: Algorithms and Identifiers for the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+     * @spec https://www.rfc-editor.org/info/rfc3279 RFC 3279: Algorithms and Identifiers for the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
      */
     public abstract String getSigAlgOID();
 
@@ -610,8 +610,8 @@ implements X509Extension {
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
      *
-     * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
-     * @spec https://www.ietf.org/rfc/rfc0822.html RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
+     * @spec https://www.rfc-editor.org/info/rfc2253 RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+     * @spec https://www.rfc-editor.org/info/rfc822 RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      * @implNote The JDK SUN provider supports the third and fourth
      * otherName entries.
      *

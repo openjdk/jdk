@@ -117,10 +117,10 @@ import java.net.StandardSocketOptions;      // javadoc
  *     MembershipKey key = dc.join(group, ni);
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc2236.html RFC 2236: Internet Group Management Protocol, Version 2
- * @spec https://www.ietf.org/rfc/rfc2710.html RFC 2710: Multicast Listener Discovery (MLD) for IPv6
- * @spec https://www.ietf.org/rfc/rfc3376.html RFC 3376: Internet Group Management Protocol, Version 3
- * @spec https://www.ietf.org/rfc/rfc3810.html RFC 3810: Multicast Listener Discovery Version 2 (MLDv2) for IPv6
+ * @spec https://www.rfc-editor.org/info/rfc2236 RFC 2236: Internet Group Management Protocol, Version 2
+ * @spec https://www.rfc-editor.org/info/rfc2710 RFC 2710: Multicast Listener Discovery (MLD) for IPv6
+ * @spec https://www.rfc-editor.org/info/rfc3376 RFC 3376: Internet Group Management Protocol, Version 3
+ * @spec https://www.rfc-editor.org/info/rfc3810 RFC 3810: Multicast Listener Discovery Version 2 (MLDv2) for IPv6
  * @since 1.7
  */
 

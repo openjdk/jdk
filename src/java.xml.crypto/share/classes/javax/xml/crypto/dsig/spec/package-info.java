@@ -47,7 +47,7 @@
  * </ul>
  *
  * @spec https://www.w3.org/TR/xml-exc-c14n Exclusive XML Canonicalization Version 1.0
- * @spec https://www.ietf.org/rfc/rfc3275.html RFC 3275: (Extensible Markup Language) XML-Signature Syntax and Processing
+ * @spec https://www.rfc-editor.org/info/rfc3275 RFC 3275: (Extensible Markup Language) XML-Signature Syntax and Processing
  * @spec https://www.w3.org/TR/xmldsig-core XML Signature Syntax and Processing Version 1.1
  * @spec https://www.w3.org/TR/xmldsig-filter2 XML-Signature XPath Filter 2.0
  * @since 1.6

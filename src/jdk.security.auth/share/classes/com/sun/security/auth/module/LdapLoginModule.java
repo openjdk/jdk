@@ -296,10 +296,10 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * </dd>
  * </dl>
  *
- * @spec https://www.ietf.org/rfc/rfc2253.html RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
- * @spec https://www.ietf.org/rfc/rfc2254.html RFC 2254: The String Representation of LDAP Search Filters
- * @spec https://www.ietf.org/rfc/rfc2255.html RFC 2255: The LDAP URL Format
- * @spec https://www.ietf.org/rfc/rfc2782.html RFC 2782: A DNS RR for specifying the location of services (DNS SRV)
+ * @spec https://www.rfc-editor.org/info/rfc2253 RFC 2253: Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names
+ * @spec https://www.rfc-editor.org/info/rfc2254 RFC 2254: The String Representation of LDAP Search Filters
+ * @spec https://www.rfc-editor.org/info/rfc2255 RFC 2255: The LDAP URL Format
+ * @spec https://www.rfc-editor.org/info/rfc2782 RFC 2782: A DNS RR for specifying the location of services (DNS SRV)
  * @since 1.6
  */
 public class LdapLoginModule implements LoginModule {

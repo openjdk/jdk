@@ -207,7 +207,7 @@ import java.io.OutputStream;
  *
  * </pre>
  *
- * @spec https://www.ietf.org/rfc/rfc8353.html RFC 8353: Generic Security Service API Version 2: Java Bindings Update
+ * @spec https://www.rfc-editor.org/info/rfc8353 RFC 8353: Generic Security Service API Version 2: Java Bindings Update
  * @author Mayank Upadhyay
  * @since 1.4
  */
