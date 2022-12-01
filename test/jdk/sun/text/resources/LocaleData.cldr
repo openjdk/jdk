@@ -8394,3 +8394,7 @@ FormatData/de/latn.NumberElements/12=
 FormatData/de_AT/latn.NumberElements/12=.
 FormatData/fr/latn.NumberElements/11=
 FormatData/fr_CH/latn.NumberElements/11=.
+
+# tzdata2022f
+TimeZoneNames/en/America\/Ojinaga/1=Central Standard Time
+TimeZoneNames/en/America\/Chihuahua/1=Central Standard Time
