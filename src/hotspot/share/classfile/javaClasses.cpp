@@ -1909,7 +1909,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       if (java_lang_VirtualThread::is_instance(_java_thread())) {
         // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
         const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop() != java_lang_VirtualThread::continuation(_java_thread())) {
+        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
           return; // not mounted
         }
       } else {
@@ -4668,6 +4668,11 @@ void java_lang_ClassLoader::serialize_offsets(SerializeClosure* f) {
 oop java_lang_ClassLoader::parent(oop loader) {
   assert(is_instance(loader), "loader must be oop");
   return loader->obj_field(_parent_offset);
+}
+
+oop java_lang_ClassLoader::parent_no_keepalive(oop loader) {
+  assert(is_instance(loader), "loader must be oop");
+  return loader->obj_field_access<AS_NO_KEEPALIVE>(_parent_offset);
 }
 
 // Returns the name field of this class loader.  If the name field has not

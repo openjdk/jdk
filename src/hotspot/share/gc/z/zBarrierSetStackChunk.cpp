@@ -19,17 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-// key: compiler.err.raw.deconstruction.pattern
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
+#include "precompiled.hpp"
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zBarrierSetStackChunk.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
-class RawDeconstructionPattern {
-    boolean test(Object o) {
-        return o instanceof R(String s);
-    }
+void ZBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  // Do nothing
+}
 
-    record R<T>(T t) {}
+void ZBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  // Do nothing
+}
+
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
+  oop obj = Atomic::load(addr);
+  return ZBarrier::load_barrier_on_oop_field_preloaded((volatile oop*)NULL, obj);
+}
+
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
+  ShouldNotReachHere();
+  return NULL;
 }

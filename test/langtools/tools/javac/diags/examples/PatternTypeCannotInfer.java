@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,16 @@
  * questions.
  */
 
+// key: compiler.err.pattern.type.cannot.infer
+// key: compiler.warn.preview.feature.use.plural
+// key: compiler.misc.feature.deconstruction.patterns
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-/*
- * @test
- *
- * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001.
- * VM Testbase keywords: [quick, monitoring]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test checks that
- *         ThreadMXBean.resetPeakThreadCount()
- *     returns correct result.
- *     The test starts a couple of user threads and waits until they finish. After
- *     that, resetPeakThreadCount() is invoked to reset the peak. Then
- *     getPeakThreadCount() and getThreadCount() must return the same values. The
- *     preposition is that no threads are appered/disappeared between
- *     "getPeakThreadCount()" and getThreadCount()" calls.
- *     The test implements direct access to the metrics.
- * COMMENT
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
- */
-
+class PatternTypeCannotInfer {
+    interface A<T> {}
+    record R<T extends Number>() implements A<T> {}
+    void test(A<String> i) {
+        if (i instanceof R()) {
+        }
+    }
+}

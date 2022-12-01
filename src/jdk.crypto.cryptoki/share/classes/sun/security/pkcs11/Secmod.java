@@ -133,10 +133,10 @@ public final class Secmod {
     public synchronized boolean isInitialized() throws IOException {
         // NSS does not allow us to check if it is initialized already
         // assume that if it is loaded it is also initialized
-        if (isLoaded() == false) {
+        if (!isLoaded()) {
             return false;
         }
-        if (supported == false) {
+        if (!supported) {
             throw new IOException
                 ("An incompatible version of NSS is already loaded, "
                 + "3.7 or later required");
@@ -194,11 +194,11 @@ public final class Secmod {
             platformPath = platformLibName;
         } else {
             File base = new File(nssLibDir);
-            if (base.isDirectory() == false) {
+            if (!base.isDirectory()) {
                 throw new IOException("nssLibDir must be a directory:" + nssLibDir);
             }
             File platformFile = new File(base, platformLibName);
-            if (platformFile.isFile() == false) {
+            if (!platformFile.isFile()) {
                 throw new FileNotFoundException(platformFile.getPath());
             }
             platformPath = platformFile.getPath();
@@ -214,12 +214,12 @@ public final class Secmod {
                 configDirPath = configDirPathSB.substring(sqlPrefix.length());
             }
             File configBase = new File(configDirPath);
-            if (configBase.isDirectory() == false ) {
+            if (!configBase.isDirectory()) {
                 throw new IOException("configDir must be a directory: " + configDirPath);
             }
             if (!configDir.startsWith(sqlPrefix)) {
                 File secmodFile = new File(configBase, "secmod.db");
-                if (secmodFile.isFile() == false) {
+                if (!secmodFile.isFile()) {
                     throw new FileNotFoundException(secmodFile.getPath());
                 }
             }
@@ -229,7 +229,7 @@ public final class Secmod {
         nssHandle = nssLoadLibrary(platformPath);
         if (DEBUG) System.out.println("handle: " + nssHandle);
         fetchVersions();
-        if (supported == false) {
+        if (!supported) {
             throw new IOException
                 ("The specified version of NSS is incompatible, "
                 + "3.7 or later required");
@@ -239,7 +239,7 @@ public final class Secmod {
         boolean initok = nssInitialize(dbMode.functionName, nssHandle,
             configDir, nssOptimizeSpace);
         if (DEBUG) System.out.println("init: " + initok);
-        if (initok == false) {
+        if (!initok) {
             throw new IOException("NSS initialization failed");
         }
 
@@ -255,7 +255,7 @@ public final class Secmod {
      */
     public synchronized List<Module> getModules() {
         try {
-            if (isInitialized() == false) {
+            if (!isInitialized()) {
                 throw new IllegalStateException("NSS not initialized");
             }
         } catch (IOException e) {
@@ -353,35 +353,40 @@ public final class Secmod {
         return null;
     }
 
-    static final String TEMPLATE_EXTERNAL =
-        "library = %s\n"
-        + "name = \"%s\"\n"
-        + "slotListIndex = %d\n";
+    static final String TEMPLATE_EXTERNAL = """
+                    library = %s
+                    name = "%s"
+                    slotListIndex = %d
+                    """;
 
-    static final String TEMPLATE_TRUSTANCHOR =
-        "library = %s\n"
-        + "name = \"NSS Trust Anchors\"\n"
-        + "slotListIndex = 0\n"
-        + "enabledMechanisms = { KeyStore }\n"
-        + "nssUseSecmodTrust = true\n";
+    static final String TEMPLATE_TRUSTANCHOR = """
+                    library = %s
+                    name = "NSS Trust Anchors"
+                    slotListIndex = 0
+                    enabledMechanisms = { KeyStore }
+                    nssUseSecmodTrust = true
+                    """;
 
-    static final String TEMPLATE_CRYPTO =
-        "library = %s\n"
-        + "name = \"NSS SoftToken Crypto\"\n"
-        + "slotListIndex = 0\n"
-        + "disabledMechanisms = { KeyStore }\n";
+    static final String TEMPLATE_CRYPTO = """
+                    library = %s
+                    name = "NSS SoftToken Crypto"
+                    slotListIndex = 0
+                    disabledMechanisms = { KeyStore }
+                    """;
 
-    static final String TEMPLATE_KEYSTORE =
-        "library = %s\n"
-        + "name = \"NSS SoftToken KeyStore\"\n"
-        + "slotListIndex = 1\n"
-        + "nssUseSecmodTrust = true\n";
+    static final String TEMPLATE_KEYSTORE = """
+                    library = %s
+                    name = "NSS SoftToken KeyStore"
+                    slotListIndex = 1
+                    nssUseSecmodTrust = true
+                    """;
 
-    static final String TEMPLATE_FIPS =
-        "library = %s\n"
-        + "name = \"NSS FIPS SoftToken\"\n"
-        + "slotListIndex = 0\n"
-        + "nssUseSecmodTrust = true\n";
+    static final String TEMPLATE_FIPS = """
+                    library = %s
+                    name = "NSS FIPS SoftToken"
+                    slotListIndex = 0
+                    nssUseSecmodTrust = true
+                    """;
 
     /**
      * A representation of one PKCS#11 slot in a PKCS#11 module.
@@ -442,26 +447,13 @@ public final class Secmod {
         }
 
         private void initConfiguration() {
-            switch (type) {
-            case EXTERNAL:
-                config = String.format(TEMPLATE_EXTERNAL, libraryName,
-                                            commonName + " " + slot, slot);
-                break;
-            case CRYPTO:
-                config = String.format(TEMPLATE_CRYPTO, libraryName);
-                break;
-            case KEYSTORE:
-                config = String.format(TEMPLATE_KEYSTORE, libraryName);
-                break;
-            case FIPS:
-                config = String.format(TEMPLATE_FIPS, libraryName);
-                break;
-            case TRUSTANCHOR:
-                config = String.format(TEMPLATE_TRUSTANCHOR, libraryName);
-                break;
-            default:
-                throw new RuntimeException("Unknown module type: " + type);
-            }
+            config = switch (type) {
+                case EXTERNAL -> String.format(TEMPLATE_EXTERNAL, libraryName, commonName + " " + slot, slot);
+                case CRYPTO -> String.format(TEMPLATE_CRYPTO, libraryName);
+                case KEYSTORE -> String.format(TEMPLATE_KEYSTORE, libraryName);
+                case FIPS -> String.format(TEMPLATE_FIPS, libraryName);
+                case TRUSTANCHOR -> String.format(TEMPLATE_TRUSTANCHOR, libraryName);
+            };
         }
 
         /**
@@ -545,7 +537,7 @@ public final class Secmod {
                 trust.put(bytes, attr);
             } else {
                 // does it already have the correct trust settings?
-                if (attr.isTrusted(TrustType.ALL) == false) {
+                if (!attr.isTrusted(TrustType.ALL)) {
                     // XXX not yet implemented
                     throw new ProviderException("Cannot change existing trust attributes");
                 }
@@ -746,17 +738,16 @@ public final class Secmod {
             if (this == o) {
                 return true;
             }
-            if (o instanceof Bytes == false) {
+            if (!(o instanceof Bytes other)) {
                 return false;
             }
-            Bytes other = (Bytes)o;
             return Arrays.equals(this.b, other.b);
         }
     }
 
     private static Map<Bytes,TrustAttributes> getTrust(SunPKCS11 provider)
             throws PKCS11Exception {
-        Map<Bytes,TrustAttributes> trustMap = new HashMap<Bytes,TrustAttributes>();
+        Map<Bytes,TrustAttributes> trustMap = new HashMap<>();
         Token token = provider.getToken();
         Session session = null;
         boolean exceptionOccurred = true;

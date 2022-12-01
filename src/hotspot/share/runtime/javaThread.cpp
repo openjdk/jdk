@@ -1382,6 +1382,17 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (jvmti_thread_state() != NULL) {
     jvmti_thread_state()->oops_do(f, cf);
   }
+
+  // The continuation oops are really on the stack. But there is typically at most
+  // one of those per thread, so we handle them here in the oops_do_no_frames part
+  // so that we don't have to sprinkle as many stack watermark checks where these
+  // oops are used. We just need to make sure the thread has started processing.
+  ContinuationEntry* entry = _cont_entry;
+  while (entry != nullptr) {
+    f->do_oop((oop*)entry->cont_addr());
+    f->do_oop((oop*)entry->chunk_addr());
+    entry = entry->parent();
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
