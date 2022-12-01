@@ -33,17 +33,13 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 public class ManifestDirectoryCompression {
@@ -51,41 +47,23 @@ public class ManifestDirectoryCompression {
             ToolProvider.findFirst("jar")
                     .orElseThrow(() -> new RuntimeException("jar tool not found"));
 
-    private Path tempDir;
+    private static final String JAR_FILE_NAME = "test.jar";
+    private static final String FILE_NAME = "test.txt";
 
-    @BeforeMethod
-    private void setUp() throws Exception {
-        tempDir = Files.createTempDirectory("temp");
-    }
-
-    /** Remove dirs & files needed for test. */
     @AfterMethod
-    private void cleanup() {
-        deleteRecursively(tempDir);
-    }
-
-    private static void deleteRecursively(Path path) {
-        try {
-            if (Files.isDirectory(path)) {
-                try (Stream<Path> s = Files.list(path)) {
-                    s.forEach(p -> deleteRecursively(p));
-                }
-            }
-            Files.delete(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    private void cleanup() throws Exception {
+        Files.deleteIfExists(Path.of(JAR_FILE_NAME));
+        Files.deleteIfExists(Path.of(FILE_NAME));
     }
 
     @Test
-    public void run() throws Exception {
-        Path entryPath = Files.writeString(tempDir.resolve("test.txt"), "Some text...");
-        Path jar = tempDir.resolve("test.jar");
-        String[] jarArgs = new String[] {"cf", jar.toString(), entryPath.toString()};
+    public void testDirectoryCompressionMethod() throws Exception {
+        Files.writeString(Path.of(FILE_NAME), "Some text...");
+        String[] jarArgs = new String[] {"cf", JAR_FILE_NAME, FILE_NAME};
         if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
             fail("Could not create jar file: " + List.of(jarArgs));
         }
-        try (JarFile jarFile = new JarFile(jar.toFile())) {
+        try (JarFile jarFile = new JarFile(JAR_FILE_NAME)) {
             ZipEntry zipEntry = jarFile.getEntry("META-INF/");
             assertNotNull(zipEntry);
             assertEquals(zipEntry.getMethod(), ZipEntry.STORED);
