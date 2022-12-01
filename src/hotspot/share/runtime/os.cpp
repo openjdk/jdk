@@ -726,7 +726,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     if (new_outer_ptr == NULL) {
       // realloc(3) failed and the block still exists.
       // We have however marked it as dead, revert this change.
-      header->mark_block_as_alive();
+      header->revive();
       return nullptr;
     }
     // realloc(3) succeeded, variable header now points to invalid memory and we need to record the free:ing

@@ -122,7 +122,6 @@ class MallocHeader {
   void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
  public:
-  MallocHeader(const MallocHeader&) = default;
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
 
   inline size_t   size()  const { return _size; }
@@ -135,7 +134,7 @@ class MallocHeader {
     return FreePackage{this->size(), this->flags(), this->mst_marker()};
   }
   inline void mark_block_as_dead();
-  inline void mark_block_as_alive();
+  inline void revive();
 
   // If block is broken, fill in a short descriptive text in out,
   // an option pointer to the corruption in p_corruption, and return false.
