@@ -29,7 +29,6 @@
  * @modules jdk.httpserver
  * @library /test/lib
  * @enablePreview
- * @compile HttpALot.java
  * @comment This test runs with -Dsun.net.httpserver.nodelay=true to enable TCP_NODELAY on the
  *          sockets "accept()"ed by the HttpServer. This is to avoid occasional 40ms delays
  *          receiving responses from the server on Linux.

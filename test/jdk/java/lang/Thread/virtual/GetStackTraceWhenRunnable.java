@@ -26,7 +26,6 @@
  * @summary Test Thread::getStackTrace on a virtual thread that is runnable-unmounted
  * @requires vm.continuations
  * @enablePreview
- * @compile GetStackTraceWhenRunnable.java
  * @run main/othervm -Djdk.virtualThreadScheduler.maxPoolSize=1 GetStackTraceWhenRunnable
  */
 

@@ -41,7 +41,6 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
  * @enablePreview
- * @compile TestThreadSleepEvent.java
  * @run main/othervm jdk.jfr.event.runtime.TestThreadSleepEvent
  */
 public class TestThreadSleepEvent {

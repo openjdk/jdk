@@ -42,7 +42,6 @@ import jdk.test.lib.jfr.Events;
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @enablePreview
- * @compile TestNestedVirtualThreads.java
  * @run main/othervm jdk.jfr.threading.TestNestedVirtualThreads
  */
 public class TestNestedVirtualThreads {
