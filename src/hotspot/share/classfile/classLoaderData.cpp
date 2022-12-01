@@ -50,7 +50,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -824,6 +824,7 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
       _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
+    ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
   }
@@ -1010,6 +1011,19 @@ void ClassLoaderData::print_on(outputStream* out) const {
 
 void ClassLoaderData::print() const { print_on(tty); }
 
+class VerifyHandleOops : public OopClosure {
+ public:
+  virtual void do_oop(oop* p) {
+    if (p != nullptr && *p != nullptr) {
+      oop o = *p;
+      if (!java_lang_Class::is_instance(o)) {
+        guarantee(oopDesc::is_oop(o), "Should be some oop");
+      }
+    }
+  }
+  virtual void do_oop(narrowOop* o) { ShouldNotReachHere(); }
+};
+
 void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);
   oop cl = class_loader();
@@ -1033,6 +1047,19 @@ void ClassLoaderData::verify() {
   if (_modules != NULL) {
     _modules->verify();
   }
+
+  if (_deallocate_list != nullptr) {
+    for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
+      Metadata* m = _deallocate_list->at(i);
+      if (m->is_klass()) {
+        ((InstanceKlass*)m)->verify();
+      }
+    }
+  }
+
+  // Check the oops in the handles area
+  VerifyHandleOops vho;
+  oops_do(&vho, _claim_none, false);
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {

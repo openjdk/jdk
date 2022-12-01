@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,13 @@ public:
     // Allow "this" to be junk if copy is empty; needed by initialization of
     // raw memory in hashtables.
     assert(is_empty() || copy.is_empty(), "can only copy if empty");
+    _obj = copy._obj;
+    return *this;
+  }
+
+  OopHandle& assign_handle(const OopHandle& copy) {
+    // Assignment is used by RedefineClasses for java_mirror to temporarily
+    // replace the mirror in the scratch class.
     _obj = copy._obj;
     return *this;
   }
