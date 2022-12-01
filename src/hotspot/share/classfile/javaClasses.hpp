@@ -1476,6 +1476,7 @@ class java_lang_ClassLoader : AllStatic {
   static void release_set_loader_data(oop loader, ClassLoaderData* new_data);
 
   static oop parent(oop loader);
+  static oop parent_no_keepalive(oop loader);
   static oop name(oop loader);
   static oop nameAndId(oop loader);
   static bool isAncestor(oop loader, oop cl);
