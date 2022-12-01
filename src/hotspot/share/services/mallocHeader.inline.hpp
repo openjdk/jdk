@@ -54,6 +54,7 @@ inline void MallocHeader::revive() {
   set_footer(_footer_canary_life_mark);
 }
 
+// The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
