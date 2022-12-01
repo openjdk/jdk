@@ -102,7 +102,7 @@ public class TestLinkOption extends JavadocTester {
                 "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code>",
                 """
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
                      transformation format of ISO 10646</i></a></li>
                     <li><a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
