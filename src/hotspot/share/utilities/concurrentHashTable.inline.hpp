@@ -33,6 +33,7 @@
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalCounter.inline.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 
@@ -486,7 +487,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // table. Can do this in parallel if we want.
   assert((is_mt && _resize_lock_owner != NULL) ||
          (!is_mt && _resize_lock_owner == thread), "Re-size lock not held");
-  Node* ndel[BULK_DELETE_LIMIT];
+  Node* ndel_stack[BULK_DELETE_LIMIT];
   InternalTable* table = get_table();
   assert(start_idx < stop_idx, "Must be");
   assert(stop_idx <= _table->_size, "Must be");
@@ -511,7 +512,8 @@ inline void ConcurrentHashTable<CONFIG, F>::
     // We left critical section but the bucket cannot be removed while we hold
     // the _resize_lock.
     bucket->lock();
-    size_t nd = delete_check_nodes(bucket, eval_f, BULK_DELETE_LIMIT, ndel);
+    GrowableArrayCHeap<Node*, F> extra(0);
+    size_t nd = delete_check_nodes(bucket, eval_f, BULK_DELETE_LIMIT, ndel_stack, extra);
     bucket->unlock();
     if (is_mt) {
       GlobalCounter::write_synchronize();
@@ -519,10 +521,11 @@ inline void ConcurrentHashTable<CONFIG, F>::
       write_synchonize_on_visible_epoch(thread);
     }
     for (size_t node_it = 0; node_it < nd; node_it++) {
-      del_f(ndel[node_it]->value());
-      Node::destroy_node(_context, ndel[node_it]);
+      Node* ndel = node_it < BULK_DELETE_LIMIT ? ndel_stack[node_it] : extra.at(node_it - BULK_DELETE_LIMIT);
+      del_f(ndel->value());
+      Node::destroy_node(_context, ndel);
       JFR_ONLY(safe_stats_remove();)
-      DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
+      DEBUG_ONLY(ndel = (Node*)POISON_PTR;)
     }
     cs_context = GlobalCounter::critical_section_begin(thread);
   }
@@ -982,20 +985,21 @@ template <typename CONFIG, MEMFLAGS F>
 template <typename EVALUATE_FUNC>
 inline size_t ConcurrentHashTable<CONFIG, F>::
   delete_check_nodes(Bucket* bucket, EVALUATE_FUNC& eval_f,
-                     size_t num_del, Node** ndel)
+                     size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, F>& extra)
 {
   size_t dels = 0;
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
-  while (rem_n != NULL) {
+  for (dels = 0; rem_n != nullptr; ++dels) {
     if (eval_f(rem_n->value())) {
-      ndel[dels++] = rem_n;
+      if (dels < num_del) {
+        ndel[dels] = rem_n;
+      } else {
+        extra.append(rem_n);
+      }
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
       rem_n = next_node;
-      if (dels == num_del) {
-        break;
-      }
     } else {
       rem_n_prev = rem_n->next_ptr();
       rem_n = rem_n->next();

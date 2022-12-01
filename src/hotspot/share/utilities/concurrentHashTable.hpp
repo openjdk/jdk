@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/tableStatistics.hpp"
 
 // A mostly concurrent-hash-table where the read-side is wait-free, inserts are
@@ -349,7 +350,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Check for dead items in a bucket.
   template <typename EVALUATE_FUNC>
   size_t delete_check_nodes(Bucket* bucket, EVALUATE_FUNC& eval_f,
-                            size_t num_del, Node** ndel);
+                            size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, F>& ndel_heap);
 
   // Check for dead items in this table. During shrink/grow we cannot guarantee
   // that we only visit nodes once. To keep it simple caller will have locked
