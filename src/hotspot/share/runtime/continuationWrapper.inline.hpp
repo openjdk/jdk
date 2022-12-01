@@ -79,7 +79,7 @@ public:
   void done() {
     allow_safepoint(); // must be done first
     _continuation = nullptr;
-    _tail = (stackChunkOop)badOop;
+    *reinterpret_cast<intptr_t*>(&_tail) = badHeapOopVal;
   }
 
   class SafepointOp : public StackObj {
@@ -149,8 +149,6 @@ inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continua
   {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
-  assert(_continuation == _entry->cont_oop(), "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: "
-         INTPTR_FORMAT, p2i((oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop()), p2i(entrySP()));
   disallow_safepoint();
   read();
 }

@@ -120,7 +120,7 @@ public class TestTagOrder extends JavadocTester {
         expectMethod.put("@see", """
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list">
+                <ul class="tag-list">
                 <li><a href="http://example.com">example</a></li>
                 </ul>
                 </dd>
@@ -144,7 +144,7 @@ public class TestTagOrder extends JavadocTester {
         expectClass.put("@see", """
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list">
+                <ul class="tag-list">
                 <li><a href="http://example.com">example</a></li>
                 </ul>
                 </dd>
