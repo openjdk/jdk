@@ -295,7 +295,7 @@ class MallocTracker : AllStatic {
   // Returns the outer pointer to this block.
   static void* record_free_block(void* memblock);
   // Record a free.
-  static void record_free(FreePackage free_package);
+  static void record_free(MallocHeader::FreeInfo free_info);
 
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);

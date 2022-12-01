@@ -87,13 +87,6 @@ class outputStream;
  *   the bytes are stored individually.
  */
 
-// Contains all of the necessary data to record a free().
-struct FreePackage {
-  const size_t size;
-  const MEMFLAGS flags;
-  const uint32_t mst_marker;
-};
-
 class MallocHeader {
 
   NOT_LP64(uint32_t _alt_canary);
@@ -122,6 +115,13 @@ class MallocHeader {
   void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
  public:
+  // Contains all of the necessary data to to deaccount block with NMT.
+  struct FreeInfo {
+    const size_t size;
+    const MEMFLAGS flags;
+    const uint32_t mst_marker;
+  };
+
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
 
   inline size_t   size()  const { return _size; }
@@ -130,8 +130,8 @@ class MallocHeader {
   bool get_stack(NativeCallStack& stack) const;
 
   // Return the necessary data to record the block this belongs to as freed
-  FreePackage free_package() {
-    return FreePackage{this->size(), this->flags(), this->mst_marker()};
+  FreeInfo free_info() {
+    return FreeInfo{this->size(), this->flags(), this->mst_marker()};
   }
   inline void mark_block_as_dead();
   inline void revive();

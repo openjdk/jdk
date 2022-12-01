@@ -109,9 +109,9 @@ class MemTracker : AllStatic {
     assert(enabled(), "NMT must be enabled");
     return MallocTracker::record_free_block(memblock);
   }
-  static inline void record_free(FreePackage free_package) {
+  static inline void record_free(MallocHeader::FreeInfo free_info) {
     assert(enabled(), "NMT must be enabled");
-    MallocTracker::record_free(free_package);
+    MallocTracker::record_free(free_info);
   }
 
   // Record creation of an arena

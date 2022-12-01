@@ -199,17 +199,17 @@ void* MallocTracker::record_free_block(void* memblock) {
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();
 
-  record_free(header->free_package());
+  record_free(header->free_info());
 
   header->mark_block_as_dead();
 
   return (void*)header;
 }
 
-void MallocTracker::record_free(FreePackage free_package) {
-  MallocMemorySummary::record_free(free_package.size, free_package.flags);
+void MallocTracker::record_free(MallocHeader::FreeInfo free_info) {
+  MallocMemorySummary::record_free(free_info.size, free_info.flags);
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(free_package.size, free_package.mst_marker);
+    MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
   }
 }
 

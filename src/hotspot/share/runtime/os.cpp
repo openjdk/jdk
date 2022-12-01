@@ -717,7 +717,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     MallocHeader* header = MallocTracker::malloc_header(memblock);
     header->assert_block_integrity(); // Assert block hasn't been tampered with.
-    const FreePackage free_package = header->free_package();
+    const MallocHeader::FreeInfo free_info = header->free_info();
     header->mark_block_as_dead();
 
     // the real realloc
@@ -730,14 +730,14 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
     // realloc(3) succeeded, variable header now points to invalid memory and we need to record the free:ing
-    MemTracker::record_free(free_package);
+    MemTracker::record_free(free_info);
 
     // After a successful realloc(3), we re-account the resized block with its new size
     // to NMT. This re-instantiates the NMT header.
     void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
 #ifdef ASSERT
-    size_t old_size = free_package.size;
+    size_t old_size = free_info.size;
     if (old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
