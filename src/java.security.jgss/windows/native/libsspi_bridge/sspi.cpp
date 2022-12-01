@@ -47,8 +47,6 @@
 #define SECURITY_WIN32
 #include <sspi.h>
 
-#pragma comment(lib, "secur32.lib")
-
 // Otherwise an exception will be thrown
 #define new new (std::nothrow)
 
@@ -895,7 +893,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     gss_buffer_desc tn;
     gss_display_name(&minor, target_name, &tn, NULL);
     int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)tn.value, (int)tn.length,
-            outName, sizeof(outName) - 1);
+            outName, (sizeof(outName) / sizeof(outName[0])) - 1);
     if (len == 0) {
         goto err;
     }

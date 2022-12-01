@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class Instrumentor {
     }
 
     public synchronized Instrumentor addNativeMethodTrackingInjection(String prefix, Consumer<InstrHelper> injector) {
-        instrumentingVisitor = new ClassVisitor(Opcodes.ASM7, instrumentingVisitor) {
+        instrumentingVisitor = new ClassVisitor(Opcodes.ASM9, instrumentingVisitor) {
             private final Set<Consumer<ClassVisitor>> wmGenerators = new HashSet<>();
             private String className;
 

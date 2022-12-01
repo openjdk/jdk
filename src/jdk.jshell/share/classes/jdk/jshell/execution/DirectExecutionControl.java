@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,11 @@ public class DirectExecutionControl implements ExecutionControl {
         loaderDelegate.classesRedefined(cbcs);
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     @Override
     public String invoke(String className, String methodName)
             throws RunException, InternalException, EngineTerminationException {
@@ -133,6 +138,11 @@ public class DirectExecutionControl implements ExecutionControl {
         }
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     @Override
     public String varValue(String className, String varName)
             throws RunException, EngineTerminationException, InternalException {
@@ -173,6 +183,13 @@ public class DirectExecutionControl implements ExecutionControl {
         throw new NotImplementedException("stop: Not supported.");
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     * @throws ExecutionControl.EngineTerminationException {@inheritDoc}
+     * @throws ExecutionControl.NotImplementedException {@inheritDoc}
+     */
     @Override
     public Object extensionCommand(String command, Object arg)
             throws RunException, EngineTerminationException, InternalException {

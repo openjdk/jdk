@@ -53,7 +53,7 @@ class ObjectMonitorsHashtable {
  private:
   // ResourceHashtable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void*, PtrList*, 1031, ResourceObj::C_HEAP, mtThread,
+  typedef ResourceHashtable<void*, PtrList*, 1031, AnyObj::C_HEAP, mtThread,
                             &ObjectMonitorsHashtable::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
@@ -63,7 +63,7 @@ class ObjectMonitorsHashtable {
   // ResourceHashtable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
-  ObjectMonitorsHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable), _key_count(0), _om_count(0) {}
+  ObjectMonitorsHashtable() : _ptrs(new (mtThread) PtrTable), _key_count(0), _om_count(0) {}
 
   ~ObjectMonitorsHashtable();
 
@@ -178,7 +178,6 @@ class ObjectSynchronizer : AllStatic {
 
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
-  static intptr_t identity_hash_value_for(Handle obj);
   static intptr_t FastHashCode(Thread* current, oop obj);
 
   // java.lang.Thread support

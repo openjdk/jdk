@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,8 @@ public class MLetContent {
                 att += "/";
             }
             try {
-                baseURL = new URL(documentURL, att);
+                @SuppressWarnings("deprecation")
+                var _unused = baseURL = new URL(documentURL, att);
             } catch (MalformedURLException e) {
                 // OK : Move to next block as baseURL could not be initialized.
             }
@@ -112,7 +113,8 @@ public class MLetContent {
             int i = file.lastIndexOf('/');
             if (i >= 0 && i < file.length() - 1) {
                 try {
-                    baseURL = new URL(documentURL, file.substring(0, i + 1));
+                    @SuppressWarnings("deprecation")
+                    var _unused = baseURL = new URL(documentURL, file.substring(0, i + 1));
                 } catch (MalformedURLException e) {
                     // OK : Move to next block as baseURL could not be initialized.
                 }

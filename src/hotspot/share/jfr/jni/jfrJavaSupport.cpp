@@ -45,6 +45,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
@@ -624,6 +625,23 @@ JfrJavaSupport::CAUSE JfrJavaSupport::cause() {
 
 const char* const JDK_JFR_MODULE_NAME = "jdk.jfr";
 const char* const JDK_JFR_PACKAGE_NAME = "jdk/jfr";
+
+
+
+void JfrJavaSupport::load_jdk_jfr_module(TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+  Handle h_module_name = java_lang_String::create_from_str(JDK_JFR_MODULE_NAME, CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+    vmClasses::module_Modules_klass(),
+    vmSymbols::loadModule_name(),
+    vmSymbols::loadModule_signature(),
+    h_module_name,
+    CHECK
+  );
+}
 
 static bool is_jdk_jfr_module_in_readability_graph() {
   // take one of the packages in the module to be located and query for its definition.

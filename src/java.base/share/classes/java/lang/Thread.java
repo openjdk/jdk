@@ -52,7 +52,6 @@ import jdk.internal.vm.ExtentLocalContainer;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -63,11 +62,16 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * virtual machine allows an application to have multiple threads of
  * execution running concurrently.
  *
- * <p> {@code Thread} defines constructors and a {@link Builder} to create threads
- * that execute {@link Runnable} tasks. {@linkplain  #start() Starting} a thread
- * schedules it to execute concurrently with the thread that caused it to start.
- * The newly started thread invokes the task's {@link Runnable#run() run} method.
- * Thread defines the {@link #join() join} method to wait for a thread to terminate.
+ * <p> {@code Thread} defines constructors and a {@link Builder} to create threads.
+ * {@linkplain #start() Starting} a thread schedules it to execute its {@link #run() run}
+ * method. The newly started thread executes concurrently with the thread that caused
+ * it to start.
+ *
+ * <p> A thread <i>terminates</i> if either its {@code run} method completes normally,
+ * or if its {@code run} method completes abruptly and the appropriate {@linkplain
+ * Thread.UncaughtExceptionHandler uncaught exception handler} completes normally or
+ * abruptly. With no code left to run, the thread has completed execution. The
+ * {@link #join() join} method can be used to wait for a thread to terminate.
  *
  * <p> Threads have a unique {@linkplain #threadId() identifier} and a {@linkplain
  * #getName() name}. The identifier is generated when a {@code Thread} is created
@@ -94,11 +98,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <p> Platform threads are designated <i>daemon</i> or <i>non-daemon</i> threads.
  * When the Java virtual machine starts up, there is usually one non-daemon
  * thread (the thread that typically calls the application's {@code main} method).
- * The Java virtual machine terminates when all started non-daemon threads have
- * terminated. Unstarted non-daemon threads do not prevent the Java virtual machine
- * from terminating. The Java virtual machine can also be terminated by invoking
- * the {@linkplain Runtime#exit(int)} method, in which case it will terminate even
- * if there are non-daemon threads still running.
+ * The <a href="Runtime.html#shutdown">shutdown sequence</a> begins when all started
+ * non-daemon threads have terminated. Unstarted non-daemon threads do not prevent
+ * the shutdown sequence from beginning.
  *
  * <p> In addition to the daemon status, platform threads have a {@linkplain
  * #getPriority() thread priority} and are members of a {@linkplain ThreadGroup
@@ -124,9 +126,10 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <p> Virtual threads do not have a thread name by default. The {@link #getName()
  * getName} method returns the empty string if a thread name is not set.
  *
- * <p> Virtual threads are daemon threads and so do not prevent the Java virtual
- * machine from terminating. Virtual threads have a fixed {@linkplain #getPriority()
- * thread priority} that cannot be changed.
+ * <p> Virtual threads are daemon threads and so do not prevent the
+ * <a href="Runtime.html#shutdown">shutdown sequence</a> from beginning.
+ * Virtual threads have a fixed {@linkplain #getPriority() thread priority}
+ * that cannot be changed.
  *
  * <h2>Creating and starting threads</h2>
  *
@@ -2200,10 +2203,10 @@ public class Thread implements Runnable {
 
     /**
      * Marks this thread as either a <i>daemon</i> or <i>non-daemon</i> thread.
-     * The Java virtual machine terminates when all started non-daemon threads have
-     * terminated.
+     * The <a href="Runtime.html#shutdown">shutdown sequence</a> begins when all
+     * started non-daemon threads have terminated.
      *
-     * The daemon status of a virtual thread is always {@code true} and cannot be
+     * <p> The daemon status of a virtual thread is always {@code true} and cannot be
      * changed by this method to {@code false}.
      *
      * <p> This method must be invoked before the thread is started. The behavior

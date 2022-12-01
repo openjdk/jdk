@@ -175,10 +175,9 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (subscriber == null) {
                     // can't process anything yet
                     return;
-                } else {
-                    if (debug.on()) debug.log("subscribing user subscriber");
-                    subscriber.onSubscribe(userSubscription);
                 }
+                if (debug.on()) debug.log("subscribing user subscriber");
+                subscriber.onSubscribe(userSubscription);
             }
             while (!inputQ.isEmpty()) {
                 Http2Frame frame = inputQ.peek();
@@ -344,7 +343,6 @@ class Stream<T> extends ExchangeImpl<T> {
     Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
         Http2StreamResponseSubscriber<T> subscriber =
                 new Http2StreamResponseSubscriber<>(handler.apply(response));
-        registerResponseSubscriber(subscriber);
         return subscriber;
     }
 
@@ -355,8 +353,8 @@ class Stream<T> extends ExchangeImpl<T> {
         client().registerSubscriber(subscriber);
     }
 
-    private void subscriberCompleted(Http2StreamResponseSubscriber<?> subscriber) {
-        client().subscriberCompleted(subscriber);
+    private void unregisterResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        client().unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -418,7 +416,7 @@ class Stream<T> extends ExchangeImpl<T> {
             responseBodyCF.completeExceptionally(t);
         }
 
-        // ensure that the body subscriber will be subsribed and onError() is
+        // ensure that the body subscriber will be subscribed and onError() is
         // invoked
         pendingResponseSubscriber = bodySubscriber;
         sched.runOrSchedule(); // in case data waiting already to be processed, or error
@@ -535,9 +533,9 @@ class Stream<T> extends ExchangeImpl<T> {
             Flow.Subscriber<?> subscriber =
                     responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
             if (response == null && subscriber == null) {
-                // we haven't receive the headers yet, and won't receive any!
+                // we haven't received the headers yet, and won't receive any!
                 // handle reset now.
-                handleReset(frame, subscriber);
+                handleReset(frame, null);
             } else {
                 // put it in the input queue in order to read all
                 // pending data frames first. Indeed, a server may send
@@ -751,9 +749,14 @@ class Stream<T> extends ExchangeImpl<T> {
         hdrs.setHeader(":method", method);
         URI uri = request.uri();
         hdrs.setHeader(":scheme", uri.getScheme());
-        // TODO: userinfo deprecated. Needs to be removed
-        hdrs.setHeader(":authority", uri.getAuthority());
-        // TODO: ensure header names beginning with : not in user headers
+        String host = uri.getHost();
+        int port = uri.getPort();
+        assert host != null;
+        if (port != -1) {
+            hdrs.setHeader(":authority", host + ":" + port);
+        } else {
+            hdrs.setHeader(":authority", host);
+        }
         String query = uri.getRawQuery();
         String path = uri.getRawPath();
         if (path == null || path.isEmpty()) {
@@ -1539,12 +1542,21 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
+        protected void onSubscribed() {
+            registerResponseSubscriber(this);
+        }
+
+        @Override
         protected void complete(Throwable t) {
             try {
-                Stream.this.subscriberCompleted(this);
+                unregisterResponseSubscriber(this);
             } finally {
                 super.complete(t);
             }
+        }
+        @Override
+        protected void onCancel() {
+            unregisterResponseSubscriber(this);
         }
     }
 

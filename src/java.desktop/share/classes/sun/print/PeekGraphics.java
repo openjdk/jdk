@@ -1634,7 +1634,7 @@ public class PeekGraphics extends Graphics2D
     /**
      * Composes a Transform object with the transform in this
      * Graphics2D according to the rule last-specified-first-applied.
-     * If the currrent transform is Cx, the result of composition
+     * If the current transform is Cx, the result of composition
      * with Tx is a new transform Cx'.  Cx' becomes the current
      * transform for this Graphics2D.
      * Transforming a point p by the updated transform Cx' is
@@ -1690,7 +1690,7 @@ public class PeekGraphics extends Graphics2D
 
     /**
      * Sets the background color in this context used for clearing a region.
-     * When Graphics2D is constructed for a component, the backgroung color is
+     * When Graphics2D is constructed for a component, the background color is
      * inherited from the component. Setting the background color in the
      * Graphics2D context only affects the subsequent clearRect() calls and
      * not the background color of the component. To change the background

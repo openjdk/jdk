@@ -177,13 +177,9 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
 }
 
 bool NMTDCmd::check_detail_tracking_level(outputStream* out) {
-  if (MemTracker::tracking_level() == NMT_detail) {
-    return true;
-  } else if (MemTracker::cmdline_tracking_level() == NMT_detail) {
-    out->print_cr("Tracking level has been downgraded due to lack of resources");
-    return false;
-  } else {
+  if (MemTracker::tracking_level() != NMT_detail) {
     out->print_cr("Detail tracking is not enabled");
     return false;
   }
+  return true;
 }

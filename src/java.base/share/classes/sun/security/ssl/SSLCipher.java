@@ -1670,17 +1670,6 @@ enum SSLCipher {
             }
 
             @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
             int estimateFragmentSize(int packetSize, int headerSize) {
                 return packetSize - headerSize - recordIvSize - tagSize;
             }
@@ -1791,17 +1780,6 @@ enum SSLCipher {
                 }
 
                 return len + nonce.length;
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
             }
 
             @Override
@@ -1967,17 +1945,6 @@ enum SSLCipher {
             }
 
             @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
             int estimateFragmentSize(int packetSize, int headerSize) {
                 return packetSize - headerSize - tagSize;
             }
@@ -2094,17 +2061,6 @@ enum SSLCipher {
                     keyLimitCountdown -= len;
                 }
                 return len;
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
             }
 
             @Override
@@ -2236,17 +2192,6 @@ enum SSLCipher {
             }
 
             @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
             int estimateFragmentSize(int packetSize, int headerSize) {
                 return packetSize - headerSize - tagSize;
             }
@@ -2362,17 +2307,6 @@ enum SSLCipher {
                 }
 
                 return len;
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
             }
 
             @Override
@@ -2527,17 +2461,6 @@ enum SSLCipher {
             }
 
             @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
-            }
-
-            @Override
             int estimateFragmentSize(int packetSize, int headerSize) {
                 return packetSize - headerSize - tagSize;
             }
@@ -2655,17 +2578,6 @@ enum SSLCipher {
                     keyLimitCountdown -= len;
                 }
                 return len;
-            }
-
-            @Override
-            void dispose() {
-                if (cipher != null) {
-                    try {
-                        cipher.doFinal();
-                    } catch (Exception e) {
-                        // swallow all types of exceptions.
-                    }
-                }
             }
 
             @Override

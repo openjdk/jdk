@@ -56,10 +56,6 @@ bool register_jfr_dcmds() {
   return true;
 }
 
-static bool is_module_available(outputStream* output, TRAPS) {
-  return JfrJavaSupport::is_jdk_jfr_module_available(output, THREAD);
-}
-
 static bool is_disabled(outputStream* output) {
   if (Jfr::is_disabled()) {
     if (output != NULL) {
@@ -72,7 +68,28 @@ static bool is_disabled(outputStream* output) {
 
 static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  return is_disabled(out) || !is_module_available(out, THREAD);
+  if (is_disabled(out)) {
+    return true;
+  }
+  if (!JfrJavaSupport::is_jdk_jfr_module_available()) {
+    JfrJavaSupport::load_jdk_jfr_module(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // Log exception here, but let is_jdk_jfr_module_available(out, THREAD)
+      // handle output to the user.
+      ResourceMark rm(THREAD);
+      oop throwable = PENDING_EXCEPTION;
+      assert(throwable != nullptr, "invariant");
+      oop msg = java_lang_Throwable::message(throwable);
+      if (msg != nullptr) {
+        char* text = java_lang_String::as_utf8_string(msg);
+        if (text != nullptr) {
+          log_debug(jfr, startup)("Flight Recorder can not be enabled. %s", text);
+        }
+      }
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
+  return !JfrJavaSupport::is_jdk_jfr_module_available(out, THREAD);
 }
 
 static void handle_pending_exception(outputStream* output, bool startup, oop throwable) {
@@ -239,7 +256,7 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
                                                         false,
                                                         true, // a DcmdFramework "option"
                                                         false);
-  for (int i = 0; i < array->max_length(); ++i) {
+  for (int i = 0; i < array->capacity(); ++i) {
     array->append(dummy);
   }
 }

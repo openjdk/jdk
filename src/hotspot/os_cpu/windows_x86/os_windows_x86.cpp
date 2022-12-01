@@ -23,12 +23,12 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_x86.hpp"
@@ -564,8 +564,4 @@ void os::verify_stack_alignment() {
 int os::extra_bang_size_in_bytes() {
   // JDK-8050147 requires the full cache line bang for x86.
   return VM_Version::L1_line_size();
-}
-
-bool os::supports_sse() {
-  return true;
 }

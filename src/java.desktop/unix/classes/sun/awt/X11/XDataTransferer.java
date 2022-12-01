@@ -151,7 +151,7 @@ public class XDataTransferer extends DataTransferer {
 
     @Override
     protected Long getFormatForNativeAsLong(String str) {
-        // Just get the atom. If it has already been retrived
+        // Just get the atom. If it has already been retrieved
         // once, we'll get a copy so this should be very fast.
         return XAtom.get(str).getAtom();
     }

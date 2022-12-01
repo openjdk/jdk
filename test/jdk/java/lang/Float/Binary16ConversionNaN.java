@@ -26,6 +26,9 @@
  * @bug 8289551
  * @requires (os.arch != "x86" & os.arch != "i386") | vm.opt.UseSSE == "null" | vm.opt.UseSSE > 0
  * @summary Verify NaN sign and significand bits are preserved across conversions
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileThresholdScaling=0.1 Binary16ConversionNaN
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions
+ * -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 Binary16ConversionNaN
  */
 
 /*

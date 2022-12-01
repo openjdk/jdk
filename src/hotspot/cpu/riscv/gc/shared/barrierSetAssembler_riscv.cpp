@@ -193,6 +193,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     return;
   }
 
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
+
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
 

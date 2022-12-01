@@ -346,14 +346,6 @@ public:
   }
 
   static unsigned int hash_for_shared_dictionary(address ptr);
-
-#if INCLUDE_CDS_JAVA_HEAP
-private:
-  static void update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict);
-  static void update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict);
-public:
-  static void update_archived_mirror_native_pointers() NOT_CDS_RETURN;
-#endif
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

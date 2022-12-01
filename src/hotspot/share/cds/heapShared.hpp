@@ -160,6 +160,7 @@ private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
   static DumpedInternedStrings *_dumped_interned_strings;
+  static GrowableArrayCHeap<Metadata**, mtClassShared>* _native_pointers;
 
 public:
   static unsigned oop_hash(oop const& p);
@@ -182,14 +183,14 @@ private:
 
   typedef ResourceHashtable<oop, CachedOopInfo,
       36137, // prime number
-      ResourceObj::C_HEAP,
+      AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   typedef ResourceHashtable<oop, oop,
       36137, // prime number
-      ResourceObj::C_HEAP,
+      AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> OriginalObjectTable;
   static OriginalObjectTable* _original_object_table;
@@ -197,7 +198,7 @@ private:
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
                                137, // prime number
-                               ResourceObj::C_HEAP,
+                               AnyObj::C_HEAP,
                                mtClassShared,
                                DumpTimeSharedClassTable_hash> {
   public:
@@ -253,7 +254,7 @@ private:
 
   typedef ResourceHashtable<oop, bool,
       15889, // prime number
-      ResourceObj::C_HEAP,
+      AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> SeenObjectsTable;
 
@@ -264,7 +265,7 @@ private:
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == NULL, "must be");
-    _seen_objects_table = new (ResourceObj::C_HEAP, mtClass)SeenObjectsTable();
+    _seen_objects_table = new (mtClass)SeenObjectsTable();
   }
   static void delete_seen_objects_table() {
     assert(_seen_objects_table != NULL, "must be");
@@ -311,14 +312,16 @@ private:
   static void init_loaded_heap_relocation(LoadedArchiveHeapRegion* reloc_info,
                                           int num_loaded_regions);
   static void fill_failed_loaded_region();
+  static void mark_native_pointers(oop orig_obj, oop archived_obj);
+  static void mark_one_native_pointer(oop archived_obj, int offset);
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache(bool create_orig_table) {
     _archived_object_cache =
-      new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();
+      new (mtClass)ArchivedObjectCache();
     if (create_orig_table) {
       _original_object_table =
-        new (ResourceObj::C_HEAP, mtClass)OriginalObjectTable();
+        new (mtClass)OriginalObjectTable();
     } else {
       _original_object_table = NULL;
     }
@@ -359,7 +362,8 @@ private:
                                             oop orig_obj,
                                             bool is_closed_archive);
 
-  static ResourceBitMap calculate_oopmap(MemRegion region);
+  static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
+  static ResourceBitMap calculate_ptrmap(MemRegion region); // marks all the native pointers
   static void add_to_dumped_interned_strings(oop string);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
@@ -406,7 +410,8 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_root(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
   static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   // Returns the address of a heap object when it's mapped at the
@@ -422,7 +427,7 @@ private:
 class DumpedInternedStrings :
   public ResourceHashtable<oop, bool,
                            15889, // prime number
-                           ResourceObj::C_HEAP,
+                           AnyObj::C_HEAP,
                            mtClassShared,
                            HeapShared::string_oop_hash>
 {};

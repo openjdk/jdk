@@ -56,6 +56,7 @@ import sun.util.logging.PlatformLogger;
  * @see MouseMotionAdapter
  *
  * @since 1.1
+ * @sealedGraph
  */
 public abstract sealed class InputEvent extends ComponentEvent
     permits KeyEvent,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ public abstract class AbstractEventStream implements EventStream {
     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
     private final List<Configuration> configurations;
     private final ParserState parserState = new ParserState();
-    private volatile Thread thread;
     private Dispatcher dispatcher;
     private boolean daemon = false;
 
@@ -214,14 +213,13 @@ public abstract class AbstractEventStream implements EventStream {
     public final void startAsync(long startNanos) {
         startInternal(startNanos);
         Runnable r = () -> run(accessControllerContext);
-        thread = SecuritySupport.createThreadWitNoPermissions(nextThreadName(), r);
+        Thread thread = SecuritySupport.createThreadWitNoPermissions(nextThreadName(), r);
         SecuritySupport.setDaemonThread(thread, daemon);
         thread.start();
     }
 
     public final void start(long startNanos) {
         startInternal(startNanos);
-        thread = Thread.currentThread();
         run(accessControllerContext);
     }
 
