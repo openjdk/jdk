@@ -88,7 +88,7 @@ class outputStream;
  */
 
 class MallocHeader {
-
+  NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
