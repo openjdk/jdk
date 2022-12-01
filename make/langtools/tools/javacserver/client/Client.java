@@ -37,6 +37,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javacserver.server.Server;
 import javacserver.shared.PortFileInaccessibleException;
 import javacserver.shared.Protocol;
 import javacserver.shared.Result;
@@ -137,7 +138,7 @@ public class Client {
     }
 
     /*
-     * Fork a server process process and wait for server to come around
+     * Fork a server process and wait for server to come around
      */
     private void startNewServer() throws IOException, InterruptedException {
         List<String> cmd = new ArrayList<>();
@@ -145,7 +146,7 @@ public class Client {
         // the server
         cmd.addAll(Arrays.asList(conf.javaCommand().split(" ")));
         // javacserver.server.Server is the server main class
-        cmd.add("javacserver.server.Server");
+        cmd.add(Server.class.getName());
         // and it expects a port file path
         cmd.add(conf.portFile().getFilename());
 

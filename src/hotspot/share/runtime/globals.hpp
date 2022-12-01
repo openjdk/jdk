@@ -323,6 +323,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAESCTRIntrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
+  product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for the vectorized version of ChaCha20")          \
+                                                                            \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \
                                                                             \

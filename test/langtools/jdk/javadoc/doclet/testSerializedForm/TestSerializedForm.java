@@ -71,7 +71,7 @@ public class TestSerializedForm extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><code>TestSerializedForm</code></li>
                     </ul>
                     </dd>

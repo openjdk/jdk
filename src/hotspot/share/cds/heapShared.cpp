@@ -833,7 +833,7 @@ void HeapShared::write_subgraph_info_table() {
 #endif
 }
 
-void HeapShared::serialize(SerializeClosure* soc) {
+void HeapShared::serialize_root(SerializeClosure* soc) {
   oop roots_oop = NULL;
 
   if (soc->reading()) {
@@ -849,6 +849,9 @@ void HeapShared::serialize(SerializeClosure* soc) {
     roots_oop = roots();
     soc->do_oop(&roots_oop); // write to archive
   }
+}
+
+void HeapShared::serialize_tables(SerializeClosure* soc) {
 
 #ifndef PRODUCT
   soc->do_ptr((void**)&_archived_ArchiveHeapTestClass);

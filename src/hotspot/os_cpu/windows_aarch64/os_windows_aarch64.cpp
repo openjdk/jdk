@@ -52,7 +52,6 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
-
 // put OS-includes here
 # include <sys/types.h>
 # include <signal.h>
