@@ -149,7 +149,9 @@ jobs:
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
       apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386'
-      extra-conf-options: '--with-target-bits=32'
+      # Let linux-x86 double as the platform which also builds docs
+      make-target: 'product-bundles test-bundles docs-bundles'
+      extra-conf-options: '--with-target-bits=32 --enable-full-docs'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x86 == 'true'
