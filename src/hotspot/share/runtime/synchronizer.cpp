@@ -1544,13 +1544,14 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
                           deleted_count, ls, &timer);
       }
     }
+    assert(unlinked_count == deleted_count, "must be");
   }
 
   if (ls != NULL) {
     timer.stop();
-    if (deflated_count != 0 || unlinked_count != 0 || deleted_count != 0 || log_is_enabled(Debug, monitorinflation)) {
-      ls->print_cr("deflated_count=" SIZE_FORMAT ", unlinked_count=" SIZE_FORMAT ", deleted_count=" SIZE_FORMAT " monitors in %3.7f secs",
-                   deflated_count, unlinked_count, deleted_count, timer.seconds());
+    if (deflated_count != 0 || unlinked_count != 0 || log_is_enabled(Debug, monitorinflation)) {
+      ls->print_cr("deflated_count=" SIZE_FORMAT ", {unlinked,deleted}_count=" SIZE_FORMAT " monitors in %3.7f secs",
+                   deflated_count, unlinked_count, timer.seconds());
     }
     ls->print_cr("end deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
                  in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
