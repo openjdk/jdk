@@ -1089,7 +1089,7 @@ class LambdaForm {
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
-        @Stable MethodHandle invoker;
+        private @Stable MethodType type;
 
         NamedFunction(MethodHandle resolvedHandle) {
             this(resolvedHandle.internalMemberName(), resolvedHandle);
@@ -1185,10 +1185,6 @@ class LambdaForm {
             Object rval;
             try {
                 traceInterpreter("[ call", this, arguments);
-                if (invoker == null) {
-                    traceInterpreter("| getInvoker", this);
-                    invoker();
-                }
                 // resolvedHandle might be uninitialized, ok for tracing
                 if (resolvedHandle == null) {
                     traceInterpreter("| resolve", this);
@@ -1204,17 +1200,24 @@ class LambdaForm {
         }
 
         private MethodHandle invoker() {
-            if (invoker != null)  return invoker;
-            // Get an invoker and cache it.
-            return invoker = computeInvoker(methodType().form());
+            return computeInvoker(methodType().form());
         }
 
         MethodType methodType() {
-            if (resolvedHandle != null)
+            MethodType type = this.type;
+            if (type == null) {
+                this.type = type = calculateMethodType(member, resolvedHandle);
+            }
+            return type;
+        }
+
+        private static MethodType calculateMethodType(MemberName member, MethodHandle resolvedHandle) {
+            if (resolvedHandle != null) {
                 return resolvedHandle.type();
-            else
+            } else {
                 // only for certain internal LFs during bootstrapping
                 return member.getInvocationType();
+            }
         }
 
         MemberName member() {
