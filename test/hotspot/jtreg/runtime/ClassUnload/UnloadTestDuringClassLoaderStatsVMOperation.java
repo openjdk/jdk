@@ -22,21 +22,20 @@
  */
 
 /*
- * @test Class unloading test while triggering execution of ClassLoaderStats VM operations
- * @summary Make sure class unloading occur even if ClassLoaderStats VM operations are executed
+ * @test Make sure class unloading occur even if ClassLoaderStats VM operations are executed
+ * @bug 8297427
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @library classes
+ * @library /test/lib classes
  * @build jdk.test.whitebox.WhiteBox test.Empty test.LoadInParent test.LoadInChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc*,class+unload=debug UnloadTestDuringClassLoaderStatsVMOperation
  */
-import jdk.test.whitebox.WhiteBox;
-
+import java.lang.ref.Reference;
 import java.net.URLClassLoader;
 
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import jdk.test.whitebox.WhiteBox;
 
 public class UnloadTestDuringClassLoaderStatsVMOperation {
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
@@ -47,12 +46,11 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
 
     public static void main(String args[]) throws Exception {
         // Create a thread forcing ClassLoaderStats VM operations.
-        Runnable task = () -> {
+        var clsThread = new Thread(() -> {
             while (true) {
                 wb.forceClassLoaderStatsSafepoint();
             }
-        };
-        var clsThread = new Thread(task);
+        });
         clsThread.setDaemon(true);
         clsThread.start();
 
@@ -72,10 +70,12 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), className + " should be loaded and live");
 
-        // Printing the object to ensure the class is kept alive. If the test
+        // Using reachabilityFence() to ensure the object is live. If the test
         // is run with -Xcomp and ergonomically triggered GCs occur the class
         // could otherwise be unloaded before verified to be alive above.
-        System.out.println("testClassIsUnloaded loaded klass: " + className + " and created object: " + object);
+        Reference.reachabilityFence(object);
+
+        System.out.println("testClassIsUnloaded loaded klass: " + className);
 
         // Make class unloadable.
         classLoader = null;
@@ -103,11 +103,14 @@ public class UnloadTestDuringClassLoaderStatsVMOperation {
         ClassUnloadCommon.failIf(!wb.isClassAlive(parentClassName), parentClassName + " should be loaded and live");
         ClassUnloadCommon.failIf(!wb.isClassAlive(childClassName), childClassName + " should be loaded and live");
 
-        // Printing the objects to ensure the classes are kept alive. If the test
+        // Using reachabilityFence() to ensure the objects are live. If the test
         // is run with -Xcomp and ergonomically triggered GCs occur they could
         // otherwise be unloaded before verified to be alive above.
-        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedParent + " and created object: " + parent);
-        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedChild + " and created object: " + child);
+        Reference.reachabilityFence(parent);
+        Reference.reachabilityFence(child);
+
+        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedParent);
+        System.out.println("testClassLoadedInParentIsUnloaded loaded klass: " + loadedChild);
 
         // Clear to allow unloading.
         parentClassLoader = null;
