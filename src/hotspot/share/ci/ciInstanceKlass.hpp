@@ -76,11 +76,9 @@ private:
   //   A ciInstanceKlass that's not itself: one implementor.
   //   Itself: more than one implementor.
   ciInstanceKlass*       _implementor;
-  GrowableArray<ciInstanceKlass*>* _transitive_interfaces;
 
   void compute_injected_fields();
   bool compute_injected_fields_helper();
-  void compute_transitive_interfaces();
 
 protected:
   ciInstanceKlass(Klass* k);
@@ -294,7 +292,6 @@ public:
   bool has_trusted_loader() const {
     return _has_trusted_loader;
   }
-  GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
 
   // Replay support
 
