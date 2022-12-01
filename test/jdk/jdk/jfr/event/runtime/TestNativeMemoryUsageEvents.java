@@ -43,7 +43,7 @@ import jdk.test.lib.jfr.Events;
  * @modules jdk.jfr
  *          jdk.management
  * @run main/othervm -XX:NativeMemoryTracking=summary -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents true
- * @run main/othervm -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
+ * @run main/othervm -XX:NativeMemoryTracking=off -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
  */
 public class TestNativeMemoryUsageEvents {
     private final static String UsagePartEvent = EventNames.NativeMemoryUsagePart;
