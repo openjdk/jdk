@@ -50,21 +50,25 @@ public class TextComponentTextEventTest {
     private volatile static Dimension textCompSize;
 
     private static void initializeGUI() {
-        frame = new Frame("Test Frame");
-        frame.setLayout(new FlowLayout());
         TextField textField = new TextField(20);
         textField.addTextListener((event) -> {
             textChanged = true;
             System.out.println("TextField got a text event: " + event);
         });
-        frame.add(textField);
+
         TextArea textArea = new TextArea(5, 15);
         textArea.addTextListener((event) -> {
             System.out.println("TextArea got a text event: " + event);
             textChanged = true;
         });
+
         components = new TextComponent[] { textField, textArea };
-        frame.add(textArea);
+
+        frame = new Frame("Test Frame");
+        frame.setLayout(new FlowLayout());
+        for (TextComponent textComp : components) {
+            frame.add(textComp);
+        }
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -73,13 +77,11 @@ public class TextComponentTextEventTest {
     public static void main(String[] args) throws Exception {
         try {
             EventQueue.invokeAndWait(TextComponentTextEventTest::initializeGUI);
-
             robot = new Robot();
             robot.setAutoDelay(100);
             robot.setAutoWaitForIdle(true);
 
             for (TextComponent textComp : components) {
-
                 robot.waitForIdle();
                 EventQueue.invokeAndWait(() -> {
                     textCompAt = textComp.getLocationOnScreen();
@@ -113,8 +115,7 @@ public class TextComponentTextEventTest {
                         "FAIL: TextEvent triggered when Enter pressed on "+ textComp);
                 } else if (textComp instanceof TextArea && !textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent not triggered when Enter pressed on "
-                            + textComp);
+                        "FAIL: TextEvent not triggered when Enter pressed on "+ textComp);
                 }
 
                 textChanged = false;
@@ -130,8 +131,7 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent triggered when selection made in "
-                            + textComp);
+                        "FAIL: TextEvent triggered when selection made in "+ textComp);
                 }
 
                 textChanged = false;
@@ -140,8 +140,7 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent triggered when F3 pressed on "
-                            + textComp);
+                        "FAIL: TextEvent triggered when F3 pressed on "+ textComp);
                 }
             }
             System.out.println("Test passed!");
