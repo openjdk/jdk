@@ -115,8 +115,6 @@ public class Poly1305IntrinsicFuzzTest {
                                 break;
                         case 3: // ByteArray without backing array (wont be sent to intrinsic)
                                 buf = ByteBuffer.wrap(message, offset, len)
-                                                //.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-                                                // .order(java.nio.ByteOrder.BIG_ENDIAN)
                                                 .asReadOnlyBuffer()
                                                 .order(java.nio.ByteOrder.LITTLE_ENDIAN);
                                 authenticator.engineUpdate(buf);
