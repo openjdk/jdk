@@ -62,8 +62,10 @@ public abstract class AbstractEventStream implements EventStream {
     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
     private final List<Configuration> configurations;
     private final ParserState parserState = new ParserState();
+    private volatile boolean closeOnComplete = true;
     private Dispatcher dispatcher;
     private boolean daemon = false;
+
 
     AbstractEventStream(@SuppressWarnings("removal") AccessControlContext acc, List<Configuration> configurations) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
@@ -105,6 +107,13 @@ public abstract class AbstractEventStream implements EventStream {
     // Only used if -Xlog:jfr+event* is specified
     public final void setDaemon(boolean daemon) {
         this.daemon = daemon;
+    }
+
+    // When set to false, it becomes the callers responsibility
+    // to invoke close() and clean up resources. By default,
+    // the resource is cleaned up when the process() call has finished.
+    public final void setCloseOnComplete(boolean closeOnComplete) {
+        this.closeOnComplete = closeOnComplete;
     }
 
     @Override
@@ -258,7 +267,9 @@ public abstract class AbstractEventStream implements EventStream {
         } finally {
             Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, "Execution of stream ended.");
             try {
-                close();
+                if (closeOnComplete) {
+                    close();
+                }
             } finally {
                 terminated.countDown();
             }
