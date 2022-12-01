@@ -39,16 +39,16 @@
 #include "utilities/macros.hpp"
 #include "gc/shared/oopStorage.hpp"
 
-JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj): _obj(obj) {}
+JvmtiTagMapKey::JvmtiTagMapKey(oop obj): _obj(obj) {}
 
-JvmtiTagMapEntry::JvmtiTagMapEntry(const JvmtiTagMapEntry& src) {
+JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
    // move object into WeakHandle when copying into the table
    assert(src._obj != nullptr, "must be set");
    _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
    _obj = nullptr;
  }
 
-JvmtiTagMapEntry::~JvmtiTagMapEntry() {
+JvmtiTagMapKey::~JvmtiTagMapKey() {
    // If obj is set null it out, this is called for stack object on lookup,
    // and it should not have a WeakHandle created for it yet.
    if (_obj != nullptr) {
@@ -59,12 +59,12 @@ JvmtiTagMapEntry::~JvmtiTagMapEntry() {
   }
 }
 
-oop JvmtiTagMapEntry::object() const {
+oop JvmtiTagMapKey::object() const {
   assert(_obj == nullptr, "Must have a handle and not object");
   return _wh.resolve();
 }
 
-oop JvmtiTagMapEntry::object_no_keepalive() const {
+oop JvmtiTagMapKey::object_no_keepalive() const {
   assert(_obj == nullptr, "Must have a handle and not object");
   return _wh.peek();
 }
@@ -75,7 +75,7 @@ JvmtiTagMapTable::JvmtiTagMapTable()
 
 void JvmtiTagMapTable::clear() {
   struct RemoveAll {
-    bool do_entry(JvmtiTagMapEntry   & entry, jlong const &  tag)
+    bool do_entry(JvmtiTagMapKey   & entry, jlong const &  tag)
     {
       return true;
     }
@@ -90,17 +90,20 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
 }
 
 jlong JvmtiTagMapTable::find(oop obj) {
-   //if (obj->fast_no_hash_check()) {
-   //  return 0;
-   //} else {
-     JvmtiTagMapEntry jtme(obj);
+   if (is_empty()) {
+    return 0;
+   }
+   if (obj->fast_no_hash_check()) {
+    return 0;
+   } else {
+     JvmtiTagMapKey jtme(obj);
      jlong* found = _table.get(jtme);
      return found == NULL ? 0 : *found;
-   //}
+   }
  }
 
 bool JvmtiTagMapTable::add(oop obj, jlong tag) {
-  JvmtiTagMapEntry new_entry(obj);
+  JvmtiTagMapKey new_entry(obj);
   bool is_added = false;
   _table.put_if_absent(new_entry, tag, &is_added);
   assert(is_added, "should be added");
@@ -108,18 +111,18 @@ bool JvmtiTagMapTable::add(oop obj, jlong tag) {
 }
 
 bool JvmtiTagMapTable::update(oop obj, jlong tag) {
-  JvmtiTagMapEntry new_entry(obj);
+  JvmtiTagMapKey new_entry(obj);
   bool is_updated =  _table.put(new_entry, tag) == false;
   assert(is_updated, "should be updated and not added");
   return is_updated;
 }
 
 bool JvmtiTagMapTable::remove(oop obj) {
-  JvmtiTagMapEntry jtme(obj);
+  JvmtiTagMapKey jtme(obj);
   return _table.remove(jtme);
 }
 
-void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
+void JvmtiTagMapTable::entry_iterate(JvmtiTagMapKeyClosure* closure) {
   _table.iterate(closure);
 }
 
@@ -131,7 +134,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   struct IsDead {
     GrowableArray<jlong>* _objects;
     IsDead(GrowableArray<jlong>* objects) : _objects(objects) {}
-    bool do_entry(JvmtiTagMapEntry const & entry, jlong tag) {
+    bool do_entry(JvmtiTagMapKey const & entry, jlong tag) {
       if (entry.object_no_keepalive() == NULL) {
         if (_objects!=NULL) {
           _objects->append(tag);

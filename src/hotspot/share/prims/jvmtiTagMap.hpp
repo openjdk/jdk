@@ -32,7 +32,7 @@
 
 class JvmtiEnv;
 class JvmtiTagMapTable;
-class JvmtiTagMapEntryClosure;
+class JvmtiTagMapKeyClosure;
 
 class JvmtiTagMap :  public CHeapObj<mtInternal> {
  private:
@@ -53,7 +53,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
 
   void check_hashmap(GrowableArray<jlong>* objects);
 
-  void entry_iterate(JvmtiTagMapEntryClosure* closure);
+  void entry_iterate(JvmtiTagMapKeyClosure* closure);
 
  public:
   // indicates if this tag map is locked

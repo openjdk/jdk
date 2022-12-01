@@ -125,7 +125,7 @@ JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
 }
 
 // iterate over all entries in the tag map.
-void JvmtiTagMap::entry_iterate(JvmtiTagMapEntryClosure* closure) {
+void JvmtiTagMap::entry_iterate(JvmtiTagMapKeyClosure* closure) {
   hashmap()->entry_iterate(closure);
 }
 
@@ -1231,7 +1231,7 @@ void JvmtiTagMap::flush_object_free_events() {
 
 // support class for get_objects_with_tags
 
-class TagObjectCollector : public JvmtiTagMapEntryClosure {
+class TagObjectCollector : public JvmtiTagMapKeyClosure {
  private:
   JvmtiEnv* _env;
   JavaThread* _thread;
@@ -1263,7 +1263,7 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
   // - if it matches then we create a JNI local reference to the object
   // and record the reference and tag value.
   //
-  bool do_entry(JvmtiTagMapEntry& key , jlong& value ) {
+  bool do_entry(JvmtiTagMapKey& key , jlong& value ) {
     for (int i = 0; i < _tag_count; i++) {
       if (_tags[i] == value) {
         // The reference in this tag map could be the only (implicitly weak)

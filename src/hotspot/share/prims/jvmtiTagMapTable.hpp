@@ -32,29 +32,36 @@
 #include "utilities/resizeableResourceHash.hpp"
 
 class JvmtiEnv;
-class JvmtiTagMapEntryClosure;
+class JvmtiTagMapKeyClosure;
 
-class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
+// The oop is needed for lookup rather than creating a WeakHandle during
+// lookup because the HeapWalker may walk soon to be dead objects and
+// creating a WeakHandle for an otherwise dead object makes G1 unhappy.
+//
+// This class is the Key type for inserting in ResizeableResourceHashTable
+// Its get_hash() and equals() methods are also used for getting the hash
+// value of a Key and comparing two Keys, respectively.
+class JvmtiTagMapKey : public CHeapObj<mtInternal> {
    WeakHandle _wh;
    oop _obj; // temporarily hold obj while searching
 
   public:
-   JvmtiTagMapEntry(oop obj);
-   JvmtiTagMapEntry(const JvmtiTagMapEntry& src);
-   JvmtiTagMapEntry& operator=(JvmtiTagMapEntry const&) = delete;
+   JvmtiTagMapKey(oop obj);
+   JvmtiTagMapKey(const JvmtiTagMapKey& src);
+   JvmtiTagMapKey& operator=(JvmtiTagMapKey const&) = delete;
 
-   ~JvmtiTagMapEntry();
+   ~JvmtiTagMapKey();
 
   void resolve();
   oop object() const;
   oop object_no_keepalive() const;
 
-  static unsigned get_hash(JvmtiTagMapEntry const &entry)  {
+  static unsigned get_hash(JvmtiTagMapKey const &entry)  {
     assert(entry._obj != NULL, "must lookup obj to hash");
     return entry._obj->identity_hash();
   }
 
-  static bool equals(JvmtiTagMapEntry const & lhs, JvmtiTagMapEntry const & rhs) {
+  static bool equals(JvmtiTagMapKey const & lhs, JvmtiTagMapKey const & rhs) {
     oop lhs_obj = lhs._obj != nullptr ? lhs._obj : lhs.object_no_keepalive();
     oop rhs_obj = rhs._obj != nullptr ? rhs._obj : rhs.object_no_keepalive();
     return lhs_obj == rhs_obj;
@@ -62,10 +69,10 @@ class JvmtiTagMapEntry : public CHeapObj<mtInternal> {
 };
 
   typedef
-  ResizeableResourceHashtable <JvmtiTagMapEntry, jlong,
+  ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
                                AnyObj::C_HEAP, mtInternal,
-                               JvmtiTagMapEntry::get_hash,
-                               JvmtiTagMapEntry::equals> ResizableResourceHT;
+                               JvmtiTagMapKey::get_hash,
+                               JvmtiTagMapKey::equals> ResizableResourceHT;
 
 class JvmtiTagMapTable : public CHeapObj<mtInternal> {
   enum Constants {
@@ -89,7 +96,7 @@ public:
   bool remove(oop obj);
 
   // iterate over all entries in the hashmap
-  void entry_iterate(JvmtiTagMapEntryClosure* closure);
+  void entry_iterate(JvmtiTagMapKeyClosure* closure);
 
   bool is_empty() const { return _table.number_of_entries() == 0; }
 
@@ -99,9 +106,9 @@ public:
 };
 
 // A supporting class for iterating over all entries in Hashmap
-class JvmtiTagMapEntryClosure {
+class JvmtiTagMapKeyClosure {
   public:
-  virtual bool do_entry(JvmtiTagMapEntry& key , jlong& value) = 0;
+  virtual bool do_entry(JvmtiTagMapKey& key , jlong& value) = 0;
 };
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP
