@@ -3182,25 +3182,16 @@ void TypePtr::InterfaceSet::compute_hash() {
   _hash = hash;
 }
 
-static int compare_interfaces(ciKlass** k1, ciKlass** k2) {
-  return (int)((*k1)->ident() - (*k2)->ident());
-}
-
 void TypePtr::InterfaceSet::dump(outputStream *st) const {
   if (_list.length() == 0) {
     return;
   }
-  ResourceMark rm;
   st->print(" (");
-  GrowableArray<ciKlass*> interfaces;
-  interfaces.appendAll(&_list);
-  // Sort the interfaces so they are listed in the same order from one run to the other of the same compilation
-  interfaces.sort(compare_interfaces);
-  for (int i = 0; i < interfaces.length(); i++) {
+  for (int i = 0; i < _list.length(); i++) {
     if (i > 0) {
       st->print(",");
     }
-    ciKlass* k = interfaces.at(i);
+    ciKlass* k = _list.at(i);
     k->print_name_on(st);
   }
   st->print(")");
