@@ -63,15 +63,14 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
             Optional<Documentation> result = docFinder.search((ExecutableElement) holder,
                     m -> Result.fromOptional(extract(utils, m))).toOptional();
             if (result.isPresent()) {
-                ExecutableElement m = result.get().method();
-                tags = utils.getSpecTrees(m);
-                e = m;
+                e = result.get().method();
+                tags = result.get().specTrees();
             }
         }
         return writer.specTagOutput(e, tags);
     }
 
-    private record Documentation(List<? extends SpecTree> seeTrees, ExecutableElement method) { }
+    private record Documentation(List<? extends SpecTree> specTrees, ExecutableElement method) { }
 
     private static Optional<Documentation> extract(Utils utils, ExecutableElement method) {
         List<? extends SpecTree> tags = utils.getSpecTrees(method);

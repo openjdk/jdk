@@ -155,6 +155,11 @@ public class BigIntegerModuloP implements IntegerFieldModuloP {
         public void asByteArray(byte[] result) {
             bigIntAsByteArray(v, result);
         }
+
+        @Override
+        public long[] getLimbs() {
+            return null;
+        }
     }
 
     private class ImmutableElement extends Element
@@ -258,13 +263,6 @@ public class BigIntegerModuloP implements IntegerFieldModuloP {
             v = BigInteger.ZERO.subtract(v);
             return this;
         }
-
-        @Override
-        public MutableElement setReduced() {
-            // do nothing
-            return this;
-        }
-
     }
 
     private class SmallElement extends ImmutableElement implements SmallValue {
