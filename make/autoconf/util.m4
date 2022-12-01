@@ -64,9 +64,10 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
       )
     ])
 
-    # WARNING: Below this comment, you will find actual demons in the foreach block below waiting to rip your very soul out and destroy everything you hold dear
+    # WARNING: Underneath this comment, you will find actual demons in the foreach block below waiting to rip your very soul out and destroy everything you hold dear
     # Proceed at the risk of your own sanity, and don't say I didn't warn you when you inevitably suffer the same torment that I went through should you decide
-    # that you need to dive into it to fix anything ~Julian
+    # that you need to dive into it to fix anything
+    # ~Julian
     m4_foreach([arg], m4_dquote(m4_dquote_elt($3)), [
       m4_if(m4_index(arg, [: ]), -1, [m4_define([arg], m4_dquote(m4_bpatsubst(m4_dquote(arg), [:], [: ])))])
       m4_define(arg_name, m4_substr(arg, 0, m4_index(arg, [: ])))
