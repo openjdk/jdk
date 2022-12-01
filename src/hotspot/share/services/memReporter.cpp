@@ -21,6 +21,7 @@
  * questions.
  *
  */
+#include "cds/filemap.hpp"
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -30,8 +31,6 @@
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include "cds/filemap.hpp"
 
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
@@ -44,13 +43,16 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
 void MemReporterBase::print_total(size_t reserved, size_t committed) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
-    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
+                  amount_in_current_scale(reserved), scale,
+                  amount_in_current_scale(committed), scale);
 }
 
 void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s, readonly=" SIZE_FORMAT "%s",
-    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale, amount_in_current_scale(read_only), scale);
+                  amount_in_current_scale(reserved), scale,
+                  amount_in_current_scale(committed), scale,
+                  amount_in_current_scale(read_only), scale);
 }
 
 void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
@@ -114,11 +116,11 @@ void MemSummaryReporter::report() {
   size_t total_committed_amount = total_malloced_bytes + total_mmap_committed_bytes;
 
   size_t read_only_bytes = 0;
-  FileMapInfo* c = FileMapInfo::current_info();
-  FileMapRegion* r = c->region_at(MetaspaceShared::ro);
-  if (r->read_only()) {
-    read_only_bytes = r->used();
-  }
+  //FileMapInfo* c = FileMapInfo::current_info();
+  //FileMapRegion* r = c->region_at(MetaspaceShared::ro);
+  FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
+  assert(r->read_only(), "Region should be read only");
+  read_only_bytes = r->used();
 
   // Overall total
   out->print_cr("\nNative Memory Tracking:\n");
