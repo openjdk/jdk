@@ -71,7 +71,7 @@ import static sun.nio.ch.sctp.ResultContainer.SHUTDOWN;
 /**
  * An implementation of an SctpChannel
  */
-public class SctpChannelImpl extends SctpChannel
+public final class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {
     private final FileDescriptor fd;

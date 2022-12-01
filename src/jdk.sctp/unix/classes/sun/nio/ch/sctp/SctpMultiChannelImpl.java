@@ -68,7 +68,7 @@ import static sun.nio.ch.sctp.ResultContainer.*;
 /**
  * An implementation of SctpMultiChannel
  */
-public class SctpMultiChannelImpl extends SctpMultiChannel
+public final class SctpMultiChannelImpl extends SctpMultiChannel
     implements SelChImpl
 {
     private final FileDescriptor fd;

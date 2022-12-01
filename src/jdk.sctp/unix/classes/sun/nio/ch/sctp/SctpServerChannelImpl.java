@@ -53,7 +53,7 @@ import sun.nio.ch.Util;
 /**
  * An implementation of SctpServerChannel
  */
-public class SctpServerChannelImpl extends SctpServerChannel
+public final class SctpServerChannelImpl extends SctpServerChannel
     implements SelChImpl
 {
     private final FileDescriptor fd;
