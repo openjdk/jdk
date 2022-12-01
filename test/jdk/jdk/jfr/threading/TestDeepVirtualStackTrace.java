@@ -43,7 +43,6 @@ import jdk.test.lib.jfr.Events;
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @enablePreview
- * @compile TestDeepVirtualStackTrace.java
  * @run main/othervm -XX:FlightRecorderOptions:stackdepth=2048
  *      jdk.jfr.threading.TestDeepVirtualStackTrace
  */

@@ -44,7 +44,6 @@ import jdk.test.lib.Asserts;
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @enablePreview
- * @compile TestManyVirtualThreads.java
  * @run main/othervm jdk.jfr.threading.TestManyVirtualThreads
  */
 public class TestManyVirtualThreads {
