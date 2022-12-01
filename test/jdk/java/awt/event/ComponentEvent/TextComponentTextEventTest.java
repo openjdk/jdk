@@ -46,8 +46,8 @@ public class TextComponentTextEventTest {
     private static Robot robot = null;
     private volatile static TextComponent[] components;
     private volatile static boolean textChanged = false;
-    private volatile static Point textFieldAt;
-    private volatile static Dimension textFieldSize;
+    private volatile static Point textCompAt;
+    private volatile static Dimension textCompSize;
 
     private static void initializeGUI() {
         frame = new Frame("Test Frame");
@@ -60,12 +60,10 @@ public class TextComponentTextEventTest {
         frame.add(textField);
         TextArea textArea = new TextArea(5, 15);
         textArea.addTextListener((event) -> {
-            System.out.println("TextArea Got a text event: " + event);
+            System.out.println("TextArea got a text event: " + event);
             textChanged = true;
         });
-
         components = new TextComponent[] { textField, textArea };
-
         frame.add(textArea);
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -84,12 +82,12 @@ public class TextComponentTextEventTest {
 
                 robot.waitForIdle();
                 EventQueue.invokeAndWait(() -> {
-                    textFieldAt = textComp.getLocationOnScreen();
-                    textFieldSize = textComp.getSize();
+                    textCompAt = textComp.getLocationOnScreen();
+                    textCompSize = textComp.getSize();
                 });
 
-                robot.mouseMove(textFieldAt.x + textFieldSize.width / 2,
-                    textFieldAt.y + textFieldSize.height / 2);
+                robot.mouseMove(textCompAt.x + textCompSize.width / 2,
+                    textCompAt.y + textCompSize.height / 2);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
@@ -112,8 +110,7 @@ public class TextComponentTextEventTest {
                 robot.waitForIdle();
                 if (textComp instanceof TextField && textChanged) {
                     throw new RuntimeException(
-                        "FAIL: TextEvent triggered when Enter pressed on in "
-                            + textComp);
+                        "FAIL: TextEvent triggered when Enter pressed on "+ textComp);
                 } else if (textComp instanceof TextArea && !textChanged) {
                     throw new RuntimeException(
                         "FAIL: TextEvent not triggered when Enter pressed on "
@@ -121,12 +118,12 @@ public class TextComponentTextEventTest {
                 }
 
                 textChanged = false;
-                robot.mouseMove(textFieldAt.x + 4, textFieldAt.y + 10);
+                robot.mouseMove(textCompAt.x + 4, textCompAt.y + 10);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                for (int i = 0; i < textFieldSize.width / 2; i++) {
-                    robot.mouseMove(textFieldAt.x + 4 + i, textFieldAt.y + 10);
+                for (int i = 0; i < textCompSize.width / 2; i++) {
+                    robot.mouseMove(textCompAt.x + 4 + i, textCompAt.y + 10);
                 }
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
@@ -147,7 +144,6 @@ public class TextComponentTextEventTest {
                             + textComp);
                 }
             }
-
             System.out.println("Test passed!");
         } finally {
             EventQueue.invokeAndWait(TextComponentTextEventTest::disposeFrame);
