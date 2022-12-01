@@ -25,12 +25,7 @@
 
 /*
  * @test
-<<<<<<< HEAD
  * @summary Check secondary error handling
-=======
- * @bug 8065895
- * @summary Synchronous signals during error reporting may terminate or hang VM process
->>>>>>> master
  * @library /test/lib
  * @requires vm.debug
  * @requires os.family != "windows"
