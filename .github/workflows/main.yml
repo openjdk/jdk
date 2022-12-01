@@ -35,7 +35,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64'
+        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -65,6 +65,7 @@ jobs:
       macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
       windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
+      docs: ${{ steps.include.outputs.docs }}
 
     steps:
         # This function must be inlined in main.yml, or we'd be forced to checkout the repo
@@ -118,6 +119,7 @@ jobs:
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
           echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
+          echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
 
   ###
   ### Build jobs
@@ -149,9 +151,7 @@ jobs:
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
       apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386'
-      # Let linux-x86 double as the platform which also builds docs
-      make-target: 'product-bundles test-bundles docs-bundles'
-      extra-conf-options: '--with-target-bits=32 --enable-full-docs'
+      extra-conf-options: '--with-target-bits=32'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x86 == 'true'
@@ -279,6 +279,22 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-aarch64 == 'true'
+
+  build-docs:
+    name: docs
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      debug-levels: '[ "release" ]'
+      make-target: 'docs-jdk-bundles'
+      # Creating full docs require us to build the entire JDK (for the module graphs)
+      extra-conf-options: '--disable-full-docs'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.docs == 'true'
 
   ###
   ### Test jobs
