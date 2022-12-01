@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,45 +21,53 @@
  * questions.
  */
 
+import javax.imageio.ImageIO;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.DisplayMode;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
-/**
+/*
  * @test
  * @key headful
  * @bug 8003173 7019055
  * @summary Full-screen windows should have the proper insets.
- * @author Sergey Bylokhov
+ * @run main FullScreenInsets
  */
 public final class FullScreenInsets {
 
     private static boolean passed = true;
     private static Robot robot = null;
+    private static int deviceCount = 0;
+    private static final float TOLERANCE = 10;
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         final GraphicsEnvironment ge = GraphicsEnvironment
                 .getLocalGraphicsEnvironment();
         final GraphicsDevice[] devices = ge.getScreenDevices();
+        System.out.println("No. of Screen Devices: "+ devices.length + "\n");
 
-        final Window wGreen = new Frame();
+        final Frame wGreen = new Frame();
         wGreen.setBackground(Color.GREEN);
+        wGreen.setUndecorated(true);
         wGreen.setSize(300, 300);
         wGreen.setVisible(true);
         sleep();
         final Insets iGreen = wGreen.getInsets();
         final Dimension sGreen = wGreen.getSize();
 
-        final Window wRed = new Frame();
+        final Frame wRed = new Frame();
         wRed.setBackground(Color.RED);
+        wRed.setUndecorated(true);
         wRed.setSize(300, 300);
         wRed.setVisible(true);
         sleep();
@@ -70,15 +78,16 @@ public final class FullScreenInsets {
             if (!device.isFullScreenSupported()) {
                 continue;
             }
+            System.out.println("Testing on Screen Device# "+ deviceCount++);
             device.setFullScreenWindow(wGreen);
             sleep();
-            testWindowBounds(device.getDisplayMode(), wGreen);
-            testColor(wGreen, Color.GREEN);
+            testWindowBounds(device.getFullScreenWindow().getBounds(), wGreen);
+            testColor(wGreen, Color.GREEN, "GREEN_" + deviceCount + ".png");
 
             device.setFullScreenWindow(wRed);
             sleep();
-            testWindowBounds(device.getDisplayMode(), wRed);
-            testColor(wRed, Color.RED);
+            testWindowBounds(device.getFullScreenWindow().getBounds(), wRed);
+            testColor(wRed, Color.RED, "RED_" + deviceCount + ".png");
 
             device.setFullScreenWindow(null);
             sleep();
@@ -96,7 +105,7 @@ public final class FullScreenInsets {
 
     private static void testSize(final Dimension actual, final Dimension exp) {
         if (!exp.equals(actual)) {
-            System.err.println(" Wrong window size:" +
+            System.out.println(" Wrong window size:" +
                                " Expected: " + exp + " Actual: " + actual);
             passed = false;
         }
@@ -104,24 +113,24 @@ public final class FullScreenInsets {
 
     private static void testInsets(final Insets actual, final Insets exp) {
         if (!actual.equals(exp)) {
-            System.err.println(" Wrong window insets:" +
+            System.out.println(" Wrong window insets:" +
                                " Expected: " + exp + " Actual: " + actual);
             passed = false;
         }
     }
 
-    private static void testWindowBounds(final DisplayMode dm, final Window w) {
-        if (w.getWidth() != dm.getWidth() || w.getHeight() != dm.getHeight()) {
-            System.err.println(" Wrong window bounds:" +
-                               " Expected: width = " + dm.getWidth()
-                               + ", height = " + dm.getHeight() + " Actual: "
-                               + w.getSize());
+    private static void testWindowBounds(Rectangle expectedBounds, final Window w) {
+        if (!expectedBounds.equals(w.getBounds())) {
+            System.out.println(" Wrong window bounds:" +
+                               " Expected: " + expectedBounds +
+                               " Actual: " + w.getBounds());
             passed = false;
         }
     }
 
-    private static void testColor(final Window w, final Color color) {
+    private static void testColor(final Window w, final Color color, final String filename) throws IOException {
         final Robot r;
+        float[] expectedRGB = color.getRGBColorComponents(null);
         try {
             r = new Robot(w.getGraphicsConfiguration().getDevice());
         } catch (AWTException e) {
@@ -129,27 +138,51 @@ public final class FullScreenInsets {
             passed = false;
             return;
         }
-        final BufferedImage bi = r.createScreenCapture(w.getBounds());
-        for (int y = 0; y < bi.getHeight(); y++) {
-            for (int x = 0; x < bi.getWidth(); x++) {
-                if (bi.getRGB(x, y) != color.getRGB()) {
-                    System.err.println(
-                            "Incorrect pixel at " + x + "x" + y + " : " +
-                            Integer.toHexString(bi.getRGB(x, y)) +
-                            " ,expected : " + Integer.toHexString(
-                                    color.getRGB()));
-                    passed = false;
-                    return;
-                }
+        final BufferedImage bimg = r.createScreenCapture(w.getBounds());
+        // vertical scan - at the right end
+        int x = bimg.getWidth() - 1;
+        for (int y= 0; y < bimg.getHeight() - 1; y++) {
+            float[] actualRGB = new Color(bimg.getRGB(x, y)).getRGBColorComponents(null);
+            if (checkColor(actualRGB, expectedRGB)) {
+                System.out.println(
+                        "Vertical Scan: Incorrect pixel at " + x + "x" + y + " : " +
+                                Integer.toHexString(bimg.getRGB(x, y)) +
+                                " ,expected : " + Integer.toHexString(
+                                color.getRGB()));
+                passed = false;
+                break;
             }
+        }
+        // horizontal scan - at the bottom end
+        int y = bimg.getHeight() - 1;
+        for (x= 0; x < bimg.getWidth() - 1; x++) {
+            float[] actualRGB = new Color(bimg.getRGB(x, y)).getRGBColorComponents(null);
+            if (checkColor(actualRGB, expectedRGB)) {
+                System.out.println(
+                        "Horizontal Scan: Incorrect pixel at " + x + "x" + y + " : " +
+                                Integer.toHexString(bimg.getRGB(x, y)) +
+                                " ,expected : " + Integer.toHexString(
+                                color.getRGB()));
+                passed = false;
+                break;
+            }
+        }
+        if (!passed) {
+            ImageIO.write(bimg, "png", new File(filename));
         }
     }
 
+    private static boolean checkColor(float[] actualRGB, float[] expectedRGB) {
+        return (Math.abs(actualRGB[0] - expectedRGB[0]) > TOLERANCE
+                || Math.abs(actualRGB[1] - expectedRGB[1]) > TOLERANCE ||
+                Math.abs(actualRGB[2] - expectedRGB[2]) > TOLERANCE);
+    }
+
     private static void sleep() {
-        if(robot == null) {
+        if (robot == null) {
             try {
                 robot = new Robot();
-            }catch(AWTException ae) {
+            } catch(AWTException ae) {
                 ae.printStackTrace();
                 throw new RuntimeException("Cannot create Robot.");
             }
