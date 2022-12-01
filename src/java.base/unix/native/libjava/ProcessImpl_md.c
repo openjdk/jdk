@@ -488,7 +488,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
     char *buf, buf1[16];
-    char *hlpargs[2];
+    char *hlpargs[3];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
@@ -496,8 +496,9 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
      */
     snprintf(buf1, sizeof(buf1), "%d:%d", c->childenv[0], c->fail[1]);
     /* put the fd string as argument to the helper cmd */
-    hlpargs[0] = buf1;
-    hlpargs[1] = 0;
+    hlpargs[0] = (char*)helperpath;
+    hlpargs[1] = buf1;
+    hlpargs[2] = 0;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
