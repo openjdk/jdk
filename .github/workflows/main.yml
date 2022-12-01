@@ -286,7 +286,7 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x64
-      debug-levels: '[ "release" ]'
+      debug-levels: '[ "debug" ]'
       make-target: 'docs-jdk-bundles'
       # Creating full docs require us to build the entire JDK (for the module graphs)
       extra-conf-options: '--disable-full-docs'
