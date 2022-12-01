@@ -28,6 +28,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <errno.h>
 
 class ArgumentsTest : public ::testing::Test {

@@ -51,7 +51,7 @@ bool ProtectionDomainCacheTable::equals(const WeakHandle& protection_domain1, co
 
 // WeakHandle is both the key and the value.  We need it as the key to compare the oops that each point to
 // for equality.  We need it as the value to return the one that already exists to link in the DictionaryEntry.
-ResourceHashtable<WeakHandle, WeakHandle, 1009, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<WeakHandle, WeakHandle, 1009, AnyObj::C_HEAP, mtClass,
                   ProtectionDomainCacheTable::compute_hash,
                   ProtectionDomainCacheTable::equals> _pd_cache_table;
 
@@ -116,7 +116,7 @@ void ProtectionDomainCacheTable::unlink() {
 
   // Create a list for holding deleted entries
   if (_delete_list == NULL) {
-    _delete_list = new (ResourceObj::C_HEAP, mtClass)
+    _delete_list = new (mtClass)
                        GrowableArray<ProtectionDomainEntry*>(20, mtClass);
   }
 

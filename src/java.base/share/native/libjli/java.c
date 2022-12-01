@@ -1374,6 +1374,8 @@ ParseArguments(int *pargc, char ***pargv,
             JLI_ReportErrorMessage(ARG_WARN, arg);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
             ; /* Ignore machine independent options already handled */
+        } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
+            ; /* Ignore --disable-@files option already handled */
         } else if (ProcessPlatformOption(arg)) {
             ; /* Processing of platform dependent options */
         } else {

@@ -43,27 +43,16 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class IssuerAlternativeNameExtension
-extends Extension implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.IssuerAlternativeName";
-    /**
-     * Attribute names.
-     */
+public class IssuerAlternativeNameExtension extends Extension {
+
     public static final String NAME = "IssuerAlternativeName";
-    public static final String ISSUER_NAME = "issuer_name";
 
     // private data members
     GeneralNames names;
 
     // Encode this extension
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (names == null || names.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -77,14 +66,9 @@ extends Extension implements CertAttrSet<String> {
      * Create a IssuerAlternativeNameExtension with the passed GeneralNames.
      *
      * @param names the GeneralNames for the issuer.
-     * @exception IOException on error.
      */
-    public IssuerAlternativeNameExtension(GeneralNames names)
-    throws IOException {
-        this.names = names;
-        this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
-        this.critical = false;
-        encodeThis();
+    public IssuerAlternativeNameExtension(GeneralNames names) {
+        this(false, names);
     }
 
     /**
@@ -92,24 +76,16 @@ extends Extension implements CertAttrSet<String> {
      * and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the issuer.
-     * @exception IOException on error.
+     * @param names the GeneralNames for the issuer, cannot be null or empty.
      */
-    public IssuerAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+    public IssuerAlternativeNameExtension(Boolean critical, GeneralNames names) {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names cannot be null or empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default IssuerAlternativeNameExtension.
-     */
-    public IssuerAlternativeNameExtension() {
-        extensionId = PKIXExtensions.IssuerAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**
@@ -158,10 +134,9 @@ extends Extension implements CertAttrSet<String> {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding error.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.IssuerAlternativeName_Id;
             critical = false;
@@ -170,42 +145,15 @@ extends Extension implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER_NAME)) {
-            if (!(obj instanceof GeneralNames)) {
-              throw new IOException("Attribute value should be of" +
-                                    " type GeneralNames.");
-            }
-            names = (GeneralNames)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:IssuerAlternativeName.");
-        }
-        encodeThis();
+    public GeneralNames getNames() {
+        return names;
     }
 
     /**
-     * Get the attribute value.
-     */
-    public GeneralNames get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER_NAME)) {
-            return (names);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:IssuerAlternativeName.");
-        }
-    }
-
-
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

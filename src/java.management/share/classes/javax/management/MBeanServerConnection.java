@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,7 +354,7 @@ public interface MBeanServerConnection {
      * @exception InstanceNotFoundException The MBean specified is not
      * registered in the MBean server.
      * @exception MBeanRegistrationException The preDeregister
-     * ((<CODE>MBeanRegistration</CODE> interface) method of the MBean
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean
      * has thrown an exception.
      * @exception RuntimeMBeanException If the <CODE>postDeregister</CODE>
      * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a

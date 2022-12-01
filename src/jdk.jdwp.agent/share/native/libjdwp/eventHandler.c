@@ -487,7 +487,7 @@ eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
 
     debugMonitorEnter(handlerLock);
 
-    node = getHandlerChain(EI_GC_FINISH)->first;
+    node = getHandlerChain(EI_CLASS_UNLOAD)->first;
     while (node != NULL) {
         /* save next so handlers can remove themselves */
         HandlerNode *next = NEXT(node);
@@ -1508,8 +1508,13 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable thread end events");
     }
-    error = threadControl_setEventMode(JVMTI_ENABLE,
-                                       EI_GC_FINISH, NULL);
+
+    /*
+     * GARBAGE_COLLECTION_FINISH is special since it is not tied to any handlers or an EI,
+     * so it cannot be setup using threadControl_setEventMode(). Use JVMTI API directly.
+     */
+    error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
+            (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
@@ -1616,6 +1621,15 @@ eventHandler_onConnect() {
     debugMonitorExit(handlerLock);
 }
 
+static jvmtiError
+adjust_jvmti_error(jvmtiError error) {
+    // Allow WRONG_PHASE if vm is exiting.
+    if (error == JVMTI_ERROR_WRONG_PHASE && gdata->vmDead) {
+        error = JVMTI_ERROR_NONE;
+    }
+    return error;
+}
+
 void
 eventHandler_reset(jbyte sessionID)
 {
@@ -1632,18 +1646,20 @@ eventHandler_reset(jbyte sessionID)
 
     /* Disable vthread START and END events unless we are remembering vthreads
      * when no debugger is connected. We do this because these events can
-     * be very noisy and hurt performance a lot.
+     * be very noisy and hurt performance a lot. Note the VM might be exiting,
+     * and we might get the VM_DEATH event while executing here, so don't
+     * complain about JVMTI_ERROR_WRONG_PHASE if we've already seen VM_DEATH event.
      */
     if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
         jvmtiError error;
         error = threadControl_setEventMode(JVMTI_DISABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
-        if (error != JVMTI_ERROR_NONE) {
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error,"Can't disable vthread start events");
         }
         error = threadControl_setEventMode(JVMTI_DISABLE,
                                            EI_VIRTUAL_THREAD_END, NULL);
-        if (error != JVMTI_ERROR_NONE) {
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error,"Can't disable vthread end events");
         }
     }

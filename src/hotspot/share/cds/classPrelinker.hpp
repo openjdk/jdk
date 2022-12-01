@@ -49,7 +49,7 @@ class Klass;
 // at dump time, because at run time we will load a class from the CDS archive only
 // if all of its supertypes are loaded from the CDS archive.
 class ClassPrelinker :  AllStatic {
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, ResourceObj::C_HEAP, mtClassShared> ;
+  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, AnyObj::C_HEAP, mtClassShared> ;
   static ClassesTable* _processed_classes;
   static ClassesTable* _vm_classes;
 

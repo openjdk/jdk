@@ -57,17 +57,20 @@ import sun.security.util.DerOutputStream;
 
 public class EncryptedPrivateKeyInfo {
 
-    // the "encryptionAlgorithm" field
+    // The "encryptionAlgorithm" is stored in either the algid or
+    // the params field. Precisely, if this object is created by
+    // {@link #EncryptedPrivateKeyInfo(AlgorithmParameters, byte[])}
+    // with an uninitialized AlgorithmParameters, the AlgorithmParameters
+    // object is stored in the params field and algid is set to null.
+    // In all other cases, algid is non null and params is null.
     private final AlgorithmId algid;
-
-    // the algorithm name of the encrypted private key
-    private String keyAlg;
+    private final AlgorithmParameters params;
 
     // the "encryptedData" field
     private final byte[] encryptedData;
 
     // the ASN.1 encoded contents of this class
-    private byte[] encoded;
+    private final byte[] encoded;
 
     /**
      * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
@@ -100,6 +103,7 @@ public class EncryptedPrivateKeyInfo {
         }
 
         this.algid = AlgorithmId.parse(seq[0]);
+        this.params = null;
         if (seq[0].data.available() != 0) {
             throw new IOException("encryptionAlgorithm field overrun");
         }
@@ -142,6 +146,7 @@ public class EncryptedPrivateKeyInfo {
                 throw new NullPointerException("the algName parameter " +
                                                "must be non-null");
         this.algid = AlgorithmId.get(algName);
+        this.params = null;
 
         if (encryptedData == null) {
             throw new NullPointerException("the encryptedData " +
@@ -182,7 +187,22 @@ public class EncryptedPrivateKeyInfo {
         if (algParams == null) {
             throw new NullPointerException("algParams must be non-null");
         }
-        this.algid = AlgorithmId.get(algParams);
+        AlgorithmId tmp;
+        try {
+            tmp = AlgorithmId.get(algParams);
+        } catch (IllegalStateException e) {
+            // This exception is thrown when algParams.getEncoded() fails.
+            // While the spec of this constructor requires that
+            // "getEncoded should return...", in reality people might
+            // create with an uninitialized algParams first and only
+            // initialize it before calling getEncoded(). Thus we support
+            // this case as well.
+            tmp = null;
+        }
+
+        // one and only one is non null
+        this.algid = tmp;
+        this.params = this.algid != null ? null : algParams;
 
         if (encryptedData == null) {
             throw new NullPointerException("encryptedData must be non-null");
@@ -198,7 +218,6 @@ public class EncryptedPrivateKeyInfo {
         this.encoded = null;
     }
 
-
     /**
      * Returns the encryption algorithm.
      * <p>Note: Standard name is returned instead of the specified one
@@ -211,7 +230,7 @@ public class EncryptedPrivateKeyInfo {
      * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public String getAlgName() {
-        return this.algid.getName();
+        return algid == null ? params.getAlgorithm() : algid.getName();
     }
 
     /**
@@ -219,7 +238,7 @@ public class EncryptedPrivateKeyInfo {
      * @return the algorithm parameters.
      */
     public AlgorithmParameters getAlgParameters() {
-        return this.algid.getParameters();
+        return algid == null ? params : algid.getParameters();
     }
 
     /**
@@ -254,14 +273,13 @@ public class EncryptedPrivateKeyInfo {
         byte[] encoded;
         try {
             encoded = cipher.doFinal(encryptedData);
-            checkPKCS8Encoding(encoded);
+            return pkcs8EncodingToSpec(encoded);
         } catch (GeneralSecurityException |
                  IOException |
                  IllegalStateException ex) {
             throw new InvalidKeySpecException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
-        return new PKCS8EncodedKeySpec(encoded, keyAlg);
     }
 
     private PKCS8EncodedKeySpec getKeySpecImpl(Key decryptKey,
@@ -272,13 +290,13 @@ public class EncryptedPrivateKeyInfo {
         try {
             if (provider == null) {
                 // use the most preferred one
-                c = Cipher.getInstance(algid.getName());
+                c = Cipher.getInstance(getAlgName());
             } else {
-                c = Cipher.getInstance(algid.getName(), provider);
+                c = Cipher.getInstance(getAlgName(), provider);
             }
-            c.init(Cipher.DECRYPT_MODE, decryptKey, algid.getParameters());
+            c.init(Cipher.DECRYPT_MODE, decryptKey, getAlgParameters());
             encoded = c.doFinal(encryptedData);
-            checkPKCS8Encoding(encoded);
+            return pkcs8EncodingToSpec(encoded);
         } catch (NoSuchAlgorithmException nsae) {
             // rethrow
             throw nsae;
@@ -286,7 +304,6 @@ public class EncryptedPrivateKeyInfo {
             throw new InvalidKeyException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
-        return new PKCS8EncodedKeySpec(encoded, keyAlg);
     }
 
     /**
@@ -390,14 +407,23 @@ public class EncryptedPrivateKeyInfo {
             DerOutputStream tmp = new DerOutputStream();
 
             // encode encryption algorithm
-            algid.encode(tmp);
+            if (algid != null) {
+                algid.encode(tmp);
+            } else {
+                try {
+                    // Let's hope params has been initialized by now.
+                    AlgorithmId.get(params).encode(tmp);
+                } catch (Exception e) {
+                    throw new IOException("not initialized", e);
+                }
+            }
 
             // encode encrypted data
             tmp.putOctetString(encryptedData);
 
             // wrap everything into a SEQUENCE
             out.write(DerValue.tag_Sequence, tmp);
-            this.encoded = out.toByteArray();
+            return out.toByteArray();
         }
         return this.encoded.clone();
     }
@@ -411,7 +437,7 @@ public class EncryptedPrivateKeyInfo {
     }
 
     @SuppressWarnings("fallthrough")
-    private void checkPKCS8Encoding(byte[] encodedKey)
+    private static PKCS8EncodedKeySpec pkcs8EncodingToSpec(byte[] encodedKey)
         throws IOException {
         DerInputStream in = new DerInputStream(encodedKey);
         DerValue[] values = in.getSequence(3);
@@ -422,9 +448,9 @@ public class EncryptedPrivateKeyInfo {
             /* fall through */
         case 3:
             checkTag(values[0], DerValue.tag_Integer, "version");
-            keyAlg = AlgorithmId.parse(values[1]).getName();
+            String keyAlg = AlgorithmId.parse(values[1]).getName();
             checkTag(values[2], DerValue.tag_OctetString, "privateKey");
-            break;
+            return new PKCS8EncodedKeySpec(encodedKey, keyAlg);
         default:
             throw new IOException("invalid key encoding");
         }

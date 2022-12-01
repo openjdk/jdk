@@ -611,6 +611,10 @@ uint ciMethodData::arg_modified(int arg) const {
   return aid->arg_modified(arg);
 }
 
+ciParametersTypeData* ciMethodData::parameters_type_data() const {
+  return _parameters != NULL ? new ciParametersTypeData(_parameters) : NULL;
+}
+
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {
   // Get offset within MethodData* of the data array
   ByteSize data_offset = MethodData::data_offset();

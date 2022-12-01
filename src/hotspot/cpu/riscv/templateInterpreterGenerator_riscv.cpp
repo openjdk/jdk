@@ -1737,18 +1737,35 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  __ push_reg(t0);
-  __ push_reg(x10);
-  __ mv(x10, (address) &BytecodeCounter::_counter_value);
-  __ mv(t0, 1);
-  __ amoadd_d(zr, x10, t0, Assembler::aqrl);
-  __ pop_reg(x10);
-  __ pop_reg(t0);
+  __ mv(x7, (address) &BytecodeCounter::_counter_value);
+  __ atomic_addw(noreg, 1, x7);
 }
 
-void TemplateInterpreterGenerator::histogram_bytecode(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
+  __ mv(x7, (address) &BytecodeHistogram::_counters[t->bytecode()]);
+  __ atomic_addw(noreg, 1, x7);
+}
 
-void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
+  // Calculate new index for counter:
+  //   _index = (_index >> log2_number_of_codes) |
+  //            (bytecode << log2_number_of_codes);
+  Register index_addr = t1;
+  Register index = t0;
+  __ mv(index_addr, (address) &BytecodePairHistogram::_index);
+  __ lw(index, index_addr);
+  __ mv(x7, ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
+  __ srli(index, index, BytecodePairHistogram::log2_number_of_codes);
+  __ orrw(index, x7, index);
+  __ sw(index, index_addr);
+  // Bump bucket contents:
+  //   _counters[_index] ++;
+  Register counter_addr = t1;
+  __ mv(x7, (address) &BytecodePairHistogram::_counters);
+  __ slli(index, index, LogBytesPerInt);
+  __ add(counter_addr, x7, index);
+  __ atomic_addw(noreg, 1, counter_addr);
+ }
 
 void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // Call a little run-time stub to avoid blow-up for each bytecode.

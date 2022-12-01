@@ -23,8 +23,7 @@
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} TypedDeconstructionPatternExc.java
- * @run main/othervm --enable-preview TypedDeconstructionPatternExc
+ * @enablePreview
  */
 
 import java.util.Objects;

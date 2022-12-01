@@ -541,14 +541,22 @@ class ContiguousSpace: public CompactibleSpace {
   virtual void verify() const;
 };
 
-
-// A dirty card to oop closure that does filtering.
-// It knows how to filter out objects that are outside of the _boundary.
-class FilteringDCTOC : public DirtyCardToOopClosure {
-protected:
-  // Override.
+// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
+// sub-classes). It knows how to filter out objects that are outside of the
+// _boundary.
+//
+// Assumptions:
+// 1. That the actual top of any area in a memory region
+//    contained by the space is bounded by the end of the contiguous
+//    region of the space.
+// 2. That the space is really made up of objects and not just
+//    blocks.
+class ContiguousSpaceDCTOC : public DirtyCardToOopClosure {
+  // Overrides.
   void walk_mem_region(MemRegion mr,
                        HeapWord* bottom, HeapWord* top);
+
+  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
 
   // Walk the given memory region, from bottom to top, applying
   // the given oop closure to (possibly) all objects found. The
@@ -557,47 +565,18 @@ protected:
   // be a filtering closure which makes use of the _boundary.
   // We offer two signatures, so the FilteringClosure static type is
   // apparent.
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       OopIterateClosure* cl) = 0;
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       FilteringClosure* cl) = 0;
-
-public:
-  FilteringDCTOC(Space* sp, OopIterateClosure* cl,
-                  CardTable::PrecisionStyle precision,
-                  HeapWord* boundary) :
-    DirtyCardToOopClosure(sp, cl, precision, boundary) {}
-};
-
-// A dirty card to oop closure for contiguous spaces
-// (ContiguousSpace and sub-classes).
-// It is a FilteringClosure, as defined above, and it knows:
-//
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-
-class ContiguousSpaceDCTOC : public FilteringDCTOC {
-protected:
-  // Overrides.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
-
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       OopIterateClosure* cl);
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       FilteringClosure* cl);
+  void walk_mem_region_with_cl(MemRegion mr,
+                               HeapWord* bottom, HeapWord* top,
+                               OopIterateClosure* cl);
+  void walk_mem_region_with_cl(MemRegion mr,
+                               HeapWord* bottom, HeapWord* top,
+                               FilteringClosure* cl);
 
 public:
   ContiguousSpaceDCTOC(ContiguousSpace* sp, OopIterateClosure* cl,
                        CardTable::PrecisionStyle precision,
                        HeapWord* boundary) :
-    FilteringDCTOC(sp, cl, precision, boundary)
+    DirtyCardToOopClosure(sp, cl, precision, boundary)
   {}
 };
 

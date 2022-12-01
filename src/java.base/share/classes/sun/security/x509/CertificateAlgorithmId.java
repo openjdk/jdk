@@ -36,26 +36,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificateAlgorithmId implements CertAttrSet<String> {
+public class CertificateAlgorithmId implements DerEncoder {
     private AlgorithmId algId;
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.algorithmID";
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
     public static final String NAME = "algorithmID";
-
-    /**
-     * Identifier to be used with get, set, and delete methods. When
-     * using this identifier the associated object being passed in or
-     * returned is an instance of AlgorithmId.
-     * @see sun.security.x509.AlgorithmId
-     */
-    public static final String ALGORITHM = "algorithm";
 
     /**
      * Default constructor for the certificate attribute.
@@ -101,38 +85,16 @@ public class CertificateAlgorithmId implements CertAttrSet<String> {
      * Encode the algorithm identifier in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         algId.encode(out);
     }
 
     /**
-     * Set the attribute value.
+     * Get the AlgorithmId value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof AlgorithmId)) {
-            throw new IOException("Attribute must be of type AlgorithmId.");
-        }
-        if (name.equalsIgnoreCase(ALGORITHM)) {
-            algId = (AlgorithmId)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                              "CertAttrSet:CertificateAlgorithmId.");
-        }
+    public AlgorithmId getAlgId() throws IOException {
+        return algId;
     }
-
-    /**
-     * Get the attribute value.
-     */
-    public AlgorithmId get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ALGORITHM)) {
-            return (algId);
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                               "CertAttrSet:CertificateAlgorithmId.");
-        }
-    }
-
 }
