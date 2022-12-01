@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,37 @@
  * questions.
  */
 
-
-/*
+/**
  * @test
- *
- * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset004.
- * VM Testbase keywords: [quick, monitoring]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test checks that
- *         ThreadMXBean.resetPeakThreadCount()
- *     returns correct result.
- *     The test starts a couple of user threads and waits until they finish. After
- *     that, resetPeakThreadCount() is invoked to reset the peak. Then
- *     getPeakThreadCount() and getThreadCount() must return the same values. The
- *     preposition is that no threads are appered/disappeared between
- *     "getPeakThreadCount()" and getThreadCount()" calls.
- *     The test implements access to the metrics via default MBean server proxy.
- * COMMENT
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001 -testMode=proxy
+ * @bug 8296924
+ * @summary Tests compilation of an unreachable unsafe access with a bad base address.
+ * @modules java.base/jdk.internal.misc:+open
+ * @run main/othervm -XX:CompileCommand=compileonly,TestBadBaseAddress::test -XX:-TieredCompilation -Xcomp TestBadBaseAddress
  */
 
+import java.lang.reflect.*;
+import sun.misc.*;
+
+public class TestBadBaseAddress {
+    private static Unsafe unsafe;
+
+    static {
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            unsafe = (Unsafe)field.get(null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void test(boolean b) {
+        if (b) {
+            unsafe.putLong(-1, 42);
+        }
+    }
+
+    public static void main(String[] args) {
+        test(false);
+    }
+}

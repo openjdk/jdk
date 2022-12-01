@@ -557,7 +557,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     assert(!r->is_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
     stats()->account_evacuated_region(r);
 
-    // Free the region and and its remembered set.
+    // Free the region and its remembered set.
     _g1h->free_region(r, nullptr);
     _g1h->hr_printer()->cleanup(r);
   }
