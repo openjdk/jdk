@@ -139,7 +139,8 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
     /**
-     * {@return the approximate number of tasks in the thread's queue}
+     * {@return a (non-negative) estimate of the number of tasks in the
+     * thread's queue}
      *
      * @since 20
      * @see ForkJoinPool#getQueuedTaskCount()

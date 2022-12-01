@@ -2850,6 +2850,10 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Submits a ForkJoinTask for execution.
      *
+     * @implSpec
+     * This method is equivalent to {@link #externalSubmit(ForkJoinTask)}
+     * when called from a thread that is not in this pool.
+     *
      * @param task the task to submit
      * @param <T> the type of the task's result
      * @return the task
