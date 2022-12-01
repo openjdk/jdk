@@ -2314,14 +2314,16 @@ bool TypeAry::ary_must_be_exact() const {
     toop = _elem->isa_oopptr();
   }
   if (!toop)                return true;   // a primitive type, like int
-  if (!toop->is_loaded())   return false;  // unloaded class
+  ciKlass* tklass = toop->klass();
+  if (tklass == NULL)       return false;  // unloaded class
+  if (!tklass->is_loaded()) return false;  // unloaded class
   const TypeInstPtr* tinst;
   if (_elem->isa_narrowoop())
     tinst = _elem->make_ptr()->isa_instptr();
   else
     tinst = _elem->isa_instptr();
   if (tinst)
-    return tinst->instance_klass()->is_final();
+    return tklass->as_instance_klass()->is_final();
   const TypeAryPtr*  tap;
   if (_elem->isa_narrowoop())
     tap = _elem->make_ptr()->isa_aryptr();
