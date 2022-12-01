@@ -55,7 +55,6 @@ public:
 
   // Add to remembered set
   void remember(volatile zpointer* p) const;
-  void remember_fields(zaddress obj) const;
 
   // Scan all remembered sets
   void scan() const;

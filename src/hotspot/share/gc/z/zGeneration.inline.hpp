@@ -158,10 +158,6 @@ inline void ZGenerationYoung::remember(volatile zpointer* p) {
   _remembered.remember(p);
 }
 
-inline void ZGenerationYoung::remember_fields(zaddress addr) {
-  _remembered.remember_fields(addr);
-}
-
 inline void ZGenerationYoung::scan_remembered_field(volatile zpointer* p) {
   _remembered.scan_field(p);
 }

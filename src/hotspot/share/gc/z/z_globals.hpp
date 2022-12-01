@@ -72,15 +72,6 @@
           "0: Claim tree "                                                  \
           "1: Simple Striped ")                                             \
                                                                             \
-  product(uintx, ZRelocateRemsetStrategy, 1,                                \
-          "Strategy used to add remset entries to promoted objects "        \
-          "0: Add for all fields during relocation "                        \
-          "1: Filter and remapping during relocation "                      \
-          "2: Filter and remapping after relocation ")                      \
-          /* This flag exists so that these approaches can be evaluated */  \
-          /* 0 - 1: Unclear if one is better than the other */              \
-          /* 2: has been shown to be very expensive */                      \
-                                                                            \
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \

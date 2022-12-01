@@ -45,13 +45,6 @@ ZRemembered::ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator)
     _page_allocator(page_allocator) {
 }
 
-void ZRemembered::remember_fields(zaddress addr) const {
-  assert(ZHeap::heap()->is_old(addr), "Should already have been checked");
-  ZIterator::basic_oop_iterate_safe(to_oop(addr), [&](volatile zpointer* p) {
-    remember(p);
-  });
-}
-
 template <typename Function>
 void ZRemembered::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const {
   // The array contains duplicated from_addr values. Cache expensive operations.

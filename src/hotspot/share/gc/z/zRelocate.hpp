@@ -84,7 +84,6 @@ public:
   void start();
 
   static void add_remset(volatile zpointer* p);
-  static void add_remset_for_fields(volatile zaddress addr);
 
   static ZPageAge compute_to_age(ZPageAge from_age);
 

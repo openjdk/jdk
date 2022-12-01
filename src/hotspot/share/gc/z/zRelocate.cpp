@@ -51,7 +51,6 @@
 
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Concurrent Relocate Remset FP", ZGenerationId::young);
-static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung("Concurrent Relocate Remset NP", ZGenerationId::young);
 
 static uintptr_t forwarding_index(ZForwarding* forwarding, zoffset from_offset) {
   return (from_offset - forwarding->start()) >> forwarding->object_alignment_shift();
@@ -317,10 +316,6 @@ void ZRelocate::start() {
 
 void ZRelocate::add_remset(volatile zpointer* p) {
   ZGeneration::young()->remember(p);
-}
-
-void ZRelocate::add_remset_for_fields(volatile zaddress addr) {
-  ZGeneration::young()->remember_fields(addr);
 }
 
 static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
@@ -716,10 +711,6 @@ private:
     }
   }
 
-  void update_remset_promoted_all(zaddress to_addr) const {
-    ZRelocate::add_remset_for_fields(to_addr);
-  }
-
   static bool add_remset_if_young(volatile zpointer* p, zaddress addr) {
     if (ZHeap::heap()->is_young(addr)) {
       ZRelocate::add_remset(p);
@@ -784,17 +775,8 @@ private:
     return;
   }
 
-  void update_remset_promoted_filter_and_remap(zaddress to_addr) const {
-    ZIterator::basic_oop_iterate(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
-  }
-
   void update_remset_promoted(zaddress to_addr) const {
-    switch (ZRelocateRemsetStrategy) {
-    case 0: update_remset_promoted_all(to_addr); break;
-    case 1: update_remset_promoted_filter_and_remap(to_addr); break;
-    case 2: /* Handled after relocation is done */ break;
-    default: fatal("Unsupported ZRelocateRemsetStrategy"); break;
-    };
+    ZIterator::basic_oop_iterate(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
   }
 
   void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
@@ -1217,34 +1199,6 @@ public:
   }
 };
 
-class ZRelocateAddRemsetForNormalPromoted : public ZRestartableTask {
-private:
-  ZStatTimerYoung                _timer;
-  ZRelocationSetParallelIterator _iter;
-
-public:
-  ZRelocateAddRemsetForNormalPromoted() :
-      ZRestartableTask("ZRelocateAddRemsetForNormalPromoted"),
-      _timer(ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung),
-      _iter(ZGeneration::young()->relocation_set_parallel_iterator()) {}
-
-  virtual void work() {
-    SuspendibleThreadSetJoiner sts_joiner;
-
-    for (ZForwarding* forwarding; _iter.next(&forwarding);) {
-      if (forwarding->to_age() == ZPageAge::old) {
-        forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
-      }
-
-      if (ZGeneration::young()->should_worker_resize()) {
-        break;
-      }
-
-      SuspendibleThreadSet::yield();
-    }
-  }
-};
-
 void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   {
     // Install the store buffer's base pointers before the
@@ -1261,11 +1215,6 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
 
   if (relocation_set->generation()->is_young()) {
     ZRelocateAddRemsetForFlipPromoted task(relocation_set->flip_promoted_pages());
-    workers()->run(&task);
-  }
-
-  if (relocation_set->generation()->is_young() && ZRelocateRemsetStrategy == 2) {
-    ZRelocateAddRemsetForNormalPromoted task;
     workers()->run(&task);
   }
 
