@@ -106,57 +106,25 @@ public class SecondaryErrorTest {
     // which is an end marker written in the last step and proves that hs-err file was
     // completely written.
 
-<<<<<<< HEAD
     ArrayList<Pattern> patternlist = new ArrayList<>();
     patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
     patternlist.add(Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"));
     if (with_callstacks) {
-      patternlist.add(Pattern.compile("\\[siginfo: si_signo: 11 \\(SIGSEGV\\).*\\]"));
-      patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
-      patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
+        patternlist.add(Pattern.compile("\\[siginfo:.*\\(SIGSEGV\\).*\\]"));
+        patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
+        patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
     }
     // and again, to see that repeated error reporting steps work
     patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
     patternlist.add(Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 2\\).*\\]"));
     if (with_callstacks) {
-      patternlist.add(Pattern.compile("\\[siginfo: si_signo: 11 \\(SIGSEGV\\).*\\]"));
-      patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
-      patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
+        patternlist.add(Pattern.compile("\\[siginfo:.*\\(SIGSEGV\\).*\\]"));
+        patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
+        patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
     }
     Pattern[] pattern = patternlist.toArray(new Pattern[] {});
-    int currentPattern = 0;
-
-    String lastLine = null;
-    while ((line = br.readLine()) != null) {
-      if (currentPattern < pattern.length) {
-        if (pattern[currentPattern].matcher(line).matches()) {
-          System.out.println("Found: " + line + ".");
-          currentPattern ++;
-        }
-      }
-      lastLine = line;
-    }
-    br.close();
-
-    if (currentPattern < pattern.length) {
-      throw new RuntimeException("hs-err file incomplete (first missing pattern: " + pattern[currentPattern] + ")");
-    }
-
-    if (!lastLine.equals("END.")) {
-      throw new RuntimeException("hs-err file incomplete (missing END marker.)");
-    } else {
-      System.out.println("End marker found.");
-    }
-=======
-    Pattern [] pattern = new Pattern[] {
-        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
-        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 1\\).*\\]"),
-        Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."),
-        Pattern.compile("\\[error occurred during error reporting \\(test secondary crash 2\\).*\\]"),
-    };
 
     HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
->>>>>>> master
 
     System.out.println("OK.");
 
