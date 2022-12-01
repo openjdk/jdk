@@ -48,6 +48,7 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
+import jdk.jfr.internal.management.StreamBarrier;
 
 /**
  * A recording stream produces events from the current JVM (Java Virtual
@@ -378,6 +379,43 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         long startNanos = pr.start();
         updateOnCompleteHandler();
         directoryStream.startAsync(startNanos);
+    }
+
+    /**
+     * Stops the recording stream.
+     * <p>
+     * Stops a started stream and waits until all events in the recording have
+     * been consumed.
+     * <p>
+     * Invoking this method in an action, for example in the
+     * {@link #onEvent(Consumer)} method, could block the stream indefinitely.
+     * To stop the stream abruptly, use the {@link #close} method.
+     * <p>
+     * The following code snippet illustrates how this method can be used in
+     * conjunction with the {@link #startAsync()} method to monitor what happens
+     * during a test method:
+     * <p>
+     * {@snippet class="Snippets" region="RecordingStreamStop"}
+     *
+     * @return {@code true} if recording is stopped, {@code false} otherwise
+     *
+     * @throws IllegalStateException if the recording is not started or is already stopped
+     *
+     * @since 20
+     */
+    public boolean stop() {
+        boolean stopped = false;
+        try {
+            try (StreamBarrier sb = directoryStream.activateStreamBarrier()) {
+                stopped = recording.stop();
+                directoryStream.setCloseOnComplete(false);
+                sb.setStreamEnd(recording.getStopTime().toEpochMilli());
+            }
+            directoryStream.awaitTermination();
+        } catch (InterruptedException | IOException e) {
+            // OK, return
+        }
+        return stopped;
     }
 
     /**
