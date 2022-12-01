@@ -2444,7 +2444,7 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
       // These are the encoded values for the bottom of this region at dump-time vs run-time:
       narrowOop dt_encoded_bottom = CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
       narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(regions[i].start()));
-      log_info(cds)("patching heap embedded pointers for %s: 0x%8x -> 0x%8x",
+      log_info(cds)("patching heap embedded pointers for %s: narrowOop 0x%8x -> 0x%8x",
                     region_name(region_idx), (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
       // TODO JDK-8269736: if we have the same narrow_oop_shift between dumptime and runtime,
       // Each embedded pointer P can be updated by:
