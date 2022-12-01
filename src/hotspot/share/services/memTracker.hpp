@@ -103,7 +103,7 @@ class MemTracker : AllStatic {
   }
 
   // Record malloc free and return malloc base address
-  static inline void* record_free_block(void* memblock) {
+  static inline void* record_free(void* memblock) {
     // Never turned on
     assert(memblock != NULL, "caller should handle NULL");
     assert(enabled(), "NMT must be enabled");
