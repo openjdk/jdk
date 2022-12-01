@@ -28,9 +28,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/globals.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
 class  FileMapInfo;

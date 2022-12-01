@@ -55,7 +55,7 @@ import sun.security.util.*;
  *
  * @author David Brownell
  */
-public class X509Key implements PublicKey {
+public class X509Key implements PublicKey, DerEncoder {
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
     @java.io.Serial
@@ -100,8 +100,7 @@ public class X509Key implements PublicKey {
      * data is stored and transmitted losslessly, but no knowledge
      * about this particular algorithm is available.
      */
-    private X509Key(AlgorithmId algid, BitArray key)
-    throws InvalidKeyException {
+    private X509Key(AlgorithmId algid, BitArray key) {
         this.algid = algid;
         setKey(key);
         encode();
@@ -190,10 +189,9 @@ public class X509Key implements PublicKey {
      * values using the X509Key member functions, such as <code>parse</code>
      * and <code>decode</code>.
      *
-     * @exception IOException on parsing errors.
      * @exception InvalidKeyException on invalid key encodings.
      */
-    protected void parseKeyBits() throws IOException, InvalidKeyException {
+    protected void parseKeyBits() throws InvalidKeyException {
         encode();
     }
 
@@ -287,11 +285,9 @@ public class X509Key implements PublicKey {
 
     /**
      * Encode SubjectPublicKeyInfo sequence on the DER output stream.
-     *
-     * @exception IOException on encoding errors.
      */
-    public final void encode(DerOutputStream out) throws IOException
-    {
+    @Override
+    public final void encode(DerOutputStream out) {
         encode(out, this.algid, getKey());
     }
 
@@ -299,26 +295,15 @@ public class X509Key implements PublicKey {
      * Returns the DER-encoded form of the key as a byte array.
      */
     public byte[] getEncoded() {
-        try {
-            return getEncodedInternal().clone();
-        } catch (InvalidKeyException e) {
-            // XXX
-        }
-        return null;
+        return getEncodedInternal().clone();
     }
 
-    public byte[] getEncodedInternal() throws InvalidKeyException {
+    public byte[] getEncodedInternal() {
         byte[] encoded = encodedKey;
         if (encoded == null) {
-            try {
-                DerOutputStream out = new DerOutputStream();
-                encode(out);
-                encoded = out.toByteArray();
-            } catch (IOException e) {
-                throw new InvalidKeyException("IOException : " +
-                                               e.getMessage());
-            }
-            encodedKey = encoded;
+            DerOutputStream out = new DerOutputStream();
+            encode(out);
+            encodedKey = encoded = out.toByteArray();
         }
         return encoded;
     }
@@ -332,10 +317,8 @@ public class X509Key implements PublicKey {
 
     /**
      * Returns the DER-encoded form of the key as a byte array.
-     *
-     * @exception InvalidKeyException on encoding errors.
      */
-    public byte[] encode() throws InvalidKeyException {
+    public byte[] encode() {
         return getEncodedInternal().clone();
     }
 
@@ -428,18 +411,14 @@ public class X509Key implements PublicKey {
         if (!(obj instanceof Key)) {
             return false;
         }
-        try {
-            byte[] thisEncoded = this.getEncodedInternal();
-            byte[] otherEncoded;
-            if (obj instanceof X509Key) {
-                otherEncoded = ((X509Key)obj).getEncodedInternal();
-            } else {
-                otherEncoded = ((Key)obj).getEncoded();
-            }
-            return Arrays.equals(thisEncoded, otherEncoded);
-        } catch (InvalidKeyException e) {
-            return false;
+        byte[] thisEncoded = this.getEncodedInternal();
+        byte[] otherEncoded;
+        if (obj instanceof X509Key) {
+            otherEncoded = ((X509Key) obj).getEncodedInternal();
+        } else {
+            otherEncoded = ((Key) obj).getEncoded();
         }
+        return Arrays.equals(thisEncoded, otherEncoded);
     }
 
     /**
@@ -447,24 +426,18 @@ public class X509Key implements PublicKey {
      * which are equal will also have the same hashcode.
      */
     public int hashCode() {
-        try {
-            byte[] b1 = getEncodedInternal();
-            int r = b1.length;
-            for (int i = 0; i < b1.length; i++) {
-                r += (b1[i] & 0xff) * 37;
-            }
-            return r;
-        } catch (InvalidKeyException e) {
-            // should not happen
-            return 0;
+        byte[] b1 = getEncodedInternal();
+        int r = b1.length;
+        for (int i = 0; i < b1.length; i++) {
+            r += (b1[i] & 0xff) * 37;
         }
+        return r;
     }
 
     /*
      * Produce SubjectPublicKey encoding from algorithm id and key material.
      */
-    static void encode(DerOutputStream out, AlgorithmId algid, BitArray key)
-        throws IOException {
+    static void encode(DerOutputStream out, AlgorithmId algid, BitArray key) {
             DerOutputStream tmp = new DerOutputStream();
             algid.encode(tmp);
             tmp.putUnalignedBitString(key);

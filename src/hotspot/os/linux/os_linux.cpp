@@ -45,8 +45,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
@@ -169,8 +169,37 @@ const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
-os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
-os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+// We want to be buildable and runnable on older and newer glibcs, so resolve both
+// mallinfo and mallinfo2 dynamically.
+struct old_mallinfo {
+  int arena;
+  int ordblks;
+  int smblks;
+  int hblks;
+  int hblkhd;
+  int usmblks;
+  int fsmblks;
+  int uordblks;
+  int fordblks;
+  int keepcost;
+};
+typedef struct old_mallinfo (*mallinfo_func_t)(void);
+static mallinfo_func_t g_mallinfo = NULL;
+
+struct new_mallinfo {
+  size_t arena;
+  size_t ordblks;
+  size_t smblks;
+  size_t hblks;
+  size_t hblkhd;
+  size_t usmblks;
+  size_t fsmblks;
+  size_t uordblks;
+  size_t fordblks;
+  size_t keepcost;
+};
+typedef struct new_mallinfo (*mallinfo2_func_t)(void);
+static mallinfo2_func_t g_mallinfo2 = NULL;
 #endif // __GLIBC__
 
 static int clock_tics_per_sec = 100;
@@ -2102,26 +2131,17 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   size_t total_allocated = 0;
   size_t free_retained = 0;
   bool might_have_wrapped = false;
-  if (_mallinfo2 != NULL) {
-    struct glibc_mallinfo2 mi = _mallinfo2();
-    total_allocated = mi.uordblks + mi.hblkhd;
-    free_retained = mi.fordblks;
-  } else if (_mallinfo != NULL) {
-    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are 32-bit signed.
-    // So for larger footprints the values may have wrapped around. We try to detect this here: if the
-    // process whole resident set size is smaller than 4G, malloc footprint has to be less than that
-    // and the numbers are reliable.
-    struct glibc_mallinfo mi = _mallinfo();
-    total_allocated = (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd;
-    free_retained = (size_t)(unsigned)mi.fordblks;
-    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-    might_have_wrapped = (info.vmrss * K) > UINT_MAX && (info.vmrss * K) > (total_allocated + UINT_MAX);
-  }
-  if (_mallinfo2 != NULL || _mallinfo != NULL) {
-    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
-                 total_allocated / K, free_retained / K,
-                 might_have_wrapped ? " (may have wrapped)" : "");
-  }
+  glibc_mallinfo mi;
+  os::Linux::get_mallinfo(&mi, &might_have_wrapped);
+  total_allocated = mi.uordblks + mi.hblkhd;
+  free_retained = mi.fordblks;
+#ifdef _LP64
+  // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
+  might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
+#endif
+  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+               total_allocated / K, free_retained / K,
+               might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
   print_glibc_malloc_tunables(st);
   st->cr();
@@ -4273,8 +4293,8 @@ void os::init(void) {
   Linux::initialize_system_info();
 
 #ifdef __GLIBC__
-  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
-  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
 #endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
@@ -5330,4 +5350,69 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     st->cr();
   }
+}
+
+#ifdef __GLIBC__
+void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
+  if (g_mallinfo2) {
+    new_mallinfo mi = g_mallinfo2();
+    out->arena = mi.arena;
+    out->ordblks = mi.ordblks;
+    out->smblks = mi.smblks;
+    out->hblks = mi.hblks;
+    out->hblkhd = mi.hblkhd;
+    out->usmblks = mi.usmblks;
+    out->fsmblks = mi.fsmblks;
+    out->uordblks = mi.uordblks;
+    out->fordblks = mi.fordblks;
+    out->keepcost =  mi.keepcost;
+    *might_have_wrapped = false;
+  } else if (g_mallinfo) {
+    old_mallinfo mi = g_mallinfo();
+    // glibc reports unsigned 32-bit sizes in int form. First make unsigned, then extend.
+    out->arena = (size_t)(unsigned)mi.arena;
+    out->ordblks = (size_t)(unsigned)mi.ordblks;
+    out->smblks = (size_t)(unsigned)mi.smblks;
+    out->hblks = (size_t)(unsigned)mi.hblks;
+    out->hblkhd = (size_t)(unsigned)mi.hblkhd;
+    out->usmblks = (size_t)(unsigned)mi.usmblks;
+    out->fsmblks = (size_t)(unsigned)mi.fsmblks;
+    out->uordblks = (size_t)(unsigned)mi.uordblks;
+    out->fordblks = (size_t)(unsigned)mi.fordblks;
+    out->keepcost = (size_t)(unsigned)mi.keepcost;
+    *might_have_wrapped = NOT_LP64(false) LP64_ONLY(true);
+  } else {
+    // We should have either mallinfo or mallinfo2
+    ShouldNotReachHere();
+  }
+}
+#endif // __GLIBC__
+
+bool os::trim_native_heap(os::size_change_t* rss_change) {
+#ifdef __GLIBC__
+  os::Linux::meminfo_t info1;
+  os::Linux::meminfo_t info2;
+
+  bool have_info1 = rss_change != nullptr &&
+                    os::Linux::query_process_memory_info(&info1);
+  ::malloc_trim(0);
+  bool have_info2 = rss_change != nullptr && have_info1 &&
+                    os::Linux::query_process_memory_info(&info2);
+  ssize_t delta = (ssize_t) -1;
+  if (rss_change != nullptr) {
+    if (have_info1 && have_info2 &&
+        info1.vmrss != -1 && info2.vmrss != -1 &&
+        info1.vmswap != -1 && info2.vmswap != -1) {
+      // Note: query_process_memory_info returns values in K
+      rss_change->before = (info1.vmrss + info1.vmswap) * K;
+      rss_change->after = (info2.vmrss + info2.vmswap) * K;
+    } else {
+      rss_change->after = rss_change->before = SIZE_MAX;
+    }
+  }
+
+  return true;
+#else
+  return false; // musl
+#endif
 }

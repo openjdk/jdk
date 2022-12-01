@@ -24,7 +24,8 @@
  * @test
  * @bug 8291657
  * @summary Javac assertion when compiling a method call with switch expression as argument
- * @compile --enable-preview -source ${jdk.version} T8291657.java
+ * @enablePreview
+ * @compile T8291657.java
  */
 public class T8291657 {
     static class A { }

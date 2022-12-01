@@ -1267,10 +1267,6 @@ public:
       return false;
     }
 
-    if (!check_common_app_classpath_prefix_len()) {
-      return false;
-    }
-
     // All fields in the GenericCDSFileMapHeader has been validated.
     _is_valid = true;
     return true;
@@ -1351,15 +1347,6 @@ public:
 
     return true;
   }
-
-  bool check_common_app_classpath_prefix_len() {
-    int common_path_size = _header->_common_app_classpath_prefix_size;
-    if (common_path_size < 0) {
-      FileMapInfo::fail_continue("common app classpath prefix len < 0");
-      return false;
-    }
-    return true;
-  }
 };
 
 // Return value:
@@ -1432,6 +1419,12 @@ bool FileMapInfo::init_from_file(int fd) {
     log_info(cds)("           actual: 0x%x", header()->version());
     fail_continue("The shared archive file has the wrong version.");
     return false;
+  }
+
+  int common_path_size = header()->common_app_classpath_prefix_size();
+  if (common_path_size < 0) {
+      FileMapInfo::fail_continue("common app classpath prefix len < 0");
+      return false;
   }
 
   unsigned int base_offset = header()->base_archive_name_offset();

@@ -189,21 +189,23 @@ private:
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
   // can be used.
-  size_t _core_region_alignment;    // how shared archive should be aligned
-  int    _obj_alignment;            // value of ObjectAlignmentInBytes
-  address _narrow_oop_base;         // compressed oop encoding base
-  int    _narrow_oop_shift;         // compressed oop encoding shift
-  bool   _compact_strings;          // value of CompactStrings
-  uintx  _max_heap_size;            // java max heap size during dumping
-  CompressedOops::Mode _narrow_oop_mode; // compressed oop encoding mode
-  int     _narrow_klass_shift;      // save narrow klass base and shift
-  bool    _compressed_oops;         // save the flag UseCompressedOops
-  bool    _compressed_class_ptrs;   // save the flag UseCompressedClassPointers
-  size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
-  size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
-  address _heap_begin;              // heap begin at dump time.
-  address _heap_end;                // heap end at dump time.
-  bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
+  size_t _core_region_alignment;                  // how shared archive should be aligned
+  int    _obj_alignment;                          // value of ObjectAlignmentInBytes
+  address _narrow_oop_base;                       // compressed oop encoding base
+  int    _narrow_oop_shift;                       // compressed oop encoding shift
+  bool   _compact_strings;                        // value of CompactStrings
+  uintx  _max_heap_size;                          // java max heap size during dumping
+  CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
+  int     _narrow_klass_shift;                    // save narrow klass base and shift
+  bool    _compressed_oops;                       // save the flag UseCompressedOops
+  bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
+  size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
+  size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
+  address _heap_begin;                            // heap begin at dump time.
+  address _heap_end;                              // heap end at dump time.
+  bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
+  unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
+                                                  //    0 if no common prefix exists
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -240,21 +242,21 @@ private:
   void set_as_offset(char* p, size_t *offset);
 public:
   // Accessors -- fields declared in GenericCDSFileMapHeader
-  unsigned int magic()                    const { return _generic_header._magic;    }
-  int crc()                               const { return _generic_header._crc;      }
-  int version()                           const { return _generic_header._version;  }
-  unsigned int header_size()              const { return _generic_header._header_size;              }
-  unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
-  unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
-  unsigned int common_app_classpath_prefix_size() const { return _generic_header._common_app_classpath_prefix_size; }
+  unsigned int magic()                            const { return _generic_header._magic;                    }
+  int crc()                                       const { return _generic_header._crc;                      }
+  int version()                                   const { return _generic_header._version;                  }
+  unsigned int header_size()                      const { return _generic_header._header_size;              }
+  unsigned int base_archive_name_offset()         const { return _generic_header._base_archive_name_offset; }
+  unsigned int base_archive_name_size()           const { return _generic_header._base_archive_name_size;   }
+  unsigned int common_app_classpath_prefix_size() const { return _common_app_classpath_prefix_size;         }
 
-  void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
-  void set_crc(int crc_value)                       { _generic_header._crc = crc_value; }
-  void set_version(int v)                           { _generic_header._version = v;     }
-  void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
-  void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
-  void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
-  void set_common_app_classpath_prefix_size(unsigned int s) { _generic_header._common_app_classpath_prefix_size = s; }
+  void set_magic(unsigned int m)                            { _generic_header._magic = m;                    }
+  void set_crc(int crc_value)                               { _generic_header._crc = crc_value;              }
+  void set_version(int v)                                   { _generic_header._version = v;                  }
+  void set_header_size(unsigned int s)                      { _generic_header._header_size = s;              }
+  void set_base_archive_name_offset(unsigned int s)         { _generic_header._base_archive_name_offset = s; }
+  void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
+  void set_common_app_classpath_prefix_size(unsigned int s) { _common_app_classpath_prefix_size = s;         }
 
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
