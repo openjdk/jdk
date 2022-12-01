@@ -25,7 +25,7 @@
  * @test
  * @bug 8297951
  * @summary Test that crashes because we do not emit skeleton predicates for normal If nodes for which a range check
- *          predicate is created in loop predication. 
+ *          predicate is created in loop predication.
  * @requires vm.debug == true & vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-RangeCheckElimination -XX:+BailoutToInterpreterForThrows
                      compiler.loopopts.TestMissingSkeletonPredicateForIfNode
@@ -39,13 +39,13 @@ public class TestMissingSkeletonPredicateForIfNode {
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 5000; i++) {
             try {
-                test(i % 2 == 0, i % 3); 
+                test(i % 2 == 0, i % 3);
             } catch (Exception e) {
                 // Expected
             }
         }
     }
-    
+
     public static void test(boolean flag, int arg) throws Exception {
         int sum = 1;
         int[] iArr2 = new int[4];
@@ -57,22 +57,22 @@ public class TestMissingSkeletonPredicateForIfNode {
                 // After unrolling, we have:
                 //
                 // iArr2[i]
-                // iArr2[i+2] 
-                // 
-                // The type of iArr2[i+2] is [4..SHORT_MAX+2] (we need limit to be short such that we do not have an integer overflow 
-                // which would set the type to int). However, the type of the CastII node for the index i+2 is [0..3] because its size 
-                // is only 4. Since the type of i+2 is outside the range of the CastII node, the CastII node is replaced by top and 
+                // iArr2[i+2]
+                //
+                // The type of iArr2[i+2] is [4..SHORT_MAX+2] (we need limit to be short such that we do not have an integer overflow
+                // which would set the type to int). However, the type of the CastII node for the index i+2 is [0..3] because its size
+                // is only 4. Since the type of i+2 is outside the range of the CastII node, the CastII node is replaced by top and
                 // some of the data nodes and memory nodes die. We are left with a broken graph and later assert because of that.
-                iFld += iArr2[i]; // RangeCheck node is removed because it shares the same bool as the If (**). 
+                iFld += iArr2[i]; // RangeCheck node is removed because it shares the same bool as the If (**).
                 sum += iFld;
             } else {
                 // Emits an UCT with -XX:+BailoutToInterpreterForThrows and therefore the If (**) satisfies the condition of being a
                 // range check if with one of its blocks being an UCT.
-                throw r;        
+                throw r;
             }
             if (i > 50) {
                 break;
-            }            
+            }
         }
     }
 }
