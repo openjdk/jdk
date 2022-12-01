@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -127,14 +127,13 @@ endef
 # the build was created from
 SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
 
-# Locate all hg repositories included in the forest, as absolute paths
+# Locate all sourcecode repositories included in the forest, as absolute paths
 FindAllReposAbs = \
     $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
-        $(addprefix $(TOPDIR)/, .hg */.hg */*/.hg */*/*/.hg */*/*/*/.hg) \
         $(addprefix $(TOPDIR)/, .git */.git */*/.git */*/*/.git */*/*/*/.git) \
     )))))
 
-# Locate all hg repositories included in the forest, as relative paths
+# Locate all sourcecode repositories included in the forest, as relative paths
 FindAllReposRel = \
     $(strip $(subst $(TOPDIR)/,.,$(patsubst $(TOPDIR)/%/, %, $(FindAllReposAbs))))
 
@@ -195,7 +194,7 @@ $(eval $(call SetupLogging))
 
 ################################################################################
 
-MAX_PARAMS := 36
+MAX_PARAMS := 96
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
 
 # Template for creating a macro taking named parameters. To use it, assign the
@@ -220,7 +219,7 @@ define NamedParamsMacroTemplate
   $(foreach i,$(PARAM_SEQUENCE), $(if $(strip $($i)),\
     $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
   # Debug print all named parameter names and values
-  $(if $(findstring $(LOG_LEVEL),debug trace), \
+  $(if $(findstring $(LOG_LEVEL), trace), \
     $(info $0 $(strip $1) $(foreach i,$(PARAM_SEQUENCE), \
       $(if $(strip $($i)),$(NEWLINE) $(strip [$i] $(if $(filter $(LOG_LEVEL), trace), \
         $($i), $(wordlist 1, 20, $($(i))) $(if $(word 21, $($(i))), ...)))))))
@@ -443,12 +442,23 @@ endif
 # list.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
+#
+# FixPathFile is the file version of FixPath. It instead takes a file with paths in $1
+# and outputs the 'fixed' paths into the file in $2. If the file in $2 already exists
+# it is overwritten.
+# On non-Windows platforms this instead does a copy, so that $2 can still be used
+# as a depenendency of a make rule, instead of having to conditionally depend on
+# $1 instead, based on the target platform.
 ifeq ($(call isTargetOs, windows), true)
   FixPath = \
     $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
+  FixPathFile = \
+    $(shell $(FIXPATH_BASE) convert $1 $2)
 else
   FixPath = \
       $1
+  FixPathFile = \
+      $(shell $(CP) $1 $2)
 endif
 
 ################################################################################

@@ -116,6 +116,11 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         return super.invoke(doitMethod);
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     // Overridden only so this stack frame is seen
     @Override
     public String varValue(String className, String varName) throws RunException, EngineTerminationException, InternalException {

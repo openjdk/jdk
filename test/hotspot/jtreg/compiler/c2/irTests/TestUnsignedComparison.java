@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package compiler.c2.irTests;
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
+import static compiler.lib.ir_framework.IRNode.*;
+
 /*
  * @test
  * @bug 8276162
@@ -34,10 +36,6 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.TestUnsignedComparison
  */
 public class TestUnsignedComparison {
-    private static final String CMP_REGEX = "(\\d+(\\s){2}(" + "Cmp(I|L)" + ".*)+(\\s){2}===.*)";
-    private static final String CMPU_REGEX = "(\\d+(\\s){2}(" + "Cmp(U|UL)" + ".*)+(\\s){2}===.*)";
-    private static final String ADD_REGEX = "(\\d+(\\s){2}(" + "Add(I|L)" + ".*)+(\\s){2}===.*)";
-
     private static final int INT_MIN = Integer.MIN_VALUE;
     private static final long LONG_MIN = Long.MIN_VALUE;
 
@@ -84,43 +82,43 @@ public class TestUnsignedComparison {
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntVarEQ(int x, int y) {
         return x + INT_MIN == y + INT_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntVarNE(int x, int y) {
         return x + INT_MIN != y + INT_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntVarLT(int x, int y) {
         return x + INT_MIN < y + INT_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntVarLE(int x, int y) {
         return x + INT_MIN <= y + INT_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntVarGT(int x, int y) {
         return x + INT_MIN > y + INT_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntVarGE(int x, int y) {
         return x + INT_MIN >= y + INT_MIN;
     }
@@ -150,43 +148,43 @@ public class TestUnsignedComparison {
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntConEQ(int x) {
         return x + INT_MIN == INT_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntConNE(int x) {
         return x + INT_MIN != INT_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntConLT(int x) {
         return x + INT_MIN < INT_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntConLE(int x) {
         return x + INT_MIN <= INT_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntConGT(int x) {
         return x + INT_MIN > INT_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_I, ADD_I})
+    @IR(counts = {CMP_U, "1"})
     public boolean testIntConGE(int x) {
         return x + INT_MIN >= INT_CONST;
     }
@@ -214,43 +212,43 @@ public class TestUnsignedComparison {
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarEQ(long x, long y) {
         return x + LONG_MIN == y + LONG_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarNE(long x, long y) {
         return x + LONG_MIN != y + LONG_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarLT(long x, long y) {
         return x + LONG_MIN < y + LONG_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarLE(long x, long y) {
         return x + LONG_MIN <= y + LONG_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarGT(long x, long y) {
         return x + LONG_MIN > y + LONG_MIN;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarGE(long x, long y) {
         return x + LONG_MIN >= y + LONG_MIN;
     }
@@ -280,43 +278,43 @@ public class TestUnsignedComparison {
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConEQ(long x) {
         return x + LONG_MIN == LONG_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConNE(long x) {
         return x + LONG_MIN != LONG_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConLT(long x) {
         return x + LONG_MIN < LONG_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConLE(long x) {
         return x + LONG_MIN <= LONG_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConGT(long x) {
         return x + LONG_MIN > LONG_CONST;
     }
 
     @Test
-    @IR(failOn = {CMP_REGEX, ADD_REGEX})
-    @IR(counts = {CMPU_REGEX, "1"})
+    @IR(failOn = {CMP_L, ADD_L})
+    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConGE(long x) {
         return x + LONG_MIN >= LONG_CONST;
     }

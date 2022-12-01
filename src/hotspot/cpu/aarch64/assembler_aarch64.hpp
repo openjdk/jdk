@@ -303,24 +303,29 @@ public:
 class PrePost {
   int _offset;
   Register _r;
-public:
+protected:
   PrePost(Register reg, int o) : _offset(o), _r(reg) { }
-  int offset() { return _offset; }
-  Register reg() { return _r; }
+  ~PrePost() = default;
+  PrePost(const PrePost&) = default;
+  PrePost& operator=(const PrePost&) = default;
+public:
+  int offset() const { return _offset; }
+  Register reg() const { return _r; }
 };
 
 class Pre : public PrePost {
 public:
   Pre(Register reg, int o) : PrePost(reg, o) { }
 };
+
 class Post : public PrePost {
   Register _idx;
   bool _is_postreg;
 public:
-  Post(Register reg, int o) : PrePost(reg, o) { _idx = noreg; _is_postreg = false; }
-  Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; _is_postreg = true; }
-  Register idx_reg() { return _idx; }
-  bool is_postreg() {return _is_postreg; }
+  Post(Register reg, int o) : PrePost(reg, o), _idx(noreg), _is_postreg(false) {}
+  Post(Register reg, Register idx) : PrePost(reg, 0), _idx(idx), _is_postreg(true) {}
+  Register idx_reg() const { return _idx; }
+  bool is_postreg() const { return _is_postreg; }
 };
 
 namespace ext
@@ -332,7 +337,7 @@ namespace ext
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pre, post, post_reg, pcrel,
+  enum mode { no_mode, base_plus_offset, pre, post, post_reg,
               base_plus_offset_reg, literal };
 
   // Shift and extend for base reg + reg offset addressing
@@ -346,22 +351,11 @@ class Address {
     int shift() const { return _shift; }
     ext::operation op() const { return _op; }
   };
-  class uxtw : public extend {
-  public:
-    uxtw(int shift = -1): extend(shift, 0b010, ext::uxtw) { }
-  };
-  class lsl : public extend {
-  public:
-    lsl(int shift = -1): extend(shift, 0b011, ext::uxtx) { }
-  };
-  class sxtw : public extend {
-  public:
-    sxtw(int shift = -1): extend(shift, 0b110, ext::sxtw) { }
-  };
-  class sxtx : public extend {
-  public:
-    sxtx(int shift = -1): extend(shift, 0b111, ext::sxtx) { }
-  };
+
+  static extend uxtw(int shift = -1) { return extend(shift, 0b010, ext::uxtw); }
+  static extend lsl(int shift = -1)  { return extend(shift, 0b011, ext::uxtx); }
+  static extend sxtw(int shift = -1) { return extend(shift, 0b110, ext::sxtw); }
+  static extend sxtx(int shift = -1) { return extend(shift, 0b111, ext::sxtx); }
 
  private:
   Register _base;
@@ -371,11 +365,6 @@ class Address {
   extend _ext;
 
   RelocationHolder _rspec;
-
-  // Typically we use AddressLiterals we want to use their rval
-  // However in some situations we want the lval (effect address) of
-  // the item.  We provide a special factory for making those lvals.
-  bool _is_lval;
 
   // If the target is far we'll need to load the ea of this to a
   // register to reach it. Otherwise if near we can do PC-relative
@@ -405,7 +394,6 @@ class Address {
   Address(address target, RelocationHolder const& rspec)
     : _mode(literal),
       _rspec(rspec),
-      _is_lval(false),
       _target(target)  { }
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
   Address(Register base, RegisterOrConstant index, extend ext = lsl())
@@ -1907,31 +1895,33 @@ void mvnw(Register Rd, Register Rm,
 #undef INSN
 
   // Floating-point data-processing (1 source)
-  void data_processing(unsigned op31, unsigned type, unsigned opcode,
+  void data_processing(unsigned type, unsigned opcode,
                        FloatRegister Vd, FloatRegister Vn) {
     starti;
-    f(op31, 31, 29);
+    f(0b000, 31, 29);
     f(0b11110, 28, 24);
     f(type, 23, 22), f(1, 21), f(opcode, 20, 15), f(0b10000, 14, 10);
     rf(Vn, 5), rf(Vd, 0);
   }
 
-#define INSN(NAME, op31, type, opcode)                  \
+#define INSN(NAME, type, opcode)                        \
   void NAME(FloatRegister Vd, FloatRegister Vn) {       \
-    data_processing(op31, type, opcode, Vd, Vn);        \
+    data_processing(type, opcode, Vd, Vn);              \
   }
 
-  INSN(fmovs,  0b000, 0b00, 0b000000);
-  INSN(fabss,  0b000, 0b00, 0b000001);
-  INSN(fnegs,  0b000, 0b00, 0b000010);
-  INSN(fsqrts, 0b000, 0b00, 0b000011);
-  INSN(fcvts,  0b000, 0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fmovs,  0b00, 0b000000);
+  INSN(fabss,  0b00, 0b000001);
+  INSN(fnegs,  0b00, 0b000010);
+  INSN(fsqrts, 0b00, 0b000011);
+  INSN(fcvts,  0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fcvths, 0b11, 0b000100);   // Half-precision to single-precision
+  INSN(fcvtsh, 0b00, 0b000111);   // Single-precision to half-precision
 
-  INSN(fmovd,  0b000, 0b01, 0b000000);
-  INSN(fabsd,  0b000, 0b01, 0b000001);
-  INSN(fnegd,  0b000, 0b01, 0b000010);
-  INSN(fsqrtd, 0b000, 0b01, 0b000011);
-  INSN(fcvtd,  0b000, 0b01, 0b000100);   // Double-precision to single-precision
+  INSN(fmovd,  0b01, 0b000000);
+  INSN(fabsd,  0b01, 0b000001);
+  INSN(fnegd,  0b01, 0b000010);
+  INSN(fsqrtd, 0b01, 0b000011);
+  INSN(fcvtd,  0b01, 0b000100);   // Double-precision to single-precision
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
@@ -2332,6 +2322,40 @@ public:
     }
   }
 
+  // Single-structure load/store method (all addressing variants)
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Address a,
+             int op1, int op2, int regs) {
+    int expectedImmediate = (regVariant_to_elemBits(T) >> 3) * regs;
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    Register Xn = a.base();
+    int Rm;
+
+    switch (a.getMode()) {
+    case Address::base_plus_offset:
+      guarantee(a.offset() == 0, "no offset allowed here");
+      Rm = 0;
+      break;
+    case Address::post:
+      guarantee(a.offset() == expectedImmediate, "bad offset");
+      op1 |= 0b100;
+      Rm = 0b11111;
+      break;
+    case Address::post_reg:
+      op1 |= 0b100;
+      Rm = a.index()->encoding();
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1, 29, 21), f(Rm, 20, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
+  }
+
  public:
 
 #define INSN1(NAME, op1, op2)                                           \
@@ -2383,6 +2407,66 @@ public:
   INSN2(ld2r, 0b001101011, 0b1100);
   INSN3(ld3r, 0b001101010, 0b1110);
   INSN4(ld4r, 0b001101011, 0b1110);
+
+#undef INSN1
+#undef INSN2
+#undef INSN3
+#undef INSN4
+
+// Handle common single-structure ld/st parameter sanity checks
+// for all variations (1 to 4) of SIMD reigster inputs.  This
+// method will call the routine that generates the opcode.
+template<typename R, typename... Rx>
+  void ldst_sstr(SIMD_RegVariant T, int index, const Address &a,
+            int op1, int op2, R firstReg, Rx... otherRegs) {
+    const FloatRegister vtSet[] = { firstReg, otherRegs... };
+    const int regCount = sizeof...(otherRegs) + 1;
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||
+              (T == H && index <= 7) || (T == S && index <= 3) ||
+              (T == D && index <= 1)), "invalid index");
+    assert(regCount >= 1 && regCount <= 4, "illegal register count");
+
+    // Check to make sure when multiple SIMD registers are used
+    // that they are in successive order.
+    for (int i = 0; i < regCount - 1; i++) {
+      assert(vtSet[i]->successor() == vtSet[i + 1],
+             "Registers must be ordered");
+    }
+
+    ld_st(firstReg, T, index, a, op1, op2, regCount);
+  }
+
+// Define a set of INSN1/2/3/4 macros to handle single-structure
+// load/store instructions.
+#define INSN1(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, SIMD_RegVariant T, int index,             \
+            const Address &a) {                                         \
+    ldst_sstr(T, index, a, op1, op2, Vt);                               \
+ }
+
+#define INSN2(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, SIMD_RegVariant T,     \
+            int index, const Address &a) {                              \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2);                          \
+  }
+
+#define INSN3(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            SIMD_RegVariant T, int index, const Address &a) {           \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3);                     \
+  }
+
+#define INSN4(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            FloatRegister Vt4, SIMD_RegVariant T, int index,            \
+            const Address &a) {                                         \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3, Vt4);                \
+  }
+
+  INSN1(st1, 0b001101000, 0b0000);
+  INSN2(st2, 0b001101001, 0b0000);
+  INSN3(st3, 0b001101000, 0b0010);
+  INSN4(st4, 0b001101001, 0b0010);
 
 #undef INSN1
 #undef INSN2
@@ -2759,6 +2843,7 @@ public:
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
   INSN(usra, 1, 0b000101, /* isSHR = */ true);
   INSN(ssra, 0, 0b000101, /* isSHR = */ true);
+  INSN(sli,  1, 0b010101, /* isSHR = */ false);
 
 #undef INSN
 
@@ -3856,6 +3941,17 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
 
   INSN(sve_bext, 0b00);
   INSN(sve_bdep, 0b01);
+#undef INSN
+
+// SVE2 bitwise ternary operations
+#define INSN(NAME, opc)                                               \
+  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {  \
+    starti;                                                           \
+    f(0b00000100, 31, 24), f(opc, 23, 21), rf(Zm, 16);                \
+    f(0b001110, 15, 10), rf(Zk, 5), rf(Zdn, 0);                       \
+  }
+
+  INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

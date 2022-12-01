@@ -37,6 +37,8 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 // PPC64 is not specified as multi-copy-atomic
 // So we must not #define CPU_MULTI_COPY_ATOMIC
 

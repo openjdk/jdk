@@ -182,8 +182,7 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
   return found;
 }
 
-void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry,
-                                          bool check_for_duplicates) {
+void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry) {
   ResourceMark rm(current);
   jint manifest_size;
   char* manifest = read_manifest(current, entry, &manifest_size);

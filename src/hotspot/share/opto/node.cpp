@@ -2554,10 +2554,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
-    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
-      st->print("  Interface:");
-    } else if (toop) {
+    if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");
@@ -2680,51 +2677,6 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
 }
 
 // VERIFICATION CODE
-// For each input edge to a node (ie - for each Use-Def edge), verify that
-// there is a corresponding Def-Use edge.
-//------------------------------verify_edges-----------------------------------
-void Node::verify_edges(Unique_Node_List &visited) {
-  uint i, j, idx;
-  int  cnt;
-  Node *n;
-
-  // Recursive termination test
-  if (visited.member(this))  return;
-  visited.push(this);
-
-  // Walk over all input edges, checking for correspondence
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if (n != NULL && !n->is_top()) {
-      // Count instances of (Node *)this
-      cnt = 0;
-      for (idx = 0; idx < n->_outcnt; idx++ ) {
-        if (n->_out[idx] == (Node *)this)  cnt++;
-      }
-      assert( cnt > 0,"Failed to find Def-Use edge." );
-      // Check for duplicate edges
-      // walk the input array downcounting the input edges to n
-      for( j = 0; j < len(); j++ ) {
-        if( in(j) == n ) cnt--;
-      }
-      assert( cnt == 0,"Mismatched edge count.");
-    } else if (n == NULL) {
-      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy() || (is_Unlock() && i == req()-1)
-              || (is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
-              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
-    } else {
-      assert(n->is_top(), "sanity");
-      // Nothing to check.
-    }
-  }
-  // Recursive walk over all input edges
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if( n != NULL )
-      in(i)->verify_edges(visited);
-  }
-}
-
 // Verify all nodes if verify_depth is negative
 void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
   assert(verify_depth != 0, "depth should not be 0");

@@ -54,6 +54,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.Source.Feature;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
@@ -95,10 +96,12 @@ public class Lower extends TreeTranslator {
     private final TypeEnvs typeEnvs;
     private final Name dollarAssertionsDisabled;
     private final Types types;
+    private final TransTypes transTypes;
     private final boolean debugLower;
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
+    private final boolean useMatchException;
 
     protected Lower(Context context) {
         context.put(lowerKey, this);
@@ -117,6 +120,7 @@ public class Lower extends TreeTranslator {
             fromString(target.syntheticNameChar() + "assertionsDisabled");
 
         types = Types.instance(context);
+        transTypes = TransTypes.instance(context);
         Options options = Options.instance(context);
         debugLower = options.isSet("debuglower");
         pkginfoOpt = PkgInfo.get(options);
@@ -124,6 +128,10 @@ public class Lower extends TreeTranslator {
             target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
+        Source source = Source.instance(context);
+        Preview preview = Preview.instance(context);
+        useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
+                            (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
     }
 
     /** The currently enclosing class.
@@ -2768,7 +2776,8 @@ public class Lower extends TreeTranslator {
                 lambdaTranslationMap = prevLambdaTranslationMap;
             }
         }
-        if (tree.name == names.init && (tree.sym.flags_field & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0) {
+        if (tree.name == names.init && ((tree.sym.flags_field & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
+                (tree.sym.flags_field & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD))) {
             // lets find out if there is any field waiting to be initialized
             ListBuffer<VarSymbol> fields = new ListBuffer<>();
             for (Symbol sym : currentClass.getEnclosedElements()) {
@@ -3518,16 +3527,15 @@ public class Lower extends TreeTranslator {
                                               syms.iterableType.tsym);
             if (iterableType.getTypeArguments().nonEmpty())
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
-            Type eType = types.skipTypeVars(tree.expr.type, false);
-            tree.expr.type = types.erasure(eType);
-            if (eType.isCompound())
-                tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
+            tree.expr.type = types.erasure(types.skipTypeVars(tree.expr.type, false));
+            tree.expr = transTypes.coerce(attrEnv, tree.expr, types.erasure(iterableType));
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,
-                                           eType,
+                                           tree.expr.type,
                                            List.nil());
+            Assert.check(types.isSameType(types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)), types.erasure(syms.iteratorType)));
             VarSymbol itvar = new VarSymbol(SYNTHETIC, names.fromString("i" + target.syntheticNameChar()),
-                                            types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
+                                            types.erasure(syms.iteratorType),
                                             currentMethodSym);
 
              JCStatement init = make.
@@ -3622,21 +3630,24 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
-        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(matchException, tree.cases)
+        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(tree.patternSwitch,
+                                                                     tree.wasEnumSelector,
+                                                                     tree.cases)
                                                 : tree.cases;
         handleSwitch(tree, tree.selector, cases);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
-        List<JCCase> cases = addDefaultIfNeeded(matchException, tree.cases);
+        List<JCCase> cases = addDefaultIfNeeded(tree.patternSwitch, tree.wasEnumSelector, tree.cases);
         handleSwitch(tree, tree.selector, cases);
     }
 
-    private List<JCCase> addDefaultIfNeeded(boolean matchException, List<JCCase> cases) {
+    private List<JCCase> addDefaultIfNeeded(boolean patternSwitch, boolean wasEnumSelector,
+                                            List<JCCase> cases) {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
+            boolean matchException = useMatchException;
+            matchException |= patternSwitch && !wasEnumSelector;
             Type exception = matchException ? syms.matchExceptionType
                                             : syms.incompatibleClassChangeErrorType;
             List<JCExpression> params = matchException ? List.of(makeNull(), makeNull())

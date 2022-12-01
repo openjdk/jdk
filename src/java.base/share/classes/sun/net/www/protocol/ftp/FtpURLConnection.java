@@ -159,17 +159,15 @@ public class FtpURLConnection extends URLConnection {
         }
     }
 
-    static URL checkURL(URL u) throws IllegalArgumentException {
+    private static URL checkURL(URL u) throws MalformedURLException {
         if (u != null) {
             if (u.toExternalForm().indexOf('\n') > -1) {
-                Exception mfue = new MalformedURLException("Illegal character in URL");
-                throw new IllegalArgumentException(mfue.getMessage(), mfue);
+                throw new MalformedURLException("Illegal character in URL");
             }
         }
-        String s = IPAddressUtil.checkAuthority(u);
-        if (s != null) {
-            Exception mfue = new MalformedURLException(s);
-            throw new IllegalArgumentException(mfue.getMessage(), mfue);
+        String errMsg = IPAddressUtil.checkAuthority(u);
+        if (errMsg != null) {
+            throw new MalformedURLException(errMsg);
         }
         return u;
     }
@@ -179,14 +177,14 @@ public class FtpURLConnection extends URLConnection {
      *
      * @param   url     The {@code URL} to retrieve or store.
      */
-    public FtpURLConnection(URL url) {
+    public FtpURLConnection(URL url) throws MalformedURLException {
         this(url, null);
     }
 
     /**
      * Same as FtpURLconnection(URL) with a per connection proxy specified
      */
-    FtpURLConnection(URL url, Proxy p) {
+    FtpURLConnection(URL url, Proxy p) throws MalformedURLException {
         super(checkURL(url));
         instProxy = p;
         host = url.getHost();

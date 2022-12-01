@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,30 +27,30 @@ package sun.java2d.marlin;
 
 public interface DPathConsumer2D {
     /**
-     * @see java.awt.geom.Path2D.Float#moveTo
+     * @see java.awt.geom.Path2D.Double#moveTo
      */
     public void moveTo(double x, double y);
 
     /**
-     * @see java.awt.geom.Path2D.Float#lineTo
+     * @see java.awt.geom.Path2D.Double#lineTo
      */
     public void lineTo(double x, double y);
 
     /**
-     * @see java.awt.geom.Path2D.Float#quadTo
+     * @see java.awt.geom.Path2D.Double#quadTo
      */
     public void quadTo(double x1, double y1,
                        double x2, double y2);
 
     /**
-     * @see java.awt.geom.Path2D.Float#curveTo
+     * @see java.awt.geom.Path2D.Double#curveTo
      */
     public void curveTo(double x1, double y1,
                         double x2, double y2,
                         double x3, double y3);
 
     /**
-     * @see java.awt.geom.Path2D.Float#closePath
+     * @see java.awt.geom.Path2D.Double#closePath
      */
     public void closePath();
 

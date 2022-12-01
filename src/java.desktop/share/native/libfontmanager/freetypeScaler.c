@@ -94,7 +94,7 @@ typedef struct FTScalerContext {
 
 #ifdef DEBUG
 /* These are referenced in the freetype sources if DEBUG macro is defined.
-   To simplify work with debuging version of freetype we define
+   To simplify work with debugging version of freetype we define
    them here. */
 int z_verbose;
 void z_error(char *s) {}
@@ -1275,7 +1275,7 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
     maxCoords = 4*(npoints + 2*ncontours); //we may need to insert
                                            //up to n-1 intermediate points
 
-    /* first usage - allocate space and intialize all fields */
+    /* first usage - allocate space and initialize all fields */
     if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL) {
         gpdata->lenTypes  = maxTypes;
         gpdata->lenCoords = maxCoords;

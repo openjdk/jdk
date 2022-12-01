@@ -50,7 +50,6 @@ import com.sun.tools.javac.tree.JCTree.JCForLoop;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCIf;
 import com.sun.tools.javac.tree.JCTree.JCInstanceOf;
-import com.sun.tools.javac.tree.JCTree.JCLabeledStatement;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCSwitch;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -63,7 +62,6 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-import com.sun.tools.javac.util.Options;
 
 import java.util.Collections;
 import java.util.Map;
@@ -106,9 +104,7 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.Pair;
 
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
@@ -301,16 +297,10 @@ public class TransPatterns extends TreeTranslator {
         //$record $r; type-test-of($nestedPattern1) && type-test-of($nestedPattern2) && ... &&
         //            nested-conditions-of($nestedPattern1) && nested-conditions-of($nestedPattern2)
         Type recordType = recordPattern.record.erasure(types);
-        JCVariableDecl recordBindingVar;
-
-        if (recordPattern.var != null) {
-            recordBindingVar = recordPattern.var;
-        } else {
-            BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
-                names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
-                                 currentMethodSym);
-            recordBindingVar = make.VarDef(tempBind, null);
-        }
+        BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
+            names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
+                             currentMethodSym);
+        JCVariableDecl recordBindingVar = make.VarDef(tempBind, null);
 
         VarSymbol recordBinding = recordBindingVar.sym;
         List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
@@ -362,6 +352,7 @@ public class TransPatterns extends TreeTranslator {
             nestedFullComponentTypes = nestedFullComponentTypes.tail;
             nestedPatterns = nestedPatterns.tail;
         }
+
         Assert.check(components.isEmpty() == nestedPatterns.isEmpty());
         JCExpression guard = null;
         if (firstLevelChecks != null) {
@@ -438,6 +429,8 @@ public class TransPatterns extends TreeTranslator {
             // restarted from the next index.
             //-case null is always desugared to case -1, as the typeSwitch bootstrap method will
             // return -1 when the input is null
+            //
+            //note the selector is evaluated only once and stored in a temporary variable
             ListBuffer<JCCase> newCases = new ListBuffer<>();
             for (List<JCCase> c = cases; c.nonEmpty(); c = c.tail) {
                 c.head.labels = c.head.labels.map(l -> {
@@ -954,7 +947,7 @@ public class TransPatterns extends TreeTranslator {
         if (bindingVar == null) {
             super.visitIdent(tree);
         } else {
-            result = make.at(tree.pos).Ident(bindingVar);
+            result = make.at(tree.pos).Ident(bindingVar).setType(bindingVar.erasure(types));
         }
     }
 

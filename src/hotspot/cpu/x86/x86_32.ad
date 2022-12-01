@@ -657,8 +657,8 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   }
   st->print_cr("POPL   EBP"); st->print("\t");
   if (do_polling() && C->is_method_compilation()) {
-    st->print("CMPL     rsp, poll_offset[thread]  \n\t"
-              "JA       #safepoint_stub\t"
+    st->print("CMPL    rsp, poll_offset[thread]  \n\t"
+              "JA      #safepoint_stub\t"
               "# Safepoint: poll for GC");
   }
 }

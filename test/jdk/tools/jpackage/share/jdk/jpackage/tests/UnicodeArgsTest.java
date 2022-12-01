@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,19 @@ public final class UnicodeArgsTest {
     @Parameter("false")
     @Test
     public void test8246042(boolean onCommandLine) {
-        final String testString = new String(Character.toChars(0x00E9));
+        final String testString;
+
+        String encoding = System.getProperty("native.encoding");
+        switch (encoding) {
+        default:
+            testString = new String(Character.toChars(0x00E9));
+            break;
+
+        case "MS932":
+        case "SJIS":
+            testString = new String(Character.toChars(0x3042));
+            break;
+        }
 
         TKit.trace(String.format("Test string code points: %s", testString
                 .codePoints()

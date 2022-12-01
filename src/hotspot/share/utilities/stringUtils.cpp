@@ -22,8 +22,8 @@
  *
  */
 
-#include "jvm_io.h"
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 

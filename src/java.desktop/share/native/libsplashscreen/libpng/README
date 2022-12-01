@@ -1,12 +1,12 @@
-README for libpng version 1.6.37 - April 14, 2019
-=================================================
+README for libpng version 1.6.38
+================================
 
 See the note about version numbers near the top of png.h.
 See INSTALL for instructions on how to install libpng.
 
 Libpng comes in several distribution formats.  Get libpng-*.tar.gz or
-libpng-*.tar.xz or if you want UNIX-style line endings in the text
-files, or lpng*.7z or lpng*.zip if you want DOS-style line endings.
+libpng-*.tar.xz if you want UNIX-style line endings in the text files,
+or lpng*.7z or lpng*.zip if you want DOS-style line endings.
 
 Version 0.89 was the first official release of libpng.  Don't let the
 fact that it's the first release fool you.  The libpng library has been

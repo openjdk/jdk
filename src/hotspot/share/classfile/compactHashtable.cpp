@@ -23,17 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
+#include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
+
 #include <sys/stat.h>
 
 #if INCLUDE_CDS
@@ -51,7 +52,7 @@ CompactHashtableWriter::CompactHashtableWriter(int num_entries,
   _num_entries_written = 0;
   _buckets = NEW_C_HEAP_ARRAY(GrowableArray<Entry>*, _num_buckets, mtSymbol);
   for (int i=0; i<_num_buckets; i++) {
-    _buckets[i] = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Entry>(0, mtSymbol);
+    _buckets[i] = new (mtSymbol) GrowableArray<Entry>(0, mtSymbol);
   }
 
   _stats = stats;

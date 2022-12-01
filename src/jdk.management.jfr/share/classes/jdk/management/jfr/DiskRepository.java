@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ final class DiskRepository implements Closeable {
         }
         int count = 0;
         while (chunks.size() > 1) {
-            DiskChunk oldestChunk = chunks.getLast();
+            DiskChunk oldestChunk = chunks.peekLast();
             if (oldestChunk.endTime.isAfter(oldest)) {
                 return;
             }
@@ -440,14 +440,14 @@ final class DiskRepository implements Closeable {
     }
 
     private void removeOldestChunk() {
-        DiskChunk chunk = chunks.poll();
+        DiskChunk chunk = chunks.pollLast();
         chunk.release();
         size -= chunk.size;
     }
 
     public synchronized void onChunkComplete(long endTimeNanos) {
         while (!chunks.isEmpty()) {
-            DiskChunk oldestChunk = chunks.peek();
+            DiskChunk oldestChunk = chunks.peekLast();
             if (oldestChunk.startTimeNanos < endTimeNanos) {
                 removeOldestChunk();
             } else {
@@ -460,7 +460,7 @@ final class DiskRepository implements Closeable {
         if (maxAge != null) {
             trimToAge(chunk.endTime.minus(maxAge));
         }
-        chunks.push(chunk);
+        chunks.addFirst(chunk);
         size += chunk.size;
         trimToSize();
 
@@ -500,9 +500,13 @@ final class DiskRepository implements Closeable {
 
     public synchronized FileDump newDump(long endTime) {
         FileDump fd = new FileDump(endTime);
-        for (DiskChunk dc : chunks) {
+        // replay history by iterating from oldest to most recent
+        Iterator<DiskChunk> it = chunks.descendingIterator();
+        while (it.hasNext()) {
+            DiskChunk dc = it.next();
             fd.add(dc);
         }
+
         if (!fd.isComplete()) {
             fileDumps.add(fd);
         }

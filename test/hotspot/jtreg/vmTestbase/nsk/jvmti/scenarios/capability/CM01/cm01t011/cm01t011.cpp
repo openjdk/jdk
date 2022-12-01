@@ -316,23 +316,18 @@ static int checkLocalVariableFunctions() {
     jfloat float_value;
     jdouble double_value;
     int i;
-
-/* DEBUG -- while thread should be suspended
     jvmtiCapabilities caps;
-*/
 
     NSK_DISPLAY0("Checking positive: GetLocalVariableTable\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetLocalVariableTable(method, &count, &local_variable_table)))
         return NSK_FALSE;
 
-/* DEBUG -- while thread should be suspended
     memset(&caps, 0, sizeof(caps));
     caps.can_suspend = 1;
     if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SuspendThread(thread)))
         return NSK_FALSE;
-*/
 
     for (i = 0; i < count; i++) {
         if (strcmp(local_variable_table[i].name, "o") == 0) {
@@ -388,12 +383,10 @@ static int checkLocalVariableFunctions() {
         }
     }
 
-/* DEBUG -- while thread should be suspended
     if (!NSK_JVMTI_VERIFY(jvmti->ResumeThread(thread)))
         return NSK_FALSE;
     if (!NSK_JVMTI_VERIFY(jvmti->RelinquishCapabilities(&caps)))
         return JNI_ERR;
-*/
 
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)local_variable_table)))
         return NSK_FALSE;

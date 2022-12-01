@@ -65,11 +65,11 @@ public final class ZoomOutAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomOutAction");
+        return NbBundle.getMessage(ZoomOutAction.class, "CTL_ZoomOutAction");
     }
 
     private String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomOutAction");
+        return NbBundle.getMessage(ZoomOutAction.class, "HINT_ZoomOutAction");
     }
 
     @Override
@@ -84,6 +84,6 @@ public final class ZoomOutAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/zoom_out.png";
+        return "com/sun/hotspot/igv/view/images/zoomOut.svg"; // NOI18N
     }
 }

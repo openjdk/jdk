@@ -23,8 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -33,16 +35,15 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 
+// Prints the current bytecode and its attributes using bytecode-specific information.
 
-// Standard closure for BytecodeTracer: prints the current bytecode
-// and its attributes using bytecode-specific information.
-
-class BytecodePrinter: public BytecodeClosure {
+class BytecodePrinter {
  private:
   // %%% This field is not GC-ed, and so can contain garbage
   // between critical sections.  Use only pointer-comparison
@@ -52,6 +53,7 @@ class BytecodePrinter: public BytecodeClosure {
   bool      _is_wide;
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
+  int       _flags;
 
   void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
@@ -69,20 +71,25 @@ class BytecodePrinter: public BytecodeClosure {
   Bytecodes::Code raw_code()         { return Bytecodes::Code(_code); }
 
 
-  bool      check_index(int i, int& cp_index, outputStream* st = tty);
-  bool      check_cp_cache_index(int i, int& cp_index, outputStream* st = tty);
-  bool      check_obj_index(int i, int& cp_index, outputStream* st = tty);
-  bool      check_invokedynamic_index(int i, int& cp_index, outputStream* st = tty);
-  void      print_constant(int i, outputStream* st = tty);
-  void      print_field_or_method(int i, outputStream* st = tty);
-  void      print_field_or_method(int orig_i, int i, outputStream* st = tty);
-  void      print_attributes(int bci, outputStream* st = tty);
-  void      bytecode_epilog(int bci, outputStream* st = tty);
+  bool      check_index(int i, int& cp_index, outputStream* st);
+  bool      check_cp_cache_index(int i, int& cp_index, outputStream* st);
+  bool      check_obj_index(int i, int& cp_index, outputStream* st);
+  bool      check_invokedynamic_index(int i, int& cp_index, outputStream* st);
+  void      print_constant(int i, outputStream* st);
+  void      print_constant_nocheck(int i, outputStream* st);
+  void      print_cpcache_entry(int cpc_index, outputStream* st);
+  void      print_dynamic(int orig_i, int i, constantTag tag, outputStream* st);
+  void      print_field_or_method(int i, outputStream* st);
+  void      print_field_or_method(int orig_i, int i, outputStream* st);
+  void      print_invoke_handle(int i, outputStream* st);
+  void      print_attributes(int bci, outputStream* st);
+  void      bytecode_epilog(int bci, outputStream* st);
 
  public:
-  BytecodePrinter() {
+  BytecodePrinter(int flags = 0) {
     _is_wide = false;
     _code = Bytecodes::_illegal;
+    _flags = flags;
   }
 
   // This method is called while executing the raw bytecodes, so none of
@@ -120,7 +127,7 @@ class BytecodePrinter: public BytecodeClosure {
            BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
-    print_attributes(bci);
+    print_attributes(bci, st);
     // Set is_wide for the next one, since the caller of this doesn't skip
     // the next bytecode.
     _is_wide = (code == Bytecodes::_wide);
@@ -141,10 +148,13 @@ class BytecodePrinter: public BytecodeClosure {
     _code = code;
     int bci = bcp - method->code_base();
     // Print bytecode index and name
+    if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_BYTECODE_ADDR)) {
+      st->print(INTPTR_FORMAT " ", p2i(bcp));
+    }
     if (is_wide()) {
-      st->print("%d %s_w", bci, Bytecodes::name(code));
+      st->print("%4d %s_w", bci, Bytecodes::name(code));
     } else {
-      st->print("%d %s", bci, Bytecodes::name(code));
+      st->print("%4d %s", bci, Bytecodes::name(code));
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
     print_attributes(bci, st);
@@ -152,53 +162,31 @@ class BytecodePrinter: public BytecodeClosure {
   }
 };
 
+// We need a global instance to keep track of the states when the bytecodes
+// are executed. Access by multiple threads are controlled by ttyLocker.
+static BytecodePrinter _interpreter_printer;
 
-// Implementation of BytecodeTracer
-
-// %%% This set_closure thing seems overly general, given that
-// nobody uses it.  Also, if BytecodePrinter weren't hidden
-// then Method* could use instances of it directly and it
-// would be easier to remove races on _current_method and bcp.
-// Since this is not product functionality, we can defer cleanup.
-
-BytecodeClosure* BytecodeTracer::_closure = NULL;
-
-static BytecodePrinter std_closure;
-BytecodeClosure* BytecodeTracer::std_closure() {
-  return &::std_closure;
-}
-
-
-void BytecodeTracer::trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
-  if (_closure == NULL) {
-    return;
-  }
-
+void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
     ttyLocker ttyl;  // 5065316: keep the following output coherent
     // The ttyLocker also prevents races between two threads
     // trying to use the single instance of BytecodePrinter.
-    // Using the ttyLocker prevents the system from coming to
-    // a safepoint within this code, which is sensitive to Method*
-    // movement.
     //
     // There used to be a leaf mutex here, but the ttyLocker will
     // work just as well, as long as the printing operations never block.
-    //
-    // We put the locker on the static trace method, not the
-    // virtual one, because the clients of this module go through
-    // the static method.
-    _closure->trace(method, bcp, tos, tos2, st);
+    _interpreter_printer.trace(method, bcp, tos, tos2, st);
   }
 }
 
-void BytecodeTracer::trace(const methodHandle& method, address bcp, outputStream* st) {
-  if (_closure == NULL) {
-    return;
-  }
+void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
+  BytecodePrinter method_printer(flags);
+  BytecodeStream s(method);
+  s.set_interval(from, to);
 
-  ttyLocker ttyl;  // 5065316: keep the following output coherent
-  _closure->trace(method, bcp, st);
+  ttyLocker ttyl;  // keep the following output coherent
+  while (s.next() >= 0) {
+    method_printer.trace(method, s.bcp(), st);
+  }
 }
 
 void print_symbol(Symbol* sym, outputStream* st) {
@@ -324,6 +312,10 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   int orig_i = i;
   if (!check_index(orig_i, i, st))  return;
 
+  print_constant_nocheck(i, st);
+}
+
+void BytecodePrinter::print_constant_nocheck(int i, outputStream* st) {
   ConstantPool* constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
@@ -396,8 +388,61 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
     }
     st->print_cr(" %d <%s%s%s>", i, name->as_C_string(), sep, signature->as_C_string());
   }
+
+  if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC) &&
+      (tag.is_dynamic_constant() || tag.is_invoke_dynamic())) {
+    print_dynamic(orig_i, i, tag, st);
+  }
 }
 
+void BytecodePrinter::print_dynamic(int orig_i, int bsm_cpindex, constantTag tag, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  int bsm = constants->bootstrap_method_ref_index_at(bsm_cpindex);
+  const char* ref_kind = "";
+  switch (constants->method_handle_ref_kind_at(bsm)) {
+  case JVM_REF_getField         : ref_kind = "REF_getField"; break;
+  case JVM_REF_getStatic        : ref_kind = "REF_getStatic"; break;
+  case JVM_REF_putField         : ref_kind = "REF_putField"; break;
+  case JVM_REF_putStatic        : ref_kind = "REF_putStatic"; break;
+  case JVM_REF_invokeVirtual    : ref_kind = "REF_invokeVirtual"; break;
+  case JVM_REF_invokeStatic     : ref_kind = "REF_invokeStatic"; break;
+  case JVM_REF_invokeSpecial    : ref_kind = "REF_invokeSpecial"; break;
+  case JVM_REF_newInvokeSpecial : ref_kind = "REF_newInvokeSpecial"; break;
+  case JVM_REF_invokeInterface  : ref_kind = "REF_invokeInterface"; break;
+  default                       : ShouldNotReachHere();
+  }
+  st->print("  BSM: %s", ref_kind);
+  print_field_or_method(-1, constants->method_handle_index_at(bsm), st);
+  int argc = constants->bootstrap_argument_count_at(bsm_cpindex);
+  st->print("  arguments[%d] = {", argc);
+  if (argc > 0) {
+    st->cr();
+    for (int arg_i = 0; arg_i < argc; arg_i++) {
+      int arg = constants->bootstrap_argument_index_at(bsm_cpindex, arg_i);
+      st->print("    ");
+      print_constant_nocheck(arg, st);
+    }
+  }
+  st->print_cr("  }");
+  if (tag.is_invoke_dynamic()) {
+    int indy_index = orig_i;
+    int cpc_index = constants->invokedynamic_cp_cache_index(indy_index);
+    print_cpcache_entry(cpc_index, st);
+  } else {
+    // TODO: print info for tag.is_dynamic_constant()
+  }
+}
+
+void BytecodePrinter::print_invoke_handle(int i, outputStream* st) {
+  print_cpcache_entry(ConstantPool::decode_cpcache_index(i), st);
+}
+
+void BytecodePrinter::print_cpcache_entry(int cpc_index, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  ConstantPoolCacheEntry* cpce = constants->cache()->entry_at(cpc_index);
+  st->print("  ConstantPoolCacheEntry: ");
+  cpce->print(st, cpc_index, constants->cache());
+}
 
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
@@ -559,7 +604,14 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
-      print_field_or_method(get_index_u2_cpcache(), st);
+      {
+        int i = get_index_u2_cpcache();
+        print_field_or_method(i, st);
+        if (raw_code() == Bytecodes::_invokehandle &&
+            ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
+          print_invoke_handle(i, st);
+        }
+      }
       break;
 
     case Bytecodes::_invokeinterface:

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -858,7 +859,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
 
   stringStream* predString = NULL;
   if (TraceLoopPredicate) {
-    predString = new stringStream();
+    predString = new (mtCompiler) stringStream();
     predString->print("rc_predicate ");
   }
 
@@ -983,7 +984,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
   if (TraceLoopPredicate) {
     predString->print_cr("<u range");
     tty->print("%s", predString->base());
-    predString->~stringStream();
+    delete predString;
   }
   return bol;
 }

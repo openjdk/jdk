@@ -385,7 +385,7 @@ public:
   UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {}
 
 private:
-  ResizeableResourceHashtable<address, bool, ResourceObj::C_HEAP,
+  ResizeableResourceHashtable<address, bool, AnyObj::C_HEAP,
                               mtClassShared> _has_been_visited;
 };
 

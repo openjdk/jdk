@@ -73,7 +73,7 @@ public class TestIntegerUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"UDivI", ">= 1"}) // Atleast one UDivI node is generated if intrinsic is used
+    @IR(counts = {IRNode.UDIV_I, ">= 1"}) // Atleast one UDivI node is generated if intrinsic is used
     public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {
@@ -87,7 +87,7 @@ public class TestIntegerUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"UModI", ">= 1"}) // Atleast one UModI node is generated if intrinsic is used
+    @IR(counts = {IRNode.UMOD_I, ">= 1"}) // Atleast one UModI node is generated if intrinsic is used
     public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {
@@ -102,7 +102,7 @@ public class TestIntegerUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"UDivModI", ">= 1"}) // Atleast one UDivModI node is generated if intrinsic is used
+    @IR(counts = {IRNode.UDIV_MOD_I, ">= 1"}) // Atleast one UDivModI node is generated if intrinsic is used
     public void testDivModUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {

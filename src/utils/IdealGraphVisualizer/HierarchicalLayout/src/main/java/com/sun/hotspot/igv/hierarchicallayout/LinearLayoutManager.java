@@ -41,7 +41,7 @@ public class LinearLayoutManager implements LayoutManager {
 
     @Override
     public void doLayout(LayoutGraph graph) {
-        doLayout(graph, new HashSet<Link>());
+        doLayout(graph, new HashSet<>());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -125,6 +125,7 @@ public class XIncludeTextReader {
             else {
                 String expandedSystemId = XMLEntityManager.expandSystemId(source.getSystemId(), source.getBaseSystemId(), false);
 
+                @SuppressWarnings("deprecation")
                 URL url = new URL(expandedSystemId);
                 URLConnection urlCon = url.openConnection();
 

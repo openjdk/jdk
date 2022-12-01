@@ -566,7 +566,7 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" />
   </Event>
 
-  <Event name="JitRestart" category="Java Virtual Machine, Compiler" label="JIT Restart" stackTrace="false" startTime="false" thread="true">
+  <Event name="JITRestart" category="Java Virtual Machine, Compiler" label="JIT Restart" stackTrace="false" startTime="false" thread="true">
     <Field type="ulong" contentType="bytes" name="freedMemory" label="Freed Memory" />
     <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
   </Event>

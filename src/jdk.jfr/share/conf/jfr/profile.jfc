@@ -540,7 +540,7 @@
       <setting name="enabled" control="compiler-enabled-failure">false</setting>
     </event>
 
-    <event name="jdk.JitRestart">
+    <event name="jdk.JITRestart">
       <setting name="enabled" control="compiler-enabled">true</setting>
     </event>
 
@@ -707,6 +707,11 @@
     <event name="jdk.Deserialization">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.InitialSecurityProperty">
+      <setting name="enabled">true</setting>
+      <setting name="period">beginChunk</setting>
     </event>
 
     <event name="jdk.SecurityPropertyModification">

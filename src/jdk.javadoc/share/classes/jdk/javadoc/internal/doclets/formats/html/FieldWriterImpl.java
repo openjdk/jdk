@@ -143,11 +143,11 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
+    protected Table<Element> createSummaryTable() {
         List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
                 HtmlStyle.colLast);
 
-        return new Table(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setCaption(contents.fields)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(bodyRowStyles);

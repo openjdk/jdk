@@ -299,14 +299,18 @@ static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
 void JfrThreadSampleClosure::commit_events(JfrSampleType type) {
   if (JAVA_SAMPLE == type) {
     assert(_added_java > 0 && _added_java <= MAX_NR_OF_JAVA_SAMPLES, "invariant");
-    for (uint i = 0; i < _added_java; ++i) {
-      _events[i].commit();
+    if (EventExecutionSample::is_enabled()) {
+      for (uint i = 0; i < _added_java; ++i) {
+        _events[i].commit();
+      }
     }
   } else {
     assert(NATIVE_SAMPLE == type, "invariant");
     assert(_added_native > 0 && _added_native <= MAX_NR_OF_NATIVE_SAMPLES, "invariant");
-    for (uint i = 0; i < _added_native; ++i) {
-      _events_native[i].commit();
+    if (EventNativeMethodSample::is_enabled()) {
+      for (uint i = 0; i < _added_native; ++i) {
+        _events_native[i].commit();
+      }
     }
   }
 }

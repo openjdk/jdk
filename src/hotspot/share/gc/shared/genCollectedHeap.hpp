@@ -186,10 +186,6 @@ public:
   // supports. Caller does not hold the Heap_lock on entry.
   virtual void collect(GCCause::Cause cause);
 
-  // Perform a full collection of generations up to and including max_generation.
-  // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
-  void collect(GCCause::Cause cause, GenerationType max_generation);
-
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // The methods is_in() and is_in_youngest() may be expensive to compute
   // in general, so, to prevent their inadvertent use in product jvm's, we
