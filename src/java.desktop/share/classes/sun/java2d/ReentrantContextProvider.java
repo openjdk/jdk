@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,14 +136,14 @@ public abstract class ReentrantContextProvider<K extends ReentrantContext>
             // Create the reference:
             switch (refType) {
                 case REF_HARD:
-                    ctx.reference = new HardReference<K>(ctx);
+                    ctx.reference = new HardReference<>(ctx);
                     break;
                 case REF_SOFT:
-                    ctx.reference = new SoftReference<K>(ctx);
+                    ctx.reference = new SoftReference<>(ctx);
                     break;
                 default:
                 case REF_WEAK:
-                    ctx.reference = new WeakReference<K>(ctx);
+                    ctx.reference = new WeakReference<>(ctx);
                     break;
             }
         }

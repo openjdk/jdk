@@ -28,10 +28,10 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "jvm.h"
-#include "memory/resourceArea.hpp"
-#include "runtime/perfData.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "utilities/copy.hpp"
 
 /* Copyright (c) 1992, 2021, Oracle and/or its affiliates, and Stanford University.
