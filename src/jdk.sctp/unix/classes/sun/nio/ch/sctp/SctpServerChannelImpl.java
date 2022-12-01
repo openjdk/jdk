@@ -59,7 +59,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
     private final int fdVal;
 
     /* IDs of native thread doing accept, for signalling */
-    private volatile long thread = 0;
+    private volatile long thread;
 
     /* Lock held by thread currently blocked in this channel */
     private final Object lock = new Object();

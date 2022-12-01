@@ -50,7 +50,7 @@ public final class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption<Boolean> SCTP_DISABLE_FRAGMENTS = new
         SctpStdSocketOption<>("SCTP_DISABLE_FRAGMENTS", Boolean.class,
-        sun.nio.ch.sctp.SctpStdSocketOption.SCTP_DISABLE_FRAGMENTS);
+        SctpStdSocketOption.SCTP_DISABLE_FRAGMENTS);
 
     /**
      * Enables or disables explicit message completion.
@@ -69,7 +69,7 @@ public final class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption<Boolean> SCTP_EXPLICIT_COMPLETE = new
         SctpStdSocketOption<>("SCTP_EXPLICIT_COMPLETE", Boolean.class,
-        sun.nio.ch.sctp.SctpStdSocketOption.SCTP_EXPLICIT_COMPLETE);
+        SctpStdSocketOption.SCTP_EXPLICIT_COMPLETE);
 
     /**
      * Fragmented interleave controls how the presentation of messages occur
@@ -120,7 +120,7 @@ public final class SctpStandardSocketOptions {
     public static final SctpSocketOption<Integer> SCTP_FRAGMENT_INTERLEAVE =
             new SctpStdSocketOption<>("SCTP_FRAGMENT_INTERLEAVE",
                   Integer.class,
-                  sun.nio.ch.sctp.SctpStdSocketOption.SCTP_FRAGMENT_INTERLEAVE);
+                  SctpStdSocketOption.SCTP_FRAGMENT_INTERLEAVE);
 
     /**
      * The maximum number of streams requested by the local endpoint during
@@ -171,7 +171,7 @@ public final class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption<Boolean> SCTP_NODELAY =
         new SctpStdSocketOption<>("SCTP_NODELAY", Boolean.class,
-        sun.nio.ch.sctp.SctpStdSocketOption.SCTP_NODELAY);
+        SctpStdSocketOption.SCTP_NODELAY);
 
     /**
      * Requests that the local SCTP stack use the given peer address as
@@ -246,7 +246,7 @@ public final class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption<Integer> SO_SNDBUF =
         new SctpStdSocketOption<>("SO_SNDBUF", Integer.class,
-        sun.nio.ch.sctp.SctpStdSocketOption.SO_SNDBUF);
+        SctpStdSocketOption.SO_SNDBUF);
 
     /**
      * The size of the socket receive buffer.
@@ -272,8 +272,8 @@ public final class SctpStandardSocketOptions {
      * dependent.
      */
     public static final SctpSocketOption<Integer> SO_RCVBUF =
-        new SctpStdSocketOption<Integer>("SO_RCVBUF", Integer.class,
-        sun.nio.ch.sctp.SctpStdSocketOption.SO_RCVBUF);
+        new SctpStdSocketOption<>("SO_RCVBUF", Integer.class,
+        SctpStdSocketOption.SO_RCVBUF);
 
     /**
      * Linger on close if data is present.
@@ -304,7 +304,7 @@ public final class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption<Integer> SO_LINGER =
         new SctpStdSocketOption<>("SO_LINGER", Integer.class,
-        sun.nio.ch.sctp.SctpStdSocketOption.SO_LINGER);
+        SctpStdSocketOption.SO_LINGER);
 
     /**
      * This class is used to set the maximum number of inbound/outbound streams
