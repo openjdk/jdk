@@ -26,81 +26,85 @@
 #include "code/debugInfo.hpp"
 #include "unittest.hpp"
 
-void check_int_encoding() {
-  ResourceMark rm;
-  DebugInfoWriteStream out(NULL, 100);
-  const u_char* buf = out.buffer();
+class CompressedSparseDataWriteStreamTest {
+public:
+  void check_int_encoding() {
+    ResourceMark rm;
+    DebugInfoWriteStream out(NULL, 100);
+    const u_char* buf = out.buffer();
 
-  out.set_position(0);
-  out.write_int(0);
-  out.write_int(0);
-  out.write_int(0);
-  out.write_int(0);
-  out.write_int(0);
-  out.write_int(0);
-  out.write_int(0);
-  out.write_int(0);
-  ASSERT_TRUE(out.position() == 1 && buf[0] == 0);
+    out.roll_back(0);
+    out.write_int(0);
+    out.write_int(0);
+    out.write_int(0);
+    out.write_int(0);
+    out.write_int(0);
+    out.write_int(0);
+    out.write_int(0);
+    out.write_int(0);
+    ASSERT_TRUE(out.start_scope() == 1 && buf[0] == 0);
 
-  out.set_position(0);
-  out.write_int(1);
-  ASSERT_TRUE(out.position() == 1 && buf[0] == 0x81);
+    out.roll_back(0);
+    out.write_int(1);
+    ASSERT_TRUE(out.start_scope() == 1 && buf[0] == 0x81);
 
-  out.set_position(0);
-  out.write_int(0xff);
-  ASSERT_TRUE(out.position() == 2 && buf[0] == 0xff && buf[1] == 0x3);
+    out.roll_back(0);
+    out.write_int(0xff);
+    ASSERT_TRUE(out.start_scope() == 2 && buf[0] == 0xff && buf[1] == 0x3);
 
-  out.set_position(0);
-  out.write_int(0xffff);
-  ASSERT_TRUE(out.position() == 3 && buf[0] == 0xff && buf[1] == 0xff && buf[2] == 0x7);
+    out.roll_back(0);
+    out.write_int(0xffff);
+    ASSERT_TRUE(out.start_scope() == 3 && buf[0] == 0xff && buf[1] == 0xff && buf[2] == 0x7);
 
-  out.set_position(0);
-  out.write_int(0xffffffff);
-  ASSERT_TRUE(out.position() == 5 && ((buf[0] & buf[1] & buf[2] & buf[3]) == 0xff) && buf[4] == 0x1f);
-}
-
-void check_read_write() {
-  ResourceMark rm;
-  DebugInfoWriteStream out(NULL, 100);
-
-  for (int i = 0; i < 1000*1000; i++) {
-    out.write_int(i);
-    out.write_bool((bool)i);
-    out.write_byte((jbyte)i);
-    out.write_signed_int((jint)i);
-    out.write_double((jdouble)i);
-    out.write_long((jlong)i);
+    out.roll_back(0);
+    out.write_int(0xffffffff);
+    ASSERT_TRUE(out.start_scope() == 5 && ((buf[0] & buf[1] & buf[2] & buf[3]) == 0xff) && buf[4] == 0x1f);
   }
-  out.align();
 
-  const u_char* buf = out.buffer();
-  CompressedSparseDataReadStream in(buf, 0);
+  void check_read_write() {
+    ResourceMark rm;
+    DebugInfoWriteStream out(NULL, 100);
 
-  for (int i = 0; i < 1000*1000; i++) {
-    ASSERT_TRUE(in.read_int() == i);
-    ASSERT_TRUE(in.read_bool() == (jboolean)(bool)i);
-    ASSERT_TRUE(in.read_byte() == (jbyte)i);
-    ASSERT_TRUE(in.read_signed_int() == (jint)i);
-    ASSERT_TRUE(in.read_double() == (jdouble)i);
-    ASSERT_TRUE(in.read_long() == (jlong)i);
+    for (int i = 0; i < 1000*1000; i++) {
+      out.write_int(i);
+      out.write_bool((bool)i);
+      out.write_byte((jbyte)i);
+      out.write_signed_int((jint)i);
+      out.write_double((jdouble)i);
+      out.write_long((jlong)i);
+    }
+    out.align();
+
+    const u_char* buf = out.buffer();
+    CompressedSparseDataReadStream in(buf, 0);
+
+    for (int i = 0; i < 1000*1000; i++) {
+      ASSERT_TRUE(in.read_int() == i);
+      ASSERT_TRUE(in.read_bool() == (jboolean)(bool)i);
+      ASSERT_TRUE(in.read_byte() == (jbyte)i);
+      ASSERT_TRUE(in.read_signed_int() == (jint)i);
+      ASSERT_TRUE(in.read_double() == (jdouble)i);
+      ASSERT_TRUE(in.read_long() == (jlong)i);
+    }
   }
-}
 
-void check_buffer_grow() {
-  ResourceMark rm;
-  DebugInfoWriteStream out(NULL, 100);
-  out.set_position(99);
-  out.write_int(0);
-  out.align();
-  out.write_int(1);
-  out.write_int(2);
-  const u_char* buf = out.buffer();
-  ASSERT_TRUE(out.position() == 102 && buf[99] == 0 && buf[100] == 0x81 && buf[101] == 0x82);
-}
+  void check_buffer_grow() {
+    ResourceMark rm;
+    DebugInfoWriteStream out(NULL, 100);
+    out.roll_back(99);
+    out.write_int(0);
+    out.align();
+    out.write_int(1);
+    out.write_int(2);
+    const u_char* buf = out.buffer();
+    ASSERT_TRUE(out.start_scope() == 102 && buf[99] == 0 && buf[100] == 0x81 && buf[101] == 0x82);
+  }
+};
 
 TEST_VM(DebugInfo, basic_test)
 {
-  check_int_encoding();
-  check_read_write();
-  check_buffer_grow();
+  CompressedSparseDataWriteStreamTest test;
+  test.check_int_encoding();
+  test.check_read_write();
+  test.check_buffer_grow();
 }

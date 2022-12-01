@@ -132,7 +132,7 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
   _stream->write_byte((jbyte)0xFF);
 
   // make sure that we can distinguish the value "serialized_null" from offsets
-  assert(_stream->position() > serialized_null, "sanity");
+  assert(!_stream->is_empty(), "sanity");
 
   _oop_recorder = oop_recorder;
 
@@ -198,7 +198,7 @@ void DebugInformationRecorder::add_new_pc_offset(int pc_offset) {
 int DebugInformationRecorder::serialize_monitor_values(GrowableArray<MonitorValue*>* monitors) {
   if (monitors == NULL || monitors->is_empty()) return DebugInformationRecorder::serialized_null;
   assert(_recording_state == rs_safepoint, "must be recording a safepoint");
-  int result = stream()->position();
+  int result = stream()->start_scope();
   stream()->write_int(monitors->length());
   for (int index = 0; index < monitors->length(); index++) {
     monitors->at(index)->write_on(stream());
@@ -208,7 +208,7 @@ int DebugInformationRecorder::serialize_monitor_values(GrowableArray<MonitorValu
   // (See comment below on DebugInformationRecorder::describe_scope.)
   int shared_result = find_sharable_decode_offset(result);
   if (shared_result != serialized_null) {
-    stream()->set_position(result);
+    stream()->roll_back(result);
     result = shared_result;
   }
 
@@ -219,7 +219,7 @@ int DebugInformationRecorder::serialize_monitor_values(GrowableArray<MonitorValu
 int DebugInformationRecorder::serialize_scope_values(GrowableArray<ScopeValue*>* values) {
   if (values == NULL || values->is_empty()) return DebugInformationRecorder::serialized_null;
   assert(_recording_state == rs_safepoint, "must be recording a safepoint");
-  int result = stream()->position();
+  int result = stream()->start_scope();
   assert(result != serialized_null, "sanity");
   stream()->write_int(values->length());
   for (int index = 0; index < values->length(); index++) {
@@ -229,7 +229,7 @@ int DebugInformationRecorder::serialize_scope_values(GrowableArray<ScopeValue*>*
   // (See comment below on DebugInformationRecorder::describe_scope.)
   int shared_result = find_sharable_decode_offset(result);
   if (shared_result != serialized_null) {
-    stream()->set_position(result);
+    stream()->roll_back(result);
     result = shared_result;
   }
 
@@ -259,7 +259,7 @@ struct dir_stats_struct {
 
 int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
   NOT_PRODUCT(++dir_stats.chunks_queried);
-  int stream_length = stream()->position() - stream_offset;
+  int stream_length = stream()->data_size() - stream_offset;
   assert(stream_offset != serialized_null, "should not be null");
   assert(stream_length != 0, "should not be empty");
 
@@ -299,7 +299,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   assert(last_pd->pc_offset() == pc_offset, "must be last pc");
   int sender_stream_offset = last_pd->scope_decode_offset();
   // update the stream offset of current pc desc
-  int stream_offset = stream()->position();
+  int stream_offset = stream()->start_scope();
   last_pd->set_scope_decode_offset(stream_offset);
 
   // Record flags into pcDesc.
@@ -344,7 +344,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   // compresses equivalent non-safepoint PcDescs.
   int shared_stream_offset = find_sharable_decode_offset(stream_offset);
   if (shared_stream_offset != serialized_null) {
-    stream()->set_position(stream_offset);
+    stream()->roll_back(stream_offset);
     last_pd->set_scope_decode_offset(shared_stream_offset);
   }
 }
@@ -418,7 +418,7 @@ DebugToken* DebugInformationRecorder::create_monitor_values(GrowableArray<Monito
 
 int DebugInformationRecorder::data_size() {
   debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
-  return _stream->position();
+  return _stream->data_size();
 }
 
 
@@ -431,7 +431,7 @@ int DebugInformationRecorder::pcs_size() {
 
 
 void DebugInformationRecorder::copy_to(nmethod* nm) {
-  nm->copy_scopes_data(stream()->buffer(), stream()->position());
+  nm->copy_scopes_data(stream()->buffer(), stream()->data_size());
   nm->copy_scopes_pcs(_pcs, _pcs_length);
 }
 
