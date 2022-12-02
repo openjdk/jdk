@@ -260,18 +260,13 @@ abstract class DSA extends SignatureSpi {
             return outseq;
         } else {
             // Return the DER-encoded ASN.1 form
-            try {
-                DerOutputStream outseq = new DerOutputStream(100);
-                outseq.putInteger(r);
-                outseq.putInteger(s);
-                DerValue result = new DerValue(DerValue.tag_Sequence,
-                        outseq.toByteArray());
+            DerOutputStream outseq = new DerOutputStream(100);
+            outseq.putInteger(r);
+            outseq.putInteger(s);
+            DerValue result = new DerValue(DerValue.tag_Sequence,
+                    outseq.toByteArray());
 
-                return result.toByteArray();
-
-            } catch (IOException e) {
-                throw new SignatureException("error encoding signature");
-            }
+            return result.toByteArray();
         }
     }
 

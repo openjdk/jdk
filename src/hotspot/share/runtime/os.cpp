@@ -174,7 +174,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
 
   // Compute the time zone offset.
   //    localtime_pd() sets timezone to the difference (in seconds)
-  //    between UTC and and local time.
+  //    between UTC and local time.
   //    ISO 8601 says we need the difference between local time and UTC,
   //    we change the sign of the localtime_pd() result.
   const time_t local_to_UTC = -(UTC_to_local);

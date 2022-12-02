@@ -208,7 +208,7 @@ final class P11AEADCipher extends CipherSpi {
         String apAlgo;
         AlgorithmParameterSpec spec = null;
         switch (type) {
-            case AES_GCM:
+            case AES_GCM -> {
                 apAlgo = "GCM";
                 if (encrypt && iv == null && tagLen == -1) {
                     iv = new byte[type.defIvLen];
@@ -218,8 +218,8 @@ final class P11AEADCipher extends CipherSpi {
                 if (iv != null) {
                     spec = new GCMParameterSpec(tagLen << 3, iv);
                 }
-            break;
-            case CHACHA20_POLY1305:
+            }
+            case CHACHA20_POLY1305 -> {
                 if (encrypt && iv == null) {
                     iv = new byte[type.defIvLen];
                     random.nextBytes(iv);
@@ -228,9 +228,8 @@ final class P11AEADCipher extends CipherSpi {
                 if (iv != null) {
                     spec = new IvParameterSpec(iv);
                 }
-            break;
-            default:
-                throw new AssertionError("Unsupported type " + type);
+            }
+            default -> throw new AssertionError("Unsupported type " + type);
         }
         if (spec != null) {
             try {
@@ -311,18 +310,10 @@ final class P11AEADCipher extends CipherSpi {
         try {
             AlgorithmParameterSpec paramSpec = null;
             if (params != null) {
-                switch (type) {
-                    case AES_GCM:
-                        paramSpec =
-                            params.getParameterSpec(GCMParameterSpec.class);
-                        break;
-                    case CHACHA20_POLY1305:
-                        paramSpec =
-                            params.getParameterSpec(IvParameterSpec.class);
-                        break;
-                    default:
-                        throw new AssertionError("Unsupported type " + type);
-                }
+                paramSpec = switch (type) {
+                    case AES_GCM -> params.getParameterSpec(GCMParameterSpec.class);
+                    case CHACHA20_POLY1305 -> params.getParameterSpec(IvParameterSpec.class);
+                };
             }
             engineInit(opmode, key, paramSpec, sr);
         } catch (InvalidParameterSpecException ex) {
@@ -343,7 +334,7 @@ final class P11AEADCipher extends CipherSpi {
         P11Key newKey = P11SecretKeyFactory.convertKey(token, key,
                 type.keyAlgo);
         switch (opmode) {
-            case Cipher.ENCRYPT_MODE:
+            case Cipher.ENCRYPT_MODE -> {
                 encrypt = true;
                 requireReinit = Arrays.equals(iv, lastEncIv) &&
                         (newKey == lastEncKey);
@@ -351,18 +342,16 @@ final class P11AEADCipher extends CipherSpi {
                     throw new InvalidAlgorithmParameterException(
                             "Cannot reuse the same key and iv pair");
                 }
-                break;
-            case Cipher.DECRYPT_MODE:
+            }
+            case Cipher.DECRYPT_MODE -> {
                 encrypt = false;
                 requireReinit = false;
-                break;
-            case Cipher.WRAP_MODE:
-            case Cipher.UNWRAP_MODE:
-                throw new UnsupportedOperationException
-                        ("Unsupported mode: " + opmode);
-            default:
+            }
+            case Cipher.WRAP_MODE, Cipher.UNWRAP_MODE -> throw new UnsupportedOperationException
+                    ("Unsupported mode: " + opmode);
+            default ->
                 // should never happen; checked by Cipher.init()
-                throw new AssertionError("Unknown mode: " + opmode);
+                    throw new AssertionError("Unknown mode: " + opmode);
         }
 
         // decryption without parameters is checked in all engineInit() calls
@@ -372,20 +361,9 @@ final class P11AEADCipher extends CipherSpi {
 
         if (iv == null && tagLen == -1) {
             // generate default values
-            switch (type) {
-                case AES_GCM:
-                    iv = new byte[type.defIvLen];
-                    this.random.nextBytes(iv);
-                    tagLen = type.defTagLen;
-                    break;
-                case CHACHA20_POLY1305:
-                    iv = new byte[type.defIvLen];
-                    this.random.nextBytes(iv);
-                    tagLen = type.defTagLen;
-                    break;
-                default:
-                    throw new AssertionError("Unsupported type " + type);
-            }
+            iv = new byte[type.defIvLen];
+            this.random.nextBytes(iv);
+            tagLen = type.defTagLen;
         }
         this.iv = iv;
         this.tagLen = tagLen;
@@ -463,19 +441,12 @@ final class P11AEADCipher extends CipherSpi {
 
         long p11KeyID = p11Key.getKeyID();
         try {
-            CK_MECHANISM mechWithParams;
-            switch (type) {
-                case AES_GCM:
-                    mechWithParams = new CK_MECHANISM(mechanism,
+            CK_MECHANISM mechWithParams = switch (type) {
+                case AES_GCM -> new CK_MECHANISM(mechanism,
                         new CK_GCM_PARAMS(tagLen << 3, iv, aad));
-                    break;
-                case CHACHA20_POLY1305:
-                    mechWithParams = new CK_MECHANISM(mechanism,
+                case CHACHA20_POLY1305 -> new CK_MECHANISM(mechanism,
                         new CK_SALSA20_CHACHA20_POLY1305_PARAMS(iv, aad));
-                    break;
-                default:
-                    throw new AssertionError("Unsupported type: " + type);
-            }
+            };
             if (session == null) {
                 session = token.getOpSession();
             }
@@ -513,7 +484,7 @@ final class P11AEADCipher extends CipherSpi {
                 result -= tagLen;
             }
         }
-        return (result > 0 ? result : 0);
+        return (Math.max(result, 0));
     }
 
     // reset the states to the pre-initialized values
