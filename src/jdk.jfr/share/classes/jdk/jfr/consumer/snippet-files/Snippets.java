@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.regex.Pattern;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import jdk.jfr.consumer.EventStream;
@@ -36,11 +37,12 @@ import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.Configuration;
+import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedEvent;
 
 public class Snippets {
 
-    class PackageOveriview {
+    class PackageOverview {
         // @start region="PackageOverview"
         public static void main(String[] args) throws IOException {
             if (args.length != 1) {
@@ -84,6 +86,25 @@ public class Snippets {
                 System.out.println();
             });
             es.start();
+        }
+        // @end
+    }
+
+    class EventStreamMetadata {
+        // @start region="EventStreamMetadata"
+        static long count = 0;
+        public static void main(String... args) throws IOException {
+            Path file = Path.of(args[0]);
+            String regExp = args[1];
+            var pr = Pattern.compile(regExp).asMatchPredicate();
+            try (var s = EventStream.openFile(file)) {
+                s.setOrdered(false);
+                s.onMetadata(metadata -> metadata.getAddedEventTypes()
+                 .stream().map(EventType::getName).filter(pr)
+                 .forEach(eventName -> s.onEvent(eventName, event -> count++)));
+                s.start();
+                System.out.println(count + " events matches " + regExp);
+            }
         }
         // @end
     }

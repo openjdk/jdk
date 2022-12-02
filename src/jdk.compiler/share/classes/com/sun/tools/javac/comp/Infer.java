@@ -57,8 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -1264,7 +1263,7 @@ public class Infer {
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
-    Map<IncorporationBinaryOp, Boolean> incorporationCache = new HashMap<>();
+    Map<IncorporationBinaryOp, Boolean> incorporationCache = new LinkedHashMap<>();
 
     protected static class BoundFilter implements Predicate<Type> {
 
@@ -1426,7 +1425,7 @@ public class Infer {
         }
 
         /** cache used to avoid redundant computation of tree costs */
-        final Map<Node, Pair<List<Node>, Integer>> treeCache = new HashMap<>();
+        final Map<Node, Pair<List<Node>, Integer>> treeCache = new LinkedHashMap<>();
 
         /** constant value used to mark non-existent paths */
         final Pair<List<Node>, Integer> noPath = new Pair<>(null, Integer.MAX_VALUE);
@@ -1754,7 +1753,7 @@ public class Infer {
                  * through all its dependencies.
                  */
                 protected Set<Node> closure() {
-                    Set<Node> closure = new HashSet<>();
+                    Set<Node> closure = new LinkedHashSet<>();
                     closureInternal(closure);
                     return closure;
                 }
