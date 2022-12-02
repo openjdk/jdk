@@ -37,9 +37,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateSubjectName implements CertAttrSet {
+public class CertificateSubjectName implements DerEncoder {
 
     public static final String NAME = "subject";
 
@@ -91,10 +91,9 @@ public class CertificateSubjectName implements CertAttrSet {
      * Encode the name in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         dnName.encode(out);
     }
 }

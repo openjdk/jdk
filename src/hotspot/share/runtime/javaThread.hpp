@@ -59,6 +59,7 @@ class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
 
 class Metadata;
+class OopHandleList;
 class OopStorage;
 class OSThread;
 
@@ -81,9 +82,14 @@ class JavaThread: public Thread {
   friend class HandshakeState;
   friend class Continuation;
   friend class Threads;
+  friend class ServiceThread; // for deferred OopHandle release access
  private:
   bool           _in_asgct;                      // Is set when this JavaThread is handling ASGCT call
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
+
+  // All references to Java objects managed via OopHandles. These
+  // have to be released by the ServiceThread after the JavaThread has
+  // terminated - see add_oop_handles_for_release().
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
@@ -1168,6 +1174,20 @@ public:
   // AsyncGetCallTrace support
   inline bool in_asgct(void) {return _in_asgct;}
   inline void set_in_asgct(bool value) {_in_asgct = value;}
+
+  // Deferred OopHandle release support
+ private:
+  // List of OopHandles to be released - guarded by the Service_lock.
+  static OopHandleList* _oop_handle_list;
+  // Add our OopHandles to the list for the service thread to release.
+  void add_oop_handles_for_release();
+  // Called by the ServiceThread to release the OopHandles.
+  static void release_oop_handles();
+  // Called by the ServiceThread to poll if there are any OopHandles to release.
+  // Called when holding the Service_lock.
+  static bool has_oop_handles_to_release() {
+    return _oop_handle_list != nullptr;
+  }
 };
 
 inline JavaThread* JavaThread::current_or_null() {

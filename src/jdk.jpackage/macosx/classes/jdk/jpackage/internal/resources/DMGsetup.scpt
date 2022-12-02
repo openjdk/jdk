@@ -21,6 +21,9 @@ tell application "Finder"
 
   set allTheFiles to the name of every item of theWindow
   set xpos to 120
+  set ypos to 290
+  set i to 1
+  set j to 0
   repeat with theFile in allTheFiles
     set theFilePath to POSIX path of theFile
     set appFilePath to POSIX path of "/DEPLOY_TARGET"
@@ -31,12 +34,34 @@ tell application "Finder"
       -- Position application or runtime
       set position of item theFile of theWindow to {120, 130}
     else
-      -- Position all other items in a second row.
-      set position of item theFile of theWindow to {xpos, 290}
-      set xpos to xpos + 150
+      -- Position all other items in rows by 3 item
+      set position of item theFile of theWindow to {xpos, ypos}
+      set xpos to xpos + 135
+      if (i mod 3) is equal to 0
+        set i to 1
+        set ypos to ypos + 150
+        set xpos to 120
+      else
+        set i to i + 1
+      end if
+      set j to j + 1
     end if
   end repeat
 
+  -- Reduce icon size to 96 if we have additional content
+  if j is not equal to 0
+    set icon size of theViewOptions to 96
+  end if
+
+  -- Resize window to fit 1 or 2 extra raws with additional content
+  -- 6 additional content will be displayed to user without scrolling
+  -- for anything more then 6 scrolling will be required
+  if j is greater than 0 and j is less than or equal to 3
+    set the bounds of theWindow to {400, 100, 920, 525}
+  end if
+  if j is greater than 3
+    set the bounds of theWindow to {400, 100, 920, 673}
+  end if
 
   update theDisk without registering applications
   delay 5

@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8003280
  * @summary Add lambda tests
- *  check that that void compatibility affects overloading as expected
+ *  check that void compatibility affects overloading as expected
  * @compile VoidCompatibility.java
  */
 class VoidCompatibility {

@@ -102,14 +102,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
       CHECKING_MSG: [if we should build headless-only (no GUI)])
   AC_SUBST(ENABLE_HEADLESS_ONLY)
 
-  # Should the compiler only accept code that strictly conforms to the standard used by
-  # the build?
-  UTIL_ARG_ENABLE(NAME: conforming-compilation, DEFAULT: false,
-      RESULT: ENABLE_CONFORMING_COMPILATION,
-      DESC: [enforce conforming code during compilation],
-      CHECKING_MSG: [if compiler should enforce conforming code (conforming-compilation)])
-  AC_SUBST(ENABLE_CONFORMING_COMPILATION)
-
   # should we linktime gc unused code sections in the JDK build ?
   if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = xs390x; then
     LINKTIME_GC_DEFAULT=true

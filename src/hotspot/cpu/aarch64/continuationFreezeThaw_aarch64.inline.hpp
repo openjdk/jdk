@@ -201,6 +201,12 @@ void ThawBase::patch_chunk_pd(intptr_t* sp) {
   *(intptr_t**)(sp - frame::sender_sp_offset) = fp;
 }
 
+template <typename ConfigT>
+inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
+  // Fast path depends on !PreserveFramePointer. See can_thaw_fast().
+  assert(!PreserveFramePointer, "Frame pointers need to be fixed");
+}
+
 // Slow path
 
 inline frame ThawBase::new_entry_frame() {

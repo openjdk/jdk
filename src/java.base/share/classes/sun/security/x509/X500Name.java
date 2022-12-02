@@ -826,7 +826,8 @@ public class X500Name implements GeneralNameInterface, Principal {
      *
      * @param out where to put the DER-encoded X.500 name
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
         for (int i = 0; i < names.length; i++) {
             names[i].encode(tmp);

@@ -46,13 +46,9 @@
 
 #define IS_SAFE_SIZE_T(x) ((x) >= 0 && (unsigned long long)(x) <= SIZE_MAX)
 
-#define IS_MUL_OVERFLOW(m, n) \
-        ((m) != 0 && (n) != 0 && (((size_t)((m)*(n))) != (((size_t)(m)) * ((size_t)(n)))))
-
 #define IS_SAFE_SIZE_MUL(m, n) \
     (IS_SAFE_SIZE_T(m) && IS_SAFE_SIZE_T(n) && \
-     ((m) == 0 || (n) == 0 || (size_t)(n) <= (SIZE_MAX / (size_t)(m))) && \
-     !IS_MUL_OVERFLOW(m, n))
+     ((m) == 0 || (n) == 0 || (size_t)(n) <= (SIZE_MAX / (size_t)(m))))
 
 #define IS_SAFE_SIZE_ADD(a, b) \
     (IS_SAFE_SIZE_T(a) && IS_SAFE_SIZE_T(b) && (size_t)(b) <= (SIZE_MAX - (size_t)(a)))
@@ -75,10 +71,10 @@
  *    // Use the allocated array...
  */
 #define SAFE_SIZE_ARRAY_ALLOC(func, m, n) \
-    (IS_SAFE_SIZE_MUL((m), (n)) ? ((func)((m) * (n))) : FAILURE_RESULT)
+    (IS_SAFE_SIZE_MUL((m), (n)) ? ((func)((size_t)(m) * (size_t)(n))) : FAILURE_RESULT)
 
 #define SAFE_SIZE_ARRAY_REALLOC(func, p, m, n) \
-    (IS_SAFE_SIZE_MUL((m), (n)) ? ((func)((p), (m) * (n))) : FAILURE_RESULT)
+    (IS_SAFE_SIZE_MUL((m), (n)) ? ((func)((p), (size_t)(m) * (size_t)(n))) : FAILURE_RESULT)
 
 /*
  * A helper macro to safely allocate an array of type 'type' with 'n' items
@@ -92,11 +88,11 @@
  * IS_SAFE_... macros to check if the calculations are safe.
  */
 #define SAFE_SIZE_NEW_ARRAY(type, n) \
-    (IS_SAFE_SIZE_MUL(sizeof(type), (n)) ? (new type[(n)]) : throw std::bad_alloc())
+    (IS_SAFE_SIZE_MUL(sizeof(type), (n)) ? (new type[(size_t)(n)]) : throw std::bad_alloc())
 
 #define SAFE_SIZE_NEW_ARRAY2(type, n, m) \
-    (IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_MUL(sizeof(type), (n) * (m)) ? \
-     (new type[(n) * (m)]) : throw std::bad_alloc())
+    (IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_MUL(sizeof(type), (size_t)(n) * (size_t)(m)) ? \
+     (new type[(size_t)(n) * (size_t)(m)]) : throw std::bad_alloc())
 
 /*
  * Checks if a data structure of size (a + m*n) can be safely allocated
@@ -104,7 +100,7 @@
  */
 #define IS_SAFE_STRUCT_SIZE(a, m, n) \
     ( \
-      IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_ADD((m) * (n), (a)) \
+      IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_ADD((size_t)(m) * (size_t)(n), (a)) \
     )
 
 /*
@@ -116,7 +112,7 @@
  *    // Use the allocated memory...
  */
 #define SAFE_SIZE_STRUCT_ALLOC(func, a, m, n) \
-    (IS_SAFE_STRUCT_SIZE((a), (m), (n)) ? ((func)((a) + (m) * (n))) : FAILURE_RESULT)
+    (IS_SAFE_STRUCT_SIZE((a), (m), (n)) ? ((func)((size_t)(a) + (size_t)(m) * (size_t)(n))) : FAILURE_RESULT)
 
 
 #endif /* SIZECALC_H */
