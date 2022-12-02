@@ -1214,11 +1214,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * The enhanced for loop.
      */
     public static class JCEnhancedForLoop extends JCStatement implements EnhancedForLoopTree {
-        public JCVariableDecl var;
+        public JCTree varOrRecordPattern;
         public JCExpression expr;
         public JCStatement body;
-        protected JCEnhancedForLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
-            this.var = var;
+        public Type elementType;
+
+        protected JCEnhancedForLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
+            this.varOrRecordPattern = varOrRecordPattern;
             this.expr = expr;
             this.body = body;
         }
@@ -1228,7 +1230,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.ENHANCED_FOR_LOOP; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCVariableDecl getVariable() { return var; }
+        public JCVariableDecl getVariable() {
+            return varOrRecordPattern instanceof JCVariableDecl var ? var : null;
+        }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCTree getVariableOrRecordPattern() { return varOrRecordPattern; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
         @DefinedBy(Api.COMPILER_TREE)
@@ -1240,6 +1246,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return FOREACHLOOP;
+        }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public EnhancedForLoopTree.DeclarationKind getDeclarationKind() {
+            return varOrRecordPattern.hasTag(VARDEF) ? DeclarationKind.VARIABLE : DeclarationKind.PATTERN;
         }
     }
 
@@ -2231,6 +2241,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public TestKind getTestKind() {
+            return pattern instanceof JCPatternCaseLabel ? TestKind.PATTERN : TestKind.TYPE;
+        }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitInstanceOf(this, d);
@@ -2432,15 +2446,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             implements DeconstructionPatternTree {
         public JCExpression deconstructor;
         public List<JCPattern> nested;
-        public JCVariableDecl var;
         public ClassSymbol record;
         public List<Type> fullComponentTypes;
 
-        protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested,
-                                  JCVariableDecl var) {
+        protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
             this.deconstructor = deconstructor;
             this.nested = nested;
-            this.var = var;
         }
 
         @DefinedBy(Api.COMPILER_TREE)
@@ -2477,11 +2488,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return RECORDPATTERN;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public VariableTree getVariable() {
-            return var;
         }
 
     }
@@ -3470,7 +3476,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                         JCExpression cond,
                         List<JCExpressionStatement> step,
                         JCStatement body);
-        JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body);
+        JCEnhancedForLoop ForeachLoop(JCTree var, JCExpression expr, JCStatement body);
         JCLabeledStatement Labelled(Name label, JCStatement body);
         JCSwitch Switch(JCExpression selector, List<JCCase> cases);
         JCSwitchExpression SwitchExpression(JCExpression selector, List<JCCase> cases);

@@ -635,4 +635,10 @@ public final class JVM {
      * can't be emitted anyway.
      */
     public native boolean isContainerized();
+
+    /**
+     * Returns the total amount of memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public native long hostTotalMemory();
 }

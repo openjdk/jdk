@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117 8263528 8289334
+ *           8253117 8263528 8289334 8292594
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -95,12 +95,10 @@ public class TestStylesheet extends JavadocTester {
                         position:relative;
                         text-align:left;
                         background-repeat:no-repeat;
-                        color:#253441;
+                        color:var(--selected-text-color);
                         clear:none;
                         overflow:hidden;
-                        padding:0;
-                        padding-top:10px;
-                        padding-left:1px;
+                        padding: 10px 0 0 1px;
                         margin:0;
                     }""",
                 """
@@ -110,7 +108,7 @@ public class TestStylesheet extends JavadocTester {
                         padding:5px 12px 7px 12px;
                         display:inline-block;
                         float:left;
-                        background-color:var(--highlight-background-color);
+                        background-color:var(--selected-background-color);
                         border: none;
                         height:16px;
                     }""",
@@ -123,8 +121,8 @@ public class TestStylesheet extends JavadocTester {
                         margin-right: 8px;
                     }
                     div.table-tabs > .active-table-tab {
-                        background: var(--highlight-background-color);
-                        color: var(--highlight-text-color);
+                        background: var(--selected-background-color);
+                        color: var(--selected-text-color);
                     }
                     div.table-tabs > button.table-tab {
                         background: var(--navbar-background-color);
@@ -146,7 +144,7 @@ public class TestStylesheet extends JavadocTester {
                 "@import url('resources/fonts/dejavu.css');",
                 """
                     .search-tag-result:target {
-                        background-color:yellow;
+                        background-color:var(--search-tag-highlight-color);
                     }""",
                 """
                     a[href]:hover, a[href]:focus {
@@ -191,7 +189,7 @@ public class TestStylesheet extends JavadocTester {
                     }""",
                 """
                     ::placeholder {
-                        color:#909090;
+                        color:var(--search-input-placeholder-color);
                         opacity: 1;
                     }""");
 

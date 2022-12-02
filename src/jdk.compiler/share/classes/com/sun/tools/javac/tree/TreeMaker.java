@@ -273,8 +273,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
-        JCEnhancedForLoop tree = new JCEnhancedForLoop(var, expr, body);
+    public JCEnhancedForLoop ForeachLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
+        JCEnhancedForLoop tree = new JCEnhancedForLoop(varOrRecordPattern, expr, body);
         tree.pos = pos;
         return tree;
     }
@@ -512,9 +512,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested,
-                                         JCVariableDecl var) {
-        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested, var);
+    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
+        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested);
         tree.pos = pos;
         return tree;
     }

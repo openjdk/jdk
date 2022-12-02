@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import sun.nio.ch.DirectBuffer;
  * This class inflates sequences of ZLIB compressed bytes. The input byte
  * sequence is provided in either byte array or byte buffer, via one of the
  * {@code setInput()} methods. The output byte sequence is written to the
- * output byte array or byte buffer passed to the {@code deflate()} methods.
+ * output byte array or byte buffer passed to the {@code inflate()} methods.
  * <p>
  * The following code fragment demonstrates a trivial compression
  * and decompression of a string using {@code Deflater} and

@@ -5915,6 +5915,11 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       }
     }
   }
+  // Don't extend live ranges of raw oops
+  if (least != early && n->is_ConstraintCast() && n->in(1)->bottom_type()->isa_rawptr() &&
+      !n->bottom_type()->isa_rawptr()) {
+    least = early;
+  }
 
 #ifdef ASSERT
   // If verifying, verify that 'verify_me' has a legal location
@@ -6012,80 +6017,88 @@ void PhaseIdealLoop::dump_bad_graph(const char* msg, Node* n, Node* early, Node*
       }
     }
   }
-  tty->cr();
-  tty->print_cr("idoms of early %d:", early->_idx);
-  dump_idom(early);
-  tty->cr();
-  tty->print_cr("idoms of (wrong) LCA %d:", LCA->_idx);
-  dump_idom(LCA);
-  tty->cr();
-  dump_real_LCA(early, LCA);
+  dump_idoms(early, LCA);
   tty->cr();
 }
 
-// Find the real LCA of early and the wrongly assumed LCA.
-void PhaseIdealLoop::dump_real_LCA(Node* early, Node* wrong_lca) {
-  assert(!is_dominator(early, wrong_lca) && !is_dominator(early, wrong_lca),
-         "sanity check that one node does not dominate the other");
+// Class to compute the real LCA given an early node and a wrong LCA in a bad graph.
+class RealLCA {
+  const PhaseIdealLoop* _phase;
+  Node* _early;
+  Node* _wrong_lca;
+  uint _early_index;
+  int _wrong_lca_index;
+
+  // Given idom chains of early and wrong LCA: Walk through idoms starting at StartNode and find the first node which
+  // is different: Return the previously visited node which must be the real LCA.
+  // The node lists also contain _early and _wrong_lca, respectively.
+  Node* find_real_lca(Unique_Node_List& early_with_idoms, Unique_Node_List& wrong_lca_with_idoms) {
+    int early_index = early_with_idoms.size() - 1;
+    int wrong_lca_index = wrong_lca_with_idoms.size() - 1;
+    bool found_difference = false;
+    do {
+      if (early_with_idoms[early_index] != wrong_lca_with_idoms[wrong_lca_index]) {
+        // First time early and wrong LCA idoms differ. Real LCA must be at the previous index.
+        found_difference = true;
+        break;
+      }
+      early_index--;
+      wrong_lca_index--;
+    } while (wrong_lca_index >= 0);
+
+    assert(early_index >= 0, "must always find an LCA - cannot be early");
+    _early_index = early_index;
+    _wrong_lca_index = wrong_lca_index;
+    Node* real_lca = early_with_idoms[_early_index + 1]; // Plus one to skip _early.
+    assert(found_difference || real_lca == _wrong_lca, "wrong LCA dominates early and is therefore the real LCA");
+    return real_lca;
+  }
+
+  void dump(Node* real_lca) {
+    tty->cr();
+    tty->print_cr("idoms of early \"%d %s\":", _early->_idx, _early->Name());
+    _phase->dump_idom(_early, _early_index + 1);
+
+    tty->cr();
+    tty->print_cr("idoms of (wrong) LCA \"%d %s\":", _wrong_lca->_idx, _wrong_lca->Name());
+    _phase->dump_idom(_wrong_lca, _wrong_lca_index + 1);
+
+    tty->cr();
+    tty->print("Real LCA of early \"%d %s\" (idom[%d]) and wrong LCA \"%d %s\"",
+               _early->_idx, _early->Name(), _early_index, _wrong_lca->_idx, _wrong_lca->Name());
+    if (_wrong_lca_index >= 0) {
+      tty->print(" (idom[%d])", _wrong_lca_index);
+    }
+    tty->print_cr(":");
+    real_lca->dump();
+  }
+
+ public:
+  RealLCA(const PhaseIdealLoop* phase, Node* early, Node* wrong_lca)
+      : _phase(phase), _early(early), _wrong_lca(wrong_lca), _early_index(0), _wrong_lca_index(0) {
+    assert(!wrong_lca->is_Start(), "StartNode is always a common dominator");
+  }
+
+  void compute_and_dump() {
+    ResourceMark rm;
+    Unique_Node_List early_with_idoms;
+    Unique_Node_List wrong_lca_with_idoms;
+    early_with_idoms.push(_early);
+    wrong_lca_with_idoms.push(_wrong_lca);
+    _phase->get_idoms(_early, 10000, early_with_idoms);
+    _phase->get_idoms(_wrong_lca, 10000, wrong_lca_with_idoms);
+    Node* real_lca = find_real_lca(early_with_idoms, wrong_lca_with_idoms);
+    dump(real_lca);
+  }
+};
+
+// Dump the idom chain of early, of the wrong LCA and dump the real LCA of early and wrong LCA.
+void PhaseIdealLoop::dump_idoms(Node* early, Node* wrong_lca) {
+  assert(!is_dominator(early, wrong_lca), "sanity check that early does not dominate wrong lca");
   assert(!has_ctrl(early) && !has_ctrl(wrong_lca), "sanity check, no data nodes");
 
-  ResourceMark rm;
-  Node_List nodes_seen;
-  Node* real_LCA = NULL;
-  Node* n1 = wrong_lca;
-  Node* n2 = early;
-  uint count_1 = 0;
-  uint count_2 = 0;
-  // Add early and wrong_lca to simplify calculation of idom indices
-  nodes_seen.push(n1);
-  nodes_seen.push(n2);
-
-  // Walk the idom chain up from early and wrong_lca and stop when they intersect.
-  while (!n1->is_Start() && !n2->is_Start()) {
-    n1 = idom(n1);
-    n2 = idom(n2);
-    if (n1 == n2) {
-      // Both idom chains intersect at the same index
-      real_LCA = n1;
-      count_1 = nodes_seen.size() / 2;
-      count_2 = count_1;
-      break;
-    }
-    if (check_idom_chains_intersection(n1, count_1, count_2, &nodes_seen)) {
-      real_LCA = n1;
-      break;
-    }
-    if (check_idom_chains_intersection(n2, count_2, count_1, &nodes_seen)) {
-      real_LCA = n2;
-      break;
-    }
-    nodes_seen.push(n1);
-    nodes_seen.push(n2);
-  }
-
-  assert(real_LCA != NULL, "must always find an LCA");
-  tty->print_cr("Real LCA of early %d (idom[%d]) and (wrong) LCA %d (idom[%d]):", early->_idx, count_2, wrong_lca->_idx, count_1);
-  real_LCA->dump();
-}
-
-// Check if n is already on nodes_seen (i.e. idom chains of early and wrong_lca intersect at n). Determine the idom index of n
-// on both idom chains and return them in idom_idx_new and idom_idx_other, respectively.
-bool PhaseIdealLoop::check_idom_chains_intersection(const Node* n, uint& idom_idx_new, uint& idom_idx_other, const Node_List* nodes_seen) const {
-  if (nodes_seen->contains(n)) {
-    // The idom chain has just discovered n.
-    // Divide by 2 because nodes_seen contains the same amount of nodes from both chains.
-    idom_idx_new = nodes_seen->size() / 2;
-
-    // The other chain already contained n. Search the index.
-    for (uint i = 0; i < nodes_seen->size(); i++) {
-      if (nodes_seen->at(i) == n) {
-        // Divide by 2 because nodes_seen contains the same amount of nodes from both chains.
-        idom_idx_other = i / 2;
-      }
-    }
-    return true;
-  }
-  return false;
+  RealLCA real_lca(this, early, wrong_lca);
+  real_lca.compute_and_dump();
 }
 #endif // ASSERT
 
@@ -6158,16 +6171,38 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
   }
 }
 
-void PhaseIdealLoop::dump_idom(Node* n) const {
+void PhaseIdealLoop::dump_idom(Node* n, const uint count) const {
   if (has_ctrl(n)) {
     tty->print_cr("No idom for data nodes");
   } else {
-    for (int i = 0; i < 100 && !n->is_Start(); i++) {
-      tty->print("idom[%d] ", i);
-      n->dump();
-      n = idom(n);
-    }
+    ResourceMark rm;
+    Unique_Node_List idoms;
+    get_idoms(n, count, idoms);
+    dump_idoms_in_reverse(n, idoms);
   }
+}
+
+void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idoms) const {
+  Node* next = n;
+  for (uint i = 0; !next->is_Start() && i < count; i++) {
+    next = idom(next);
+    assert(!idoms.member(next), "duplicated idom is not possible");
+    idoms.push(next);
+  }
+}
+
+void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
+  Node* next;
+  uint padding = 3;
+  uint node_index_padding_width = static_cast<int>(log10(C->unique())) + 1;
+  for (int i = idom_list.size() - 1; i >= 0; i--) {
+    if (i == 9 || i == 99) {
+      padding++;
+    }
+    next = idom_list[i];
+    tty->print_cr("idom[%d]:%*c%*d  %s", i, padding, ' ', node_index_padding_width, next->_idx, next->Name());
+  }
+  tty->print_cr("n:      %*c%*d  %s", padding, ' ', node_index_padding_width, n->_idx, n->Name());
 }
 #endif // NOT PRODUCT
 

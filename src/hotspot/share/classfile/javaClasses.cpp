@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/heapShared.hpp"
@@ -45,6 +44,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
@@ -1122,8 +1122,9 @@ void java_lang_Class::archive_basic_type_mirrors() {
 
   for (int t = T_BOOLEAN; t < T_VOID+1; t++) {
     BasicType bt = (BasicType)t;
-    oop m = Universe::_mirrors[t].resolve();
-    if (m != NULL) {
+    if (!is_reference_type(bt)) {
+      oop m = Universe::java_mirror(bt);
+      assert(m != NULL, "sanity");
       // Update the field at _array_klass_offset to point to the relocated array klass.
       oop archived_m = HeapShared::archive_object(m);
       assert(archived_m != NULL, "sanity");
@@ -1138,7 +1139,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
         "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
         type2name(bt), p2i(m), p2i(archived_m));
 
-      Universe::replace_mirror(bt, archived_m);
+      Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(archived_m));
     }
   }
 }
@@ -1908,7 +1909,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       if (java_lang_VirtualThread::is_instance(_java_thread())) {
         // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
         const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop() != java_lang_VirtualThread::continuation(_java_thread())) {
+        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
           return; // not mounted
         }
       } else {
@@ -1995,10 +1996,6 @@ int java_lang_ThreadGroup::_parent_offset;
 int java_lang_ThreadGroup::_name_offset;
 int java_lang_ThreadGroup::_maxPriority_offset;
 int java_lang_ThreadGroup::_daemon_offset;
-int java_lang_ThreadGroup::_ngroups_offset;
-int java_lang_ThreadGroup::_groups_offset;
-int java_lang_ThreadGroup::_nweaks_offset;
-int java_lang_ThreadGroup::_weaks_offset;
 
 oop  java_lang_ThreadGroup::parent(oop java_thread_group) {
   assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
@@ -2026,37 +2023,11 @@ bool java_lang_ThreadGroup::is_daemon(oop java_thread_group) {
   return java_thread_group->bool_field(_daemon_offset) != 0;
 }
 
-int java_lang_ThreadGroup::ngroups(oop java_thread_group) {
-  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
-  return java_thread_group->int_field(_ngroups_offset);
-}
-
-objArrayOop java_lang_ThreadGroup::groups(oop java_thread_group) {
-  oop groups = java_thread_group->obj_field(_groups_offset);
-  assert(groups == NULL || groups->is_objArray(), "just checking"); // Todo: Add better type checking code
-  return objArrayOop(groups);
-}
-
-int java_lang_ThreadGroup::nweaks(oop java_thread_group) {
-  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
-  return java_thread_group->int_field(_nweaks_offset);
-}
-
-objArrayOop java_lang_ThreadGroup::weaks(oop java_thread_group) {
-  oop weaks = java_thread_group->obj_field(_weaks_offset);
-  assert(weaks == NULL || weaks->is_objArray(), "just checking");
-  return objArrayOop(weaks);
-}
-
 #define THREADGROUP_FIELDS_DO(macro) \
   macro(_parent_offset,      k, vmSymbols::parent_name(),      threadgroup_signature,         false); \
   macro(_name_offset,        k, vmSymbols::name_name(),        string_signature,              false); \
   macro(_maxPriority_offset, k, vmSymbols::maxPriority_name(), int_signature,                 false); \
-  macro(_daemon_offset,      k, vmSymbols::daemon_name(),      bool_signature,                false); \
-  macro(_ngroups_offset,     k, vmSymbols::ngroups_name(),     int_signature,                 false); \
-  macro(_groups_offset,      k, vmSymbols::groups_name(),      threadgroup_array_signature,   false); \
-  macro(_nweaks_offset,      k, vmSymbols::nweaks_name(),      int_signature,                 false); \
-  macro(_weaks_offset,       k, vmSymbols::weaks_name(),       weakreference_array_signature, false);
+  macro(_daemon_offset,      k, vmSymbols::daemon_name(),      bool_signature,                false);
 
 void java_lang_ThreadGroup::compute_offsets() {
   assert(_parent_offset == 0, "offsets should be initialized only once");
@@ -4697,6 +4668,11 @@ void java_lang_ClassLoader::serialize_offsets(SerializeClosure* f) {
 oop java_lang_ClassLoader::parent(oop loader) {
   assert(is_instance(loader), "loader must be oop");
   return loader->obj_field(_parent_offset);
+}
+
+oop java_lang_ClassLoader::parent_no_keepalive(oop loader) {
+  assert(is_instance(loader), "loader must be oop");
+  return loader->obj_field_access<AS_NO_KEEPALIVE>(_parent_offset);
 }
 
 // Returns the name field of this class loader.  If the name field has not

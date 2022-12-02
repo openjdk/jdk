@@ -623,6 +623,7 @@ public class X509CRLSelector implements CRLSelector {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: no CRLNumber");
                 }
+                return false;
             }
             BigInteger crlNum;
             try {
