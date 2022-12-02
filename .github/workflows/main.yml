@@ -88,9 +88,6 @@ jobs:
               else
                 input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
               fi
-            # else
-            #   >&2 echo "Unsupported Github Event: $GITHUB_EVENT_NAME"
-            #   exit 1
             fi
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
