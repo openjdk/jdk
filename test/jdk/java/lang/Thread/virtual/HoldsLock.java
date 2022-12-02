@@ -35,6 +35,7 @@
  * @summary Test Thread.holdsLock when lock held by carrier thread
  * @requires vm.continuations & vm.debug
  * @modules java.base/java.lang:+open
+ * @enablePreview
  * @run testng/othervm -XX:+UseHeavyMonitors HoldsLock
  */
 
