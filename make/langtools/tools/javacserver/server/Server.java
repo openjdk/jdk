@@ -67,7 +67,7 @@ public class Server {
     // For logging server internal (non request specific) errors.
     private static LazyInitFileLog errorLog;
 
-    public static void main(String... args)  {
+    public static void main(String... args) {
         initLogging();
 
         try {
@@ -198,7 +198,7 @@ public class Server {
                 idleMonitor.startCall();
 
                 // Set up logging for this thread. Stream back logging messages to
-                // client on the format format "level:msg".
+                // client on the format "level:msg".
                 Log.setLogForCurrentThread(new Protocol.ProtocolLog(out));
 
                 String[] args = Protocol.readCommand(in);
