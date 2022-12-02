@@ -380,10 +380,10 @@ UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
   m4_define(ARG_GIVEN, m4_translit(ARG_NAME, [a-z-], [A-Z_])[_GIVEN])
 
   # If DESC is not specified, set it to a generic description.
-  m4_define([ARG_DESC], m4_if(m4_quote(ARG_DESC), , [[Enable the ARG_NAME feature]], [m4_quote(m4_normalize(m4_quote(ARG_DESC)))]))
+  m4_define([ARG_DESC], m4_if(m4_quote(ARG_DESC), , [[Enable the ARG_NAME feature]], [m4_normalize(ARG_DESC)]))
 
   # If CHECKING_MSG is not specified, set it to a generic description.
-  m4_define([ARG_CHECKING_MSG], m4_if(m4_quote(ARG_CHECKING_MSG), , [[for --enable-ARG_NAME]], [m4_quote(m4_normalize(m4_quote(ARG_CHECKING_MSG)))]))
+  m4_define([ARG_CHECKING_MSG], m4_if(m4_quote(ARG_CHECKING_MSG), , [[for --enable-ARG_NAME]], [m4_normalize(ARG_CHECKING_MSG)]))
 
   # If the code blocks are not given, set them to the empty statements to avoid
   # tripping up bash.
@@ -654,10 +654,10 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   m4_define(ARG_GIVEN, m4_translit(ARG_NAME, [a-z-], [A-Z_])[_GIVEN])
 
   # If DESC is not specified, set it to a generic description.
-  m4_define([ARG_DESC], m4_if(m4_quote(ARG_DESC), , [[Give a value for the ARG_NAME feature]], [m4_quote(m4_normalize(m4_quote(ARG_DESC)))]))
+  m4_define([ARG_DESC], m4_if(m4_quote(ARG_DESC), , [[Give a value for the ARG_NAME feature]], [m4_normalize(ARG_DESC)]))
 
   # If CHECKING_MSG is not specified, set it to a generic description.
-  m4_define([ARG_CHECKING_MSG], m4_if(m4_quote(ARG_CHECKING_MSG), , [[for --with-ARG_NAME]], [m4_quote(m4_normalize(m4_quote(ARG_CHECKING_MSG)))]))
+  m4_define([ARG_CHECKING_MSG], m4_if(m4_quote(ARG_CHECKING_MSG), , [[for --with-ARG_NAME]], [m4_normalize(ARG_CHECKING_MSG)]))
 
   m4_define([ARG_HAS_AUTO_BLOCK], m4_if(ARG_IF_AUTO, , false, true))
 
