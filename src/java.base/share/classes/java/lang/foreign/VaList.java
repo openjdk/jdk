@@ -57,8 +57,8 @@ import jdk.internal.reflect.Reflection;
  * {@link #nextVarg(ValueLayout.OfLong)} is illegal, but, any such illegal accesses might not be detected by
  * the implementation.
  * This goes for accesses through one of the {@code nextVarg} overloads, and {@link #skip(MemoryLayout...)}.
- * After an attempt to access a value using the wrong memory layout like this can result in the
- * variable argument list being corrupted, and the behavior of any subsequent accesses is therefor undefined as well.
+ * Any attempt to access a value using the wrong memory layout like this can result in the
+ * variable argument list being corrupted, and the behavior of any subsequent accesses is therefore undefined as well.
  * <p>
  * It is possible for clients to access elements outside the spatial bounds of a variable argument list.
  * Variable argument list implementations will try to detect out-of-bounds reads on a best-effort basis.
