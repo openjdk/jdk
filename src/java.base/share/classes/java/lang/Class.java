@@ -1333,9 +1333,7 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
      * flags} for this class, possibly empty}
-     * The {@code AccessFlags} are the access flags of the class
-     * that are specified for the class file format version;
-     * any unspecified flags are omitted.
+     * The {@code AccessFlags} may depend on the class file format version of the class.
      *
      * <p> If the underlying class is an array class:
      * <ul>
