@@ -26,8 +26,7 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
-#include "ci/ciUtilities.inline.hpp"
-#include "memory/universe.hpp"
+#include "ci/ciUtilities.hpp"
 
 // ciArrayKlass
 //
@@ -104,4 +103,3 @@ ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
     return ciObjArrayKlass::make(element_type->as_klass());
   }
 }
-

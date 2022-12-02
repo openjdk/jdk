@@ -76,7 +76,7 @@ public class TestOverview extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="%sp1/C.html" title="class in p1"><code>C</code></a></li>
                     </ul>
                     </dd>
