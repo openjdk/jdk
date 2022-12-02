@@ -448,11 +448,7 @@ public class TransPatterns extends TreeTranslator {
                     }
                     return l;
                 });
-                if (c.head.stats.isEmpty() && c.tail.nonEmpty()) {
-                    c.tail.head.labels = c.tail.head.labels.prependList(c.head.labels);
-                } else {
-                    newCases.add(c.head);
-                }
+                newCases.add(c.head);
             }
             cases = processCases(tree, newCases.toList());
             ListBuffer<JCStatement> statements = new ListBuffer<>();
