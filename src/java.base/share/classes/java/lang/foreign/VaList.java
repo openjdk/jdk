@@ -54,11 +54,10 @@ import jdk.internal.reflect.Reflection;
  * <h2 id="safety">Safety considerations</h2>
  * Accessing a value through a variable argument list using the wrong memory layout will result in undefined behavior.
  * For instance, if a variable argument list currently points at a C {@code int} value, then accessing it using
- * {@link #nextVarg(ValueLayout.OfLong)} is illegal, but, any such illegal accesses might not be detected by
- * the implementation.
- * This goes for accesses through one of the {@code nextVarg} overloads, and {@link #skip(MemoryLayout...)}.
- * Any attempt to access a value using the wrong memory layout like this can result in the
- * variable argument list being corrupted, and the behavior of any subsequent accesses is therefore undefined as well.
+ * {@link #nextVarg(ValueLayout.OfLong)} is illegal. Similarly, accessing the variable argument list with
+ * {@link #skip(MemoryLayout...)}, and providing a layout other than {@link ValueLayout.OfInt} is illegal.
+ * Any such illegal accesses might not be detected by the implementation, and can corrupt the variable argument list,
+ * so that the behavior of subsequent accesses is also undefined.
  * <p>
  * It is possible for clients to access elements outside the spatial bounds of a variable argument list.
  * Variable argument list implementations will try to detect out-of-bounds reads on a best-effort basis.
