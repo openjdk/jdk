@@ -117,7 +117,8 @@ void MemSummaryReporter::report() {
 
   size_t read_only_bytes = 0;
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
-  assert(r->read_only(), "Region should be read only");
+  // Region will be read-write on windows, otherwise this is a sanity check
+  assert(r->read_only() && !MetaspaceShared::use_windows_memory_mapping(), "Region should be read only");
   read_only_bytes = r->used();
 
   // Overall total
