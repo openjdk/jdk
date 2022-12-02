@@ -70,8 +70,7 @@ uint G1CardSetAllocator::num_segments() const {
   return _arena.num_segments();
 }
 
-G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
-                                               G1CardSetFreePool* free_list_pool) : _config(config) {
+G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config) : _config(config) {
 
   _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator,
                                  _config->num_mem_object_types(),
@@ -79,7 +78,7 @@ G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
   for (uint i = 0; i < num_mem_object_types(); i++) {
     new (&_allocators[i]) G1CardSetAllocator(_config->mem_object_type_name_str(i),
                                              _config->mem_object_alloc_options(i),
-                                             free_list_pool->free_list(i));
+                                             _config->freelist_pool()->free_list(i));
   }
 }
 

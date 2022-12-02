@@ -98,8 +98,7 @@ class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
 
   uint num_mem_object_types() const;
 public:
-  G1CardSetMemoryManager(G1CardSetConfiguration* config,
-                         G1CardSetFreePool* free_list_pool);
+  G1CardSetMemoryManager(G1CardSetConfiguration* config);
 
   virtual ~G1CardSetMemoryManager();
 

@@ -913,6 +913,8 @@ public:
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
 
+  const G1CardSetConfiguration* card_set_config() const { return &_card_set_config; }
+
   inline G1GCPhaseTimes* phase_times() const;
 
   const G1CollectionSet* collection_set() const { return &_collection_set; }
