@@ -4670,6 +4670,11 @@ oop java_lang_ClassLoader::parent(oop loader) {
   return loader->obj_field(_parent_offset);
 }
 
+oop java_lang_ClassLoader::parent_no_keepalive(oop loader) {
+  assert(is_instance(loader), "loader must be oop");
+  return loader->obj_field_access<AS_NO_KEEPALIVE>(_parent_offset);
+}
+
 // Returns the name field of this class loader.  If the name field has not
 // been set, null will be returned.
 oop java_lang_ClassLoader::name(oop loader) {

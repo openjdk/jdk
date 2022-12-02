@@ -2984,6 +2984,14 @@ operand immI_16bits()
   interface(CONST_INTER);
 %}
 
+operand immIpowerOf2() %{
+  predicate(is_power_of_2((juint)(n->get_int())));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
