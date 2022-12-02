@@ -1649,9 +1649,9 @@ public:
   };
 };
 
-static size_t delete_monitors(GrowableArray<ObjectMonitor*> delete_list) {
+static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
   size_t count = 0;
-  for (ObjectMonitor* monitor: delete_list) {
+  for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;
     count++;
   }
@@ -1742,8 +1742,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
                      unlinked_count, in_use_list_ceiling(),
                      _in_use_list.count(), _in_use_list.max());
       }
-      // Make the calling JavaThread blocked (safepoint safe) while we
-      // free the ObjectMonitors:
+      // Mark the calling JavaThread blocked (safepoint safe) while we free
+      // the ObjectMonitors so we don't delay safepoints whilst doing that.
       ThreadBlockInVM tbivm(JavaThread::cast(current));
       if (ls != NULL) {
         ls->print_cr("after setting blocked: in_use_list stats: ceiling="
@@ -1751,11 +1751,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }
-      deleted_count = delete_monitors(delete_list);
+      deleted_count = delete_monitors(&delete_list);
       // ThreadBlockInVM is destroyed here
     } else {
       // A non-JavaThread can just free the ObjectMonitors:
-      deleted_count = delete_monitors(delete_list);
+      deleted_count = delete_monitors(&delete_list);
     }
     assert(unlinked_count == deleted_count, "must be");
   }
