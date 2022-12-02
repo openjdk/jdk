@@ -802,7 +802,10 @@ public class Supplementary {
             int c = isAt ? Character.codePointAt(a, index, limit)
                          : Character.codePointBefore(a, index, limit);
         } catch (Exception e) {
-            if (expectedException == e.getClass()) {
+            if (isAt && expectedException == e.getClass()) {
+                return;
+            }
+            if (expectedException.isInstance(e)) { // Character.codePointBefore() throws
                 return;
             }
             throw new RuntimeException("Unspecified exception", e);
