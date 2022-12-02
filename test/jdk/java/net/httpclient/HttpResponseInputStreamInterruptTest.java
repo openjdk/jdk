@@ -169,6 +169,8 @@ public class HttpResponseInputStreamInterruptTest {
                 var thrown = assertThrows(IOException.class, () -> response.body().readAllBytes(), "expected IOException");
                 var cause = thrown.getCause();
                 assertTrue(cause instanceof InterruptedException, cause + " is not an InterruptedException");
+                var thread = Thread.currentThread();
+                assertTrue(thread.isInterrupted(), "Thread " + thread + " is not interrupted");
             } catch (Throwable t) {
                 t.printStackTrace();
                 fail();
