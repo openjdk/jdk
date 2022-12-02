@@ -26,10 +26,10 @@
  * @bug 8297264
  * @summary Test that CastII nodes are added to the CCP worklist if they could have been
  *          optimized due to a CmpI/If pattern.
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.c2.TestCastIIWrongTypeCCP::*
- *                   compiler.c2.TestCastIIWrongTypeCCP
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.ccp.TestCastIIWrongTypeCCP::*
+ *                   compiler.ccp.TestCastIIWrongTypeCCP
  */
-package compiler.c2;
+package compiler.ccp;
 
 public class TestCastIIWrongTypeCCP {
 
