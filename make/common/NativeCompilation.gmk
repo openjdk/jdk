@@ -267,10 +267,15 @@ endif
 # specialized file is found, returns the default file.
 # $1 Executable to find entitlements file for.
 ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
-DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default.plist
+ifeq ($(MACOSX_CODESIGN_MODE), debug)
+  CODESIGN_PLIST_SUFFIX := -debug
+else
+  CODESIGN_PLIST_SUFFIX :=
+endif
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default$(CODESIGN_PLIST_SUFFIX).plist
 
 GetEntitlementsFile = \
-    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1)).plist, \
+    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1))$(CODESIGN_PLIST_SUFFIX).plist, \
       $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
     )
 
@@ -1206,11 +1211,12 @@ define SetupNativeCompilationBody
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
                   endif
                 endif
-                # This only works if the openjdk_codesign identity is present on the system. Let
-                # silently fail otherwise.
-                ifneq ($(CODESIGN), )
+                # On macosx, optionally run codesign on every binary
+                ifeq ($(MACOSX_CODESIGN_MODE), hardened)
 		  $(CODESIGN) -f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
 		      --entitlements $$(call GetEntitlementsFile, $$@) $$@
+                else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+		  $(CODESIGN) -f -s - --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
   endif
 
