@@ -2671,7 +2671,8 @@ bool SuperWord::output() {
                  opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
                  opc == Op_ReverseI || opc == Op_ReverseL ||
                  opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
-                 opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
+                 opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL ||
+                 opc == Op_ConvHF2F || opc == Op_ConvF2HF) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
