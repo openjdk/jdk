@@ -64,9 +64,10 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
       )
     ])
 
-    # WARNING: Underneath this comment, you will find actual demons in the foreach block below waiting to rip your very soul out and destroy everything you hold dear
-    # Proceed at the risk of your own sanity, and don't say I didn't warn you when you inevitably suffer the same torment that I went through should you decide
-    # that you need to dive into it to fix anything
+    # Delicate quoting and unquoting sequence to ensure the actual value is passed along unchanged
+    # For details on how this works, see https://git.openjdk.org/jdk/pull/11458#discussion_r1038173051
+    # WARNING: Proceed at the risk of your own sanity, getting this to work has made me completely
+    # incapable of feeling love or any other positive emotion
     # ~Julian
     m4_foreach([arg], m4_dquote(m4_dquote_elt($3)), [
       m4_if(m4_index(arg, [: ]), -1, [m4_define([arg], m4_dquote(m4_bpatsubst(m4_dquote(arg), [:], [: ])))])
