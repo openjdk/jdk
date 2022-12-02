@@ -374,6 +374,13 @@ class Parse : public GraphKit {
   // Constructor
   Parse(JVMState* caller, ciMethod* parse_method, float expected_uses);
 
+#ifndef PRODUCT
+  ~Parse() {
+    if (TraceOptoParse) {
+      tty->print_cr("}");
+    }
+  }
+#endif
   virtual Parse* is_Parse() const { return (Parse*)this; }
 
   // Accessors.

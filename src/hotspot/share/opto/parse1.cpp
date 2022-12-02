@@ -417,6 +417,12 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   }
   _max_switch_depth = 0;
   _est_switch_depth = 0;
+
+  if (TraceOptoParse) {
+    tty->print_raw("Parsing method ");
+    parse_method->dump_name_as_ascii(tty);
+    tty->print_cr(" {");
+  }
 #endif
 
   if (parse_method->has_reserved_stack_access()) {
