@@ -288,7 +288,8 @@ jobs:
       platform: linux-x64
       debug-levels: '[ "debug" ]'
       make-target: 'docs-jdk-bundles'
-      # Creating full docs require us to build the entire JDK (for the module graphs)
+      # Make sure we never try to make full docs, since that would require a
+      # build JDK, and we do not need the additional testing of the graphs.
       extra-conf-options: '--disable-full-docs'
       gcc-major-version: '10'
       apt-gcc-version: '10.4.0-4ubuntu1~22.04'
