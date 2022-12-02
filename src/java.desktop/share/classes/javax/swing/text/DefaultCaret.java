@@ -1043,10 +1043,14 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      */
     public void setBlinkRate(int rate) {
         if (rate != 0) {
-            if (flasher == null) {
-                flasher = new Timer(rate, handler);
+            if (component.isEditable()) {
+                if (flasher == null) {
+                    flasher = new Timer(rate, handler);
+                }
+                flasher.setDelay(rate);
+            } else {
+                savedBlinkRate = rate;
             }
-            flasher.setDelay(rate);
         } else {
             if (flasher != null) {
                 flasher.stop();
