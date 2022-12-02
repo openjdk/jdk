@@ -131,9 +131,8 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * segments associated with that scope are also released.
      *
      * @apiNote This operation is not idempotent; that is, closing an already closed arena <em>always</em> results in an
-     * exception being thrown. This reflects a deliberate design choice: arena state transitions should be
-     * manifest in the client code; a failure in any of these transitions reveals a bug in the underlying application
-     * logic.
+     * exception being thrown. This reflects a deliberate design choice: failure to close an arena might reveal a bug
+     * in the underlying application logic.
      *
      * @see SegmentScope#isAlive()
      *
@@ -152,7 +151,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     boolean isCloseableBy(Thread thread);
 
     /**
-     * {@return a new confined arena}
+     * {@return a new confined arena, owned by the current thread}
      */
     static Arena openConfined() {
         return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();

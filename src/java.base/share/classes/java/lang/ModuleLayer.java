@@ -310,8 +310,6 @@ public final class ModuleLayer {
          * from depending on restricted methods, and use safe and supported functionalities,
          * where possible.
          *
-         * @since 20
-         *
          * @param  target
          *         The module to update
          *
@@ -322,6 +320,8 @@ public final class ModuleLayer {
          *
          * @throws IllegalCallerException
          *         If the caller is in a module that does not have native access enabled
+         *
+         * @since 20
          */
         @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
         @CallerSensitive
