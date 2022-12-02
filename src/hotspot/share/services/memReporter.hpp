@@ -31,9 +31,6 @@
 #include "services/nmtCommon.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
-#include "utilities/ticks.hpp"
-
-class MemJFRReporter;
 
 /*
  * Base class that provides helpers
@@ -239,14 +236,5 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
-
-class MemJFRReporter : public AllStatic {
-private:
-  static void sendTypeEvent(const Ticks& starttime, const char* type, size_t reserved, size_t committed);
- public:
-  static void sendTotalEvent();
-  static void sendTypeEvents();
-};
-
 
 #endif // SHARE_SERVICES_MEMREPORTER_HPP

@@ -63,7 +63,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
-#include "services/memReporter.hpp"
+#include "services/memJfrReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -626,10 +626,10 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #endif
 }
 
-TRACE_REQUEST_FUNC(NativeMemoryUsagePart) {
+TRACE_REQUEST_FUNC(NativeMemoryUsage) {
   MemJFRReporter::sendTypeEvents();
 }
 
-TRACE_REQUEST_FUNC(NativeMemoryUsage) {
+TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
   MemJFRReporter::sendTotalEvent();
 }

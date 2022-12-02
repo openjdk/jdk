@@ -517,7 +517,7 @@
       <setting name="period">1000 ms</setting>
     </event>
 
-    <event name="jdk.NativeMemoryUsagePart">
+    <event name="jdk.NativeMemoryUsageTotal">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="period">1000 ms</setting>
     </event>

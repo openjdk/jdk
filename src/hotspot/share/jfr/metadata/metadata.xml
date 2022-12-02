@@ -706,17 +706,17 @@
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
-  <Event name="NativeMemoryUsagePart" category="Java Virtual Machine, Memory" label="Component Native Memory Usage" description="Native memory usage for a component"
-    period="everyChunk" experimental="true">
-    <Field type="string" name="type" label="Memory Type" description="Component allocating the native memory" />
-    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes by this component" />
-    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes by this component" />
+  <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
+    description="Native memory usage for a given memory type in the JVM" period="everyChunk">
+    <Field type="string" name="type" label="Memory Type" description="Type used for the native memory allocation" />
+    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />
   </Event>
 
-  <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Total Native Memory Usage" description="Total Native Memory Usage"
-    period="everyChunk" experimental="true">
-    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this component" />
-    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this component" />
+  <Event name="NativeMemoryUsageTotal" category="Java Virtual Machine, Memory" label="Total Native Memory Usage"
+    description="Total native memory usage for the JVM. Might not be the exact sum of the NativeMemoryUsage events due to timeing." period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Total amount of reserved bytes for the JVM" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Total amount of committed bytes for the JVM" />
   </Event>
 
   <Event name="DumpReason" category="Flight Recorder" label="Recording Reason"

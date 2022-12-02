@@ -46,13 +46,13 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm -XX:NativeMemoryTracking=off -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
  */
 public class TestNativeMemoryUsageEvents {
-    private final static String UsagePartEvent = EventNames.NativeMemoryUsagePart;
+    private final static String UsageTotalEvent = EventNames.NativeMemoryUsageTotal;
     private final static String UsageEvent = EventNames.NativeMemoryUsage;
 
     private final static int UsagePeriod = 1000;
     private final static int K = 1024;
 
-    private final static String[] UsagePartEventTypes = {
+    private final static String[] UsageEventTypes = {
         "Java Heap",
         "Class",
         "Thread",
@@ -95,8 +95,8 @@ public class TestNativeMemoryUsageEvents {
     private static void generateEvents(Recording recording) throws Exception {
         // Enable the two types of events for "everyChunk", it will give
         // an event att the beginning of the chunk as well as the end.
-        recording.enable(UsagePartEvent).with("period", "everyChunk");
         recording.enable(UsageEvent).with("period", "everyChunk");
+        recording.enable(UsageTotalEvent).with("period", "everyChunk");
 
         recording.start();
 
@@ -109,25 +109,25 @@ public class TestNativeMemoryUsageEvents {
     private static void verifyExpectedEventTypes(List<RecordedEvent> events) throws Exception {
         // First verify that the number of total usage events is greater than 0.
         long numberOfTotal = events.stream()
-                .filter(e -> e.getEventType().getName().equals(UsageEvent))
+                .filter(e -> e.getEventType().getName().equals(UsageTotalEvent))
                 .count();
 
-        assertGreaterThan(numberOfTotal, 0L, "Should exist events of type: " + UsageEvent);
+        assertGreaterThan(numberOfTotal, 0L, "Should exist events of type: " + UsageTotalEvent);
 
         // Now verify that we got the expected events.
         List<String> uniqueEventTypes = events.stream()
-                .filter(e -> e.getEventType().getName().equals(UsagePartEvent))
+                .filter(e -> e.getEventType().getName().equals(UsageEvent))
                 .map(e -> e.getString("type"))
                 .distinct()
                 .toList();
-        for (String type : UsagePartEventTypes) {
+        for (String type : UsageEventTypes) {
             assertTrue(uniqueEventTypes.contains(type), "Events should include: " + type);
         }
     }
 
     private static void verifyHeapGrowth(List<RecordedEvent> events) throws Exception {
         List<Long> javaHeapCommitted = events.stream()
-                .filter(e -> e.getEventType().getName().equals(UsagePartEvent))
+                .filter(e -> e.getEventType().getName().equals(UsageEvent))
                 .filter(e -> e.getString("type").equals("Java Heap"))
                 .map(e -> e.getLong("committed"))
                 .toList();
@@ -140,7 +140,7 @@ public class TestNativeMemoryUsageEvents {
 
     private static void verifyNoUsageEvents(List<RecordedEvent> events) throws Exception {
         Events.hasNotEvent(events, UsageEvent);
-        Events.hasNotEvent(events, UsagePartEvent);
+        Events.hasNotEvent(events, UsageTotalEvent);
     }
 
     public static void main(String[] args) throws Exception {
