@@ -24,8 +24,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
-#include "runtime/os.hpp" // malloc
 
 static LogDecorators::Decorator decorator_array[] = {
 #define DECORATOR(name, abbr) LogDecorators::name##_decorator,

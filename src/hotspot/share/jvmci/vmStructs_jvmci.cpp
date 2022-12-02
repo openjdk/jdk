@@ -318,6 +318,7 @@
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
   static_field(StubRoutines,                _md5_implCompress,                                address)                               \
   static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
+  static_field(StubRoutines,                _chacha20Block,                                   address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \

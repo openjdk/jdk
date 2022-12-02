@@ -221,6 +221,7 @@ public final class JDKEvents {
             t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
             t.memoryLimit = containerMetrics.getMemoryLimit();
             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
+            t.hostTotalMemory = JVM.getJVM().hostTotalMemory();
             t.commit();
         }
     }

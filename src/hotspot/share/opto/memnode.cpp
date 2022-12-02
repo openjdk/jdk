@@ -2387,7 +2387,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2488,7 +2488,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p)  return (p == NodeSentinel) ? NULL : p;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2520,7 +2520,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   Node* x = LoadINode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;

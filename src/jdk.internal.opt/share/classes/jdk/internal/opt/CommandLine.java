@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,38 @@
  * questions.
  */
 
-package jdk.jpackage.main;
+package jdk.internal.opt;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-/**
+/*
  * This file was originally a copy of CommandLine.java in
- * com.sun.tools.javac.main.
- * It should track changes made to that file.
+ * com.sun.tools.javac.main -- and it will be the last.
+ *
+ * Find details at https://bugs.openjdk.org/browse/JDK-8236919
  */
 
 /**
  * Various utility methods for processing Java tool command line arguments.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-class CommandLine {
+public final class CommandLine {
+    /**
+     * Convenient wrapper for the {@code List}-based parse method.
+     *
+     * @see #parse(List)
+     */
+    public static String[] parse(String... args) throws IOException {
+        return parse(List.of(args)).toArray(String[]::new);
+    }
+
     /**
      * Process Win32-style command files for the specified command line
      * arguments and return the resulting arguments. A command file argument
@@ -64,14 +68,13 @@ class CommandLine {
      * @return the arguments, with @files expanded
      * @throws IOException if there is a problem reading any of the @files
      */
-    public static String[] parse(String[] args) throws IOException {
+    public static List<String> parse(List<String> args) throws IOException {
         List<String> newArgs = new ArrayList<>();
-        appendParsedCommandArgs(newArgs, Arrays.asList(args));
-        return newArgs.toArray(new String[newArgs.size()]);
+        appendParsedCommandArgs(newArgs, args);
+        return newArgs;
     }
 
-    private static void appendParsedCommandArgs(List<String> newArgs,
-            List<String> args) throws IOException {
+    private static void appendParsedCommandArgs(List<String> newArgs, List<String> args) throws IOException {
         for (String arg : args) {
             if (arg.length() > 1 && arg.charAt(0) == '@') {
                 arg = arg.substring(1);
@@ -86,13 +89,45 @@ class CommandLine {
         }
     }
 
-    private static void loadCmdFile(String name, List<String> args)
-            throws IOException {
-        if (!Files.isReadable(Path.of(name))) {
-            throw new FileNotFoundException(name);
-        }
-        try (Reader r = Files.newBufferedReader(Paths.get(name),
-                Charset.defaultCharset())) {
+    /**
+     * Process the given environment variable and appends any Win32-style
+     * command files for the specified command line arguments and return
+     * the resulting arguments. A command file argument
+     * is of the form '@file' where 'file' is the name of the file whose
+     * contents are to be parsed for additional arguments. The contents of
+     * the command file are parsed using StreamTokenizer and the original
+     * '@file' argument replaced with the resulting tokens. Recursive command
+     * files are not supported. The '@' character itself can be quoted with
+     * the sequence '@@'.
+     * @param envVariable the env variable to process
+     * @param args the arguments that may contain @files
+     * @return the arguments, with environment variable's content and expansion of @files
+     * @throws IOException if there is a problem reading any of the @files
+     * @throws CommandLine.UnmatchedQuote
+     */
+    public static List<String> parse(String envVariable, List<String> args)
+            throws IOException, UnmatchedQuote {
+
+        List<String> inArgs = new ArrayList<>();
+        appendParsedEnvVariables(inArgs, envVariable);
+        inArgs.addAll(args);
+        List<String> newArgs = new ArrayList<>();
+        appendParsedCommandArgs(newArgs, inArgs);
+        return newArgs;
+    }
+
+    public static void loadCmdFile(InputStream in, List<String> args) throws IOException {
+        Reader reader = new InputStreamReader(in);
+        loadCmdFileAndCloseReader(reader, args);
+    }
+
+    private static void loadCmdFile(String name, List<String> args) throws IOException {
+        Reader reader = Files.newBufferedReader(Paths.get(name), Charset.defaultCharset());
+        loadCmdFileAndCloseReader(reader, args);
+    }
+
+    private static void loadCmdFileAndCloseReader(Reader r, List<String> args) throws IOException {
+        try (r) {
             Tokenizer t = new Tokenizer(r);
             String s;
             while ((s = t.nextToken()) != null) {
@@ -151,9 +186,7 @@ class CommandLine {
                             switch (ch) {
                                 case '\n':
                                 case '\r':
-                                    while (ch == ' ' || ch == '\n'
-                                            || ch == '\r' || ch == '\t'
-                                            || ch == '\f') {
+                                    while (ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t' || ch == '\f') {
                                         ch = in.read();
                                     }
                                     continue;
@@ -169,8 +202,6 @@ class CommandLine {
                                     break;
                                 case 'f':
                                     ch = '\f';
-                                    break;
-                                default:
                                     break;
                             }
                         }
@@ -210,6 +241,77 @@ class CommandLine {
 
                 ch = in.read();
             }
+        }
+    }
+
+    @SuppressWarnings("fallthrough")
+    private static void appendParsedEnvVariables(List<String> newArgs, String envVariable)
+            throws UnmatchedQuote {
+
+        if (envVariable == null) {
+            return;
+        }
+        String in = System.getenv(envVariable);
+        if (in == null || in.trim().isEmpty()) {
+            return;
+        }
+
+        final char NUL = (char)0;
+        final int len = in.length();
+
+        int pos = 0;
+        StringBuilder sb = new StringBuilder();
+        char quote = NUL;
+        char ch;
+
+        loop:
+        while (pos < len) {
+            ch = in.charAt(pos);
+            switch (ch) {
+                case '\"': case '\'':
+                    if (quote == NUL) {
+                        quote = ch;
+                    } else if (quote == ch) {
+                        quote = NUL;
+                    } else {
+                        sb.append(ch);
+                    }
+                    pos++;
+                    break;
+                case '\f': case '\n': case '\r': case '\t': case ' ':
+                    if (quote == NUL) {
+                        newArgs.add(sb.toString());
+                        sb.setLength(0);
+                        while (ch == '\f' || ch == '\n' || ch == '\r' || ch == '\t' || ch == ' ') {
+                            pos++;
+                            if (pos >= len) {
+                                break loop;
+                            }
+                            ch = in.charAt(pos);
+                        }
+                        break;
+                    }
+                    // fall through
+                default:
+                    sb.append(ch);
+                    pos++;
+            }
+        }
+        if (sb.length() != 0) {
+            newArgs.add(sb.toString());
+        }
+        if (quote != NUL) {
+            throw new UnmatchedQuote(envVariable);
+        }
+    }
+
+    public static class UnmatchedQuote extends Exception {
+        private static final long serialVersionUID = 0;
+
+        public final String variableName;
+
+        UnmatchedQuote(String variable) {
+            this.variableName = variable;
         }
     }
 }
