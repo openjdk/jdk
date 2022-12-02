@@ -35,6 +35,7 @@
  * @test
  * @requires vm.debug == true & vm.continuations
  * @modules java.base/java.lang:+open
+ * @enablePreview
  * @compile GetStackTraceALot.java ../ThreadBuilders.java
  * @run main/timeout=300 GetStackTraceALot 1000
  */
