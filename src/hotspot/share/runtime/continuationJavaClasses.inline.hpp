@@ -82,7 +82,7 @@ inline void jdk_internal_vm_StackChunk::set_parent_access(oop chunk, oop value) 
 }
 
 inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
-    return chunk->obj_field(_cont_offset);
+  return chunk->obj_field(_cont_offset);
 }
 
 inline void jdk_internal_vm_StackChunk::set_cont(oop chunk, oop value) {
