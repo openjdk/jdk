@@ -620,10 +620,19 @@ static bool no_flip_branch(Block *b) {
 // fake exit path to infinite loops.  At this late stage they need to turn
 // into Goto's so that when you enter the infinite loop you indeed hang.
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
-  // Find true target
+  // NeverBranch sits at end_idx, the two projections right after it
   int end_idx = b->end_idx();
-  int idx = b->get_node(end_idx+1)->as_Proj()->_con;
-  Block *succ = b->_succs[idx];
+  int taken_idx = b->get_node(end_idx+1)->as_Proj()->_con;
+  ProjNode* alwaysTaken = b->get_node(end_idx + 1 + taken_idx)->as_Proj();
+  ProjNode* neverTaken  = b->get_node(end_idx + 2 - taken_idx)->as_Proj();
+  assert(alwaysTaken->_con == 0 && neverTaken->_con == 1, "correct projection constants");
+  // if alwaysTaken projects into _succs[0], dead_idx == 1
+  int dead_idx = b->_succs[0]->get_node(0) == alwaysTaken->unique_ctrl_out_or_null();
+  Block* succ = b->_succs[1 - dead_idx];
+  Block* dead = b->_succs[dead_idx];
+  assert(alwaysTaken->unique_ctrl_out_or_null() == succ->get_node(0), "alwaysTaken leads to succ block");
+  assert(neverTaken->unique_ctrl_out_or_null() == dead->get_node(0), "neverTaken leads to dead block");
+
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, b->head());
   Node *bp = b->get_node(end_idx);
@@ -642,7 +651,6 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
     }
   }
   // Kill alternate exit path
-  Block* dead = b->_succs[1 - idx];
   for (j = 1; j < dead->num_preds(); j++) {
     if (dead->pred(j)->in(0) == bp) {
       break;
