@@ -73,11 +73,11 @@ public class TestPhaseCFGNeverBranchToGotoMain {
                     if (p == 0) { // reason for peeling in loop-opts 1
                         // after we know that p == 1, we lose this exit
                         break;
-		    }
+                    }
                     // once we know that b == 77, we lose exit
-		} while (b == 77);
-                // after we lost both exits above, this loop gets cut off
-		int y = 5;
+            } while (b == 77);
+            // after we lost both exits above, this loop gets cut off
+            int y = 5;
                 do {
                     y *= 3;
                 } while (b == 77);
