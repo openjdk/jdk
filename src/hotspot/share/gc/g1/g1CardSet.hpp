@@ -33,7 +33,6 @@ class G1CardSetAllocOptions;
 class G1CardSetHashTable;
 class G1CardSetHashTableValue;
 class G1CardSetMemoryManager;
-class G1MonotonicArenaFreePool;
 class Mutex;
 
 // The result of an attempt to add a card to that card set.
@@ -61,7 +60,6 @@ class G1CardSetConfiguration {
   uint _log2_cards_per_card_region;
 
   G1CardSetAllocOptions* _card_set_alloc_options;
-  G1MonotonicArenaFreePool* _freelist_pool;
 
   G1CardSetConfiguration(uint inline_ptr_bits_per_card,
                          uint max_cards_in_array,
@@ -140,8 +138,6 @@ public:
 
   // For a given memory object, get a descriptive name.
   static const char* mem_object_type_name_str(uint index);
-
-  G1MonotonicArenaFreePool* freelist_pool() const { return _freelist_pool; }
 };
 
 // Collects coarsening statistics: how many attempts of each kind and how many

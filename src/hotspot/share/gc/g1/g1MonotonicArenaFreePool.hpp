@@ -56,7 +56,7 @@ public:
 
 // A set of free lists holding freed segments for use by G1MonotonicArena,
 // e.g. G1CardSetAllocators::_arena
-class G1MonotonicArenaFreePool : public CHeapObj<mtGC> {
+class G1MonotonicArenaFreePool {
   using SegmentFreeList = G1MonotonicArena::SegmentFreeList;
 
   const uint _num_free_lists;

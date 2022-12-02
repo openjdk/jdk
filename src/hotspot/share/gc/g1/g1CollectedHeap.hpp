@@ -41,6 +41,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
@@ -787,6 +788,8 @@ private:
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
+  G1MonotonicArenaFreePool _card_set_freelist_pool;
+
 public:
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -913,7 +916,8 @@ public:
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
 
-  const G1CardSetConfiguration* card_set_config() const { return &_card_set_config; }
+  const G1MonotonicArenaFreePool* card_set_freelist_pool() const { return &_card_set_freelist_pool; }
+  G1MonotonicArenaFreePool* card_set_freelist_pool() { return &_card_set_freelist_pool; }
 
   inline G1GCPhaseTimes* phase_times() const;
 

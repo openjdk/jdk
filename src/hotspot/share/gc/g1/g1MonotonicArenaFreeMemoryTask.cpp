@@ -55,7 +55,7 @@ bool G1MonotonicArenaFreeMemoryTask::calculate_return_infos(jlong deadline) {
 
   G1MonotonicArenaMemoryStats used = _total_used;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1MonotonicArenaFreePool* freelist_pool = g1h->card_set_config()->freelist_pool();
+  G1MonotonicArenaFreePool* freelist_pool = g1h->card_set_freelist_pool();
   G1MonotonicArenaMemoryStats free = freelist_pool->memory_sizes();
 
   _return_info = new G1ReturnMemoryProcessorSet(used.num_pools());

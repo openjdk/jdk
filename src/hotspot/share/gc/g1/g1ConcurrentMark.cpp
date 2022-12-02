@@ -3053,7 +3053,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   }
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  size_t mem_size = g1h->card_set_config()->freelist_pool()->mem_size();
+  size_t mem_size = g1h->card_set_freelist_pool()->mem_size();
   _total_remset_bytes += mem_size;
   // add static memory usages to remembered set sizes
   _total_remset_bytes += HeapRegionRemSet::static_mem_size();

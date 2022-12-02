@@ -26,7 +26,6 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
-#include "gc/g1/g1MonotonicArena.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -113,8 +112,7 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_max_cards_in_howl_bitmap(log2i_exact(_max_cards_in_howl_bitmap)),
   _bitmap_hash_mask(~(~(0) << _log2_max_cards_in_howl_bitmap)),
   _log2_card_regions_per_heap_region(log2_card_regions_per_heap_region),
-  _log2_cards_per_card_region(log2i_exact(_max_cards_in_card_set)),
-  _freelist_pool(new G1MonotonicArenaFreePool(num_mem_object_types())) {
+  _log2_cards_per_card_region(log2i_exact(_max_cards_in_card_set)) {
 
   assert(_inline_ptr_bits_per_card <= G1CardSetContainer::LogCardsPerRegionLimit,
          "inline_ptr_bits_per_card (%u) is wasteful, can represent more than maximum possible card indexes (%u)",
@@ -150,7 +148,6 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
 
 G1CardSetConfiguration::~G1CardSetConfiguration() {
   FREE_C_HEAP_ARRAY(size_t, _card_set_alloc_options);
-  delete _freelist_pool;
 }
 
 void G1CardSetConfiguration::init_card_set_alloc_options() {

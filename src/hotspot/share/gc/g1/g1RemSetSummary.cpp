@@ -286,7 +286,7 @@ public:
 
     HeapRegionRemSet::print_static_mem_size(out);
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    g1h->card_set_config()->freelist_pool()->print_on(out);
+    g1h->card_set_freelist_pool()->print_on(out);
 
     // Code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
